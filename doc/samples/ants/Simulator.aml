@@ -20,16 +20,22 @@ structure Simulator :
   open Instructions
   open World
 
-  val defSeed = 0w12345
-  fun randStream seed =
-      lazy Word.toInt (Word.andb(Word.>>(seed,0w16), 0wx3FFF )) ::
-           randStream ((seed * 0w22695477)+0w1)
-  fun randInit () = tl(tl(tl(tl(randStream defSeed))))
-                    
   local
-      val rands = ref (randInit())
+      val rands = ref defSeed
+      fun nextRand() = 
+          let
+              val seed = !rands
+              val res = Word.toInt (Word.andb(Word.>>(seed,0w16), 0wx3FFF ))
+          in
+              rands := (seed * 0w22695477)+0w1;
+              res
+          end
   in
-  fun randomInt n = (hd (!rands)) mod n before rands:=tl (!rands)
+    val _ = nextRand()
+    val _ = nextRand()
+    val _ = nextRand()
+    val _ = nextRand()
+    fun randomInt n = (nextRand()) mod n
   end
 
   fun instr(Sense(sensedir,st1,st2,cond,_),

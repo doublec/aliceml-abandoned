@@ -23,6 +23,7 @@ struct
             window      :   Gtk.object,
             drawingArea :   Gtk.object,
             pixmap      :   Gtk.object,
+            gc          :   Gtk.object,
             rockC       :   Gtk.object,
             redAntC     :   Gtk.object,
             blackAntC   :   Gtk.object,
@@ -37,18 +38,7 @@ struct
 
     fun size w = (tileSize * 101 , tileSize * 100)
 
-    fun allocColor colorName =
-        let
-            val color   = Gdk.colorNew (0, 0, 0)
-            val _       = Gdk.colorParse (colorName, color)
-            val colormap= Gdk.colormapGetSystem ()
-            val _       = Gdk.colormapAllocColor (colormap, color, 
-                                                    false, true) 
-        in
-            color
-        end
-    
-    and allocColor' (r, g, b) =
+    fun allocColor' (r, g, b) =
         let
             val colormap= Gdk.colormapGetSystem ()
             val color   = Gdk.colorNew (Real.trunc (r * 65000.0),
@@ -59,9 +49,17 @@ struct
         in
             color
         end
-    
+    fun allocColor colorName =
+        let
+            val color   = Gdk.colorNew (0, 0, 0)
+            val _       = Gdk.colorParse (colorName, color)
+            val colormap= Gdk.colormapGetSystem ()
+            val _       = Gdk.colormapAllocColor (colormap, color, 
+                                                    false, true) 
+        in
+            color
+        end
         
-
     fun viewer (redName, blackName) =
         let
             val window  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -77,34 +75,35 @@ struct
             val pixmapP = Promise.promise ()
             val pixmap  = Promise.future pixmapP
 
+                          
             fun expose (widget, Gtk.EVENT (Gtk.EVENT_EXPOSE { area_x, area_y, 
-                                                 area_width, area_height,
-                                                ... }) :: _) =
+                                                              area_width, area_height,
+                                                              ... }) :: _) =
                 let
                     val w       = Gtk.widgetGetFieldWindow widget 
                     val style   = Gtk.widgetGetStyle widget
                     val gc      = Gtk.styleGetFieldWhiteGc style
                 in
                     if Future.isFuture pixmap 
-                        then ()
-                        else
-                            Gdk.drawDrawable (w, gc, pixmap, area_x, area_y, 
-                                area_x, area_y, area_width, area_height) 
+                    then ()
+                    else
+                        Gdk.drawDrawable (w, gc, pixmap, area_x, area_y, 
+                                          area_x, area_y, area_width, area_height) 
                 end
-
+                    
             fun configure (widget, _) =
                 let
                     val w       = Gtk.widgetGetFieldWindow widget
                     val (width, 
-                        height) = size w
+                         height) = size w
                     val p       = Gdk.pixmapNew (w, width, height, ~1)
                     val style   = Gtk.widgetGetStyle widget
                     val gc      = Gtk.styleGetFieldWhiteGc style
                 in
                     if Future.isFuture pixmap then
                         (Promise.fulfill (pixmapP, p);
-                        Gdk.drawRectangle (p, gc, true, 0, 0, width, height);
-                        print "configured\n")
+                         Gdk.drawRectangle (p, gc, true, 0, 0, width, height);
+                         print "configured\n")
                     else ()
                 end
 
@@ -125,105 +124,95 @@ struct
             Gtk.signalConnect (bt, "clicked", fn _ => OS.Process.exit OS.Process.success); 
             Gtk.widgetShowAll window;
             Future.await pixmap;
-            G { drawingArea = area, pixmap, window,
+            G { drawingArea = area, pixmap, window, gc = Gdk.gcNew (Gtk.widgetGetFieldWindow area), 
                 redAntC, blackAntC, rockC, redHillC, blackHillC,
                 emptySpotC, foodCs}
         end
 
+local
+    val cos = 0.5
+    val sin = 0.866025403784438597
+    val mcos = ~cos
+    val msin = ~sin
+    val gray = allocColor' (0.80, 0.80, 0.80)
 
-    fun updateCell (td as G { pixmap, ... }) (world, x, y) =
-        let
-            val _       = assert 0 <= x andalso x < 100 
-                            andalso 0 <= y andalso y < 100
-            val cell    = World.getCellAt (world, x, y)
-        in
-            tilePlot' (td, x, y, cell) 
-        end
-
+    fun drawRect (gc, pixmap, x, y, c) = 
+        (Gdk.gcSetForeground (gc, c);
+         Gdk.drawRectangle (pixmap, gc, true, x, y, tileSize, tileSize))
         
-    and tilePlot' (G { drawingArea = area, pixmap, 
+    fun drawIRect (gc, pixmap, x, y, c) =
+        (Gdk.gcSetForeground (gc, c);
+         Gdk.drawRectangle (pixmap, gc, true, x + 2, y+2, tileSize-4, tileSize-4))
+        
+    fun drawBoring (gc, pixmap, x, y, c) =
+        (* draw a cross *)
+        (Gdk.gcSetForeground (gc, c);
+         Gdk.drawLine (pixmap, gc, x+1, y+1, x+tileSize-3, y+tileSize-3);
+         Gdk.drawLine (pixmap, gc, x+tileSize-3, y+1, x+1, y+tileSize-3))
+        
+    fun drawFood (gc, pixmap, x, y, c) =
+        (Gdk.gcSetForeground (gc, c);
+         Gdk.drawRectangle (pixmap, gc, false, x+1, y+1, tileSize-3, tileSize-3))
+        
+    fun forloop (init, endv, f) = if init > endv then () else (f init ; forloop (init+1, endv, f))
+                                                              
+    fun drawTrail direction (gc, pixmap, x, y, c) =
+        let 
+            val (dx, dy) =
+                case direction of
+                    West => (~1.0, 0.0)
+                  | East => (1.0, 0.0)
+                  | NorthWest => (mcos, msin)
+                  | NorthEast => (cos, msin)
+                  | SouthWest => (mcos, sin)
+                  | SouthEast => (cos, sin)
+            val x0 = x+tileSize div 2
+            val y0 = y+tileSize div 2
+            val ddx = round (dx * realTileSize * 0.75 )
+            val ddy = round (dy * realTileSize * 0.75 )
+        in
+            Gdk.gcSetForeground (gc, gray);
+            Gdk.drawLine (pixmap, gc, x0, y0, x0+ddx, y0+ddy) ;
+            Gdk.gcSetForeground (gc, c);
+            Gdk.drawPoint (pixmap, gc, x0, y0)                     
+        end
+            
+    fun getDirection m =
+        let val m1 = Array.sub (m,1)
+            val m2 = Array.sub (m,2)
+            val m3 = Array.sub (m,3)
+        in
+            case (m1, m2, m3) of
+                (false, false, false) => East
+              | (true, false, false) => SouthEast
+              | (false, true, false) => SouthWest
+              | (false, false, true) => NorthWest
+              | (true, false, true) => NorthEast
+              | (true, true, false) => West
+              | _ => (print "What the hell is this ?"; West)
+        end
+            
+    fun drawMarkers (gc, pixmap, x, y, m, c) =
+        (if Array.sub (m, 4) (* food marker *) then
+             drawFood (gc, pixmap, x, y, c)
+         else if Array.sub (m, 5) (* boring marker *) then
+             drawBoring (gc, pixmap, x, y, c)
+         else if Array.sub (m, 1) orelse Array.sub (m, 2) orelse Array.sub (m,3) then
+             drawTrail (getDirection m) (gc, pixmap, x, y, c) 
+         else ())
+in
+    fun tilePlot (G { drawingArea = area, pixmap, gc,
                         rockC, redAntC, blackAntC, emptySpotC, 
                         blackHillC, redHillC, foodCs,... }, 
-                xc, yc, cell) =
+                xc, yc, cell:World.cell) =
         let
-            val w       = Gtk.widgetGetFieldWindow area
-            val gc      = Gdk.gcNew w 
+(*            val w       = Gtk.widgetGetFieldWindow area
+            val gc      = Gdk.gcNew w *)
 
            (* every second row is indented *) 
             val x       = xc * tileSize + (if yc mod 2 <> 0 then tileSize div 2 else 0)         
             val y       = yc * tileSize
 
-            fun drawRect (gc, pixmap, x, y, c) = 
-                (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawRectangle (pixmap, gc, true, x, y, tileSize, tileSize))
-
-            fun drawIRect (gc, pixmap, x, y, c) =
-                (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawRectangle (pixmap, gc, true, x + 2, y+2, tileSize-4, tileSize-4))
-
-            fun drawBoring (gc, pixmap, x, y, c) =
-                (* draw a cross *)
-                (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawLine (pixmap, gc, x+1, y+1, x+tileSize-3, y+tileSize-3);
-                 Gdk.drawLine (pixmap, gc, x+tileSize-3, y+1, x+1, y+tileSize-3))
-            
-            fun drawFood (gc, pixmap, x, y, c) =
-                (Gdk.gcSetForeground (gc, c);
-                Gdk.drawRectangle (pixmap, gc, false, x+1, y+1, tileSize-3, tileSize-3))
-
-            fun forloop (init, endv, f) = if init > endv then () else (f init ; forloop (init+1, endv, f))
-
-            val cos = 0.5
-            val sin = 0.866025403784438597
-            val mcos = ~cos
-            val msin = ~sin
-
-            val gray = allocColor' (0.80, 0.80, 0.80)
-
-            fun drawTrail direction (gc, pixmap, x, y, c) =
-                let 
-                    val (dx, dy) =
-                    case direction of
-                        West => (~1.0, 0.0)
-                      | East => (1.0, 0.0)
-                      | NorthWest => (mcos, msin)
-                      | NorthEast => (cos, msin)
-                      | SouthWest => (mcos, sin)
-                      | SouthEast => (cos, sin)
-                    val x0 = x+tileSize div 2
-                    val y0 = y+tileSize div 2
-                    val ddx = round (dx * realTileSize * 0.75 )
-                    val ddy = round (dy * realTileSize * 0.75 )
-                 in
-                     Gdk.gcSetForeground (gc, gray);
-                     Gdk.drawLine (pixmap, gc, x0, y0, x0+ddx, y0+ddy) ;
-                     Gdk.gcSetForeground (gc, c);
-                     Gdk.drawPoint (pixmap, gc, x0, y0)                     
-                 end
-
-            fun getDirection m =
-                let val m1 = Array.sub (m,1)
-                    val m2 = Array.sub (m,2)
-                    val m3 = Array.sub (m,3)
-                in
-                    case (m1, m2, m3) of
-                        (false, false, false) => East
-                      | (true, false, false) => SouthEast
-                      | (false, true, false) => SouthWest
-                      | (false, false, true) => NorthWest
-                      | (true, false, true) => NorthEast
-                      | (true, true, false) => West
-                      | _ => (print "What the hell is this ?"; West)
-                end
-
-            fun drawMarkers (gc, pixmap, x, y, m, c) =
-                (if Array.sub (m, 4) (* food marker *) then
-                    drawFood (gc, pixmap, x, y, c)
-                else if Array.sub (m, 5) (* boring marker *) then
-                    drawBoring (gc, pixmap, x, y, c)
-                else if Array.sub (m, 1) orelse Array.sub (m, 2) orelse Array.sub (m,3) then
-                    drawTrail (getDirection m) (gc, pixmap, x, y, c) 
-                else ())
         in
             if #rocky cell then
                 drawRect (gc, pixmap, x, y, rockC)
@@ -250,6 +239,18 @@ struct
                    
             Gtk.widgetQueueDrawArea (area,x, y, tileSize, tileSize)
         end
+end
+
+    fun updateCell (td as G { pixmap, ... }) (world, x, y) =
+        let
+            val _       = assert 0 <= x andalso x < 100 
+                            andalso 0 <= y andalso y < 100
+            val cell    = World.getCellAt (world, x, y)
+        in
+            tilePlot (td, x, y, cell) 
+        end
+
+        
 
 end 
 
