@@ -8,7 +8,7 @@ package de.uni_sb.ps.dml.builtin;
 
 import de.uni_sb.ps.dml.runtime.*;
 
-final public class Cons implements DMLConVal, DMLList {
+final public class Cons implements DMLConVal {
 
     protected DMLValue car=null;
     protected DMLValue cdr=null;
@@ -26,21 +26,22 @@ final public class Cons implements DMLConVal, DMLList {
 	return cdr;
     }
 
+    final public void setCdr(DMLValue val) {
+	cdr = val;
+    }
+
     public DMLValue get0() { return car; }
     public DMLValue get1() { return cdr; }
     public DMLValue get2() { throw new ArrayIndexOutOfBoundsException(); }
     public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
     public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
-    /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Cons) &&
-	    car.equals(((Cons) val).car) &&
-	    cdr.equals(((Cons) val).cdr);
-    }
-
     final public DMLValue getContent() {
 	return new Tuple2(car,cdr);
+    }
+
+    final public Constructor getConstructor() {
+	return List.cons;
     }
 
     /** wirft Fehler */
@@ -57,28 +58,15 @@ final public class Cons implements DMLConVal, DMLList {
 	return "("+car+", "+cdr+")";
     }
 
-    final public DMLValue getValue() {
-	return this;
+    /** Gleichheit der  und Inhalte */
+    final public boolean equals(java.lang.Object val) {
+	return (val instanceof Cons) &&
+	    car.equals(((Cons) val).car) &&
+	    cdr.equals(((Cons) val).cdr);
     }
 
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue v) {
-	try {
-	    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
-	} catch (java.rmi.RemoteException r) {
-	    System.err.println(r);
-	    return null;
-	}
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-
-    final public Constructor getConstructor() {
-	return List.cons;
-    }
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

@@ -29,7 +29,7 @@ final public class Array implements DMLValue {
 		    le++;
 		    li = ((Cons) li).cdr;
 		} else
-		     _error(`"argument not DMLList"',list);
+		    _error("argument not DMLList",list);
 	    }
 	    arr = new DMLValue[le];
 	    int index = 0;
@@ -39,7 +39,7 @@ final public class Array implements DMLValue {
 		list = l.cdr;
 	    }
 	} else
-	     _error(`"argument not DMLList"',list);
+	    _error("argument not DMLList",list);
     }
 
     /** das ist tabulate */
@@ -193,10 +193,6 @@ final public class Array implements DMLValue {
 	return new Array(f,n);
     }
 
-    final public DMLValue fromList(DMLList l) {
-	return null; //new Array(l.list);
-    }
-
     final public DMLValue extract(int from, int to) {
 	if (to<0 || from<0 || to<from || arr.length<to)
 	    return General.Subscript.raise();
@@ -239,61 +235,61 @@ final public class Array implements DMLValue {
     /** <code>val maxLen : int </code>*/
     final public static Int maxLen = new Int(Array.maxLength);
 
-    final public static class ArraY extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(ArraY) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"Array.array");
 	    DMLValue arg=args[0].request();
 	    int ar=0;
 	    if (arg instanceof Int)
 		ar = ((Int) arg).getInt();
 	    else
-		_error(`"argument #1 not Int"',val);
+		_error("argument 1 not Int",val);
 	    return new Array(ar,args[1]);
 	}
     }
     /** <code>val array : (int * 'a) -> 'a array </code>*/
     final public static ArraY array = new ArraY();
 
-    final public static class FromList extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(FromList) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.fromList");
 	    DMLValue arg=args[0].request();
 	    return new Array(arg);
 	}
     }
     /** <code>val fromList : 'a list -> 'a array </code>*/
-    final public static FromList fromList = new FromList();
+    _FIELD(fromList);
 
-    final public static class Tabulate extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Tabulate) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"Array.tabulate");
 	    int ar=0;
 	    DMLValue arg=args[0].request();
 	    if (arg instanceof Int)
 		ar = ((Int) arg).getInt();
 	    else
-		_error(`"argument #1 not Array"',val);
+		_error("argument 1 not Array",val);
 	    return new Array(args[1],ar);
 	}
     }
     /** <code>val tabulate : (int * (int -> 'a)) -> 'a array </code>*/
-    final public static Tabulate tabulate = new Tabulate();
+    _FIELD(tabulate);
 
-    final public static class Length extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Length) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.length");
 	    DMLValue arg=args[0].request();
 	    if (arg instanceof Array)
 		return new Int(((Array) arg).arr.length);
 	    else
-		return _error(`"argument #1 not Int"',val);
+		return _error("argument 1 not Int",val);
 	}
     }
     /** <code>val length : 'a array -> int </code>*/
-    final public static Length length = new Length();
+    _FIELD(length);
 
-    final public static class Sub extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Sub) {
+	_APPLY(val) {
 	    _fromTuple(args,val,2,"Array.sub");
 	    DMLValue array = args[0].request();
 	    if (array instanceof Array) {
@@ -301,17 +297,17 @@ final public class Array implements DMLValue {
 		if (idx instanceof Int)
 		    return ((Array) array).sub(((Int) idx).getInt());
 		else
-		    return _error(`"argument #2 not Int"',val);
+		    return _error("argument 2 not Int",val);
 	    }
 	    else
-		return _error(`"argument #1 not Array"',val);
+		return _error("argument 1 not Array",val);
 	}
     }
     /** <code>val sub : ('a array * int) -> 'a </code>*/
-    final public static Sub sub = new Sub();
+    _FIELD(sub);
 
-    final public static class Update extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Update) {
+	_APPLY(val) {
 	    _fromTuple(args,val,3,"Array.update");
 	    DMLValue array = args[0].request();
 	    if (array instanceof Array) {
@@ -320,17 +316,17 @@ final public class Array implements DMLValue {
 		    return ((Array) array).
 			update(((Int) idx).getInt(),args[2]);
 		else
-		    return _error(`"argument #2 not Int"',val);
+		    return _error("argument 2 not Int",val);
 	    }
 	    else
-		return _error(`"argument #1 not Array"',val);
+		return _error("argument 1 not Array",val);
 	}
     }
     /** <code>val update : ('a array * int * 'a) -> unit </code>*/
-    final public static Update update = new Update();
+    _FIELD(update);
 
-    final public static class Extract extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Extract) {
+	_APPLY(val) {
 	    _fromTuple(args,val,3,"Array.extract");
 	    DMLValue array = args[0].request();
 	    if (array instanceof Array) {
@@ -352,26 +348,26 @@ final public class Array implements DMLValue {
 					    ((Int) to).getInt());
 			}
 		    }
-		    return _error(`"argument #3 not Int option"',val);
+		    return _error("argument 3 not Int option",val);
 		}
 		else
-		    return _error(`"argument #2 not Int"',val);
+		    return _error("argument 2 not Int",val);
 	    }
 	    else
-		return _error(`"argument #1 not Array"',val);
+		return _error("argument 1 not Array",val);
 	}
     }
     /** <code>val extract : ('a array * int * int option) -> 'a vector </code>*/
-    final public static Extract extract = new Extract();
+    _FIELD(extract);
 
-    final public static class Copy extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Copy) {
+	_APPLY(val) {
 	    _fromTuple(args,val,5,"Array.copy");
 	    DMLValue array = args[0].request();
 	    if (array instanceof Array) {
 		DMLValue fr = args[1].request();
 		if (!(fr instanceof Int))
-		    return _error(`"argument #2 not Int"',val);
+		    return _error("argument 2 not Int",val);
 		int from = ((Int) fr).getInt();
 		DMLValue len = args[2].request();
 		int le = 0;
@@ -387,34 +383,34 @@ final public class Array implements DMLValue {
 		    }
 		}
 		else
-		    return _error(`"argument #3 not Int option"',val);
+		    return _error("argument 3 not Int option",val);
 		DMLValue dest = args[3].request();
 		if (!(dest instanceof Array))
-		    return _error(`"argument #4 not Array"',val);
+		    return _error("argument 4 not Array",val);
 		DMLValue di = args[4].request();
 		if (!(di instanceof Int))
-		    return _error(`"argument #5 not Int"',val);
+		    return _error("argument 5 not Int",val);
 		return ((Array) array)
 		    .copy(from,
 			  le,
 			  (Array) dest,
 			  ((Int) di).getInt());
 	    } else
-		return _error(`"argument #1 not Array"',val);
+		return _error("argument 1 not Array",val);
 	}
     }
     /** <code>val copy : {src : 'a array, si : int, len : int option, dst : 'a array, di : int} -> unit </code>*/
-    final public static Copy copy = new Copy();
+    _FIELD(copy);
 
-    final public static class CopyVec extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(CopyVec) {
+	_APPLY(val) {
 	    _fromTuple(args,val,5,"Array.copyVec");
 	    DMLValue vector = args[0].request();
 	    //	    System.err.println("vector: "+vector.getClass());
 	    if (vector instanceof Vector) {
 		DMLValue fr = args[1].request();
 		if (!(fr instanceof Int))
-		    return _error(`"argument #2 not Int"',val);
+		    return _error("argument 2 not Int",val);
 		int from = ((Int) fr).getInt();
 		DMLValue len = args[2].request();
 		int le = 0;
@@ -430,40 +426,40 @@ final public class Array implements DMLValue {
 		    }
 		}
 		else
-		    return _error(`"argument #3 not Int option"',val);
+		    return _error("argument 3 not Int option",val);
 		DMLValue dest = args[3].request();
 		if (!(dest instanceof Array))
-		    return _error(`"argument #4 not Array"',val);
+		    return _error("argument 4 not Array",val);
 		DMLValue di = args[4].request();
 		if (!(di instanceof Int))
-		    return _error(`"argument #5 not Int"',val);
+		    return _error("argument 5 not Int",val);
 		return ((Vector) vector).copyVec(from,
-						    le,
-						    (Array) dest,
-						    ((Int) di).getInt());
+						 le,
+						 (Array) dest,
+						 ((Int) di).getInt());
 	    } else
-		return _error(`"argument #1 not Vector"',val);
+		return _error("argument 1 not Vector",val);
 	}
     }
     /** <code>val copyVec : {src : 'a vector, si : int, len : int option, dst : 'a array, di : int} -> unit </code>*/
-    final public static CopyVec copyVec = new CopyVec();
+    _FIELD(copyVec);
 
-    final public static class Appi extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Appi) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.appi");
 	    return new Appi1(args[0].request());
 	}
-	final public static class Appi1 extends Builtin {
+	_BUILTIN(Appi1) {
 	    public DMLValue fun = null;
 	    public Appi1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,3,"Array.appi1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof Array))
-		    return _error(`"argument #1 not Array"',val);
+		    return _error("argument 1 not Array",val);
 		DMLValue fr = args[1].request();
 		if (!(fr instanceof Int))
-		    return _error(`"argument #2 not Int"',val);
+		    return _error("argument 2 not Int",val);
 		int from = ((Int) fr).getInt();
 		DMLValue to = args[2].request();
 		int toint = 0;
@@ -474,11 +470,11 @@ final public class Array implements DMLValue {
 		    if (!(cv.getConstructor()==Option.SOME)) {
 			DMLValue iv= cv.getContent();
 			if (!(iv instanceof Int))
-			    return _error(`"argument #3 not Int option"',val);
+			    return _error("argument 3 not Int option",val);
 			toint=((Int) iv).getInt();
 		    }
 		} else
-		    return _error(`"argument #3 not Int option"',val);
+		    return _error("argument 3 not Int option",val);
 		return ((Array) array).
 		    appi(from,
 			 toint,
@@ -487,198 +483,198 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val appi : ((int * 'a) -> unit) -> ('a array * int * int option) -> unit </code>*/
-    final public static Appi appi = new Appi();
+    _FIELD(appi);
 
-    final public static class App extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(App) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.app");
 	    return new App1(args[0].request());
 	}
-	final public static class App1 extends Builtin {
+	_BUILTIN(App1) {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,1,"Array.app1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof Array))
-		    return _error(`"argument not Array"',val);
+		    return _error("argument not Array",val);
 		return ((Array) array).app(fun);
 	    }
 	}
     }
     /** <code>val app : ('a -> unit) -> 'a array -> unit </code>*/
-    final public static App app = new App();
+    _FIELD(app);
 
-    final public static class Foldli extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Foldli) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.foldli");
 	    return new Foldli1(args[0].request());
 	}
-	final public static class Foldli1 extends Builtin {
+	_BUILTIN(Foldli1) {
 	    DMLValue fun = null;
 	    Foldli1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,1,"Array.foldli1");
 		return new Foldli2(fun, args[0].request());
 	    }
-	    final public static class Foldli2 extends Builtin {
+	    _BUILTIN(Foldli2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldli2(DMLValue f, DMLValue i) { init=i; fun=f;}
-		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-		_fromTuple(args,val,3,"Array.foldli2");
-		DMLValue array = args[0].request();
-		if (!(array instanceof Array))
-		    return _error(`"argument #1 not Array"',val);
-		DMLValue from = args[1].request();
-		if (!(from instanceof Int))
-		    return _error(`"argument #2 not Int"',val);
-		DMLValue to = args[2].request();
-		int toint = 0;
-		if (to==Option.NONE)
-		    toint = ((Array) array).arr.length;
-		else if (to instanceof DMLConVal) {
-		    DMLConVal cv = (DMLConVal) to;
-		    if (!(cv.getConstructor()==Option.SOME)) {
-			DMLValue iv= cv.getContent();
-			if (!(iv instanceof Int))
-			    return _error(`"argument #3 not Int option"',val);
-			toint=((Int) iv).getInt();
-		    }
-		} else
-		    return _error(`"argument #3 not Int option"',val);
-		return ((Array) array).
-		    foldli(fun,
-			   init,
-			   ((Int) from).getInt(),
-			   toint);
+		_APPLY(val) {
+		    _fromTuple(args,val,3,"Array.foldli2");
+		    DMLValue array = args[0].request();
+		    if (!(array instanceof Array))
+			return _error("argument 1 not Array",val);
+		    DMLValue from = args[1].request();
+		    if (!(from instanceof Int))
+			return _error("argument 2 not Int",val);
+		    DMLValue to = args[2].request();
+		    int toint = 0;
+		    if (to==Option.NONE)
+			toint = ((Array) array).arr.length;
+		    else if (to instanceof DMLConVal) {
+			DMLConVal cv = (DMLConVal) to;
+			if (!(cv.getConstructor()==Option.SOME)) {
+			    DMLValue iv= cv.getContent();
+			    if (!(iv instanceof Int))
+				return _error("argument 3 not Int option",val);
+			    toint=((Int) iv).getInt();
+			}
+		    } else
+			return _error("argument 3 not Int option",val);
+		    return ((Array) array).
+			foldli(fun,
+			       init,
+			       ((Int) from).getInt(),
+			       toint);
 		}
 	    }
 	}
     }
     /** <code>val foldli : ((int * 'a * 'b) -> 'b) -> 'b -> ('a array * int * int option) -> 'b </code>*/
-    final public static Foldli foldli = new Foldli();
+    _FIELD(foldli);
 
-    final public static class Foldri extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Foldri) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.foldri");
 	    return new Foldri1(args[0].request());
 	}
-	final public static class Foldri1 extends Builtin {
+	_BUILTIN(Foldri1) {
 	    DMLValue fun = null;
 	    Foldri1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,1,"Array.foldri1");
 		return new Foldri2(fun, args[0].request());
 	    }
-	    final public static class Foldri2 extends Builtin {
+	    _BUILTIN(Foldri2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldri2(DMLValue f, DMLValue i) { init=i; fun=f; }
-		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-		_fromTuple(args,val,3,"Array.foldri2");
-		DMLValue array = args[0].request();
-		if (!(array instanceof Array))
-		    return _error(`"argument #1 not Array"',val);
-		DMLValue from = args[1].request();
-		if (!(from instanceof Int))
-		    return _error(`"argument #2 not Int"',val);
-		DMLValue to = args[2].request();
-		int toint = 0;
-		if (to==Option.NONE)
-		    toint = ((Array) array).arr.length;
-		else if (to instanceof DMLConVal) {
-		    DMLConVal cv = (DMLConVal) to;
-		    if (!(cv.getConstructor()==Option.SOME)) {
-			DMLValue iv= cv.getContent();
-			if (!(iv instanceof Int))
-			    return _error(`"argument #3 not Int option"',val);
-			toint=((Int) iv).getInt();
-		    }
-		} else
-		    return _error(`"argument #3 not Int option"',val);
-		return ((Array) array).
-		    foldri(fun,
-			   init,
-			   ((Int) from).getInt(),
-			   toint);
+		_APPLY(val) {
+		    _fromTuple(args,val,3,"Array.foldri2");
+		    DMLValue array = args[0].request();
+		    if (!(array instanceof Array))
+			return _error("argument 1 not Array",val);
+		    DMLValue from = args[1].request();
+		    if (!(from instanceof Int))
+			return _error("argument 2 not Int",val);
+		    DMLValue to = args[2].request();
+		    int toint = 0;
+		    if (to==Option.NONE)
+			toint = ((Array) array).arr.length;
+		    else if (to instanceof DMLConVal) {
+			DMLConVal cv = (DMLConVal) to;
+			if (!(cv.getConstructor()==Option.SOME)) {
+			    DMLValue iv= cv.getContent();
+			    if (!(iv instanceof Int))
+				return _error("argument 3 not Int option",val);
+			    toint=((Int) iv).getInt();
+			}
+		    } else
+			return _error("argument 3 not Int option",val);
+		    return ((Array) array).
+			foldri(fun,
+			       init,
+			       ((Int) from).getInt(),
+			       toint);
 		}
 	    }
 	}
     }
     /** <code>val foldri : ((int * 'a * 'b) -> 'b) -> 'b -> ('a array * int * int option) -> 'b </code>*/
-    final public static Foldri foldri = new Foldri();
+    _FIELD(foldri);
 
-    final public static class Foldl extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Foldl) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.foldl");
 	    return new Foldl1(args[0].request());
 	}
-	final public static class Foldl1 extends Builtin {
+	_BUILTIN(Foldl1) {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,1,"Array.foldl1");
 		return new Foldl2(fun, args[0]);
 	    }
-	    final public static class Foldl2 extends Builtin {
+	    _BUILTIN(Foldl2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldl2(DMLValue f,DMLValue i) { init=i; fun=f; }
-		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+		_APPLY(val) {
 		    _fromTuple(args,val,1,"Array.foldl2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof Array))
-			return _error(`"argument not Array"',val);
+			return _error("argument not Array",val);
 		    return ((Array) array).foldl(fun,init);
 		}
 	    }
 	}
     }
     /** <code>val foldl : (('a * 'b) -> 'b) -> 'b -> 'a array -> 'b </code>*/
-    final public static Foldl foldl = new Foldl();
+    _FIELD(foldl);
 
-    final public static class Foldr extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Foldr) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.foldr");
 	    return new Foldr1(args[0].request());
 	}
-	final public static class Foldr1 extends Builtin {
+	_BUILTIN(Foldr1) {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,1,"Array.foldr1");
 		return new Foldr2(fun, args[0]);
 	    }
-	    final public static class Foldr2 extends Builtin {
+	    _BUILTIN(Foldr2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldr2(DMLValue f, DMLValue i) { init=i; fun=f; }
-		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+		_APPLY(val) {
 		    _fromTuple(args,val,1,"Array.foldr2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof Array))
-			return _error(`"argument not Array"',val);
+			return _error("argument not Array",val);
  		    return ((Array) array).foldr(fun,init);
 		}
 	    }
 	}
     }
     /** <code>val foldr : (('a * 'b) -> 'b) -> 'b -> 'a array -> 'b </code>*/
-    final public static Foldr foldr = new Foldr();
+    _FIELD(foldr);
 
-    final public static class Modifyi extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Modifyi) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.modifyi");
 	    return new Modifyi1(args[0].request());
 	}
-	final public static class Modifyi1 extends Builtin {
+	_BUILTIN(Modifyi1) {
 	    DMLValue fun = null;
 	    Modifyi1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,3,"Array.modifyi1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof Array))
-		    return _error(`"argument #1 not Array"',val);
+		    return _error("argument 1 not Array",val);
 		DMLValue from = args[1].request();
 		if (!(from instanceof Int))
-		    return _error(`"argument #2 not Int"',val);
+		    return _error("argument 2 not Int",val);
 		DMLValue to = args[2].request();
 		int toint = 0;
 		if (to==Option.NONE)
@@ -688,11 +684,11 @@ final public class Array implements DMLValue {
 		    if (!(cv.getConstructor()==Option.SOME)) {
 			DMLValue iv= cv.getContent();
 			if (!(iv instanceof Int))
-			    return _error(`"argument #2 not Int option"',val);
+			    return _error("argument 2 not Int option",val);
 			toint=((Int) iv).getInt();
 		    }
 		} else
-		    return _error(`"argument #2 not Int option"',val);
+		    return _error("argument 2 not Int option",val);
 		return ((Array) array).
 		    modifyi(fun,
 			    ((Int) from).getInt(),
@@ -701,26 +697,26 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val modifyi : ((int * 'a) -> 'a) -> ('a array * int * int option) -> unit </code>*/
-    final public static Modifyi modifyi = new Modifyi();
+    _FIELD(modifyi);
 
-    final public static class Modify extends Builtin {
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    _BUILTIN(Modify) {
+	_APPLY(val) {
 	    _fromTuple(args,val,1,"Array.modify");
 	    return new Modify1(args[0]);
 	}
-	final public static class Modify1 extends Builtin {
+	_BUILTIN(Modify1) {
 	    DMLValue fun = null;
 	    Modify1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    _APPLY(val) {
 		_fromTuple(args,val,1,"Array.modify1");
 		DMLValue array = args[0].request();
-	    if (!(array instanceof Array))
-		return _error(`"argument not Array"',val);
-	    else
-		return ((Array) array).modify(fun);
+		if (!(array instanceof Array))
+		    return _error("argument not Array",val);
+		else
+		    return ((Array) array).modify(fun);
 	    }
 	}
     }
     /** <code>val modify : ('a -> 'a) -> 'a array -> unit</code>*/
-    final public static Modify modify = new Modify();
+    _FIELD(modify);
 }

@@ -18,19 +18,19 @@ final public class String extends SCon {
     /** java-String Wert */
     private java.lang.String value=null;
 
+    /** Baut einen neuen de.uni_sb.ps.dml.runtime.String mit Inhalt <code>value</code>.
+     *  @param value <code>String</code> Wert, der dem de.uni_sb.ps.dml.runtime.String entspricht.
+     */
+    public String(java.lang.String value) {
+	this.value=value;
+    }
+
     /** Testet Gleichheit der Java-Strings */
     final public boolean equals(java.lang.Object val) {
 	return (val instanceof de.uni_sb.ps.dml.runtime.String) &&
 	    (((de.uni_sb.ps.dml.runtime.String) val).value.equals(this.value));
     }
 
-    /** Baut einen neuen de.uni_sb.ps.dml.runtime.String mit Inhalt <code>value</code>.
-     *  @param value <code>String</code> Wert, der dem de.uni_sb.ps.dml.runtime.String entspricht.
-     */
-   public String(java.lang.String value) {
-	this.value=value;
-    }
-    
     /** java.lang.Stringdarstellung des Wertes erzeugen.
      *  @return java.lang.String java.lang.Stringdarstellung des Wertes
      */

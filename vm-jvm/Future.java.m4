@@ -11,14 +11,13 @@ public class Future extends LVar {
     // von LVar: DMLValue ref = null;
     // diese ref kann nur eine LVar sein!
 
-    /** Dieser Konstruktor wird nur mit LVar als Argument aufgerufen.
-     *  @param v LVar
-     */
     public Future() throws java.rmi.RemoteException {
     }
 
+    /** Dieser Konstruktor wird nur mit LVar als Argument aufgerufen.
+     *  @param v LVar
+     */
     public Future(DMLValue v) throws java.rmi.RemoteException {
-	super();
 	ref=v;
     }
 

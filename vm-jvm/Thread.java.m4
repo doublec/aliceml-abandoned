@@ -15,6 +15,7 @@ package de.uni_sb.ps.dml.runtime;
 public class Thread extends java.lang.Thread implements DMLValue {
     /** Hier wird die Continuation für die Tail-Calls übergeben. */
     public DMLValue tail=null;
+
     private NoGood ng = null;
     /** Die Funktion (oder etwas, das zu einer Funktion wird),
      *  die der java.lang.Thread ausführt.
@@ -69,7 +70,7 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	    +"Is interrupted: "+this.isInterrupted();
     }
 
-    private Object writeReplace()
+    final private Object writeReplace()
 	throws java.io.ObjectStreamException {
 	if (ng==null) { // falls zum ersten Mal serialisiert
 	    GName gn=new GName();

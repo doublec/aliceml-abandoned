@@ -7,6 +7,7 @@
 package de.uni_sb.ps.dml.runtime;
 
 abstract public class Function implements DMLValue {
+
     public Function() {
 	super();
     }

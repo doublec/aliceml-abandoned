@@ -16,11 +16,11 @@ final public class GName implements java.io.Serializable {
 	id = new java.rmi.dgc.VMID();
     }
 
-    public int hashCode() {
+    final public int hashCode() {
 	return id.hashCode();
     }
 
-    public boolean equals(java.lang.Object o) {
+    final public boolean equals(java.lang.Object o) {
 	return (o instanceof GName) &&
 	    id.equals(((GName) o).id);
     }

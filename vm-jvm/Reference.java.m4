@@ -19,13 +19,13 @@ final public class Reference implements DMLConVal, DMLReference {
 	this.content=content;
     }
 
-    public DMLValue release() {
+    final public DMLValue release() {
 	DMLValue t = content;
 	content = null;
 	return t;
     }
 
-    public DMLValue get0() throws java.rmi.RemoteException {
+    final public DMLValue get0() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -36,7 +36,7 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
 
-    public DMLValue get1() throws java.rmi.RemoteException {
+    final public DMLValue get1() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -46,7 +46,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    public DMLValue get2() throws java.rmi.RemoteException {
+    final public DMLValue get2() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -56,7 +56,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    public DMLValue get3() throws java.rmi.RemoteException {
+    final public DMLValue get3() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -66,7 +66,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    public DMLValue get4() throws java.rmi.RemoteException {
+    final public DMLValue get4() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -76,17 +76,17 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Reference) &&
-	    this.content.equals(((Reference)val).content);
-    }
-
     final public DMLValue getContent() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
 	return content;
+    }
+
+    /** Gleichheit der  und Inhalte */
+    final public boolean equals(java.lang.Object val) {
+	return (val instanceof Reference) &&
+	    this.content.equals(((Reference)val).content);
     }
 
     /** setzt Wert auf val und gibt alten Wert zurueck */
@@ -119,7 +119,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	return ret;
     }
 
-    private void writeObject(java.io.ObjectOutputStream out)
+    final private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
 	try {
 	    if (mgr==null) {
@@ -147,7 +147,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	}
     }
 
-    private void readObject(java.io.ObjectInputStream in)
+    final private void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
 	in.defaultReadObject();
 	cmgr = new ClientManager(this);

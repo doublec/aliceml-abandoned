@@ -8,10 +8,10 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class ConValTuple2 implements DMLConVal {
 
-    DMLValue fst = null;
-    DMLValue snd = null;
+    private DMLValue fst = null;
+    private DMLValue snd = null;
 
-    Constructor constructor=null;
+    private Constructor constructor=null;
 
     public ConValTuple2(Constructor con,
 			DMLValue eins,
@@ -21,21 +21,21 @@ final public class ConValTuple2 implements DMLConVal {
 	snd=zwei;
     }
 
-    public DMLValue get0() { return fst; }
-    public DMLValue get1() { return snd; }
-    public DMLValue get2() { throw new ArrayIndexOutOfBoundsException(); }
-    public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
-    public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get0() { return fst; }
+    final public DMLValue get1() { return snd; }
+    final public DMLValue get2() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
+
+    final public DMLValue getContent() {
+	return new Tuple2(fst,snd);
+    }
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
 	return (val instanceof ConValTuple2) &&
 	    fst.equals(((ConValTuple2) val).fst) &&
 	    snd.equals(((ConValTuple2) val).snd);
-    }
-
-    final public DMLValue getContent() {
-	return new Tuple2(fst,snd);
     }
 
     /** setzt Wert auf val und gibt alten Wert zurueck */

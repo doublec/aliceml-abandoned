@@ -10,11 +10,11 @@ import de.uni_sb.ps.dml.runtime.*;
 
 final public class Option {
     // datatype 'a option = NONE | SOME of 'a 
-    final public static Name NONE = new Name("Option.NONE");
-    final public static Constructor SOME = new Constructor("Option.SOME");
+    final public static Name NONE = new UniqueName("Option.NONE");
+    final public static Constructor SOME = new UniqueConstructor("Option.SOME");
 
     // exception Option
-    final public static Name Option = new Name("Option.Option");
+    final public static Name Option = new UniqueName("Option.Option");
 
     // val getOpt : ('a option * 'a) -> 'a 
     // val isSome : 'a option -> bool 

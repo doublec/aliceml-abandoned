@@ -8,12 +8,12 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class ConValTuple4 implements DMLConVal {
 
-    DMLValue fst = null;
-    DMLValue snd = null;
-    DMLValue thr = null;
-    DMLValue fur = null;
+    private DMLValue fst = null;
+    private DMLValue snd = null;
+    private DMLValue thr = null;
+    private DMLValue fur = null;
 
-    Constructor constructor=null;
+    private Constructor constructor=null;
 
     public ConValTuple4(Constructor con,
 			DMLValue eins,
@@ -27,23 +27,23 @@ final public class ConValTuple4 implements DMLConVal {
 	fur=vier;
     }
 
-    public DMLValue get0() { return fst; }
-    public DMLValue get1() { return snd; }
-    public DMLValue get2() { return thr; }
-    public DMLValue get3() { return fur; }
-    public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
-
-    /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof ConValTuple5) &&
-	    fst.equals(((ConValTuple5) val).fst) &&
-	    snd.equals(((ConValTuple5) val).snd) &&
-	    thr.equals(((ConValTuple5) val).thr) &&
-	    fur.equals(((ConValTuple5) val).fur);
-    }
+    final public DMLValue get0() { return fst; }
+    final public DMLValue get1() { return snd; }
+    final public DMLValue get2() { return thr; }
+    final public DMLValue get3() { return fur; }
+    final public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
     final public DMLValue getContent() {
 	return new Tuple4(fst,snd,thr,fur);
+    }
+
+    /** Gleichheit der  und Inhalte */
+    final public boolean equals(java.lang.Object val) {
+	return (val instanceof ConValTuple4) &&
+	    fst.equals(((ConValTuple4) val).fst) &&
+	    snd.equals(((ConValTuple4) val).snd) &&
+	    thr.equals(((ConValTuple4) val).thr) &&
+	    fur.equals(((ConValTuple4) val).fur);
     }
 
     final public DMLValue assign(DMLValue val) {

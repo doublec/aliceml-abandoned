@@ -8,11 +8,11 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class ConValTuple3 implements DMLConVal {
 
-    DMLValue fst = null;
-    DMLValue snd = null;
-    DMLValue thr = null;
+    private DMLValue fst = null;
+    private DMLValue snd = null;
+    private DMLValue thr = null;
 
-    Constructor constructor=null;
+    private Constructor constructor=null;
 
     public ConValTuple3(Constructor con,
 			DMLValue eins,
@@ -24,11 +24,15 @@ final public class ConValTuple3 implements DMLConVal {
 	thr=drei;
     }
 
-    public DMLValue get0() { return fst; }
-    public DMLValue get1() { return snd; }
-    public DMLValue get2() { return thr; }
-    public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
-    public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get0() { return fst; }
+    final public DMLValue get1() { return snd; }
+    final public DMLValue get2() { return thr; }
+    final public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
+
+    final public DMLValue getContent() {
+	return new Tuple3(fst,snd,thr);
+    }
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
@@ -36,10 +40,6 @@ final public class ConValTuple3 implements DMLConVal {
 	    fst.equals(((ConValTuple3) val).fst) &&
 	    snd.equals(((ConValTuple3) val).snd) &&
 	    thr.equals(((ConValTuple3) val).thr);
-    }
-
-    final public DMLValue getContent() {
-	return new Tuple3(fst,snd,thr);
     }
 
     final public DMLValue assign(DMLValue val) {

@@ -13,18 +13,23 @@ public class LVar extends java.rmi.server.UnicastRemoteObject implements DMLRemo
     public LVar() throws java.rmi.RemoteException { }
 
     final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
-	if (ref==null)
+	if (ref==null) {
 	    return this;
-	else
+	} else {
 	    ref=ref.getValue();
+	}
 	return ref;
     }
 
     synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
-	if (ref==null)
+	if (ref==null) {
 	    try {
 		this.wait();
-	    } catch (java.lang.InterruptedException e) {}
+	    } catch (java.lang.InterruptedException e) {
+		System.err.println(e);
+		e.printStackTrace();
+	    }
+	}
 	ref=ref.request();
 	return ref;
     }
@@ -58,13 +63,14 @@ public class LVar extends java.rmi.server.UnicastRemoteObject implements DMLRemo
     }
 
 
-    public DMLValue apply(DMLValue v)  throws java.rmi.RemoteException{
+    public DMLValue apply(DMLValue v)  throws java.rmi.RemoteException {
 	return this.request().apply(v);
     }
 
     /** LVar und Future werden beim pickeln ersetzt, falls sie gebunden sind.
 	Nicht gebunde logische Variablen dürfen nicht gepickelt werden. */
-    final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+    final private void writeObject(java.io.ObjectOutputStream out)
+	throws java.io.IOException {
 	Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle LVar")).raise();
     }
 

@@ -18,16 +18,16 @@ final public class Real extends SCon {
     /** java-float Wert */
     private float value=0.0f;
 
-    /** Gleichheit der Real-Werte (Java-Floats) */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Real) && (((Real) val).value==this.value);
-    }
-
     /** Baut einen neuen Real mit Inhalt <code>value</code>.
      *  @param value <code>float</code> Wert, der dem Real entspricht.
      */
     public Real(float value) {
 	this.value=value;
+    }
+
+    /** Gleichheit der Real-Werte (Java-Floats) */
+    final public boolean equals(java.lang.Object val) {
+	return (val instanceof Real) && (((Real) val).value==this.value);
     }
 
     /** java.lang.Stringdarstellung des Wertes erzeugen.
@@ -36,7 +36,7 @@ final public class Real extends SCon {
     final public java.lang.String toString() {
 	return value+": real";
     }
-    
+
     /** Den Java-Wert des Real auslesen.
      *  @return float Java-Wert der dem Real-Wert entspricht
      */

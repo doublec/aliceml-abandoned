@@ -14,7 +14,7 @@ public class ClientManager extends java.rmi.server.UnicastRemoteObject implement
 	ref=r;
     }
 
-    public DMLValue release() throws java.rmi.RemoteException {
+    final public DMLValue release() throws java.rmi.RemoteException {
 	return ref.release();
     }
 }

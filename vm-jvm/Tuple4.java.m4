@@ -10,10 +10,10 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class Tuple4 implements DMLTuple {
 
-    protected DMLValue fst = null;
-    protected DMLValue snd = null;
-    protected DMLValue thr = null;
-    protected DMLValue fur = null;
+    private DMLValue fst = null;
+    private DMLValue snd = null;
+    private DMLValue thr = null;
+    private DMLValue fur = null;
 
     public Tuple4(DMLValue eins,
 		  DMLValue zwei,
@@ -39,7 +39,7 @@ final public class Tuple4 implements DMLTuple {
 	    fur.equals(((Tuple4) val).fur);
     }
 
-    public java.lang.String toString() {
+    final public java.lang.String toString() {
 	return "("+fst+", "+snd+", "+thr+", "+fur+")";
     }
 

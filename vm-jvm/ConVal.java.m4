@@ -17,31 +17,31 @@ final public class ConVal implements DMLConVal {
 	this.content = content;
     }
 
-    public DMLValue get0() {
+    final public DMLValue get0() {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get0();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
-    public DMLValue get1() {
+    final public DMLValue get1() {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get1();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
-    public DMLValue get2() {
+    final public DMLValue get2() {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get2();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
-    public DMLValue get3() {
+    final public DMLValue get3() {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get3();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
-    public DMLValue get4() {
+    final public DMLValue get4() {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get4();
 	else

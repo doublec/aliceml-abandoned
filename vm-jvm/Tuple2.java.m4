@@ -10,8 +10,8 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class Tuple2 implements DMLTuple {
 
-    protected DMLValue fst = null;
-    protected DMLValue snd = null;
+    private DMLValue fst = null;
+    private DMLValue snd = null;
 
     public Tuple2(DMLValue eins,
 		  DMLValue zwei) {
@@ -19,11 +19,11 @@ final public class Tuple2 implements DMLTuple {
 	snd=zwei;
     }
 
-    public DMLValue get0() { return fst; }
-    public DMLValue get1() { return snd; }
-    public DMLValue get2() { throw new ArrayIndexOutOfBoundsException(); }
-    public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
-    public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get0() { return fst; }
+    final public DMLValue get1() { return snd; }
+    final public DMLValue get2() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
+    final public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
     final public boolean equals(java.lang.Object val) {
 	return (val instanceof Tuple2) &&
@@ -31,7 +31,7 @@ final public class Tuple2 implements DMLTuple {
 	    snd.equals(((Tuple2) val).snd);
     }
 
-    public java.lang.String toString() {
+    final public java.lang.String toString() {
 	return "("+fst+", "+snd+")/2";
     }
 

@@ -19,7 +19,7 @@ final public class NoGood implements DMLValue {
     /** Falls unter diesm GName ein Objekt eingetragen ist, wird
      *  dieses verwendet, aus einem NoGood wird wieder ein Good.
      */
-    private java.lang.Object readResolve()
+    final private java.lang.Object readResolve()
 	throws java.io.ObjectStreamException {
 	java.lang.Object o = GName.gNames.get(gName);
 	if (o==null) {

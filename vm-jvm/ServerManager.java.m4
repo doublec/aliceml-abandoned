@@ -16,7 +16,7 @@ final public class ServerManager extends java.rmi.server.UnicastRemoteObject
 	contentOwner=initial;
     }
 
-    public synchronized DMLValue request(CManager iWantIt) throws java.rmi.RemoteException {
+    final public synchronized DMLValue request(CManager iWantIt) throws java.rmi.RemoteException {
 	DMLValue val = contentOwner.release();
 	contentOwner = iWantIt;
 	return val;

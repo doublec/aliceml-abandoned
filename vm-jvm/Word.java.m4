@@ -18,16 +18,16 @@ final public class Word extends SCon {
     /** java-long Wert */
     private long value=0;
 
-    /** Gleichheit auf Long-Werten */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Word) && (((Word)val).value==this.value);
-    }
-
     /** Baut ein neues Word mit Wert <code>value</code>.
      *  @param value <code>long</code> Wert, der dem Word entspricht.
      */
     public Word(long value) {
 	this.value=value;
+    }
+
+    /** Gleichheit auf Long-Werten */
+    final public boolean equals(java.lang.Object val) {
+	return (val instanceof Word) && (((Word)val).value==this.value);
     }
 
     /** java.lang.Stringdarstellung des Wertes erzeugen.
