@@ -45,7 +45,7 @@ void AssertOutline(const char *file, int line, const char *message);
 #define Assert(cond)
 #endif
 
-void ErrorOutline(const char *file, int line, const char *message);
+DllExport void ErrorOutline(const char *file, int line, const char *message);
 #define Error(message) { ErrorOutline(__FILE__, __LINE__, message); exit(0); }
 
 #endif
