@@ -56,7 +56,7 @@ signature SIMPLIFY_MATCH =
 	  | Translated of O.body
 
 	type consequent = Source.region * O.body option ref
-	type mapping' = (pos * O.id) list
+	type mapping' = (pos * O.idRef) list
 
 	val buildGraph: (Source.region * I.pat * O.body) vector * O.body ->
 	    testGraph * consequent list
