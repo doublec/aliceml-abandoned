@@ -46,6 +46,18 @@
  * ref ::= 0x0A number
  *)
 
+import
+    signature PICKLE_OUT_STREAM
+from "PICKLE_OUT_STREAM-sig"
+
+import
+    functor MkHashImpMap
+from "../misc/MkHashImpMap"
+
+import
+    structure StringHashKey
+from "../misc/HASH_KEY-sig"
+
 structure PickleOutStream :> PICKLE_OUT_STREAM =
     struct
 	open LargeWord
@@ -76,7 +88,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 
 	val initialSize = 256
 
-	structure StringMap = MakeHashImpMap(StringHashKey)
+	structure StringMap = MkHashImpMap(StringHashKey)
 
 	type label = word
 
