@@ -11,6 +11,7 @@
 //
 
 #include "generic/RootSet.hh"
+#include "generic/Finalization.hh"
 #include "generic/Transients.hh"
 #include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
@@ -25,6 +26,7 @@ int main(int argc, char *argv[]) {
   Store::InitStore(memLimits, 75, 20);
 
   RootSet::Init();
+  Finalization::Init();
   Hole::Init();
   TaskStack::Init();
   Scheduler::Init();
