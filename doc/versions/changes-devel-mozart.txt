@@ -1,12 +1,14 @@
 Library:
 
-* Added Array2
+* Added Array2.
+* Added OS.Path.
 * Defined and fixed behaviour of proxies in the presence of
   sited values and failed futures.
 * Fixed race condition in Future.awaitEither.
 * Renamed UniqueString to Atom.
 * Added WideText and WideChar{Vector,Array}[Slice].
 * Added List.split.
+* Correct treatment of exceptions in Lock.sync.
 * FD and FS set constructors now perform domain checking.
 * FD and FS now raise Tell exception on toplevel constraints.
 * Fixed broken GTK signal handling (disconnect/block/unblock/emit).
@@ -14,9 +16,9 @@ Library:
 
 Compiler:
 
-* Implemented naming convention warning.
+* New naming convention warning.
 * Automatic .import file prepending for .sml sources.
-* Fixed translation of fun spawn ...
+* Fixed translation of "fun spawn ..." derived form.
 
 
 Alice 0.9.1 (Stockhausen Operette 3 Remix 1) - 2003/02/13
