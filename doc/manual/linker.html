@@ -4,7 +4,7 @@
 <?php section("overview", "overview") ?>
 
 <P>The static linker allows to bundle a component together with (a subset of)
-its direct and indirect imports. It can also be used to inspect import and
+its direct and indirect imports.  It can also be used to inspect import and
 export signatures of components.</P>
 
 
@@ -26,18 +26,18 @@ component that has the same export signature as the root component.  Components
 can be selected for inclusion depending on the URL they reside on.</P>
 
 <P>When the URL of a component is tested for inclusion, it is tested in order
-against the given <TT>--include</TT> and <TT>--exclude</TT> option prefixes
-(see <A href="#options">below</A>), where string prefix matching is used.  The
-first match decides. If no <TT>--include</TT> or <TT>--exclude</TT> is given,
-no component will be included at all.  In particular, one has to make sure that
-the root component is included.</P>
+against the prefixes given by the <TT>--include</TT> and <TT>--exclude</TT>
+options (see <A href="#options">below</A>), where string prefix matching is
+used.  The first match decides.  If no <TT>--include</TT> option is given,
+no component will be included at all.  In particular, one has to make sure
+that the root component is included.</P>
 
 <P>Bundles can include Mozart components (<A
 href="http://www.mozart-oz.org/documentation/apptut/node3.html">Mozart
 "functors"</A>).  Native components (<A
 href="http://www.mozart-oz.org/documentation/foreign/">Mozart native
-"functors"</A>) cannot be part of a component bundle. They are implicitly
-considered excluded.</P>
+"functors"</A>) cannot be part of a component bundle.  They must
+explicitly be excluded.</P>
 
 <P>In the second form, the linker just prints the import and export signatures
 of the component at <I>&lt;root url&gt;</I> to standard output.</P>
@@ -79,7 +79,10 @@ alicelink -v --include ./ ./Foo -o LinkedFoo.ozf</PRE>
     A &lt;<I>rule</I>&gt; is of the form &lt;<I>from</I>&gt;<TT>=</TT>&lt;<I
     >to</I>&gt;, where &lt;<I>from</I>&gt; and </TT>&lt;<I>to</I>&gt; are
     <A href="library/resolver-handler.html#pattern">patterns</A> in which
-    <TT>?{x}</TT> denotes a variable.</P></DD>
+    <TT>?{x}</TT> denotes a variable.  If the environment variable
+    <TT>ALICE_TRACE_REWRITE</TT> is set (its value does not matter),
+    trace messages about rewriting attempts are output to standard
+    error.</P></DD>
 </DL>
 
 
