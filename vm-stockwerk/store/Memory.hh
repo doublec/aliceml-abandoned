@@ -33,7 +33,7 @@ public:
     AssertStore(block != NULL);
     // Ensure Base Ptr Alignment
     base += (STORE_MEM_ALIGN - ((u_int) base & (STORE_MEM_ALIGN - 1)));
-    max = (base + size);
+    max = (base + size - sizeof(word)); // Header must always fit
     top = base;
     next = root;
     if (root != NULL) {
@@ -44,18 +44,19 @@ public:
   ~MemChunk() {
     AssertStore(block != NULL);
     MemChunk::Free(block);
-    if (prev != NULL) {
-      prev->SetNext(next);
-    }
-    if (next != NULL) {
-      next->SetPrev(prev);
-    }
+//      if (prev != NULL) {
+//        prev->SetNext(next);
+//      }
+//      if (next != NULL) {
+//        next->SetPrev(prev);
+//      }
   }
 
   void Clear(){
     u_int size = (u_int) (max - base);
     std::memset(base, 1, size);
     top = base;
+    next = NULL;
   }
   char *GetTop()         { return top; }
   void SetTop(char *top) { MemChunk::top = top; } 
