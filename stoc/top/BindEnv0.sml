@@ -4,6 +4,7 @@ structure BindEnv0 :> BIND_ENV0 =
     open BindEnv
 
     structure P = Prebound
+    structure P' = Prebound'
 
     val E0 = new()
 
@@ -53,12 +54,8 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertVal(E0, VId.fromString "=",     (i, P.stamp_eq,    V))
     val _ = insertVal(E0, VId.fromString ":=",    (i, P.stamp_assign,V))
 
-    val stamp_leq   = Stamp.new()
-    val stamp_plus  = Stamp.new()
-    val stamp_times = Stamp.new()
-
-    val _ = insertVal(E0, VId.fromString "<", (i, stamp_leq,   V))
-    val _ = insertVal(E0, VId.fromString "+", (i, stamp_plus,  V))
-    val _ = insertVal(E0, VId.fromString "*", (i, stamp_times, V))
+    val _ = insertVal(E0, VId.fromString "<", (i, P'.stamp_less,  V))
+    val _ = insertVal(E0, VId.fromString "+", (i, P'.stamp_plus,  V))
+    val _ = insertVal(E0, VId.fromString "*", (i, P'.stamp_times, V))
 
   end

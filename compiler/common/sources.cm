@@ -6,6 +6,8 @@ Group
 	structure IntermediateGrammar
 	signature PREBOUND
 	structure Prebound
+	signature PREBOUND'
+	structure Prebound'
 
 is
 
@@ -17,3 +19,5 @@ is
 
 	PREBOUND.sig
 	Prebound.sml
+	PREBOUND'.sig
+	Prebound'.sml
