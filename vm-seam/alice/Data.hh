@@ -354,6 +354,7 @@ public:
   void Init(const char *s, word value) {
     UniqueString *label = UniqueString::New(String::New(s));
     u_int n = Store::DirectWordToInt(GetArg(WIDTH_POS));
+    Assert(n != 0);
     u_int index = label->Hash() % n;
     u_int i = index;
     while (true) {
@@ -363,7 +364,7 @@ public:
 	return;
       }
       i = (i + 1) % n;
-      Assert(i != index);
+      Assert(i != index || n == 1);
     }
   }
   void AssertLabel(u_int i, UniqueString *label) {
@@ -372,6 +373,7 @@ public:
   word PolySel(UniqueString *label) {
     word wLabel = label->ToWord();
     u_int n = Store::DirectWordToInt(GetArg(WIDTH_POS));
+    Assert(n != 0);
     u_int index = label->Hash() % n;
     u_int i = index;
     while (true) {
