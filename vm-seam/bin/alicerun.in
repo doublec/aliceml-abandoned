@@ -77,7 +77,7 @@ export ALICE_HOME ALICE_LOAD
 #exec insight seam.exe
 
 ## To use the debugger on Unix:
-#(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run alice "$@"; cat) |
+#(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run "${ALICE_DLL_PATH}"alice "$@"; cat) |
 #exec gdb seam
 
 exec seam "${ALICE_DLL_PATH}"alice "$@"
