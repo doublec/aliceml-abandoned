@@ -69,6 +69,7 @@
 			<param name="Name" value="Incompatibilities with SML">
 			<param name="Local" value="incompatibilities.html">
 			</OBJECT>
+<!--
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Mozart Interoperability">
 			<param name="Local" value="interop.html">
@@ -77,6 +78,7 @@
 			<param name="Name" value="Oz-to-Alice Migration">
 			<param name="Local" value="migration.html">
 			</OBJECT>
+-->
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Implementation Limitations">
 			<param name="Local" value="limitations.html">
@@ -101,8 +103,20 @@
 			<param name="Local" value="library/alt.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Array">
+			<param name="Local" value="library/array.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Array2">
+			<param name="Local" value="library/array2.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="ArraySlice">
 			<param name="Local" value="library/array-slice.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="ATOM">
+			<param name="Local" value="library/atom.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="BinIO">
@@ -115,6 +129,14 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Byte">
 			<param name="Local" value="library/byte.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Canvas">
+			<param name="Local" value="library/gtk-canvas.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Channel">
+			<param name="Local" value="library/channel.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="CHAR">
@@ -165,8 +187,8 @@
 			<param name="Local" value="library/gtk.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="GtkCanvas">
-			<param name="Local" value="library/gtk-canvas.html">
+			<param name="Name" value="HASHABLE">
+			<param name="Local" value="library/hashable.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Hole">
@@ -187,6 +209,14 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="IEEEReal">
 			<param name="Local" value="library/ieee-real.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="IMP_MAP">
+			<param name="Local" value="library/imp-map.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="IMP_SET">
+			<param name="Local" value="library/imp-set.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="IMPERATIVE_IO">
@@ -225,6 +255,10 @@
 			<param name="Local" value="library/lock.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="MAP">
+			<param name="Local" value="library/map.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="MATH">
 			<param name="Local" value="library/math.html">
 			</OBJECT>
@@ -249,8 +283,12 @@
 			<param name="Local" value="library/option.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="OS">
+			<param name="Name" value="ORDERED">
 			<param name="Local" value="library/os.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="OS">
+			<param name="Local" value="library/ordered.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="OS.FileSys">
@@ -281,6 +319,10 @@
 			<param name="Local" value="library/prim-io.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Print">
+			<param name="Local" value="library/print.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Promise">
 			<param name="Local" value="library/promise.html">
 			</OBJECT>
@@ -291,6 +333,10 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Ref">
 			<param name="Local" value="library/ref.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="RefMap">
+			<param name="Local" value="library/ref-map.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Remote">
