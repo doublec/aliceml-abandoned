@@ -219,7 +219,7 @@ struct
 		 | _ => false )
      | _ => false
 
-    and isSimple n = case n of
+    fun isSimple n = case n of
 	Simple _ => true
       | _ => false
 
@@ -231,6 +231,10 @@ struct
 	RelRefNode _ => true
       | _ => false
 
+    and isLimit n = case n of
+	Limit _ => true
+      | _ => false
+	    
     fun inspectList(n,x) = inspectList'(n,x,[])
 
     and inspectList'(n,x,xs) =

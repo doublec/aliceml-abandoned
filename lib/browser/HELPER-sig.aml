@@ -65,6 +65,7 @@ sig
     val isSimple : node -> bool
     val isRelNode : node -> bool
     val isRelRefNode : node -> bool
+    val isLimit : node -> bool
 
     (* Behandlung von Listen *)
     val inspectList : int * 'a list  -> 'a list_desc 
