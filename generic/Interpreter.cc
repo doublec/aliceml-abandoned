@@ -87,6 +87,14 @@ void Interpreter::PurgeFrame(word) {
   return; // default: nothing to do
 }
 
+u_int Interpreter::GetArity() {
+  return 0; // to be done
+}
+
+Interpreter::function Interpreter::GetCFunction() {
+  return NULL; // default: no c function available
+}
+
 Interpreter::Result Interpreter::Handle() {
   // default: pass the exception up the stack
   Scheduler::currentBacktrace->Enqueue(Scheduler::GetAndPopFrame());
