@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-# Alice for Debian/GNU
+# Alice/Mozart for Debian/GNU
 # Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 
 export DH_COMPAT=3
@@ -21,32 +21,19 @@ endif
 
 # generic Debian directories
 
-package_name = alice
-package_version = 0.9.1
+package_name = alice-mozart
+package_version = 0.9.2
 
 DEB_BASE_DIR = $(PWD)
 DEB_DEBIAN_DIR = $(DEB_BASE_DIR)/debian
-DEB_SOURCE_DIR = $(DEB_BASE_DIR)/$(package_name)-$(package_version)
+DEB_SOURCE_DIR = $(DEB_BASE_DIR)
 DEB_BUILD_DIR = $(DEB_DEBIAN_DIR)/build
 DEB_INSTALL_DIR = $(DEB_DEBIAN_DIR)/$(package_name)
 
 # generic targets
 
-source: source-stamp
-source-stamp:
-	tar xzf $(package_name)-$(package_version).tar.gz
-	for f in $(shell ls $(DEB_BASE_DIR)/*.diff); do \
-		(cd $(DEB_SOURCE_DIR) && patch -p1 < $$f); \
-	done
-	chmod ugo+rx \
-		$(DEB_SOURCE_DIR)/configure \
-		$(DEB_SOURCE_DIR)/install-sh \
-		$(DEB_SOURCE_DIR)/missing \
-		$(DEB_SOURCE_DIR)/mkinstalldirs
-	echo > $@
-
 configure: configure-stamp
-configure-stamp: source-stamp
+configure-stamp:
 	dh_testdir
 	mkdir $(DEB_BUILD_DIR) || true
 	cd $(DEB_BUILD_DIR) && \
@@ -73,28 +60,24 @@ install-stamp: build-stamp
 		install DESTDIR=$(DEB_INSTALL_DIR)
 	echo > $@
 	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc/examples \
-	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/examples
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart/examples
 	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc \
-	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/html
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart/html
 
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f source-stamp configure-stamp build-stamp install-stamp
-	rm -rf $(DEB_SOURCE_DIR) $(DEB_BUILD_DIR) $(DEB_INSTALL_DIR)
+	rm -f configure-stamp build-stamp install-stamp
+	rm -rf $(DEB_BUILD_DIR) $(DEB_INSTALL_DIR)
 	dh_clean
 
 # package-specific targets
 
-binary-indep:
-
-binary-arch: build install
+binary-indep: build install
 	dh_testdir
 	dh_testroot
 	dh_install --sourcedir=$(DEB_SOURCE_DIR)
 	dh_installdocs $(DEB_SOURCE_DIR)/README
-	cp -p -r $(DEB_SOURCE_DIR)/doc $(DEB_INSTALL_DIR)/usr/share/doc/alice/html
-	cd $(DEB_INSTALL_DIR)/usr/share/doc/alice/html && mv examples ..
 	dh_undocumented alice.1 alicec.1 alicedep.1 alicelink.1 aliceserv.1
 	dh_installchangelogs
 	dh_strip
@@ -105,6 +88,8 @@ binary-arch: build install
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
+
+binary-arch: build install
 
 binary: binary-arch binary-indep
 

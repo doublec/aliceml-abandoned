@@ -1,11 +1,11 @@
-Source: alice
+Source: alice-mozart
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 4.1.6)
+Build-Depends-Indep: debhelper (>= 4.1.6)
 Maintainer: Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
-Standards-Version: 3.5.10
+Standards-Version: 3.6.0
 
-Package: alice
+Package: alice-mozart
 Architecture: all
 Depends: mozart (>= 1.2.5)
 Recommends: mozart-gtk, www-browser
