@@ -37,11 +37,7 @@ CPPSOURCES = $(NATIVES:%=%.cc)
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # executable names
-ifdef WINDOWS
-GENERATOR = GtkBinding.x86-win32.exe
-else
-GENERATOR = GtkBinding.x86-linux
-endif
+GENERATOR = GtkBinding.smlc
 
 SML = sml
 ALICEC = alicec --dump-phases
@@ -75,6 +71,10 @@ $(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
 $(GENERATOR):
 	rm -f $(GENERATOR)
 	echo 'CM.make(); compile();' | $(SML)
+	if test -e GtkBinding.x86-linux ; then \
+	  mv -f GtkBinding.x86-linux $(GENERATOR) ; fi
+	if test -e GtkBinding.x86-win32.exe ; then \
+	  mv -f GtkBinding.x86-win32.exe $(GENERATOR) ; fi
 	test -e $(GENERATOR) || exit 1
 
 $(INPUTFILE):

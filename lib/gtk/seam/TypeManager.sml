@@ -281,16 +281,8 @@ struct
     end
 
 
-    local 
-	(* workaround needed because too many get/set functions *)
-	(* produce alice compiler crash *)
-	(**)val wac = ref 0    
-	(**)fun workAround (STRUCT ("_GtkFileSelection",_)) = true
-	(**)  | workAround s = isItemOfSpace Util.GDK s orelse
-                            (wac := (!wac) + 1 ; (!wac) < 200)
-    in
-        (* checks whether a binding can be generated for a declaration  *)
-	fun checkItem (FUNC (n,ret,arglist)) =
+    (* checks whether a binding can be generated for a declaration  *)
+    fun checkItem (FUNC (n,ret,arglist)) =
 	let
 	    fun error s = ( print ("function "^n^" ignored: "^s^"\n") ; false )
 	in
@@ -299,9 +291,7 @@ struct
   	        EStruct   => error "struct in arglist or retval"
 	      | EUnion    => error "union in arglist or retval"
 	end		    
-(**)	  | checkItem (s as (STRUCT _)) = workAround s
-	  | checkItem _ = true
-    end
+      | checkItem _ = true
 
     (* Removes struct/enum members for which no binding can be generated *)
     fun checkStructMember (_,TYPEREF ("gconstpointer", _)) = false
@@ -313,6 +303,5 @@ struct
            | t'         => ((getAliceType t' ; true) handle _ => false))
 
     fun checkEnumMember (_,v) = (LargeInt.toInt v ; true) handle _ => false
-
 
 end

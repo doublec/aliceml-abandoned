@@ -1,11 +1,12 @@
 
 *** Allgemein/Ideen ***
 
-- zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
-- nicht beliebig viele set/get-Methode moeglich
-
-- Quellcode aufraeumen
+- Binding fuer Windows
 - Dokumentation
+* zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
+* nicht beliebig viele set/get-Methode moeglich
+
+* Quellcode aufraeumen
 
 * aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
 * Transient from finalStream funktioniert nicht -> finalStream abgeschafft
@@ -40,9 +41,8 @@ fuer GtkObjects gilt:
 * Dateien komplett umbenennen
 * libgnomecanvas statt GtkCanvas installieren
 * GnomeCanvas-Bindings
-- get/set-Funktionen - auch fuer Gtk!
-- Windows
-- Namespace-Aufteilung: Gtk.Button.new ...
+* get/set-Funktionen - auch fuer Gtk!
+X Namespace-Aufteilung: Gtk.Button.new ...
 X eigene Native-Hilfsfunktionen besser benennen
 
 * stockwerk-gtk-binding in den CVS main trunk
