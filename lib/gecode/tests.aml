@@ -1,0 +1,87 @@
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Search from "x-alice:/lib/gecode/Search"
+import structure Space  from "x-alice:/lib/gecode/Space"
+open Linear
+
+
+fun getValList vars space = List.map (fn var => FD.getVal(space,var)) vars
+fun getSolSpaces space = (case Space.status space of
+	            Space.FAILED => nil
+                | _ => Search.searchAll space)
+
+fun printInt n = print ((Int.toString n) ^ " ")
+
+fun printSol l = 
+	let 
+		val _= print "["
+		val _ = List.app printInt l
+	in
+		print "]"
+	end
+
+
+fun runtest (space, vars, expected_solutions)=
+	let
+		val _ =FD.branch(space, Vector.fromList vars, FD.B_NONE, FD.B_MIN)
+		val solutionspaces = getSolSpaces space
+		val solutions = List.map (getValList vars) solutionspaces
+	in
+		if solutions = expected_solutions 
+		then print "OK\n"
+		else let
+			val _ = print "Not OK. Expected:\n"
+			val _ = List.app printSol expected_solutions
+			val _ = print "\nReceived:\n"
+			val _ = List.app printSol solutions
+			in
+				print "\n"
+			end
+	end
+
+
+
+fun getSpaceNBools n= 
+	let 
+		val space = Space.new ()	
+		val bvars  = Vector.toList (FD.boolvarVec(space,n))
+		val vars = List.map FD.boolvar2fdvar bvars
+	in
+		(space,bvars,vars) 
+	end
+
+(* first try test *)
+fun test1 ()=
+	let
+		val _ as (space,[b],vars) = getSpaceNBools 1
+	in
+		postTrue(space, (BC(false)`->BC(true))`== BV(b));
+		runtest (space,vars,[[1]])
+	end
+(*first test to uncover a bug *)
+fun test2 ()=
+	let
+		val _ as (space,_,vars) = getSpaceNBools 0
+	in
+		postTrue(space, (BC(false)));
+		runtest (space,vars,nil)
+	end
+fun test3 ()=
+	let
+		val _ as (space,_,vars) = getSpaceNBools 0
+	in
+		postTrue(space, (BC(true)));
+		runtest (space,vars,[nil])
+	end
+fun test4 ()=
+	let
+		val _ as (space,[b1,b2,b3],vars) = getSpaceNBools 3
+	in
+		postTrue(space, (BV b1 `| BV b2 `| BV b3`-> BC false));
+		runtest (space,vars,[[0,0,0]])
+	end
+ 
+
+val _ = List.app (fn x=>x()) [test1, test2, test3, test4]
+
+val _ = OS.Process.exit OS.Process.success
