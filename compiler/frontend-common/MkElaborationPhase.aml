@@ -1821,7 +1821,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
     fun elabAnn(E, desc, I.ImpAnn(i, imps, url)) =
 	let
 	    val s     = loadSig(desc, url)
-	    val s'    = Inf.emptySig()
+	    val s'    = Inf.emptySig' s		(* TODO: Efficiency hack! *)
 	    val imps' = elabImps(E, s, s', imps)
 	    val s''   = if !Switches.Language.retainFullImport then s else s'
 	in
@@ -1885,29 +1885,29 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
       | elabImp(E, s, s', I.TypImp(i, typid, desc)) =
 	let
-	    (*UNFINISHED: have to check (or disallow) manifest type *)
 	    val  l         = Label.fromName(I.name typid)
 	    val  p         = Path.name(I.name typid)
-	    val  t1        = Inf.lookupTyp'(s, l) handle Inf.Lookup =>
+	    val  k1        = Inf.lookupTyp(s, l) handle Inf.Lookup =>
 				error(i, E.ImpMismatch(Inf.MissingTyp l))
-	    val (t2,desc') = case desc
+	    val  t1        = Inf.lookupTyp'(s, l)
+	    val (k2,t2,desc') = case desc
 			       of I.NoDesc(i') =>
-				      (t1, O.NoDesc(typInfo(i', t1)))
+				      (k1, t1, O.NoDesc(typInfo(i', t1)))
 				| I.SomeDesc(i',typ) =>
 				  let
 				      val (t2,_,typ') =
 					   elabTypRep(E, p, fn k => k, typ)
-				      val  k1 = Type.singKind t1
 				      val  k2 = Type.kind t2
 				  in
 				      if Type.matchesKind(k1, k2)
-				      then (t2, O.SomeDesc(typInfo(i',t2),typ'))
+				      then (k2, t2,
+				            O.SomeDesc(typInfo(i',t2), typ'))
 				      else error(i, E.ImpMismatch
 						    (Inf.MismatchTyp(l,k1,k2)))
 				  end
 	    val (_,typid') = elabTypid_bind(E, p, t2, typid)
 	in
-	    Inf.extendTyp(s', p, Type.singKind t2);
+	    Inf.extendTyp(s', p, k2);
 	    O.TypImp(nonInfo(i), typid', desc')
 	end
 
@@ -1915,11 +1915,16 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	let
 	    val  l         = Label.fromName(I.name modid)
 	    val  p         = Path.name(I.name modid)
-	    val  j1        = Inf.sing(Inf.lookupMod'(s, l)) handle Inf.Lookup =>
+	    val  j1        = Inf.lookupMod(s, l) handle Inf.Lookup =>
 				error(i, E.ImpMismatch(Inf.MissingMod l))
-	    val (j2,desc') = case desc
+	    val  m1        = Inf.lookupMod'(s, l)
+	    val (j2,j2',desc') = case desc
 				of I.NoDesc(i') =>
-				   (j1, O.NoDesc(infInfo(i',j1)))
+				   let
+				       val j1' = Inf.sing m1
+				   in
+				       (j1, j1', O.NoDesc(infInfo(i', j1')))
+				   end
 				 | I.SomeDesc(i',inf) =>
 				   let
 				       val (j2,inf') = elabGroundInf(E, inf)
@@ -1927,10 +1932,14 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 					   handle Inf.Mismatch m =>
 					   error(i, E.ImpMismatch
 						    (Inf.MismatchMod(l,m)))
+				       val p2 = #1 m1
+				       val m2 = (p2, #1(Inf.instance(p2,j2')))
+				       val j2'' = Inf.sing m2
 				   in
-				       (j2', O.SomeDesc(infInfo(i',j2'), inf'))
+				       (j2', j2'',
+				       O.SomeDesc(infInfo(i',j2''),inf'))
 				   end
-	    val (_,modid') = elabModid_bind'(E, p, j2, modid)
+	    val (_,modid') = elabModid_bind'(E, p, j2', modid)
 	in
 	    Inf.extendMod(s', p, j2);
 	    O.ModImp(nonInfo(i), modid', desc')
@@ -1940,27 +1949,27 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	let
 	    val  l         = Label.fromName(I.name infid)
 	    val  p         = Path.name(I.name infid)
-	    val  j1        = Inf.lookupInf'(s, l) handle Inf.Lookup =>
+	    val  k1        = Inf.lookupInf(s, l) handle Inf.Lookup =>
 				error(i, E.ImpMismatch(Inf.MissingInf l))
-	    val (j2,desc') = case desc
+	    val  j1        = Inf.lookupInf'(s, l)
+	    val (k2,j2,desc') = case desc
 				of I.NoDesc(i') =>
-				   (j1, O.NoDesc(infInfo(i',j1)))
+				   (k1, j1, O.NoDesc(infInfo(i',j1)))
 				 | I.SomeDesc(i',inf) =>
 				   let				
 					val (j2,_,inf') =
 					     elabInfRep(E, p, fn k => k, inf)
-					val  k1 = Inf.singKind j1
 					val  k2 = Inf.kind j2
 				   in
 					Inf.matchKind(k1, k2)
 					handle Inf.Mismatch m =>
 					    error(i, E.ImpMismatch
 						     (Inf.MismatchMod(l,m)));
-					(j2, O.SomeDesc(infInfo(i',j2), inf'))
+					(k2,j2,O.SomeDesc(infInfo(i',j2),inf'))
 				   end
 	    val (_,infid') = elabInfid_bind(E, p, j2, infid)
 	in
-	    Inf.extendInf(s', p, Inf.singKind j2);
+	    Inf.extendInf(s', p, k2);
 	    O.InfImp(nonInfo(i), infid', desc')
 	end
 
@@ -1983,13 +1992,14 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = Path.name(I.name typid)
+	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup =>
+			error(i, E.ImpMismatch(Inf.MissingTyp l))
 	    val t1 = Inf.lookupTyp'(s, l) handle Inf.Lookup =>
 			error(i, E.ImpMismatch(Inf.MissingTyp l))
 	    val _  = case desc
 			of I.NoDesc(i')       => ()
 			 | I.SomeDesc(i',typ) =>
 			   let
-				val k1 = Type.singKind t1
 				val k2 = elabTypKind(E, typ)
 			   in
 				if Type.matchesKind(k1,k2)
@@ -2020,20 +2030,22 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
       | elabRHSRecImp(E, s, s', I.TypImp(i, typid, desc)) =
 	let
-	    (*UNFINISHED: have to check (or disallow) manifest type *)
+	    (*UNFINISHED *)
 	    val (t1,p,typid') = elabTypid(E, typid)
-	    val (t2,desc')    = case desc
+	    val  k1           = Inf.lookupTyp(s, Label.fromName(I.name typid))
+	    val (k2,t2,desc') = case desc
 				  of I.NoDesc(i') =>
-					(t1, O.NoDesc(typInfo(i',t1)))
+					(k1, t1, O.NoDesc(typInfo(i',t1)))
 				   | I.SomeDesc(i',typ) =>
 				     let
 					 val (t2,_,typ') =
 					     elabTypRep(E, p, fn k'=>k', typ)
+					 val k2 = Type.kind t2
 				     in
-					 (t1, O.SomeDesc(typInfo(i',t1), typ'))
+					 (k2,t2,O.SomeDesc(typInfo(i',t2),typ'))
 				     end
 	in
-	    Inf.extendTyp(s', p, Type.singKind t2);
+	    Inf.extendTyp(s', p, k2);
 	    O.TypImp(nonInfo(i), typid', desc')
 	end
 
@@ -2163,7 +2175,7 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 
     and stripSig(UE, s) =
 	let
-	    val s' = Inf.emptySig()
+	    val s' = Inf.emptySig' s	(* TODO: Efficiency hack! *)
 	in
 	    List.app (stripItem (UE,s,s')) (Inf.items s);
 	    s'
@@ -2219,8 +2231,6 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 			 else stripAnns(E, anns')
 	    val _      = Env.mergeScope E
 	in
-	    Vector.app (fn O.ImpAnn({sign,...},_,_) =>
-		       Inf.compressSig sign) anns'';
 	    O.Comp(sigInfo(i,s), anns'', decs')
 	end
 
