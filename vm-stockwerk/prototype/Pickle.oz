@@ -30,8 +30,10 @@ import
    PrimitiveTable(table)
    AbstractCodeInterpreter(interpreter)
 export
-   Load
    Unpack
+   Pack
+   Load
+   Save
 define
    %% Tags:
    POSINT    = 0
@@ -180,6 +182,10 @@ define
       {New PickleParser init(V $) _}
    end
 
+   fun {Pack _}
+      {Exception.raiseError unimplemented('Pickle.pack')} unit   %--**
+   end
+
    proc {ReadFile File ?S} F in
       F = {New Open.file init(name: File flags: [read])}
       {F read(list: ?S size: all)}
@@ -188,5 +194,9 @@ define
 
    fun {Load File}
       {New PickleParser init({ReadFile File} $) _}
+   end
+
+   fun {Save _ _}
+      {Exception.raiseError unimplemented('Pickle.save')} unit   %--**
    end
 end
