@@ -1,1 +1,4 @@
 *.dll
+.deps
+Makefile
+Makefile.in
