@@ -49,7 +49,7 @@ struct
 	    if Type.isSingKind k then () else
 	    let
 		val l = trTypLabel(Path.toLab p)
-		val t = UnsafeValue.projPoly(m,l)
+		val t = lazy UnsafeValue.projPoly(m,l)
 	    in
 		PathMap.insert(#typ_rea rea, p, t);
 		matchSig(rea, m, items)
@@ -58,7 +58,7 @@ struct
 	    if Inf.isSing j then () else
 	    let
 		val l  = trModLabel(Path.toLab p)
-		val m' = UnsafeValue.projPoly(m,l)
+		val m' = lazy UnsafeValue.projPoly(m,l)
 	    in
 		match'(rea,m',j);
 		matchSig(rea, m, items)
@@ -67,7 +67,7 @@ struct
 	    if Inf.isSingKind k then () else
 	    let
 		val l = trInfLabel(Path.toLab p)
-		val j = UnsafeValue.projPoly(m,l)
+		val j = lazy UnsafeValue.projPoly(m,l)
 	    in
 		PathMap.insert(#typ_rea rea, p, j);
 		matchSig(rea, m, items)
