@@ -102,11 +102,11 @@ clean: clean-$(DEFAULT_TARGET)
 clean-mozart: clean-common
 	rm -f bootstrap/alicec-mozart.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
 	(cd vm-mozart && make distclean) || exit 1
-	(cd lib/inspector && make distclean) || exit 1
 	(cd lib/constraints && make distclean) || exit 1
 	(cd lib/distribution && make distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
-	(cd lib/gtk && ([ -f Makefile ] && make distclean || exit 0)) || exit 1
+	(cd lib/gtk/mozart && ([ -f Makefile ] && make distclean || exit 0)) || exit 1
+	(cd lib/tools/inspector/mozart && make distclean) || exit 1
 
 clean-seam: clean-common
 	rm -f bootstrap/alicec-seam.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
@@ -114,8 +114,8 @@ clean-seam: clean-common
 	(cd vm-seam && make -f Makefile.bootstrap distclean) || exit 1
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
-	(cd lib/gtk/stockwerk && make distclean) || exit 1
-	(cd lib/browser && make distclean) || exit 1
+	(cd lib/gtk/seam && make distclean) || exit 1
+	(cd lib/tools/inspector/seam && make distclean) || exit 1
 
 clean-common:
 	(cd bootstrap && make clean) || exit 1
@@ -155,17 +155,17 @@ bootstrap-mozart:
 libs-mozart:
 	unset ALICE_HOME ;\
 	export PATH="$(PREFIX)/bin:$(PATH)" ;\
-	(cd lib/inspector && make depend) || exit 1 ;\
-	(cd lib/inspector && make all PREFIX=$(PREFIX) install) || exit 1 ;\
+	(cd lib/tools/inspector/mozart && make depend) || exit 1 ;\
+	(cd lib/tools/inspector/mozart && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/constraints && make depend) || exit 1 ;\
 	(cd lib/constraints && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/distribution && make depend) || exit 1 ;\
 	(cd lib/distribution && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/test && make SH_EXT=ozf depend && \
 	 make SH_EXT=ozf PREFIX=$(PREFIX) all install) || exit 1 ;\
-	(cd lib/gtk && autoconf && \
+	(cd lib/gtk/mozart && autoconf && \
 	 ./configure --with-gtk-canvas-dir=/opt/gtk-canvas) || exit 1 ;\
-	(cd lib/gtk && make all PREFIX=$(PREFIX) install) || exit 1
+	(cd lib/gtk/mozart && make all PREFIX=$(PREFIX) install) || exit 1
 	#(cd lib/gtk && make depend) || exit 1
 
 
@@ -207,10 +207,10 @@ libs-seam:
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
 	(cd lib/test && make SH_EXT=alc depend && \
 	 make SH_EXT=alc all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
-	(cd lib/gtk/stockwerk && ./BUILD_ALL) || exit 1 ;\
-	(cd lib/gtk/stockwerk && make install) || exit 1 ;\
-	(cd lib/browser && make depend) || exit 1 ;\
-	(cd lib/browser && make all install) || exit 1
+	(cd lib/gtk/seam && ./BUILD_ALL) || exit 1 ;\
+	(cd lib/gtk/seam && make install) || exit 1 ;\
+	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
+	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1
 
 ##
 ## Build Seam
