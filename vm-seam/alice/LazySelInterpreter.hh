@@ -16,13 +16,10 @@
 #define __ALICE__LAZY_SEL_INTERPRETER_HH__
 
 #if defined(INTERFACE)
-#pragma implementation "alice/LazySelInterpreter.hh"
+#pragma interface "alice/LazySelInterpreter.hh"
 #endif
 
-#include "generic/Interpreter.hh"
-#include "generic/ConcreteCode.hh"
-#include "generic/Closure.hh"
-#include "generic/UniqueString.hh"
+#include "Seam.hh"
 
 class LazySelInterpreter: public Interpreter {
 private:

@@ -17,10 +17,10 @@
 #pragma interface "alice/PrimitiveTable.hh"
 #endif
 
-#include "generic/Interpreter.hh"
-#include "generic/Primitive.hh"
+#include "Seam.hh"
+#include "alice/Base.hh"
 
-class DllExport PrimitiveTable {
+class AliceDll PrimitiveTable {
 private:
   static word valueTable;
   static word functionTable;

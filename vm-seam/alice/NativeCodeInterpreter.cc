@@ -15,12 +15,6 @@
 #endif
 
 #include <cstdio>
-#include "generic/Scheduler.hh"
-#include "generic/Backtrace.hh"
-#include "generic/Closure.hh"
-#include "generic/ConcreteCode.hh"
-#include "generic/Transients.hh"
-#include "generic/Transform.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/NativeConcreteCode.hh"

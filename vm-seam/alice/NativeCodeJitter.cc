@@ -19,32 +19,16 @@
 #endif
 
 #include <cstdio>
-#include "adt/IntMap.hh"
-#include "adt/ChunkMap.hh"
-#include "generic/Scheduler.hh"
-#include "generic/Backtrace.hh"
-#include "generic/Closure.hh"
-#include "generic/ConcreteCode.hh"
-#include "generic/Transients.hh"
-#include "generic/Transform.hh"
-#include "generic/Primitive.hh"
-#include "generic/RootSet.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/LazySelInterpreter.hh"
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/NativeCodeJitter.hh"
-
-#include "generic/JitterGenericData.hh"
 #include "alice/JitterAliceData.hh"
 #include "alice/JitterImmediateEnv.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/Types.hh"
-
-#if PROFILE
-#include "generic/Profiler.hh"
-#endif
 
 static inline u_int GetArity(TagVal *args) {
   switch (AbstractCode::GetArgs(args)) {
@@ -208,6 +192,7 @@ public:
   }
 };
 
+#undef max
 static u_int max(u_int a, u_int b) {
   return ((a >= b) ? a : b);
 }
@@ -717,6 +702,7 @@ void NativeCodeJitter::LazySelClosureNew(u_int Record, UniqueString *label) {
   Generic::Closure::Put(JIT_V1, LazySelClosure::LABEL_POS, JIT_R0);
 }
 
+#undef RETURN
 #define RETURN() \
   JIT_LOG_REG(JIT_SP); \
   JIT_LOG_MESG("returning to base\n"); \

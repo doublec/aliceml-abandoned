@@ -22,9 +22,6 @@
 #include <cstdlib>
 #endif
 
-#include "generic/RootSet.hh"
-#include "generic/Pickler.hh"
-#include "generic/Unpickler.hh"
 #include "alice/Authoring.hh"
 
 DEFINE0(UnsafeRemote_getLocalIP) {
@@ -73,7 +70,7 @@ DEFINE1(UnsafeRemote_unpackValue) {
   return Unpickler::Unpack(packedValue);
 } END
 
-word UnsafeRemote() {
+AliceDll word UnsafeRemote() {
   Record *record = Record::New(4);
   INIT_STRUCTURE(record, "UnsafeRemote", "getLocalIP",
 		 UnsafeRemote_getLocalIP, 0);

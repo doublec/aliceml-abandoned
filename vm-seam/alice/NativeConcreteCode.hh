@@ -17,8 +17,6 @@
 #pragma interface "alice/NativeConcreteCode.hh"
 #endif
 
-#include "generic/ConcreteCode.hh"
-#include "generic/Tuple.hh"
 #include "alice/Data.hh"
 #include "alice/NativeCodeInterpreter.hh"
 
@@ -39,7 +37,7 @@ public:
   virtual void DumpFrame(StackFrame *sFrame);
 };
 
-class DllExport NativeConcreteCode : private ConcreteCode {
+class AliceDll NativeConcreteCode : private ConcreteCode {
 protected:
   enum {
     TRANSFORM_POS, NATIVE_CODE_POS, IMMEDIATE_ENV_POS, NLOCALS_POS,
