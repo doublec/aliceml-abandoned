@@ -44,7 +44,7 @@
     .field static public initonly class StockWerk.StockWert false
     .field static public initonly class StockWerk.StockWert true
     .field static public initonly class StockWerk.StockWert nil
-    .field static public initonly class StockWerk.StockWert cons
+    .field static public initonly class StockWerk.Constructor cons
     .field static public initonly class StockWerk.StockWert ref
     .field static public initonly class StockWerk.StockWert Match
     .field static public initonly class StockWerk.StockWert Bind
@@ -53,7 +53,7 @@
     .field static public initonly class StockWerk.StockWert Promise
     .field static public initonly class StockWerk.StockWert Future
     .field static public initonly class StockWerk.StockWert Fulfill
-    .field static public initonly class StockWerk.StockWert ByNeed
+    .field static public initonly class StockWerk.Constructor ByNeed
     .field static public initonly class StockWerk.StockWert Pickle
     .field static public initonly class StockWerk.StockWert Component
     .field static public initonly class StockWerk.StockWert General$Chr
@@ -100,7 +100,7 @@
     .field static public initonly class StockWerk.StockWert Pickle$save
     .field static public initonly class StockWerk.StockWert String$compare //--**
     .field static public initonly class StockWerk.StockWert String$conc
-    .field static public initonly class StockWerk.StockWert String$explode //--**
+    .field static public initonly class StockWerk.StockWert String$explode
     .field static public initonly class StockWerk.StockWert String$size
     .field static public initonly class StockWerk.StockWert String$str
     .field static public initonly class StockWerk.StockWert String$sub
@@ -160,7 +160,7 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::nil
       ldstr "::"
       newobj instance void StockWerk.NamedConstructor::.ctor(class System.String)
-      stsfld class StockWerk.StockWert StockWerk.Prebound::cons
+      stsfld class StockWerk.Constructor StockWerk.Prebound::cons
       ldstr "Match"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Match
@@ -184,7 +184,7 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
       ldstr "ByNeed"
       newobj instance void StockWerk.NamedConstructor::.ctor(class System.String)
-      stsfld class StockWerk.StockWert StockWerk.Prebound::ByNeed
+      stsfld class StockWerk.Constructor StockWerk.Prebound::ByNeed
       ldstr "Pickle"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
@@ -280,6 +280,8 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle$save
       newobj instance void StockWerk.Builtins.String$conc::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$conc
+      newobj instance void StockWerk.Builtins.String$explode::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::String$explode
       newobj instance void StockWerk.Builtins.String$size::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$size
       newobj instance void StockWerk.Builtins.String$str::.ctor()
@@ -1886,40 +1888,46 @@
       switch(apply, raise, deref)
     apply:
       .try {
-        ldarg.0
-        ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
-        ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
-        callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
-        stloc.0
-        ldloc.0
-        ldarg.0
-        callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
-        brtrue.s raiseFulfill
-        ldarg.0
-        ldc.i4.2
-        stfld int32 StockWerk.ByNeed::State
-        ldarg.0
-        ldloc.0
-        stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
-        leave.s return
+	ldarg.0
+	ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+	ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+	callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+	stloc.0
+	ldloc.0
+	ldarg.0
+	callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
+	brtrue.s raiseFulfill
+	ldarg.0
+	ldc.i4.2
+	stfld int32 StockWerk.ByNeed::State
+	ldarg.0
+	ldloc.0
+	stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+	leave.s return
       raiseFulfill:
-        ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
-        newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-        throw
+	ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
+	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+	throw
       } catch StockWerk.ExceptionWrapper {
-        ldfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
-        stloc.0
-        ldarg.0
-        ldc.i4.1
-        stfld int32 StockWerk.ByNeed::State
-        ldarg.0
-        ldloc.0
-        stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
-        ldarg.0
-        call void System.CriticalSection::Exit(class System.Object)
-        ldloc.0
-        newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-        throw
+	ldfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
+	stloc.0
+	ldsfld class StockWerk.Constructor StockWerk.Prebound::ByNeed
+	newobj instance void StockWerk.ConVal::.ctor(class StockWerk.Constructor)
+	dup
+	ldloc.0
+	stfld class StockWerk.StockWert StockWerk.ConVal::Val
+	stloc.0
+	ldarg.0
+	ldc.i4.1
+	stfld int32 StockWerk.ByNeed::State
+	ldarg.0
+	ldloc.0
+	stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+	ldarg.0
+	call void System.CriticalSection::Exit(class System.Object)
+	ldloc.0
+	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+	throw
       }
     return:
       ldarg.0
@@ -3511,6 +3519,69 @@
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed String$explode extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      .locals(class System.String, int32, class StockWerk.StockWert)
+    retry:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      dup
+      stloc.0
+      call instance int32 System.String::GetLength()
+      stloc.1
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::nil
+      stloc.2
+    loop:
+      ldloc.1
+      ldc.i4.0
+      beq.s return
+      ldsfld class StockWerk.Constructor StockWerk.Prebound::cons
+      newobj instance void StockWerk.ConVal::.ctor(class StockWerk.Constructor)
+      dup
+      newobj instance void StockWerk.Tuple2::.ctor()
+      dup
+      ldloc.0
+      ldloc.1
+      ldc.i4.1
+      sub
+      dup
+      stloc.1
+      call instance wchar System.String::GetChars(int32)
+      newobj instance void StockWerk.Char::.ctor(wchar)
+      stfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      dup
+      ldloc.2
+      stfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      stfld class StockWerk.StockWert StockWerk.ConVal::Val
+      stloc.2
+      br.s loop
+    return:
+      ldloc.2
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
