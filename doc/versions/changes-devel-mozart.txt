@@ -7,6 +7,7 @@ Language:
 Compiler:
 
 * Check exhaustiveness of patterns, giving samples of uncovered cases.
+* Flag unresolved record types as error.
 
 Library:
 
