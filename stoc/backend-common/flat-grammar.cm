@@ -1,5 +1,7 @@
 Group
 
+    structure Label
+    structure Type
     signature FLAT_GRAMMAR
     structure FlatGrammar
 
@@ -8,7 +10,6 @@ is
     ../error/sources.cm
     ../misc/sources.cm
     ../common/id-stamp.cm
-    ../common/type.cm
     ../common/intermediate-grammar.cm
 
     FLAT_GRAMMAR.sig

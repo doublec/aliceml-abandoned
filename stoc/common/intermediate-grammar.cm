@@ -4,6 +4,8 @@ Group
 	structure Name
 	signature LABEL
 	structure Label
+	signature TYPE
+	structure Type
 	signature INTERMEDIATE_GRAMMAR
 	functor MakeIntermediateGrammar
 	structure IntermediateInfo

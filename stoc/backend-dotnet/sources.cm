@@ -9,8 +9,6 @@ is
     ../misc/sources.cm
     ../common/id-stamp.cm
     ../common/prebound.cm
-    ../common/name.cm
-    ../common/type.cm
     ../backend-common/flat-grammar.cm
     ../backend-common/liveness-analysis-phase.cm
 
