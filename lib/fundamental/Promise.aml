@@ -31,7 +31,7 @@ struct
     exception Promise	= Hole.Hole
 
     fun promise()	= (ref false, Hole.hole())
-    fun future(_,h)	= Hole.future h
+    fun future(_,h)	= Hole.future h handle Hole.Hole => h
 
     fun fulfill((r,h), x) =
 	let
@@ -65,7 +65,7 @@ struct
     exception Promise	= Hole.Hole
 
     fun promise()	= Promise__(ref false, Hole.hole())
-    fun future(Promise__(_,h))	= Hole.future h
+    fun future(Promise__(_,h))	= Hole.future h handle Hole.Hole => h
 
     fun fulfill(Promise__(r,h), x) =
 	let
