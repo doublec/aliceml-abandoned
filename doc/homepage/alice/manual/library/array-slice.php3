@@ -150,8 +150,8 @@
       (respectively, right) of the slice <TT><I>sl</I></TT>. If
       <TT><I>k</I></TT> is greater than the size of the slice, an empty
       slice is returned. Specifically, for a slice
-      <TT><I>sl</I> = slice(<I>arr</I>,<I>i</I>,<I>j</I>) and
-      <TT><I>k</I></TT> &le;= <TT><I>j</I></TT>, we have:</P>
+      <TT><I>sl</I> = slice(<I>arr</I>,<I>i</I>,<I>j</I>)</TT> and
+      <TT><I>k</I></TT> &le; <TT><I>j</I></TT>, we have:</P>
       <PRE>
         triml <I>k sl</I> = slice(<I>arr</I>, <I>i</I>+<I>k</I>, <I>j</I>-<I>k</I>)
         trimr <I>k sl</I> = slice(<I>arr</I>, <I>i</I>, <I>j</I>-<I>k</I>)</PRE>
@@ -167,7 +167,7 @@
       <P>Returns the pair of slices <TT>(<I>sl1</I>, <I>sl2</I>)</TT>,
       where <TT><I>sl1</I></TT> contains the first <TT><I>i</I></TT> characters
       of <TT><I>sl</I></TT> and <TT><I>sl2</I></TT> contains the rest, assuming
-      0 &le;= <TT><I>i</I></TT> &li;= <TT>size <I>sl</I><TT>. Otherwise, it
+      0 &le; <TT><I>i</I></TT> &le; <TT>size <I>sl</I><TT>. Otherwise, it
       raises <TT>Subscript</TT>.</P>
     </DD>
 
