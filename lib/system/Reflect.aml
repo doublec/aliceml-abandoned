@@ -1,15 +1,18 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import structure Label         from "../rtt/Label"
+import structure Type          from "../rtt/Type"
 import structure Inf           from "../rtt/Inf"
 import structure UnsafeReflect from "UnsafeReflect"
 import signature REFLECT       from "REFLECT-sig"
@@ -17,6 +20,8 @@ import signature REFLECT       from "REFLECT-sig"
 structure Reflect :> REFLECT =
     struct
 	type value
+
+	val cast = UnsafeReflect.cast
 
 	fun realToVector r =
 	    Vector.map Word8.fromInt (UnsafeReflect.realToVector r)
@@ -26,20 +31,20 @@ structure Reflect :> REFLECT =
 		structure Str = UnsafeReflect.Reflect(signature S = S
 						      structure X = X)
 	    in
-		(val x = UnsafeReflect.cast Str.x)
+		(val x = cast Str.x)
 	    end
 
 	functor Unreflect(val x: value signature S) =
-	    UnsafeReflect.Unreflect(val x = UnsafeReflect.cast x
-				    signature S = S)
+	    UnsafeReflect.Unreflect(val x = cast x signature S = S)
 
-	functor ReflectSig(signature S) =
+	structure ReflectSig = UnsafeReflect.ReflectSig
+	structure UnreflectSig = UnsafeReflect.UnreflectSig
+
+	functor ReflectType(type t) =
 	    let
-		structure Sig = UnsafeReflect.ReflectSig(signature S = S)
+		structure Sig = ReflectSig(signature S = (type t = t))
 	    in
-		(val x = UnsafeReflect.cast Sig.x)
+		(val x = Inf.lookupTyp'(Inf.asSig(cast Sig.x),
+					Label.fromString "t"))
 	    end
-
-	functor UnreflectSig(val x: Inf.t) =
-	    UnsafeReflect.UnreflectSig(val x = UnsafeReflect.cast x)
     end

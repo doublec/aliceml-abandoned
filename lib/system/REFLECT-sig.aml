@@ -4,14 +4,15 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Inf from "../rtt/Inf"
+import structure Type from "../rtt/Type"
+import structure Inf  from "../rtt/Inf"
 
 signature REFLECT =
     sig
@@ -19,8 +20,10 @@ signature REFLECT =
 
 	val realToVector: real -> Word8.word vector
 
-	functor Reflect(signature S structure X: S): (val x: value)
-	functor Unreflect(val x: value signature S): S
-	functor ReflectSig(signature S): (val x: Inf.t)
-	functor UnreflectSig(val x: Inf.t): (signature S)
+	functor Reflect(signature S structure X : S) : (val x : value)
+	functor Unreflect(val x : value signature S) : S
+	functor ReflectSig(signature S) : (val x : Inf.t)
+	functor UnreflectSig(val x : Inf.t) : (signature S)
+	functor ReflectType(type t) : (val x : Type.t)
+	(*functor UnreflectType(val x : Type.t) : (type t)*)
     end
