@@ -1,0 +1,27 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeTextIO from "UnsafeTextIO"
+import signature TEXT_IO      from "TEXT_IO-sig"
+
+structure TextIO :> TEXT_IO =
+    struct
+	type vector = string (* StreamIO.vector *)
+	type elem   = char (* StreamIO.elem *)
+
+	type instream
+	type outstream
+
+	open UnsafeTextIO
+    end
+
+val print = TextIO.print

@@ -1,0 +1,26 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeSocket from "UnsafeSocket"
+import signature SOCKET       from "SOCKET-sig"
+
+structure Socket :> SOCKET =
+    struct
+	type t
+	type vector = string
+	type elem = char
+
+	type host = string
+	type port = int
+
+	open UnsafeSocket
+    end
