@@ -39,8 +39,6 @@ import structure Server from "Server"
 
 import signature WIDGET from "WIDGET-sig"
 
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-
 local 
 open GtkSupport Node Doc Color PervasiveType
 
@@ -907,7 +905,6 @@ struct
 			     (case node of 
 				  SOME(n) => 
 				      let 
-					  val _ = Inspector.inspect(n)
 				    val ydim =Node.get_ydim(n) 
 				    val group = Node.getGroup(n)
 				    val x2 = Real.fromInt(font_width 
