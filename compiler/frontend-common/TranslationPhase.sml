@@ -12,14 +12,10 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun idToField(x' as O.Id(i,_,n)) =
 	    O.Field(i, O.Lab(i,Label.fromName n), O.VarExp(i, O.ShortId(i, x')))
 
-      | idToField _ = raise Crash.Crash"TranslationPhase.idToField: internal id"
-
-    fun idToDec(x' as O.Id(i, z, n), y) =
+    fun idToDec(O.Id(i, z, n), y) =
 	    O.ValDec(i, O.VarPat(i, O.Id(i, z, n)),
 			O.AppExp(i, O.SelExp(i, O.Lab(i,Label.fromName n)),
 				    O.VarExp(i,y)))
-
-      | idToDec _ = raise Crash.Crash "TranslationPhase.idToDec: internal id"
 
 
     (* Curry-convert expressions *)
@@ -52,10 +48,13 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trName  n			= n
     fun trName'(n as Name.InId)		= n
-      | trName'(Name.ExIs s)		= Name.ExId("$" ^ s)
+      | trName'(Name.ExId s)		= Name.ExId("$" ^ s)
 
-    fun trLab(I.Lab(i,s))		= O.Lab(i, trName  s)
-    fun trLab'(I.Lab(i,s))		= O.Lab(i, trName' s)
+    fun trLabel l			= Label.fromName(trName(Label.toName l))
+    fun trLabel' l			= Label.fromName(trName'(Label.toName l))
+
+    fun trLab(I.Lab(i,l))		= O.Lab(i, trLabel (Label.fromString l))
+    fun trLab'(I.Lab(i,l))		= O.Lab(i, trLabel'(Label.fromString  l))
 
     fun trId(I.Id(i,z,n))		= O.Id(i, z, trName n)
     fun trId'(I.Id(i,z,n))		= O.Id(i, z, trName' n)
@@ -179,7 +178,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trPat(I.RefPat(i,p))		= O.RefPat(i, trPat p)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
       | trPat(I.RowPat(i,r))		= let val (fs',b') = trPatRow r in
-					      O.RowPat(i, fs', b')
+					      O.RowPat(i, fs')
 					  end
       | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)

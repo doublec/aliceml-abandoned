@@ -6,4 +6,5 @@ is
 	../error/sources.cm
 
 	prebound.cm
+	type.cm
 	intermediate-grammar.cm

@@ -1,5 +1,9 @@
 Group
 
+	signature NAME
+	structure Name
+	signature LABEL
+	structure Label
 	signature INTERMEDIATE_GRAMMAR
 	functor MakeIntermediateGrammar
 	structure IntermediateGrammar
