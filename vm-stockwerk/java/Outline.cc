@@ -12,8 +12,6 @@
 
 #if defined(INTERFACE)
 #pragma implementation "java/StackFrame.hh"
-#pragma implementation "java/Table.hh"
 #endif
 
 #include "java/StackFrame.hh"
-#include "java/Table.hh"

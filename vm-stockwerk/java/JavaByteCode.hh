@@ -20,7 +20,6 @@
 
 #include "generic/ConcreteCode.hh"
 #include "java/Data.hh"
-#include "java/Table.hh"
 #include "java/ByteCodeInterpreter.hh"
 
 class MethodInfo;
