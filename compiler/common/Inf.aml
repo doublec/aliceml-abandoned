@@ -209,6 +209,12 @@ structure InfPrivate =
     fun selectFix(FIX(x, f))		= f
       | selectFix _			= raise Crash.Crash "Inf.selectFix"
 
+    fun selectValSort(VAL(x, t, w, d))	= w
+      | selectValSort _			= raise Crash.Crash "Inf.selectValSort"
+
+    fun selectTypSort(TYP(x, k, w, d))	= w
+      | selectTypSort _			= raise Crash.Crash "Inf.selectTypSort"
+
 
     exception Lookup
 
@@ -234,6 +240,9 @@ structure InfPrivate =
     fun lookupMod' args	= (selectMod' o lookup' MOD') args
     fun lookupInf' args	= (selectInf  o lookup' INF') args
     fun lookupFix' args	= (selectFix  o lookup' FIX') args
+
+    fun lookupValSort args = (selectValSort o lookup VAL') args
+    fun lookupTypSort args = (selectTypSort o lookup TYP') args
 
     fun lookupValPath args = (selectVal o lookup VAL') args
     fun lookupModPath args = (selectMod o lookup MOD') args

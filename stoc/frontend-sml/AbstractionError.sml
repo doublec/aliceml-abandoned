@@ -71,6 +71,15 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| ImpStrIdDuplicate	of StrId
 	| ImpSigIdDuplicate	of SigId
 	| ConItemDuplicate	of VId
+	| ValItemUnbound	of VId
+	| TypItemUnbound	of TyCon
+	| DatItemUnbound	of TyCon
+	| ConItemUnbound	of VId
+	| DconItemUnbound	of VId
+	| StrItemUnbound	of StrId
+	| SigItemUnbound	of SigId
+	| ConItemNonCon		of VId
+	| DconItemNonCon	of VId
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id
@@ -115,6 +124,8 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 
     fun ppUnbound((ppId,class), id) =
 	  par(["unknown"] @ class @ [ppId id])
+    fun ppUnboundImport((ppId,class), id) =
+	  par(class @ [ppId id,"is","not","exported","by","component"])
 
     fun ppError(VIdUnbound vid) =
 	  ppUnbound(classVId, vid)
@@ -218,6 +229,26 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","import"])
       | ppError(ConItemDuplicate vid) =
 	  par["duplicate","constructor",ppVId vid,"in","datatype"]
+      | ppError(ValItemUnbound vid) =
+	  ppUnboundImport(classVId, vid)
+      | ppError(TypItemUnbound tycon) =
+	  ppUnboundImport(classTyCon, tycon)
+      | ppError(DatItemUnbound tycon) =
+	  ppUnboundImport(classTyCon, tycon)
+      | ppError(ConItemUnbound vid) =
+	  ppUnboundImport(classVId, vid)
+      | ppError(DconItemUnbound vid) =
+	  ppUnboundImport(classVId, vid)
+      | ppError(StrItemUnbound strid) =
+	  ppUnboundImport(classStrId, strid)
+      | ppError(SigItemUnbound sigid) =
+	  ppUnboundImport(classSigId, sigid)
+      | ppError(ConItemNonCon vid) =
+	  par["value",ppVId vid,"exported","by","component","is",
+	      "not","a","constructor"]
+      | ppError(DconItemNonCon vid) =
+	  par["value",ppVId vid,"exported","by","component","is",
+	      "not","a","constructor"]
       (* Sharing translation *)
       | ppError(SharingExternalTy x) =
 	  par(#2 classTyCon @ [ppId x,"is","external","to","signature"])

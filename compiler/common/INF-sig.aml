@@ -15,7 +15,7 @@ signature INF =
     datatype typ_sort = datatype Type.sort		(* [w] *)
 
     type kind						(* [kappa,k] *)
-    type con  = kind * path				(* [chi,c]   *)
+    type con = kind * path				(* [chi,c]   *)
     type sign						(* [sigma,s] *)
     type item
     type inf						(* [jota,j] *)
@@ -134,6 +134,8 @@ signature INF =
     val lookupInf' :	sign * lab * int -> inf		(* Lookup *)
     val lookupFix' :	sign * lab * int -> fix		(* Lookup *)
 
+    val lookupValSort :	sign * lab -> val_sort		(* Lookup *)
+    val lookupTypSort :	sign * lab -> typ_sort		(* Lookup *)
     val lookupValPath :	sign * lab -> path		(* Lookup *)
     val lookupModPath :	sign * lab -> path		(* Lookup *)
 

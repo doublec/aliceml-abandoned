@@ -8,6 +8,15 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     open TypedInfo
 
 
+  (* Recognize sum type constructors (tags) *)
+
+    fun isTagType t =
+	Type.isArrow t andalso isTagType(#2(Type.asArrow t)) orelse
+	Type.isAll t   andalso isTagType(#2(Type.asAll t))   orelse
+	Type.isExist t andalso isTagType(#2(Type.asExist t)) orelse
+	Type.isSum t
+
+
   (* Names and labels *)
 
     fun trName  n		= n
@@ -155,14 +164,9 @@ UNFINISHED: obsolete after bootstrapping:
 	  of x' as O.Id(_,_,Name.ExId s') => StringMap.insert(xs', s', (x',t))
 	   | _                            => ()
 
-    fun idsRow    idsZ xs' (I.Row(i,fs,_))   = idsFields idsZ xs' fs
-    and idsField  idsZ xs' (I.Field(i,a,z))  = idsZ xs' z
-    and idsFields idsZ xs' 		     = List.app(idsField idsZ xs')
-
     fun idsDec xs' (I.ValDec(i,p,e))	= idsPat xs' p
-      | idsDec xs' (I.ConDec(i,x,t))	= idsId trId' xs' x (#typ(I.infoTyp t))
+      | idsDec xs' (I.ConDec(i,x,t,k))	= idsId trId xs' x (#typ(I.infoTyp t))
       | idsDec xs' (I.TypDec(i,x,t))	= ()
-      | idsDec xs' (I.DatDec(i,x,t))	= idsTyp xs' t
       | idsDec xs' (I.ModDec(i,x,m))	= idsId trId' xs' x
 						(infToTyp(#inf(I.infoMod m)))
       | idsDec xs' (I.InfDec(i,x,j))	= ()
@@ -175,10 +179,11 @@ UNFINISHED: obsolete after bootstrapping:
     and idsPat xs' (I.JokPat(i))	= ()
       | idsPat xs' (I.LitPat(i,l))	= ()
       | idsPat xs' (I.VarPat(i,x))	= idsId trId xs' x (#typ i)
-      | idsPat xs' (I.ConPat(i,k,y))	= ()
+      | idsPat xs' (I.TagPat(i,l,k))	= ()
+      | idsPat xs' (I.ConPat(i,y,k))	= ()
       | idsPat xs' (I.RefPat(i))	= ()
       | idsPat xs' (I.TupPat(i,ps))	= idsPats xs' ps
-      | idsPat xs' (I.RowPat(i,r))	= idsRow idsPat xs' r
+      | idsPat xs' (I.ProdPat(i,r))	= idsRow xs' r
       | idsPat xs' (I.VecPat(i,ps))	= idsPats xs' ps
       | idsPat xs' (I.AppPat(i,p1,p2))	= ( idsPat xs' p1 ; idsPat xs' p2 )
       | idsPat xs' (I.AsPat(i,p1,p2))	= ( idsPat xs' p1 ; idsPat xs' p2 )
@@ -189,25 +194,9 @@ UNFINISHED: obsolete after bootstrapping:
       | idsPat xs' (I.WithPat(i,p,ds))	= ( idsPat xs' p ; idsDecs xs' ds )
     and idsPats xs'			= List.app(idsPat xs')
 
-    and idsTyp xs' (I.AbsTyp(i))	= ()
-      | idsTyp xs' (I.VarTyp(i,x))	= ()
-      | idsTyp xs' (I.ConTyp(i,y))	= ()
-      | idsTyp xs' (I.FunTyp(i,x,t))	= idsTyp xs' t
-      | idsTyp xs' (I.AppTyp(i,t1,t2))	= ( idsTyp xs' t1 ; idsTyp xs' t2 )
-      | idsTyp xs' (I.RefTyp(i,t))	= idsTyp xs' t
-      | idsTyp xs' (I.TupTyp(i,ts))	= idsTyps xs' ts
-      | idsTyp xs' (I.RowTyp(i,r))	= idsRow idsTyp xs' r
-      | idsTyp xs' (I.ArrTyp(i,t1,t2))	= ( idsTyp xs' t1 ; idsTyp xs' t2 )
-      | idsTyp xs' (I.SumTyp(i,cs))	= idsCons xs' cs
-      | idsTyp xs' (I.ExtTyp(i))	= ()
-      | idsTyp xs' (I.AllTyp(i,x,t))	= idsTyp xs' t
-      | idsTyp xs' (I.ExTyp(i,x,t))	= idsTyp xs' t
-      | idsTyp xs' (I.PackTyp(i,j))	= ()
-      | idsTyp xs' (I.SingTyp(i,y))	= ()
-    and idsTyps xs'			= List.app(idsTyp xs')
-
-    and idsCon xs' (I.Con(i,x,ts))	= idsId trId xs' x (#typ i)
-    and idsCons xs'			= List.app(idsCon xs')
+    and idsRow    xs' (I.Row(i,fs,_))   = idsFields xs' fs
+    and idsField  xs' (I.Field(i,a,z))  = idsPats xs' z
+    and idsFields xs'			= List.app(idsField xs')
 
     fun ids ds				= let val xs' = StringMap.new() in
 					      idsDecs xs' ds ;
@@ -220,10 +209,11 @@ UNFINISHED: obsolete after bootstrapping:
     fun trExp(I.LitExp(i,l))		= O.LitExp(i, trLit l)
       | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
       | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
-      | trExp(I.ConExp(i,k,y))		= O.ConExp(i, trLongid y, k>1)
+      | trExp(I.TagExp(i,a,k))		= O.TagExp(i, trLab a, k>1)
+      | trExp(I.ConExp(i,y,k))		= O.ConExp(i, trLongid y, k>1)
       | trExp(I.RefExp(i))		= O.RefExp(i)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
-      | trExp(I.RowExp(i,r))		= O.RowExp(i, trExpRow r)
+      | trExp(I.ProdExp(i,r))		= O.RowExp(i, trExpRow r)
       | trExp(I.SelExp(i,a))		= O.SelExp(i, trLab a)
       | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
       | trExp(I.FunExp(i,ms))		= O.FunExp(i, trMatchs ms)
@@ -245,7 +235,7 @@ UNFINISHED: obsolete after bootstrapping:
     and trExps es			= List.map trExp es
 
     and trExpRow(I.Row(i,fs,_))		= trExpFields fs
-    and trExpField(I.Field(i,a,e))	= O.Field(i, trLab a, trExp e)
+    and trExpField(I.Field(i,a,e))	= O.Field(i, trLab a, List.hd(trExps e))
     and trExpFields fs			= List.map trExpField fs
 
 
@@ -257,10 +247,11 @@ UNFINISHED: obsolete after bootstrapping:
     and trPat(I.JokPat(i))		= O.WildPat(i)
       | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(i, trId x)
-      | trPat(I.ConPat(i,k,y))		= O.ConPat(i, trLongid y, k>1)
+      | trPat(I.TagPat(i,a,k))		= O.TagPat(i, trLab a, k>1)
+      | trPat(I.ConPat(i,y,k))		= O.ConPat(i, trLongid y, k>1)
       | trPat(I.RefPat(i))		= O.RefPat(i)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
-      | trPat(I.RowPat(i,r))		= O.RowPat(i, trPatRow r)
+      | trPat(I.ProdPat(i,r))		= O.RowPat(i, trPatRow r)
       | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
       | trPat(I.AppPat(i,p1,p2))	= O.AppPat(i, trPat p1, trPat p2)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
@@ -273,7 +264,7 @@ UNFINISHED: obsolete after bootstrapping:
     and trPats ps			= List.map trPat ps
 
     and trPatRow(I.Row(i,fs,b))		= trPatFields fs
-    and trPatField(I.Field(i,a,p))	= O.Field(i, trLab a, trPat p)
+    and trPatField(I.Field(i,a,p))	= O.Field(i, trLab a, List.hd(trPats p))
     and trPatFields fs			= List.map trPatField fs
 
 
@@ -318,14 +309,15 @@ UNFINISHED: obsolete after bootstrapping:
   (* Declarations *)
 
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
-      | trDec(I.ConDec(i,x,t), ds')	= let val i' = I.infoTyp t in
-					      case t
-						of I.SingTyp(_,y) =>
-						   trEqCon(i',x,trLongid y,ds')
-						 | _ => trNewCon(i',x,ds')
+      | trDec(I.ConDec(i,x,t,k), ds')	= let val i' = I.infoTyp t in
+					      case t of I.SingTyp(_,y) =>
+						trEqCon(i',x,trLongid y,ds')
+					      | _ => if isTagType(#typ i') then
+						trTagCon(i',x,k,ds')
+					      else
+						trNewCon(i',x,k,ds')
 					  end
       | trDec(I.TypDec(i,x,t), ds')	= ds'
-      | trDec(I.DatDec(i,x,t), ds')	= trTyp(t, ds')
       | trDec(I.ModDec(i,x,m), ds')	= let val r  = #region(I.infoId x)
 					      val e' = trMod m
 					      val t  = #typ(O.infoExp e') in
@@ -344,38 +336,13 @@ UNFINISHED: obsolete after bootstrapping:
     and trEqCon(i,x,y',ds')		= O.ValDec(nonInfo(#region i),
 						   O.VarPat(i,trId x),
 						   O.VarExp(i,y')) :: ds'
-    and trNewCon(i,x,ds')		= O.ValDec(nonInfo(#region i),
+    and trNewCon(i,x,k,ds')		= O.ValDec(nonInfo(#region i),
 						   O.VarPat(i,trId x),
-						   O.NewExp(i,NONE,false)):: ds'
-
-    and trCon(I.Con(i,x,ts), ds')	= O.ValDec(nonInfo(#region i),
+						   O.NewExp(i,k>1)) :: ds'
+    and trTagCon(i,x,k,ds')		= O.ValDec(nonInfo(#region i),
 						   O.VarPat(i,trId x),
-						   O.NewExp(i,SOME(
-						       Name.toString(I.name x)),
-						       false)) :: ds'
-    and trCons(cs, ds')			= List.foldr trCon ds' cs
-
-    and trTyp(I.AbsTyp(i), ds')		= ds'
-      | trTyp(I.VarTyp(i,x), ds')	= ds'
-      | trTyp(I.ConTyp(i,y), ds')	= ds'
-      | trTyp(I.FunTyp(i,x,t), ds')	= trTyp(t, ds')
-      | trTyp(I.AppTyp(i,t1,t2), ds')	= trTyp(t1, trTyp(t2, ds'))
-      | trTyp(I.RefTyp(i,t), ds')	= trTyp(t, ds')
-      | trTyp(I.TupTyp(i,ts), ds')	= trTyps(ts, ds')
-      | trTyp(I.RowTyp(i,r), ds')	= trTypRow(r, ds')
-      | trTyp(I.ArrTyp(i,t1,t2), ds')	= trTyp(t1, trTyp(t2, ds'))
-      | trTyp(I.SumTyp(i,cs), ds')	= trCons(cs, ds')
-      | trTyp(I.ExtTyp(i), ds')		= ds'
-      | trTyp(I.AllTyp(i,x,t), ds')	= trTyp(t, ds')
-      | trTyp(I.ExTyp(i,x,t), ds')	= trTyp(t, ds')
-      | trTyp(I.PackTyp(i,j), ds')	= ds'
-      | trTyp(I.SingTyp(i,y), ds')	= ds'
-
-    and trTyps(ts, ds')			= List.foldr trTyp ds' ts
-
-    and trTypRow(I.Row(i,fs,b), ds')	= trTypFields(fs, ds')
-    and trTypField(I.Field(i,a,t), ds')	= trTyp(t, ds')
-    and trTypFields(fs, ds')		= List.foldr trTypField ds' fs
+						   O.TagExp(i,trLab(I.idToLab x)
+							     ,k>1)) :: ds'
 
 
   (* Imports and annotations *)
@@ -391,52 +358,19 @@ UNFINISHED: obsolete after bootstrapping:
 	    ( (x',(),u)::xsus', ds'' )
 	end
 
-
     and trImps(is, y, ds')		= List.foldr (trImp y) ds' is
 
     and trImp y (I.ValImp(i,x,d),ds')	= idToDec(trId x, y, #typ(I.infoDesc d))
 					  :: ds'
-      | trImp y (I.ConImp(i,x,d),ds')	= idToDec(trId x, y, #typ(I.infoDesc d))
+      | trImp y (I.ConImp(i,x,d,k),ds')	= idToDec(trId x, y, #typ(I.infoDesc d))
 					  :: ds'
       | trImp y (I.TypImp(i,x,d),ds')	= ds'
-      | trImp y (I.DatImp(i,x,d),ds')	= trDesc(d, y, ds')
       | trImp y (I.ModImp(i,x,d),ds')	= idToDec(trId' x, y,
 						  infToTyp(#inf(I.infoDesc d)))
 					  :: ds'
       | trImp y (I.InfImp(i,x,d),ds')	= ds'
       | trImp y (I.FixImp(i,x,d),ds')	= ds'
       | trImp y (I.RecImp(i,is), ds')	= trImps(is, y, ds')
-
-    and trDesc(I.NoDesc(i), y, ds')	= ds'
-      | trDesc(I.SomeDesc(i,t), y, ds')	= trRep(t, y, ds')
-
-    and trRep(I.AbsTyp(i), y, ds')	= ds'
-      | trRep(I.VarTyp(i,x), y, ds')	= ds'
-      | trRep(I.ConTyp(i,y'), y, ds')	= ds'
-      | trRep(I.FunTyp(i,x,t), y, ds')	= trRep(t, y, ds')
-      | trRep(I.AppTyp(i,t1,t2), y,ds')	= trRep(t1, y, trRep(t2, y, ds'))
-      | trRep(I.RefTyp(i,t), y, ds')	= trRep(t, y, ds')
-      | trRep(I.TupTyp(i,ts), y, ds')	= trReps(ts, y, ds')
-      | trRep(I.RowTyp(i,r), y, ds')	= trRepRow(r, y, ds')
-      | trRep(I.ArrTyp(i,t1,t2), y,ds')	= trRep(t1, y, trRep(t2, y, ds'))
-      | trRep(I.SumTyp(i,cs), y, ds')	= trCons'(cs, y, ds')
-      | trRep(I.ExtTyp(i), y, ds')	= ds'
-      | trRep(I.AllTyp(i,x,t), y, ds')	= trRep(t, y, ds')
-      | trRep(I.ExTyp(i,x,t), y, ds')	= trRep(t, y, ds')
-      | trRep(I.PackTyp(i,j), y, ds')	= ds'
-      | trRep(I.SingTyp(i,y'), y, ds')	= ds'
-    and trReps(ts, y, ds')		=
-	List.foldr (fn(t,ds') => trRep(t,y,ds')) ds' ts
-
-    and trRepRow(I.Row(i,fs,b), y, ds')	= trRepFields(fs, y, ds')
-    and trRepField y(I.Field(i,a,t),ds')= trRep(t, y, ds')
-    and trRepFields(fs, y, ds')		= List.foldr (trRepField y) ds' fs
-
-    and trCons'(cs, y, ds')		=
-	List.foldr (fn(c as I.Con(i,x,ts), ds') =>
-			trEqCon(i, x, O.LongId(nonInfo(#region i), y,
-					       trLab(I.idToLab x)), ds')
-		   ) ds' cs
 
 
   (* Components *)

@@ -45,6 +45,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | annexp(exp, typ::typs) = annexp(O.AnnExp(O.infoTyp typ, exp, typ), typs)
 
 
+    fun varToTyp id = O.VarTyp(O.infoId id, id)
+
     fun alltyp(ids,typ) =
 	List.foldr (fn(id,typ) => O.AllTyp(O.infoTyp typ, id, typ)) typ ids
 
@@ -74,6 +76,20 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	case lookupVal(E, vid')
 	  of NONE             => V
 	   | SOME(i,stamp,is) => is
+
+
+
+  (* Syntactic arity of constructors *)
+
+    fun conArity []			= 0
+      | conArity typs'			= typArity(List.hd typs')
+
+    and typArity(O.TupTyp(_,typs'))	= Int.max(1, List.length typs')
+      | typArity(O.ProdTyp(_,row'))	= Int.max(1, rowArity row')
+      | typArity _			= 1
+
+    and rowArity(O.Row(_,fields',_))	= List.length fields'
+
 
 
 
@@ -431,7 +447,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		 O.VarExp(i, longid')
 
 	       | (longid', C k) =>
-		 O.ConExp(i, k, longid')
+		 O.ConExp(i, longid', k)
 
 	       | (longid', R) =>
 		 O.RefExp(i)
@@ -442,7 +458,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val row' = trExpRowo E exprowo
 		val  _   = deleteScope E
 	   in
-		O.RowExp(i, row')
+		O.ProdExp(i, row')
 	   end
 	 | UPDATEAtExp(i, atexp, exprow) =>
 	   let
@@ -451,7 +467,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val row' = trExpRowo E (SOME exprow)
 		val  _   = deleteScope E
 	   in
-		O.CompExp(i, exp', O.RowExp(infoExpRow exprow, row'))
+		O.CompExp(i, exp', O.ProdExp(infoExpRow exprow, row'))
 	   end
 	 | HASHAtExp(i, lab)		=> O.SelExp(i, trLab E lab)
 	 | TUPLEAtExp(i, exps)		=> O.TupExp(i, trExps E exps)
@@ -475,7 +491,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SOME(ROWExpRow(i, lab as Lab(i',lab'), exp, exprowo)) =>
 	   let
 		val i1'    = Source.over(i', infoExp exp)
-		val field' = O.Field(i1', trLab E lab, trExp E exp)
+		val field' = O.Field(i1', trLab E lab, [trExp E exp])
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
 				error(i', E.ExpRowLabDuplicate lab')
 		val O.Row(_,fields',_) = trExpRowo E exprowo
@@ -557,7 +573,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SCONAtPat(i, scon)	=> O.LitPat(i, trSCon E scon)
 	 | LONGVIDAtPat(_, _, longvid as SHORTLong(i, vid as VId(i',vid'))) =>
 	   (case lookupIdStatus(E, vid')
-	      of C k => O.ConPat(i, k, #1(trLongVId E longvid))
+	      of C k => O.ConPat(i, #1(trLongVId E longvid), k)
 	       | R   => O.RefPat(i)
 	       | V   =>
 		 let
@@ -581,7 +597,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   )
 	 | LONGVIDAtPat(i, _, longvid) =>
 	   (case trLongVId E longvid
-	      of (longid', C k) => O.ConPat(i, k, longid')
+	      of (longid', C k) => O.ConPat(i, longid', k)
 	       | (longid', R)   => O.RefPat(i)
 	       | (longid', V)   => error(i, E.PatLongVIdVar)
 	   )
@@ -591,7 +607,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val row' = trPatRowo (E,E') patrowo
 		val  _   = deleteScope E
 	   in
-		O.RowPat(i, row')
+		O.ProdPat(i, row')
 	   end
 
 	 | TUPLEAtPat(i, pats)     => O.TupPat(i, trPats (E,E') pats)
@@ -618,7 +634,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SOME(ROWPatRow(i, lab as Lab(i',lab'), pat, patrowo)) =>
 	   let
 		val i1'    = Source.over(i', infoPat pat)
-		val field' = O.Field(i1', trLab E lab, trPat (E,E') pat)
+		val field' = O.Field(i1', trLab E lab, [trPat (E,E') pat])
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
 				error(i', E.PatRowLabDuplicate lab')
 		val O.Row(_,fields',dots') = trPatRowo (E,E') patrowo
@@ -747,7 +763,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val row' = trTyRowo E tyrowo
 		val  _   = deleteScope E
 	   in
-		O.RowTyp(i, row')
+		O.ProdTyp(i, row')
 	   end
 
 	 | TUPLETy(i, tys) =>
@@ -778,7 +794,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SOME(ROWTyRow(i, lab as Lab(i',lab'), ty, tyrowo)) =>
 	   let
 		val i1'    = Source.over(i', infoTy ty)
-		val field' = O.Field(i1', trLab E lab, trTy E ty)
+		val field' = O.Field(i1', trLab E lab, [trTy E ty])
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
 				error(i', E.TyRowLabDuplicate lab')
 		val O.Row(_,fields',_) = trTyRowo E tyrowo
@@ -922,13 +938,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | DATATYPEDec(i, datbind) =>
 	   let
-		val E'    = BindEnv.new()
-		val  _    = trDatBindo_lhs (E,E') (SOME datbind)
-		val  _    = union(E,E')
-		val decs' = trDatBindo_rhs (E,E') (SOME datbind)
-		val  _    = union(E,E')
+		val  E'             = BindEnv.new()
+		val  _              = trDatBindo_lhs (E,E') (SOME datbind)
+		val  _              = union(E,E')
+		val (tdecs',cdecs') = trDatBindo_rhs (E,E') (SOME datbind)
+		val  _              = union(E,E')
 	   in
-		O.RecDec(i, decs') :: acc
+		cdecs' @ O.RecDec(i, tdecs') :: acc
 	   end
 
 	 | REPLICATIONDec(i, tycon as TyCon(i',tycon'), longtycon) =>
@@ -1031,8 +1047,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  exp1'       = O.PrimExp(i, s, typ1')
 		val  dec1'       = O.ValDec(i, pat1', exp1')
 		val  typ2'       = O.SingTyp(i, O.ShortId(i',id1'))
-		val  dec2'       = O.ConDec(i, id2', typ2')
-		val  k           = List.length typs'
+		val  k           = conArity typs'
+		val  dec2'       = O.ConDec(i, id2', typ2', k)
 		val  _           = insertVal(E, vid', (i', stamp, C k))
 	   in
 		dec2' :: vardec(ids', dec1') :: acc
@@ -1121,8 +1137,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val _       = insertVal(E, vid', (i,stamp2,is))
 	in
 	    (case is
-	       of V => O.ValDec(i, O.VarPat(i, id2'), O.VarExp(i, longid'))
-		| _ => O.ConDec(i, id2', O.SingTyp(i, longid'))
+	       of V   => O.ValDec(i, O.VarPat(i, id2'), O.VarExp(i, longid'))
+		| C k => O.ConDec(i, id2', O.SingTyp(i, longid'), k)
+		| R   => O.ConDec(i, id2', O.SingTyp(i, longid'), 1)
 	    ) :: acc
 	end
 
@@ -1497,7 +1514,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val ids'        = trTyVarSeq E tyvarseq
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
-		val dec'        = O.DatDec(i, id', funtyp')
+		val dec'        = O.TypDec(i, id', funtyp')
 		val _           = insertDisjointTy(E', tycon',
 						  (i', stamp, BindEnv.new()))
 				  handle CollisionTy _ =>
@@ -1543,59 +1560,75 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
     and trDatBindo_rhs (E,E') datbindo =
-	    List.rev(trDatBindo_rhs' (E,E',[]) datbindo)
+	let
+	    val (tdecs',cdecs') = trDatBindo_rhs' (E,E',[],[]) datbindo
+	in
+	    (List.rev tdecs', cdecs')
+	end
 
-    and trDatBindo_rhs'(E,E',acc) =
-	fn NONE => acc
+    and trDatBindo_rhs'(E,E',acc1,acc2) =
+	fn NONE => (acc1,acc2)
 
 	 | SOME(CLOSEDDatBind(_, tyvarseq, tycon, conbind, datbindo)) =>
 	   let
-		val i'        = infoConBind conbind
-		val i         = Source.over(infoSeq tyvarseq, i')
-		val (id',E'') = trTyCon E tycon		(* bound before *)
-		val _         = insertScope E
-		val ids'      = trTyVarSeq E tyvarseq
-		val cons'     = trConBindo (E,E'') (SOME conbind)
-		val _         = deleteScope E
-		val funtyp'   = funtyp(ids', O.SumTyp(i', cons'))
-		val dec'      = O.DatDec(i, id', funtyp')
-		val  _        = unionDisjoint(E',E'')
-				handle CollisionVal vid' =>
-				    errorVId(E'', vid', E.DatBindConDuplicate)
+		val  i'           = infoConBind conbind
+		val  i            = Source.over(infoSeq tyvarseq, i')
+		val (id',E'')     = trTyCon E tycon	(* bound before *)
+		val  _            = insertScope E
+		val  ids'         = trTyVarSeq E tyvarseq
+		val  i_id         = O.infoId id'
+		val  contyp'      = O.ConTyp(i_id, O.ShortId(i_id, id'))
+		val  typ'         = apptyp(List.map varToTyp ids', contyp')
+		val (flds',decs') = trConBindo (E,E'',ids',typ') (SOME conbind)
+		val  _            = deleteScope E
+		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', false))
+		val  dec'         = O.TypDec(i, id', funtyp(ids', sumtyp'))
+		val  _            = unionDisjoint(E',E'')
+				    handle CollisionVal vid' =>
+				      errorVId(E'', vid', E.DatBindConDuplicate)
 	   in
-		trDatBindo_rhs' (E,E', dec'::acc) datbindo
+		trDatBindo_rhs' (E,E', dec'::acc1, decs'@acc2) datbindo
 	   end
 
 	 | SOME(OPENDatBind(_, tyvarseq, tycon, datbindo)) =>
 	   let
-		val i'        = infoTyCon tycon
-		val i         = Source.over(infoSeq tyvarseq, i')
+		val  i'       = infoTyCon tycon
+		val  i        = Source.over(infoSeq tyvarseq, i')
 		val (id',E'') = trTyCon E tycon		(* bound before *)
-		val _         = insertScope E
-		val ids'      = trTyVarSeq E tyvarseq
-		val _         = deleteScope E
-		val funtyp'   = funtyp(ids', O.ExtTyp(i'))
-		val dec'      = O.DatDec(i, id', funtyp')
+		val  _        = insertScope E
+		val  ids'     = trTyVarSeq E tyvarseq
+		val  _        = deleteScope E
+		val  funtyp'  = funtyp(ids', O.ExtTyp(i'))
+		val  dec'     = O.TypDec(i, id', funtyp')
 	   in
-		trDatBindo_rhs' (E,E', dec'::acc) datbindo
+		trDatBindo_rhs' (E,E', dec'::acc1, acc2) datbindo
 	   end
 
 
-    and trConBindo (E,E') conbindo = List.rev(trConBindo' (E,E',[]) conbindo)
-    and trConBindo'(E,E',acc) =
-	fn NONE => acc
+    and trConBindo (E,E',ids',typ') conbindo =
+	let
+	    val (fields',decs') = trConBindo' (E,E',ids',typ',[],[]) conbindo
+	in
+	    (List.rev fields', decs')
+	end
+
+    and trConBindo'(E,E',ids',typ',acc1,acc2) =
+	fn NONE => (acc1,acc2)
 
 	 | SOME(ConBind(i, _, vid as VId(i',vid'), tyo, conbindo)) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
 		val  typs'      = trTyo E tyo
-		val  con'       = O.Con(i, id', typs')
-		val  k          = List.length typs'
+		val  lab'       = O.Lab(i', Label.fromName(O.name id'))
+		val  field'     = O.Field(i, lab', typs')
+		val  k          = conArity typs'
+		val  dec'       = O.ConDec(i, id',
+					   alltyp(ids', arrtyp(typs',typ')), k)
 		val  _          = insertDisjointVal(E', vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
 				      error(i', E.ConBindDuplicate vid')
 	   in
-		trConBindo' (E,E', con'::acc) conbindo
+		trConBindo' (E,E',ids',typ', field'::acc1, dec'::acc2) conbindo
 	   end
 
     and trDconBindo' (E,E',acc) =
@@ -1609,10 +1642,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _          = insertScope E
 		val (ids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  typs'      = trTyo E tyo
+		val  k          = conArity typs'
 		val  dec'       = O.ConDec(i, id',
-					   alltyp(ids', arrtyp(typs',typ')))
+					   alltyp(ids', arrtyp(typs',typ')), k)
 		val  _          = deleteScope E
-		val  k          = List.length typs'
 		val  _          = insertDisjointVal(E', vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
 				      error(i', E.DconBindDuplicate vid')
@@ -1626,10 +1659,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  i           = Source.over(i', infoLong longvid)
 		val (id',stamp)  = trVId_bind E vid
 		val (longid',is) = trLongVId E longvid
-		val  _           = if is <> V then () else
-				      error(i, E.DconBindNonCon)
+		val  k           = case is
+				     of C k => k
+				      | R   => 1
+				      | V   => error(i, E.DconBindNonCon)
 		val  typ'        = O.SingTyp(O.infoLongid longid', longid')
-		val  dec'        = O.ConDec(i, id', typ')
+		val  dec'        = O.ConDec(i, id', typ', k)
 		val  _           = insertDisjointVal(E', vid', (i', stamp, is))
 				   handle CollisionVal _ =>
 				       error(i', E.DconBindDuplicate vid')
@@ -1871,10 +1906,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | DATATYPESpec(i, datdesc) =>
 	   let
-		val  _     = trDatDesco_lhs E (SOME datdesc)
-		val specs' = trDatDesco_rhs E (SOME datdesc)
+		val  _                = trDatDesco_lhs E (SOME datdesc)
+		val (tspecs',cspecs') = trDatDesco_rhs E (SOME datdesc)
 	   in
-		O.RecSpec(i, specs') :: acc
+		cspecs' @ O.RecSpec(i, tspecs') :: acc
 	   end
 
 	 | REPLICATIONSpec(i, tycon as TyCon(i', tycon'), longtycon) =>
@@ -2017,8 +2052,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			      error(i, E.SpecVIdDuplicate vid')
 	in
 	    (case is
-	       of V => O.ValSpec(i, id2', typ')
-	        | _ => O.ConSpec(i, id2', typ')
+	       of V   => O.ValSpec(i, id2', typ')
+	        | C k => O.ConSpec(i, id2', typ', k)
+	        | R   => O.ConSpec(i, id2', typ', 1)
 	    ) :: acc
 	end
 
@@ -2071,7 +2107,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val ids'        = trTyVarSeq E tyvarseq
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
-		val spec'       = O.DatSpec(i, id', funtyp')
+		val spec'       = O.TypSpec(i, id', funtyp')
 		val _           = insertDisjointTy(E, tycon',
 						   (i', stamp, BindEnv.new()))
 				  handle CollisionTy _ =>
@@ -2116,25 +2152,35 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		trDatDesco_lhs E datdesco
 	   end
 
-    and trDatDesco_rhs E datdesco = List.rev(trDatDesco_rhs' (E,[]) datdesco)
-    and trDatDesco_rhs' (E,acc) =
-	fn NONE => acc
+    and trDatDesco_rhs E datdesco =
+	let
+	    val (tspecs',cspecs') = trDatDesco_rhs' (E,[],[]) datdesco
+	in
+	    (List.rev tspecs', cspecs')
+	end
+
+    and trDatDesco_rhs' (E,acc1,acc2) =
+	fn NONE => (acc1,acc2)
 
 	 | SOME(CLOSEDDatDesc(_, tyvarseq, tycon, condesc, datdesco)) =>
 	   let
-		val i'       = infoConDesc condesc
-		val i        = Source.over(infoSeq tyvarseq, i')
-		val (id',E') = trTyCon E tycon
-		val _        = insertScope E
-		val ids'     = trTyVarSeq E tyvarseq
-		val cons'    = trConDesco (E,E') (SOME condesc)
-		val _        = deleteScope E
-		val funtyp'  = funtyp(ids', O.SumTyp(i', cons'))
-		val spec'    = O.DatSpec(i, id', funtyp')
-		val _        = unionDisjoint(E,E') handle CollisionVal vid' =>
-				   errorVId(E', vid', E.SpecVIdDuplicate)
+		val  i'            = infoConDesc condesc
+		val  i             = Source.over(infoSeq tyvarseq, i')
+		val (id',E')       = trTyCon E tycon	(* bound before *)
+		val  _             = insertScope E
+		val  ids'          = trTyVarSeq E tyvarseq
+		val  i_id          = O.infoId id'
+		val  contyp'       = O.ConTyp(i_id, O.ShortId(i_id, id'))
+		val  typ'          = apptyp(List.map varToTyp ids', contyp')
+		val (flds',specs') = trConDesco (E,E',ids',typ') (SOME condesc)
+		val  _             = deleteScope E
+		val  sumtyp'       = O.SumTyp(i', O.Row(i', flds', false))
+		val  spec'         = O.TypSpec(i, id', funtyp(ids', sumtyp'))
+		val  _             = unionDisjoint(E,E')
+				     handle CollisionVal vid' =>
+					errorVId(E', vid', E.SpecVIdDuplicate)
 	   in
-		trDatDesco_rhs' (E, spec'::acc) datdesco
+		trDatDesco_rhs' (E, spec'::acc1, specs'@acc2) datdesco
 	   end
 
 	 | SOME(OPENDatDesc(_, tyvarseq, tycon, datdesco)) =>
@@ -2146,27 +2192,36 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val ids'     = trTyVarSeq E tyvarseq
 		val _        = deleteScope E
 		val funtyp'  = funtyp(ids', O.ExtTyp(i'))
-		val spec'    = O.DatSpec(i, id', funtyp')
+		val spec'    = O.TypSpec(i, id', funtyp')
 	   in
-		trDatDesco_rhs' (E, spec'::acc) datdesco
+		trDatDesco_rhs' (E, spec'::acc1, acc2) datdesco
 	   end
 
 
-    and trConDesco (E,E') condesco = List.rev(trConDesco' (E,E',[]) condesco)
-    and trConDesco'(E,E',acc) =
-	fn NONE => acc
+    and trConDesco (E,E',ids',typ') condesco =
+	let
+	    val (fields',specs') = trConDesco' (E,E',ids',typ',[],[]) condesco
+	in
+	    (List.rev fields', specs')
+	end
+
+    and trConDesco'(E,E',ids',typ',acc1,acc2) =
+	fn NONE => (acc1,acc2)
 
 	 | SOME(ConDesc(i, _, vid as VId(i',vid'), tyo, condesco)) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
 		val  typs'      = trTyo E tyo
-		val  con'       = O.Con(i, id', typs')
-		val  k          = List.length typs'
+		val  lab'       = O.Lab(i', Label.fromName(O.name id'))
+		val  field'     = O.Field(i, lab', typs')
+		val  k          = conArity typs'
+		val  spec'      = O.ConSpec(i, id',
+					    alltyp(ids', arrtyp(typs',typ')), k)
 		val  _          = insertDisjointVal(E', vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
 				      error(i', E.ConDescDuplicate vid')
 	   in
-		trConDesco' (E,E', con'::acc) condesco
+		trConDesco' (E,E',ids',typ', field'::acc1, spec'::acc2) condesco
 	   end
 
 
@@ -2182,9 +2237,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (ids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  typs'      = trTyo E tyo
 		val  _          = deleteScope E
-		val  k          = List.length typs'
+		val  k          = conArity typs'
 		val  spec'      = O.ConSpec(i', id',
-					    alltyp(ids', arrtyp(typs',typ')))
+					    alltyp(ids', arrtyp(typs',typ')), k)
 		val  _          = insertDisjointVal(E, vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
 				      error(i', E.SpecVIdDuplicate vid')
@@ -2198,10 +2253,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  i           = Source.over(i', infoLong longvid)
 		val (id',stamp)  = trVId_bind E vid
 		val (longid',is) = trLongVId E longvid
-		val  _           = if is <> V then () else
-				   error(i, E.DconDescNonCon)
+		val  k           = case is
+				     of C k => k
+				      | R   => 1
+				      | V   => error(i, E.DconDescNonCon)
 		val  typ'        = O.SingTyp(O.infoLongid longid', longid')
-		val  spec'       = O.ConSpec(i', id', typ')
+		val  spec'       = O.ConSpec(i', id', typ', k)
 		val  _           = insertDisjointVal(E, vid', (i', stamp, is))
 				   handle CollisionVal _ =>
 				       error(i', E.SpecVIdDuplicate vid')
@@ -2298,36 +2355,36 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
   (* Imports *)
 
-    and trImp  E imp = List.rev(trImp' (E,[]) imp)
-    and trImp'(E,acc) =
+    and trImp (E,E') imp = List.rev(trImp' (E,E',[]) imp)
+    and trImp'(E,E',acc) =
 	fn VALImp(i, valitem) =>
-		trValItemo' (E,acc) (SOME valitem)
+		trValItemo' (E,E',acc) (SOME valitem)
 
 	 | TYPEImp(i, typitem) =>
-		trTypItemo' (E,acc) (SOME typitem)
+		trTypItemo' (E,E',acc) (SOME typitem)
 
 	 | DATATYPEImp(i, datitem) =>
 	   let
-		val  _    = trDatItemo_lhs E (SOME datitem)
-		val imps' = trDatItemo_rhs E (SOME datitem)
+		val   _             = trDatItemo_lhs (E,E') (SOME datitem)
+		val (timps',cimps') = trDatItemo_rhs (E,E') (SOME datitem)
 	   in
-		O.RecImp(i, imps') :: acc
+		cimps' @ O.RecImp(i, timps') :: acc
 	   end
 
 	 | CONSTRUCTORImp(i, dconitem) =>
-		trDconItemo' (E,acc) (SOME dconitem)
+		trDconItemo' (E,E',acc) (SOME dconitem)
 
 	 | STRUCTUREImp(i, stritem) =>
-		trStrItemo' (E,acc) (SOME stritem)
+		trStrItemo' (E,E',acc) (SOME stritem)
 
 	 | SIGNATUREImp(i, sigitem) =>
-		trSigItemo' (E,acc) (SOME sigitem)
+		trSigItemo' (E,E',acc) (SOME sigitem)
 
 	 | EMPTYImp(i) =>
 		acc
 
 	 | SEQImp(i, imp1, imp2) =>
-		trImp' (E, trImp' (E,acc) imp1) imp2
+		trImp' (E,E', trImp' (E,E',acc) imp1) imp2
 
 
     and trOpenImpVal (E,i) (vid', (_,_,is), acc) =
@@ -2340,8 +2397,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			      error(i, E.ImpVIdDuplicate vid')
 	in
 	    (case is
-	       of V => O.ValImp(i, id', O.NoDesc(i))
-	        | _ => O.ConImp(i, id', O.NoDesc(i))
+	       of V   => O.ValImp(i, id', O.NoDesc(i))
+	        | C k => O.ConImp(i, id', O.NoDesc(i), k)
+	        | R   => O.ConImp(i, id', O.NoDesc(i), 1)
 	    ) :: acc
 	end
 
@@ -2349,18 +2407,20 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
   (* Items *)
 
-    and trValItemo' (E,acc) =
+    and trValItemo' (E,E',acc) =
 	fn NONE => acc
 
 	 | SOME(PLAINValItem(_, _, vid as VId(i',vid'), valitemo)) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
 		val  imp'       = O.ValImp(i', id', O.NoDesc(i'))
+		val  _          = if isSome(lookupVal(E', vid')) then () else
+					error(i', E.ValItemUnbound vid')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, V))
 				  handle CollisionVal vid' =>
-				      error(i', E.ImpVIdDuplicate vid')
+					error(i', E.ImpVIdDuplicate vid')
 	   in
-		trValItemo' (E, imp'::acc) valitemo
+		trValItemo' (E,E', imp'::acc) valitemo
 	   end
 
 	 | SOME(DESCValItem(_, _, vid as VId(i',vid'), ty, valitemo)) =>
@@ -2373,27 +2433,31 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _          = deleteScope E
 		val  desc'      = O.SomeDesc(O.infoTyp typ', typ')
 		val  imp'       = O.ValImp(i, id', desc')
+		val  _          = if isSome(lookupVal(E', vid')) then () else
+					error(i', E.ValItemUnbound vid')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, V))
 				  handle CollisionVal vid' =>
-				      error(i', E.ImpVIdDuplicate vid')
+					error(i', E.ImpVIdDuplicate vid')
 	   in
-		trValItemo' (E, imp'::acc) valitemo
+		trValItemo' (E,E', imp'::acc) valitemo
 	   end
 
 
-    and trTypItemo' (E,acc) =
+    and trTypItemo' (E,E',acc) =
 	fn NONE => acc
 
 	 | SOME(PLAINTypItem(_, tycon as TyCon(i',tycon'), typitemo)) =>
 	   let
 		val (id',stamp) = trTyCon_bind E tycon
-		val imp'        = O.DatImp(i', id', O.NoDesc(i'))
-		val _           = insertDisjointTy(E, tycon',
-						   (i', stamp, BindEnv.new()))
+		val  imp'       = O.TypImp(i', id', O.NoDesc(i'))
+		val  E''        = BindEnv.new()
+		val  _          = if isSome(lookupTy(E', tycon')) then () else
+					error(i', E.TypItemUnbound tycon')
+		val  _          = insertDisjointTy(E, tycon', (i', stamp, E''))
 				  handle CollisionTy _ =>
-				      error(i', E.ImpTyConDuplicate tycon')
+					error(i', E.ImpTyConDuplicate tycon')
 	   in
-		trTypItemo' (E, imp'::acc) typitemo
+		trTypItemo' (E,E', imp'::acc) typitemo
 	   end
 
 	 | SOME(DESCTypItem(_, tyvarseq, tycon as TyCon(i',tycon'), typitemo)) =>
@@ -2405,107 +2469,134 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
 		val desc'       = O.SomeDesc(O.infoTyp funtyp', funtyp')
-		val imp'        = O.DatImp(i, id', desc')
-		val _           = insertDisjointTy(E, tycon',
-						   (i', stamp, BindEnv.new()))
+		val imp'        = O.TypImp(i, id', desc')
+		val  E''        = BindEnv.new()
+		val _           = if isSome(lookupTy(E', tycon')) then () else
+					error(i', E.TypItemUnbound tycon')
+		val _           = insertDisjointTy(E, tycon', (i', stamp, E''))
 				  handle CollisionTy _ =>
-				      error(i', E.SpecTyConDuplicate tycon')
+					error(i', E.SpecTyConDuplicate tycon')
 	   in
-		trTypItemo' (E, imp'::acc) typitemo
+		trTypItemo' (E,E', imp'::acc) typitemo
 	   end
 
 
-    and trDatItemo_lhs E =
+    and trDatItemo_lhs (E,E') =
 	fn NONE => ()
 
-	 | SOME(PLAINDatItem(_, tycon as TyCon(i',tycon'), datitemo)) =>
+	 | ( SOME(PLAINDatItem(i, tycon, datitemo))
+	   | SOME(DESCDatItem(i, _, tycon, _, datitemo)) ) =>
 	   let
-		val (id',stamp)  = trTyCon_bind E tycon
-		(*UNFINISHED*)
-		val  E'          = BindEnv.new()
-		val  _           = insertDisjointTy(E, tycon', (i', stamp, E'))
-				   handle CollisionTy _ =>
-				       error(i', E.ImpTyConDuplicate tycon')
-	   in
-		trDatItemo_lhs E datitemo
-	   end
-
-	 | SOME(DESCDatItem(i, tyvarseq, tycon as TyCon(i',tycon'), _,
-								datitemo)) =>
-	   let
+		val TyCon(i',tycon') = tycon
 		val (id',stamp)      = trTyCon_bind E tycon
-		val _                = insertDisjointTy(E, tycon',
-						   (i', stamp, BindEnv.new()))
+		val E''              = BindEnv.new()
+		val _                = insertDisjointTy(E,tycon',(i',stamp,E''))
 				       handle CollisionTy _ =>
 					 error(i', E.ImpTyConDuplicate tycon')
 	   in
-		trDatItemo_lhs E datitemo
+		trDatItemo_lhs (E,E') datitemo
 	   end
 
-    and trDatItemo_rhs E datitemo = List.rev(trDatItemo_rhs' (E,[]) datitemo)
-    and trDatItemo_rhs' (E,acc) =
-	fn NONE => acc
+    and trDatItemo_rhs (E,E') datitemo =
+	let
+	    val (timps',cimps') = trDatItemo_rhs' (E,E',[],[]) datitemo
+	in
+	    (List.rev timps', cimps')
+	end
 
-	 | SOME(PLAINDatItem(i, tycon, datitemo)) =>
+    and trDatItemo_rhs' (E,E',acc1, acc2) =
+	fn NONE => (acc1,acc2)
+
+	 | SOME(PLAINDatItem(i, tycon as TyCon(i', tycon'), datitemo)) =>
 	   let
-		val (id',E') = trTyCon E tycon
+		val (id',E'') = trTyCon E tycon
+		val  E'''     = case lookupTy(E', tycon')
+				  of SOME(_,_,E''') => E'''
+				   | NONE => error(i', E.DatItemUnbound tycon')
+		val  _        = unionDisjoint(E'',E''')
 	   in
-		foldiVals (trOpenImpVal (E,i))
-		 (O.TypImp(i, id', O.NoDesc(i))::acc)
-		 E'
+		trDatItemo_rhs' (E,E', O.TypImp(i, id', O.NoDesc(i))::acc1,
+				       foldiVals (trOpenImpVal (E,i)) acc2 E'')
+				datitemo
 	   end
 
-	 | SOME(DESCDatItem(_, tyvarseq, tycon, conitem, datitemo)) =>
+	 | SOME(DESCDatItem(_, tyvarseq, tycon as TyCon(_,tycon'), conitem,
+								   datitemo)) =>
 	   let
-		val i'       = infoConItem conitem
-		val i        = Source.over(infoSeq tyvarseq, i')
-		val (id',E') = trTyCon E tycon
-		val _        = insertScope E
-		val ids'     = trTyVarSeq E tyvarseq
-		val cons'    = trConItemo (E,E') (SOME conitem)
-		val _        = deleteScope E
-		val funtyp'  = funtyp(ids', O.SumTyp(i', cons'))
-		val desc'    = O.SomeDesc(O.infoTyp funtyp', funtyp')
-		val imp'     = O.DatImp(i, id', desc')
-		val _        = unionDisjoint(E,E') handle CollisionVal vid' =>
-				   errorVId(E', vid', E.ImpVIdDuplicate)
+		val  i'           = infoConItem conitem
+		val  i            = Source.over(infoSeq tyvarseq, i')
+		val (id',E'')     = trTyCon E tycon
+		val  _            = insertScope E
+		val  ids'         = trTyVarSeq E tyvarseq
+		val  i_id         = O.infoId id'
+		val  contyp'      = O.ConTyp(i_id, O.ShortId(i_id, id'))
+		val  typ'         = apptyp(List.map varToTyp ids', contyp')
+		val (flds',imps') = trConItemo (E,E'',ids',typ') (SOME conitem)
+		val  _            = deleteScope E
+		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', false))
+		val  desc'        = O.SomeDesc(i', funtyp(ids', sumtyp'))
+		val  imp'         = O.TypImp(i, id', desc')
+		val  _            = if isSome(lookupTy(E', tycon')) then () else
+					error(i', E.TypItemUnbound tycon')
+		val  _            = unionDisjoint(E,E'')
+				    handle CollisionVal vid' =>
+					errorVId(E'', vid', E.ImpVIdDuplicate)
 	   in
-		trDatItemo_rhs' (E, imp'::acc) datitemo
+		trDatItemo_rhs' (E,E', imp'::acc1, imps'@acc2) datitemo
 	   end
 
 
-    and trConItemo (E,E') conitemo = List.rev(trConItemo' (E,E',[]) conitemo)
-    and trConItemo'(E,E',acc) =
-	fn NONE => acc
+    and trConItemo (E,E',ids',typ') conitemo =
+	let
+	    val (fields',imps') = trConItemo' (E,E',ids',typ',[],[]) conitemo
+	in
+	    (List.rev fields', imps')
+	end
+
+    and trConItemo'(E,E',ids',typ',acc1,acc2) =
+	fn NONE => (acc1,acc2)
 
 	 | SOME(ConItem(i, _, vid as VId(i',vid'), tyo, conitemo)) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
 		val  typs'      = trTyo E tyo
-		val  con'       = O.Con(i, id', typs')
-		val  k          = List.length typs'
+		val  lab'       = O.Lab(i', Label.fromName(O.name id'))
+		val  field'     = O.Field(i, lab', typs')
+		val  k          = conArity typs'
+		val  desc'      = O.SomeDesc(i',alltyp(ids',arrtyp(typs',typ')))
+		val  imp'       = O.ConImp(i, id', desc', k)
+		val  _          = case lookupVal(E', vid')
+				    of SOME(_,_,(C _ | R)) => ()
+				     | SOME(_,_,V) =>
+					error(i', E.ConItemNonCon vid')
+				     | NONE => error(i', E.ConItemUnbound vid')
 		val  _          = insertDisjointVal(E', vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
-				      error(i', E.ConItemDuplicate vid')
+					error(i', E.ConItemDuplicate vid')
 	   in
-		trConItemo' (E,E', con'::acc) conitemo
+		trConItemo' (E,E',ids',typ', field'::acc1, imp'::acc2) conitemo
 	   end
 
 
-    and trDconItemo' (E,acc) =
+    and trDconItemo' (E,E',acc) =
 	fn NONE => acc
 
 	 | SOME(PLAINDconItem(_, _, vid as VId(i',vid'), dconitemo)) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
-		(* UNFINISHED: where get the actual k from? *)
-		val  k          = 1
-		val  imp'       = O.ConImp(i', id', O.NoDesc(i'))
+		val  k          = case lookupVal(E', vid')
+				    of SOME(_,_,C k) => k
+				     | SOME(_,_,R)   => 1
+				     | SOME(_,_,V)   =>
+					error(i', E.DconItemNonCon vid')
+				     | NONE =>
+					error(i', E.DconItemUnbound vid')
+		val  imp'       = O.ConImp(i', id', O.NoDesc(i'), k)
 		val  _          = insertDisjointVal(E, vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
-				      error(i', E.ImpVIdDuplicate vid')
+					error(i', E.ImpVIdDuplicate vid')
 	   in
-		trDconItemo' (E, imp'::acc) dconitemo
+		trDconItemo' (E,E', imp'::acc) dconitemo
 	   end
 
 	 | SOME(DESCDconItem(_, _, vid as VId(i',vid'), tyo, tyvarseq,longtycon,
@@ -2517,63 +2608,73 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (ids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  typs'      = trTyo E tyo
 		val  _          = deleteScope E
-		val  k          = List.length typs'
+		val  k          = conArity typs'
 		val  desc'      = O.SomeDesc(i, alltyp(ids',arrtyp(typs',typ')))
-		val  imp'       = O.ConImp(i', id', desc')
+		val  imp'       = O.ConImp(i', id', desc', k)
+		val  _          = case lookupVal(E', vid')
+				    of SOME(_,_,(C _ | R)) => ()
+				     | SOME(_,_,V) =>
+					error(i', E.DconItemNonCon vid')
+				     | NONE => error(i', E.DconItemUnbound vid')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
-				      error(i', E.ImpVIdDuplicate vid')
+					error(i', E.ImpVIdDuplicate vid')
 	   in
-		trDconItemo' (E, imp'::acc) dconitemo
+		trDconItemo' (E,E', imp'::acc) dconitemo
 	   end
 
 
 
-    and trStrItemo' (E,acc) =
+    and trStrItemo' (E,E',acc) =
 	fn NONE => acc
 
 	 | SOME(PLAINStrItem(_, strid as StrId(i',strid'), stritemo)) =>
 	   let
 		val (id',stamp) = trStrId_bind E strid
 		val  imp'       = O.ModImp(i', id', O.NoDesc(i'))
-		(*UNFINISHED:*)
-		val  E'         = BindEnv.new()
-		val  _          = insertDisjointStr(E, strid', (i', stamp, E'))
+		val  E''        = case lookupStr(E', strid')
+				    of SOME(_,_,E'') => E''
+				     | NONE => error(i',E.StrItemUnbound strid')
+		val  _          = insertDisjointStr(E, strid', (i', stamp, E''))
 				  handle CollisionStr strid' =>
 				      error(i', E.ImpStrIdDuplicate strid')
 	   in
-		trStrItemo' (E, imp'::acc) stritemo
+		trStrItemo' (E,E', imp'::acc) stritemo
 	   end
 
 	 | SOME(DESCStrItem(_, strid as StrId(i',strid'), sigexp, stritemo)) =>
 	   let
 		val  i          = Source.over(i', infoSigExp sigexp)
 		val (id',stamp) = trStrId_bind E strid
-		val (inf',E')   = trSigExp E sigexp
+		val (inf',E'')  = trSigExp E sigexp
 		val  desc'      = O.SomeDesc(O.infoInf inf', inf')
 		val  imp'       = O.ModImp(i, id', desc')
-		val  _          = insertDisjointStr(E, strid', (i', stamp, E'))
+		val  _          = if isSome(lookupStr(E', strid')) then () else
+					error(i', E.StrItemUnbound strid')
+		val  _          = insertDisjointStr(E, strid', (i', stamp, E''))
 				  handle CollisionStr strid' =>
-				      error(i', E.ImpStrIdDuplicate strid')
+					error(i', E.ImpStrIdDuplicate strid')
 	   in
-		trStrItemo' (E, imp'::acc) stritemo
+		trStrItemo' (E,E', imp'::acc) stritemo
 	   end
 
 
 
-    and trSigItemo' (E,acc) =
+    and trSigItemo' (E,E',acc) =
 	fn NONE => acc
 
 	 | SOME(PLAINSigItem(_, sigid as SigId(i',sigid'), sigitemo)) =>
 	   let
 		val (id',stamp) = trSigId_bind E sigid
 		val  imp'       = O.InfImp(i', id', O.NoDesc(i'))
-		val  _          = insertDisjointSig(E, sigid',
-						    (i', stamp, BindEnv.new()))
+		val  E''        = case lookupSig(E', sigid')
+				    of SOME(_,_,E'') => E''
+				     | NONE => error(i',E.SigItemUnbound sigid')
+		val  _          = insertDisjointSig(E, sigid', (i', stamp, E''))
 				  handle CollisionSig _ =>
 				      error(i', E.ImpSigIdDuplicate sigid')
 	   in
-		trSigItemo' (E, imp'::acc) sigitemo
+		trSigItemo' (E,E', imp'::acc) sigitemo
 	   end
 
 	 | SOME(DESCSigItem(_, sigid as SigId(i',sigid'), strpats, sigitemo)) =>
@@ -2585,12 +2686,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _          = deleteScope E
 		val  desc'      = O.SomeDesc(O.infoInf inf', inf')
 		val  imp'       = O.InfImp(i', id', desc')
-		val  _          = insertDisjointSig(E, sigid',
-						    (i', stamp, BindEnv.new()))
+		val  E''        = case lookupSig(E', sigid')
+				    of SOME(_,_,E'') => E''
+				     | NONE => error(i',E.SigItemUnbound sigid')
+		val  _          = insertDisjointSig(E, sigid', (i', stamp, E''))
 				  handle CollisionSig _ =>
 				      error(i', E.ImpSigIdDuplicate sigid')
 	   in
-		trSigItemo' (E, imp'::acc) sigitemo
+		trSigItemo' (E,E', imp'::acc) sigitemo
 	   end
 
 
@@ -2601,8 +2704,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trAnn'(E,acc) =
 	fn IMPORTAnn(i, imp, s) =>
 	   let
-		val imps' = trImp E imp
 		val url   = Url.fromString s
+		(*UNFINISHED: extract bind env from component*)
+		val E'    = BindEnv.new()
+		val _     = insertScope E
+		val imps' = trImp (E,E') imp
+		val _     = mergeScope E
 	   in
 		O.ImpAnn(i, imps', url) :: acc
 	   end

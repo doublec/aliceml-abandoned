@@ -71,12 +71,6 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
 	(* Imports *)
-	| ValItemUnknown	of lab
-	| ConItemUnknown	of lab
-	| TypItemUnknown	of lab
-	| ModItemUnknown	of lab
-	| InfItemUnknown	of lab
-	| FixItemUnknown	of lab
 	| ValItemMismatch	of lab * typ * typ
 	| ConItemMismatch	of lab * typ * typ
 	| TypItemMismatch	of lab * kind * kind
@@ -104,7 +98,7 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun ppLongid y = ppQuoted(ppLongid' y)
 
 
-    fun ppLab l = ppQuoted(Label.toString l)
+    fun ppLab a = ppQuoted(Label.toString a)
 
 
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
@@ -148,51 +142,51 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    par(ppMismatch' im)
 	)
 
-    and ppMismatch'(Inf.MissingVal l) =
-	    ["value",ppLab l,"is","missing"]
-      | ppMismatch'(Inf.MissingTyp  l) =
-	    ["type",ppLab l,"is","missing"]
-      | ppMismatch'(Inf.MissingMod  l) =
-	    ["module",ppLab l,"is","missing"]
-      | ppMismatch'(Inf.MissingInf  l) =
-	    ["signature",ppLab l,"is","missing"]
-      | ppMismatch'(Inf.MissingFix  l) =
-	    ["fixity","of",ppLab l,"is","unspecified"]
-      | ppMismatch'(Inf.ManifestVal l) =
-	    ["value",ppLab l,"does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.ManifestTyp l) =
-	    ["type",ppLab l,"does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.ManifestMod l) =
-	    ["module",ppLab l,"does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.ManifestInf l) =
-	    ["signature",ppLab l,
+    and ppMismatch'(Inf.MissingVal a) =
+	    ["value",ppLab a,"is","missing"]
+      | ppMismatch'(Inf.MissingTyp  a) =
+	    ["type",ppLab a,"is","missing"]
+      | ppMismatch'(Inf.MissingMod  a) =
+	    ["module",ppLab a,"is","missing"]
+      | ppMismatch'(Inf.MissingInf  a) =
+	    ["signature",ppLab a,"is","missing"]
+      | ppMismatch'(Inf.MissingFix  a) =
+	    ["fixity","of",ppLab a,"is","unspecified"]
+      | ppMismatch'(Inf.ManifestVal a) =
+	    ["value",ppLab a,"does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.ManifestTyp a) =
+	    ["type",ppLab a,"does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.ManifestMod a) =
+	    ["module",ppLab a,"does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.ManifestInf a) =
+	    ["signature",ppLab a,
 	     "does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.MismatchVal(l,t1,t2)) =
-	    ["value",ppLab l,"has","incompatible","type"]
-      | ppMismatch'(Inf.MismatchTyp(l,k1,k2)) =
-	    ["type",ppLab l,"has","incompatible","arity"]
-      | ppMismatch'(Inf.MismatchMod(l, Inf.Incompatible _)) =
-	    ["module",ppLab l,"has","incompatible","signature"]
-      | ppMismatch'(Inf.MismatchMod(l, im as Inf.IncompatibleArg _)) =
-	    ["module",ppLab l,"has","incompatible","signature,","because"]
+      | ppMismatch'(Inf.MismatchVal(a,t1,t2)) =
+	    ["value",ppLab a,"has","incompatible","type"]
+      | ppMismatch'(Inf.MismatchTyp(a,k1,k2)) =
+	    ["type",ppLab a,"has","incompatible","arity"]
+      | ppMismatch'(Inf.MismatchMod(a, Inf.Incompatible _)) =
+	    ["module",ppLab a,"has","incompatible","signature"]
+      | ppMismatch'(Inf.MismatchMod(a, im as Inf.IncompatibleArg _)) =
+	    ["module",ppLab a,"has","incompatible","signature,","because"]
 	    @ ppMismatch' im
-      | ppMismatch'(Inf.MismatchMod(l,im)) =
-	    ["module",ppLab l,"has","incompatible","signature,",
+      | ppMismatch'(Inf.MismatchMod(a,im)) =
+	    ["module",ppLab a,"has","incompatible","signature,",
 	     "because","nested"] @ ppMismatch' im
-      | ppMismatch'(Inf.MismatchInf(l, Inf.Incompatible _)) =
-	    ["signature",ppLab l,"is","incompatible"]
-      | ppMismatch'(Inf.MismatchInf(l, im as Inf.IncompatibleArg _)) =
-	    ["signature",ppLab l,"is","incompatible","because"]
+      | ppMismatch'(Inf.MismatchInf(a, Inf.Incompatible _)) =
+	    ["signature",ppLab a,"is","incompatible"]
+      | ppMismatch'(Inf.MismatchInf(a, im as Inf.IncompatibleArg _)) =
+	    ["signature",ppLab a,"is","incompatible","because"]
 	    @ ppMismatch' im
-      | ppMismatch'(Inf.MismatchInf(l,im)) =
-	    ["signature",ppLab l,"is","incompatible,","because","nested"]
+      | ppMismatch'(Inf.MismatchInf(a,im)) =
+	    ["signature",ppLab a,"is","incompatible,","because","nested"]
 	    @ ppMismatch' im
-      | ppMismatch'(Inf.MismatchFix(l,q1,q2)) =
-	    ["fixity","of",ppLab l,"is","different"]
-      | ppMismatch'(Inf.MismatchValSort(l,w1,w2)) =
-	    ["value",ppLab l,"is","not","a","constructor"]
-      | ppMismatch'(Inf.MismatchTypSort(l,w1,w2)) =
-	    ["type",ppLab l,"is","not","an","open","datatype"]
+      | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
+	    ["fixity","of",ppLab a,"is","different"]
+      | ppMismatch'(Inf.MismatchValSort(a,w1,w2)) =
+	    ["value",ppLab a,"is","not","a","constructor"]
+      | ppMismatch'(Inf.MismatchTypSort(a,w1,w2)) =
+	    ["type",ppLab a,"is","not","an","open","datatype"]
       | ppMismatch'(Inf.MismatchDom im) =
 	    ["functor","signature","is","incompatible","because","argument"]
 	    @ ppMismatch' im
@@ -205,12 +199,12 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    ["applied","signature","arguments","are","incompatible"]
 
 
-    fun ppUnclosed(d, (l,n,t)) =
+    fun ppUnclosed(d, (a,n,t)) =
 	vbox(
 	    d ^^
 	    nest(break ^^
 		fbox(nest(
-		    text(Label.toString l) ^/^
+		    text(Label.toString a) ^/^
 		    text ":" ^/^
 		    below(PPType.ppTyp t)
 		))
@@ -355,50 +349,37 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppError(SingInfPath) =
 	  par["module","expression","is","not","a","path"]
       (* Imports *)
-      | ppError(ValItemUnknown l) =
-	  par["value",ppLab l,"is","not","exported","by","component"]
-      | ppError(ConItemUnknown l) =
-	  par["constructor",ppLab l,"is","not","exported","by","component"]
-      | ppError(TypItemUnknown l) =
-	  par["type",ppLab l,"is","not","exported","by","component"]
-      | ppError(ModItemUnknown l) =
-	  par["module",ppLab l,"is","not","exported","by","component"]
-      | ppError(InfItemUnknown l) =
-	  par["signature",ppLab l,"is","not","exported","by","component"]
-      | ppError(FixItemUnknown l) =
-	  par["fixity","status","for",ppLab l,"is","not","exported","by",
-	      "component"]
-      | ppError(ValItemMismatch(l,t1,t2)) =
+      | ppError(ValItemMismatch(a,t1,t2)) =
 	vbox(
-	    par["type","annotation","of","value",ppLab l] ^^
+	    par["type","annotation","of","value",ppLab a] ^^
 	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
 	    par["does","not","match","component","export","type"] ^^
 	    nest(break ^^ below(PPType.ppTyp t2))
 	)
-      | ppError(ConItemMismatch(l,t1,t2)) =
+      | ppError(ConItemMismatch(a,t1,t2)) =
 	vbox(
-	    par["type","of","constructor",ppLab l] ^^
+	    par["type","of","constructor",ppLab a] ^^
 	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
 	    par["does","not","match","component","export","type"] ^^
 	    nest(break ^^ below(PPType.ppTyp t2))
 	)
-      | ppError(TypItemMismatch(l,k1,k2)) =
-	  par["type",ppLab l,"exported","by","component",
+      | ppError(TypItemMismatch(a,k1,k2)) =
+	  par["type",ppLab a,"exported","by","component",
 	      "has","incompatible","arity"]
-      | ppError(ModItemMismatch(l,im)) =
+      | ppError(ModItemMismatch(a,im)) =
 	ppMismatch(
-	  par["module",ppLab l,"exported","by","component","does","not","match",
+	  par["module",ppLab a,"exported","by","component","does","not","match",
 	      "signature,","because"], im)
-      | ppError(InfItemMismatch(l,im)) =
+      | ppError(InfItemMismatch(a,im)) =
 	ppMismatch(
-	  par["signature",ppLab l,"exported","by","component","is",
+	  par["signature",ppLab a,"exported","by","component","is",
 	      "incompatible,","because"], im)
-      | ppError(FixItemMismatch(l,f1,f2)) =
-	  par["fixity","status","for",ppLab l,"does","not","match","export"]
+      | ppError(FixItemMismatch(a,f1,f2)) =
+	  par["fixity","status","for",ppLab a,"does","not","match","export"]
       (* Components *)
-      | ppError(CompUnclosed lnt) =
+      | ppError(CompUnclosed ant) =
 	ppUnclosed(
-	  par["component","is","not","closed:"], lnt)
+	  par["component","is","not","closed:"], ant)
 
     fun ppWarning(NotGeneralized(x,t)) =
 	vbox(

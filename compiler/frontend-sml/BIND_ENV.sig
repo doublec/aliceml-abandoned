@@ -1,3 +1,25 @@
+(*******************************************************************************
+
+The binding environment just contains the information necessary to do
+binding analysis for identifiers:
+
+	Env	= InfEnv U FldEnv U VarEnv U ValEnv U TyEnv U StrEnv U SigEnv
+	InfEnv	= VId   -> InfStatus		(infix env)
+	FldEnv	= Lab   -> 0			(field env)
+	VarEnv	= TyVar -> Stamp		(type variable env)
+	ValEnv	= VId   -> Stamp * IdStatus	(value env)
+	TyEnv	= TyCon -> Stamp * Env		(type env)
+	StrEnv	= StrId -> Stamp * Env		(module env)
+	SigEnv	= SigId -> Stamp * Env		(signature env)
+
+Field envs are just used to detect duplicate labels. Type envs map to
+constructor environments. Module envs map to environments representing the
+module's signature (th result signature for functors, as we never need to look
+at the argument signature). Similarly, signature envs map to the result
+environment (ignoring signature parameters).
+
+*******************************************************************************)
+
 signature BIND_ENV =
   sig
 

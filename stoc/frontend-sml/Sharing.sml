@@ -58,7 +58,6 @@ structure Sharing :> SHARING =
     fun cons1st(x, (xs,y)) = (x::xs, y)
 
     fun annotate( spec as ( TypSpec(_, id, _)
-			  | DatSpec(_, id, _)
 			  | ModSpec(_, id, _)
 			  | InfSpec(_, id, _) ), longids) =
 	(case findId(stamp id, longids, [])
@@ -120,8 +119,6 @@ structure Sharing :> SHARING =
 
     fun withWhere(TYP, TypSpec(i, id, typ), _, longid) =
 	    TypSpec(i, id, ConTyp(infoLongid longid, longid))
-      | withWhere(TYP, DatSpec(i, id, typ), _, longid) =
-	    DatSpec(i, id, ConTyp(infoLongid longid, longid))
       | withWhere(SIG, InfSpec(i, id, inf), _, longid) =
 	    InfSpec(i, id, ConInf(infoLongid longid, longid))
       | withWhere(STR, ModSpec(i, id, inf), ShortId _, longid) =

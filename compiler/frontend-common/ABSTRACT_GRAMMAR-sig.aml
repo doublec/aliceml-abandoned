@@ -48,10 +48,11 @@ signature ABSTRACT_GRAMMAR =
 	  LitExp    of exp_info * lit		(* literal *)
 	| PrimExp   of exp_info * string * typ	(* builtin values *)
 	| VarExp    of exp_info * longid	(* variable *)
-	| ConExp    of exp_info * int * longid	(* constructor *)
+	| TagExp    of exp_info * lab * int	(* tag (constructor) *)
+	| ConExp    of exp_info * longid * int	(* (generative) constructor *)
 	| RefExp    of exp_info			(* reference constructor *)
 	| TupExp    of exp_info * exp list	(* tuple *)
-	| RowExp    of exp_info * exp row	(* row (record) *)
+	| ProdExp   of exp_info * exp row	(* row (record) *)
 	| SelExp    of exp_info * lab		(* row selector *)
 	| VecExp    of exp_info * exp list	(* vector *)
 	| FunExp    of exp_info * match list	(* function *)
@@ -70,7 +71,7 @@ signature ABSTRACT_GRAMMAR =
 	| PackExp   of exp_info * mod		(* package introduction *)
 
     and 'a row   = Row   of 'a row_info * 'a field list * bool
-    and 'a field = Field of 'a field_info * lab * 'a
+    and 'a field = Field of 'a field_info * lab * 'a list
 
     and match    = Match of match_info * pat * exp
 
@@ -80,10 +81,11 @@ signature ABSTRACT_GRAMMAR =
 	  JokPat    of pat_info			(* joker (wildcard) *)
 	| LitPat    of pat_info * lit		(* literal *)
 	| VarPat    of pat_info * id		(* variable *)
-	| ConPat    of pat_info * int * longid	(* constructor (fully applied)*)
+	| TagPat    of pat_info * lab * int	(* tag (fully applied) *)
+	| ConPat    of pat_info * longid * int	(* constructor (fully applied)*)
 	| RefPat    of pat_info			(* reference (fully applied) *)
 	| TupPat    of pat_info * pat list	(* tuple *)
-	| RowPat    of pat_info * pat row	(* row (record) *)
+	| ProdPat   of pat_info * pat row	(* row (record) *)
 	| VecPat    of pat_info * pat list	(* vector *)
 	| AppPat    of pat_info * pat * pat	(* constructor application *)
 	| AsPat     of pat_info * pat * pat	(* as (layered) pattern *)
@@ -96,23 +98,21 @@ signature ABSTRACT_GRAMMAR =
     (* Types *)
 
     and typ =
-	  AbsTyp    of typ_info			(* abstract type *)
-	| VarTyp    of typ_info * id		(* variable *)
+	  VarTyp    of typ_info * id		(* variable *)
 	| ConTyp    of typ_info * longid	(* constructor *)
 	| FunTyp    of typ_info * id * typ	(* type function *)
 	| AppTyp    of typ_info * typ * typ	(* constructor application *)
 	| RefTyp    of typ_info * typ		(* reference type *)
 	| TupTyp    of typ_info * typ list	(* tuple (cartesian) type *)
-	| RowTyp    of typ_info * typ row	(* row (record) type *)
+	| ProdTyp   of typ_info * typ row	(* product (record) type *)
+	| SumTyp    of typ_info * typ row	(* sum type (datatype) *)
 	| ArrTyp    of typ_info * typ * typ	(* arrow (function) type *)
-	| SumTyp    of typ_info * con list	(* sum type (datatype) *)
-	| ExtTyp    of typ_info			(* extensible sum type *)
 	| AllTyp    of typ_info * id * typ	(* universal quantification *)
 	| ExTyp     of typ_info * id * typ	(* existential quantification *)
 	| PackTyp   of typ_info * inf		(* package type *)
 	| SingTyp   of typ_info * longid	(* singleton type *)
-
-    and con = Con of con_info * id * typ list	(* data constructor *)
+	| AbsTyp    of typ_info			(* abstract type *)
+	| ExtTyp    of typ_info			(* extensible sum type *)
 
     (* Modules *)
 
@@ -132,7 +132,6 @@ signature ABSTRACT_GRAMMAR =
 
     and inf =
 	  TopInf    of inf_info			(* top interface *)
-	| AbsInf    of inf_info			(* abstract interface *)
 	| ConInf    of inf_info * longid	(* interface constructor *)
 	| SigInf    of inf_info * spec list	(* signature *)
 	| FunInf    of inf_info * id * inf * inf (* interface function *)
@@ -141,14 +140,14 @@ signature ABSTRACT_GRAMMAR =
 	| ArrInf    of inf_info * id * inf * inf (* arrow (functor) interface *)
 	| LetInf    of inf_info * dec list * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
+	| AbsInf    of inf_info			(* abstract interface *)
 
     (* Declarations *)
 
     and dec =
 	  ValDec    of dec_info * pat * exp	(* values *)
-	| ConDec    of dec_info * id * typ	(* constructor *)
+	| ConDec    of dec_info * id * typ * int (* constructor *)
 	| TypDec    of dec_info * id * typ	(* type *)
-	| DatDec    of dec_info * id * typ	(* data type *)
 	| ModDec    of dec_info * id * mod	(* module *)
 	| InfDec    of dec_info * id * inf	(* interface *)
 	| FixDec    of dec_info * id * fix	(* fixity *)
@@ -160,9 +159,8 @@ signature ABSTRACT_GRAMMAR =
 
     and spec =
 	  ValSpec   of spec_info * id * typ	(* value *)
-	| ConSpec   of spec_info * id * typ	(* constructor *)
+	| ConSpec   of spec_info * id * typ * int (* constructor *)
 	| TypSpec   of spec_info * id * typ	(* type *)
-	| DatSpec   of spec_info * id * typ	(* data type *)
 	| ModSpec   of spec_info * id * inf	(* module *)
 	| InfSpec   of spec_info * id * inf	(* interface *)
 	| FixSpec   of spec_info * id * fix	(* fixity *)
@@ -173,9 +171,8 @@ signature ABSTRACT_GRAMMAR =
 
     and imp =
 	  ValImp of imp_info * id * (typ_info,typ) desc	(* value *)
-	| ConImp of imp_info * id * (typ_info,typ) desc	(* constructor *)
+	| ConImp of imp_info * id * (typ_info,typ) desc * int (* constructor *)
 	| TypImp of imp_info * id * (typ_info,typ) desc (* type *)
-	| DatImp of imp_info * id * (typ_info,typ) desc (* data type *)
 	| ModImp of imp_info * id * (inf_info,inf) desc (* module *)
 	| InfImp of imp_info * id * (inf_info,inf) desc (* interface *)
 	| FixImp of imp_info * id * (fix_info,fix) desc (* fixity *)
@@ -201,7 +198,6 @@ signature ABSTRACT_GRAMMAR =
     val lab :		lab	-> Label.t
     val idToLab :	id	-> lab
     val labToId :	lab	-> id
-    val conToId :	con	-> id
 
     val infoLab :	lab	-> lab_info
     val infoId :	id	-> id_info
@@ -212,7 +208,6 @@ signature ABSTRACT_GRAMMAR =
     val infoMatch :	match	-> match_info
     val infoPat :	pat	-> pat_info
     val infoTyp :	typ	-> typ_info
-    val infoCon :	con	-> con_info
     val infoMod :	mod	-> mod_info
     val infoInf :	inf	-> inf_info
     val infoDec :	dec	-> dec_info

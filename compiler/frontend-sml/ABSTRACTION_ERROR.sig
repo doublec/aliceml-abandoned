@@ -60,6 +60,15 @@ signature ABSTRACTION_ERROR =
 	| ImpStrIdDuplicate	of StrId
 	| ImpSigIdDuplicate	of SigId
 	| ConItemDuplicate	of VId
+	| ValItemUnbound	of VId
+	| TypItemUnbound	of TyCon
+	| DatItemUnbound	of TyCon
+	| ConItemUnbound	of VId
+	| DconItemUnbound	of VId
+	| StrItemUnbound	of StrId
+	| SigItemUnbound	of SigId
+	| ConItemNonCon		of VId
+	| DconItemNonCon	of VId
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id
