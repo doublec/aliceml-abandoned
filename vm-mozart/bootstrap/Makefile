@@ -121,7 +121,7 @@ NATIVECOMPONENTS = \
 	IO TextIO OS Unix CommandLine Tools UnsafePickle Debug Socket
 
 LIBFUNDAMENTALSOURCES0 = \
-	RTT.aml Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
+	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
 	Fundamental.aml ALT-sig.aml ARRAY-sig.aml BOOL-sig.aml CELL-sig.aml \
 	CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
 	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
@@ -274,7 +274,7 @@ stoc1-%: build1-install
 ########################################################################
 
 BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
-BUILD1SOURCES = $(ALLSOURCES:%=build1/%)
+BUILD1SOURCES = build1/lib/fundamental/RTT.aml $(ALLSOURCES:%=build1/%)
 
 INSTALL1DIRS = build1/install build1/install/bin
 INSTALL1TOPFILES = stow.ozf stoc.ozf
@@ -413,7 +413,7 @@ build1/install/bin/%: %
 BUILD2DIRS = \
 	build2 build2/lib build2/lib/fundamental build2/lib/system \
 	build2/lib/utility build2/lib/rtt build2/lib/ml-yacc
-BUILD2SOURCES = $(LIBSOURCES:%=build2/%)
+BUILD2SOURCES = build2/lib/fundamental/RTT.aml $(LIBSOURCES:%=build2/%)
 
 INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib build2/install/lib/fundamental \
@@ -497,9 +497,7 @@ $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
 ########################################################################
 
 BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%)
-BUILD3SOURCES = \
-	$(filter-out build3/lib/fundamental/RTT.aml, \
-	  $(ALLSOURCES:%=build3/%))
+BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 
 INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
