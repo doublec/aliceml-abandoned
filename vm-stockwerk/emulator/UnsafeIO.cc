@@ -57,7 +57,7 @@ public:
   // InStream Untagging
   static InStream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
-    Assert(p != INVALID_POINTER && p->GetLabel() == (BlockLabel) IO_IN);
+    Assert(p == INVALID_POINTER || p->GetLabel() == (BlockLabel) IO_IN);
     return (InStream *) p;
   }
 };
@@ -66,12 +66,12 @@ class OutStream : public IOStream {
 public:
   // OutStream Constructor
   static OutStream *New(FILE *file, String *name) {
-    return (OutStream *) IOStream::New(IO_IN, file, name);
+    return (OutStream *) IOStream::New(IO_OUT, file, name);
   }
   // OutStream Untagging
   static OutStream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
-    Assert(p != INVALID_POINTER && p->GetLabel() == (BlockLabel) IO_OUT);
+    Assert(p == INVALID_POINTER || p->GetLabel() == (BlockLabel) IO_OUT);
     return (OutStream *) p;
   }
 };

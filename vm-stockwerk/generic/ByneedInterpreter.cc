@@ -82,8 +82,7 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
   else {
     ((Future *) future)->ScheduleWaitingThreads();
     future->Become(REF_LABEL, args);
-    Scheduler::currentData = future->ToWord();
-    Scheduler::currentArgs = Interpreter::OneArg(Scheduler::currentData);
+    Scheduler::currentArgs = Interpreter::OneArg(future->ToWord());
     return Interpreter::CONTINUE;
   }
 }

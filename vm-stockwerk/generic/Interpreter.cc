@@ -55,10 +55,13 @@ word Interpreter::Deconstruct(word args) {
       Transient *t = Store::WordToTransient(arg);
       // Found Block
       if (t == INVALID_POINTER) {
-	u_int nargs = p->GetSize();
-	Block *args_outp = Interpreter::TupArgs(nargs); // Hack Alert
+	Tuple *tuple = Tuple::FromWord(arg);
+	Assert(tuple != INVALID_POINTER);
+	u_int nargs  = ((Block *) tuple)->GetSize();
+	// Hack Alert: to be done
+	Block *args_outp = Interpreter::TupArgs(nargs); 
 	for (u_int i = nargs; i--;) {
-	  args_outp->InitArg(i, p->GetArg(i));
+	  args_outp->InitArg(i, tuple->Sel(i));
 	}
 	return args_outp->ToWord();
       }

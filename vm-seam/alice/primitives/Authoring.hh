@@ -35,14 +35,15 @@
 #define DECLARE_LIST_ELEMS(tagVal, length, x, cmd)			\
   u_int length = 0;							\
   TagVal *tagVal;							\
-  { word list = x;						\
+  { word list = x;							\
     while ((tagVal = TagVal::FromWord(list)) != INVALID_POINTER) {	\
       cmd;								\
       length++;								\
       list = tagVal->Sel(1);						\
     }									\
     if (Store::WordToInt(list) == INVALID_INT) { REQUEST(list); }	\
-  }
+  } \
+  tagVal = TagVal::FromWord(x);
 
 #define DECLARE_LIST(tagVal, length, x)					\
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)

@@ -71,8 +71,9 @@ void Scheduler::Run() {
       preempt = false;
       Interpreter *interpreter = taskStack->GetInterpreter();
       //      fprintf(stderr, "Executing frame %s\n", interpreter->Identify());
+      Scheduler::currentArgs = currentThread->GetArgs();
       Interpreter::Result result =
-	interpreter->Run(currentThread->GetArgs(), taskStack);
+	interpreter->Run(Scheduler::currentArgs, taskStack);
     interpretResult:
       //      fprintf(stderr, "Got result %s\n", ResultToString(result));
       switch (result) {
@@ -96,6 +97,7 @@ void Scheduler::Run() {
       case Interpreter::REQUEST:
 	{
 	  Transient *transient = Store::WordToTransient(Scheduler::currentData);
+	  Assert(transient != INVALID_POINTER);
 	  switch (transient->GetLabel()) {
 	  case HOLE_LABEL:
 	    Scheduler::currentData = Hole::holeExn;
@@ -103,7 +105,7 @@ void Scheduler::Run() {
 	  case FUTURE_LABEL:
 	    taskStack->Purge();
 	    currentThread->SetArgs(currentArgs);
-	    currentThread->SetState(Thread::BLOCKED);
+	    currentThread->Block(transient->ToWord());
 	    ((Future *) transient)->AddToWaitQueue(currentThread);
 	    nextThread = true;
 	    break;
@@ -118,8 +120,11 @@ void Scheduler::Run() {
 			Interpreter::EmptyArg(), newTaskStack);
 	      // empty queue
 	      transient->Become(FUTURE_LABEL, Store::IntToWord(0));
+	      taskStack->Purge();
 	      currentThread->SetArgs(currentArgs);
 	      currentThread->Block(transient->ToWord());
+	      ((Future *) transient)->AddToWaitQueue(currentThread);
+	      nextThread = true;
 	    }
 	    break;
 	  default:

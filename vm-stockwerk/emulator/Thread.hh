@@ -64,7 +64,7 @@ public:
   state GetState() {
     return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
   }
-  word GetTransients() {
+  word GetTransient() {
     return GetArg(BLOCK_POS);
   }
   bool IsSuspended() {

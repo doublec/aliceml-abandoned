@@ -239,18 +239,20 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
   case Pickle::TupArgs:
     {
       Vector *formalIdDefs = Vector::FromWord(formalArgs->Sel(0));
-      word deconstructed_args = Interpreter::Deconstruct(args);
-      Block *p = Store::WordToBlock(deconstructed_args);
-      if (p == INVALID_POINTER) {
-	// Scheduler::currentData has been set by Interpreter::Deconstruct
-	return Interpreter::REQUEST;
-      }
       u_int nargs = formalIdDefs->GetLength();
-      Assert(nargs == 0 || p->GetSize() == nargs); // to be done
-      for (u_int i = nargs; i--; ) {
-	TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
-	if (idDef != INVALID_POINTER) // IdDef id
-	  localEnv->Add(idDef->Sel(0), p->GetArg(i));
+      if (nargs != 0) {
+	word deconstructed_args = Interpreter::Deconstruct(args);
+	Block *p = Store::WordToBlock(deconstructed_args);
+	if (p == INVALID_POINTER) {
+	  // Scheduler::currentData has been set by Interpreter::Deconstruct
+	  return Interpreter::REQUEST;
+	}
+	Assert(nargs == 0 || p->GetSize() == nargs); // to be done
+	for (u_int i = nargs; i--; ) {
+	  TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
+	  if (idDef != INVALID_POINTER) // IdDef id
+	    localEnv->Add(idDef->Sel(0), p->GetArg(i));
+	}
       }
     }
     break;

@@ -161,7 +161,7 @@ DEFINE1(Process_getEnv) {
   DECLARE_STRING(envVar, x0);
   char *envVal = getenv(ExportChar(envVar));
   if (envVal != NULL) {
-    TagVal *val = TagVal::New(0, 1); // SOME Tag?
+    TagVal *val = TagVal::New(1, 1); // SOME
     val->Init(0, String::New(envVal)->ToWord());
     RETURN(val->ToWord());
   }

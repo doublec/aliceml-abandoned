@@ -14,6 +14,7 @@
 
 #include <cstring>
 #include "emulator/Authoring.hh"
+#include "emulator/BootLinker.hh"
 
 DEFINE2(String_opconcat) {
   DECLARE_STRING(string1, x0);
@@ -73,7 +74,7 @@ DEFINE1(String_explode) {
   char *base = string->GetValue();
   word list = Store::IntToWord(1); // nil
   for (u_int i = string->GetSize(); i--; ) {
-    TagVal *cons = TagVal::New(0, 2);
+    TagVal *cons = TagVal::New(0, 2); // ::
     cons->Init(0, Store::IntToWord(base[i]));
     cons->Init(1, list);
     list = cons->ToWord();
@@ -87,7 +88,7 @@ DEFINE1(String_implode) {
     RAISE(PrimitiveTable::General_Size);
   String *string = String::New(length);
   char *base = string->GetValue();
-  u_int i = 1;
+  u_int i = 0;
   while (tagVal != INVALID_POINTER) {
     base[i++] = Store::WordToInt(tagVal->Sel(0));
     tagVal = TagVal::FromWord(tagVal->Sel(1));
