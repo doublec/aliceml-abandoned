@@ -18,6 +18,7 @@
 #endif
 
 #include <cstdio>
+#include "generic/Transform.hh"
 #include "generic/ConcreteCode.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCodeInterpreter.hh"
@@ -32,8 +33,8 @@ public:
   TagVal *GetAbstractCode() {
     return TagVal::FromWordDirect(Get(ABSTRACT_CODE_POS));
   }
-  Block *GetAbstractRepresentation() {
-    return Store::DirectWordToBlock(Get(TRANSFORM_POS));
+  Transform *GetAbstractRepresentation() {
+    return Transform::FromWordDirect(Get(TRANSFORM_POS));
   }
   void Disassemble(std::FILE *file);
 
