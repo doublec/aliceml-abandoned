@@ -27,7 +27,7 @@ import structure MkRecursiveCompiler
        structure ModLoader
        structure ImportLoader        from "MkRecursiveCompiler"
 
-structure SMLToDotNetRecursiveCompiler =
+structure RecursiveCompiler =
     let
 	structure Switches = MkSwitches()
 

@@ -1,19 +1,24 @@
-INSTALLTO= `alice-config --alicelibdir`/tools/toplevel
+INSTALLTO= `alice-config --alicelibdir`/tools
 
 SOURCES = TOPLEVEL-sig.aml Toplevel.aml
 
-all: $(SOURCES:%.aml=%.alc)
+all: LinkedToplevel.alc
+
+LinkedToplevel.alc: $(SOURCES:%.aml=%.alc)
+	alicelink -z -v ./Toplevel -o $@
 
 %.alc: %.aml
 	alicec -z $< -o $@
 
 install: all
 	install -d $(INSTALLTO)
-	install $(SOURCES:%.aml=%.alc) $(INSTALLTO)
+	install LinkedToplevel.alc $(INSTALLTO)/Toplevel.alc
 	install ToplevelStartup.aml $(INSTALLTO)
 
 clean:
 	rm -f *.alc
+
+distclean: clean
 
 depend:
 	alicedep $(SOURCES) > Makefile.depend

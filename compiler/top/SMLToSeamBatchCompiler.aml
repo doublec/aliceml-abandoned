@@ -10,12 +10,11 @@
  *   $Revision$
  *)
 
-import structure MkBatchCompiler            from "MkBatchCompiler"
-import structure SMLToSeamRecursiveCompiler from "SMLToSeamRecursiveCompiler"
+import structure MkBatchCompiler   from "MkBatchCompiler"
+import structure RecursiveCompiler from "RecursiveCompiler"
 
 structure SMLToSeamBatchCompiler =
-    MkBatchCompiler(structure RecursiveCompiler =
-			SMLToSeamRecursiveCompiler
+    MkBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
 		    val executableHeader =
 			"#!/bin/sh\nexec alicerun $0 \"$@\"\n"
 		    val extension = "alc")

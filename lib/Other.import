@@ -6,7 +6,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -34,7 +34,8 @@ import structure ImperativeIO     from "x-alice:/lib/system/ImperativeIO"
 import signature BIN_IO           from "x-alice:/lib/system/BIN_IO-sig"
 import structure BinIO            from "x-alice:/lib/system/BinIO"
 import signature TEXT_IO          from "x-alice:/lib/system/TEXT_IO-sig"
-import structure TextIO val print from "x-alice:/lib/system/TextIO"
+import structure TextIO val print : string -> unit
+				  from "x-alice:/lib/system/TextIO"
 import signature OS               from "x-alice:/lib/system/OS-sig"
 import signature OS_FILE_SYS      from "x-alice:/lib/system/OS_FILE_SYS-sig"
 import signature OS_PROCESS       from "x-alice:/lib/system/OS_PROCESS-sig"
@@ -46,3 +47,16 @@ import structure CommandLine      from "x-alice:/lib/system/CommandLine"
 
 import signature PICKLE           from "x-alice:/lib/system/PICKLE-sig"
 import structure Pickle           from "x-alice:/lib/system/Pickle"
+import signature COMPONENT        from "x-alice:/lib/system/COMPONENT-sig"
+import structure Component        from "x-alice:/lib/system/Component"
+import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+import signature COMPILER         from "x-alice:/lib/system/COMPILER-sig"
+import structure Compiler         from "x-alice:/lib/system/Compiler"
+import structure URL              from "x-alice:/lib/system/URL-sig"
+import structure Url              from "x-alice:/lib/system/Url"
+import signature RESOLVER         from "x-alice:/lib/system/RESOLVER-sig"
+import signature RESOLVER_HANDLER from "x-alice:/lib/system/RESOLVER_HANDLER-sig"
+import structure Resolver         from "x-alice:/lib/system/Resolver"
+
+import structure Print            from "x-alice:/lib/system/Print"

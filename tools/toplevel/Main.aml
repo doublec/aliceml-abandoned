@@ -12,7 +12,7 @@
 
 import structure Config   from "x-alice:/lib/system/Config"
 import structure Signal   from "x-alice:/lib/system/Signal"
-import structure Toplevel from "x-alice:/lib/tools/toplevel/Toplevel"
+import structure Toplevel from "x-alice:/lib/tools/Toplevel"
 
 structure Main : any =
 struct

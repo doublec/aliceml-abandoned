@@ -17,14 +17,12 @@ import structure TextPrimIO from "TextPrimIO"
 import structure Url        from "Url"
 import structure Component  from "Component"
 
-import structure SMLToSeamRecursiveCompiler from "../../compiler/top/SMLToSeamRecursiveCompiler"
+import structure RecursiveCompiler from "../../compiler/top/RecursiveCompiler"
 
 import signature COMPILER from "COMPILER-sig"
 
 structure Compiler : COMPILER =
 struct
-    structure RecursiveCompiler = SMLToSeamRecursiveCompiler
-
     (* Output stream *)
 
     val outWidth  = RecursiveCompiler.Switches.Global.logWidth
@@ -274,8 +272,6 @@ struct
 
 
     (* Initialization *)
-
-    val implicitImport = "x-alice:/alicec.import"
 
     fun init () =
 	let

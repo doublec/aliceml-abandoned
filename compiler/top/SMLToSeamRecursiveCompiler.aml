@@ -25,7 +25,7 @@ import structure MkRecursiveCompiler
        structure ImportLoader        from "MkRecursiveCompiler"
 import signature RECURSIVE_COMPILER' from "RECURSIVE_COMPILER-sig"
 
-structure SMLToSeamRecursiveCompiler =
+structure RecursiveCompiler =
     let
 	structure Switches = MkSwitches()
 

@@ -121,6 +121,7 @@ clean-seam: clean-common
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk/seam && make distclean) || exit 1
+	(cd lib/tools/toplevel && make distclean) || exit 1
 	(cd lib/tools/inspector/seam && make distclean) || exit 1
 	(cd tools/lex && make distclean) || exit 1
 	(cd tools/yacc && make distclean) || exit 1
@@ -215,12 +216,10 @@ libs-seam:
 	(cd lib/distribution && make TARGET=seam depend) || exit 1 ;\
 	(cd lib/distribution && \
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
-	(cd lib/test && make SH_EXT=alc depend && \
-	 make SH_EXT=alc all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
-	(cd tools/yacc && make depend) || exit 1 ;\
-	(cd tools/yacc && make all && make install) || exit 1 ;\
-	(cd tools/lex && make depend) || exit 1;\
-	(cd tools/lex && make all && make install) || exit 1 ;\
+	(cd lib/tools/toplevel && make depend) || exit 1 ;\
+	(cd lib/tools/toplevel && make all PREFIX=$(PREFIX) install) || exit 1 ;\
+	(cd tools/toplevel && make depend) || exit 1 ;\
+	(cd tools/toplevel && make install) || exit 1 ;\
 	(cd lib/gtk/seam && ./BUILD_ALL) || exit 1 ;\
 	(cd lib/gtk/seam && make install) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
@@ -234,6 +233,12 @@ libs-seam:
 	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make all install) || exit 1 ;\
+	(cd lib/test && make SH_EXT=alc depend && \
+	 make SH_EXT=alc all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
+	(cd tools/yacc && make depend) || exit 1 ;\
+	(cd tools/yacc && make all && make install) || exit 1 ;\
+	(cd tools/lex && make depend) || exit 1;\
+	(cd tools/lex && make all && make install) || exit 1 ;\
 	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
 	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
 	(cd tools/ide && make depend) || exit 1 ;\

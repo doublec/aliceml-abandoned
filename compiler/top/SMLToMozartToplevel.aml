@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,7 +12,6 @@
  *)
 
 import structure MkToplevel from "MkToplevel"
-import structure SMLToMozartRecursiveCompiler
-					from "SMLToMozartRecursiveCompiler"
+import structure RecursiveCompiler from "RecursiveCompiler"
 
-structure SMLToMozartToplevel = MkToplevel(SMLToMozartRecursiveCompiler)
+structure SMLToMozartToplevel = MkToplevel(RecursiveCompiler)

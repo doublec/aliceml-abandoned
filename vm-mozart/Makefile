@@ -321,6 +321,7 @@ COMPILERTOPSOURCES0 = \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToSeamRecursiveCompiler.aml \
+	RecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
@@ -449,6 +450,9 @@ build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
 build1/lib/%.aml: lib/%.aml.m4 Rel2.import
+	cat Rel2.import $< | $(M4) > $@
+
+build1/compiler/%.aml: compiler/%.aml.m4 Rel2.import
 	cat Rel2.import $< | $(M4) > $@
 
 build1/compiler/infrastructure/%.aml: compiler/infrastructure/%.aml Rel2.import
@@ -653,8 +657,8 @@ INSTALL3DIRS = \
 	build3/install/compiler \
 	build3/install/compiler/top \
 	build3/install/tools
-INSTALL3TOPFILES = $(INSTALL1TOPFILES) alicec.import alice.import COPYING
-INSTALL3BINFILES = $(INSTALL1BINFILES) alice alicedep
+INSTALL3TOPFILES = $(INSTALL1TOPFILES) alicec.import COPYING
+INSTALL3BINFILES = $(INSTALL1BINFILES) alicedep
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) system/UnsafeValue.asig \
@@ -662,7 +666,7 @@ INSTALL3LIBFILES = \
 	fundamental/PACKAGE-sig.ozf fundamental/Package.ozf
 INSTALL3COMPILERFILES = $(INSTALL1COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
-	SMLToMozartRecursiveCompiler.ozf SMLToSeamRecursiveCompiler.ozf
+	RecursiveCompiler.ozf
 INSTALL3TOOLSFILES = Linker.ozf Depend.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
@@ -692,7 +696,7 @@ build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/compiler/LinkedCompilerMain.ozf \
 	build3/compiler/LinkedCompileServerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
-	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
+	build3/compiler/top/LinkedRecursiveCompiler.ozf \
 	build3/LinkedVMMain.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
@@ -705,10 +709,6 @@ $(LIBNATIVES:%=build3/%): build3/lib/%.ozf: lib/%.oz
 	$(OZC) -c $< -o $@
 
 build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
-	cat $^ > $@
-
-build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
-	compiler/top/Toplevel.import
 	cat $^ > $@
 
 build3/lib/fundamental/Pervasive.ozf: build3/lib/fundamental/Pervasive.aml
@@ -728,33 +728,30 @@ build3/lib/fundamental/LinkedPervasive.ozf: \
 
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
-	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
+	--exclude build3/compiler/top/RecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompilerMain -o $@
 
 build3/compiler/LinkedCompileServerMain.ozf: \
 	build3/compiler/CompileServerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
-	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
+	--exclude build3/compiler/top/RecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompileServerMain -o $@
 
 build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
-	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
+	--exclude build3/compiler/top/RecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/ToplevelMain -o $@
 
-build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
-	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
+build3/compiler/top/LinkedRecursiveCompiler.ozf: \
+	build3/compiler/top/RecursiveCompiler.ozf \
 	build3/compiler/backend-mozart/CodeGenPhase.ozf \
 	build3/compiler/backend-mozart/CodeGen.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}"="../../?{x}" \
 	--include build3/compiler \
-	build3/compiler/top/SMLToMozartRecursiveCompiler -o $@
+	build3/compiler/top/RecursiveCompiler -o $@
 
 build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToSeamRecursiveCompiler.ozf

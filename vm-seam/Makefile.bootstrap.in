@@ -337,6 +337,7 @@ COMPILERTOPSOURCES0 = \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
 	SMLToSeamRecursiveCompiler.aml \
+	RecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
@@ -460,6 +461,9 @@ build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
 build1/lib/%.aml: lib/%.aml.m4 Rel2.import
+	cat Rel2.import $< | $(M4) > $@
+
+build1/compiler/%.aml: compiler/%.aml.m4 Rel2.import
 	cat Rel2.import $< | $(M4) > $@
 
 build1/compiler/infrastructure/%.aml: compiler/infrastructure/%.aml Rel2.import
@@ -660,7 +664,7 @@ INSTALL3DIRS = \
 	build3/install/compiler/top \
 	build3/install/tools
 #---**
-INSTALL3TOPFILES = alicec.import alice.import COPYING
+INSTALL3TOPFILES = alicec.import COPYING
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.alc) \
 	$(DEBUGGERSOURCES:%.aml=%.alc) \
@@ -669,7 +673,7 @@ INSTALL3LIBFILES = \
 #	fundamental/RTT.alc 
 INSTALL3COMPILERFILES = CompilerMain.alc ToplevelMain.alc
 INSTALL3COMPILERTOPFILES = \
-	SMLToSeamRecursiveCompiler.alc
+	RecursiveCompiler.alc
 INSTALL3TOOLSFILES = Linker.alc Depend.alc
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
@@ -701,16 +705,12 @@ build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/lib/system/Boot.alc \
 	build3/compiler/LinkedCompilerMain.alc \
 	build3/compiler/LinkedToplevelMain.alc \
-	build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.alc
+	build3/compiler/top/LinkedRecursiveCompiler.alc
 
 build3/lib/fundamental/RTT.alc: build2/lib/rtt/LinkedRTT.alc
 	cp $< $@
 
 build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
-	cat $^ > $@
-
-build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
-	Toplevel.import
 	cat $^ > $@
 
 build3/lib/fundamental/Pervasive.alc: build3/lib/fundamental/Pervasive.aml
@@ -731,25 +731,21 @@ build3/lib/fundamental/LinkedPervasive.alc: \
 
 build3/compiler/LinkedCompilerMain.alc: build3/compiler/CompilerMain.alc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
-	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
+	--exclude build3/compiler/top/RecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompilerMain -o $@
 
 build3/compiler/LinkedToplevelMain.alc: build3/compiler/ToplevelMain.alc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
-	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
+	--exclude build3/compiler/top/RecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/ToplevelMain -o $@
 
-build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.alc: \
-	build3/compiler/top/SMLToSeamRecursiveCompiler.alc
+build3/compiler/top/LinkedRecursiveCompiler.alc: \
+	build3/compiler/top/RecursiveCompiler.alc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3/compiler \
-	build3/compiler/top/SMLToSeamRecursiveCompiler -o $@
+	build3/compiler/top/RecursiveCompiler -o $@
 
 build3/tools/linker/LinkedMain.alc: $(TOOLSLINKERSOURCES:%.aml=build3/%.alc)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \

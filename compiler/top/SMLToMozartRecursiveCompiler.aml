@@ -26,7 +26,7 @@ import structure MkRecursiveCompiler
        structure ImportLoader        from "MkRecursiveCompiler"
 import signature RECURSIVE_COMPILER' from "RECURSIVE_COMPILER-sig"
 
-structure SMLToMozartRecursiveCompiler =
+structure RecursiveCompiler =
     let
 	structure Switches = MkSwitches()
 

@@ -191,7 +191,7 @@ struct
 
     val currentEnv = ref Compiler.initialEnv
 
-    val startup = "x-alice:/lib/tools/toplevel/ToplevelStartup.aml"
+    val startup = "x-alice:/lib/tools/ToplevelStartup.aml"
 
     fun init () =
 	let
