@@ -4,9 +4,12 @@ Runtime system:
   It uses just-in-time compilation and a 3-generation garbage collector,
   rendering it up to 5 times faster than Alice on Mozart.
 * Completely new, extended constraint library based on Gecode
-  (Generic Constraint Development Environment). It adds
-  selection constraints, batch recomputation and distributed search.
-  Propagation and search is more than 10 times faster than with Mozart.
+  (Generic Constraint Development Environment). It provides advanced
+  global constraints (like global cardinality, sortedness, regular
+  language acceptance, counting, lexicographic ordering) not found in
+  Mozart, set selection constraints, and batch recomputation. The new
+  library gives a considerable gain in performance (typically one
+  order of magnitude).
 * Mozart is no longer required to run Alice (and no longer compatible with it).
 
 Language:
