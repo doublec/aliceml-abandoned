@@ -258,12 +258,9 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   case CONSTANT_Float:
     {
       ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 1);
-      union {
-	s_int32 i;
-	u_char s[4];
-      } bytes;
-      bytes.i = GetU4(offset);
-      Float *flt = Float::NewFromNetworkRepresentation(bytes.s);
+      u_char s[4];
+      for (u_int i = 0; i < 4; i++) s[i] = GetU1(offset);
+      Float *flt = Float::NewFromNetworkRepresentation(s);
       entry->InitArg(0, flt->ToWord());
       return entry;
     }
@@ -271,15 +268,9 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   case CONSTANT_Double:
     {
       ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 1);
-      union {
-	struct {
-	  s_int32 i, j;
-	} x;
-	u_char s[8];
-      } bytes;
-      bytes.x.i = GetU4(offset);
-      bytes.x.j = GetU4(offset);
-      Double *dbl = Double::NewFromNetworkRepresentation(bytes.s);
+      u_char s[8];
+      for (u_int i = 0; i < 8; i++) s[i] = GetU1(offset);
+      Double *dbl = Double::NewFromNetworkRepresentation(s);
       entry->InitArg(0, dbl->ToWord());
       return entry;
     }
