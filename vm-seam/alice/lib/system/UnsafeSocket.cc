@@ -78,7 +78,7 @@ DEFINE1(UnsafeSocket_server) {
   DECLARE_INT(port, x0);
 
   Interruptible(sock, socket(PF_INET, SOCK_STREAM, 0));
-  if (sock < 0) { RAISE_SOCK_ERR(); } //--** IO.Io
+  if (sock < 0) { RAISE_SOCK_ERR(); }
 
   // bind a name to the socket:
   sockaddr_in addr;
@@ -89,7 +89,7 @@ DEFINE1(UnsafeSocket_server) {
   addr.sin_port = htons(port);
   Interruptible(res1, bind(sock, reinterpret_cast<sockaddr *>(&addr),
 			   addrLen));
-  if (res1 < 0) { RAISE_SOCK_ERR(); } //--** IO.Io
+  if (res1 < 0) { RAISE_SOCK_ERR(); }
 
   // listen for connections:
   static const u_int backLog = 5;
@@ -99,7 +99,7 @@ DEFINE1(UnsafeSocket_server) {
 
   Interruptible(res2, getsockname(sock, reinterpret_cast<sockaddr *>(&addr),
 				  &addrLen));
-  if (res2 < 0) { RAISE_SOCK_ERR(); } //--** IO.Io
+  if (res2 < 0) { RAISE_SOCK_ERR(); }
   RETURN2(Store::IntToWord(sock), Store::IntToWord(ntohs(addr.sin_port)));
 } END
 
@@ -120,7 +120,7 @@ DEFINE1(UnsafeSocket_accept) {
 	goto retry;
       }
     } else {
-      RAISE_SOCK_ERR(); //--** IO.Io
+      RAISE_SOCK_ERR();
     }
   }
   SetNonBlocking(client, true);
@@ -135,11 +135,11 @@ DEFINE2(UnsafeSocket_client) {
   DECLARE_INT(port, x1);
 
   Interruptible(sock, socket(PF_INET, SOCK_STREAM, 0));
-  if (sock < 0) { RAISE_SOCK_ERR(); } //--** IO.Io
+  if (sock < 0) { RAISE_SOCK_ERR(); }
   SetNonBlocking(sock, true);
 
   hostent *entry = gethostbyname(host->ExportC());
-  if (!entry) { RAISE_SOCK_ERR(); } //--** IO.Io
+  if (!entry) { RAISE_SOCK_ERR(); }
   sockaddr_in addr;
   std::memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
@@ -161,7 +161,7 @@ DEFINE2(UnsafeSocket_client) {
 	return Worker::REQUEST;
       }
     } else {
-      RAISE_SOCK_ERR(); //--** IO.Io
+      RAISE_SOCK_ERR();
     }
   }
   RETURN_INT(sock);
@@ -185,7 +185,7 @@ DEFINE1(UnsafeSocket_input1) {
     } else {
       //--** map ECONNRESET to IO.Io {cause = ClosedStream, ...}
       //--** std::fprintf(stderr, "recv failed: %d\n", error);
-      RAISE_SOCK_ERR(); //--** IO.Io
+      RAISE_SOCK_ERR();
     }
   } else if (n == 0) { // EOF
     RETURN_INT(Types::NONE);
@@ -217,7 +217,7 @@ DEFINE2(UnsafeSocket_inputN) {
 	goto retry;
       }
     } else {
-      RAISE_SOCK_ERR(); //--** IO.Io
+      RAISE_SOCK_ERR();
     }
   } else if (n == 0) {
     RETURN(String::New(STATIC_CAST(u_int, 0))->ToWord());
@@ -245,7 +245,7 @@ DEFINE2(UnsafeSocket_output1) {
 	goto retry;
       }
     } else {
-      RAISE_SOCK_ERR(); //--** IO.Io
+      RAISE_SOCK_ERR();
     }
   }
   RETURN_UNIT;
@@ -270,7 +270,7 @@ DEFINE3(UnsafeSocket_output) {
 	goto retry;
       }
     } else {
-      RAISE_SOCK_ERR(); //--** IO.Io
+      RAISE_SOCK_ERR();
     }
   } else {
     RETURN_INT(n);

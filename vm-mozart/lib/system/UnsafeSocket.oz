@@ -18,14 +18,7 @@ import
 export
    'UnsafeSocket$': Socket
 define
-   IoException = {NewUniqueName 'UnsafeSocket.Io'}
-
-   Socket = 'Socket'('Io':
-		 	fun {$ N F C}
-			    IoException(name: N function: F cause: C)
-			end
-   		     '\'Io': IoException
-		     server:
+   Socket = 'Socket'(server:
 			fun {$ TakePort} Socket Port in
 			   Socket = {New Open.socket init()}
 			   if TakePort \= 0 then
@@ -50,12 +43,7 @@ define
 			   try
 			      {Socket connect(host: Host port: Port)}
 			   catch E then   %--** maybe, should raise OS.SysErr
-			      {Exception.raiseError
-			       alice(IoException(name:
-						    {ByteString.make 'socket'}
-						 function:
-						    {ByteString.make 'client'}
-						 cause: E))} %--** not type exn
+			      {Exception.raiseError alice(E)} %--** not type exn
 			   end
 			   Socket
 			end
@@ -67,12 +55,7 @@ define
 			      [] nil then 'NONE'
 			      end
 			   catch E then
-			      {Exception.raiseError
-			       alice(IoException(name:
-						    {ByteString.make 'socket'}
-						 function:
-						    {ByteString.make 'input1'}
-						 cause: E))} %--** not type exn
+			      {Exception.raiseError alice(E)} %--** not type exn
 			      unit
 			   end
 			end
@@ -82,12 +65,7 @@ define
 			      {Socket read(list: ?Cs size: N)}
 			      {ByteString.make Cs}
 			   catch E then
-			      {Exception.raiseError
-			       alice(IoException(name:
-						    {ByteString.make 'socket'}
-						 function:
-						    {ByteString.make 'inputN'}
-						 cause: E))} %--** not type exn
+			      {Exception.raiseError alice(E)} %--** not type exn
 			      unit
 			   end
 			end
@@ -96,12 +74,7 @@ define
 			   try
 			      {Socket write(vs: [C])}
 			   catch E then
-			      {Exception.raiseError
-			       alice(IoException(name:
-						    {ByteString.make 'socket'}
-						 function:
-						    {ByteString.make 'output1'}
-						 cause: E))} %--** not type exn
+			      {Exception.raiseError alice(E)} %--** not type exn
 			   end
 			   unit
 			end
@@ -110,18 +83,17 @@ define
 			   try
 			      {Socket write(vs: S len: $)}
 			   catch E then
-			      {Exception.raiseError
-			       alice(IoException(name:
-						    {ByteString.make 'socket'}
-						 function:
-						    {ByteString.make 'output'}
-						 cause: E))} %--** not type exn
+			      {Exception.raiseError alice(E)} %--** not type exn
 			      unit
 			   end
 			end
 		     close:
 			fun {$ Socket}
-			   {Socket close()}
+			   try
+			      {Socket close()}
+			   catch E then
+			      {Exception.raiseError alice(E)} %--** not type exn
+			   end
 			   unit
 			end)
 end
