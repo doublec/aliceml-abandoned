@@ -23,4 +23,5 @@ signature BEST_WORKER =
 	val steal : (trace list * int * int) option Promise.promise -> unit
 	val constrain : sol -> unit
 	val stop : unit -> unit
+	val shutdown : unit -> unit
     end

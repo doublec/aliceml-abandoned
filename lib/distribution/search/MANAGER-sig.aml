@@ -18,6 +18,7 @@ signature MANAGER =
 	type sol
 	type trace = sol Trace.trace
 
+	val log : int * int * string -> unit
 	val sync : unit Promise.promise -> unit
 	val prepare : unit Promise.promise -> unit
 	val register : Packer.package * int -> unit
