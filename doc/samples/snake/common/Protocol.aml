@@ -114,6 +114,12 @@ struct
         startGame: (unit -> unit) option
     }
 
+    type level_info = {
+
+	dimensions : int * int
+		       }
+
+    type diff = Pos.pos * field
 
     type client_interface = {
         (* JOIN MODE *)
@@ -126,9 +132,10 @@ struct
 
 	tournamentStarted :  unit -> unit,
 
-        levelStarted :       unit -> unit,
+        levelStarted :       level_info -> unit,
 	(** will be executed before each level, returns as soon as 
-	    the client is ready to process update signals *)
+	    the client is ready to process update signals,
+	    sends level information *)
 
 
         (* GENERIC *)
@@ -139,7 +146,7 @@ struct
 	countdown :         int -> unit,
 	(** [countdown n] is called before a level starts. [n] is the time
 	    till gamestart. n = 0 => levels starts *)
-        update :            (Pos.pos * field) list -> unit,
+        update :            diff list -> unit,
         tick :              Time.time option -> unit,
         (** [tick t] is called to notify the client that a new tick has
 	    started and he has to update the gui. [t] is the time left

@@ -18,7 +18,9 @@ sig
     type t = color
 
     val equal :     t * t -> bool
-    
+
+    val compare :   t * t -> order
+
     val all :       color list
     (** [all] is a list of all available colors *)
     
