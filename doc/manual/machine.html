@@ -12,9 +12,19 @@ evaluates it.</P>
 <?php section("synopsis", "synopsis") ?>
 
 <DL>
-  <DT><TT>alicerun</TT> <I>&lt;url&gt;</I>
-    <I>&lt;args&gt;</I> ...</DT>
+  <DT><TT>alicerun</TT> <I>&lt;url&gt;</I> <I>&lt;args&gt;</I> ...</DT>
 </DL>
+
+<!--
+<DIV class=note>
+<P><I>Note:</I> Windows does not properly allow a single program to support both text mode <I>and</I> GUI mode. Thus, <TT>alicerun</TT> will always open a console window (if not started from a console shell), even if it does not perform any I/O on standard channels. As an alternative, we hence provide the <TT>alicerunwin</TT> command on Windows:</P>
+<DL>
+  <DT><TT>alicerunwin</TT> <I>&lt;url&gt;</I> <I>&lt;args&gt;</I> ...</DT>
+</DL>
+Note that programs invoked with this command <I>cannot</I> perform any I/O on <TT>stdIn</TT>, <TT>stdOut</TT> and <TT>stdErr</TT>.
+</P>
+</DIV>
+-->
 
 
 <?php section("description", "description") ?>

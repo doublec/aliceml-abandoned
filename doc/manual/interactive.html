@@ -16,7 +16,7 @@ page</A>.</P>
 <?php section("synopsis", "synopsis") ?>
 
 <DL>
-  <DT><TT>alice</TT> [<TT>--gui</TT>] [<I>&lt;input file&gt;</I> ...] </DT>
+  <DT><TT>alice</TT> [<TT>-g</TT>|<TT>--gui</TT>] [<I>&lt;input file&gt;</I> ...] </DT>
 </DL>
 
 
@@ -108,7 +108,7 @@ default when Alice is started from the system's graphical interface - e.g. the S
 
 <?php subsection("gui-interaction", "Interaction") ?>
 
-<P>The interaction pane operates much like the interactive top-level in text mode: ML snippets can be entered that can span several lines and must be terminated by semicolon. In addition, previous inputs can be retrieved via the history commands from the <I>Eval</I> menu (or the shortcuts Ctrl-Up and Ctrl-Down).</P>
+<P>The interaction pane operates much like the interactive top-level in text mode: ML snippets can be entered that can span several lines and must be terminated by semicolon. In addition, previous inputs can be retrieved via the history commands from the <I>Eval</I> menu (or the shortcuts Ctrl-Up and Ctrl-Down). History is saved when the top-level is quit.</P>
 
 <P>The <I>Interrupt</I> and <I>Background</I> commands from the <I>Eval</I> menu allow aborting the current computation or putting it into background. The whole interpreter environment can be reset from the menu (note that this does not kill any running threads).</P>
 
