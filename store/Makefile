@@ -24,10 +24,10 @@ OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all clean distclean adt
 
+all: libstore.a
+
 adt:
 	cd $(TOPDIR)/adt && $(MAKE) clean all
-
-all: libstore.a
 
 libstore.a: StoreConfig.hh $(OBJS)
 	ar rc libstore.a $(OBJS) || exit 1
