@@ -12,7 +12,7 @@
 
 signature IMPERATIVE_GRAMMAR =
     sig
-	type coord = Source.position
+	type coord = Source.region
 
 	(* Literals *)
 

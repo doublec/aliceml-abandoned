@@ -36,7 +36,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun lookup (pos, (pos', id)::mappingRest) =
 	    if pos = pos' then id
 	    else lookup (pos, mappingRest)
-	  | lookup (pos, nil) = Crash.crash "MatchCompilationPhase.lookup"
+	  | lookup (pos, nil) = raise Crash.Crash "MatchCompilationPhase.lookup"
 
 	fun mappingsToSubst (mapping0, mapping) =
 	    List.map (fn (pos, id) => (id, lookup (pos, mapping))) mapping0
@@ -377,7 +377,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    if !isLast then
 			(case stms of
 			     nil => ()
-			   | _ => Crash.crash "ImperativePhase.translateExp";
+			   | _ =>
+			     raise Crash.Crash "ImperativePhase.translateExp";
 			 isLast := false; translateExp (exp, f, cont))
 		    else
 			translateExp
@@ -518,7 +519,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	  | translateGraph (Leaf (_, ref (SOME stms)), _) = stms
 	  | translateGraph (_, _) =
-	    Crash.crash "MatchCompilationPhase.translateGraph"
+	    raise Crash.Crash "MatchCompilationPhase.translateGraph"
 	and translateNode (pos, GuardTest (mapping0, exp),
 			   thenGraph, elseGraph, mapping) =
 	    let
@@ -620,11 +621,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		(nil, O.VecTest ids, mapping')
 	    end
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
-	    Crash.crash "MatchCompilationPhase.translateTest"
+	    raise Crash.Crash "MatchCompilationPhase.translateTest"
 
 	fun getPrintName (Id (_, _, ExId s)) = s
 	  | getPrintName (Id (_, _, InId)) =
-	    Crash.crash "MatchCompilationPhase.getPrintName"
+	    raise Crash.Crash "MatchCompilationPhase.getPrintName"
 
 	structure IdSort =
 	    MakeLabelSort(type 'a t = id

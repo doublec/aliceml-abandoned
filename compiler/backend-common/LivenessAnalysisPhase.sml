@@ -120,7 +120,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanStm (SharedStm ((_, ref (Use set')), _, _), set) =
 	    union (set, set')
 	  | scanStm (SharedStm ((_, ref (Kill _)), _, _), _) =
-	    Crash.crash "LivenessAnalysisPhase.scanStm"
+	    raise Crash.Crash "LivenessAnalysisPhase.scanStm"
 	  | scanStm (ReturnStm (_, exp), set) = scanExp (exp, set)
 	  | scanStm (IndirectStm (_, ref bodyOpt), set) =
 	    scanBody' (valOf bodyOpt, set)
@@ -159,7 +159,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		    (_, r as ref (Unknown | LoopEnd)) => r := Use set
 		  | (_, ref (LoopStart | Use _)) => ()
 		  | (_, ref (Kill _)) =>
-			Crash.crash "LivenessAnalysisPhase.scanBody";
+			raise Crash.Crash "LivenessAnalysisPhase.scanBody";
 		delStm (stm, set)
 	    end
 	  | scanBody (nil, initial) = initial
@@ -222,7 +222,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	and initBody (stm::stms, defSet) =
 	    (case infoStm stm of
 		 (_, ref (Unknown | LoopStart | LoopEnd)) =>
-		     Crash.crash "LivenessAnalysisPhase.initBody"
+		     raise Crash.Crash "LivenessAnalysisPhase.initBody"
 	       | (_, r as ref (Use useSet)) =>
 		     let
 			 val killSet = StampSet.new ()

@@ -229,7 +229,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	       | thenTree => propagateElses (thenTree, !elseTreeRef))
 	  | propagateElses (Leaf (_, _), _) = ()
 	  | propagateElses (Default, _) =
-	    Crash.crash "SimplifyMatch.propagateElses"
+	    raise Crash.Crash "SimplifyMatch.propagateElses"
 
 	(* Optimization of the Test Graph *)
 
@@ -271,7 +271,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	      | getSets (ref (Cooked sets)) = sets
 	      | getSets (ref (Optimized sets)) = sets
-	      | getSets (ref _) = Crash.crash "SimplifyMatch.getSets"
+	      | getSets (ref _) = raise Crash.Crash "SimplifyMatch.getSets"
 	    and makePosTestList (graphs, isTrue) =
 		List.foldr
 		(fn (graph, posTestList) =>
@@ -287,7 +287,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				 testSetIntersect
 				 (trueSet, (pos, test)::falseSet)
 			 end
-		   | _ => Crash.crash "SimplifyMatch.cook")
+		   | _ => raise Crash.Crash "SimplifyMatch.cook")
 		nil graphs
 
 	    fun disentailed (pos, test, (pos', test')::rest) =
@@ -313,7 +313,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			 optimize elseGraphRef)
 		end
 	      | optimize (ref (Leaf (_, _))) = ()
-	      | optimize (ref _) = Crash.crash "SimplifyMatch.optimize"
+	      | optimize (ref _) = raise Crash.Crash "SimplifyMatch.optimize"
 	in
 	    fun optimizeGraph graph =
 		let
@@ -407,7 +407,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			nil intIdList
 		in
 		    if i = i' then ()
-		    else Crash.crash "SimplifyMatch.process 1";
+		    else raise Crash.Crash "SimplifyMatch.process 1";
 		    (O.TupArgs ids, graph, mapping, consequents)
 		end
 	      | process (REC labs, Node (nil, RecTest labs', ref graph, _, _),
@@ -420,10 +420,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				    ([lab], id)::mapping) nil labIdList
 		in
 		    if labs = labs' then ()
-		    else Crash.crash "SimplifyMatch.process 2";
+		    else raise Crash.Crash "SimplifyMatch.process 2";
 		    (O.RecArgs labIdList, graph, mapping, consequents)
 		end
-	      | process (_, _, _, _) = Crash.crash "SimplifyMatch.process 3"
+	      | process (_, _, _, _) =
+		raise Crash.Crash "SimplifyMatch.process 3"
 	in
 	    fun buildFunArgs (id, matches, errStmsFun) =
 		let

@@ -98,7 +98,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | patToExp (RowPat (coord, patFields, hasDots)) =
 	    (*--** record patterns with dots must be resolved using the rhs *)
-	    Crash.crash "SimplifyRec.patToExp"
+	    raise Crash.Crash "SimplifyRec.patToExp"
 	  | patToExp (VecPat (coord, pats)) =
 	    let
 		val (pats', exps') = ListPair.unzip (List.map patToExp pats)
@@ -159,7 +159,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 				 SOME i => i >= 1 andalso i <= n
 			       | NONE => false) patFields
 		then
-		    Crash.crash   (*--** *)
+		    raise Crash.Crash   (*--** *)
 		    "SimplifyRec.derec': not implemented 1"
 		else Error.error (coord, "pattern never matches")
 	    end
@@ -186,7 +186,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		val (expFields', _) = FieldSort.sort expFields
 	    in
 		if isSubarity (patFields, expFields') then
-		    Crash.crash   (*--** *)
+		    raise Crash.Crash   (*--** *)
 		    "SimplifyRec.derec': not implemented 2"
 		else Error.error (coord, "pattern never matches")
 	    end
@@ -256,11 +256,11 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		end
 	    else Error.error (coord, "pattern never matches")
 	  | unify (TupPat (_, _), RowPat (_, _, true)) =
-	    Crash.crash "SimplifyRec.unify: not implemented 1"   (*--** *)
+	    raise Crash.Crash "SimplifyRec.unify: not implemented 1"   (*--** *)
 	  | unify (pat1 as RowPat (_, _, _), pat2 as TupPat (_, _)) =
 	    unify (pat2, pat1)
 	  | unify (RowPat (_, _, _), RowPat (_, _, _)) =
-	    Crash.crash "SimplifyRec.unify: not implemented 2"   (*--** *)
+	    raise Crash.Crash "SimplifyRec.unify: not implemented 2"   (*--** *)
 	  | unify (VecPat (coord, pats1), VecPat (_, pats2)) =
 	    if length pats1 = length pats2 then
 		let
