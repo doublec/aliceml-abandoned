@@ -21,6 +21,9 @@ sig
 
     val realToVector: real -> Word8Vector.vector
 
+    val reflect : 'a -> value
+    val reify :   value -> 'a				(* Unsafe! *)
+
     val reflectPackage :    Package.package -> module * Inf.t
     val reflectValPackage : Package.val_package -> value * Type.t
 

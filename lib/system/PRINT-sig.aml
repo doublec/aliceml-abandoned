@@ -1,0 +1,23 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO from "TextIO"
+
+signature PRINT =
+sig
+    val printWidth :	int ref
+
+    val printVal :	'a -> unit
+    val printType :	'a -> unit
+    val outputVal :	TextIO.outstream * 'a * int -> unit
+    val outputType :	TextIO.outstream * 'a * int -> unit
+end

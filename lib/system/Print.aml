@@ -1,0 +1,39 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO      from "TextIO"
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure PPValue     from "PPValue"
+import structure PPType      from "../rtt/PPType"
+import signature PRINT       from "PRINT-sig"
+
+structure Print' =
+struct
+    val printWidth = ref 80
+
+    fun outputVal'  t (s,x,n) = PrettyPrint.output(s, PPValue.ppVal t x, n)
+    fun outputType' t (s,x,n) = PrettyPrint.output(s, PPType.ppTyp t, n)
+
+    fun printVal'  t x = outputVal'  t (TextIO.stdOut, x, !printWidth)
+    fun printType' t x = outputType' t (TextIO.stdOut, x, !printWidth)
+end
+
+structure Print (* : PRINT *) =
+struct
+    val printWidth = Print'.printWidth
+    __overload 'a printVal :   'a -> unit = Print'.printVal'
+    __overload 'a printType :  'a -> unit = Print'.printType'
+    __overload 'a outputVal :  TextIO.outstream * 'a * int -> unit
+				= Print'.outputVal'
+    __overload 'a outputType : TextIO.outstream * 'a * int -> unit
+				= Print'.outputType'
+end

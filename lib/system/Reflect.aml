@@ -26,6 +26,9 @@ structure Reflect : REFLECT =
 	val cast = UnsafeValue.cast
 	val realToVector = UnsafeReflect.realToVector
 
+	val reflect = cast
+	val reify   = cast
+
 	(* TODO: Q&D, has to correspond to translation *)
 	datatype package' = Package__ of module * Inf.t
 
