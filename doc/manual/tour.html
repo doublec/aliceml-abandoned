@@ -116,7 +116,7 @@ the factority function:<P>
 <PRE class=code>
 fun fac 0 = 1
   | fac n = n * fac (n-1)
-<I>val fac : int -> int = fn</I></PRE>
+<I>val fac : int -> int = _fn</I></PRE>
 
 <P>This time, the result has a more complex type: it is a function from
 integers to integers. We can apply that function:</P>
@@ -191,17 +191,17 @@ preceeding it with the <TT>lazy</TT> keyword:</P>
 
 <PRE class=code>
 val x = lazy 4+5
-<I>val x : int = lazy</I></PRE>
+<I>val x : int = _lazy</I></PRE>
 
-<P>Lazy suspensions are represented by the <TT>lazy</TT> keyword in the
+<P>Lazy suspensions are represented by the <TT>_lazy</TT> notation in the
 interactive toplevel's output, as shown above. The value of <TT>x</TT> will not
 be computed before it is actually required. For example,</P>
 
 <PRE class=code>
 (x,x)
-<I>val it : int * int = (lazy, lazy)</I>
+<I>val it : int * int = (_lazy, _lazy)</I>
 x
-<I>val it : int = lazy</I>
+<I>val it : int = _lazy</I>
 x > 10
 <I>val it : bool = false</I>
 x
@@ -218,13 +218,13 @@ streams of numbers:</P>
 
 <PRE class=code>
 fun enum n = lazy n :: enum (n+1)
-<I>val enum : int -> int list = fn</I>
+<I>val enum : int -> int list = _fn</I>
 val ns = enum 0
-<I>val ns : int list = lazy</I>
+<I>val ns : int list = _lazy</I>
 List.nth (ns,5)
 <I>val it : int = 5</I>
 ns
-<I>val it : int list = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: lazy</I></PRE>
+<I>val it : int list = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: _lazy</I></PRE>
 
 <P>In this example, requesting the 5th element of the list forced partial
 evaluation of the list, up to that element.</P>
@@ -234,7 +234,7 @@ evaluation of the list, up to that element.</P>
 <PRE class=code>
 fun mapz f xs = lazy (case xs of nil    => nil
                                | x::xs' => f x :: mapz f xs')
-<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
+<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = _fn</I></PRE>
 
 <P>Note that the <TT>case</TT> expression must be nested inside the
 <TT>lazy</TT> expression - otherwise applying <TT>mapz</TT> would trigger
@@ -245,7 +245,7 @@ definition more elegantly:</P>
 <PRE class=code>
 fun lazy mapz f nil     = nil
   |      mapz f (x::xs) = f x :: mapz f xs
-<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
+<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = _fn</I></PRE>
 
 <P>This derived form is defined such that both definitions of <TT>mapz</TT> are
 equivalent. Let us apply <TT>mapz</TT> to the stream of natural numbers
@@ -253,11 +253,11 @@ to calculate their factorities lazily:</P>
 
 <PRE class=code>
 val facs = mapz fac (enum 0)
-<I>val facs : int list = lazy</I>
+<I>val facs : int list = _lazy</I>
 List.take (facs,7)
 <I>val it : int list = [1, 1, 2, 6, 24, 120, 720]</I>
 facs
-<I>val it : int list = 1 :: 1 :: 2 :: 6 :: 24 :: 120 :: 720 :: lazy</I></PRE>
+<I>val it : int list = 1 :: 1 :: 2 :: 6 :: 24 :: 120 :: 720 :: _lazy</I></PRE>
 
 <DIV class=note>
 <P><EM>Note:</EM> The Inspector observes when lazy suspensions are triggered. If
@@ -278,19 +278,19 @@ lazy tail of <TT>facs</TT> by a (partial) list.</P>
 <PRE class=code>
 fun lazy zipz (x::xs, y::ys) = (x,y) :: zipz (xs,ys)
   |      zipz       _        = nil
-<I>val zipz : 'a list * 'b list -> ('a * 'b) list = fn</I></PRE>
+<I>val zipz : 'a list * 'b list -> ('a * 'b) list = _fn</I></PRE>
 
 <P>It is possible to calculate the stream of Fibonacci numbers using
 <TT>mapz</TT> and <TT>zipz</TT>:</P>
 
 <PRE class=code>
 val rec fibs = 1 :: 1 :: (lazy mapz op+ (zipz (fibs, tl fibs)))
-<I>val it : int list = 1 :: 1 :: lazy</I>
+<I>val it : int list = 1 :: 1 :: _lazy</I>
 List.nth (fibs, 10)
 <I>val it : int = 89</I>
 fibs
 <I>val it : int list =
-   1 :: 1 :: 2 :: 3 :: 5 :: 8 :: 13 :: 21 :: 34 :: 55 :: 89 :: lazy</I></PRE>
+   1 :: 1 :: 2 :: 3 :: 5 :: 8 :: 13 :: 21 :: 34 :: 55 :: 89 :: _lazy</I></PRE>
 
 <P>For more practical applications of laziness, see the standard literature
 on lazy functional programming. Last but not least, note that Alice ML allows
@@ -298,7 +298,7 @@ laziness to be combined freely with side effects:</P>
 
 <PRE class=code>
 val n = lazy (print "Huhu!\n"; 13)
-<I>val n : int = lazy</I>
+<I>val n : int = _lazy</I>
 n+1
 <I>Huhu!
 val it : int = 14</I></PRE>
@@ -316,7 +316,7 @@ expression:</P>
 
 <PRE class=code>
 spawn 45*68
-<I>val it : int = future</I></PRE>
+<I>val it : int = _future</I></PRE>
 
 <P>In this example the value 45*68 is computed in a new thread. The result of
 the <TT>spawn</TT> expression is a <EM>future</EM>, a place-holder for the
@@ -330,14 +330,14 @@ function, which has exponential complexity:</P>
 <PRE class=code>
 fun fib (0 | 1) = 1
   | fib n       = fib (n-1) + fib (n-2)
-<I>val fib : int -> int = fn</I></PRE>
+<I>val fib : int -> int = _fn</I></PRE>
 
 <P>On an ordinary desktop PC, computing <TT>fib 35</TT> will take quite some
 time. We perform that computation concurrently:</P>
 
 <PRE class=code>
 val n = spawn fib 35
-<I>val n : int = future</I></PRE>
+<I>val n : int = _future</I></PRE>
 
 <P>We get back a future, that we can look at using the Inspector:</P>
 
@@ -380,12 +380,12 @@ producer and consumer that are connected through a message stream:</P>
 <PRE class=code>
 fun produce 0 = []
   | produce n = spawn (Thread.sleep (Time.fromSeconds 2); n :: produce (n-1))
-<I>val produce : int -> int list = fn</I>
+<I>val produce : int -> int list = _fn</I>
 fun consume (n::ns) = (print (Int.toString n ^ "\n"); consume ns)
   | consume   nil   = ()
-<I>val consume : int list -> 'a = fn</I>
+<I>val consume : int list -> 'a = _fn</I>
 spawn consume (produce 5)
-<I>val it : unit = future
+<I>val it : unit = _future
 5
 4
 3
@@ -409,7 +409,7 @@ explicitly:</P>
 
 <PRE class=code>
 lazy 3+4
-<I>val it : int = lazy</I>
+<I>val it : int = _lazy</I>
 Future.await it
 <I>val it : int = 7</I></PRE>
 
@@ -424,14 +424,14 @@ future, the failure exception will be re-raised at the point of request:</P>
 
 <PRE class=code>
 spawn (raise Domain)
-<I>val it : 'a = future</I>
+<I>val it : 'a = _future</I>
 [it]
-<I>val it : 'a list = [raise]</I>
+<I>val it : 'a list = [_failed{|Domain|}]</I>
 hd it + 1
 <I>uncaught exception Domain</I></PRE>
 
-<P>In the second output, the interactive toplevel uses the keyword
-<TT>raise</TT> to indicate a failed future.</P>
+<P>In the second output, the interactive toplevel uses the notation
+<TT>_failed{|exn|}</TT> to indicate a future with exception <TT>exn</TT>.</P>
 
 <P>See the <A href="futures.html">manual page</A> on futures for a detailed
 discussion of concurrency, futures, and failure.</P>
@@ -472,14 +472,14 @@ open Promise
 val ...
 ...</I>
 val p : int promise = promise ()
-<I>val p : int Promise.promise = promise{|future|}</I></PRE>
+<I>val p : int Promise.promise = promise{|_future|}</I></PRE>
 
 <P>an associated future is created along with it. This future can be obtained as
 follows:</P>
 
 <PRE class=code>
 val x = future p
-<I>val x : int = future</I></PRE>
+<I>val x : int = _future</I></PRE>
 
 <P>Such a <EM>promised future</EM> behaves like a concurrent future, in
 particular by allowing dataflow synchronisation. But unlike a concurrent or
@@ -501,11 +501,11 @@ the future:</P>
 
 <PRE class=code>
 val p : int promise = promise ()
-<I>val p : int Promise.promise = promise{|future|}</I>
+<I>val p : int Promise.promise = promise{|_future|}</I>
 fail (p, Domain)
 <I>val it : unit = ()</I>
 p
-<I>val it : int Promise.promise = promise{|raise|}</I></PRE>
+<I>val it : int Promise.promise = promise{|_failed{|Domain|}|}</I></PRE>
 
 <P>The future will be failed with the exception you pass to the <TT>fail</TT>
 function. Any subsequent attempt to request the future will cause raise of that
@@ -552,7 +552,7 @@ let
 in
     iter (l1, p); future p
 end
-<I>val append : 'a list * 'a list -> 'a list = fn</I></PRE>
+<I>val append : 'a list * 'a list -> 'a list = _fn</I></PRE>
 
 <!--
 <P class=note><EM>Note:</EM> When entering this example interactively you have
@@ -660,12 +660,12 @@ queue. That ensures thread-safity.<P>
 
 <PRE class=code>
 val ch : int Chan.chan = Chan.chan ()
-<I>val ch : int Chan.chan = val</I>
+<I>val ch : int Chan.chan = _val</I>
 inspect ch
 <I>val it : unit = ()</I></PRE>
 
 <P class=note><I>Note:</I> The interactive top-level prints the channel value
-as <TT>val</TT>, indicating an abstract type that cannot be shown. The
+as <TT>_val</TT>, indicating an abstract type that cannot be shown. The
 Inspector allows looking at values of abstract type, however.</P>
 
 <P align=center><IMG src="inspector-conc-4.jpg" border=0 alt="Alice Inspector"></P>
@@ -690,7 +690,7 @@ thread scheduling:</P>
 
 <PRE class=code>
 fun client _ = spawn (fib 20; Chan.get ch)
-<I>val client : 'a -> int = fn</I>
+<I>val client : 'a -> int = _fn</I>
 inspect (List.tabulate (5, client))
 <I>val it : unit = ()</I>
 Chan.put (ch, 1); Chan.put (ch, 2); Chan.put (ch, 3)
@@ -900,7 +900,7 @@ structure Num' = unpack Pickle.load ("Num." ^ Pickle.extension) : NUM where type
 
 <PRE class=code>
 Num'.add (Num.fromInt 4, Num.fromInt 5)
-<I>val it : Num'.t = val</I></PRE>
+<I>val it : Num'.t = _val</I></PRE>
 
 <P>Note however, that the type <TT>Num'.t</TT> is still abstract and
 incompatible to <TT>int</TT>:</P>
@@ -923,14 +923,14 @@ does not unify with
 functors can be pickled as well:</P>
 
 <PRE class=code>
-functor MkHello(val who : string) =
+functor MkHello (val who : string) =
 struct
     val _ = print ("Hello " ^ who ^ "!\n")
 end
-<I>functor MkHello : fct(_id2 : sig val who : string end) -> sig end</I>
-signature MK_HELLO = fct(val who : string) -> sig val s : string end
+<I>functor MkHello : fct (_id2 : sig val who : string end) -> sig end</I>
+signature MK_HELLO = fct (val who : string) -> sig val s : string end
 <I>signature MK_HELLO =
-   fct(_id3 : sig val who : string end) -> sig val s : string end</I>
+   fct (_id3 : sig val who : string end) -> sig val s : string end</I>
 Pickle.save ("MkHello." ^ Pickle.extension, pack MkHello :> MK_HELLO)
 <I>val it : unit = ()</I></PRE>
 -->
@@ -1004,7 +1004,7 @@ accessing a structure field:</P>
 
 <PRE class=code>
 Fac.fac
-<I>val it : int -> int = lazy</I></PRE>
+<I>val it : int -> int = _lazy</I></PRE>
 
 <P>The function is represented by a <A href="#laziness">lazy future</A>. The
 component will be evaluated when its content is first requested:</P>
@@ -1177,7 +1177,7 @@ import structure Fac50 from "Fac50"
 <I>### loaded signature from file:/home/rossberg/src/stockhausen/doc/homepage/Fac50
 structure Fac50 : sig val x : int end = Fac50</I>
 Fac50.x
-<I>val it : int = lazy</I>
+<I>val it : int = _lazy</I>
 Future.await Fac50.x
 <I>val it : int =
    30414093201713378043612608166064768844377641568960512000000000000</I></PRE>
@@ -1274,9 +1274,9 @@ references.</P>
 <PRE class=code>
 fun fib (0 | 1) = 1
   | fib n       = fib (n-1) + fib (n-2)
-<I>val fib : int -> int = fn</I>
+<I>val fib : int -> int = _fn</I>
 val fib' = Remote.proxy fib
-<I>val fib' : int -> int = fn</I></PRE>
+<I>val fib' : int -> int = _fn</I></PRE>
 
 <P>The resulting function has the same type as the function it references. When
 it is applied, all arguments are forwarded to the original function, and the
@@ -1370,7 +1370,7 @@ one using <A href="#concurrency">functional threads</A>!</P>
 
 <PRE class=code>
 spawn Server.compute (fib, 30)
-<I>val it : int = future</I></PRE>
+<I>val it : int = _future</I></PRE>
 
 <P>Functional threads and futures hence are a high-level mechanism to improve
 <EM>lag latency</EM> in distributed applications - a client can proceed
@@ -1420,9 +1420,9 @@ open Linear
 
 <PRE class=code>
 val #[x,y,z] = vec (3, [1`#10])
-<I>val x : term = fd (val)
-val y : term = fd (val)
-val z : term = fd (val)</I></PRE>
+<I>val x : term = FD (_val)
+val y : term = FD (_val)
+val z : term = FD (_val)</I></PRE>
 
 <P>The arguments to <TT>vec</TT> specify the number of constraint variables
 (the size of the vector) and the initial domain {1,...,10} of each of these
@@ -1531,7 +1531,7 @@ in
     {S,E,N,D,M,O,R,Y}
 end
 <I>val money :
-   unit -> {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} = fn</I></PRE>
+   unit -> {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} = _fn</I></PRE>
 
 <P>The Send More Money problem cannot be solved using constraint propagation
 alone. Search is required to reduce the problem space until constraint
@@ -1548,8 +1548,8 @@ predefined search engines can be used:</P>
 Search.searchAll money
 <I>val it :
    {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} list =
-   [{D = fd (val), E = fd (val), M = fd (val), N = fd (val), O = fd (val),
-     R = fd (val), S = fd (val), Y = fd (val)}]</I></PRE>
+   [{D = FD (_val), E = FD (_val), M = FD (_val), N = FD (_val), O = FD (_val),
+     R = FD (_val), S = FD (_val), Y = FD (_val)}]</I></PRE>
 
 <P>Using the inspector, we can easily look at the solution:</P>
 
