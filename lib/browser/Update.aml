@@ -1,0 +1,114 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Reflect from "x-alice:/lib/system/Reflect";
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Types from "Types"
+import structure Helper from "Helper"
+import structure MainDictionary from "MainDictionary"
+import structure TransientDictionary from "TransientDictionary"
+import structure Dictionaries from "Dictionaries"
+import structure Layout from "Layout"
+import structure Server from "Server"
+import signature UPDATE from "UPDATE-sig"
+
+import structure TextIO from "x-alice:/lib/system/TextIO"
+
+local
+    open Types Helper 
+in
+
+structure Update :> UPDATE = 
+    struct
+	
+	exception UpdateError
+	
+	val minCounter = ref (MainDictionary.getHighestIndexAssigned
+			      (Dictionaries.dict))
+
+	(* updateChild *)
+	fun updateChild (p,i,n) = case p of
+	    Concat(r) => Array.update(getKids(p),i,n)
+          | Container(r) => Array.update(getKids(p),i,n)
+          | RelNode(r) => #content(r) := n
+          | _ => raise UpdateError
+
+        (* setDazzled *)
+        fun setDazzled n = case n of
+	    Simple(r) => ( #status(r) := DAZZLED
+			 ; setDazzled(getParent(n)) )
+          | Concat(r) => ( #status(r) := DAZZLED
+                         ; setDazzled(getParent(n)) )
+          | Container(r) => ( #status(r) := DAZZLED
+                            ; setDazzled(getParent(n)) )
+          | RelNode(r) => ( #status(r) := DAZZLED
+                          ; setDazzled(getParent(n)) )
+          | RelRefNode(r) => ( #status(r) := DAZZLED
+                             ; setDazzled(getParent(n)) )
+          | Limit(r) => ( #status(r) := DAZZLED
+                        ; setDazzled(getParent(n)) )
+          | Empty => ()
+
+        (* tell *)
+	and tell (va,li,f) =  TextIO.print "\nmethod tell: UPDATED !!!\n\n" (*
+	    let val new_li = List.sort
+		(fn (n,m) => Int.compare(getAncIndex n,
+					 getAncIndex m))
+		                         li
+		val update = 
+		    fn n 
+		    => ( setDazzled n
+		       ; let val ind = getAncIndex n
+                             val anc = valOf(MainDictionary.lookup
+					         (Dictionaries.dict,ind))
+                             val t = ( case getDesc(n) of 
+				       VALUE(rr) => #typ(rr)
+				     | _ => raise UpdateError) 
+			     val new = f(va,t,getParent(n),
+					 getIndex(n),
+					 getDepth(n))
+			 in ( minCounter := getAncIndex(hd(new_li))
+			    ; Gtk.objectDestroy(getGroup(n))
+			    ; MainDictionary.update(Dictionaries.dict,
+						    (ind,anc))
+                            ; updateChild(getParent(n),getIndex(n),new)
+			    ; Layout.layout(n)
+                            ; TextIO.print " UPDATED !!! \n") 
+			 (* neu zeichnen / verschieben *) 
+			 end )
+		val mapped_li = List.map update new_li
+	    in ()
+	    end *)
+	    (* nach oben durchgehen, flags auf DAZZLED setzen, 
+	     minCounter setzen und createGraph aufrufen *)
+
+       (* watcher *)
+	and watcher (future,va,f) = 
+	    Thread.thread 
+	    (fn () 
+	     => ( case TransientDictionary.iterLookup 
+		                (Dictionaries.transdict, 
+				 fn (v,l) => UnsafeValue.same(v,va)) of 
+		  NONE => () 
+		| SOME((vv,ll),i)  
+		  => ( Future.await(future)
+		     ; let val new_va = UnsafeValue.cast future
+		       in Server.serve(fn () => tell(new_va,ll,f)) 
+		       end )) )
+end
+
+end
+

@@ -1,0 +1,47 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure Types from "Types"
+
+local
+    open Types
+in
+
+signature UPDATE = 
+    sig
+
+        exception UpdateError
+
+	val minCounter: int ref
+
+	val setDazzled: node -> unit
+	val updateChild: node * int * node -> unit
+
+        (* eigentlicher update-Mechanismus *)
+	val tell: Reflect.value * node list * 
+	          (Reflect.value * Type.t  * node * int * int -> node)
+		  -> unit
+
+        (* constraint watcher *) 
+        val watcher: 
+	    'a  * Reflect.value * 
+	    (Reflect.value * Type.t  * node * int * int -> node)
+	    -> Thread.thread
+
+end
+
+end
