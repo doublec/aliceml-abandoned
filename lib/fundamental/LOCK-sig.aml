@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,7 @@
  *)
 
 import structure __pervasive from "Pervasive"
-import type unit             from "ToplevelTypes"
+import __primitive type unit from "ToplevelTypes"
 
 signature LOCK =						(**)
     sig
