@@ -314,8 +314,8 @@ functor MakeMain(structure Composer: COMPOSER'
 	      Switches.Debug.dumpTarget)]
 
 	fun checkBooleanSwitches (s, (name, switch)::rest) =
-	    if name = "--" ^ s then (switch := true; true)
-	    else if name = "--no-" ^ s then (switch := false; true)
+	    if "--" ^ name = s then (switch := true; true)
+	    else if "--no-" ^ name = s then (switch := false; true)
 	    else checkBooleanSwitches (s, rest)
 	  | checkBooleanSwitches (_, nil) = false
 
