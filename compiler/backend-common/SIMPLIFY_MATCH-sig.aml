@@ -66,9 +66,11 @@ signature SIMPLIFY_MATCH =
 	type consequent = Source.region * O.body option ref
 	type mapping' = (pos * O.idRef) list
 
-	val buildGraph: (Source.region * I.pat * O.body) vector *
+	val buildGraph: Source.region *
+			(Source.region * I.pat * O.body) vector *
 			O.body * bool -> testGraph * consequent list
 
-	val buildFunArgs: (Source.region * I.pat * O.body) vector * O.body ->
-	    O.idDef O.args * testGraph * mapping' * consequent list
+	val buildFunArgs: Source.region *
+			(Source.region * I.pat * O.body) vector * O.body ->
+			O.idDef O.args * testGraph * mapping' * consequent list
     end

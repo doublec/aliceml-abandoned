@@ -706,7 +706,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val region = #1 (Vector.sub (mats', 0))
 		val errStms = raisePrim (region, "General.Match")
 		val (args, graph, mapping, consequents) =
-		    buildFunArgs (mats', errStms)
+		    buildFunArgs (#region info, mats', errStms)
 		val (body, _) = translateGraph (graph, mapping, #region info)
 		val outArityOpt = typToOutArity (getResultType (#typ info))
 	    in
@@ -1003,7 +1003,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
  	and simplifyCase (region, idRef, matches, raiseIdRef, check) =
 	    let
 		val errStms = [O.RaiseStm (region, raiseIdRef)]
- 		val (graph, consequents) = buildGraph (matches, errStms, check)
+ 		val (graph, consequents) =
+		    buildGraph (region, matches, errStms, check)
 		val (body, _) = translateGraph (graph, [(nil, idRef)], region)
 	    in
 		checkReachability consequents;

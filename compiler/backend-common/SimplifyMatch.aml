@@ -807,7 +807,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	type consequent = Source.region * O.body option ref
 	type mapping' = (pos * O.idRef) list
 
-	fun buildGraph (matches, defaultBody, check) =
+	fun buildGraph (region, matches, defaultBody, check) =
 	    let
 		val (graph, consequents) =
 		    Vector.foldr (fn ((region, pat, thenBody),
@@ -824,9 +824,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				       (region, r)::consequents)
 				  end) (Default, nil) matches
 		val defaultGraph = Leaf (defaultBody, ref NONE)
-		val region = if Vector.length matches > 0 then
-				 #1 (Vector.sub (matches, 0))
-			     else O.infoStm (List.hd defaultBody)
 	    in
 		case graph of
 		    Default =>
@@ -940,14 +937,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | process (_, _, _, _) =
 		raise Crash.Crash "SimplifyMatch.process"
 	in
-	    fun buildFunArgs (matches, errStms) =
+	    fun buildFunArgs (region, matches, errStms) =
 		let
 		    val info = infoPat (#2 (Vector.sub (matches, 0)))
 		    val arity =
 			if checkMatches matches then typToArity (#typ info)
 			else Arity.Unary
 		    val (graph, consequents) =
-			buildGraph (matches, errStms, true)
+			buildGraph (region, matches, errStms, true)
 		in
 		    process (arity, graph, consequents, #region info)
 		end
