@@ -378,7 +378,7 @@ structure Backend=
 		fun makefields startwert =
 		    LitHash.foldi
 		    (fn (lit', number, fields) =>
-		     Field ([FPublic, FStatic, FFinal],
+		     Field ([FPublic, FStatic],
 			    fieldname number,
 			    [Classsig (litClass lit')])::fields)
 		    startwert
