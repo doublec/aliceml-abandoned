@@ -2443,7 +2443,7 @@ signature TIME =
   end
 
 
-structure Time :> (TIME where __primitive type time = "time") =
+structure Time :> (TIME (*UNFINISHED where __primitive type time = "time"*)) =
   struct
     open LargeInt		(* +, -, <, >, <=, >=, compare *)
 
@@ -2585,7 +2585,7 @@ signature PROMISE =
   end
 
 
-structure Promise :> (PROMISE where __primitive type 'a promise = "promise") =
+structure Promise :> (PROMISE (*UNFINISHED where __primitive type 'a promise = "promise"*)) =
   struct
     open Cell
 
