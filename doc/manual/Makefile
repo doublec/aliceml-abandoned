@@ -1,8 +1,8 @@
 PHP = php
 
-ifeq ($(STOCKWERK), 1)
+ifeq ($(SEAM), 1)
 INTEROP =
-PLATFORM = stockwerk
+PLATFORM = seam
 else
 INTEROP = interop.html
 PLATFORM = mozart
