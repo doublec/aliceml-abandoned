@@ -62,11 +62,14 @@
 #define RETURN_BOOL(b) RETURN(BOOL_TO_WORD(b));
 #define RETURN_REAL(r) RETURN(Real::New(r)->ToWord());
 
-#define INIT_STRUCTURE(r, s1, s2, f, i) {				      \
+#define INIT_STRUCTURE_N(r, s1, s2, f, i, j) {				      \
   Transform *abstract = INVALID_POINTER;				      \
-  word function = Primitive::MakeFunction(s1 "." s2, f, i, abstract);	      \
+  word function = Primitive::MakeFunction(s1 "." s2, f, i, j, abstract);      \
   r->Init(s2, Closure::New(function, 0)->ToWord());			      \
 }
+
+#define INIT_STRUCTURE(r, s1, s2, f, i) \
+  INIT_STRUCTURE_N(r, s1, s2, f, i, 1)
 
 #define RETURN_STRUCTURE(label, record)		\
   {						\
