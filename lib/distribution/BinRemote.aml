@@ -1,4 +1,4 @@
-		(*
+		    (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
@@ -201,7 +201,10 @@ struct
 	    val part1 = rest2 div 256
 	    val rest  = rest2 mod 256 
 	in
-	    implode [Char.chr part3, Char.chr part2, Char.chr part1, Char.chr rest]
+            implode [Char.chr part3, 
+                     Char.chr part2, 
+                     Char.chr part1, 
+                     Char.chr rest]
 	end
 
     fun strToUint (s, off) =	
@@ -287,7 +290,8 @@ struct
 
     val myPort: int option ref = ref NONE
 
-    fun notFoundHandler (request: message) = (#1 request, BinaryMessage.tagNotFound, "")
+    fun notFoundHandler (request: message) = 
+        (#1 request, BinaryMessage.tagNotFound, "")
 
     structure IntMap = MkHashImpMap(Int)
 
@@ -296,7 +300,9 @@ struct
     fun findHandler i =
 	case IntMap.lookup (handlerMap, i) of
 	    SOME handler => handler
-	|   NONE => (trace ("couldn't find handler for: " ^ Int.toString i ^ "\n"); notFoundHandler)
+        |   NONE => (trace ("couldn't find handler for: " ^ 
+                        Int.toString i ^ "\n"); 
+                     notFoundHandler)
 
     (*--**  Currently have to pass token stream as reference
 	    in order to work around infamous thread space leak
@@ -450,7 +456,8 @@ struct
 		    SOME authority => authority
 		  | NONE => raise Authority
 	    val (host, port) = parseAuthority authority
-	    val path	    = Option.valOf (Int.fromString ( hd (Url.getPath url)))
+            val path	    = Option.valOf (
+                    Int.fromString ( hd (Url.getPath url)))
 	in
 	    request' (host, port, (path, tag, text))
 	end
