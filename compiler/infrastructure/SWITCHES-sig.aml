@@ -5,7 +5,7 @@
  *
  * Copyright:
  *   Andreas Rossberg, 2000-2001
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -53,10 +53,7 @@ sig
 	val dumpFlatteningResult :		bool ref
 	val dumpValuePropagationContext :	bool ref
 	val dumpValuePropagationResult :	bool ref
-	val dumpLivenessAnalysisIntermediate :	bool ref
-	val dumpLivenessAnalysisContext :	bool ref
 	val dumpLivenessAnalysisResult :	bool ref
-	val dumpDeadCodeEliminationResult :	bool ref
 	val dumpTarget :			bool ref
     end
 end

@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -65,14 +65,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tDump environment after value propagation.\n\
 	    \\t--(no-)dump-value-propagation-result\n\
 	    \\t\tDump flat representation after value propagation.\n\
-	    \\t--(no-)dump-liveness-analysis-intermediate\n\
-	    \\t\tDump flat representation with liveness annotations.\n\
-	    \\t--(no-)dump-liveness-analysis-context\n\
-	    \\t\tDump set of defined stamps after liveness analysis.\n\
 	    \\t--(no-)dump-liveness-analysis-result\n\
 	    \\t\tDump flat representation after liveness analysis.\n\
-	    \\t--(no-)dump-dead-code-elimination-result\n\
-	    \\t\tDump flat representation after dead code elimination.\n\
 	    \\t--(no-)dump-target\n\
 	    \\t\tDump target code representation.\n"
 
@@ -98,14 +92,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	      Debug.dumpValuePropagationContext),
 	     ("dump-value-propagation-result",
 	      Debug.dumpValuePropagationResult),
-	     ("dump-liveness-analysis-intermediate",
-	      Debug.dumpLivenessAnalysisIntermediate),
-	     ("dump-liveness-analysis-context",
-	      Debug.dumpLivenessAnalysisContext),
 	     ("dump-liveness-analysis-result",
 	      Debug.dumpLivenessAnalysisResult),
-	     ("dump-dead-code-elimination-result",
-	      Debug.dumpDeadCodeEliminationResult),
 	     ("dump-target",
 	      Debug.dumpTarget)]
 

@@ -5,7 +5,7 @@
  *
  * Copyright:
  *   Andreas Rossberg, 2000
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -55,10 +55,7 @@ struct
 	val dumpFlatteningResult		= ref false
 	val dumpValuePropagationContext		= ref false
 	val dumpValuePropagationResult		= ref false
-	val dumpLivenessAnalysisIntermediate	= ref false
-	val dumpLivenessAnalysisContext		= ref false
 	val dumpLivenessAnalysisResult		= ref false
-	val dumpDeadCodeEliminationResult	= ref false
 	val dumpTarget				= ref false
     end
 end
