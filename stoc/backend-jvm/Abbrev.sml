@@ -76,6 +76,7 @@ structure Abbrev  =
 	fun mApply n = (IVal, applyName n, (valList n, [Classsig IVal]))
 	val MGetBuiltin = (CBuiltin, "getBuiltin", ([Classsig CStr], [Classsig IVal]))
 	fun mSetContent n = (IConVal, "set", (valList n, [Voidsig]))
+	val MExit = ("java/lang/System", "exit", ([Intsig], [Voidsig]))
 
 	(* runtime builtins *)
 	val BUnit          = ("de/uni_sb/ps/dml/runtime/Constants/dmlunit", [Classsig CName])

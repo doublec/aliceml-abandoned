@@ -234,7 +234,7 @@ structure CodeGen =
 	  | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
 
 	(* entry point *)
-	fun genComponentCode (debug, verbose, optimize, lmaa, lines, name, (components, _, program)) =
+	fun genComponentCode (debug, verbose, optimize, lmaa, lines, wait, name, (components, _, program)) =
 	    let
 		fun loadComponents ((Id (_, stamp', _), name')::rest, akku) =
 		    loadComponents
@@ -254,6 +254,7 @@ structure CodeGen =
 		OPTIMIZE := optimize;
 		LINES := lines;
 		LMAA := lmaa;
+		WAIT := wait;
 		Class.setInitial name;
 		if !VERBOSE >=2 then
 		    (print ("thisStamp: "^Stamp.toString thisStamp^"\n");
@@ -842,18 +843,23 @@ structure CodeGen =
 		    let
 			val stamp' = Stamp.new()
 		    in
-			[Line line,
-			 Multi (expCode (exp', curFun, curCls)),
-			 Astore stamp',
-			 (if !VERBOSE >= 1 then
-			      Multi [Getstatic FOut,
-				     Aload stamp',
-				     Invokevirtual MPrint]
-			  else Nop),
-			 Ldc (JVMString (Class.getInitial()^".pickle")),
-			 Aload stamp',
-			 Invokestatic MPickle,
-			 Pop]
+			Line line ::
+			Multi (expCode (exp', curFun, curCls)) ::
+			Astore stamp' ::
+			(if !VERBOSE >= 1 then
+			     Multi [Getstatic FOut,
+				    Aload stamp',
+				    Invokevirtual MPrint]
+			 else Nop) ::
+			Ldc (JVMString (Class.getInitial()^".pickle")) ::
+			Aload stamp' ::
+			Invokestatic MPickle ::
+			Pop ::
+			(if !WAIT
+			     then [Nop]
+			 else
+			     [Iconst 0,
+			      Invokestatic MExit])
 		    end
 
 	  | decCode (IndirectStm (_, ref (SOME body')), curFun, curCls) =
@@ -1555,9 +1561,9 @@ structure CodeGen =
 	    end
 	  | expCodeClass _ = Crash.crash "CodeGen.expCodeClass"
 	and
-	    compile prog = genComponentCode (0,0,2,false,false,"Emil", imperatifyString prog)
+	    compile prog = genComponentCode (0,0,2,false,false,false,"Emil", imperatifyString prog)
 	and
-	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,"Emil", imperatifyFile f)
+	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,false,"Emil", imperatifyFile f)
 
 	(* make array of value list *)
 	and

@@ -13,7 +13,7 @@
 SMLofNJ.Internals.GC.messages false;
 CM.make();
 
-fun dmlc (_, debug::verbose::optimize::lmaa::lines::x) =
+fun dmlc (_, debug::verbose::optimize::lmaa::lines::wait::x) =
     let
 	val v=valOf (Int.fromString (String.substring(verbose, 2,1)))
 	fun dc (fi::rest) =
@@ -24,14 +24,13 @@ fun dmlc (_, debug::verbose::optimize::lmaa::lines::x) =
 	      valOf (Int.fromString (String.substring(optimize, 2,1))),
 	      valOf (Bool.fromString lmaa),
 	      valOf (Bool.fromString lines),
-	      if (String.extract(fi, size fi-4, NONE)=".dml")
-		  then String.substring(fi, 0, size fi-4)
-	      else fi,
-		  Main.imperatifyFile fi); dc (rest)))
+	      valOf (Bool.fromString wait),
+	      String.substring(fi, 0, size fi-4),
+	      Main.imperatifyFile fi); dc (rest)))
 	  | dc nil = 0
     in
-	(dc x) handle _ => 1
+	(dc x) handle _ => (print "fehler beim Kompilieren"; 1)
     end
-  | dmlc _ = 2
+  | dmlc _ = (print "ungültiger Parameter"; 2)
 
 val _ = SMLofNJ.exportFn (".dmlc", dmlc)
