@@ -46,6 +46,7 @@ structure Abbrev  =
 	val CPlus          = ("de/uni_sb/ps/dml/runtime/Int/plus",
 			      "de/uni_sb/ps/dml/runtime/DMLValue", 0)
 	val CBuiltin       = "de/uni_sb/ps/dml/runtime/Builtin"
+	val CDMLTuple      = "de/uni_sb/ps/dml/runtime/DMLTuple"
 
 	(* Ab hier nur Unfug! *)
 	val CEquals        = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Equals",0 )

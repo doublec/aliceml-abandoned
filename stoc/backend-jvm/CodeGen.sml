@@ -89,9 +89,9 @@ structure CodeGen =
 		local
 		    val localscount = ref 1
 		    val stack:int list ref = ref nil
-		    val register: int StampHash.t    = StampHash.new 88
-		    val lambda  : stamp StampHash.t  = StampHash.new 88
-		    val fields  : string StampHash.t = StampHash.new 88
+		    val register: int StampHash.t    = StampHash.new ()
+		    val lambda  : stamp StampHash.t  = StampHash.new ()
+		    val fields  : string StampHash.t = StampHash.new ()
 		in
 		    (* Nummer des nächsten freien lokalen Registers der aktuellen Methode. *)
 		    fun nextFree () = (localscount := !localscount + 1;
@@ -173,8 +173,8 @@ structure CodeGen =
 
 	structure FreeVars =
 	    struct
-		val free:stamp list StampHash.t=StampHash.new (toplevel div 20)
-		val defFun:stamp StampHash.t=StampHash.new (toplevel div 5)
+		val free:stamp list StampHash.t=StampHash.new ()
+		val defFun:stamp StampHash.t=StampHash.new ()
 
 		(* Freie Variablen einer Id setzen oder auslesen *)
 		fun setVars (stamp', freeVarList) =
@@ -200,7 +200,7 @@ structure CodeGen =
 	(* Zuordnung von formalen Parametern auf zugehoerige Funktions-Stamps *)
 	structure LambdaIds =
 	    struct
-		val lambdas:id StampHash.t=StampHash.new (toplevel div 20)
+		val lambdas:id StampHash.t=StampHash.new ()
 
 		val stack = ref [Id ((0,0),toplevel,InId)]:id list ref
 
@@ -240,8 +240,7 @@ structure CodeGen =
 
 	structure RecordLabel =
 	    struct
-		val arity: int StringListHash.t
-		    = StringListHash.new 88
+		val arity: int StringListHash.t = StringListHash.new ()
 		val number = ref 0
 
 		fun fieldname number = "arity"^Int.toString number
@@ -259,7 +258,7 @@ structure CodeGen =
 
 		fun generate () =
 		    let
-			fun codeall ((strs, aritynumber), acc) =
+			fun codeall (strs, aritynumber, acc) =
 			    let
 				val size=List.length strs
 				fun codeone (str, (acc, n)) =
@@ -271,7 +270,7 @@ structure CodeGen =
 					     Dup::
 					     (Ldc (JVMString str))::
 					     (Invokespecial (CLabel, "<init>",
-							     ([Classsig CString], Voidsig)))::
+							     ([Classsig CString], [Voidsig])))::
 					     Aastore::
 					     acc)
 					val d = n+1
@@ -319,26 +318,36 @@ structure CodeGen =
 			if LambdaIds.isSelfCall stamp'
 			    then ()
 			else
-			    ScopedStampSet.insert (free, stamp')
+			    (ScopedStampSet.insert (free, stamp');
+			     print ("inserted "^Int.toString stamp'^"\n"))
 		    fun delete (Id (_,stamp',_)) =
-			if ScopedStampSet.member(free,stamp')
-			    then ScopedStampSet.delete(free, stamp')
-			else ()
+			(ScopedStampSet.deleteExistent(free, stamp')
+			 handle ScopedStampSet.Delete _ => print "nicht geloescht:\n";
+			 print ("deleted "^Int.toString stamp'^"\n");
+			 if ScopedStampSet.member(free, stamp')
+			     then print "isdrin\n"
+			 else ();
+			     ScopedStampSet.foldScope (fn (x,_) => if x=stamp' then
+						       print "isdochdrin" else ()) () free
+				 )
+
 		    fun get () = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
 
 		    (* Betreten einer neuen Subfunktion. *)
 		    fun enter () =
-			ScopedStampSet.insertScope free;
+			(print "ENTER scope\n";
+			 ScopedStampSet.insertScope free)
 
 		    (* Verlassen der Subfunktion. *)
 		    fun exit () =
-			ScopedStampSet.mergeScope free
+			(print "LEAVE scope\n";
+			 ScopedStampSet.mergeScope free)
 		end
 	in
 	    fun freeVarsExp (LitExp _) = ()
 	      | freeVarsExp (VarExp (_, id')) = fV.insert id'
 	      | freeVarsExp (ConAppExp (_, id', id'')) = (fV.insert id'; fV.insert id'')
-	      | freeVarsExp (TupExp (_,ids)) = app fV.insert ids
+	      | freeVarsExp (TupExp ((i,_),ids)) = (print ("TupExp "^(Int.toString i));app fV.insert ids)
 	      | freeVarsExp (RecExp (_,labids)) = app (fn (lab, id') => fV.insert id') labids
 	      | freeVarsExp (SelExp _) = ()
 	      | freeVarsExp (FunExp(_,_, idbodys)) =
@@ -346,7 +355,7 @@ structure CodeGen =
 		    fun freeVarsFun ((OneArg (id' as Id (_,stamp',_)),body')::idbodys') =
 			(fV.enter();
 			 Lambda.push id';
-			 app freeVarsDec (List.rev body');
+			 freeVarsDecs body';
 			 fV.delete id';
 			 FreeVars.setVars (stamp',fV.get ());
 			 FreeVars.setFun id';
@@ -374,18 +383,18 @@ structure CodeGen =
 
 	    and freeVarsDec (RaiseStm(_,id')) = fV.insert id'
 	      | freeVarsDec (HandleStm(_,body',id',body'')) = (print "HandleExp";
-							       app freeVarsDec (List.rev body');
-							       app freeVarsDec (List.rev body'');
+							       freeVarsDecs body'';
+							       freeVarsDecs body';
 							       FreeVars.setFun id';
 							       fV.delete id'; print "/HandleExp\n")
-	      | freeVarsDec (EndHandleStm(_,body')) = app freeVarsDec (List.rev body')
-	      | freeVarsDec (TestStm(_,id',test',body',body'')) =(app freeVarsDec (List.rev body');
-								app freeVarsDec (List.rev body'');
-								freeVarsTest test';
-								fV.insert id')
-	      | freeVarsDec (SharedStm(_,body',raf as ref 0)) = (raf := ~1; app freeVarsDec (List.rev body'))
+	      | freeVarsDec (EndHandleStm(_,body')) = freeVarsDecs body'
+	      | freeVarsDec (TestStm(_,id',test',body',body'')) =(freeVarsDecs  body'';
+								  freeVarsDecs  body';
+								  freeVarsTest test';
+								  fV.insert id')
+	      | freeVarsDec (SharedStm(_,body',raf as ref 0)) = (raf := ~1; freeVarsDecs body')
 	      | freeVarsDec (SharedStm _) = ()
-	      | freeVarsDec  (ValDec(_,id',exp', _)) = (print "ValDec";
+	      | freeVarsDec (ValDec(_,id',exp', _)) = (print "ValDec";
 						  freeVarsExp exp';
 						  print "/exp";
 						  FreeVars.setFun id';
@@ -409,12 +418,21 @@ structure CodeGen =
 	      | freeVarsDec (ExportStm _) = ()
 	    and
 		freeVarsTest (LitTest _) = ()
-	      | freeVarsTest (ConTest(id',NONE)) = fV.delete id'
-	      | freeVarsTest (ConTest(id',SOME id'')) = (fV.delete id'; fV.delete id'')
+	      | freeVarsTest (ConTest(id',NONE)) = fV.insert id'
+	      | freeVarsTest (ConTest(id',SOME id'')) = (fV.insert id'; fV.delete id'')
 	      | freeVarsTest (RecTest stringlablist) =
 		app (fn (_,id') => fV.delete id') stringlablist
-	      | freeVarsTest (TupTest lablist) = app (fn id' => fV.delete id') lablist
+	      | freeVarsTest (TupTest lablist) = app fV.delete lablist
 	      | freeVarsTest (LabTest(_,id')) = fV.delete id'
+
+	    and freeVarsDecs (decs) =
+		(app freeVarsDec (List.rev decs)
+		 (*;app (fn
+		      (ValDec (_,id',_,_)) => fV.delete id'
+		    | RecDec (_,idexps,_) => app (fn (id',_) => fV.delete id') idexps
+		    | ConDec (_,id',_,_) => fV.delete id'
+		    | _ => ())
+		 decs*))
 	end
 
 (* Das macht jetzt alles Leif. *)
@@ -468,30 +486,30 @@ structure CodeGen =
 		  diese in einem DML-Thread ablaufen. main erzeugt also lediglich eine neue
 		  Instanz der eigenen Klasse und startet einen neuen Thread. Die eigentliche
 		  Initialisierungsarbeit geschieht in run. *)
-		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],Voidsig),
+		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
 				   Locals 1,
 				   [New name,
 				    Dup,
-				    Invokespecial (name, "<init>", ([], Voidsig)),
-				    Invokevirtual (CThread, "start", ([], Voidsig)),
+				    Invokespecial (name, "<init>", ([], [Voidsig])),
+				    Invokevirtual (CThread, "start", ([], [Voidsig])),
 				    Return], nil)
 		 (* Standardinitialisierung. Die Superklasse wird aufgerufen. *)
 
-		 val clinit = Method([MPublic],"<clinit>",([],Voidsig),
+		 val clinit = Method([MPublic],"<clinit>",([],[Voidsig]),
 				   Locals 6,
 				   RecordLabel.generate(),
 				   nil)
 
-		 val init = Method([MPublic],"<init>",([],Voidsig),
+		 val init = Method([MPublic],"<init>",([],[Voidsig]),
 				   Locals 1,
 				   [Aload 0,
-				    Invokespecial (CDMLThread, "<init>", ([], Voidsig)),
+				    Invokespecial (CDMLThread, "<init>", ([], [Voidsig])),
 				    Return], nil)
 		 (* In run wird die Toplevel-Umgebung aufgebaut. Alle Objekte werden erzeugt
 		  und initialisiert, die Funktionsabschluesse werden gebildet. Anschliessend
 		  wird das Ergebnis zusammen mit den Classfiles in ein Pickle geschrieben.
 		  Dies ist der letzte Schritt des Compilierungsvorganges. *)
-		 val run = Method([MPublic], "run", ([], Voidsig),
+		 val run = Method([MPublic], "run", ([], [Voidsig]),
 				  Locals (Local.max()+1),
 				   iL @
 				   insts @
@@ -505,14 +523,19 @@ structure CodeGen =
 				    New CStr,
 				    Dup,
 				    Ldc (JVMString (name^".pickle")),
-				    Invokespecial (CStr, "<init>", ([Classsig CString], Voidsig)),
+				    Invokespecial (CStr, "<init>",
+						   ([Classsig CString], [Voidsig])),
 				    Aastore,
 				    Dup,
 				    Iconst 1,
 				    Aload (!mainpickle),
 				    Aastore,
-				    Invokespecial (CTuple, "<init>", ([Arraysig, Classsig CVal], Voidsig)),
-				    Invokeinterface (CVal, "apply", ([Classsig CVal], Classsig CVal)),
+				    Invokespecial (CTuple, "<init>",
+						   ([Arraysig, Classsig CVal],
+						    [Voidsig])),
+				    Invokeinterface (CVal, "apply",
+						     ([Classsig CVal],
+						      [Classsig CVal])),
 				    Pop,
 				    Comment "Generate" ] @
 				   [Return],
@@ -527,6 +550,20 @@ structure CodeGen =
 		 schreibs(name^".j",classToJasmin class)
 	     end
 	     )
+
+	and builtinStamp stamp' =
+	    if stamp'=stamp_plus then CPlus else
+		if stamp'=stamp_Match then CMatch else
+		    if stamp'=stamp_false then CFalse else
+			if stamp'=stamp_true then CTrue else
+			    if stamp'=stamp_nil then CNil else
+				if stamp'=stamp_cons then CCons else
+				    if stamp'=stamp_ref then CRef else
+					if stamp'=stamp_Bind then CBind else
+					    if stamp'=stamp_eq then CEquals else
+						if stamp'=stamp_assign then CAssign else
+						    ("","",0)
+
 
 	and decListCode decs = List.concat (map decCode decs)
 
@@ -563,7 +600,8 @@ structure CodeGen =
 				in
 				    [New className,
 				     Dup,
-				     Invokespecial (className, "<init>", ([],Voidsig)),
+				     Invokespecial (className, "<init>",
+						    ([],[Voidsig])),
 				     Astore loc] @
 				    (funList rest)
 				end
@@ -578,12 +616,14 @@ structure CodeGen =
 				      Dup] @
 				     (idCode id') @
 				     [Invokespecial (CConVal, "<init>",
-						     ([Classsig CConstructor], Voidsig)),
+						     ([Classsig CConstructor],
+						      [Voidsig])),
 				      Dup,
 				      Astore loc] @
 				     (idCode id'') @
 				     [Invokeinterface (CConVal, "setContent",
-						       ([Classsig CVal], Voidsig))])
+						       ([Classsig CVal],
+							[Voidsig]))])
 			      | VarExp (_, id') => (idCode id'@
 						    [Astore loc])
 			      (* ConVal *)
@@ -595,13 +635,15 @@ structure CodeGen =
 			      | RecExp _ =>
 				    [New CRecord,
 				     Dup,
-				     Invokespecial (CRecord,"<init>", ([],Voidsig)),
+				     Invokespecial (CRecord,"<init>",
+						    ([],[Voidsig])),
 				     Astore loc]
 			      (* Tuple *)
 			      | TupExp _ =>
 				    [New CTuple,
 				     Dup,
-				     Invokespecial (CTuple,"<init>", ([],Voidsig)),
+				     Invokespecial (CTuple,"<init>",
+						    ([],[Voidsig])),
 				     Astore loc]
 			in
 			    one @ init ids''
@@ -619,7 +661,6 @@ structure CodeGen =
 			@
 			(Pop::
 			 evalexp idexps')
-			
 		      | evalexp nil = nil
 		in
 		    val expcode = evalexp idexps
@@ -640,7 +681,8 @@ structure CodeGen =
 			[New CConstructor,
 			 Dup,
 			 Ldc (JVMString constructorName),
-			 Invokespecial (CConstructor, "<init>", ([Classsig CString],Voidsig)),
+			 Invokespecial (CConstructor, "<init>",
+					([Classsig CString],[Voidsig])),
 			 Astore loc]
 		    end
 		else
@@ -650,7 +692,8 @@ structure CodeGen =
 			[New CName,
 			 Dup,
 			 Ldc (JVMString nameName),
-			 Invokespecial (CName, "<init>", ([Classsig CString],Voidsig)),
+			 Invokespecial (CName, "<init>",
+					([Classsig CString],[Voidsig])),
 			 Astore loc]
 		    end
 	    end
@@ -658,45 +701,49 @@ structure CodeGen =
 		 [New CExWrap,
 		  Dup] @
 		 (idCode id') @
-		 [Invokespecial(CExWrap,"<init>",([Classsig CVal],Voidsig)),
+		 [Invokespecial(CExWrap,"<init>",
+				([Classsig CVal],[Voidsig])),
 		  Athrow]
 	  | decCode (TestStm(_,id' as Id (_,stamp',_),test',body',body'')) =
 	    (* teste id' mit test'. body' ist then-Fall, body'' else-Fall *)
 	    let
 		val danach = Label.new ()
 		val elselabel = Label.new ()
-		val zuerst = [Dup] (* (case id' of Id (_,stomp, _) => print ("Stomp"^(Int.toString stomp));[Comment "Hi7", Aload (Local.get id')]) *)
+		val zuerst = [] (* (case id' of Id (_,stomp, _) => print ("Stomp"^(Int.toString stomp));[Comment "Hi7", Aload (Local.get id')]) *)
 
-		val e1 = List.concat (map decCode body')
-		val e2 = List.concat (map decCode body'')
 		fun testCode (LitTest lit') =
 		    let
 			val litcode = expCode (LitExp((~1,~1),lit'))
 		    in
 			litcode @
-			[Aload (Local.get stamp'),
-			 Invokevirtual (CObj, "equals", ([Classsig CObj],Boolsig)),
+			(idCode id') @
+			[Invokevirtual (CObj, "equals",
+					([Classsig CObj],[Boolsig])),
 			 Ifeq elselabel]
 		    end
-		  | testCode (ConTest(Id (_,stamp'',_),NONE)) =
-		    [Comment "Hi8",
-		     Aload (Local.get stamp'),
-		     Aload (Local.get stamp''),
-		     Ifacmpeq elselabel]
-		  | testCode (ConTest(Id (_,stamp'',_),SOME id''')) =
+		  | testCode (ConTest (id'',NONE)) =
+		    Comment "Hi8" ::
+		    (idCode id') @
+		    (idCode id'') @
+		    [Ifacmpne elselabel]
+		  | testCode (ConTest(id'',SOME id''')) =
 		    let
 			val loc = Local.assign(id''',Local.nextFree())
+			val _ = FreeVars.setFun id'''
 		    in
-			[Comment "Hi9",
-			 Aload (Local.get stamp'),
-			 Dup,
-			 Comment "Hi10",
-			 Aload (Local.get stamp''),
-			 Checkcast CConVal,
-			 Invokevirtual (CConVal, "sameConstructor", ([Classsig CConstructor],Intsig)),
-			 Ifeq elselabel,
-			 Invokevirtual (CConVal, "getContent",([],Classsig CVal)),
-			 Astore loc]
+			Comment "Hi9" ::
+			 (idCode id') @
+			 [Checkcast CConVal,
+			  Invokeinterface (CConVal, "getConstructor",
+					   ([], [Classsig CConstructor])),
+			  Comment "Hi10"] @
+			 (idCode id'') @
+			 (Ifacmpne elselabel ::
+			  (idCode id')) @
+			 [Checkcast CConVal,
+			  Invokeinterface (CConVal, "getContent",
+					   ([],[Classsig CVal])),
+			  Astore loc]
 		    end
 		  | testCode (RecTest stringid) =
 		    (* Arity laden, vergleichen, dann binden *)
@@ -732,15 +779,16 @@ structure CodeGen =
 			(Getstatic (RecordLabel.insert
 				    (stringids2strings (stringid, nil)))) ::
 			(Invokespecial (CRecordArity,"<init>",
-					([Arraysig,Classsig CLabel],Voidsig))) ::
+					([Arraysig,Classsig CLabel],
+					 [Voidsig]))) ::
 			(Comment "Hi11") ::
 			(Aload (Local.get stamp')) ::
 			(Invokevirtual (CRecord,"getArity",
-					([],Classsig CRecordArity))) ::
+					([],[Classsig CRecordArity]))) ::
 			(Ifacmpne elselabel) ::
 			(idCode id') @
 			[Invokevirtual (CRecord,"getValues",
-					([],Classsig ("["^CVal)))] @
+					([],[Arraysig, Classsig CVal]))] @
 			(bindit(stringid,0))
 		    end
 		  | testCode (TupTest ids) =
@@ -767,12 +815,15 @@ structure CodeGen =
 			    end
 			  | bindit (nil,_) = nil
 		    in
-			[Aload (Local.get stamp'),
-			 Invokevirtual (CTuple,"getArity",([],Intsig)),
+			idCode id'@
+			[Checkcast CDMLTuple,
+			 Invokevirtual (CDMLTuple,"getArity",([],[Intsig])),
 			 Iconst (length ids),
 			 Ificmpne elselabel] @
-			 (idCode id') @
-			 [Invokevirtual (CTuple,"getValues",([],Classsig ("["^CVal)))] @
+			(idCode id') @
+			[Checkcast CDMLTuple,
+			 Invokevirtual (CDMLTuple,"getValues",
+					([],[Arraysig, Classsig CVal]))] @
 			(bindit(ids,0))
 		    end
 		  | testCode test' = raise Debug (Test test')
@@ -780,10 +831,10 @@ structure CodeGen =
 	    in
 		(*zuerst @ *)
 		(testCode test') @
-		e1 @
+		(List.concat (map decCode body')) @
 		[Goto danach,
 		 Label elselabel] @
-		e2 @
+		(List.concat (map decCode body'')) @
 		[Label danach]
 	    end
 
@@ -858,7 +909,8 @@ structure CodeGen =
 			 b1 @
 			 [Goto nocatch] @
 			 [Label using,
-			  Invokevirtual (CExWrap,"getValue",([],Classsig CVal)),
+			  Invokevirtual (CExWrap,"getValue",
+					 ([],[Classsig CVal])),
 			  Astore loc] @
 			 b2 @
 			 [Label nocatch]
@@ -870,38 +922,37 @@ structure CodeGen =
 	  | decCode dings = raise Debug (Dec dings)
 	and
 	    idCode (id' as Id(_,stamp',_)) =
-	    (if stamp'=stamp_false then [Getstatic CFalse] else
-		 if stamp'=stamp_true  then [Getstatic CTrue] else
-		     if stamp'=stamp_nil   then [Getstatic CNil] else
-			 if stamp'=stamp_cons  then [Getstatic CCons] else
-			     if stamp'=stamp_ref   then [Getstatic CRef] else
-				 if stamp'=stamp_Match then [Getstatic CMatch] else
-				     if stamp'=stamp_Bind  then [Getstatic CBind] else
-					 if stamp'=stamp_eq    then [Getstatic CEquals] else
-					     if stamp'=stamp_assign then [Getstatic CAssign] else
-						 if stamp'=stamp_plus (* plus *) then
-						     [Getstatic CPlus]
-						 else
-						     let
-							 val _ = print("("^(Int.toString stamp')^" Stamp in "^(Int.toString (Local.get stamp'))^")\n")
-							 val isFree = not ((FreeVars.getFun stamp') = Lambda.top ())
-						     in
-							 if isFree then (* bei Rekursion reicht eigentlich [Aload 0] *)
-							     if stamp'=(stampFromId (LambdaIds.getId (Lambda.top()))) then
-								 [Comment "Hi 42",
-								  Aload 0]
-							     else
-								 [Comment ("Hi. Stamp="^(Int.toString stamp')^". Lambda = "^Int.toString (Lambda.top())^" in "^Int.toString (Local.get stamp')^")\n"),
-								  Aload 0,
-								  Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)]
-							 else
-							     if stampFromId id' = Lambda.top() then
-								 [Comment "Hi.Parm",
-								  Aload 1]
-							     else
-								 [Comment "Hi6",
-								  Aload (Local.get stamp')]
-						     end)
+	    let
+		val bstamp = builtinStamp stamp'
+	    in
+		if bstamp<>("","",0) then [Getstatic bstamp]
+		else
+		    let
+			val _ = print("("^(Int.toString stamp')^" Stamp in "^
+				      (Int.toString (Local.get stamp'))^")\n")
+			val isFree = not ((FreeVars.getFun stamp') = Lambda.top ())
+		    in
+			if isFree then (* bei Rekursion reicht eigentlich [Aload 0] *)
+			    if stamp'=(stampFromId (LambdaIds.getId (Lambda.top()))) then
+				[Comment "Hi 42",
+				 Aload 0]
+			    else
+				[Comment ("Hi. Stamp="^(Int.toString stamp')^
+					  ". Lambda = "^Int.toString (Lambda.top())^
+					  " in "^Int.toString (Local.get stamp')^
+					  ". Fun = "^(Int.toString
+						      (FreeVars.getFun stamp'))^"\n"),
+				 Aload 0,
+				 Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)]
+			else
+			    if stamp' = Lambda.top() then
+				[Comment "Hi.Parm",
+				 Aload 1]
+			    else
+				[Comment "Hi6",
+				 Aload (Local.get stamp')]
+		    end
+	    end
 	and
 	    idArgCode (OneArg id') = idCode id'
 
@@ -916,7 +967,8 @@ structure CodeGen =
 		 Iconst (List.length ids),
 		 Anewarray CVal]@
 		(iac (ids, nil))@
-		[Invokespecial (CTuple, "<init>", ([Arraysig, Classsig CVal], Voidsig))]
+		[Invokespecial (CTuple, "<init>",
+				([Arraysig, Classsig CVal], [Voidsig]))]
 	    end
 
 	  | idArgCode (RecArgs stringids) =
@@ -943,7 +995,8 @@ structure CodeGen =
 		[New CTuple,
 		 Dup] @
 		(iac (stringids, nil, nil))@
-		[Invokespecial (CTuple, "<init>", ([Arraysig, Classsig CVal], Voidsig))]
+		[Invokespecial (CTuple, "<init>",
+				([Arraysig, Classsig CVal], [Voidsig]))]
 	    end
 
 	(*	  | expCode (SeqExp(_, exps)) =
@@ -959,16 +1012,19 @@ structure CodeGen =
 	    expCode (AppExp(_,id' as Id(_,stamp',_),ida'')) =
 	    if stamp'=stamp_builtin then
 		idArgCode ida'' @
-		[Invokestatic (CBuiltin, "getBuiltin", ([Classsig CStr], Classsig CVal))]
+		[Invokestatic (CBuiltin, "getBuiltin",
+			       ([Classsig CStr], [Classsig CVal]))]
 	    else
 		idCode id' @
 		(idArgCode ida'') @
-		[Invokeinterface (CVal, "apply", ([Classsig CVal], Classsig CVal))]
+		[Invokeinterface (CVal, "apply",
+				  ([Classsig CVal], [Classsig CVal]))]
 	  | expCode (BuiltinAppExp (_, name, ids)) =
 		(case name of
 		     "print" => (Getstatic COut::
 				 (idCode (hd ids))@
-				 [Invokevirtual (CPrintStream, "print", ([Classsig CObj],Voidsig)),
+				 [Invokevirtual (CPrintStream, "print",
+						 ([Classsig CObj],[Voidsig])),
 				  Getstatic CUnit])
 		   | _ => nil)
 
@@ -1036,42 +1092,53 @@ structure CodeGen =
 					  val loc = Local.getLambda stamp'
 				      in
 					  if loc= ~1 (* dann baue Objekt *)
-					      then [New className,
-						    Dup,
-						    Invokespecial (className, "<init>",([],Voidsig))]
+					      then
+						  [New className,
+						   Dup,
+						   Invokespecial (className,
+								  "<init>",
+								  ([],
+								   [Voidsig]))]
 					  else
 					      [Comment "Hi2", Aload loc]
 				      end
 			 (* 2. *)
 			 local
 			     fun loadFreeVar stamp'' =
-				 if stamp''=stamp_plus then
-				     [Dup,
-				      Getstatic CPlus,
-				      Putfield (className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0)]
-				 else
-				     if FreeVars.getFun stamp'' = Lambda.top() then
-					 if stamp'' <> stampFromId(LambdaIds.getId stamp')
-					     then
-						 (print ("bearbeite "^Int.toString stamp'^" in "^Int.toString(Lambda.top())^"\n");
-						  (* if Local.get id' = ~1 then
-						   raise Debug (Ias FreeVars.array)
-					 else *)
-						  [Dup,
-						   Comment ("Hi3: id="^Int.toString (Local.get stamp')),
-						   Aload (Local.get stamp''),
-						   Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
-						   Comment ("load local variable")])
-					 else nil
+				 let
+				     val bstamp = builtinStamp stamp''
+				 in
+				     if bstamp<>("","",0)
+					 then
+					     [Dup,
+					      Getstatic bstamp,
+					      Putfield (className^"/"^
+							(Local.fieldNameFromStamp stamp''),
+							CVal, 0)]
 				     else
-					 (print ("bearbeite "^Int.toString stamp'^" in "^Int.toString(Lambda.top())^"\n");
-					  [Dup,
-					   Aload 0,
-					   Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
-						    Int.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
-						    Int.toString (Lambda.top())),
-					   Getfield(Class.getCurrent()^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
-					   Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0)])
+					 if FreeVars.getFun stamp'' = Lambda.top() then
+					     if stamp'' <> stampFromId(LambdaIds.getId stamp')
+						 then
+						     (print ("mache "^Int.toString stamp'^" in "^Int.toString(Lambda.top())^"\n");
+						      (* if Local.get id' = ~1 then
+						       raise Debug (Ias FreeVars.array)
+					     else *)
+						      [Dup,
+						       Comment ("Hi3: id="^Int.toString (Local.get stamp'')),
+						       Aload (Local.get stamp''),
+						       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
+						       Comment ("load local variable")])
+					     else nil
+					 else
+					     (print ("bearbeite "^Int.toString stamp'^" in "^Int.toString(Lambda.top())^"\n");
+					      [Dup,
+					       Aload 0,
+					       Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
+							Int.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
+							Int.toString (Lambda.top())),
+					       Getfield(Class.getCurrent()^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
+					       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0)])
+				 end
 			 in
 			     val _ = print "Jetzt kommen die Loadvars\n"
 			     val loadVars = List.concat (map loadFreeVar freeVarList)
@@ -1155,7 +1222,10 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			     [atCodeInt arity,
 			      Anewarray CVal] @
 			     loadids @
-			     [Invokespecial (CRecord,"<init>",([Arraysig, Classsig CLabel, Arraysig, Classsig CVal],Voidsig)),
+			     [Invokespecial (CRecord,"<init>",
+					     ([Arraysig, Classsig CLabel,
+					       Arraysig, Classsig CVal],
+					      [Voidsig])),
 			      Comment "Record ]"]
 		     in
 			 result
@@ -1178,11 +1248,11 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			   | StringLit s => Ldc (JVMString s)
 			   | WordLit w   => atCodeInt (LargeInt.toInt (LargeWord.toLargeInt w))
 			 val jType = case lit' of
-			     CharLit _   => ([Intsig],Voidsig)
-			   | IntLit _    => ([Intsig],Voidsig)
-			   | RealLit _   => ([Floatsig],Voidsig)
-			   | StringLit _ => ([Classsig CString], Voidsig)
-			   | WordLit _   => ([Intsig],Voidsig)
+			     CharLit _   => ([Intsig],[Voidsig])
+			   | IntLit _    => ([Intsig],[Voidsig])
+			   | RealLit _   => ([Floatsig],[Voidsig])
+			   | StringLit _ => ([Classsig CString], [Voidsig])
+			   | WordLit _   => ([Intsig],[Voidsig])
 			 and scon = case lit' of
 			     CharLit _   => CInt
 			   | IntLit _    => CInt
@@ -1216,7 +1286,9 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			  Iconst arity,
 			  Anewarray CVal]@
 			 ids (longids, 0)@
-			 [Invokespecial (CTuple, "<init>", ([Arraysig, Classsig CVal], Voidsig))]
+			 [Invokespecial (CTuple, "<init>",
+					 ([Arraysig, Classsig CVal],
+					  [Voidsig]))]
 		     end
 
 	  | expCode (VarExp(_,id')) =
@@ -1228,7 +1300,8 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		     [New CSel,
 		      Dup,
 		      Ldc (JVMString lab'),
-		      Invokespecial (CSel, "<init>",([Classsig CString],Voidsig))]
+		      Invokespecial (CSel, "<init>",
+				     ([Classsig CString],[Voidsig]))]
 
 	  | expCode (ConExp (_, id', _)) =
 		     idCode id'
@@ -1236,7 +1309,8 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	  | expCode (ConAppExp (_, id', id'')) =
 		     idCode id' @
 		     (idCode id'') @
-		     [Invokeinterface (CVal, "apply", ([Classsig CVal], Classsig CVal))]
+		     [Invokeinterface (CVal, "apply",
+				       ([Classsig CVal], [Classsig CVal]))]
 
 	  | expCode _ = raise Error "boom"
 	and
@@ -1260,14 +1334,18 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		    val initRegister = initializeLocals (Local.max ())
 		end
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
-		val applY =Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),
+		val applY =Method ([MPublic],"apply",([Classsig CVal], [Classsig CVal]),
 				   Locals (Local.max()+1),
 				   (* (Aload 1) :: *) initRegister @ [Comment "Hi"] @ e @ [Comment "Ho", Areturn],
 				   Catch.top())
 		(* die Standard-Initialisierung *)
-		val init = Method ([MPublic],"<init>",([], Voidsig), Locals 1,
-				   [Aload 0, Invokespecial (CFcnClosure, "<init>",([], Voidsig)),Return], nil)
-		    
+		val init = Method ([MPublic],"<init>",([], [Voidsig]), Locals 1,
+				   [Aload 0,
+				    Invokespecial (CFcnClosure, "<init>",
+						   ([], [Voidsig])),
+				    Return],
+				   nil)
+
 		(* die ganze Klasse *)
 		val class = Class([CPublic],className,
 				  CFcnClosure,fieldscode,
