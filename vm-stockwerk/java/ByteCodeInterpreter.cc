@@ -535,6 +535,12 @@ public:
     return Worker::CONTINUE;			\
 }
 
+#define RAISE_EXCEPTION(exn) { \
+  Scheduler::currentData = exn; \
+  Scheduler::currentBacktrace = Backtrace::New(frame->ToWord()); \
+  return Worker::RAISE; \
+}
+
 class JavaDebug {
 public:
 #if defined(STORE_DEBUG)
@@ -897,7 +903,14 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ATHROW:
       {
-	Error("not implemented");
+	Object *exn = Object::FromWord(frame->Pop());
+	if (exn != INVALID_POINTER) {
+	  RAISE_EXCEPTION(exn->ToWord());
+	}
+	else {
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
+	}
       }
       break;
     case Instr::BALOAD:
@@ -2164,8 +2177,8 @@ Interpreter::Result ByteCodeInterpreter::Handle() {
       }
     }
   }
-  // to be done: Add to BackTrace
   Scheduler::PopFrame();
+  Scheduler::currentBacktrace->Enqueue(frame->ToWord());
   return Worker::RAISE;
 }
 
