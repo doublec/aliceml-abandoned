@@ -12,27 +12,27 @@ SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
 all: $(EXES)
 
-alicerun.o:
-	$(CXX) $(CXXFLAGS) -DROOT='--argc?*++argv:usage()' \
+alicerun.o: alicex.cc
+	$(CXX) $(CXXFLAGS) -DROOT='--argc>0?(--brokerArgc,*++argv):usage()' \
         -c alicex.cc -o alicerun.o
 
-alice.o:
+alice.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/ToplevelMain"' \
         -c alicex.cc -o alice.o
 
-alicec.o:
+alicec.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/CompilerMain"' \
         -c alicex.cc -o alicec.o
 
-aliceserv.o:
+aliceserv.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/CompilerServerMain"' \
         -c alicex.cc -o aliceserv.o
 
-alicelink.o:
+alicelink.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Linker"' \
         -c alicex.cc -o alicelink.o
 
-alicedep.o:
+alicedep.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Depend"' \
         -c alicex.cc -o alicedep.o
 
