@@ -479,6 +479,20 @@ structure TypePrivate =
       | openRowType _			= raise Row
 
 
+    fun isEmptyRow(NIL | RHO _)		= true
+      | isEmptyRow _			= false
+
+    fun isUnknownRow NIL		= false
+      | isUnknownRow(RHO _)		= true
+      | isUnknownRow(FLD(l,ts,r))	= isUnknownRow r
+
+    fun headRow(FLD(l,ts,r))		= (l,ts)
+      | headRow _			= raise Row
+
+    fun tailRow(FLD(l,ts,r))		= r
+      | tailRow _			= raise Row
+
+
   (* Closure *)
 
     fun close t =
