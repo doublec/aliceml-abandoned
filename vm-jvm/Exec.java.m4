@@ -79,17 +79,17 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    PickleInputStream in = new PickleInputStream(zip);
 	    DMLValue r = (DMLValue) in.readObject();
 	    fin.close(); in.close(); zip.close();
-	    if (showpickle) {
-		System.out.println(r.toString(3));
-	    }
-	    if (showtime) {
-		time = System.currentTimeMillis();
-	    }
 	    if (traceInstructions) {
 		Runtime.getRuntime().traceInstructions(true);
 	    }
 	    if (traceMethods) {
 		Runtime.getRuntime().traceMethodCalls(true);
+	    }
+	    if (showpickle) {
+		System.out.println(r.toString(3));
+	    }
+	    if (showtime) {
+		time = System.currentTimeMillis();
 	    }
 	    if (r instanceof Record) {
 		fcn = ((Record) r).get("main");
@@ -105,7 +105,6 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-
 	if (showtime) {
 	    System.out.println("Execution time [ms]: "+ (System.currentTimeMillis() - time));
 	}
