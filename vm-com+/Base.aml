@@ -16,8 +16,6 @@
 
 __prebound Prebound
 
-structure Base = struct
-
 datatype bool   = datatype Prebound.bool
 type     int    = Prebound.int
 type     word   = Prebound.word
@@ -677,5 +675,3 @@ val explode = String.explode
 val implode = String.implode
 val substring = String.substring
 val op^ = String.^
-
-end
