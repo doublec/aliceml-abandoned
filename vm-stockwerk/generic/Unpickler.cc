@@ -26,7 +26,6 @@
 #include "generic/Tuple.hh"
 #include "generic/Closure.hh"
 #include "generic/Backtrace.hh"
-#include "generic/TaskStack.hh"
 #include "generic/Transients.hh"
 #include "generic/Interpreter.hh"
 #include "generic/Scheduler.hh"
@@ -182,7 +181,7 @@ public:
       Error("InputStream::Close: illegal node type");
     }
   }
-  Interpreter::Result FillBuffer(TaskStack *taskStack) {
+  Interpreter::Result FillBuffer() {
     switch ((IN_STREAM_TYPE) GetLabel()) {
     case FILE_INPUT_STREAM:
       {
@@ -219,21 +218,21 @@ public:
 	  Error("InputStream::FillBuffer"); //--** raise Io exception
 	} else if (nread == 0) { // at end of file: raise Corrupt exception
 	  Scheduler::currentData = Unpickler::Corrupt;
-	  Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
-	  taskStack->PopFrame();
+	  Scheduler::currentBacktrace =
+	    Backtrace::New(Scheduler::GetAndPopFrame());
 	  return Interpreter::RAISE;
 	} else {
 	  tl += nread;
 	  SetTl(tl);
-	  taskStack->PopFrame();
+	  Scheduler::PopFrame();
 	  return Interpreter::CONTINUE;
 	}
       }
     case STRING_INPUT_STREAM:
       // there is no more data: raise Corrupt exception
       Scheduler::currentData = Unpickler::Corrupt;
-      Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
-      taskStack->PopFrame();
+      Scheduler::currentBacktrace =
+	Backtrace::New(Scheduler::GetAndPopFrame());
       return Interpreter::RAISE;
     default:
       Error("InputStream::FillBuffer: illegal node type");
@@ -278,9 +277,9 @@ public:
     self = new InputInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack);
+  static void PushFrame();
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -291,13 +290,12 @@ public:
 //
 InputInterpreter *InputInterpreter::self;
 
-void InputInterpreter::PushFrame(TaskStack *taskStack) {
-  taskStack->PushFrame(StackFrame::New(INPUT_FRAME, self, 0)->ToWord());
+void InputInterpreter::PushFrame() {
+  Scheduler::PushFrame(StackFrame::New(INPUT_FRAME, self, 0)->ToWord());
 }
 
-Interpreter::Result InputInterpreter::Run(TaskStack *taskStack) {
-  InputStream *is = UnpickleArgs::GetInputStream();
-  return is->FillBuffer(taskStack);
+Interpreter::Result InputInterpreter::Run() {
+  return UnpickleArgs::GetInputStream()->FillBuffer();
 }
 
 const char *InputInterpreter::Identify() {
@@ -352,10 +350,9 @@ public:
     self = new TransformInterpreter();
   }
   // Frame Handling
-  static void TransformInterpreter::PushFrame(TaskStack *taskStack,
-					      Future *future, Tuple *tuple);
+  static void TransformInterpreter::PushFrame(Future *future, Tuple *tuple);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -380,21 +377,18 @@ word ApplyTransform(String *name, word argument) {
 //
 TransformInterpreter *TransformInterpreter::self;
 
-void TransformInterpreter::PushFrame(TaskStack *taskStack,
-				     Future *future, Tuple *tuple) {
-  TransformFrame *frame = TransformFrame::New(self, future, tuple);
-  taskStack->PushFrame(frame->ToWord());
+void TransformInterpreter::PushFrame(Future *future, Tuple *tuple) {
+  Scheduler::PushFrame(TransformFrame::New(self, future, tuple)->ToWord());
 }
 
-Interpreter::Result TransformInterpreter::Run(TaskStack *taskStack) {
+Interpreter::Result TransformInterpreter::Run() {
   TransformFrame *frame =
-    TransformFrame::FromWordDirect(taskStack->GetFrame());
+    TransformFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Future *future = frame->GetFuture();
   Tuple *tuple   = frame->GetTuple();
   String *name   = String::FromWordDirect(tuple->Sel(0));
   word argument  = tuple->Sel(1);
   future->Become(REF_LABEL, ApplyTransform(name, argument));
-  taskStack->PopFrame();
   return Interpreter::CONTINUE;
 }
 
@@ -453,9 +447,9 @@ public:
     self = new UnpickleInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, word block, u_int i, u_int n);
+  static void PushFrame(word block, u_int i, u_int n);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -466,17 +460,16 @@ public:
 //
 UnpickleInterpreter *UnpickleInterpreter::self;
 
-void UnpickleInterpreter::PushFrame(TaskStack *taskStack,
-				    word block, u_int i, u_int n) {
-  taskStack->PushFrame(UnpickleFrame::New(self, block, i, n)->ToWord());
+void UnpickleInterpreter::PushFrame(word block, u_int i, u_int n) {
+  Scheduler::PushFrame(UnpickleFrame::New(self, block, i, n)->ToWord());
 }
 
 // Unpickle Helpers
 static inline
-void PushUnpickleFrame(TaskStack *taskStack, word block, u_int i, u_int n) {
+void PushUnpickleFrame(word block, u_int i, u_int n) {
   if (i != n) {
     Assert(i < n);
-    UnpickleInterpreter::PushFrame(taskStack, block, i, n);
+    UnpickleInterpreter::PushFrame(block, i, n);
   }
 }
 
@@ -500,25 +493,24 @@ word SelFromEnv(word env, u_int index) {
 //--** to be done: more efficient solution
 #define CHECK_EOB()				\
   if (is->IsEOB()) {				\
-    taskStack->PushFrame(frame->ToWord());	\
-    InputInterpreter::PushFrame(taskStack);	\
+    Scheduler::PushFrame(frame->ToWord());	\
+    InputInterpreter::PushFrame();		\
     return Interpreter::CONTINUE;		\
   } else {}
 
-#define CONTINUE()					\
+#define CONTINUE()							     \
   if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) \
-    return Interpreter::PREEMPT;			\
-  else							\
+    return Interpreter::PREEMPT;					     \
+  else									     \
     return Interpreter::CONTINUE;
 
 // Core Unpickling Function
-Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
-  UnpickleFrame *frame = UnpickleFrame::FromWordDirect(taskStack->GetFrame());
-  word x  = frame->GetBlock();
+Interpreter::Result UnpickleInterpreter::Run() {
+  UnpickleFrame *frame =
+    UnpickleFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  word x = frame->GetBlock();
   u_int i = frame->GetIndex();
   u_int n = frame->GetNumberOfElements();
-  // It is safe to pop the frame, since we remember it in variable `frame':
-  taskStack->PopFrame();
   if (i == n) { // we are finished!
     CONTINUE();
   } else {
@@ -531,7 +523,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	u_int y = is->GetUInt(); CHECK_EOB();
 	Set(x, i, Store::IntToWord(y));
 	is->Commit();
-	PushUnpickleFrame(taskStack, x, i + 1, n);
+	PushUnpickleFrame(x, i + 1, n);
 	CONTINUE();
       }
       break;
@@ -540,7 +532,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	u_int y = is->GetUInt(); CHECK_EOB();
 	Set(x, i, Store::IntToWord(-(y + 1)));
 	is->Commit();
-	PushUnpickleFrame(taskStack, x, i + 1, n);
+	PushUnpickleFrame(x, i + 1, n);
 	CONTINUE();
       }
       break;
@@ -553,7 +545,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, y->ToWord());
 	AddToEnv(env, y->ToWord());
 	is->Commit();
-	PushUnpickleFrame(taskStack, x, i + 1, n);
+	PushUnpickleFrame(x, i + 1, n);
 	CONTINUE();
       }
       break;
@@ -581,7 +573,8 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	  break;
 	default:
 	  Scheduler::currentData = Unpickler::Corrupt;
-	  Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+	  Scheduler::currentBacktrace =
+	    Backtrace::New(Scheduler::GetAndPopFrame());
 	  return Interpreter::RAISE;
 	}
 	is->Commit();
@@ -589,7 +582,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, wUnique);
 	AddToEnv(env, wUnique);
 	if (y != INVALID_POINTER) AddToEnv(env, y->ToWord());
-	PushUnpickleFrame(taskStack, x, i + 1, n);
+	PushUnpickleFrame(x, i + 1, n);
 	CONTINUE();
       }
       break;
@@ -602,8 +595,8 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, y);
 	AddToEnv(env, y);
 	is->Commit();
-	PushUnpickleFrame(taskStack, x, i + 1, n);
-	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
+	PushUnpickleFrame(x, i + 1, n);
+	UnpickleInterpreter::PushFrame(y, 0, size);
 	CONTINUE();
       }
       break;
@@ -614,8 +607,8 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, y);
 	AddToEnv(env, y);
 	is->Commit();
-	PushUnpickleFrame(taskStack, x, i + 1, n);
-	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
+	PushUnpickleFrame(x, i + 1, n);
+	UnpickleInterpreter::PushFrame(y, 0, size);
 	CONTINUE();
       }
       break;
@@ -627,8 +620,8 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Set(x, i, y);
 	AddToEnv(env, y);
 	is->Commit();
-	PushUnpickleFrame(taskStack, x, i + 1, n);
-	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
+	PushUnpickleFrame(x, i + 1, n);
+	UnpickleInterpreter::PushFrame(y, 0, size);
 	CONTINUE();
       }
       break;
@@ -640,9 +633,9 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	AddToEnv(env, y);
 	is->Commit();
 	Tuple *tuple = Tuple::New(2);
-	PushUnpickleFrame(taskStack, x, i + 1, n);
-	TransformInterpreter::PushFrame(taskStack, future, tuple);
-	UnpickleInterpreter::PushFrame(taskStack, tuple->ToWord(), 0, 2);
+	PushUnpickleFrame(x, i + 1, n);
+	TransformInterpreter::PushFrame(future, tuple);
+	UnpickleInterpreter::PushFrame(tuple->ToWord(), 0, 2);
 	CONTINUE();
       }
       break;
@@ -651,12 +644,13 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	u_int index = is->GetUInt(); CHECK_EOB();
 	Set(x, i, SelFromEnv(env, index));
 	is->Commit();
-	PushUnpickleFrame(taskStack, x, i + 1, n);
+	PushUnpickleFrame(x, i + 1, n);
 	CONTINUE();
       }
     default:
       Scheduler::currentData = Unpickler::Corrupt;
-      Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+      Scheduler::currentBacktrace =
+	Backtrace::New(Scheduler::GetAndPopFrame());
       return Interpreter::RAISE;
     }
   }
@@ -711,9 +705,9 @@ public:
     self = new PickleUnpackInterpeter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, Tuple *x);
+  static void PushFrame(Tuple *x);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -724,15 +718,14 @@ public:
 //
 PickleUnpackInterpeter *PickleUnpackInterpeter::self;
 
-void PickleUnpackInterpeter::PushFrame(TaskStack *taskStack, Tuple *x) {
-  taskStack->PushFrame(PickleUnpackFrame::New(self, x)->ToWord());
+void PickleUnpackInterpeter::PushFrame(Tuple *x) {
+  Scheduler::PushFrame(PickleUnpackFrame::New(self, x)->ToWord());
 }
 
-Interpreter::Result PickleUnpackInterpeter::Run(TaskStack *taskStack) {
+Interpreter::Result PickleUnpackInterpeter::Run() {
   PickleUnpackFrame *frame =
-    PickleUnpackFrame::FromWordDirect(taskStack->GetFrame());
+    PickleUnpackFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Tuple *x = frame->GetTuple();
-  taskStack->PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = x->Sel(0);
   return Interpreter::CONTINUE;
@@ -784,9 +777,9 @@ public:
     self = new PickleLoadInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, Tuple *x);
+  static void PushFrame(Tuple *x);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -797,17 +790,16 @@ public:
 //
 PickleLoadInterpreter *PickleLoadInterpreter::self;
 
-void PickleLoadInterpreter::PushFrame(TaskStack *taskStack, Tuple *x) {
-  taskStack->PushFrame(PickleLoadFrame::New(self, x)->ToWord());
+void PickleLoadInterpreter::PushFrame(Tuple *x) {
+  Scheduler::PushFrame(PickleLoadFrame::New(self, x)->ToWord());
 }
 
-Interpreter::Result PickleLoadInterpreter::Run(TaskStack *taskStack) {
+Interpreter::Result PickleLoadInterpreter::Run() {
   PickleLoadFrame *frame =
-    PickleLoadFrame::FromWordDirect(taskStack->GetFrame());
+    PickleLoadFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   InputStream *is = UnpickleArgs::GetInputStream();
-  Tuple *x        = frame->GetTuple();
+  Tuple *x = frame->GetTuple();
   is->Close();
-  taskStack->PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = x->Sel(0);
   return Interpreter::CONTINUE;
@@ -826,33 +818,32 @@ void PickleLoadInterpreter::DumpFrame(word) {
 //
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
-Interpreter::Result Unpickler::Unpack(String *s, TaskStack *taskStack) {
+Interpreter::Result Unpickler::Unpack(String *s) {
   Tuple *x = Tuple::New(1);
   InputStream *is = InputStream::NewFromString(s);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
-  taskStack->PopFrame();
-  PickleUnpackInterpeter::PushFrame(taskStack, x);
-  UnpickleInterpreter::PushFrame(taskStack, x->ToWord(), 0, 1);
+  Scheduler::PopFrame();
+  PickleUnpackInterpeter::PushFrame(x);
+  UnpickleInterpreter::PushFrame(x->ToWord(), 0, 1);
   UnpickleArgs::New(is, env->ToWord());
   return Interpreter::CONTINUE;
 }
 
-Interpreter::Result Unpickler::Load(String *filename, TaskStack *taskStack) {
+Interpreter::Result Unpickler::Load(String *filename) {
   char *szFileName = filename->ExportC();
   InputStream *is = InputStream::NewFromFile(szFileName);
   if (is->HasException()) {
     delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
     fprintf(stderr, "file '%s' not found\n", szFileName);
-    Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
-    taskStack->PopFrame();
+    Scheduler::currentBacktrace = Backtrace::New(Scheduler::GetAndPopFrame());
     return Interpreter::RAISE;
   }
-  taskStack->PopFrame();
+  Scheduler::PopFrame();
   Tuple *x = Tuple::New(1);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
-  PickleLoadInterpreter::PushFrame(taskStack, x);
-  UnpickleInterpreter::PushFrame(taskStack, x->ToWord(), 0, 1);
+  PickleLoadInterpreter::PushFrame(x);
+  UnpickleInterpreter::PushFrame(x->ToWord(), 0, 1);
   UnpickleArgs::New(is, env->ToWord());
   return Interpreter::CONTINUE;
 }
