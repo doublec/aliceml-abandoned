@@ -1,4 +1,10 @@
 (*******************************************************************************
+On Tuples and Records:
+
+As in SML, tuples are just a special case of records. We treat them specially
+however for reasons of efficiency. Tuple and record types can be freely
+interconverted.
+
 On Type Functions:
 
 We evaluate type application lazily. Reduction is triggered on demand, i.e. by
@@ -522,6 +528,69 @@ structure TypePrivate =
     fun var k		= ref(VAR(k, !level))
 
 
+  (* Operations on rows *)
+
+    exception Row
+
+    fun unknownRow()		= RHO(ref(!level), NIL)
+    fun emptyRow()		= NIL
+
+    fun openRow(r as RHO _)	= r
+      | openRow r		= RHO(ref(!level), r)
+
+    fun extendRow(l,t,NIL)	= FIELD(l,t,NIL)
+      | extendRow(l,t,RHO(n,r))	= RHO(n, extendRow(l,t,r))
+      | extendRow(l1,t1, r1 as FIELD(l2,t2,r2)) =
+	case Label.compare(l1,l2)
+	  of EQUAL   => raise Row
+	   | LESS    => FIELD(l1, t1, r1)
+	   | GREATER => FIELD(l2, t2, extendRow(l1,t1,r2))
+
+    fun tupToRow  ts			= tupToRow'(ts,0)
+    and tupToRow'(ts,i)			= if i = Vector.length ts then
+					      NIL
+					  else
+					      FIELD(Label.fromInt(i+1),
+						    Vector.sub(ts,i),
+						    tupToRow'(ts,i+1))
+
+    fun rowToTup r			= rowToTup'(r,1,[])
+    and rowToTup'(RHO _,i,ts)		= raise Row
+      | rowToTup'(NIL,i,ts)		= Vector.rev(Vector.fromList ts)
+      | rowToTup'(FIELD(a,t,r),i,ts)	= case Label.toLargeInt a
+					    of NONE     => raise Row
+					     | SOME i'  =>
+					  (if Int.fromLarge i' <> i then
+					      raise Row
+					   else
+					      rowToTup'(r,i+1,t::ts)
+					  ) handle Overflow => raise Row
+
+    fun isTupRow r			= (rowToTup r;true) handle Row => false
+
+    fun isEmptyRow(NIL | RHO _)		= true
+      | isEmptyRow _			= false
+
+    fun isUnknownRow(RHO _)		= true
+      | isUnknownRow _			= false
+
+    fun headRow(FIELD(a,t,r))		= (a,t)
+      | headRow(RHO(_,r))		= headRow r
+      | headRow(NIL)			= raise Row
+
+    fun tailRow(FIELD(a,t,r))		= r
+      | tailRow(RHO(n,r))		= RHO(n, tailRow r)
+      | tailRow(NIL)			= raise Row
+
+    fun lookupRow(NIL, a)		= (print(Label.toString a); raise Row)
+(*DEBUG*)
+      | lookupRow(RHO(_,r), a)		= lookupRow(r,a)
+      | lookupRow(FIELD(a',t,r), a)	= case Label.compare(a',a)
+					    of EQUAL   => t
+					     | LESS    => lookupRow(r,a)
+					     | GREATER => raise Row
+
+
   (* Projections and extractions *)
 
     exception Type
@@ -537,8 +606,10 @@ structure TypePrivate =
 
     fun isUnknown t	= case asType t of HOLE _   => true | _ => false
     fun isArrow t	= case asType t of FUN _    => true | _ => false
-    fun isTuple t	= case asType t of TUPLE _  => true | _ => false
-    fun isProd t	= case asType t of PROD _   => true | _ => false
+    fun isTuple t	= case asType t of PROD r   => isTupRow r
+					 | TUPLE _  => true | _ => false
+    fun isProd t	= case asType t of PROD _   => true
+					 | TUPLE _  => true | _ => false
     fun isSum t		= case asType t of SUM _    => true | _ => false
     fun isVar t		= case asType t of VAR _    => true | _ => false
     fun isCon t		= case asType t of CON _    => true | _ => false
@@ -549,8 +620,11 @@ structure TypePrivate =
     fun isMu t		= case asType t of MU _     => true | _ => false
 
     fun asArrow t	= case asType t of FUN tt    => tt | _ => raise Type
-    fun asTuple t	= case asType t of TUPLE ts  => ts | _ => raise Type
-    fun asProd t	= case asType t of PROD r    => r  | _ => raise Type
+    fun asTuple t	= case asType t of PROD r    => (rowToTup r handle Row
+							       => raise Type)
+					 | TUPLE ts  => ts | _ => raise Type
+    fun asProd t	= case asType t of TUPLE ts  => tupToRow ts
+					 | PROD r    => r  | _ => raise Type
     fun asSum t		= case asType t of SUM r     => r  | _ => raise Type
     fun asVar t		= case asType t of VAR _     => t  | _ => raise Type
     fun asCon t		= case asType t of CON c     => c  | _ => raise Type
@@ -579,8 +653,10 @@ structure TypePrivate =
 
     fun isUnknown' t	= case isType' t of HOLE _   => true | _ => false
     fun isArrow' t	= case isType' t of FUN _    => true | _ => false
-    fun isTuple' t	= case isType' t of TUPLE _  => true | _ => false
-    fun isProd' t	= case isType' t of PROD _   => true | _ => false
+    fun isTuple' t	= case isType' t of PROD r   => isTupRow r
+					  | TUPLE _  => true | _ => false
+    fun isProd' t	= case isType' t of PROD _   => true
+					  | TUPLE _  => true | _ => false
     fun isSum' t	= case isType' t of SUM _    => true | _ => false
     fun isVar' t	= case isType' t of VAR _    => true | _ => false
     fun isCon' t	= case isType' t of CON _    => true | _ => false
@@ -618,8 +694,11 @@ structure TypePrivate =
       | asTypeApply''(ref t', [])		= t'
 
     fun asArrow' t	= case asType' t of FUN tt    => tt | _ => raise Type
-    fun asTuple' t	= case asType' t of TUPLE ts  => ts | _ => raise Type
-    fun asProd' t	= case asType' t of PROD r    => r  | _ => raise Type
+    fun asTuple' t	= case asType' t of PROD r    => (rowToTup r handle Row
+								=> raise Type)
+					  | TUPLE ts  => ts | _ => raise Type
+    fun asProd' t	= case asType' t of TUPLE ts  => tupToRow ts
+					  | PROD r    => r  | _ => raise Type
     fun asSum' t	= case asType' t of SUM r     => r  | _ => raise Type
     fun asVar' t	= case asType' t of VAR _     => t  | _ => raise Type
     fun asCon' t	= case asType' t of CON c     => c  | _ => raise Type
@@ -690,55 +769,6 @@ structure TypePrivate =
       | skolem(ref(LINK t))			= skolem t
       | skolem t				= t
 
-
-
-  (* Operations on rows *)
-
-    exception Row
-
-    fun unknownRow()		= RHO(ref(!level), NIL)
-    fun emptyRow()		= NIL
-
-    fun openRow(r as RHO _)	= r
-      | openRow r		= RHO(ref(!level), r)
-
-    fun extendRow(l,t,NIL)	= FIELD(l,t,NIL)
-      | extendRow(l,t,RHO(n,r))	= RHO(n, extendRow(l,t,r))
-      | extendRow(l1,t1, r1 as FIELD(l2,t2,r2)) =
-	case Label.compare(l1,l2)
-	  of EQUAL   => raise Row
-	   | LESS    => FIELD(l1, t1, r1)
-	   | GREATER => FIELD(l2, t2, extendRow(l1,t1,r2))
-
-    fun tupToRow  ts			= tupToRow'(ts,0)
-    and tupToRow'(ts,i)			= if i = Vector.length ts then
-					      NIL
-					  else
-					      FIELD(Label.fromInt(i+1),
-						    Vector.sub(ts,i),
-						    tupToRow'(ts,i+1))
-
-    fun isEmptyRow(NIL | RHO _)		= true
-      | isEmptyRow _			= false
-
-    fun isUnknownRow(RHO _)		= true
-      | isUnknownRow _			= false
-
-    fun headRow(FIELD(a,t,r))		= (a,t)
-      | headRow(RHO(_,r))		= headRow r
-      | headRow(NIL)			= raise Row
-
-    fun tailRow(FIELD(a,t,r))		= r
-      | tailRow(RHO(n,r))		= RHO(n, tailRow r)
-      | tailRow(NIL)			= raise Row
-
-    fun lookupRow(NIL, a)		= (print(Label.toString a); raise Row)
-(*DEBUG*)
-      | lookupRow(RHO(_,r), a)		= lookupRow(r,a)
-      | lookupRow(FIELD(a',t,r), a)	= case Label.compare(a',a)
-					    of EQUAL   => t
-					     | LESS    => lookupRow(r,a)
-					     | GREATER => raise Row
 
 
   (* Hashing *)
@@ -931,10 +961,12 @@ if isLambda t1 then raise Assert.failure else
 			  handle Domain => raise Unify(t1,t2))
 
 		       | (TUPLE(ts), PROD(r)) =>
-			 recur unifyRow (t1, t2, tupToRow ts, r, PROD)
+			 (recur unifyTupleProd (ts,r,t2)
+			  handle Domain => raise Unify(t1,t2))
 
 		       | (PROD(r), TUPLE(ts)) =>
-			 recur unifyRow (t1, t2, r, tupToRow ts, PROD)
+			 (recur unifyTupleProd (ts,r,t1)
+			  handle Domain => raise Unify(t1,t2))
 
 		       | (PROD(r1), PROD(r2)) =>
 			 recur unifyRow (t1, t2, r1, r2, PROD)
@@ -979,6 +1011,27 @@ if isLambda t1 then raise Assert.failure else
 		    raise Domain
 		else
 		    VectorPair.app unify (ts1,ts2)
+
+	    and unifyTupleProd(ts,r,t) = unifyTupleProd'(ts,r,t,0,false)
+	    and unifyTupleProd'(ts, RHO(_,r), t, i, b) =
+		unifyTupleProd'(ts, r, t, i, true)
+	      | unifyTupleProd'(ts, NIL, t, i, b) =
+		if b orelse i = Vector.length ts then
+		    t := TUPLE ts
+		else
+		    raise Domain
+	      | unifyTupleProd'(ts, r as FIELD(a,t',r'), t, i, b) =
+		case Label.toLargeInt a
+		  of NONE     => raise Domain
+		   | SOME i'  =>
+		case Int.compare(Int.fromLarge i', i+1)
+		     handle Overflow => raise Domain
+		  of EQUAL   => ( unify(t', Vector.sub(ts,i))
+				  handle Subscript => raise Domain
+				; unifyTupleProd'(ts, r', t, i+1, b) )
+		   | GREATER => if not b then raise Domain else
+				  unifyTupleProd'(ts, r, t, i+1, b)
+		   | LESS    => raise Domain (* cannot happen *)
 
 	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
 		let
@@ -1060,6 +1113,12 @@ end*)
 			; trail := (a1,a1') :: !trail
 			; recur equals (t1,t2)
 			)
+
+		    fun equalsTupProd(ts, r, t) =
+			let val ts' = rowToTup r in
+			    t := TUPLE ts'; recur equalsVector (ts,ts')
+			end
+			handle Row => false
 		in
 		    t1 = t2 orelse
 		    case (t1',t2')
@@ -1078,9 +1137,11 @@ end*)
 		       | (TUPLE(ts1), TUPLE(ts2)) =>
 			 recur equalsVector (ts1,ts2)
 
-		       | ( (TUPLE(ts), PROD(r))
-			 | (PROD(r),   TUPLE(ts)) ) =>
-			 recur equalsRow (r, tupToRow ts)
+		       | (TUPLE(ts), PROD(r)) =>
+			 equalsTupProd(ts,r,t2)
+
+		       | (PROD(r), TUPLE(ts)) =>
+			 equalsTupProd(ts,r,t1)
 
 		       | ( (PROD(r1), PROD(r2))
 			 | (SUM(r1),  SUM(r2)) ) =>
