@@ -717,6 +717,12 @@ fun makePopup n =
 	    val d = handleDepth(n)
 	    val r = handleReinspect(n)
 	    val f = handleForce(n)
+	    val width_active =not(case n of 
+				  Limit(r) => getSort(n) = Node.DEPTH_LIMIT
+				    |  _ => false )
+	    val depth_active =not(case n of 
+				  Limit(r) => getSort(n) = Node.WIDTH_LIMIT
+				    |  _ => false )	
 	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT) 
 	    val force_active = (Node.isByneed n) handle _ => false
 	    val delete_active = getParent(n) = Empty orelse 
@@ -805,11 +811,11 @@ fun makePopup n =
 			  items = [MenuObj
 				   {title = "width",
 				    items = width_item_list,
-				    sensitive = true},
+				    sensitive = width_active},
 				   MenuObj
 				   {title = "depth",
 				    items = depth_item_list,
-			  sensitive = true}],
+				    sensitive = depth_active}],
 			  sensitive = true},
 		  MenuObj{title = "Actions",
 			  items = [EntryObj(LABEL("reinspect"),
