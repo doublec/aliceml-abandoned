@@ -156,6 +156,17 @@ OZ_BI_define(Word_toIntX, 1, 1) {
   OZ_RETURN_INT(v >> (MAXWIDTH - w->size));
 } OZ_BI_end
 
+OZ_BI_define(Word_plus, 2, 1) {
+  OZ_declareWord(0, w1);
+  OZ_declareWord(1, w2);
+  if (w1->size != w2->size) {
+    return OZ_raiseDebug(OZ_makeException(OZ_atom("system"), OZ_atom("kernel"),
+					  "Word.binop", 2,
+					  OZ_in(0), OZ_in(1)));
+  }
+  OZ_RETURN_WORD(w1->size, TRUNCATE(w1->value + w2->value, w1->size));
+} OZ_BI_end
+
 OZ_BI_define(Word_orb, 2, 1) {
   OZ_declareWord(0, w1);
   OZ_declareWord(1, w2);
@@ -196,21 +207,21 @@ OZ_BI_define(Word_notb, 1, 1) {
 
 OZ_BI_define(Word_shl, 2, 1) {
   OZ_declareWord(0, w);
-  OZ_declareInt(1, n);
-  OZ_RETURN_WORD(w->size, w->value << n);
+  OZ_declareWord(1, n);
+  OZ_RETURN_WORD(w->size, w->value << n->value);
 } OZ_BI_end
 
 OZ_BI_define(Word_lsr, 2, 1) {
   OZ_declareWord(0, w);
-  OZ_declareInt(1, n);
-  OZ_RETURN_WORD(w->size, w->value >> n);
+  OZ_declareWord(1, n);
+  OZ_RETURN_WORD(w->size, w->value >> n->value);
 } OZ_BI_end
 
 OZ_BI_define(Word_asr, 2, 1) {
   OZ_declareWord(0, w);
-  OZ_declareInt(1, n);
+  OZ_declareWord(1, n);
   signed int v = w->value << (MAXWIDTH - w->size);
-  OZ_RETURN_WORD(w->size, v >> (MAXWIDTH - w->size + n));
+  OZ_RETURN_WORD(w->size, v >> (MAXWIDTH - w->size + n->value));
 } OZ_BI_end
 
 //
@@ -224,6 +235,7 @@ OZ_C_proc_interface *oz_init_module(void) {
     {"size", 1, 1, Word_size},
     {"toInt", 1, 1, Word_toInt},
     {"toIntX", 1, 1, Word_toIntX},
+    {"+", 2, 1, Word_plus},
     {"orb", 2, 1, Word_orb},
     {"xorb", 2, 1, Word_xorb},
     {"andb", 2, 1, Word_andb},

@@ -27,6 +27,7 @@ define
       'fromInt\'': fun {$ N#X} {NativeWord.make N X} end
       'toInt': NativeWord.toInt
       'toIntX': NativeWord.toIntX
+      '+': fun {$ X#Y} {NativeWord.'+' X Y} end
       'orb': fun {$ X#Y} {NativeWord.orb X Y} end
       'xorb': fun {$ X#Y} {NativeWord.xorb X Y} end
       'andb': fun {$ X#Y} {NativeWord.andb X Y} end
