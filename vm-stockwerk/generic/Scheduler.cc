@@ -93,7 +93,7 @@ inline void Scheduler::FlushThread() {
   }
 }
 
-void Scheduler::Run() {
+int Scheduler::Run() {
   while (true) {
     while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
       SwitchToThread();
@@ -184,6 +184,8 @@ void Scheduler::Run() {
 	  currentThread->SetTerminated();
 	  nextThread = true;
 	  break;
+	case Worker::EXIT:
+	  return Store::DirectWordToInt(currentData);
 	}
       }
       if (Store::NeedGC()) {

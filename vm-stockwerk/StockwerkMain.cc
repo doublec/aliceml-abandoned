@@ -118,6 +118,5 @@ DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
   BootLinker::Init(nativeComponents);
   // Link and execute boot component:
   BootLinker::Link(String::New("lib/system/Boot")); //--** to be done
-  Scheduler::Run();
-  return 0;
+  return Scheduler::Run();
 }
