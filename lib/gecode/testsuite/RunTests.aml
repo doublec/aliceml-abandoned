@@ -24,6 +24,7 @@ structure RunTests =
   val testsuite =
       List.map (fn t => t max seeds)
       [
+       seqU 4,
        union, (* ok *)
        unionN 4, (* ok *)
        partitionN 4,

@@ -35,6 +35,7 @@ structure TestSuite :
       val partitionN : tn
       val equals : t
       val convexHull : t
+      val seqU : tn
   end
   =
   struct
@@ -145,7 +146,15 @@ structure TestSuite :
 	fun vEquals1 (a,b) = a=b
 	
 	fun vSeqU (x,a) space = 
-		if (vSeq x space) andalso ((vBoolN vPartitionN1) (x,a) space) then true else false
+(*		if (vSeq x space) andalso ((vBoolN vPartitionN1) (x,a) space) then true else false *)
+	let
+		val b1 = (vSeq x space)
+		val b2 = ((vBoolN vPartitionN1) (x,a) space)
+		val _ = if (not b1) then (print "Not a sequence!") else ()
+		val _ = if (not b2) then (print "Not union!") else ()
+	in
+		if b1 andalso b2 then true else false
+	end
 	
 	fun vConvex a space = 
 	let
@@ -327,12 +336,12 @@ structure TestSuite :
             GecodeTest.narySet ("PartitionN",max,seeds,arity,
                                 FS.partitionN,
                                 vBoolN vPartitionN1)
-(*
+
         fun seqU arity max seeds =
             GecodeTest.narySet ("SeqU",max,seeds,arity,
                                 FS.seqU,
                                 vSeqU)
-*)                              
+                              
         fun equals max seeds =
             GecodeTest.binarySet ("Equals",max,seeds,
                                    FS.equals,
