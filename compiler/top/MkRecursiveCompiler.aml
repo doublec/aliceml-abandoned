@@ -19,7 +19,6 @@ import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig
 import structure Component          from "../../lib/system/Component"
 import structure Url                from "../../lib/utility/Url"
 import structure MkHashImpMap       from "../../lib/utility/MkHashImpMap"
-import structure FromEqHashKey      from "../../lib/utility/HASH_KEY-sig"
 import structure Path               from "../../lib/rtt/Path"
 import structure Inf                from "../../lib/rtt/Inf"
 
@@ -267,7 +266,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	 *                  else A without the component extension
 	 *)
 
-	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
+	structure UrlMap = MkHashImpMap(Url)
 
 	val sigTable: Inf.sign UrlMap.t = UrlMap.new ()
 
