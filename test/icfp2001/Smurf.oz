@@ -10,7 +10,7 @@ import
 export
    'Smurf$': SmurfModule
 define
-   %% Attribute A is one of [b ems i tt u size color]
+   AttributeNames = [b ems i tt u size color]
 
    RootAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
 			       size: 11 color: 9)
@@ -251,11 +251,19 @@ define
 
       for I in FirstElementI..LastElementI do W in
 	 W = V.I
-	 {ForAll [b ems i tt u size color]
+	 {ForAll AttributeNames
 	  proc {$ A} Inherited in
 	     Inherited = {Select.fd Attributes.A W.mother}
 	     W.attributes.A = {Select.fd
 			       {Map Ps fun {$ P} {P A Inherited} end} W.tag}
+	  end}
+      end
+
+      for I in FirstDataItemI..LastDataItemI do W in
+	 W = V.I
+	 {ForAll AttributeNames
+	  proc {$ A}
+	     W.attributes.A = {Select.fd Attributes.A W.mother}
 	  end}
       end
 
@@ -320,7 +328,7 @@ define
 		    [{ByteString.make 'a'}]#false#SampleProperty]
 
    proc {SmurfTest Meaning NumberOfElements}
-      {Explorer.one proc {$ V}
+      {Explorer.all proc {$ V}
 		       V = {Constrain {Reverse Meaning} NumberOfElements}
 		       {FS.distribute naive
 			for I in 1..{Width V} collect: Collect do
