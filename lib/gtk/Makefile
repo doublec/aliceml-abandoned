@@ -37,7 +37,7 @@ OZCOPTS = -z9
 OZTOOL = oztool
 OZTOOLOPTS =
 
-STOC = stoc
+STOC = alicec
 STOCOPTS = #--no-dump-phases
 
 OZSOURCES = GtkCoreOz.oz Gtk.oz Gdk.oz Canvas.oz
