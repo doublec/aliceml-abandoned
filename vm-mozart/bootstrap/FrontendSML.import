@@ -17,7 +17,10 @@ structure FunId: ID
 structure SCon: SCON
 
 ###frontend-sml/INPUT_GRAMMAR.sig
-structure InputGrammar: INPUT_GRAMMAR
+structure InputGrammar: INPUT_GRAMMAR where type Info = Source.region
+
+###frontend-sml/PARSING_ERROR.sig
+structure ParsingError: PARSING_ERROR
 
 ###frontend-sml/DERIVED_FORMS.sig
 structure DerivedForms: DERIVED_FORMS

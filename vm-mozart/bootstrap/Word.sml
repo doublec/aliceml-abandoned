@@ -71,7 +71,8 @@ structure Word =
 	    (* Below, 48 = Char.ord #"0" and 55 = Char.ord #"A" - 10. *)
 	    fun decval c = fromInt (Char.ord c) - fromInt 48;
 	    fun hexval c =
-		if #"0" <= c andalso c <= #"9" then
+		if Char.ord #"0" <= Char.ord c
+		andalso Char.ord c <= Char.ord #"9" then
 		    fromInt (Char.ord c) - fromInt 48
 		else
 		    (fromInt (Char.ord c) - fromInt 55) mod (fromInt 32);
@@ -81,8 +82,10 @@ structure Word =
 		    val source = skipWS getc source
 		    val (isDigit, factor) =
 			case radix of
-			    BIN => (fn c => (#"0" <= c andalso c <= #"1"),  2)
-			  | OCT => (fn c => (#"0" <= c andalso c <= #"7"),  8)
+			    BIN => (fn c => (Char.ord #"0" <= Char.ord c
+				    andalso Char.ord c <= Char.ord #"1"),  2)
+			  | OCT => (fn c => (Char.ord #"0" <= Char.ord c
+				    andalso Char.ord c <= Char.ord #"7"),  8)
 			  | DEC => (Char.isDigit,                          10)
 			  | HEX => (Char.isHexDigit,                       16)
 		    fun dig1 NONE              = NONE

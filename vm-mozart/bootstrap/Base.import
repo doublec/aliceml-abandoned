@@ -5,18 +5,19 @@ import
 __prebound Prebound0
 
 type unit = {}
-datatype bool = true | false
-type int
-type word
-type real
-type string
-type char
+datatype bool = datatype Prebound0.bool
+type int = Prebound0.int
+type word = Prebound0.word
+type real = Prebound0.real
+type string = Prebound0.string
+type char = Prebound0.char
+type 'a vector = 'a Prebound0.vector
 datatype list = datatype Prebound0.list
 datatype ref = datatype Prebound0.ref
 datatype exn = datatype Prebound0.exn
 
-exception Match
-exception Bind
+exception Match = Prebound0.Match
+exception Bind = Prebound0.Bind
 
 infix  7  * / div mod
 infix  6  + - ^
@@ -181,10 +182,13 @@ signature CHAR =
 
 	val ord : char -> int
 	val chr : int -> char
+
+	val isAlphaNum : char -> bool
 	val isDigit : char -> bool
 	val isHexDigit : char -> bool
 	val isSpace : char -> bool
-	val toCString : char -> bool
+	val toLower : char -> char
+	val toCString : char -> string
     end
 
 structure Char: CHAR
@@ -197,29 +201,30 @@ signature STRING =
 	type string = string
 
 	val op^ : string * string -> string
-	val toCString : string * string -> string
-	val str : string * string -> string
-	val size : string * string -> string
-	val substring : string * string -> string
-	val sub : string * string -> string
-	val explode : string * string -> string
+	val toCString : string -> string
+	val str : char -> string
+	val size : string -> int
+	val substring : string * int * int -> string
+	val sub : string * int -> char
+	val explode : string -> char list
 	val extract : string * int * int option -> string
 	val concat : string list -> string
 	val implode : char list -> string
 	val map : (char -> char) -> string -> string
 	val compare : string * string -> order
 	val op< : string * string -> bool
+	val tokens : (char -> bool) -> string -> string list
     end
 
 structure String: STRING
 
-val str : string * string -> string
-val size : string * string -> string
-val concat : string list -> string
-val explode : string * string -> string
-val implode : char list -> string
-val substring : string * string -> string
 val op^ : string * string -> string
+val str : char -> string
+val size : string -> int
+val substring : string * int * int -> string
+val explode : string -> char list
+val concat : string list -> string
+val implode : char list -> string
 
 structure StringCvt:
     sig
@@ -246,6 +251,7 @@ signature INTEGER =
 	val >= : int * int -> bool
 	val < : int * int -> bool
 	val fromString : string -> int option
+	val min : int * int -> int
 	val max : int * int -> int
 	val fromLarge : int -> int
 	val toLarge : int -> int
@@ -255,7 +261,21 @@ structure Int: INTEGER
 
 structure LargeInt:
     sig
-	include INTEGER
+	(*--** include INTEGER *)
+	type int = int
+
+	val op+ : int * int -> int
+	val scan :
+	    StringCvt.radix -> (char, 'a) StringCvt.reader ->
+	    (int, 'a) StringCvt.reader
+	val compare : int * int -> order
+	val toString : int -> string
+	val >= : int * int -> bool
+	val < : int * int -> bool
+	val fromString : string -> int option
+	val max : int * int -> int
+	val fromLarge : int -> int
+	val toLarge : int -> int
 	val fromInt : int -> int
     end
 
@@ -295,14 +315,13 @@ type array = Array.array
 
 structure Vector:
     sig
-	eqtype 'a vector
+	type 'a vector = 'a vector
 
 	val fromList : 'a list -> 'a vector
 	val sub : 'a vector * int -> 'a
 	val tabulate : int * (int -> 'a) -> 'a vector
     end
 
-type 'a vector = 'a Vector.vector
 val vector : 'a list -> 'a vector
 
 from "Base.ozf"

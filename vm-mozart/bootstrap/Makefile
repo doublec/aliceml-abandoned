@@ -48,7 +48,9 @@ MISC_FILES = \
 	$(STOC_DIR)/misc/PRETTY_PRINT.sig \
 	$(STOC_DIR)/misc/PrettyPrint.sml \
 	$(STOC_DIR)/misc/PP_MISC.sig \
-	$(STOC_DIR)/misc/PPMisc.sml
+	$(STOC_DIR)/misc/PPMisc.sml \
+	$(STOC_DIR)/misc/URL.sig \
+	$(STOC_DIR)/misc/Url.sml
 
 ERROR_FILES = \
 	Base.import \
@@ -67,10 +69,27 @@ COMMON_FILES = \
 	Misc.import \
 	Error.import \
 	$(STOC_DIR)/common/Stamp.sml \
+	$(STOC_DIR)/common/StampSet.sml \
+	$(STOC_DIR)/common/StampMap.sml \
+	$(STOC_DIR)/common/NAME.sig \
+	$(STOC_DIR)/common/Name.sml \
+	$(STOC_DIR)/common/LABEL.sig \
+	$(STOC_DIR)/common/Label.sml \
+	$(STOC_DIR)/common/PATH.sig \
+	$(STOC_DIR)/common/Path.sml \
+	$(STOC_DIR)/common/PathSet.sml \
+	$(STOC_DIR)/common/PathMap.sml \
+	$(STOC_DIR)/common/TYPE.sig \
+	$(STOC_DIR)/common/Type.sml \
+	$(STOC_DIR)/common/PP_PATH.sig \
+	$(STOC_DIR)/common/PPPath.sml \
+	$(STOC_DIR)/common/PP_TYPE.sig \
+	$(STOC_DIR)/common/PPType.sml \
 	$(STOC_DIR)/common/INTERMEDIATE_GRAMMAR.sig \
 	$(STOC_DIR)/common/MakeIntermediateGrammar.sml \
 	$(STOC_DIR)/common/IntermediateGrammar.sml \
 	$(STOC_DIR)/common/PREBOUND.sig \
+	$(STOC_DIR)/common/MakePrebound.sml \
 	$(STOC_DIR)/common/Prebound.sml
 
 FRONTEND_COMMON_FILES = \
@@ -81,16 +100,8 @@ FRONTEND_COMMON_FILES = \
 	Error.import \
 	Common.import \
 	$(STOC_DIR)/frontend-common/StringMap.sml \
-	$(STOC_DIR)/frontend-common/StampMap.sml \
-	$(STOC_DIR)/frontend-common/NAME.sig \
-	$(STOC_DIR)/frontend-common/Name.sml \
-	$(STOC_DIR)/frontend-common/LAB.sig \
-	$(STOC_DIR)/frontend-common/Lab.sml \
-	$(STOC_DIR)/frontend-common/PATH.sig \
-	$(STOC_DIR)/frontend-common/Path.sml \
-	$(STOC_DIR)/frontend-common/PathSet.sml \
-	$(STOC_DIR)/frontend-common/TYPE.sig \
-	$(STOC_DIR)/frontend-common/Type.sml \
+	$(STOC_DIR)/frontend-common/FIXITY.sig \
+	$(STOC_DIR)/frontend-common/Fixity.sml \
 	$(STOC_DIR)/frontend-common/INF.sig \
 	$(STOC_DIR)/frontend-common/Inf.sml \
 	$(STOC_DIR)/frontend-common/ABSTRACT_GRAMMAR.sig \
@@ -101,10 +112,6 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/Env.sml \
 	$(STOC_DIR)/frontend-common/ENV0.sig \
 	$(STOC_DIR)/frontend-common/Env0.sml \
-	$(STOC_DIR)/frontend-common/PP_PATH.sig \
-	$(STOC_DIR)/frontend-common/PPPath.sml \
-	$(STOC_DIR)/frontend-common/PP_TYPE.sig \
-	$(STOC_DIR)/frontend-common/PPType.sml \
 	$(STOC_DIR)/frontend-common/PP_INF.sig \
 	$(STOC_DIR)/frontend-common/PPInf.sml \
 	$(STOC_DIR)/frontend-common/ELABORATION_ERROR.sig \
@@ -113,19 +120,6 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/ElaborationPhase.sml \
 	$(STOC_DIR)/frontend-common/TRANSLATION_PHASE.sig \
 	$(STOC_DIR)/frontend-common/TranslationPhase.sml
-
-FRONTEND_SML_LEXER_FILES = \
-	Base.import \
-	Word.import \
-	TextIO.import \
-	MLYacc.import \
-	Misc.import \
-	Error.import \
-	$(STOC_DIR)/frontend-sml/Parser.grm.sig \
-	$(STOC_DIR)/frontend-sml/LEXER_ERROR.sig \
-	$(STOC_DIR)/frontend-sml/LexerError.sml \
-	$(STOC_DIR)/frontend-sml/Lexer.lex.sml \
-	$(STOC_DIR)/frontend-sml/CountPosLexer.sml
 
 FRONTEND_SML_FILES = \
 	Base.import \
@@ -145,16 +139,36 @@ FRONTEND_SML_FILES = \
 	$(STOC_DIR)/frontend-sml/INPUT_GRAMMAR.sig \
 	$(STOC_DIR)/frontend-sml/MakeInputGrammar.sml \
 	$(STOC_DIR)/frontend-sml/InputGrammar.sml \
+	$(STOC_DIR)/frontend-sml/PARSING_ERROR.sig \
+	$(STOC_DIR)/frontend-sml/ParsingError.sml \
+	$(STOC_DIR)/frontend-sml/ABSTRACTION_ERROR.sig \
+	$(STOC_DIR)/frontend-sml/AbstractionError.sml \
 	$(STOC_DIR)/frontend-sml/INFIX.sig \
 	$(STOC_DIR)/frontend-sml/Infix.sml \
 	$(STOC_DIR)/frontend-sml/BIND_ENV.sig \
 	$(STOC_DIR)/frontend-sml/BindEnv.sml \
+	$(STOC_DIR)/frontend-sml/SHARING.sig \
+	$(STOC_DIR)/frontend-sml/Sharing.sml \
 	$(STOC_DIR)/frontend-sml/ABSTRACTION_PHASE.sig \
 	$(STOC_DIR)/frontend-sml/AbstractionPhase.sml \
 	$(STOC_DIR)/frontend-sml/DERIVED_FORMS.sig \
 	$(STOC_DIR)/frontend-sml/DerivedForms.sml \
 	$(STOC_DIR)/frontend-sml/BIND_ENV0.sig \
 	$(STOC_DIR)/frontend-sml/BindEnv0.sml
+
+FRONTEND_SML_LEXER_FILES = \
+	Base.import \
+	Word.import \
+	TextIO.import \
+	MLYacc.import \
+	Misc.import \
+	Error.import \
+	FrontendSML.import \
+	$(STOC_DIR)/frontend-sml/Parser.grm.sig \
+	$(STOC_DIR)/frontend-sml/LEXER_ERROR.sig \
+	$(STOC_DIR)/frontend-sml/LexerError.sml \
+	$(STOC_DIR)/frontend-sml/Lexer.lex.sml \
+	$(STOC_DIR)/frontend-sml/CountPosLexer.sml
 
 FRONTEND_SML_PARSER_FILES = \
 	Base.import \
@@ -182,14 +196,15 @@ BACKEND_COMMON_FILES = \
 	Common.import \
 	$(STOC_DIR)/backend-common/DEBUG.sig \
 	$(STOC_DIR)/backend-common/Debug.sml \
+	$(STOC_DIR)/backend-common/LABEL_SORT.sig \
+	$(STOC_DIR)/backend-common/MakeLabelSort.sml \
+	$(STOC_DIR)/backend-common/LabelSort.sml \
 	$(STOC_DIR)/backend-common/IMPERATIVE_GRAMMAR.sig \
 	$(STOC_DIR)/backend-common/ImperativeGrammar.sml \
 	$(STOC_DIR)/backend-common/OUTPUT_IMPERATIVE_GRAMMAR.sig \
 	$(STOC_DIR)/backend-common/OutputImperativeGrammar.sml \
 	$(STOC_DIR)/backend-common/INTERMEDIATE_AUX.sig \
 	$(STOC_DIR)/backend-common/IntermediateAux.sml \
-	$(STOC_DIR)/backend-common/LABEL_SORT.sig \
-	$(STOC_DIR)/backend-common/MakeLabelSort.sml \
 	$(STOC_DIR)/backend-common/SIMPLIFY_MATCH.sig \
 	$(STOC_DIR)/backend-common/SimplifyMatch.sml \
 	$(STOC_DIR)/backend-common/SIMPLIFY_REC.sig \
@@ -228,7 +243,7 @@ COMPONENTS = \
 	MLYacc \
 	Misc Error Common \
 	FrontendCommon \
-	FrontendSMLLexer FrontendSML FrontendSMLParser FrontendSMLMain \
+	FrontendSML FrontendSMLLexer FrontendSMLParser FrontendSMLMain \
 	BackendCommon BackendMozart \
 	Main Test
 
@@ -265,10 +280,10 @@ Common.aus: $(COMMON_FILES)
 	$(MERGE) $(COMMON_FILES) > $@
 FrontendCommon.aus: $(FRONTEND_COMMON_FILES)
 	$(MERGE) $(FRONTEND_COMMON_FILES) > $@
-FrontendSMLLexer.aus: $(FRONTEND_SML_LEXER_FILES)
-	$(MERGE) $(FRONTEND_SML_LEXER_FILES) > $@
 FrontendSML.aus: $(FRONTEND_SML_FILES)
 	$(MERGE) $(FRONTEND_SML_FILES) > $@
+FrontendSMLLexer.aus: $(FRONTEND_SML_LEXER_FILES)
+	$(MERGE) $(FRONTEND_SML_LEXER_FILES) > $@
 FrontendSMLParser.aus: $(FRONTEND_SML_PARSER_FILES)
 	$(MERGE) $(FRONTEND_SML_PARSER_FILES) > $@
 FrontendSMLMain.aus: $(FRONTEND_SML_MAIN_FILES)

@@ -3,12 +3,54 @@
 import
 
 structure Stamp: STAMP
+structure StampSet: IMP_SET where type item = Stamp.t
+structure StampMap: IMP_MAP where type key = Stamp.t
+
+###common/NAME.sig
+structure Name: NAME
+
+###common/LABEL.sig
+structure Label: LABEL
+
+###common/PATH.sig
+structure Path: PATH
+structure PathSet: IMP_SET where type item = Path.t
+structure PathMap: IMP_MAP where type key = Path.t
+
+###common/TYPE.sig
+structure Type: TYPE
+
+###common/PP_PATH.sig
+structure PPPath: PP_PATH
+
+###common/PP_TYPE.sig
+structure PPType: PP_TYPE
 
 ###common/INTERMEDIATE_GRAMMAR.sig
 functor MakeIntermediateGrammar(type info):
   INTERMEDIATE_GRAMMAR where type info = info
 
+structure IntermediateInfo:
+  sig
+    type lab_info	= { region: Source.region }
+    type id_info	= { region: Source.region }
+    type longid_info	= { region: Source.region }
+    type exp_info	= { region: Source.region, typ: Type.t }
+    type pat_info	= { region: Source.region, typ: Type.t }
+    type 'a field_info	= { region: Source.region }
+    type match_info	= { region: Source.region }
+    type dec_info	= { region: Source.region }
+  end
+
 structure IntermediateGrammar: INTERMEDIATE_GRAMMAR
+  where type lab_info = IntermediateInfo.lab_info
+  where type id_info = IntermediateInfo.id_info
+  where type longid_info = IntermediateInfo.longid_info
+  where type exp_info = IntermediateInfo.exp_info
+  where type pat_info = IntermediateInfo.pat_info
+  where type field_info = IntermediateInfo.field_info
+  where type match_info = IntermediateInfo.match_info
+  where type dec_info = IntermediateInfo.dec_info
 
 ###common/PREBOUND.sig
 structure Prebound: PREBOUND

@@ -10,7 +10,7 @@ structure Assert:
     end
 
 ###misc/HASH_KEY.sig
-structure StringHashKey: HASH_KEY
+structure StringHashKey: HASH_KEY where type t = string
 
 structure WideChar: CHAR = Char
 structure WideString: STRING = String
@@ -19,7 +19,7 @@ structure WideString: STRING = String
 structure Misc: MISC
 
 ###misc/IMP_SET.sig
-functor MakeHashImpSet(Item: HASH_KEY): IMP_SET
+functor MakeHashImpSet(Item: HASH_KEY): IMP_SET where type item = Item.t
 
 ###misc/IMP_MAP.sig
 functor MakeHashImpMap(Key: HASH_KEY): IMP_MAP where type key = Key.t
@@ -44,5 +44,8 @@ structure PrettyPrint: PRETTY_PRINT
 
 ###misc/PP_MISC.sig
 structure PPMisc: PP_MISC
+
+###misc/URL.sig
+structure Url: URL
 
 from "Misc.ozf"

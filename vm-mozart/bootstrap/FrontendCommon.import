@@ -2,21 +2,8 @@
 
 import
 
-structure StampMap: IMP_MAP
-
-###frontend-common/NAME.sig
-structure Name: NAME
-
-###frontend-common/LAB.sig
-structure Lab: LAB
-
-###frontend-common/PATH.sig
-structure Path: PATH
-structure PathSet: IMP_SET
-structure PathMap: IMP_MAP
-
-###frontend-common/TYPE.sig
-structure Type: TYPE
+###frontend-common/FIXITY.sig
+structure Fixity: FIXITY
 
 ###frontend-common/INF.sig
 structure Inf: INF

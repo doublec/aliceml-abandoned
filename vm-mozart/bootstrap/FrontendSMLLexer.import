@@ -27,6 +27,8 @@ functor CountPosLexer(
 		(Lexer.UserDeclarations.svalue, int) LrParser.Token.token
 ) : LEXER
 
-functor LexerError(structure Tokens: Parser_TOKENS): LEXER_ERROR
+functor LexerError(structure Tokens: Parser_TOKENS type error): LEXER_ERROR
+  where type token = (Tokens.svalue, int) Tokens.token
+  where type error = error
 
 from "FrontendSMLLexer.ozf"
