@@ -817,8 +817,8 @@ BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
-	$(ALICEDEP) --seam $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) \
-	> Makefile.bootstrap.depend
+	$(ALICEDEP) --seam $(BUILD2ALICESOURCES) > Makefile.bootstrap.depend
+	$(ALICEDEP) --seam $(BUILD3ALICESOURCES) >> Makefile.bootstrap.depend
 
 -include Makefile.bootstrap.depend
 

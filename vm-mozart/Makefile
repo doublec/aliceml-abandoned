@@ -832,8 +832,8 @@ BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
-	$(ALICEDEP) --mozart $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) \
-	> Makefile.depend
+	$(ALICEDEP) --mozart $(BUILD2ALICESOURCES) > Makefile.depend
+	$(ALICEDEP) --mozart $(BUILD3ALICESOURCES) >> Makefile.depend
 
 -include Makefile.depend
 
