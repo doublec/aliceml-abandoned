@@ -23,13 +23,13 @@ static const BlockLabel REFMAP_LABEL = TUPLE_LABEL;
 // Abstract Data Type: RefMap
 //
 
-class Entry: private Block {
+class RefMapEntry: private Block {
 private:
   enum { KEY_POS, VALUE_POS, PREV_POS, NEXT_POS, SIZE };
 public:
   using Block::ToWord;
 
-  static Entry *New(int key, word value, Entry *next) {
+  static RefMapEntry *New(int key, word value, RefMapEntry *next) {
     Block *b = Store::AllocBlock(ENTRY_LABEL, SIZE);
     b->InitArg(KEY_POS, key);
     b->InitArg(VALUE_POS, value);
@@ -39,12 +39,12 @@ public:
       next->ReplaceArg(PREV_POS, b->ToWord());
     } else
       b->InitArg(NEXT_POS, 0);
-    return static_cast<Entry *>(b);
+    return static_cast<RefMapEntry *>(b);
   }
-  static Entry *FromWordDirect(word w) {
+  static RefMapEntry *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == ENTRY_LABEL && b->GetSize() == SIZE);
-    return static_cast<Entry *>(b);
+    return static_cast<RefMapEntry *>(b);
   }
 
   int GetKey() {
@@ -53,12 +53,12 @@ public:
   word GetValue() {
     return GetArg(VALUE_POS);
   }
-  Entry *GetNext() {
+  RefMapEntry *GetNext() {
     word next = GetArg(NEXT_POS);
     if (next == Store::IntToWord(0))
       return INVALID_POINTER;
     else
-      return Entry::FromWordDirect(next);
+      return RefMapEntry::FromWordDirect(next);
   }
 
   word Unlink() {
@@ -69,11 +69,11 @@ public:
     word prev = GetArg(PREV_POS);
     word next = GetArg(NEXT_POS);
     if (next != Store::IntToWord(0)) {
-      Entry *nextEntry = Entry::FromWordDirect(next);
+      RefMapEntry *nextEntry = RefMapEntry::FromWordDirect(next);
       nextEntry->ReplaceArg(PREV_POS, prev);
     }
     if (prev != Store::IntToWord(0)) {
-      Entry *prevEntry = Entry::FromWordDirect(prev);
+      RefMapEntry *prevEntry = RefMapEntry::FromWordDirect(prev);
       prevEntry->ReplaceArg(NEXT_POS, next);
       return Store::IntToWord(1);
     } else
@@ -107,16 +107,17 @@ public:
     HashTable *hashTable = HashTable::FromWordDirect(GetArg(HASHTABLE_POS));
     word wKey = Store::IntToWord(key);
     if (hashTable->IsMember(wKey)) {
-      Entry *entry = Entry::FromWordDirect(hashTable->GetItem(wKey));
+      RefMapEntry *entry =
+	RefMapEntry::FromWordDirect(hashTable->GetItem(wKey));
       hashTable->DeleteItem(wKey);
       word result = entry->Unlink();
       if (result != Store::IntToWord(1))
 	ReplaceArg(HEAD_POS, result);
     }
     word head = GetArg(HEAD_POS);
-    Entry *headEntry = head == Store::IntToWord(0)?
-      INVALID_POINTER: Entry::FromWordDirect(head);
-    Entry *entry = Entry::New(key, value, headEntry);
+    RefMapEntry *headEntry = head == Store::IntToWord(0)?
+      INVALID_POINTER: RefMapEntry::FromWordDirect(head);
+    RefMapEntry *entry = RefMapEntry::New(key, value, headEntry);
     ReplaceArg(HEAD_POS, entry->ToWord());
     hashTable->InsertItem(wKey, entry->ToWord());
   }
@@ -124,7 +125,8 @@ public:
     word wKey = Store::IntToWord(key);
     HashTable *hashTable = HashTable::FromWordDirect(GetArg(HASHTABLE_POS));
     if (hashTable->IsMember(wKey)) {
-      Entry *entry = Entry::FromWordDirect(hashTable->GetItem(wKey));
+      RefMapEntry *entry =
+	RefMapEntry::FromWordDirect(hashTable->GetItem(wKey));
       hashTable->DeleteItem(wKey);
       word result = entry->Unlink();
       if (result != Store::IntToWord(1))
@@ -140,7 +142,8 @@ public:
     HashTable *hashTable = HashTable::FromWordDirect(GetArg(HASHTABLE_POS));
     if (hashTable->IsMember(wKey)) {
       TagVal *some = TagVal::New(1, 1); // SOME ...
-      Entry *entry = Entry::FromWordDirect(hashTable->GetItem(wKey));
+      RefMapEntry *entry =
+	RefMapEntry::FromWordDirect(hashTable->GetItem(wKey));
       some->Init(0, entry->GetValue());
       return some->ToWord();
     } else {
@@ -154,12 +157,12 @@ public:
   bool IsEmpty() {
     return HashTable::FromWordDirect(GetArg(HASHTABLE_POS))->IsEmpty();
   }
-  Entry *GetHead() {
+  RefMapEntry *GetHead() {
     word head = GetArg(HEAD_POS);
     if (head == Store::IntToWord(0))
       return INVALID_POINTER;
     else
-      return Entry::FromWordDirect(head);
+      return RefMapEntry::FromWordDirect(head);
   }
 };
 
@@ -180,7 +183,7 @@ public:
     self = new RefMapIteratorInterpreter();
   }
   // Frame Handling
-  static void PushFrame(Entry *entry, word closure, operation op);
+  static void PushFrame(RefMapEntry *entry, word closure, operation op);
   // Execution
   virtual Result Run();
   // Debugging
@@ -194,8 +197,8 @@ private:
 public:
   using StackFrame::ToWord;
 
-  static RefMapIteratorFrame *New(Interpreter *interpreter,
-				  Entry *entry, word closure, operation op) {
+  static RefMapIteratorFrame *New(Interpreter *interpreter, RefMapEntry *entry,
+				  word closure, operation op) {
     StackFrame *frame =
       StackFrame::New(REFMAP_ITERATOR_FRAME, interpreter, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
@@ -209,10 +212,10 @@ public:
     return static_cast<RefMapIteratorFrame *>(p);
   }
 
-  Entry *GetEntry() {
-    return Entry::FromWordDirect(GetArg(ENTRY_POS));
+  RefMapEntry *GetEntry() {
+    return RefMapEntry::FromWordDirect(GetArg(ENTRY_POS));
   }
-  void SetEntry(Entry *entry) {
+  void SetEntry(RefMapEntry *entry) {
     ReplaceArg(ENTRY_POS, entry->ToWord());
   }
   word GetClosure() {
@@ -226,7 +229,7 @@ public:
 
 RefMapIteratorInterpreter *RefMapIteratorInterpreter::self;
 
-void RefMapIteratorInterpreter::PushFrame(Entry *entry,
+void RefMapIteratorInterpreter::PushFrame(RefMapEntry *entry,
 					  word closure, operation op) {
   RefMapIteratorFrame *frame =
     RefMapIteratorFrame::New(self, entry, closure, op);
@@ -236,10 +239,10 @@ void RefMapIteratorInterpreter::PushFrame(Entry *entry,
 Interpreter::Result RefMapIteratorInterpreter::Run() {
   RefMapIteratorFrame *frame =
     RefMapIteratorFrame::FromWordDirect(Scheduler::GetFrame());
-  Entry *entry = frame->GetEntry();
+  RefMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
-  Entry *nextEntry = entry->GetNext();
+  RefMapEntry *nextEntry = entry->GetNext();
   if (nextEntry != INVALID_POINTER)
     frame->SetEntry(nextEntry);
   else
@@ -343,7 +346,7 @@ DEFINE1(UnsafeMkRefMap_isEmpty) {
 DEFINE2(UnsafeMkRefMap_app) {
   word closure = x0;
   DECLARE_REF_MAP(refMap, x1);
-  Entry *entry = refMap->GetHead();
+  RefMapEntry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
     RefMapIteratorInterpreter::PushFrame(entry, closure, app);
   RETURN_UNIT;
@@ -352,7 +355,7 @@ DEFINE2(UnsafeMkRefMap_app) {
 DEFINE2(UnsafeMkRefMap_appi) {
   word closure = x0;
   DECLARE_REF_MAP(refMap, x1);
-  Entry *entry = refMap->GetHead();
+  RefMapEntry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
     RefMapIteratorInterpreter::PushFrame(entry, closure, appi);
   RETURN_UNIT;
@@ -362,7 +365,7 @@ DEFINE3(UnsafeMkRefMap_fold) {
   word closure = x0;
   word zero = x1;
   DECLARE_REF_MAP(refMap, x2);
-  Entry *entry = refMap->GetHead();
+  RefMapEntry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
     RefMapIteratorInterpreter::PushFrame(entry, closure, fold);
   RETURN(zero);
@@ -372,7 +375,7 @@ DEFINE3(UnsafeMkRefMap_foldi) {
   word closure = x0;
   word zero = x1;
   DECLARE_REF_MAP(refMap, x2);
-  Entry *entry = refMap->GetHead();
+  RefMapEntry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
     RefMapIteratorInterpreter::PushFrame(entry, closure, foldi);
   RETURN(zero);
