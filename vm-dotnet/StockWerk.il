@@ -236,10 +236,25 @@
       call class System.Object StockWerk.State::Globalize(class StockWerk.StockWert)
       stfld class System.Object StockWerk.Global::Guid
     serialize:
+/*--**
       ldarg.0
       ldarg.1
       ldarg.2
       tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamContext)
+      ret
+*/
+      .locals(value class System.Serialization.SerializationInfo)
+      ldloca.s 0
+      ldarg.0
+      callvirt instance class System.Type System.Object::GetType()
+      ldarg.1
+      call class System.Serialization.SerializationTypeData System.Serialization.SerializationInfoGenerator::GetSerializationTypeData(class System.Type, int32)
+      ldarg.0
+      call instance void System.Serialization.SerializationInfo::.ctor(class System.Serialization.SerializationTypeData, class System.Object)
+      ldarg.0
+      ldloc.0
+      call void System.Serialization.SerializationInfoGenerator::PopulateSerializationInfo(class System.Object, value class System.Serialization.SerializationInfo)
+      ldloc.0
       ret
     }
     .method virtual public class System.Object GetRealObject() {
@@ -317,13 +332,9 @@
   }
 
   .class public Constructor extends StockWerk.Global {
-    .field private class System.Object Guid
     .method public void .ctor() {
       ldarg.0
-      call instance void StockWerk.Global::.ctor()
-      ldarg.0
-      ldnull
-      stfld class System.Object StockWerk.Constructor::Guid
+      tail. call instance void StockWerk.Global::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -389,6 +400,47 @@
       callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
       starg.s 1
       br.s retry
+    }
+  }
+
+  .class sealed public RefConstructor extends StockWerk.StockWert {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.StockWert::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      ldarg.1
+      newobj instance void StockWerk.Ref::.ctor(class StockWerk.StockWert)
+      ret
+    }
+  }
+
+  .class sealed public Ref extends StockWerk.StockWert {
+    .field private class StockWerk.StockWert Value
+    .method public void .ctor(class StockWerk.StockWert) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Ref::Value
+      ret
+    }
+    .method public class StockWerk.StockWert Deref() {
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Ref::Value
+      ret
+    }
+    .method public void Assign(class StockWerk.StockWert) {
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Ref::Value
+      ret
+    }
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
     }
   }
 
@@ -477,7 +529,7 @@
       ldarg.0
       call instance void System.Object::NotifyAll()
       ldarg.0
-      call void System.CriticalSection::Exit(class System.Object)
+      tail. call void System.CriticalSection::Exit(class System.Object)
       ret
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
