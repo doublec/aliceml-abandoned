@@ -84,11 +84,12 @@
 
   <H3>Constructed Values</H3>
   <P>Conceptually, all Alice constructors are unary.  For interoperability,
-    constructors syntactically declared taking a (non-unit) record as argument
-    are treated as <A href="incompatibilities.php3#conarity"><I>n</I>-ary
+    constructors syntactically declared taking a record as argument are
+    treated as <A href="incompatibilities.php3#conarity"><I>n</I>-ary
     constructors</A>.</P>
   <CENTER>
     <TABLE class=dyptic>
+      <TR><TH>Alice Constructed Value<TH>Oz Representation
       <TR>
 	<TD>Constructed value of an <I>n</I>-ary constructor, <I>n</I> &gt; 0
 	<TD>Record with the literal corresponding to the constructor as label
@@ -96,10 +97,21 @@
       <TR><TD><TT>ref </TT><I>x</I><TD><TT>{NewCell </TT><I>x</I><TT>}</TT>
     </TABLE>
   </CENTER>
+  <P>For example, assuming a declaration</P>
+  <PRE>        datatype t1 = C1 of int * int</PRE>
+  <P>the Alice expression <TT>C1 (1, 2)</TT> evaluates to the Oz value
+    <TT>'C1'(1 2)</TT> due to the constructor <TT>C1</TT> being binary.
+    However, assuming the declaration</P>
+  <PRE>        datatype 'a t2 = C2 of 'a</PRE>
+  <P>the Alice expression <TT>C2 (1, 2)</TT> evaluates to the Oz value
+    <TT>'C2'(1#2)</TT> because the constructor <TT>C2</TT> is unary.</P>
 
   <H3>Futures</H3>
+  <P>Alice futures map directly to Oz transients.  Promises are transparent
+    on the Oz side.</P>
   <CENTER>
     <TABLE class=dyptic>
+      <TR><TH>Alice Future<TH>Oz Representation
       <TR><TD>Future<TD>Future
       <TR><TD>By-need future<TD>By-need future
       <TR><TD>Promise<TD>Logic variable
@@ -107,10 +119,13 @@
   </CENTER>
 
   <H3>Other Library Types</H3>
+  <P>Some abstract library types are implemented natively:</P>
   <CENTER>
     <TABLE class=dyptic>
+      <TR><TH>Alice Library Type<TH>Oz Representation
       <TR><TD><TT>array</TT><TD>Array
       <TR><TD><TT>vector</TT><TD>Tuple with label <TT>'#'</TT>
+      <TR><TD><TT>Thread.thread</TT><TD>Thread
     </TABLE>
   </CENTER>
 
@@ -133,11 +148,8 @@
 	  <TT>constructor C</TT>
 	<TD>Identifier name as atom,<BR>e.g., <TT>'x'</TT>, <TT>'C'</TT>
       <TR>
-	<TD>Structure,<BR>e.g., <TT>structure S</TT>
+	<TD>Structure or functor,<BR>e.g., <TT>structure S</TT>
 	<TD>Dollar-prefixed identifier as atom,<BR>e.g., <TT>'$S'</TT>
-      <TR>
-	<TD>Functor,<BR>e.g., <TT>functor F</TT>
-	<TD>Double-dollar-prefixed identifier as atom,<BR>e.g., <TT>'$$F'</TT>
     </TABLE>
   </CENTER>
   <P>Signatures and types are not yet represented at run time.  Note that
