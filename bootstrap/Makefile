@@ -30,10 +30,12 @@ endif
 
 FUNCTORS = Prebound.ozf CodeGen.ozf Main.ozf
 
-.PHONY: all clean
+.PHONY: mozart seam clean
 
-all: alicedep.$(PLATFORM) alicec-mozart.exe \
-	alicec-mozart.$(PLATFORM) alicec-seam.$(PLATFORM)
+mozart: alicedep.$(PLATFORM) alicec-mozart.exe \
+	alicec-mozart.$(PLATFORM)
+
+seam: alicedep.$(PLATFORM) alicec-seam.$(PLATFORM)
 
 alicec-mozart.exe: $(FUNCTORS)
 	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@

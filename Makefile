@@ -35,13 +35,13 @@ install: install-mozart man
 	@cat $(TIMEDIR)1
 	@echo Time for build 3:
 	@cat $(TIMEDIR)3
-	
+
 install-common: install-prelude bootstrap-smlnj doc
 
 install-prelude:
 	@echo Installing Alice to $(PREFIX) for $(PLATFORM)...
 	@echo -------------------------------------------------------------------------------
-	
+
 ##
 ## Sync the global installation with local one
 ##
@@ -54,7 +54,7 @@ install-global: install
 ##
 bootstrap-smlnj:
 	rm -f bootstrap/alicec-*.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
-	(cd bootstrap && make all) || exit 1
+	(cd bootstrap && make $(MAKECMDGOALS:install-%=%)) || exit 1
 
 ##
 ## Documentation
