@@ -208,3 +208,4 @@ clean:
 	-rm -f $(ALLFILES)
 	-rm -f *.ozf */*.ozf */*/*.ozf
 	-rm -f *.ozm */*.ozm */*/*.ozm
+	-rm -f *.ozp */*.ozp */*/*.ozp
