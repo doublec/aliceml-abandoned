@@ -16,7 +16,6 @@
 #pragma interface
 #endif
 
-#include <cstring>
 #include "base.hh"
 #include "headerop.hh"
 #include "pointerop.hh"

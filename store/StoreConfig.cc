@@ -9,7 +9,7 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#include <iostream.h>
+
 #include <cstdio>
 #include <cstdlib>
 
