@@ -63,6 +63,16 @@ then
 fi
 
 ##
+## Build Support Libraries: zlib
+##
+if [ ! -f $SUPPORTDIR/install/$SUPPORTPLATFORM/include/xyz.h ]
+then
+    cd $SUPPORTDIR/zlib &&
+    CC=$CC ./configure --prefix=$SUPPORTDIR/install/$SUPPORTPLATFORM &&
+    make all install distclean || exit 1
+fi
+
+##
 ## Build the Stockwerk
 ##
 (cd vm-stockwerk && make LIGHTNING=${LIGHTNING}) || exit 1
