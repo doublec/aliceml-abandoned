@@ -16,9 +16,9 @@ import signature COMPONENT_MANAGER
 
 signature REMOTE =
     sig
-	exception Ticket
-
 	type ticket = string
+
+	exception Ticket
 
 	val proxy: ('a -> 'b) -> 'a -> 'b
 	val offer: Package.package -> string              (* Pickle.Sited *)
@@ -29,10 +29,8 @@ signature REMOTE =
 
 	functor Take(val ticket: ticket signature S): S   (* Ticket *)
 
-(*
 	functor Execute(val host: string
 			signature RESULT
 			functor Start(ComponentManager:
 				      COMPONENT_MANAGER): RESULT): RESULT
-*)
     end
