@@ -308,7 +308,7 @@ void Disassembler::Start() {
     case AbstractCode::PutNew:
       ID STRING LASTINSTR break;
     case  AbstractCode::PutTag:
-      ID INT IDREFS LASTINSTR break;
+      ID INT INT IDREFS LASTINSTR break;
     case AbstractCode::PutCon:
       ID IDREF IDREFS LASTINSTR break;
     case AbstractCode::PutRef:
@@ -358,9 +358,9 @@ void Disassembler::Start() {
     case AbstractCode::StringTest:
       IDREF STRINGINSTRVEC LASTINSTR break;
     case AbstractCode::TagTest:
-      IDREF NULLARYTAGTESTS NARYTAGTESTS LASTINSTR break;
+      IDREF INT NULLARYTAGTESTS NARYTAGTESTS LASTINSTR break;
     case AbstractCode::CompactTagTest:
-      IDREF IDDEFSOPTINSTRVEC LASTINSTROPT break;
+      IDREF INT IDDEFSOPTINSTRVEC LASTINSTROPT break;
     case AbstractCode::ConTest:
       IDREF NULLARYCONTESTS NARYCONTESTS LASTINSTR break;
     case AbstractCode::VecTest:
