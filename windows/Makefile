@@ -104,7 +104,7 @@ clean-distro:
 clean-seam:
 	(cd seam/build && rm -rf *)
 clean-gecode:
-	(cd seam/build && rm -rf *)
+	(cd gecode/build && rm -rf *)
 clean-alice-ll:
 	(cd alice/build && rm -rf *)
 clean-alice-bootstrap:
