@@ -129,6 +129,9 @@ signature STRING	= STRING
 structure String	= String
 structure WideString	= WideString
 signature SUBSTRING	= SUBSTRING
+structure Substring	= Substring
+signature UNIQUE_STRING	= UNIQUE_STRING
+structure UniqueString	= UniqueString
 signature STRING_CVT	= STRING_CVT
 structure StringCvt	= StringCvt
 
