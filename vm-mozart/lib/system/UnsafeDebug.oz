@@ -15,7 +15,7 @@ import
    System(show)
 export
    'show': Show
-   '$Show': Show
+   '$$Show': Show
 define
    fun {Show X}
       {System.show X} '#'
