@@ -63,10 +63,10 @@ Canvas.dll: Canvas.cs Win32.dll Alice.dll
 Dialog.dll: Dialog.cs Win32.dll Alice.dll
 	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Dialog.cs
 
-Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il
+Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il Base.dll.sig
 	stoc -c Tools.aml -o $@
 
-streams.dll: examples/streams.aml stoc-com+.x86-win32 Skeleton.il
+streams.dll: examples/streams.aml stoc-com+.x86-win32 Skeleton.il Base.dll.sig
 	stoc -c examples/streams.aml -o $@
 
 clean:
