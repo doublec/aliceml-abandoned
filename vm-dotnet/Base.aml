@@ -2108,7 +2108,10 @@ structure Thread : THREAD =
  * Top-level, part 2
  *****************************************************************************)
 
-type array	= Array.array
+type array		= Array.array
+
+exception Option	= Option.Option
+exception Empty		= List.Empty
 
 open General
 
