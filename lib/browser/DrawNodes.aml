@@ -55,7 +55,7 @@ struct
 		       end
 
     fun move(n,x,y) = (move'(n,x,y)
-		       ;(x+ Layout.get_l_xdim(n),
+		       ;(x+ Helper.get_l_xdim(n),
 			 y+get_ydim(n)-1)) (* maybe get_l_xdim 
 					    is 
 					    not sufficient ! *)
@@ -226,8 +226,8 @@ struct
 					      ,upd)
 		      in
 			  (x + (* String.size(#rep(r)) + *) x2   
-			   (* Layout.get_l_xdim(content) *), (* was lxdim *)
-			   y + (* Layout.get_ydim(n)-1 *) y2)
+			   (* Helper.get_l_xdim(content) *), (* was lxdim *)
+			   y + (* Helper.get_ydim(n)-1 *) y2)
 		      end  )
 	    end) *)
       | _ => raise DrawError
