@@ -94,6 +94,7 @@ define
 	 testStm(Coord Id Test
 		 {ShareBody Body1 ShareDict} {ShareBody Body2 ShareDict})
       [] raiseStm(_ _) then Stm
+      [] reraiseStm(_ _) then Stm
       [] sharedStm(Coord Body I) then NewStm in
 	 {Share I ShareDict NewStm}
 	 NewStm = sharedStm(Coord {ShareBody Body ShareDict} I)

@@ -95,7 +95,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val matches = [(coord, pat, translateCont cont)]
 	    in
-		simplifyCase (coord, exp, matches, id_Bind)
+		simplifyCase (coord, exp, matches, id_Bind, false)
 	    end
 	  | translateDec (RecDec (coord, decs), cont) =
 	    let
@@ -392,7 +392,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      (infoExp exp, pat, translateExp (exp, f, cont')))
 		    matches
 	    in
-		simplifyCase (coord, exp, matches', id_Match)
+		simplifyCase (coord, exp, matches', id_Match, false)
 	    end
 	  | translateExp (RaiseExp (coord, exp), _, _) =
 	    let
@@ -418,7 +418,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      (infoExp exp, pat, translateExp (exp, f', cont')))
 		    matches
 		val catchBody =
-		    simplifyCase (coord, catchVarExp, matches', catchId)
+		    simplifyCase (coord, catchVarExp, matches', catchId, true)
 		val contBody =
 		    translateExp  (VarExp (coord', ShortId (coord', id')),
 				   f, cont)
@@ -466,12 +466,14 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		      if isSome bodyOpt then ()
 		      else Error.warn (coord, "unreachable expression"))
 	    consequents
-	and simplifyCase (coord, exp, matches, raiseId) =
+	and simplifyCase (coord, exp, matches, raiseId, isReraise) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (info coord, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
-		val errStms = [O.RaiseStm (info coord, raiseId)]
+		val errStms =
+		    if isReraise then [O.ReraiseStm (info coord, raiseId)]
+		    else [O.RaiseStm (info coord, raiseId)]
 		val (graph, consequents) = buildGraph (matches, errStms)
 	    in
 		r := SOME (translateGraph (graph, [(nil, id)]));

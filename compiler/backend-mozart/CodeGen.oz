@@ -180,6 +180,9 @@ define
       [] raiseStm(Coord Id) then
 	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
 			    {TranslateCoord Coord State} VTl)
+      [] reraiseStm(Coord Id) then
+	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
+			    {TranslateCoord Coord State} VTl)
       [] sharedStm(_ Body I) then
 	 if {Dictionary.member State.shareDict I} then
 	    VHd = {Dictionary.get State.shareDict I}

@@ -315,6 +315,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; emit (LdcI4 i);
 	     emit (Newobj (StockWerk.ExceptionWrapper,
 			   [StockWerk.StockWertTy, Int32Ty])); emit Throw)
+	  | genStm (ReraiseStm (_, _)) = emit Rethrow
 	  | genStm (SharedStm (_, body, shared as ref 0)) =
 	    let
 		val label = newLabel ()

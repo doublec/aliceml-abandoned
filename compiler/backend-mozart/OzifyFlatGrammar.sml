@@ -168,6 +168,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputStm (q, RaiseStm (info, id)) =
 	    (f (q, "raiseStm"); outputInfo (q, info); m q;
 	     outputId (q, id); r q)
+	  | outputStm (q, ReraiseStm (info, id)) =
+	    (f (q, "reraiseStm"); outputInfo (q, info); m q;
+	     outputId (q, id); r q)
 	  | outputStm (q, SharedStm (info, body, shared)) =
 	    (if !shared = 0 then
 		 (shared := gen ();

@@ -74,6 +74,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	    (* all ids distinct *)
 	  | EvalStm of info * exp
 	  | RaiseStm of info * id
+	  | ReraiseStm of info * id
 	  (* the following must always be last *)
 	  | HandleStm of info * body * id * body * body * shared
 	  | EndHandleStm of info * shared
@@ -111,6 +112,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | infoStm (RecDec (info, _, _)) = info
 	  | infoStm (EvalStm (info, _)) = info
 	  | infoStm (RaiseStm (info, _)) = info
+	  | infoStm (ReraiseStm (info, _)) = info
 	  | infoStm (HandleStm (info, _, _, _, _, _)) = info
 	  | infoStm (EndHandleStm (info, _)) = info
 	  | infoStm (TestStm (info, _, _, _, _)) = info

@@ -136,8 +136,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "case ", ID id, S " of ", IN, outputTest test, NL,
 		 outputBody body1, EX, NL, S "else", IN, NL, outputBody body2,
 		 EX]
-	  | outputStm (RaiseStm (_, id)) =
-	    SEQ [S "raise ", ID id]
+	  | outputStm (RaiseStm (_, id)) = SEQ [S "raise ", ID id]
+	  | outputStm (ReraiseStm (_, id)) = SEQ [S "reraise ", ID id]
 	  | outputStm (SharedStm (_, body, shared as ref 0)) =
 	    (shared := gen ();
 	     SEQ [S ("label " ^ (Int.toString (!shared)) ^ ":"), NL,

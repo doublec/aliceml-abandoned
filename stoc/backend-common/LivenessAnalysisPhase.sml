@@ -139,6 +139,14 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
+	  | scanBody ([ReraiseStm (i, Id (_, stamp, _))], _) =
+	    let
+		val set = StampSet.new ()
+		val _ = StampSet.insert (set, stamp)
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
 	  | scanBody ([HandleStm (i, body1, id, body2, body3, _)], initial) =
 	    let
 		val lset3 = scanBody (body3, initial)
@@ -266,6 +274,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    List.app (fn (id, exp) => (ins (set, id); initExp exp)) idExpList
 	  | initStm (EvalStm (_, exp), _) = initExp exp
 	  | initStm (RaiseStm (_, _), _) = ()
+	  | initStm (ReraiseStm (_, _), _) = ()
 	  | initStm (HandleStm (_, body1, id, body2, body3, _), set) =
 	    let
 		val set' = StampSet.copy set
