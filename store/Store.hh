@@ -199,12 +199,6 @@ public:
   static u_int SizeToBlockSize(u_int size) {
     return HeaderOp::TranslateSize(size);
   }
-  // Calculate Block Byte Size
-  // according to given byte size (used only for assertions)
-  static u_int SizeToChunkSize(u_int size) {
-    u_int ws = (1 + (((size + sizeof(u_int)) - 1) / sizeof(u_int)));
-    return (HeaderOp::TranslateSize(ws) * sizeof(u_int));
-  }
   static void JITReplaceArg(u_int i, Block *p, word v);
   static void MemStat();
 #if defined(STORE_GC_DEBUG)
