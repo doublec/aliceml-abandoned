@@ -36,6 +36,8 @@ sig
     val fontWidth: int ref
     val fontSize: int ref
 
+    val setFontSize: int -> unit
+
     val set_width: int -> unit
     val set_depth: int -> unit
     val set_relmode: bool -> unit

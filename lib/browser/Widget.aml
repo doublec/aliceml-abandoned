@@ -621,6 +621,34 @@ struct
 	     setStopButtonOnOff
 	     (update_force, (getSelectionNode(),0))
 	 end
+
+
+(*
+
+fun uninspect() = 
+    let
+	val li = Dictionaries.Main.dict2list(Dictionaries.maindict)
+	val desc_li = 	rev(List.foldl 
+			    (fn ((n,sep),li) => (getDesc(n))::li ) nil li)
+    in
+	(List.app deleteTreeNode li
+	 ; desc_li)
+    end
+
+fun re_inspect() = 
+    let 
+	val li = uninspect()
+    in
+	List.app (fn d => case d of 
+		   VALUE(r) => inspect (#value(r),#typ(r))
+		  | I_VALUE(r) => inspectInf  (#value(r),#typ(r))
+		  | _ => ()) li
+    end
+
+fun updateIterate = re_inspect
+  
+*)  
+
 (*
 (* dient zur Aenderung der font-Groesse *)
      fun updateIterate(i,no,diffh) = 
@@ -637,12 +665,11 @@ struct
 
 				      ; updateIterate(i-1,no+1,diffh))
 	       |_ => () *)
-
-     (* Handles ok Button in Preferences Window *)
+ (* Handles ok Button in Preferences Window *)
      fun okHandler(w,
 	      width_s,
 	      depth_s,
-	      font_s,
+	     (* font_s, *)
 	      treemode_button,
 	      relmode_button, 
 	      tokenmode_button) = (fn _ => 
@@ -662,17 +689,14 @@ struct
 			    Gtk.spinButtonGetValueAsInt(width_s) 
 			    ;Settings.max_depth := 
 			    Gtk.spinButtonGetValueAsInt(depth_s)
-			    (* Fontgroesse *)
-			   (* ;  let
+			    (* Fontgroesse *) (*
+			    ;  let
 				  val new_size = 
 				      Gtk.spinButtonGetValueAsInt(font_s)
-			      val old_h =  !Settings.fontHeight
 			      in
 				  if !Settings.fontSize = new_size then ()
-				  else ( changeFontSize(new_size)
-				       ; updateIterate
-( MainDictionary.getHighestIndexAssigned(Dictionaries.dict),
- !Settings.fontHeight - old_h,0)) 
+				  else ( Settings.setFontSize(new_size)
+				       ; updateIterate())
 			      end *)
 			    (* Debug Aid *)
 			    ;if Gtk.toggleButtonGetActive(relmode_button) = 
@@ -701,6 +725,7 @@ struct
 				       ; relnumber := 0)
 			     else ()))
 
+    
      (* Preferences Window Handler *)
      fun Preferences _ = Server.serve (fn () =>
        	   let	
@@ -744,7 +769,7 @@ struct
 	    val radiobox = createVBoxDefaults[treemode_button,
 					      relmode_button,
 					      tokenmode_button]
-
+(*
 	    val font_lab = Gtk.labelNew("Set Font Size to...")	
 	    val font_s = createSpinButton{init =(!Settings.fontSize) , 
 					  lower = 8, 
@@ -753,7 +778,7 @@ struct
 					   dec = 0}
 	    val app_table = createTable{rows = 2, cols = 4, 
 				    entries = [(font_lab,0,2,0,1),
-					       (font_s,2,3,0,1)]}
+					       (font_s,2,3,0,1)]}*)
 
 	   (* val fontpicker = Gtk.fontSelectionNew() *)
 
@@ -767,7 +792,7 @@ struct
 					  (okHandler(w,
 						     width_s,
 						     depth_s,
-						     font_s,
+						   (*  font_s, *)
 						     treemode_button,
 						     relmode_button,
 						     tokenmode_button)   ))]),
@@ -778,8 +803,8 @@ struct
 				       borderwidth = 20}
 
 	    val n = createNotebook[("Width & Depth Limit Settings",frame),
-				   ("Mode Settings",radiobox),
-				   ("Appearance",app_table)  ] 
+				   ("Mode Settings",radiobox) (* ,
+				    ("Appearance",app_table)  *) ] 
 
 	    val vbox = createVBoxDefaults[n,bbox]
 		in
@@ -903,7 +928,9 @@ struct
 					    getIndex(root_node)))
 	  else ()
 	 ;incr_act_line(dy)
-	 ;Update.iterMove(dy,getIndex(root_node)+1))
+	 ;Update.iterMove(dy,getIndex(root_node)+1)
+	 ;Update.setVisible(0,dy)) (* Update.setVisible ist wichtig - 
+				    <> zu Widget.setVisible ! *)
 	end
  
 (* Handelt Mouseclick *)
@@ -1146,7 +1173,6 @@ fun setVisible (x,y) = let
 	    ; stopButtonSetActive(false)
 	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
 	end 
-
    
 	 
 end (* structure Widget end *)

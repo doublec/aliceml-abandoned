@@ -33,6 +33,7 @@ signature UPDATE =
 	val resize:      (unit -> unit) ref
 
 	val iterMove: int * int -> unit
+	val setVisible: int * int -> unit
 
         (* constraint watcher *) 
         val watcher: 

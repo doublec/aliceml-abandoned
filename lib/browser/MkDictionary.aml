@@ -81,14 +81,14 @@ struct
     fun iterLookup(dict,f) = iterLookup'(dict,0,f) 
 
     fun dict2list' ((a,fill_count,next_i) as dict,i,li) = 
-	if i < 0 orelse i >= (!next_i)
+	if i < 0 orelse i > (!next_i)
 	    then rev(li)
 	else let 
 		 val found = lookup (dict,i)
 	     in
 		  case found of 
-		              NONE => dict2list'(dict,i-1,li)
-			    | SOME x => dict2list'(dict,i-1,x::li)
+		              NONE => dict2list'(dict,i+1,li)
+			    | SOME x => dict2list'(dict,i+1,x::li)
 	     end
 
     fun dict2list dict = dict2list'(dict,0,nil)
