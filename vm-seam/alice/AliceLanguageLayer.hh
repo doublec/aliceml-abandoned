@@ -23,7 +23,7 @@ typedef word (*concrete_constructor)(TagVal *);
 
 class DllExport AliceLanguageLayer {
 public:
-  class TransformNames {
+  class DllExport TransformNames {
   public:
     static word primitiveValue;
     static word primitiveFunction;
