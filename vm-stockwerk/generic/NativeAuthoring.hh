@@ -101,8 +101,6 @@
   return Interpreter::REQUEST;			\
 }
 
-#define TERMINATE return Interpreter::TERMINATE;
-
 #define DECLARE_INT(i, x)						\
   int i = Store::WordToInt(x);						\
   if (i == INVALID_INT) { REQUEST(x); } else {}
