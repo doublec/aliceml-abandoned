@@ -69,7 +69,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	(* name a function. *)
 	fun setId (lambda, name as Id (_, namestamp, _)) =
-	    (print ("assign function "^Stamp.toString lambda^" to Stamp "^Stamp.toString namestamp^"\n");
+	    (vprint (2, "assign function "^Stamp.toString lambda^" to Stamp "^Stamp.toString namestamp^"\n");
 	     StampHash.insert(lambdas,lambda,name);
 	     StampHash.insert(ids, namestamp, lambda))
 
@@ -143,10 +143,11 @@ functor MakeLambda(structure StampSet:IMP_SET
 	 recursive functions are merged in one single apply *)
 	fun getClassStamp (stamp', params) =
 	    case StampIntHash.lookup (recApplies, (stamp', methParms params)) of
-		SOME (stamp'', _, _) => (if !VERBOSE>=3 then print ("getClassStamp "^Stamp.toString stamp'^" = "^Stamp.toString stamp'') else ();
-					     stamp'')
-	      | NONE => (if !VERBOSE>=3 then print ("getClassStamp "^Stamp.toString stamp'^" fails.") else ();
-			     stamp')
+		SOME (stamp'', _, _) => (vprint (3, "getClassStamp "^Stamp.toString stamp'^" = "^
+						 Stamp.toString stamp''^"\n");
+					 stamp'')
+	      | NONE => (vprint (3, "getClassStamp "^Stamp.toString stamp'^" fails.\n");
+			 stamp')
 
 	fun isInRecApply (stamp', params) =
 	    isSome (StampIntHash.lookup (recApplies, (stamp', methParms params)))
@@ -178,18 +179,17 @@ functor MakeLambda(structure StampSet:IMP_SET
 			    then ()
 			else
 			    (StampIntHash.insert (recApplies, (!actual, i),(dest, !counter, Label.new ()));
-			     if !VERBOSE >= 1 then
-				 print ("inserting "^Stamp.toString (!actual)^
-					":"^Int.toString i^" for "^Stamp.toString (dest)^" at "^
-					Int.toString (!counter)^"\n") else ();
-				 counter := !counter + 1)
+			     vprint (1, "inserting "^Stamp.toString (!actual)^
+				     ":"^Int.toString i^" for "^Stamp.toString (dest)^" at "^
+				     Int.toString (!counter)^"\n");
+			     counter := !counter + 1)
 		    end
 
 		fun insertRec' (id' as Id (_,stamp',_), exp') =
 		    (case exp' of
 			 FunExp (_,thisFun,_,idabodies) =>
 			     (actual := thisFun;
-			      print "rec': ";
+			      vprint (2, "rec': ");
 			      setId (thisFun, id');
 			      if fncount>1 then app insertInner idabodies
 				  else ())
@@ -239,7 +239,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 			NONE => nil
 		      | SOME code' => code'
 	    in
-		print ("addToRecApply: "^Stamp.toString stamp'^":"^Int.toString parms^"\n");
+		vprint (2, "addToRecApply: "^Stamp.toString stamp'^":"^Int.toString parms^"\n");
 		if label' = ~1 then ()
 		    else StampHash.insert (recApply, destStamp,
 					   Multi oleRecApply ::
@@ -274,11 +274,11 @@ functor MakeLambda(structure StampSet:IMP_SET
 	    before (StampHash.delete (recApply, lambda))
 
 	fun showRecApplies () =
-	    (print "Merged functions:\n";
+	    (vprint (1, "Merged functions:\n");
 	     StampIntHash.appi
 	     (fn ((fn', parms'),(dest', pos', label')) =>
-	      print ("Function "^Stamp.toString fn'^":"^Int.toString parms'^" stored in "^
-		     Stamp.toString dest'^" at "^Int.toString pos'^"(label"^Int.toString label'^")\n"))
+	      vprint (1, "Function "^Stamp.toString fn'^":"^Int.toString parms'^" stored in "^
+		      Stamp.toString dest'^" at "^Int.toString pos'^"(label"^Int.toString label'^")\n"))
 	     recApplies)
 
 	fun setParmStamp (funstamp:stamp, parmstamp:stamp, parm:stamp) =

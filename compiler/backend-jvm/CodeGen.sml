@@ -25,7 +25,7 @@ structure CodeGen =
 	    idexps
 	  | constPropDec (EvalStm (_, exp')) = (constPropExp exp'; ())
 	  | constPropDec (HandleStm (_, body', _, body'', body''', shared)) =
-	    if shared = ref ~1 then () else
+	    if !shared = ~1 then () else
 		(shared := ~1;
 		 List.app constPropDec body';
 		 List.app constPropDec body'';
@@ -36,7 +36,7 @@ structure CodeGen =
 	  | constPropDec (ReturnStm (_, exp')) = (constPropExp exp'; ())
 	  | constPropDec (IndirectStm (_, ref (SOME body'))) = List.app constPropDec body'
 	  | constPropDec (SharedStm (_,body',shared')) =
-		if shared' = ref ~1 then () else
+		if !shared' = ~1 then () else
 		    (shared' := ~1;
 		     List.app constPropDec body')
 	  | constPropDec _ = ()
@@ -57,12 +57,14 @@ structure CodeGen =
 			destClassDecs body'
 		    end
 	    in
-		app destClassFun idbodies
+		vprint (3, "computing destclasses for "^Stamp.toString thisFun^" ...\n");
+		app destClassFun idbodies;
+		vprint (3, "destclasses for "^Stamp.toString thisFun^" done.\n")
 	    end
 	  | destClassExp _ = ()
 	and
 	    destClassDec (HandleStm(_,body',id',body'', body''', shared)) =
-	    if shared = ref ~2 then () else
+	    if !shared = ~2 then () else
 		(shared:= ~2;
 		 destClassDecs body''';
 		 destClassDecs body'';
@@ -71,8 +73,8 @@ structure CodeGen =
 	    (destClassDecs body'';
 	     destClassDecs body')
 	  | destClassDec (SharedStm(_,body', shared')) =
-	    if shared' = ref ~2 then () else
-		(shared' := ~1;
+	    if !shared' = ~2 then () else
+		 (shared' := ~2;
 		 destClassDecs body')
 	  | destClassDec (ValDec(_, id', exp', _)) = destClassExp exp'
 	  | destClassDec (RecDec(_,idsexps, _)) =
@@ -99,16 +101,12 @@ structure CodeGen =
 	(* mark a variable as free *)
 	fun markfree (free, id' as Id (_,stamp', _), curFun, dbg) =
 	    (StampSet.insert (free, stamp');
-	     if !VERBOSE >= 2 then
-		 print ("markfree ("^dbg^"): "^Stamp.toString stamp'^"\n")
-	     else ())
+	     vprint (2, "markfree ("^dbg^"): "^Stamp.toString stamp'^"\n"))
 
 	(* mark a variable as bound *)
 	fun markbound (free, id' as Id (_,stamp', _), curFun, dbg) =
 	    (StampSet.delete (free, stamp');
-	     if !VERBOSE >= 2 then
-		 print ("markbound: "^dbg)
-	     else ();
+	     vprint (2, "markbound: "^dbg);
 	     FreeVars.setFun (id', curFun))
 
 	(* compute free variables of expressions *)
@@ -156,10 +154,10 @@ structure CodeGen =
 		    in
 			freeVarsDecs (body', newfree, destClass);
 			argApp (markbound, args, newfree, destClass, "freeVarsFun");
-			print ("Fun "^Stamp.toString thisFun^", Class "^Stamp.toString
-			       destClass^". Adding FreeVars ");
-			StampSet.app (fn x => print (Stamp.toString x^" ")) newfree;
-			print ".\n";
+			vprint (2, "Fun "^Stamp.toString thisFun^", Class "^Stamp.toString
+				destClass^". Adding FreeVars ");
+			StampSet.app (fn x => vprint (2, Stamp.toString x^" ")) newfree;
+			vprint (2, ".\n");
 			FreeVars.addVars (destClass, newfree);
 			StampSet.app
 			(fn x => StampSet.insert (free,x))
@@ -167,7 +165,7 @@ structure CodeGen =
 		    end
 	    in
 		app freeVarsFun idbodies;
-		print "FunExp: ";
+		vprint (2,"FunExp: ");
 		FreeVars.setFun (Id (dummyCoord, thisFun, InId), curFun)
 	    end
 	  | freeVarsExp (PrimAppExp (_, _, ids), free, curFun) =
@@ -182,7 +180,7 @@ structure CodeGen =
 	and freeVarsDec (RaiseStm(_,id'), free, curFun) =
 	    markfree (free, id', curFun, "RaiseStm")
 	  | freeVarsDec (HandleStm(_,body',id',body'', body''', shared), free, curFun) =
-	    if shared = ref ~3 then () else
+	    if !shared = ~3 then () else
 		(shared :=  ~3;
 		 freeVarsDecs (body''', free, curFun);
 		 freeVarsDecs (body'', free, curFun);
@@ -195,8 +193,8 @@ structure CodeGen =
 	     freeVarsTest (test', free, curFun);
 	     markfree (free, id', curFun, "TestStm"))
 	  | freeVarsDec (SharedStm(_,body', shared'), free, curFun) =
-	    if shared' = ref ~2 then () else
-		(shared' := ~2;
+	    if !shared' = ~3 then () else
+		(shared' := ~3;
 		 freeVarsDecs (body', free, curFun))
 	  | freeVarsDec (ValDec(_, id', exp', _), free, curFun) =
 	    (freeVarsExp (exp', free, curFun);
@@ -293,19 +291,19 @@ structure CodeGen =
 		LMAA := lmaa;
 		WAIT := wait;
 		Class.setInitial name;
-		if !VERBOSE >=2 then
-		    (print ("thisStamp: "^Stamp.toString thisStamp^"\n");
-		     print ("parm1Stamp: "^Stamp.toString parm1Stamp^"\n");
-		     print ("parm2Stamp: "^Stamp.toString parm2Stamp^"\n");
-		     print ("parm3Stamp: "^Stamp.toString parm3Stamp^"\n");
-		     print ("parm4Stamp: "^Stamp.toString parm4Stamp^"\n");
-		     print ("parm5Stamp: "^Stamp.toString parm5Stamp^"\n"))
-		else ();
-		    let
-			(* do constant propagation *)
-			val _ = List.app constPropDec program
-			(* compute free variables and destination classes. *)
-			val _ = let
+		vprint (2,"thisStamp: "^Stamp.toString thisStamp^"\n");
+		vprint (2, "parm1Stamp: "^Stamp.toString parm1Stamp^"\n");
+		vprint (2, "parm2Stamp: "^Stamp.toString parm2Stamp^"\n");
+		vprint (2, "parm3Stamp: "^Stamp.toString parm3Stamp^"\n");
+		vprint (2, "parm4Stamp: "^Stamp.toString parm4Stamp^"\n");
+		vprint (2, "parm5Stamp: "^Stamp.toString parm5Stamp^"\n");
+		let
+		    (* do constant propagation *)
+		    val _ = (vprint (3, "constant propagation ... ");
+			     if !OPTIMIZE >= 3 then List.app constPropDec program else ();
+			     vprint (3, "done\n"))
+		    (* compute free variables and destination classes. *)
+		    val _ = let
 				    val free = StampSet.new ()
 				in
 				    destClassDecs program;
@@ -317,7 +315,7 @@ structure CodeGen =
 				end
 
 			val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
-					  create (name,
+					  create (Class.getInitial (),
 						  [Invokevirtual (CThread, "start", ([], [Voidsig])),
 						   Return]))
 			(* Default initialisation. *)
@@ -348,7 +346,7 @@ structure CodeGen =
 
 			(* The main class *)
 			val class = Class([CPublic],
-					  name,
+					  Class.getInitial (),
 					  CThread,
 					  nil,
 					  Literals.makefields
@@ -356,13 +354,13 @@ structure CodeGen =
 					   (toplevel, nil)),
 					  [clinit, main, init, run])
 		    in
-			if !VERBOSE >=2 then print "Generating main class..." else ();
-			    classToJasmin (class);
-			    if !VERBOSE >=2 then print "Okay.\n" else ()
+			vprint (2, "Generating main class...");
+			classToJasmin (class);
+			vprint (2, "Okay.\n")
 		    end;
-		    if (!VERBOSE >= 1) then Lambda.showRecApplies ()
-		    else ();
-		    Label.printStackTrace ()
+		    if (!VERBOSE >= 1) then (Lambda.showRecApplies ();
+					     Label.printStackTrace ())
+		    else ()
 	    end
 
 	and decListCode (dec::rest, curFun, curCls) =
@@ -476,8 +474,10 @@ structure CodeGen =
 		    let
 			val x = nextStamp = stamp'
 		    in
-			if x then print ("NOT finished at "^Stamp.toString nextStamp) else
-			    print ("finished at "^Stamp.toString stamp'^"/"^Stamp.toString nextStamp);
+			if x then vprint (3, "Transients: NOT finished at "^
+					  Stamp.toString nextStamp^"\n") else
+			    vprint (3, "Transients: finished at "^Stamp.toString stamp'^
+				    "/"^Stamp.toString nextStamp^"\n");
 			x
 		    end
 		  | notfinished (IndirectStm (_, ref NONE)::rest) = notfinished rest
@@ -1117,6 +1117,10 @@ structure CodeGen =
 	and
 	    invokeRecApply (stamp', args, curFun, tailCallPos, curCls, defaultApply) =
 	    let
+		val (primcode, tys, retty) = case ConstProp.get stamp' of
+		    SOME (PrimExp (_, name)) => PrimCode.code name
+		  | _ => (nil, [UType], UType)
+
 		val fnstamp = Lambda.getLambda stamp'
 		val (parms, ids) =
 		    case args of
@@ -1125,6 +1129,28 @@ structure CodeGen =
 
 		fun nullLoad (0, akku) = akku
 		  | nullLoad (n, akku) = nullLoad (n-1, Aconst_null::akku)
+
+		fun tyLoadParms (Id (_, stamp'', _)::ids'', ty''::tys'') =
+		    (case (ty'', ConstProp.get stamp'') of
+			 (IntType, SOME (LitExp (_, IntLit l))) => atCodeInt l
+		       | _ => let
+				  val good = Label.new ()
+				  val handle' = Label.new ()
+			      in
+				  Multi [stampCode (stamp'', curFun, curCls),
+					 Dup,
+					 Instanceof ITransient,
+					 Ifeq good,
+					 Checkcast ITransient,
+					 Invokevirtual MRequest,
+					 Label good,
+					 Checkcast CInt,
+					 Getfield (CInt^"/value", [Intsig]),
+					 Label handle',
+					 Catch ("java/lang/ClassCastException", good, handle', Label.matchlabel)]
+			      end) ::
+			 tyLoadParms(ids'', tys'')
+		  | tyLoadParms (_, _) = nil
 
 		fun loadparms (p, ending)=
 		    Comment ("p = "^Int.toString p^"; parms = "^Int.toString parms) ::
@@ -1153,40 +1179,50 @@ structure CodeGen =
 			end
 
 		val code' =
-		    (case Lambda.invokeRecApply (fnstamp, parms) of
-			 InvokeRecApply (p, destStamp, pos', label') =>
-			     let
-				 val call' =
-				     stampCode (destStamp, curFun, curCls) ::
-				     Checkcast (classNameFromStamp destStamp) ::
-				     loadparms
-				     (p,
-				      nullLoad
-				      (4-p,
-				       [atCodeInt (LargeInt.fromInt pos'),
-					Invokevirtual (classNameFromStamp destStamp,
-						       "recApply",
-						      ([Classsig IVal, Classsig IVal,
-							Classsig IVal, Classsig IVal, Intsig],
-						       [Classsig IVal]))]))
-			     in
-				 if tailCallPos then
-				     [Comment "Call",
-				      Call (classNameFromStamp destStamp, "recApply",
-					    updateparms (p, [Goto label']),
-					    [Multi call',
-					     Areturn])]
-				 else
-				     call'
-			     end
-		       | NormalApply p =>
-			     let
-				 val p' = if defaultApply then 1 else p
-			     in
-				 stampCode (fnstamp, curFun, curCls) ::
-				 Comment "NormalApply" ::
-				 loadparms (p', [Invokeinterface (mApply p')])
-			     end)
+		    (case primcode of
+			 nil => (case Lambda.invokeRecApply (fnstamp, parms) of
+				     InvokeRecApply (p, destStamp, pos', label') =>
+					 let
+					     val call' =
+						 stampCode (destStamp, curFun, curCls) ::
+						 Checkcast (classNameFromStamp destStamp) ::
+						 loadparms
+						 (p,
+						  nullLoad
+						  (4-p,
+						   [atCodeInt (LargeInt.fromInt pos'),
+						    Invokevirtual (classNameFromStamp destStamp,
+								   "recApply",
+								   ([Classsig IVal, Classsig IVal,
+								     Classsig IVal, Classsig IVal, Intsig],
+								    [Classsig IVal]))]))
+					 in
+					     if tailCallPos then
+						 [Comment "Call",
+						  Call (classNameFromStamp destStamp, "recApply",
+							updateparms (p, [Goto label']),
+							[Multi call',
+							 Areturn])]
+					     else
+						 call'
+					 end
+				   | NormalApply p =>
+					 let
+					     val p' = if defaultApply then 1 else p
+					 in
+					     stampCode (fnstamp, curFun, curCls) ::
+					     Comment "NormalApply" ::
+					     loadparms (p', [Invokeinterface (mApply p')])
+					 end)
+		       | _ => (case retty of
+				   IntType => Multi [New CInt,
+						     Dup]
+				 | UType => Nop) ::
+			     Multi (tyLoadParms (ids, tys)) ::
+			     Multi primcode ::
+			     (case retty of
+				  IntType => [Invokespecial (CInt, "<init>", ([Intsig], [Voidsig]))]
+				| UType => nil))
 	    in
 		Comment ("invokeRecApply: "^Stamp.toString fnstamp^":"^Int.toString parms^" in "^Stamp.toString fnstamp) ::
 		code'
@@ -1454,9 +1490,7 @@ structure CodeGen =
 
 	    expCodeClass ((OneArg id', body')::specialApplies, curFun, curCls) =
 	    let
-		val _ = if !VERBOSE >=1 then
-		    print ("create Class "^classNameFromStamp curFun^"\n")
-			else ()
+		val _ = vprint (1, "create Class "^classNameFromStamp curFun^"\n")
 		val freeVarList = FreeVars.getVars curFun
 		val _ = Lambda.setParmStamp (curFun, stampFromId id', parm1Stamp)
 		val _ = FreeVars.setFun (id', curCls)
@@ -1511,7 +1545,7 @@ structure CodeGen =
 					      RecTest labids,
 					      body'', ra)])
 		  | createApplies (nil, a0, a2, a3, a4, ra) =
-		     (print ("Lambda "^Stamp.toString curFun^" in "^Stamp.toString curCls);
+		     (vprint (2, "Lambda "^Stamp.toString curFun^" in "^Stamp.toString curCls);
 		      (a0, a2, a3, a4, decListCode (ra, curFun, curCls)))
 		  | createApplies (_, _, _, _, _, _) = raise (Crash.Crash "CodeGen: createApplies")
 
@@ -1599,7 +1633,15 @@ structure CodeGen =
 			Method ([MPublic],
 				applyName parms,
 				(valList parms, [Classsig IVal]),
-				body')
+				Multi body' ::
+				[Label Label.matchlabel,
+				 Pop,
+				 New CExWrap,
+				 Dup,
+				 Getstatic BMatch,
+				 Invokespecial(CExWrap,"<init>",
+					       ([Classsig IVal],[Voidsig])),
+				 Athrow])
 		    end
 
 		(* normal apply methods *)

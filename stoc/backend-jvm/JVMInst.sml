@@ -74,6 +74,7 @@ structure JVMInst =
 	  | Invokevirtual of classname * methodname * (ARG list * ARG list)
 	  | Ireturn
 	  | Istore of stamp
+	  | Isub
 	  | Label of label
 	  | Line of int
 	  | Lcmp

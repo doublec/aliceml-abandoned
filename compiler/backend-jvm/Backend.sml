@@ -70,8 +70,7 @@ structure Backend=
 		    case StampHash.lookup (free, stamp') of
 			NONE => StampHash.insert (free, stamp', freeVarSet)
 		      | SOME freeVars =>
-			(print ("setVars twice for "^Stamp.toString stamp'^"\n");
-			 StampSet.app
+			(StampSet.app
 			 (fn stamp' => StampSet.insert(freeVars, stamp'))
 			 freeVarSet)
 
@@ -81,39 +80,39 @@ structure Backend=
 			NONE => let
 				    val f = StampSet.new ()
 				in
-				    print "unset freevars";
+				    vprint (1, "unset freevars");
 				    StampSet.insert (f, Lambda.getClassStamp (stamp', 1));
 				    StampHash.insert(free, stamp', f);
 				    f
 				end
-		      | SOME v => (print ("FreeVars for "^Stamp.toString stamp'^": ");
-				   StampSet.app (fn stamp'' => print (Stamp.toString stamp''^" ")) v;
-				   print "\n";
+		      | SOME v => (vprint (1, "FreeVars for "^Stamp.toString stamp'^": ");
+				   StampSet.app (fn stamp'' => vprint (1, Stamp.toString stamp''^" ")) v;
+				   vprint (1, "\n");
 				   v)
 
 		(* assign ids to their defining function closure. *)
 		fun setFun (Id (_,stamp',_), stamp'') =
-		    (if !VERBOSE >= 2 then print (Stamp.toString stamp'^" is defined in "^Stamp.toString stamp''^"\n")
-		     else ();
-			 StampHash.insert(defFun, stamp', stamp''))
+		    (vprint (2, Stamp.toString stamp'^" is defined in "^Stamp.toString stamp''^"\n");
+		     StampHash.insert(defFun, stamp', stamp''))
 
 		(* get the defining function closure of a stamp *)
 		fun getFun stamp' =
 		    case StampHash.lookup (defFun, stamp') of
-			NONE => (if !VERBOSE >= 2 then print (Stamp.toString stamp'^" was defined at toplevel.\n")
-				 else ();
-				     toplevel)
-		      | SOME stamp'' => (if !VERBOSE >= 2 then print (Stamp.toString stamp'^" was defined at "^
-								      Stamp.toString stamp''^".\n") else ();
-					     stamp'')
+			NONE => (vprint (2, Stamp.toString stamp'^" was defined at toplevel.\n");
+				 toplevel)
+		      | SOME stamp'' => (vprint (2, Stamp.toString stamp'^" was defined at "^
+						 Stamp.toString stamp''^".\n");
+					 stamp'')
 
 		(* print all pairs of stamps and defining function closures.
 		 used in verbose level 2. *)
 		fun printFun () =
-		    StampHash.appi (fn (stamp', stamp'') =>
-				    print ("("^Stamp.toString stamp'^","^
-					   Stamp.toString stamp''^")"))
-		    defFun
+		    if !VERBOSE >= 2 then
+			StampHash.appi (fn (stamp', stamp'') =>
+					print ("("^Stamp.toString stamp'^","^
+					       Stamp.toString stamp''^")"))
+			defFun
+		    else ()
 	    end
 
 	(* load an integer as JVM integer constant. *)
@@ -169,7 +168,7 @@ structure Backend=
 		(* create a new record arity and return its JVM field *)
 		fun insert (stamp', strings as (s::_)) =
 		    let
-			val _ = print ("create "^s^" ... in "^Stamp.toString stamp'^"\n")
+			val _ = vprint (2, "create "^s^" ... in "^Stamp.toString stamp'^"\n")
 			val l =
 			    case StampHash.lookup (arity, stamp') of
 				NONE =>
@@ -354,7 +353,7 @@ structure Backend=
 	    end
 
 	(* print a list of stamps. Used in verbose mode for debugging. *)
-	fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
+	fun printStampList xs = vprint (2, "Free: ("^(psl xs)^")\n")
 	and psl (x::nil) = Stamp.toString x
 	  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
 	  | psl nil = ""
@@ -378,7 +377,7 @@ structure Backend=
 			      | foo => foo
 		    in
 			if !OPTIMIZE >= 3 then
-			    (print ("getting "^Stamp.toString stamp'^": ");
+			    (vprint (3, "getting "^Stamp.toString stamp'^": ");
 			     case geti stamp' of
 				 SOME (p as SOME (LitExp _
 			       | PrimExp _
@@ -386,8 +385,8 @@ structure Backend=
 			       | VarExp _
 			       | ConExp _
 			       | RefExp _
-			      | SelExp _)) => (print "shortened.\n"; p)
-			      | _ => (print "left\n"; NONE))
+			      | SelExp _)) => (vprint (3, "shortened.\n"); p)
+			      | _ => (vprint (3, "left\n"); NONE))
 			else NONE
 		    end
 
@@ -397,11 +396,23 @@ structure Backend=
 		      | _ => stamp'
 
 		fun add (stamp', content) =
-		    if !OPTIMIZE >= 3 then
-			(print ("inserting "^Stamp.toString stamp');
-			 case StampHash.lookup (consts, stamp') of
-			     NONE => (print "okay.\n"; StampHash.insert (consts, stamp', SOME content))
-			   | SOME _ => (print "crashed.\n"; StampHash.insert (consts, stamp', NONE)))
-		    else ()
+		    (vprint (2, "inserting "^Stamp.toString stamp');
+		     case StampHash.lookup (consts, stamp') of
+			 NONE => (vprint (2, "okay.\n"); StampHash.insert (consts, stamp', SOME content))
+		       | SOME _ => (vprint (2, "clashed.\n"); StampHash.insert (consts, stamp', NONE)))
+	    end
+
+	datatype primtypes =
+	    UType (* unkown type *)
+	  | IntType
+
+	structure PrimCode =
+	    struct
+		fun code name = if !OPTIMIZE >=4 then
+		    (case name of
+			 "Int.+" => ([Iadd], [IntType, IntType], IntType)
+		       | "Int.-" => ([Isub], [IntType, IntType], IntType)
+		       | _ => (nil, [UType], UType))
+				else (nil, [UType], UType)
 	    end
     end

@@ -24,9 +24,14 @@ structure Common=
 	structure Class =
 	    struct
 		val initial = ref ""
+		val sourceFile = ref ""
 
-		fun setInitial name = initial := name
+		fun setInitial name =
+		    (List.app (fn x => initial := x) (String.tokens (fn x => #"/" = x) name);
+		     sourceFile := name)
+
 		fun getInitial () = !initial
+		fun getSourceFile () = !sourceFile
 	    end
 
 	(* return the fieldname of an Id. Id may be any variable. *)
@@ -95,13 +100,18 @@ structure Common=
 	  (* Invokeinterface apply or apply0/2/3/4. (# of params) *)
 	  | NormalApply of int
 
+	fun vprint (lev, s) = if !VERBOSE >= lev then print s else ()
+
 	(* Structure for managing labels in JVM-methods *)
 	structure Label =
 	    struct
-		(* the actual label number *)
-		val labelcount = ref (0:label)
+		(* Label for "raise Match" *)
 
-		val retryStack = ref [(0:label, toplevel)]
+		val matchlabel = 0
+		(* the actual label number *)
+		val labelcount = ref (1:label)
+
+		val retryStack = ref [(1:label, toplevel)]
 
 		fun new () =
 		    (labelcount := !labelcount + 1;
@@ -132,7 +142,7 @@ structure Common=
 						   prstack xs)
 			  | prstack nil = ()
 		    in
-			print "LabelStack:\n";
+			vprint (1, "LabelStack:\n");
 			prstack (!retryStack)
 		    end
 	    end

@@ -13,7 +13,7 @@
 SMLofNJ.Internals.GC.messages false;
 CM.make();
 
-fun dmlc (_, debug::verbose::optimize::lmaa::lines::wait::x) =
+fun dmlc (_, debug::verbose::optimize::tits::lmaa::lines::wait::x) =
     let
 	val v=valOf (Int.fromString (String.substring(verbose, 2,1)))
 	fun dc (fi::rest) =
@@ -26,7 +26,10 @@ fun dmlc (_, debug::verbose::optimize::lmaa::lines::wait::x) =
 	      valOf (Bool.fromString lines),
 	      valOf (Bool.fromString wait),
 	      String.substring(fi, 0, size fi-4),
-	      Main.imperatifyFile' fi); dc (rest)))
+	      (if valOf (Bool.fromString tits)
+		   then Main.imperatifyFile
+	       else Main.imperatifyFile') fi);
+	     dc (rest)))
 	  | dc nil = 0
     in
 	(dc x) handle _ => (print "fehler beim Kompilieren"; 1)

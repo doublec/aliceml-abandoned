@@ -130,8 +130,8 @@ structure ToJasmin =
 
 	    (* merge two labels *)
 	    fun merge (l', l'') =
-		(if !VERBOSE >=2 then print ("Merging "^Label.toString l'^" and "^
-					     labtoString l''^".\n") else ();
+		(vprint (2, "Merging "^Label.toString l'^" and "^
+			 labtoString l''^".\n");
 		 IntHash.insert (!labelMerge, l', l''))
 
 	    (* mark a lable as reachable *)
@@ -144,12 +144,10 @@ structure ToJasmin =
 		    isSome (IntHash.lookup (!labelMerge, l'))
 		    orelse IntSet.member (!reachable, l')
 		in
-		    if !VERBOSE >= 2 then
-			print ("Label "^Label.toString l'^" is "^
-			       (if result then "" else "not ")^
-				    "reachable.\n")
-		    else ();
-			result
+		    vprint (2, "Label "^Label.toString l'^" is "^
+			    (if result then "" else "not ")^
+				 "reachable.\n");
+		    result
 		end
 
 	    (* check whether a lable is used or not *)
@@ -157,11 +155,9 @@ structure ToJasmin =
 		let
 		    val result =IntSet.member (!usedlabel, l')
 		in
-		    if !VERBOSE >= 2 then
-			print ("Label "^Label.toString l'^" is "^
-			       (if result then "" else "not ")^
-				    "used.\n")
-		    else ();
+		    vprint (2, "Label "^Label.toString l'^" is "^
+			    (if result then "" else "not ")^
+				 "used.\n");
 			result
 		end
 
@@ -241,10 +237,8 @@ structure ToJasmin =
 			  | SOME v => v
 		    in
 			if !maxReg < r then maxReg := r else ();
-			if !VERBOSE >=3 then
-			    print ("Accessing stamp "^Stamp.toString reg^" in "^
-				   "JVM register "^Int.toString r^"\n")
-			else ();
+			vprint (3, "Accessing stamp "^Stamp.toString reg^" in "^
+				"JVM register "^Int.toString r^"\n");
 			r
 		    end
 
@@ -261,8 +255,8 @@ structure ToJasmin =
 			val old = lookup (!fromPos, stamp')
 		    in
 			if old = ~1 orelse old > pos
-			    then (if !VERBOSE >=3 then print ("define "^Stamp.toString stamp'^
-							      " at "^Int.toString pos^"\n") else ();
+			    then (vprint (3, "define "^Stamp.toString stamp'^
+					  " at "^Int.toString pos^"\n");
 				  StampHash.insert (!fromPos, stamp', pos))
 			else ()
 		    end
@@ -274,9 +268,9 @@ structure ToJasmin =
 			val old = lookup (!toPos, ori)
 		    in
 			if old < pos
-			    then (if !VERBOSE >=3 then print ("use "^Stamp.toString stamp'^
-							      " (ori: "^Stamp.toString ori^") at "^
-							      Int.toString pos^"\n") else ();
+			    then (vprint (3, "use "^Stamp.toString stamp'^
+					  " (ori: "^Stamp.toString ori^") at "^
+					  Int.toString pos^"\n");
 				  StampHash.insert(!toPos, ori, pos))
 			else ()
 		    end
@@ -296,21 +290,20 @@ structure ToJasmin =
 				val t' = lookup (!toPos, genuineReg)
 				fun assignNextFree act =
 				    if f' >= lookupInt (!jvmto, act)
-					then (if !VERBOSE >=2 then
-						  print ("map "^Stamp.toString genuineReg^" to "^
-							 Int.toString act^"(used until "^Int.toString (lookupInt (!jvmto, act))^"\n") else ();
+					then (vprint (3, "map "^Stamp.toString genuineReg^" to "^
+						      Int.toString act^"(used until "^Int.toString
+						      (lookupInt (!jvmto, act))^"\n");
 					      case StampHash.lookup (!regmap, genuineReg) of
-						      NONE =>
-							  (StampHash.insert (!regmap, genuineReg, act);
-							   IntHash.insert (!jvmto, act, t'))
-						    | SOME v => print ("ERROR: trying to overwrite old value"^
-								       Int.toString v^"\n"))
+						  NONE =>
+						      (StampHash.insert (!regmap, genuineReg, act);
+						       IntHash.insert (!jvmto, act, t'))
+						| SOME v => print ("ERROR: trying to overwrite old value"^
+								   Int.toString v^"\n"))
 				    else
 					assignNextFree (act+1)
 			    in
-				if !VERBOSE >= 2 then
-				    print ("trying to assign "^Stamp.toString genuineReg^" from "^
-					   Int.toString f'^" to "^Int.toString t'^"\n") else ();
+				vprint (2, "trying to assign "^Stamp.toString genuineReg^" from "^
+					Int.toString f'^" to "^Int.toString t'^"\n");
 				if f' <> ~1 andalso
 				    (* Register is written at least once. *)
 				    t' <> ~1 andalso
@@ -321,8 +314,7 @@ structure ToJasmin =
 				    assignNextFree 1
 				else
 				    ();
-				    if !VERBOSE >= 2 then
-					print ("assign ok.\n") else ()
+				vprint (2, "assign ok.\n")
 			    end
 		    in
 			IntHash.insert (!jvmto, 0, lookup(!toPos, thisStamp));
@@ -359,17 +351,15 @@ structure ToJasmin =
 			    in
 				if f' > regto andalso t' > regfrom andalso t' > regto
 				    then
-					(if !VERBOSE >= 3 then
-					     print ("setting toPos "^Stamp.toString stamp'^
-						    " to "^Int.toString t'^"\n") else ();
-					StampHash.insert (!toPos, stamp', t'))
+					(vprint (3, "setting toPos "^Stamp.toString stamp'^
+						 " to "^Int.toString t'^"\n");
+					 StampHash.insert (!toPos, stamp', t'))
 				else if f' > regfrom andalso f' <regto
 				    andalso t' < regfrom
-				    then
-					(if !VERBOSE >= 3 then
-					     print ("setting fromPos "^Stamp.toString stamp'^
-						    " to "^Int.toString t'^"\n") else ();
-					 StampHash.insert (!fromPos, genuineReg, t'))
+					 then
+					     (vprint (3, "setting fromPos "^Stamp.toString stamp'^
+						      " to "^Int.toString t'^"\n");
+					      StampHash.insert (!fromPos, genuineReg, t'))
 				     else ()
 			    end
 		    in
@@ -384,10 +374,8 @@ structure ToJasmin =
 		    else
 			if lookup (!defines, u)<2 then
 			    (StampHash.insert(!fusedwith, u, getOrigin x);
-			     if !VERBOSE >= 2 then
-				 print ("fuse "^Stamp.toString x^" with "^Stamp.toString u^".\n")
-			     else ();
-				 true)
+			     vprint (2, "fuse "^Stamp.toString x^" with "^Stamp.toString u^".\n");
+			     true)
 			else false
 
 		(* How often is a stamp written to? Most stamps are written only
@@ -730,15 +718,15 @@ structure ToJasmin =
 	    in
 		if !OPTIMIZE >=1 then
 		    let
-			val _ = if !VERBOSE >= 3 then print "fusing registers..." else ()
+			val _ = vprint (3, "fusing registers...")
 			val d' = fuse (Store, flattened)
-			val _ = if !VERBOSE >= 3 then print "done.\n" else ()
+			val _ = vprint (3, "done.\n")
 		    in
-			if !VERBOSE >= 3 then print "preparing liveness... " else ();
+			vprint (3, "preparing liveness... ");
 			prepareLiveness (d', 0);
-			if !VERBOSE >= 3 then print "doing liveness... " else ();
+			vprint (3, "doing liveness... ");
 			liveness (d', 0);
-			if !VERBOSE >= 3 then print "done.\n" else ();
+			vprint (3, "done.\n");
 			JVMreg.assignAll ();
 			if !OPTIMIZE >= 2 then
 			    deadCode (Non, d')
@@ -838,6 +826,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Invokevirtual (_,_,(arglist,_)))          = ~(siglength arglist)
 	  | stackNeedInstruction Ireturn = ~1
 	  | stackNeedInstruction (Istore _) = ~1
+	  | stackNeedInstruction Isub = ~1
 	  | stackNeedInstruction (Label _) = 0
 	  | stackNeedInstruction Lcmp = ~1
 	  | stackNeedInstruction (Ldc _) = 1 (* we don't use long and double! *)
@@ -947,6 +936,7 @@ structure ToJasmin =
 			     "invokestatic "^cn^"/"^mn^(descriptor2string ms)
 	      | instructionToJasmin (Invokevirtual(cn,mn,ms),_) =
 			     "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
+	      | instructionToJasmin (Isub,_) = "isub"
 	      | instructionToJasmin (Label l,_) = Label.toString l^": "
 	      | instructionToJasmin (Lcmp,_) = "lcmp"
 	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^String.toCString s^"\""
@@ -1138,7 +1128,7 @@ structure ToJasmin =
 	    in
 		actclass:= name;
 		TextIO.output(io,
-			      ".source "^Class.getInitial ()^".dml\n");
+			      ".source "^Class.getSourceFile ()^"\n");
 		TextIO.output(io,
 			      ".class "^(cAccessToString access)^name^"\n"^
 			      ".super "^super^"\n");
