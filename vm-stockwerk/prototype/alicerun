@@ -8,7 +8,7 @@ then
   STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
 fi
 
-ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc
+ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc:pattern=?{x}=?{x}.stc
 
 export ALICE_LOAD
 
