@@ -304,6 +304,9 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 	      \[-o <output file>]\n\
 	      \\tstoc --replacesign <input url> <signature file> \
 	      \<output file>\n\
+	      \Warning options:\n\
+	      \\t--(no-)warn-shadowing\n\
+	      \\t\tWhether to warn about shadowing of identifiers.\n\
 	      \Bootstrap options:\n\
 	      \\t--(no-)implicit-import\n\
 	      \\t\tWhether the SML Standard Basis is made available.\n\
@@ -362,7 +365,8 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 	  | stoc' _ = (usage (); OS.Process.failure)
 
 	val booleanSwitches =
-	    [("implicit-import", Switches.Bootstrap.implicitImport),
+	    [("warn-shadowing", Switches.Warn.shadowing),
+	     ("implicit-import", Switches.Bootstrap.implicitImport),
 	     ("dump-phases", Switches.Debug.dumpPhases),
 	     ("dump-abstraction-result", Switches.Debug.dumpAbstractionResult),
 	     ("dump-elaboration-result", Switches.Debug.dumpElaborationResult),
@@ -412,7 +416,6 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 				       "uncaught exception " ^
 				       exnName e ^ "\n");
 			OS.Process.failure)
-
 
 	(*DEBUG*)
 	local
@@ -492,7 +495,7 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 				   comp
 			       end
 	    fun translate' x = TranslationPhase.translate () x
-	    fun flatten' x   = BackendCommon.translate () x
+	    fun flatten' x   = BackendCommon.translate (BackendCommon.C.new ()) x
 
 	    infix 3 oo
 	    fun (f oo g) (desc, x) = f (desc, g (desc, x))
