@@ -79,6 +79,7 @@ public:
   static void EnterComponent(String *key, word sign, word str);
   static Component *LookupComponent(String *key);
   static void Link(String *url);
+  static void Link(Thread *thread, String *url);
 };
 
 #endif

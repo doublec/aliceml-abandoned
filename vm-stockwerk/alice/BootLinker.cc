@@ -163,17 +163,18 @@ public:
   virtual void DumpFrame(StackFrame *sFrame);
 };
 
-class BootWorker: public Worker {
+class StartWorker: public Worker {
 private:
-  static BootWorker *self;
+  static StartWorker *self;
 public:
-  // BootWorker Constructor
-  BootWorker(): Worker() {}
-  // BootWorker Static Constructor
+  // StartWorker Constructor
+  StartWorker(): Worker() {}
+  // StartWorker Static Constructor
   static void Init() {
-    self = new BootWorker();
+    self = new StartWorker();
   }
   // Frame Handling
+  static void PushFrame(String *key);
   static void PushFrame(Thread *thread, String *key);
   virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
@@ -280,22 +281,27 @@ public:
   }
 };
 
-class BootFrame: private StackFrame {
+class StartFrame: private StackFrame {
 private:
   enum { KEY_POS, SIZE };
 public:
-  // BootFrame Accessors
+  // StartFrame Accessors
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
   }
   String *GetKey() {
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
-  // BootFrame Constructor
-  static BootFrame *New(Thread *thread, Worker *worker, String *key) {
+  // StartFrame Constructor
+  static StartFrame *New(Worker *worker, String *key) {
+    NEW_STACK_FRAME(frame, worker, SIZE);
+    frame->InitArg(KEY_POS, key->ToWord());
+    return static_cast<StartFrame *>(frame);
+  }
+  static StartFrame *New(Thread *thread, Worker *worker, String *key) {
     NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
-    return static_cast<BootFrame *>(frame);
+    return static_cast<StartFrame *>(frame);
   }
 };
 
@@ -502,23 +508,28 @@ void LoadWorker::DumpFrame(StackFrame *sFrame) {
   std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
-// BootWorker
-BootWorker *BootWorker::self;
+// StartWorker
+StartWorker *StartWorker::self;
 
-void BootWorker::PushFrame(Thread *thread, String *key) {
-  BootFrame::New(thread, self, key);
+void StartWorker::PushFrame(String *key) {
+  StartFrame::New(self, key);
 }
 
-u_int BootWorker::GetFrameSize(StackFrame *sFrame) {
-  BootFrame *frame = static_cast<BootFrame *>(sFrame);
+void StartWorker::PushFrame(Thread *thread, String *key) {
+  StartFrame::New(thread, self, key);
+}
+
+u_int StartWorker::GetFrameSize(StackFrame *sFrame) {
+  StartFrame *frame = static_cast<StartFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
-Worker::Result BootWorker::Run(StackFrame *sFrame) {
-  BootFrame *frame = static_cast<BootFrame *>(sFrame);
+Worker::Result StartWorker::Run(StackFrame *sFrame) {
+  StartFrame *frame = static_cast<StartFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  String *key = frame->GetKey();
+  String *key = String::New("lib/system/Boot");
+  String *arg = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
   Component *component = BootLinker::LookupComponent(key);
   Assert(component != INVALID_POINTER);
@@ -526,19 +537,19 @@ Worker::Result BootWorker::Run(StackFrame *sFrame) {
   Assert(record != INVALID_POINTER);
   word boot = record->PolySel(UniqueString::New(String::New("boot")));
   Scheduler::nArgs = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] = AliceLanguageLayer::rootUrl;
+  Scheduler::currentArgs[0] = arg->ToWord();
   return Scheduler::PushCall(boot);
 }
 
-const char *BootWorker::Identify() {
-  return "BootWorker";
+const char *StartWorker::Identify() {
+  return "StartWorker";
 }
 
-void BootWorker::DumpFrame(StackFrame *sFrame) {
-  BootFrame *frame = static_cast<BootFrame *>(sFrame);
+void StartWorker::DumpFrame(StackFrame *sFrame) {
+  StartFrame *frame = static_cast<StartFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
-  std::fprintf(stderr, "Boot %.*s\n", (int) key->GetSize(), key->GetValue());
+  std::fprintf(stderr, "Start %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
 //
@@ -552,6 +563,7 @@ word BootLinker::keyQueue;
 u_int BootLinker::numberOfEntries;
 
 void BootLinker::Init(NativeComponent *nativeComponents) {
+  traceFlag = std::getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
   RootSet::Add(componentTable);
   RootSet::Add(keyQueue);
   componentTable = ChunkMap::New(INITIAL_TABLE_SIZE)->ToWord();
@@ -562,7 +574,7 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
   EnterWorker::Init();
   LinkWorker::Init();
   LoadWorker::Init();
-  BootWorker::Init();
+  StartWorker::Init();
   // Enter built-in native components
   while (nativeComponents->name != NULL) {
     word (*init)() = nativeComponents->init;
@@ -592,8 +604,11 @@ Component *BootLinker::LookupComponent(String *key) {
 }
 
 void BootLinker::Link(String *url) {
-  traceFlag = std::getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
-  Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
-  BootWorker::PushFrame(thread, url);
-  LoadWorker::PushFrame(thread, url);
+  StartWorker::PushFrame(url);
+  LoadWorker::PushFrame(String::New("lib/system/Boot"));
+}
+
+void BootLinker::Link(Thread *thread, String *url) {
+  StartWorker::PushFrame(thread, url);
+  LoadWorker::PushFrame(thread, String::New("lib/system/Boot"));
 }
