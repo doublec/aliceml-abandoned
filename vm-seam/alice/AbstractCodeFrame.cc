@@ -16,7 +16,12 @@
 #pragma implementation "alice/AbstractCodeFrame.hh"
 #endif
 
+#ifdef LIVENESS_DEBUG
+#include "alice/AliceConcreteCode.hh"
+#endif
+
 #include "alice/AbstractCodeFrame.hh"
+
 
 #ifdef DEBUG_CHECK
 static word dead;
@@ -46,7 +51,7 @@ word AbstractCodeFrame::Environment::LookupUnchecked(word id) {
 word AbstractCodeFrame::Environment::Lookup(word id) {
   word value = Sub(Store::WordToInt(id));
 #ifdef LIVENESS_DEBUG
-  Block *p = Store::WordToBlock(value);
+  ::Block *p = Store::WordToBlock(value);
   if (p != INVALID_POINTER) {
     if (p->GetLabel() == DEAD_LABEL) {
       std::fprintf(stderr, "### USING KILLED VALUE ###\n");
@@ -68,7 +73,7 @@ word AbstractCodeFrame::Environment::Lookup(word id) {
 #ifdef LIVENESS_DEBUG
 void AbstractCodeFrame::Environment::Kill(word id, TagVal *pc, 
 					  Closure *globalEnv) {
-  Block *dead = Store::AllocBlock(DEAD_LABEL, 4);
+  ::Block *dead = Store::AllocBlock(DEAD_LABEL, 4);
   dead->InitArg(0, id);
   dead->InitArg(1, Sub(Store::WordToInt(id)));
   dead->InitArg(2, pc->ToWord());
