@@ -100,14 +100,15 @@ static String *Concat(String *a, char *b, u_int bLen) {
 
 static word IoConstructor;
 
-#define RAISE_IO_EXCEPTION(cause, function, name)		\
-  ConVal *conVal =						\
-    ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);	\
-  conVal->Init(0, cause);					\
-  conVal->Init(1, String::New(function)->ToWord());		\
-  conVal->Init(1, name->ToWord());				\
-  Scheduler::currentData = conVal->ToWord();			\
-  return Interpreter::RAISE;
+#define RAISE_IO(cause, function, name)					\
+  {									\
+    ConVal *conVal =							\
+      ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);	\
+    conVal->Init(0, cause);						\
+    conVal->Init(1, String::New(function)->ToWord());			\
+    conVal->Init(1, name->ToWord());					\
+    RAISE(conVal->ToWord());						\
+  }
 
 DEFINE3(UnsafeIO_Io) {
   ConVal *conVal = ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);
@@ -143,7 +144,7 @@ DEFINE1(UnsafeIO_inputAll) {
   while (!feof(file)) {
     u_int rdBytes = fread(buf, 1, 8192, file);
     if (ferror(file)) {
-      RAISE_IO_EXCEPTION(Store::IntToWord(0), "inputAll", stream->GetName());
+      RAISE_IO(Store::IntToWord(0), "inputAll", stream->GetName());
     }
     b = Concat(b, buf, rdBytes);
   }
@@ -160,7 +161,7 @@ DEFINE1(UnsafeIO_inputLine) {
   while (!stop) {
     u_int rdBytes = fread(buf, 1, 1024, file);
     if (ferror(file)) {
-      RAISE_IO_EXCEPTION(Store::IntToWord(0), "inputLine", stream->GetName());
+      RAISE_IO(Store::IntToWord(0), "inputLine", stream->GetName());
     }
     u_int seek    = 0;
     while (!stop && (seek < rdBytes)) {
@@ -186,7 +187,7 @@ DEFINE2(UnsafeIO_openAppend) {
     RETURN(OutStream::New(file, s)->ToWord());
   }
   else {
-    RAISE_IO_EXCEPTION(Store::IntToWord(0), "openAppend", s);
+    RAISE_IO(Store::IntToWord(0), "openAppend", s);
   }
 } END
 
@@ -200,7 +201,7 @@ DEFINE2(UnsafeIO_openIn) {
     RETURN(InStream::New(file, s)->ToWord());
   }
   else {
-    RAISE_IO_EXCEPTION(Store::IntToWord(0), "openIn", s);
+    RAISE_IO(Store::IntToWord(0), "openIn", s);
   }
 } END
 
@@ -214,7 +215,7 @@ DEFINE2(UnsafeIO_openOut) {
     RETURN(OutStream::New(file, s)->ToWord());
   }
   else {
-    RAISE_IO_EXCEPTION(Store::IntToWord(0), "openOut", s);
+    RAISE_IO(Store::IntToWord(0), "openOut", s);
   }
 } END
 
@@ -227,7 +228,7 @@ DEFINE2(UnsafeIO_output) {
     RETURN_UNIT;
   }
   else {
-    RAISE_IO_EXCEPTION(Store::IntToWord(0), "output", stream->GetName());
+    RAISE_IO(Store::IntToWord(0), "output", stream->GetName());
   }
 } END
 
@@ -239,7 +240,7 @@ DEFINE2(UnsafeIO_output1) {
     RETURN_UNIT;
   }
   else {
-    RAISE_IO_EXCEPTION(Store::IntToWord(0), "output1", stream->GetName());
+    RAISE_IO(Store::IntToWord(0), "output1", stream->GetName());
   }
 } END
 
@@ -256,18 +257,30 @@ word UnsafeIO(void) {
 
   Tuple *t = Tuple::New(16);
   t->Init(0, IoConstructor);
-  t->Init(1, Primitive::MakeClosure("UnsafeIO_Io", UnsafeIO_Io, 3));
-  t->Init(2, Primitive::MakeClosure("UnsafeIO_closeIn", UnsafeIO_closeIn, 1));
-  t->Init(3, Primitive::MakeClosure("UnsafeIO_closeOut", UnsafeIO_closeOut, 1));
-  t->Init(4, Primitive::MakeClosure("UnsafeIO_flushOut", UnsafeIO_flushOut, 1));
-  t->Init(5, Primitive::MakeClosure("UnsafeIO_inputAll", UnsafeIO_inputAll, 1));
-  t->Init(6, Primitive::MakeClosure("UnsafeIO_inputLine", UnsafeIO_inputLine, 1));
-  t->Init(7, Primitive::MakeClosure("UnsafeIO_openAppend", UnsafeIO_openAppend, 2));
-  t->Init(8, Primitive::MakeClosure("UnsafeIO_openIn", UnsafeIO_openIn, 2));
-  t->Init(9, Primitive::MakeClosure("UnsafeIO_openOut", UnsafeIO_openOut, 2));
-  t->Init(10, Primitive::MakeClosure("UnsafeIO_output", UnsafeIO_output, 2));
-  t->Init(11, Primitive::MakeClosure("UnsafeIO_output1", UnsafeIO_output1, 2));
-  t->Init(12, Primitive::MakeClosure("UnsafeIO_print", UnsafeIO_print, 1));
+  t->Init(1, Primitive::MakeClosure("UnsafeIO_Io",
+				    UnsafeIO_Io, 3));
+  t->Init(2, Primitive::MakeClosure("UnsafeIO_closeIn",
+				    UnsafeIO_closeIn, 1));
+  t->Init(3, Primitive::MakeClosure("UnsafeIO_closeOut",
+				    UnsafeIO_closeOut, 1));
+  t->Init(4, Primitive::MakeClosure("UnsafeIO_flushOut",
+				    UnsafeIO_flushOut, 1));
+  t->Init(5, Primitive::MakeClosure("UnsafeIO_inputAll",
+				    UnsafeIO_inputAll, 1));
+  t->Init(6, Primitive::MakeClosure("UnsafeIO_inputLine",
+				    UnsafeIO_inputLine, 1));
+  t->Init(7, Primitive::MakeClosure("UnsafeIO_openAppend",
+				    UnsafeIO_openAppend, 2));
+  t->Init(8, Primitive::MakeClosure("UnsafeIO_openIn",
+				    UnsafeIO_openIn, 2));
+  t->Init(9, Primitive::MakeClosure("UnsafeIO_openOut",
+				    UnsafeIO_openOut, 2));
+  t->Init(10, Primitive::MakeClosure("UnsafeIO_output",
+				     UnsafeIO_output, 2));
+  t->Init(11, Primitive::MakeClosure("UnsafeIO_output1",
+				     UnsafeIO_output1, 2));
+  t->Init(12, Primitive::MakeClosure("UnsafeIO_print",
+				     UnsafeIO_print, 1));
   t->Init(13, OutStream::New(stderr, String::New("stderr"))->ToWord());
   t->Init(14, InStream::New(stdin, String::New("stdin"))->ToWord());
   t->Init(15, OutStream::New(stdout, String::New("stdout"))->ToWord());
