@@ -35,7 +35,7 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    PickleInputStream in = new PickleInputStream(fin);
 	    DMLValue r = (DMLValue) in.readObject();
 	    System.out.println(r);
-	    v=((Record) r).getByLabel("main").apply(arglist);
+	    v=((Record) r).get("main").apply(arglist);
 	    while (tail!=null) {
 		t = tail;
 		tail = null;

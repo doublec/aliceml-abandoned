@@ -45,7 +45,7 @@ final public class JObject implements DMLValue {
 	_APPLY(val) {
 	    if (val instanceof DMLTuple) {
 		DMLTuple v = (DMLTuple) val;
-		_REQUESTDEC(DMLValue c,v.getByIndex(0)); // erstes Argument ist java.lang.Object oder Klasse
+		_REQUESTDEC(DMLValue c,v.get0()); // erstes Argument ist java.lang.Object oder Klasse
 
 		Class cl = null;
 		Object object = null;
@@ -66,7 +66,7 @@ final public class JObject implements DMLValue {
 		}
 		// Klasse gefunden, Class steht in cl
 
-		_REQUESTDEC(DMLValue mn,v.getByIndex(1)); // Methodenname
+		_REQUESTDEC(DMLValue mn,v.get1()); // Methodenname
 		java.lang.String methname = null;
 		if (!(mn instanceof STRING)) {
 		    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for methodname"),						   val));
@@ -79,7 +79,7 @@ final public class JObject implements DMLValue {
 		Class[] classes = null;
 		Object[] args   = null;
 		java.lang.reflect.Method meth = null;
-		_REQUESTDEC(DMLValue unit,v.getByIndex(2));
+		_REQUESTDEC(DMLValue unit,v.get2());
 		if (length==0 || unit==Constants.dmlunit) { // nullstellige Methode
 		    try {
 			meth = cl.getMethod(methname,null);
@@ -91,7 +91,7 @@ final public class JObject implements DMLValue {
 		    classes = new Class[length];
 		    args = new java.lang.Object[length];
 		    for(int i=0; i<length; i++) {
-			_REQUESTDEC(DMLValue helper,v.getByIndex(i+2));
+			_REQUESTDEC(DMLValue helper,v.get(i+2));
 			if (helper instanceof Int) {
 			    classes[i] = java.lang.Integer.TYPE;
 			    args[i] = new java.lang.Integer(((Int) helper).getInt());
@@ -311,7 +311,7 @@ final public class JObject implements DMLValue {
 	    _REQUEST(val,val);
 	    if (val instanceof DMLTuple) {
 		DMLTuple v = (DMLTuple) val;
-		_REQUESTDEC(DMLValue c,v.getByIndex(0)); // erstes Argument
+		_REQUESTDEC(DMLValue c,v.get0()); // erstes Argument
 		if (c instanceof STRING) {
 		    java.lang.String classname = ((STRING) c).getString();
 		    Class cl = null;
@@ -326,7 +326,7 @@ final public class JObject implements DMLValue {
 		    Class[] classes = null;
 		    Object[] args   = null;
 		    java.lang.reflect.Constructor con = null;
-		    _REQUESTDEC(DMLValue unit,v.getByIndex(1));
+		    _REQUESTDEC(DMLValue unit,v.get1());
 		    if (length==0 || unit==Constants.dmlunit) { // Nullstelliger Konstruktor
 			try {
 			    con = cl.getConstructor(null);
@@ -338,7 +338,7 @@ final public class JObject implements DMLValue {
 			classes = new Class[length];
 			args = new java.lang.Object[length];
 			for(int i=0; i<length; i++) {
-			    _REQUESTDEC(DMLValue helper,v.getByIndex(i+1));
+			    _REQUESTDEC(DMLValue helper,v.get(i+1));
 			    if (helper instanceof Int) {
 				classes[i] = java.lang.Integer.TYPE;
 				args[i] = new java.lang.Integer(((Int) helper).getInt());
@@ -562,7 +562,7 @@ _BUILTIN(Putfield) {
 					       val));
 	    }
 	    // else:   
-	    _REQUESTDEC(DMLValue c,v.getByIndex(0)); // java.lang.Object oder Klasse
+	    _REQUESTDEC(DMLValue c,v.get0()); // java.lang.Object oder Klasse
 
 	    Class cl = null;
 	    java.lang.Object object = null;
@@ -588,7 +588,7 @@ _BUILTIN(Putfield) {
 	    // Klasse gefunden, Class steht in cl
 	    // Objekt steht in object
 
-	    _REQUEST(c,v.getByIndex(1)); // hier: Feldname
+	    _REQUEST(c,v.get1()); // hier: Feldname
 	    java.lang.String fieldname = null;
 	    if (c instanceof STRING) 
 		fieldname = ((STRING) c).getString();
@@ -597,7 +597,7 @@ _BUILTIN(Putfield) {
 					       val));
 	    }
 
-	    _REQUEST(c,v.getByIndex(2)); // hier: Wert
+	    _REQUEST(c,v.get2()); // hier: Wert
 	    java.lang.Object arg = null;
 	    if (c instanceof Int) {
 		arg = new Integer(((Int) c).getInt());
@@ -669,7 +669,7 @@ _BUILTIN(Getfield) {
 					       val));
 	    }
 	    // else:   
-	    _REQUESTDEC(DMLValue c,v.getByIndex(0)); // java.lang.Object oder Klasse
+	    _REQUESTDEC(DMLValue c,v.get0()); // java.lang.Object oder Klasse
 
 	    Class cl = null;
 	    java.lang.Object object = null;
@@ -695,7 +695,7 @@ _BUILTIN(Getfield) {
 	    // Klasse gefunden, Class steht in cl
 	    // Objekt steht in object (evtl. null)
 
-	    _REQUEST(c,v.getByIndex(1)); // hier: Feldname
+	    _REQUEST(c,v.get1()); // hier: Feldname
 	    java.lang.String fieldname = null;
 	    if (c instanceof STRING)
 		fieldname = ((STRING) c).getString();
@@ -765,7 +765,7 @@ _BUILTIN(InstanceOf) {
 		_RAISE(javaAPIError,new Tuple2(new STRING ("invalid number of arguments for instanceOf"),
 					       val));
 	    }
-	    _REQUESTDEC(DMLValue c,v.getByIndex(0)); // erstes Argument ist java.lang.Object oder Klasse
+	    _REQUESTDEC(DMLValue c,v.get0()); // erstes Argument ist java.lang.Object oder Klasse
 
 	    // 1. Argument
 	    Class cl = null;
@@ -785,7 +785,7 @@ _BUILTIN(InstanceOf) {
 	    }
 
 	    // 2. Argument
-	    _REQUEST(c,v.getByIndex(1)); // zweites Argument
+	    _REQUEST(c,v.get1()); // zweites Argument
 	    Class cl2 = null;
 	    if (c instanceof STRING) {
 		java.lang.String classname = ((STRING) c).getString();

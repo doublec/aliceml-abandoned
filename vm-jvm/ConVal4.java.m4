@@ -67,10 +67,10 @@ final public class ConValTuple4 implements DMLConVal {
 		return false;
 	    } else {
 		return
-		    t.getByIndex(0).equals(fst) &&
-		    t.getByIndex(1).equals(snd) &&
-		    t.getByIndex(2).equals(thr) &&
-		    t.getByIndex(3).equals(fur);
+		    t.get0().equals(fst) &&
+		    t.get1().equals(snd) &&
+		    t.get2().equals(thr) &&
+		    t.get3().equals(fur);
 	    }
 	} else {
 	    return false;

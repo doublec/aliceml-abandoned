@@ -10,8 +10,8 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class Tuple2 implements DMLTuple {
 
-    private DMLValue fst = null;
-    private DMLValue snd = null;
+    protected DMLValue fst = null;
+    protected DMLValue snd = null;
 
     public Tuple2(DMLValue eins,
 		  DMLValue zwei) {
@@ -38,8 +38,8 @@ final public class Tuple2 implements DMLTuple {
 		return false;
 	    } else {
 		return
-		    t.getByIndex(0).equals(fst) &&
-		    t.getByIndex(1).equals(snd);
+		    t.get0().equals(fst) &&
+		    t.get1().equals(snd);
 	    }
 	} else {
 	    return false;
@@ -51,12 +51,20 @@ final public class Tuple2 implements DMLTuple {
     }
 
     /** gibt den i-ten Eintrag des Tuples oder Records*/
-    final public DMLValue getByIndex(int i){
+    final public DMLValue get(int i){
 	switch (i) {
 	case 0: return fst;
 	case 1: return snd;
 	default: throw new ArrayIndexOutOfBoundsException();
 	}
+    }
+
+    final public DMLValue get(java.lang.String i) {
+	_RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+    }
+
+    final public DMLValue get(Label i) {
+	_RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
     }
 
     /** gibt die Stelligkeit des Tuples oder Records an */

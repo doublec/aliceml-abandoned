@@ -53,7 +53,7 @@ final public class Record extends Tuple {
 	return s+"}";
     }
 
-    final public DMLValue getByLabel(int i) {
+    final public DMLValue get(int i) {
 	int index = arity.getIndexOfLabel(new Label(i));
 	if (index > -1)
 	    return vals[index];
@@ -61,7 +61,7 @@ final public class Record extends Tuple {
 	    return null;
     }
 
-    final public DMLValue getByLabel(java.lang.String s) {
+    final public DMLValue get(java.lang.String s) {
 	int index = arity.getIndexOfLabel(new Label(s));
 	if (index > -1)
 	    return vals[index];
@@ -69,7 +69,7 @@ final public class Record extends Tuple {
 	    return null;
     }
 
-    final public DMLValue getByLabel(Label label) {
+    final public DMLValue get(Label label) {
 	int index = arity.getIndexOfLabel(label);
 	if (index > -1)
 	    return vals[index];

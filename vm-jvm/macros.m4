@@ -39,7 +39,7 @@ define(_fromTuple,`
 	  if (t.getArity()==$3) {
 	    $1 = new DMLValue[$3];
 	    for(int i=0; i<$3; i++)
-		$1[i]=t.getByIndex(i);
+		$1[i]=t.get(i);
 	  } else {
 	    return Constants.
 		runtimeError.apply(new Tuple2(

@@ -27,8 +27,7 @@ final public class Vector implements DMLValue {
 	} else {
 	    vec = new DMLValue[n];
 	    for(int i=0; i<n; i++) {
-		DMLValue[] arg={new Int(i)};
-		vec[i]=f.apply(new Tuple(arg));
+		vec[i]=f.apply(new Tuple1(new Int(i)));
 	    }
 	}
     }

@@ -16,5 +16,4 @@ public interface DMLValue extends java.io.Serializable {
      *  @return DMLValue das Ergebnis der Applikation
      */
     public DMLValue apply(DMLValue val) throws java.rmi.RemoteException;
-
 }

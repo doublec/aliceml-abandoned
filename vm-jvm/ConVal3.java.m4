@@ -61,9 +61,9 @@ final public class ConValTuple3 implements DMLConVal {
 		return false;
 	    } else {
 		return
-		    t.getByIndex(0).equals(fst) &&
-		    t.getByIndex(1).equals(snd) &&
-		    t.getByIndex(2).equals(thr);
+		    t.get0().equals(fst) &&
+		    t.get1().equals(snd) &&
+		    t.get2().equals(thr);
 	    }
 	} else {
 	    return false;

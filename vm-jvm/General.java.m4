@@ -284,7 +284,7 @@ final public class General {
 		    case 3: return ((DMLTuple) tup).get2();
 		    case 4: return ((DMLTuple) tup).get3();
 		    case 5: return ((DMLTuple) tup).get4();
-		    default: return ((DMLTuple) tup).getByIndex(i);
+		    default: return ((DMLTuple) tup).get(i);
 		    }
 		} else {
 		    _error("argument not tuple",val);
@@ -300,7 +300,7 @@ final public class General {
 		_fromTuple(args,val,1,"General.sel "+lab);
 		_REQUESTDEC(DMLValue tup, args[0]);
 		if (tup instanceof Record) {
-		    return ((Record) tup).getByLabel(lab);
+		    return ((Record) tup).get(lab);
 		} else {
 		    _error("argument not record",val);
 		}
