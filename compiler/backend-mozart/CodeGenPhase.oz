@@ -87,7 +87,7 @@ define
 	 Hd = 'RecDec'(Info {Record.map IdDefExpVec
 			     fun {$ IdDef#Exp}
 				{TrIdDef IdDef}#{TrExp Exp}
-			     end})
+			     end})|Tl
       [] 'RefDec'(Info IdDef IdRef) then
 	 Hd = 'RefDec'(Info {TrIdDef IdDef} {TrIdRef IdRef})|Tl
       [] 'TupDec'(Info IdDefs IdRef) then
