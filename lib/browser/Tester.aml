@@ -1,5 +1,3 @@
-import structure NewNode from "NewNode";
-import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 
@@ -91,7 +89,7 @@ UnsafeInspector.inspect(x,Int.x);
 
 (* Packages *)
 
-structure P = Package.Pack (signature S = LIST structure X = List);
+structure P = Package.Pack (signature S = GTK structure X = Gtk);
 structure Pack = Reflect.ReflectType (type t = Package.package);
 
 UnsafeInspector.inspect(P.package,Pack.x);

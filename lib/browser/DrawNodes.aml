@@ -96,11 +96,11 @@ struct
 	   in 
 	       (f(n,x,y)
 		; getStatus(n) := Types.CLEAN
-		; TextIO.print("Draw Concat returns: x=" 
-			    ^ Int.toString(new_x+x)
-			    ^ " y="
-			    ^ Int.toString(new_y+y)
-			    ^ "\n")
+		(* ; TextIO.print("Draw Concat returns: x=" 
+		 ^ Int.toString(new_x+x)
+		 ^ " y="
+		 ^ Int.toString(new_y+y)
+		 ^ "\n") *)
 		;(new_x+x,new_y+y))
 	   end
 
@@ -134,11 +134,11 @@ struct
 	in
 	    (getStatus(n) := Types.CLEAN
 	     ;f(n,x,y)
-	      ; TextIO.print("Draw Container returns: x=" 
+	      ; () (*TextIO.print("Draw Container returns: x=" 
 			    ^ Int.toString(new_x+x)
 			    ^ " y="
 			    ^ Int.toString(new_y+y)
-			    ^ "\n")
+			    ^ "\n") *)
 	     ;(new_x+x,new_y+y))
 	end 
     
@@ -146,7 +146,7 @@ struct
     (* drawRelNode *)
     and drawRelNode (n,x,y,f) = case n of
 	RelNode(r) 
-	=> (let val _ = TextIO.print("Entering drawRelNode \n")
+	=> (let val _ = () (* TextIO.print("Entering drawRelNode \n") *)
 	    in (f(n,x,y)
 	       ; if !(#counter(r)) = 1 orelse isSimple(!(#content(r)))
 		     then let

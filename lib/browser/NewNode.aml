@@ -539,10 +539,10 @@ struct
    
     (* createFutureNode *)
     and createFutureNode (va,t,p,i,d) = 
-	let val _ = TextIO.print("CREATE_FUTURE_NODE: wurde gestarted!\n")
+	let val _ = () (* TextIO.print("CREATE_FUTURE_NODE: wurde gestarted!\n") *)
 	    val desc = createValue(va,t,NO_ACTIONS)
             val fut = UnsafeValue.cast va
-	    val str = if Future.isLazy fut then "_byneed_" else "future"
+	    val str = if Future.isLazy fut then "byneed" else "future"
 	    val simple =  createSimple (desc,p,i,d,str,DEFAULT,setGroup)
 	in ( case TransientDictionary.iterLookup  
 	                   (transdict, 

@@ -13,8 +13,9 @@
  *
  *)
 
-import structure Reflect from "x-alice:/lib/system/Reflect";
-import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure BrowserSupport from "x-alice:/lib/system/BrowserSupport"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Types from "Types"
 import structure Helper from "Helper"
@@ -99,18 +100,16 @@ struct
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
 	       val old_ydim = Layout.get_ydim(anc)
-	       val p = if isRelNode(getParent(n))
-			   then getParent(getParent(n))
-		       else getParent(n)
+	       val (p,index) = getNoRelAnc n	 
 	       val va_inf = UnsafeValue.cast va : Reflect.module
 	       val new =
 		   case getDesc(n) of
-		       VALUE(r) => f(va,#typ(r),p,getIndex(n),
+		       VALUE(r) => f(va,#typ(r),p,index,
 				     getDepth(n))
-		     | I_VALUE(r) => g(va_inf,#typ(r),p,getIndex(n),
+		     | I_VALUE(r) => g(va_inf,#typ(r),p,index,
 				       getDepth(n))
 		     | INTERPUNCT => raise UpdateError 
-	       val _ = updateChild(p,getIndex(n),new)
+	       val _ = updateChild(p,index,new)
 	       val node = if getParent(new) = Empty then new else anc
 	       val _ = if isRelRefNode new
 			   then findRelNode(node,va)
@@ -128,22 +127,17 @@ struct
 					           [new]@ri_rel))
 			  end 
 		 else ()
-	       ; showChanges (anc,ancline,node,old_ydim,ind,y_pos) )
+               ; Layout.layout(node)
+	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
+	       ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
+	       ; let val dy =  Layout.get_ydim(node) - old_ydim
+		 in ( WindowManager.incr_act_line dy
+		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
+				 MainDictionary.getHighestIndexAssigned
+				 (Dictionaries.dict))
+		     ; Layout.setVisible(Layout.get_xdim(node),dy))
+		 end )
 	   end )
-
-    (* showChanges *)
-    and showChanges (anc,ancline,node,old_ydim,ind,y_pos) = 
-        (Layout.layout(node)
-	 ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline))) 
-         ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
-	 ; let val dy =  Layout.get_ydim(node) - old_ydim
-	   in ( WindowManager.incr_act_line dy
-	       ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
-			   MainDictionary.getHighestIndexAssigned
-			   (Dictionaries.dict))
-	       ; Layout.setVisible(Layout.get_xdim(node),dy)
-	       ; !WindowManager.resize() )
-	   end)
 
     (* findRelNode *)
     and findRelNode(anc,va) = 
@@ -166,7 +160,8 @@ struct
 			    else array_map (g,getKids(anc)) )
 	   | Container(r) => ( f anc
 			     ; if !found then () 
-			       else array_map (f,getKids(anc))
+			   
+    else array_map (f,getKids(anc))
 			     ; if !found then ()
 			       else array_map (g,getKids(anc)) )
 	   | RelNode(r) => (f anc
@@ -180,7 +175,8 @@ struct
 	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
 	                           li
-	in (List.map (fn n => update(n,va,f,g)) new_li ; ())
+	in ( List.map (fn n => update(n,va,f,g)) new_li 
+	    ; !WindowManager.resize() )
 	end   
 
     (* watcher *)
@@ -197,7 +193,7 @@ struct
 	      NONE => () 
 	    | SOME((vv,ll),i)  
 	      => ( if Future.isLazy  future
-		       then Future.await(future) (* spaeter aendern! *)
+		       then BrowserSupport.waitRequest(future)
 		   else Future.await(future)
 		  ; let val new_l = #2(valOf(TransientDictionary.lookup
 					     (Dictionaries.transdict,i)))
@@ -207,7 +203,7 @@ struct
     (* reinspect *)
     and reinspect (n,f,g) = 
         let val va = getValue(getDesc(n))
-	in  Server.serve(fn () => update(n,va,f,g))
+	in  Server.serve(fn () => (update(n,va,f,g) ; !WindowManager.resize()))
 	end
     handle General.Match => raise UpdateError
 	
@@ -221,9 +217,7 @@ struct
 	      ; let val new_depth = findHighestDepth n + i
 		in Settings.set_depth(if new_depth < 0 then 0 else new_depth)
 		end
-	      ; TextIO.print("FOLD_DEPTH: highestDepth war "^
-			     Int.toString(findHighestDepth n)^"\n")
-	      ; fold (n,i,f,g)
+	      ; fold (n,f,g)
 	      ; Settings.set_depth(old_depth) )
 	 end)
 
@@ -237,32 +231,39 @@ struct
 	      ; let val new_width = findHighestWidth n + i
 		in Settings.set_width(if new_width < 0 then 0 else new_width)
 		end
-	      ; TextIO.print("FOLD_WIDTH: highestWidth war "^
-			     Int.toString(findHighestWidth n)^"\n")
-	      ; fold (n,i,f,g)
+	      ; fold (n,f,g)
 	      ; Settings.set_width(old_width) )
 	 end )
 	
     (* fold *)
-    and fold (n,i,f,g) = 
+    and fold (n,f,g) = 
 	let val ind = getAncIndex n 
 	    val (anc,ancline) = valOf(MainDictionary.lookup 
 					(Dictionaries.dict,ind)) 
 	    val old_ydim = Layout.get_ydim(anc) 
 	    val va = getValue(getDesc(n))
 	    val va_inf = UnsafeValue.cast va : Reflect.module
+	    val (p,index) = getNoRelAnc n
 	    val new = 
 		case getDesc n of 
 		    INTERPUNCT => raise Match
-		  | VALUE(r) => f (va,#typ(r),getParent(n),getIndex(n),
-				   getDepth(n))
-		  | I_VALUE(r) => g (va_inf,#typ(r),getParent(n),getIndex(n),
-				     getDepth(n))
-	    val _ = updateChild(getParent(n),getIndex(n),new)  
+		  | VALUE(r) => f (va,#typ(r),p,index,getDepth(n))
+		  | I_VALUE(r) => g (va_inf,#typ(r),p,index,getDepth(n))
+	    val _ = updateChild(p,index,new)  
 	    val node = if getParent(new) = Empty then new else anc
 	    val (_,y_pos) = Services.getPosition(getGroup(anc))
 	in ( Gtk.objectDestroy(getGroup(n))
-	    ; showChanges (anc,ancline,node,old_ydim,ind,y_pos) )
+	    ; Layout.layout(node)
+	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
+	    ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
+	    ; let val dy =  Layout.get_ydim(node) - old_ydim
+	      in ( WindowManager.incr_act_line dy
+		  ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
+			      MainDictionary.getHighestIndexAssigned
+			      (Dictionaries.dict))
+		  ; Layout.setVisible(Layout.get_xdim(node),dy))
+	      end 
+	    ; !WindowManager.resize() )
 	end 
 
     (* findHighestDepth *)

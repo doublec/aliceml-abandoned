@@ -172,7 +172,7 @@ struct
 
     fun getNoRelAnc n = let val p = getParent(n)
 			in case p of RelNode _ => getNoRelAnc p
-		                   | _ => p 
+		                   | _ => (p,getIndex(n)) 
 			end 
 
     fun getAncIndex n = if n = Empty 

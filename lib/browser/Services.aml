@@ -125,7 +125,7 @@ import signature SERVICES from "SERVICES-sig"
 		   if absx = rx andalso absy = ry
 		       then ()
 		   else (GtkCanvas.itemMove(group,dx,dy)
-			 ; TextIO.print("ITEM MOVE FROM " 
+			 ; (* TextIO.print("ITEM MOVE FROM " 
 					^ Real.toString(absx)
 					^ "/" 
 					^ Real.toString(absy)
@@ -133,7 +133,7 @@ import signature SERVICES from "SERVICES-sig"
 					^ Real.toString(rx)
 					^ "/" 
 					^ Real.toString(ry)
-					^ "\n"))
+					^ "\n") *) () )
 	       end
 
 	   fun createSepLine (group,actline)= 

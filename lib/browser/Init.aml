@@ -14,6 +14,7 @@
  *)
 
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure Settings from "Settings"
@@ -94,7 +95,16 @@ struct
 			    ("expand",
 			     fn (n,_) 
 			     => Update.foldDepth(n,1,createGraph,
-						 createGraphInf)) )
+						 createGraphInf)) 
+	           ; !WindowManager.register
+			    ("force evaluation", 
+			     fn (n,_) 
+			     => let val b_future = case Helper.getDesc n of  
+				    VALUE(r) => UnsafeValue.cast (#value(r)) 
+				  | I_VALUE(r) => UnsafeValue.cast (#value(r)) 
+                                  | _ => raise Match 
+				in Future.await(b_future) 
+				end) )
 		      
 end
 

@@ -36,12 +36,12 @@ struct
 	let
 	    val xdim = Layout.get_xdim(node)
 	    val ydim = Layout.get_ydim(node)
-	    val _ =  TextIO.print("Simple search with x=" 
+	    val _ =  () (* TextIO.print("Simple search with x=" 
 					 ^ Int.toString(x)
 					 ^ " and y="
 					 ^ Int.toString(y)
-					 ^ "\n") 
-	in
+					 ^ "\n")  *)
+	in  
 	    x >= 0 
 	    andalso y >= 0
 	    andalso x < xdim
@@ -88,11 +88,11 @@ struct
 				 end)
       | treeSearch (Concat(r) as node,x,y) =
 	    let
-		val _ = TextIO.print("Concat search with x=" 
+		val _ = () (* TextIO.print("Concat search with x=" 
 				     ^ Int.toString(x)
 				     ^ " and y="
 				     ^ Int.toString(y)
-				     ^ "\n") 
+				     ^ "\n")  *)
 	    in
 		if inBoundingBox(node,x,y) 
 		    then let
@@ -102,9 +102,9 @@ struct
 				       SOME(n) => raise NodeFound(n)
 				     | NONE    => let
 					   val c = curx -  Layout.get_xdim(a)
-					   val _ =  TextIO.print("curx is "
-						   ^ Int.toString(c)
-						   ^ "\n") 
+					   val _ =  () (* TextIO.print("curx is "
+							^ Int.toString(c)
+							^ "\n") *)
 						  in
 					   (case a of
 						Container(r) => 
@@ -130,11 +130,11 @@ struct
 	    end
       | treeSearch (Container(r) as node,x,y) = 
 		let
-		    val _ =  TextIO.print("Container search with x=" 
+		    val _ =  () (* TextIO.print("Container search with x=" 
 					 ^ Int.toString(x)
 					 ^ " and y="
 					 ^ Int.toString(y)
-					 ^ "\n") 
+					 ^ "\n")  *)
 			in
 		if inBoundingBox(node,x,y) 
 		    then let
@@ -185,8 +185,7 @@ struct
 					   then SOME n
 				       else SOME (getParent(n))
                                   | _ => SOME n))
-	      | _ => (TextIO.print("NodeSearch unknown case") 
-		      ; NONE)
+	      |_ => NONE
 				   
 						     
     fun search (dict,real_x, real_y) = 

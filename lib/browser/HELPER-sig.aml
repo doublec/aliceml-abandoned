@@ -55,7 +55,7 @@ sig
 
     (* Zugriff auf bestimmte "Vorfahren" bzw. deren Felder *)
     val getValueAnc : node -> node
-    val getNoRelAnc : node -> node
+    val getNoRelAnc : node -> node * int
     val getAncIndex : node -> int
 
     (* boolsche Tests auf nodes *)
