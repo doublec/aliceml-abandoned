@@ -1,10 +1,22 @@
 import
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
+
+import
     signature PHASE
 from "x-alice:/infrastructure/PHASE.ozf"
 
 import
     structure ComposePhases
 from "x-alice:/infrastructure/ComposePhases.ozf"
+
+import
+    structure MakeTracingPhase
+from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+
+import
+    structure MakeDumpingPhase
+from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
 
 import
     signature COMPOSER
@@ -15,7 +27,7 @@ import
 from "x-alice:/common/Inf.ozf"
 
 import
-    structure ParsingPhase
+    structure MakeParsingPhase
 from "x-alice:/frontend-sml/ParsingPhase.ozf"
 
 import
@@ -25,3 +37,7 @@ from "x-alice:/frontend-sml/MakeAbstractionPhase.ozf"
 import
     structure BindEnv
 from "x-alice:/frontend-sml/BindEnv.ozf"
+
+import
+    structure PPAbstractGrammar
+from "x-alice:/frontend-common/AbstractGrammar.ozf"

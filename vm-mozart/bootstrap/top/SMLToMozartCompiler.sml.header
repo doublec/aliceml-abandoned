@@ -1,4 +1,8 @@
 import
+    structure TextIO
+from "x-alice:/lib/TextIO.ozf"
+
+import
     structure MakeSwitches
 from "x-alice:/infrastructure/MakeSwitches.ozf"
 
@@ -11,7 +15,7 @@ import
 from "x-alice:/frontend-sml/MakeFrontendSML.ozf"
 
 import
-    structure BackendCommon
+    structure MakeBackendCommon
 from "x-alice:/backend-common/BackendCommon.ozf"
 
 import

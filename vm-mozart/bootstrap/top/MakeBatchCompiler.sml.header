@@ -43,12 +43,20 @@ import
 from "x-alice:/common/Inf.ozf"
 
 import   (*DEBUG*)
+    structure PPInf
+from "x-alice:/common/PPInf.ozf"
+
+import   (*DEBUG*)
     structure ParsingPhase
 from "x-alice:/frontend-sml/ParsingPhase.ozf"
 
 import   (*DEBUG*)
     structure BindEnv
 from "x-alice:/frontend-sml/BindEnv.ozf"
+
+import   (*DEBUG*)
+    structure BindEnvFromSig
+from "x-alice:/frontend-sml/BindEnvFromSig.ozf"
 
 import   (*DEBUG*)
     structure MakeAbstractionPhase
@@ -63,12 +71,32 @@ import   (*DEBUG*)
 from "x-alice:/frontend-common/MakeElaborationPhase.ozf"
 
 import   (*DEBUG*)
+    structure TypedGrammar
+from "x-alice:/frontend-common/TypedGrammar.ozf"
+
+import   (*DEBUG*)
+    structure PPAbstractGrammar
+from "x-alice:/frontend-common/AbstractGrammar.ozf"
+
+import   (*DEBUG*)
     structure MakeTranslationPhase
 from "x-alice:/frontend-common/MakeTranslationPhase.ozf"
 
 import   (*DEBUG*)
+    structure PPIntermediateGrammar
+from "x-alice:/frontend-common/IntermediateGrammar.ozf"
+
+import   (*DEBUG*)
     structure FlatteningPhase
 from "x-alice:/backend-common/FlatteningPhase.ozf"
+
+import   (*DEBUG*)
+    structure MakeTracingPhase
+from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+
+import   (*DEBUG*)
+    structure MakeDumpingPhase
+from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
 
 import
     structure BackendCommon

@@ -1,4 +1,8 @@
 import
+    structure Assert
+from "x-alice:/misc/Assert.ozf"
+
+import
     structure Crash
 from "x-alice:/infrastructure/Crash.ozf"
 

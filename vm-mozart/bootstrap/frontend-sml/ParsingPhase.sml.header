@@ -19,6 +19,10 @@ import
 from "x-alice:/infrastructure/CONTEXT.ozf"
 
 import
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
+
+import
     structure EmptyContext
 from "x-alice:/infrastructure/EmptyContext.ozf"
 

@@ -72,6 +72,10 @@ import
 from "x-alice:/common/TypeReflection.ozf"
 
 import
+    functor MakeHashImpMap
+from "x-alice:/misc/MakeHashImpMap.ozf"
+
+import
     structure StringMap
 from "x-alice:/frontend-common/StringMap.ozf"
 

@@ -57,7 +57,8 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 	    CodeGenPhase.save (filename, !Switches.outputAssembly, component)
     end
 
-functor MakeBackendMozart(MozartTarget: TARGET
+functor MakeBackendMozart(structure Switches: SWITCHES
+			  structure MozartTarget: TARGET
 			  where type t = CodeGenPhase.t): PHASE =
     struct
 	structure C = EmptyContext

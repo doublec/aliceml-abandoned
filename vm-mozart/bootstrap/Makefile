@@ -2,7 +2,8 @@ PREFIX = /opt/stockhausen-devel
 
 STOC = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/stoc-mozart
-STOC_OPTS = --no-dump-elaboration-sig --no-implicit-import
+STOC_EXTRA_OPTS = 
+STOC_OPTS = $(STOC_EXTRA_OPTS) --no-dump-elaboration-sig --no-implicit-import
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
