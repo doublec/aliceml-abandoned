@@ -1447,7 +1447,7 @@ print "\n\
 
       | elabDec(E, s, vars, I.ConDec(i, id, typ, k)) =
 	let
-	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
+	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR k, id)
 	    val (t,typ')    = elabStarTyp(E, typ)
 	    (*UNFINISHED: check that type is extensible or an appropriate sum*)
 	    val  d          = case typ
@@ -1455,7 +1455,7 @@ print "\n\
 					SOME(elabValLongid_path(E,longid))
 				 | _ => NONE
 	    val  _          = Type.unify(t,t0)
-	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR, d)
+	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR k, d)
 	in
 	    O.ConDec(nonInfo(i), id', typ', k)
 	end
@@ -1710,7 +1710,7 @@ val _=print "\n"
 
       | elabSpec(E, s, I.ConSpec(i, id, typ, k)) =
 	let
-	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
+	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR k, id)
 	    val (t,typ')    = elabStarTyp(E, typ)
 	    (*UNFINISHED: check that type is extensible or an appropriate sum *)
 	    val  d          = case typ
@@ -1718,7 +1718,7 @@ val _=print "\n"
 					SOME(elabValLongid_path(E,longid))
 				 | _ => NONE
 	    val  _          = Type.unify(t,t0)
-	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR, d)
+	    val  _          = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR k, d)
 	in
 	    O.ConSpec(nonInfo(i), id', typ', k)
 	end
@@ -1950,7 +1950,7 @@ and elabRHSRecSpec' bla =
 
       | elabImp(E, s, I.ConImp(i, id, desc, k)) =
 	let
-	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
+	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR k, id)
 	    val  a          = Label.fromName(O.name id')
 	    val  t1         = Inf.lookupVal(s, a) handle Inf.Lookup =>
 				error(I.infoId id, E.ConImpUnbound a)

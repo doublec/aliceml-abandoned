@@ -10,7 +10,7 @@ signature INF =
     type tkind = Type.kind
     type fix   = Fixity.t
 
-    datatype val_sort = VALUE | CONSTRUCTOR		(* [w] *)
+    datatype val_sort = VALUE | CONSTRUCTOR of int	(* [w] *)
     datatype typ_sort = datatype Type.sort		(* [w] *)
 
     type kind						(* [kappa,k] *)

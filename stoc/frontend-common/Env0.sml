@@ -68,23 +68,23 @@ structure Env0 :> ENV0 =
     val typ_match = typ_exn
     val typ_bind  = typ_exn
 
-    fun insertCon'(stamp, path, typ, name) =
+    fun insertCon'(stamp, path,k,  typ, name) =
 	let
 	    val entry = { id   = Id(Source.nowhere, stamp, name)
 			, path = path
 			, typ  = typ
-			, sort = Inf.CONSTRUCTOR
+			, sort = Inf.CONSTRUCTOR k
 			}
 	in
 	    insertVal(E0, stamp, entry)
 	end
 
-    val _ = insertCon'(valstamp_false, valpath_false, typ_false, valname_false)
-    val _ = insertCon'(valstamp_true,  valpath_true,  typ_true,  valname_true)
-    val _ = insertCon'(valstamp_nil,   valpath_nil,   typ_nil,   valname_nil)
-    val _ = insertCon'(valstamp_cons,  valpath_cons,  typ_cons,  valname_cons)
-    val _ = insertCon'(valstamp_ref,   valpath_ref,   typ_ref,   valname_ref)
-    val _ = insertCon'(valstamp_match, valpath_match, typ_match, valname_match)
-    val _ = insertCon'(valstamp_bind,  valpath_bind,  typ_bind,  valname_bind)
+    val _ = insertCon'(valstamp_false,valpath_false, 0, typ_false,valname_false)
+    val _ = insertCon'(valstamp_true, valpath_true,  0, typ_true, valname_true)
+    val _ = insertCon'(valstamp_nil,  valpath_nil,   0, typ_nil,  valname_nil)
+    val _ = insertCon'(valstamp_cons, valpath_cons,  2, typ_cons, valname_cons)
+    val _ = insertCon'(valstamp_ref,  valpath_ref,   1, typ_ref,  valname_ref)
+    val _ = insertCon'(valstamp_match,valpath_match, 0, typ_match,valname_match)
+    val _ = insertCon'(valstamp_bind, valpath_bind,  0, typ_bind, valname_bind)
 
   end

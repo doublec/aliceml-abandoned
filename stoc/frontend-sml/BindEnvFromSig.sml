@@ -20,70 +20,35 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
       | infFromFix(Fixity.POSTFIX n)	= NONE
       | infFromFix(Fixity.INFIX(n,a))	= SOME(assocFromAssoc a, n)
 
-    (*
-     * Arity of constructors is `approximated' through its type.
-     * Reference constructors are recognized through there type as well.
-     *)
 
-    fun arity t =
-	if Type.isArrow t then
-	    arity(#2(Type.asArrow t)) + 1
-	else
-	    0
+    fun idStatusFromSort(Inf.VALUE,         t) = V
+      | idStatusFromSort(Inf.CONSTRUCTOR k, t) = idStatusFromArity(k,t)
 
-    fun isRef t =
-	Path.equals(#3(Type.asCon(#1(Type.asApply t))), PreboundType.path_ref)
-	handle Type.Type => false
-
-    fun arityFromTyp t =
-	if Type.isTuple t then
-	    List.length(Type.asTuple t)
-	else if Type.isProd t then
-	    arityFromRow(Type.asProd t)
-	else
-	    1
-
-    and arityFromRow r =
-	if Type.isUnknownRow r then
-	    1
-	else if Type.isEmptyRow r then
-	    0
-	else
-	    1 + arityFromRow(Type.tailRow r)
-
-
-    fun idStatusFromTyps []	= C 0
-      | idStatusFromTyps [t]	= C(arityFromTyp t)
-      | idStatusFromTyps ts	= C(List.length ts)
-
-    fun idStatusFromSort(Inf.VALUE, t)       = V
-      | idStatusFromSort(Inf.CONSTRUCTOR, t) =
+    and idStatusFromArity(k, t) =
 	if Type.isAll t then
-	    idStatusFromSort(Inf.CONSTRUCTOR, #2(Type.asAll t))
+	    idStatusFromArity(k, #2(Type.asAll t))
 	else if Type.isExist t then
-	    idStatusFromSort(Inf.CONSTRUCTOR, #2(Type.asExist t))
-	else if not(Type.isArrow t) then
-	    C 0
-	else
-	    let
-		val (t1,t2) = Type.asArrow t
-	    in
-		if Type.isArrow t2 then
-		    C(arity t2 + 1)
-		else if isRef t2 then
-		    R
-		else
-		    C(arityFromTyp t1)
-	    end
-
-
-    fun envFromTyp(I,t) =
-	if Type.isSum t then
-	    envFromRow(I, Type.asSum t)
+	    idStatusFromArity(k, #2(Type.asExist t))
+	else if Type.isArrow t then
+	    idStatusFromArity(k, #2(Type.asArrow t))
 	else if Type.isLambda t then
-	    envFromTyp(I, #2(Type.asLambda t))
+	    idStatusFromArity(k, #2(Type.asLambda t))
+	else if Type.isApply t then
+	    idStatusFromArity(k, #1(Type.asApply t))
+	else if Type.isCon t
+	andalso Path.equals(#3(Type.asCon t), PreboundType.path_ref) then
+	    R
+	else
+	    C k
+
+
+    fun envFromTyp(I,s,t) =
+	if Type.isSum t then
+	    envFromRow(I, s, Type.asSum t)
+	else if Type.isLambda t then
+	    envFromTyp(I, s, #2(Type.asLambda t))
 	else if Type.isMu t then
-	    envFromTyp(I, Type.asMu t)
+	    envFromTyp(I, s, Type.asMu t)
 	else if Type.isCon t
 	andalso Path.equals(#3(Type.asCon t), PreboundType.path_ref) then
 	    let
@@ -96,7 +61,7 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	else
 	    new()
 
-    and envFromRow(I,r) =
+    and envFromRow(I,s,r) =
 	let
 	    val E = new()
 
@@ -106,13 +71,19 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		    val (a,ts) = Type.headRow r
 		    val  x     = Stamp.new()
 		    val  vid   = VId.fromString(Label.toString a)
-		    val  is    = idStatusFromTyps ts
+		    val  is    = case Inf.lookupValSort(s,a)
+				   of Inf.VALUE         => raise Inf.Lookup
+				    | Inf.CONSTRUCTOR k => C k
+					(* UNFINISHED: check that the
+					 * constructor actually constructs
+					 * the type in question. *)
 		in
 		    insertVal(E, vid, (I,x,is)) ;
 		    loop(Type.tailRow r)
 		end
 	in
-	    loop r ; E
+	    ( loop r ; E )
+	    handle Inf.Lookup => new()
 	end
 
 
@@ -134,11 +105,11 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	let
 	    val E = new()
 	in
-	    List.app (insertItem(E,I)) (Inf.items s);
+	    List.app (insertItem(E,I,s)) (Inf.items s);
 	    E
 	end
 
-    and insertItem (E,I) item =
+    and insertItem (E,I,s) item =
 	if Inf.isFixItem item then
 	    let
 		val (l,f) = Inf.asFixItem item
@@ -163,7 +134,7 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		val  x        = Stamp.new()
 		val  E'       = case d
 				  of NONE   => new()
-				   | SOME t => envFromTyp(I, t)
+				   | SOME t => envFromTyp(I, s, t)
 	    in
 		insertTy(E, tycon, (I,x,E'))
 	    end

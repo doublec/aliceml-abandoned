@@ -13,7 +13,7 @@ structure InfPrivate =
     type tkind	= Type.kind
     type fix    = Fixity.t
 
-    datatype val_sort = VALUE | CONSTRUCTOR		(* [w] *)
+    datatype val_sort = VALUE | CONSTRUCTOR of int	(* [w] *)
     datatype typ_sort = datatype Type.sort		(* [w] *)
 
     type id	= path * lab * int			(* [x] *)
@@ -1029,8 +1029,11 @@ structure InfPrivate =
 	if q1 = q2 then () else
 	    raise Mismatch(MismatchFix(l,q1,q2))
 
-    and matchValSort(l,w1,w2) =
-	if w1 = CONSTRUCTOR orelse w2 = VALUE then () else
+    and matchValSort(l, w1, VALUE) = ()
+      | matchValSort(l, w1 as CONSTRUCTOR k1, w2 as CONSTRUCTOR k2) = 
+	if k1 = k2 then () else
+	    raise Mismatch(MismatchValSort(l, w1, w2))
+      | matchValSort(l,w1,w2) =
 	    raise Mismatch(MismatchValSort(l, w1, w2))
 
     and matchTypSort(l,w1,w2) =
@@ -1262,11 +1265,11 @@ structure InfPrivate =
 	if q1 = q2 then q1 else
 	    raise Mismatch(MismatchFix(l,q1,q2))
 
-    and intersectValSort(l,w1,w2) =
-	if w1 = CONSTRUCTOR orelse w2 = CONSTRUCTOR then
-	    CONSTRUCTOR
-	else
-	    VALUE
+    and intersectValSort(l,w1,VALUE) = w1
+      | intersectValSort(l,VALUE,w2) = w2
+      | intersectValSort(l,w1,w2) =
+	if w1 = w2 then w1 else
+	    raise Mismatch(MismatchValSort(l,w1,w2))
 
     and intersectTypSort(l,w1,w2) =
 	if w1 = OPEN orelse w2 = OPEN then
