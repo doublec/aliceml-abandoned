@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,7 +20,7 @@ signature URL_MAP =
 	    EXISTING of 'a
 	  | NEW of 'a Promise.promise
 
-	val new: unit -> 'a t
+	val new: (Url.t * 'a) vector -> 'a t
 
 	val lookup: 'a t * Url.t -> 'a option
 	val lookupNew: 'a t * Url.t -> 'a lookup_result
