@@ -39,7 +39,7 @@ void Properties::Init() {
   u_int n = strlen(home);
   Chunk *homeChunk = Store::AllocChunk(n + 1);
   char *homeChunkBase = homeChunk->GetBase();
-  memcpy(homeChunkBase, home, n);
+  std::memcpy(homeChunkBase, home, n);
   homeChunkBase[n] = '/';
   aliceHome = homeChunk->ToWord();
 

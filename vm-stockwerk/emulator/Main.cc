@@ -63,7 +63,7 @@ static inline Chunk *NewChunk(const char *s) {
   u_int len  = strlen(s);
   Chunk *p   = Store::AllocChunk(len);
   char *base = p->GetBase();
-  memcpy(base, s, len);
+  std::memcpy(base, s, len);
   return p;
 }
 

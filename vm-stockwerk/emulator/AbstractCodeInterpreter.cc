@@ -562,7 +562,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	  Tuple *pair = Tuple::FromWord(tests->Sub(i));
 	  string = String::FromWord(pair->Sel(0));
 	  if (string->GetSize() == length &&
-	      !memcmp(string->GetValue(), value, length)) {
+	      !std::memcmp(string->GetValue(), value, length)) {
 	    pc = TagVal::FromWord(pair->Sel(1));
 	    goto loop;
 	  }

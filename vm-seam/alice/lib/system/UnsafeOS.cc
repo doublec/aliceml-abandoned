@@ -22,17 +22,13 @@
 // to be done: respect windows/unix differences
 
 // String Handling
-static String *ExportString(String *s) {
+static char *ExportCString(String *s) {
   u_int sLen = s->GetSize();
   String *e  = String::New(sLen + 1);
   u_char *eb = e->GetValue();
-  memcpy(eb, s->GetValue(), sLen);
-  eb[sLen] = 0x00;
-  return e;
-}
-
-static char *ExportChar(String *s) {
-  return reinterpret_cast<char *>(ExportString(s)->GetValue());
+  std::memcpy(eb, s->GetValue(), sLen);
+  eb[sLen] = '\0';
+  return reinterpret_cast<char *>(eb);
 }
 
 // Global OS.sysErr Exception
@@ -50,7 +46,7 @@ static word SysErrConstructor;
 // FileSys Functor
 DEFINE1(FileSys_chDir) {
   DECLARE_STRING(name, x0);
-  int res = chdir(ExportChar(name));
+  int res = chdir(ExportCString(name));
   if (res) {
     const char *err = "chDir: cannot change directory";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
@@ -63,7 +59,7 @@ DEFINE1(FileSys_chDir) {
 DEFINE1(FileSys_fileSize) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  int res = stat(ExportChar(name), &info);
+  int res = stat(ExportCString(name), &info);
   if (res) {
     RETURN_INT(info.st_size);
   }
@@ -86,7 +82,7 @@ DEFINE0(FileSys_getDir) {
 
 DEFINE1(FileSys_mkDir) {
   DECLARE_STRING(name, x0);
-  int res = mkdir(ExportChar(name),
+  int res = mkdir(ExportCString(name),
 		  S_IRUSR | S_IWUSR | S_IXUSR |
 		  S_IRGRP | S_IWGRP | S_IXGRP |
 		  S_IROTH | S_IWOTH | S_IXOTH);
@@ -102,7 +98,7 @@ DEFINE1(FileSys_mkDir) {
 DEFINE1(FileSys_modTime) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  int res = stat(ExportChar(name), &info);
+  int res = stat(ExportCString(name), &info);
   if (!res) {
     RETURN_INT(info.st_mtime * 100000000);
   }
@@ -114,7 +110,7 @@ DEFINE1(FileSys_modTime) {
 
 DEFINE1(FileSys_remove) {
   DECLARE_STRING(name, x0);
-  int res = unlink(ExportChar(name));
+  int res = unlink(ExportCString(name));
   if (!res) {
     RETURN_UNIT;
   }
@@ -133,7 +129,7 @@ DEFINE0(FileSys_tmpName) {
   char s[MAX_PATH];
   static int counter = 0;
   while (true) {
-    sprintf(s, "%salice%d", prefix, counter);
+    std::sprintf(s, "%salice%d", prefix, counter);
     counter = (counter++) % 10000;
     if (access(s, F_OK))
       break;
@@ -169,7 +165,7 @@ static word FileSys(void) {
 // Process Functor
 DEFINE1(Process_system) {
   DECLARE_STRING(s, x0);
-  RETURN_INT(system(ExportChar(s)));
+  RETURN_INT(system(ExportCString(s)));
 } END
 
 DEFINE1(Process_atExn) {
@@ -186,7 +182,7 @@ DEFINE1(Process_exit) {
 
 DEFINE1(Process_getEnv) {
   DECLARE_STRING(envVar, x0);
-  char *envVal = getenv(ExportChar(envVar));
+  char *envVal = getenv(ExportCString(envVar));
   if (envVal != NULL) {
     TagVal *val = TagVal::New(1, 1); // SOME
     val->Init(0, String::New(envVal)->ToWord());

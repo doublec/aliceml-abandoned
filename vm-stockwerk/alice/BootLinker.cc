@@ -39,8 +39,8 @@ static bool traceFlag;
 
 static void Trace(const char *prefix, Chunk *key) {
   if (traceFlag) {
-    fprintf(stderr, "[boot-linker] %s %.*s\n", prefix,
-	    (int) key->GetSize(), key->GetBase());
+    std::fprintf(stderr, "[boot-linker] %s %.*s\n", prefix,
+		 (int) key->GetSize(), key->GetBase());
   }
 }
 
@@ -58,7 +58,7 @@ static Chunk *Resolve(Chunk *base, Chunk *rel) {
   char *rPtr   = rel->GetBase();
   while (true) {
     offset = ParentDir(bPtr, offset);
-    if ((rSize < 3) || memcmp(rPtr, "../", 3)) {
+    if ((rSize < 3) || std::memcmp(rPtr, "../", 3)) {
       break;
     }
     else {
@@ -68,15 +68,15 @@ static Chunk *Resolve(Chunk *base, Chunk *rel) {
   }
   if (offset == 0) {
     Chunk *path = Store::AllocChunk(rSize);
-    memcpy(path->GetBase(), rPtr, rSize);
+    std::memcpy(path->GetBase(), rPtr, rSize);
     return path;
   }
   else {
     Chunk *path = Store::AllocChunk(offset + 1 + rSize);
     char *pPtr  = path->GetBase();
-    memcpy(pPtr, bPtr, offset);
+    std::memcpy(pPtr, bPtr, offset);
     pPtr[offset] = '/';
-    memcpy(pPtr + offset + 1, rPtr, rSize);
+    std::memcpy(pPtr + offset + 1, rPtr, rSize);
     return path;
   }
 }
@@ -88,9 +88,9 @@ static Chunk *Localize(Chunk *key) {
   u_int kSize      = key->GetSize();
   Chunk *path      = Store::AllocChunk(hSize + kSize + 5);
   char *base       = path->GetBase();
-  memcpy(base, aliceHome->GetBase(), hSize);
-  memcpy(base + hSize, key->GetBase(), kSize);
-  memcpy(base + hSize + kSize, ".stc", 4);
+  std::memcpy(base, aliceHome->GetBase(), hSize);
+  std::memcpy(base + hSize, key->GetBase(), kSize);
+  std::memcpy(base + hSize + kSize, ".stc", 4);
   base[hSize + kSize + 4] = '\0';
   return path;
 }
@@ -332,7 +332,7 @@ const char *ApplyInterpreter::Identify() {
 void ApplyInterpreter::DumpFrame(word frameWord) {
   ApplyFrame *frame = ApplyFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetKey();
-  fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetBase());
+  std::fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 // EnterInterpreter
@@ -360,7 +360,7 @@ const char *EnterInterpreter::Identify() {
 void EnterInterpreter::DumpFrame(word frameWord) {
   EnterFrame *frame = EnterFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetKey();
-  fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetBase());
+  std::fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 // LinkInterpreter
@@ -425,7 +425,7 @@ const char *LinkInterpreter::Identify() {
 void LinkInterpreter::DumpFrame(word frameWord) {
   LinkFrame *frame = LinkFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetKey();
-  fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetBase());
+  std::fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 // LoadInterpreter
@@ -455,7 +455,7 @@ const char *LoadInterpreter::Identify() {
 void LoadInterpreter::DumpFrame(word frameWord) {
   LoadFrame *frame = LoadFrame::FromWordDirect(frameWord);
   Chunk *key = frame->GetKey();
-  fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetBase());
+  std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetBase());
 }
 
 //

@@ -118,7 +118,7 @@ public:
     if (tl == 0) {
       buffer = reinterpret_cast<u_char *>(malloc(sizeof(u_char) * size));
       Assert(buffer != INVALID_POINTER);
-      memcpy(buffer, src, size);
+      std::memcpy(buffer, src, size);
       tl = size;
     }
     // Enlarge Buffer
@@ -127,8 +127,8 @@ public:
       u_char *old = buffer;
       buffer = reinterpret_cast<u_char *>(malloc(sizeof(u_char) * newTl));
       Assert(buffer != INVALID_POINTER);
-      memcpy(buffer, old, tl);
-      memcpy(buffer + tl, src, size);
+      std::memcpy(buffer, old, tl);
+      std::memcpy(buffer + tl, src, size);
       tl = newTl;
     }
     //    fprintf(stderr, "AppendToBuffer: newTl=%d\n", tl);
@@ -568,7 +568,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
 	u_int size    = is->GetUInt(); CHECK_EOB();
 	u_char *bytes = is->GetBytes(size); CHECK_EOB();
 	Chunk *y      = Store::AllocChunk(size);
-	memcpy(y->GetBase(), bytes, size);
+	std::memcpy(y->GetBase(), bytes, size);
 	Set(x, i, y->ToWord());
 	AddToEnv(env, count, y->ToWord());
 	is->Commit();
@@ -810,7 +810,7 @@ static char *ExportString(Chunk *s) {
   u_int sLen = s->GetSize();
   Chunk *e   = Store::AllocChunk(sLen + 1);
   char *eb   = e->GetBase();
-  memcpy(eb, s->GetBase(), sLen);
+  std::memcpy(eb, s->GetBase(), sLen);
   eb[sLen] = '\0';
   return eb;
 }

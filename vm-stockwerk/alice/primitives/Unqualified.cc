@@ -69,7 +69,7 @@ static int Compare(word x0, word x1) {
       Chunk *bc = static_cast<Chunk *>(b);
       u_int size = ac->GetSize();
       return bc->GetSize() == size &&
-	!memcmp(ac->GetBase(), bc->GetBase(), size);
+	!std::memcmp(ac->GetBase(), bc->GetBase(), size);
     }
   default:
     if (Alice::IsTag(label)) {

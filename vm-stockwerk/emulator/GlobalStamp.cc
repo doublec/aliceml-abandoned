@@ -38,7 +38,7 @@ DEFINE2(GlobalStamp_compare) {
 	RETURN_INT(1); // GREATER
       }
       else {
-	switch (memcmp(pc->GetValue(), qc->GetValue(), ql)) {
+	switch (std::memcmp(pc->GetValue(), qc->GetValue(), ql)) {
 	case -1:
 	  RETURN_INT(2); // LESS
 	case 0:
