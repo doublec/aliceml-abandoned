@@ -83,6 +83,7 @@ structure SimplifiedGrammar :> SIMPLIFIED_GRAMMAR =
 	  | coordOf (TupExp (coord, _)) = coord
 	  | coordOf (RecExp (coord, _)) = coord
 	  | coordOf (SelExp (coord, _, _)) = coord
+	  | coordOf (VecExp (coord, _)) = coord
 	  | coordOf (FunExp (coord, _, _)) = coord
 	  | coordOf (AppExp (coord, _, _, _)) = coord
 	  | coordOf (AdjExp (coord, _, _)) = coord

@@ -62,6 +62,8 @@ structure Debug :> DEBUG =
 	    listToString (fn Field (_, lab, pat) =>
 			  labToString lab ^ ": " ^ patToString pat) patFields ^
 	    (if hasDots then ", ..." else "") ^ "}"
+	  | patToString (VecPat (_, pats)) =
+	    "#[" ^ listToString patToString pats ^ "]"
 	  | patToString (AsPat (_, pat1, pat2)) =
 	    "(" ^ patToString pat1 ^ " as " ^ patToString pat2 ^ ")"
 	  | patToString (AltPat (_, pats)) =
