@@ -21,6 +21,7 @@ signature REMOTE =
 	exception Ticket
 	exception Protocol of int * string
 
+	(*--** once-only offer and proxy *)
 	val proxy: ('a -> 'b) -> 'a -> 'b
 	val offer: Package.package -> string              (* Pickle.Sited *)
 	val take: string -> Package.package               (* Ticket *)
