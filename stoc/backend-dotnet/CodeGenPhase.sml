@@ -404,9 +404,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.genExp: StaticConExp"
 	  | genExp (RefExp info, PREPARE) =
 	    genExp (PrimExp (info, "General.ref"), PREPARE)
-	  | genExp (TupExp (_, nil), PREPARE) = emit Ldnull
+	  | genExp (TupExp (info, nil), PREPARE) =
+	    genExp (PrimExp (info, "unit"), PREPARE)
 	  | genExp (TupExp (_, nil), FILL) = ()
-	  | genExp (TupExp (_, nil), BOTH) = emit Ldnull
+	  | genExp (TupExp (info, nil), BOTH) =
+	    genExp (PrimExp (info, "unit"), BOTH)
 	  | genExp (TupExp (_, ids), PREPARE) =
 	    (emit (LdcI4 (List.length ids)); emit (Newarr System.ObjectTy))
 	  | genExp (TupExp (_, ids), FILL) =

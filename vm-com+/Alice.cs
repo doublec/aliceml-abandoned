@@ -18,7 +18,7 @@ namespace Alice {
 	public abstract class Procedure {
 	    public abstract Object Apply(Object a);
 	    public virtual Object Apply() {
-		return Apply(null);
+		return Apply(Prebound.unit);
 	    }
 	    public virtual Object Apply(Object a, Object b) {
 		Object[] ar = new Object[2];
@@ -545,9 +545,6 @@ namespace Alice {
 			    return (Int32) 0;
 			}
 		    }
-		    return (Int32) 1;
-		}
-		else if (a == null) {
 		    return (Int32) 1;
 		}
 		else {
@@ -2404,7 +2401,7 @@ namespace Alice {
 	}
     }
     public class Prebound {
-	public static Object unit = null;
+	public static Object unit = (Int32) 0;
 
 	public static Object Bool_false = (Int32) 0;
 	public static Object Bool_true  = (Int32) 1;
