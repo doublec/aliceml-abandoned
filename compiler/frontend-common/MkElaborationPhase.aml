@@ -724,6 +724,7 @@ val _=print "\n"
 
     (* These are needed to elaborate recursive type bindings.
      * ASSUMPTION: under recursion we do not have higher-order bindings.
+     * ASSUMPTION: type lambdas are first order.
      *)
 
     and elabTypKind(E, I.FunTyp(i, id, typ)) =
@@ -913,10 +914,11 @@ val _=print "\n"
 
       | elabTypRep(E, p, buildKind, I.FunTyp(i, id, typ)) =
 	let
-	    val  k             = Type.STAR
-	    val (a,id')        = elabVarId_bind(E, k, id)
-	    val (t,gen,w,typ') = elabTypRep(E, p,
+	    val  k              = Type.STAR
+	    val (a,id')         = elabVarId_bind(E, k, id)
+	    val (t1,gen,w,typ') = elabTypRep(E, p,
 				      fn k' => Type.ARROW(k, buildKind k'), typ)
+            val t               = Type.inLambda(a,t1)
 	in
 	    ( t, gen, w, O.FunTyp(typInfo(i,t), id', typ') )
 	end
