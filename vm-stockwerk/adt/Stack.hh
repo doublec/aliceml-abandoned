@@ -49,10 +49,11 @@ public:
     }
   }
   void ClearArgFrame(u_int fsize) {
-    int top    = Store::UnsafeWordToInt(GetArg(TOP_POS));
-    int newtop = (top - fsize);
-    Block *a   = Store::UnsafeWordToBlock(GetArg(ARR_POS));
+    u_int top    = Store::UnsafeWordToInt(GetArg(TOP_POS));
+    u_int newtop = (top - fsize);
+    Block *a     = Store::UnsafeWordToBlock(GetArg(ARR_POS));
 
+    Assert(top > fsize);
     InitArg(TOP_POS, Store::IntToWord(newtop));
     a->InitArg((newtop - 1), a->GetArg(top - 1));
   }
@@ -66,13 +67,14 @@ public:
     }
   }
   void ClearFrame(u_int fsize) {
-    int top    = Store::UnsafeWordToInt(GetArg(TOP_POS));
-    int newtop = (top - fsize);
+    u_int top    = Store::UnsafeWordToInt(GetArg(TOP_POS));
+    u_int newtop = (top - fsize);
 
+    Assert(top > fsize);
     InitArg(TOP_POS, Store::IntToWord(newtop));
   }
   void Push(word v) {
-    int top = Store::UnsafeWordToInt(GetArg(TOP_POS));
+    u_int top = Store::UnsafeWordToInt(GetArg(TOP_POS));
 
     Assert(top <= Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetSize());
     InitArg(TOP_POS, Store::IntToWord((top + 1)));
@@ -100,18 +102,19 @@ public:
     u_int top = Store::WordToInt(GetArg(TOP_POS));
     u_int pos = (top - 1 - f);
     
-    Assert(pos >= 1);
+    Assert(top > f + 1);
     return Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetArg(pos);
   }
   void PutFrameArg(u_int f, word v) {
     u_int top = Store::WordToInt(GetArg(TOP_POS));
     u_int pos = (top - 1 - f);
     
-    Assert(pos >= 1);
+    Assert(top > f + 1);
     return Store::UnsafeWordToBlock(GetArg(ARR_POS))->ReplaceArg(pos, v);
   }
   word Pop() {
     u_int top  = (Store::WordToInt(GetArg(TOP_POS)) - 1);
+    Assert(top >= 1);
     word value = Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetArg(top);
 
     InitArg(TOP_POS, Store::IntToWord(top));
