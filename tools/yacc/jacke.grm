@@ -14,7 +14,7 @@ open AbsSyn
 %term     EOF 
   | ID of string
   | INT of int | REAL of real | STRING of string 
-  | COMMA | COLON | LPAR | RPAR | LBRACK | RBRACK
+  | COMMA | COLON | DOT | LPAR | RPAR | LBRACK | RBRACK
   | LBRACE | RBRACE
   | EQ | AND | OF | AS 
   | DRARROW | BAR
@@ -32,6 +32,7 @@ open AbsSyn
 	| jackedec of parsetreeWithPos
 	| explist of atexp list
 	| atexp of atexp
+        | typeid of string
 	| tokbinds of (string * string option) list 
 	| tokbind of string * string option 
 	| idlist of string list
@@ -91,8 +92,11 @@ jackedec: TOKEN tokbinds  ( PTokenDec (tokbinds, TOKENleft, tokbindsright) )
 tokbinds: tokbind              ( [tokbind] )
 	| tokbind BAR tokbinds ( tokbind::tokbinds )
 
-tokbind : ID          ( (ID, NONE) )
-	| ID OF ID    ( (ID1, SOME ID2) )
+tokbind : ID              ( (ID, NONE) )
+	| ID OF typeid    ( (ID, SOME typeid) )
+
+typeid  : ID              ( ID )
+        | ID DOT typeid   ( ID ^ "." ^ typeid )
 
 idlist  : ID          ( [ID] )
 	| ID idlist   ( ID :: idlist )
@@ -100,14 +104,14 @@ idlist  : ID          ( [ID] )
 rulebinds: rulebind                ( [rulebind] )
 	 | rulebinds AND rulebind  ( rulebind :: rulebinds )
 
-rulebind: ID EQ bnfexp             ( (ID, NONE, bnfexp) )
-	| ID COLON ID EQ bnfexp    ( (ID1, SOME ID2, bnfexp) )
+rulebind: ID EQ bnfexp                 ( (ID, NONE, bnfexp) )
+	| ID COLON typeid EQ bnfexp    ( (ID, SOME typeid, bnfexp) )
 
 parsbinds: parsbind                ( [parsbind] )
 	 | parsbinds AND parsbind  ( parsbind :: parsbinds )
 
-parsbind: ID EQ ID                 ( (ID1, NONE, ID2) )
-	| ID COLON ID EQ ID        ( (ID1, SOME ID2, ID3) )
+parsbind: ID EQ ID                     ( (ID1, NONE, ID2) )
+	| ID COLON typeid EQ ID        ( (ID1, SOME typeid, ID2) )
 
 bnfexp  : SKIP                  ( PSkip )
 	| ID                    ( PSymbol (ID, IDleft, IDright) )
@@ -141,6 +145,7 @@ atexp 	: AND		    ( ATEXP "and" )
         | COLON             ( ATEXP ":" )
 	| LBRACE	    ( ATEXP "{" )
 	| RBRACE	    ( ATEXP "}" )
+        | DOT               ( ATEXP "." )
 	| LPAR explist RPAR ( PAREXP (EXP (explist)) )
 	| INT		    ( ATEXP (Int.toString INT) )
 	| REAL		    ( ATEXP (Real.toString REAL) )

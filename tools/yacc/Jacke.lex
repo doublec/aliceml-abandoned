@@ -69,7 +69,7 @@ string     = "\""({stringchar} | {gap})*"\"";
 char       = "#\""{gap}*{stringchar}{gap}*"\"";
 alpha      = [A-Za-z];
 alphaNum   = [A-Za-z0-9_'];
-mlId       = "'"?[A-Za-z][A-Za-z0-9_'.]*;
+mlId       = "'"?[A-Za-z][A-Za-z0-9_']*;
  
 %%
 
@@ -114,6 +114,7 @@ mlId       = "'"?[A-Za-z][A-Za-z0-9_'.]*;
 <INITIAL>"regexp"            => (Tokens.MLKEY(yytext,yypos,yypos+6));
 <INITIAL>"lexer"             => (Tokens.MLKEY(yytext,yypos,yypos+5));
 
+<INITIAL>"."      => (Tokens.DOT(yypos,yypos+1));
 <INITIAL>","      => (Tokens.COMMA(yypos,yypos+1));
 <INITIAL>":"      => (Tokens.COLON(yypos,yypos+1));
 <INITIAL>"("      => (Tokens.LPAR(yypos,yypos+1));
