@@ -10,16 +10,13 @@ LIGHTNING=1
 ## End of Configuration Section
 ##
 
-howcalled=$0
-
-if test -z "${STOCKHOME}"; then
-  dir=`dirname $howcalled`
-  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
-fi
-
 if [ $# -lt 1 ]; then
     echo "usage: $0 [--verbose|-v] (cc|ld) <option> ..." >&2
     exit 2
+fi
+
+if test -z "${STOCKHOME}"; then
+  STOCKHOME=$(dirname $(dirname $0))
 fi
 
 case `uname -s` in
@@ -32,7 +29,6 @@ case `uname -s` in
 esac
 
 mode=$1; shift
-
 case "$mode" in
     --verbose|-v)
 	verbose=1
@@ -84,14 +80,10 @@ case "$mode" in
 	    esac
 	done
 	if [ "$platform" = windows ]; then
-	    cmd dlltool --output-def $outputfile.def \
-		--dllname $outputfile $fileargs
-	    cmd dllwrap --target i386-mingw32 -mno-cygwin \
-		$ldflags -o $outputfile --def $outputfile.def \
-		$fileargs $libs $STOCKHOME/stow.dll
-	else
-	    cmd gcc -shared $ldflags -o $outputfile $fileargs $libs
+	    ldflags="-mno-cygwin $ldflags"
+	    libs="$libs $STOCKHOME/stow.dll"
 	fi
+	cmd gcc -shared $ldflags -o $outputfile $fileargs $libs
 	;;
     *)
 	echo $0: unknown mode \`$1\' >&2
