@@ -804,7 +804,8 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
     ImmediateSel(JIT_R0, JIT_V2, info->closure);
     jit_pushr_ui(JIT_R0);
   }
-  Generic::Scheduler::PopFrame();
+  u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
+  Generic::Scheduler::PopFrame(size);
   JITStore::Call(1, (void *) ::Scheduler::PushCall);
   RETURN();
 #else
@@ -1358,6 +1359,21 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
 	  if (!direct && (calleeArity != actualArity))
 	    CompileCCC(calleeArity);
 	  TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
+#if PROFILE
+	  u_int i1 = ImmediateEnv::Register(closure->ToWord());
+	  ImmediateSel(JIT_V1, JIT_V2, i1);
+	  if (idDefArgsInstrOpt != INVALID_POINTER) {
+	    CompileContinuation(idDefArgsInstrOpt);
+	    KillVariables();
+	  }
+	  else {
+	    u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
+	    Generic::Scheduler::PopFrame(size);
+	  }
+	  jit_pushr_ui(JIT_V1); // closure
+	  JITStore::Call(1, (void *) Scheduler::PushCall);
+	  RETURN();
+#else
 	  if (idDefArgsInstrOpt != INVALID_POINTER) {
 	    CompileContinuation(idDefArgsInstrOpt);
 	    KillVariables();
@@ -1371,6 +1387,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
 	    JITStore::Call(0, cFunction);
 	    RETURN();
 	  }
+#endif
 	  return INVALID_POINTER;
 	}
       }
@@ -1645,12 +1662,7 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   template_->AssertWidth(AbstractCode::functionWidth);
   u_int i1 = ImmediateEnv::Register(template_->ToWord()); // Save template_
   ImmediateSel(JIT_V0, JIT_V2, i1); // Load template_
-#if PROFILE
-  JITStore::Prepare();
-  jit_pushr_ui(JIT_V0);
-  JITStore::Call(1, (void *) Profiler::IncInstances);
-  JITStore::Finish();
-#endif
+  // PROFILE: IncInstances here
   JITAlice::TagVal::Sel(JIT_R0, JIT_V0, 0);
   JITAlice::TagVal::Put(JIT_V1, 0, JIT_R0);
   // position one will be filled in later
@@ -1759,6 +1771,18 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
     Assert(arity == Scheduler::ONE_ARG && nArgs == 1 ||
 	   arity != Scheduler::ONE_ARG && nArgs == arity); arity = arity;
 #endif
+#if PROFILE
+    ImmediateSel(JIT_V1, JIT_V2, ImmediateEnv::Register(closure->ToWord()));
+    if (idDefInstrOpt != INVALID_POINTER)
+      KillVariables();
+    else {
+      u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
+      Generic::Scheduler::PopFrame(size);
+    }
+    jit_pushr_ui(JIT_V1); // Closure
+    JITStore::Call(1, (void *) Scheduler::PushCall);
+    RETURN();
+#else
     if (idDefInstrOpt != INVALID_POINTER) {
       KillVariables();
       DirectCall(interpreter);
@@ -1772,6 +1796,7 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
       JITStore::Call(0, cFunction);
       RETURN();
     }
+#endif
   }
   return INVALID_POINTER;
 }
@@ -2547,6 +2572,11 @@ struct InlineEntry {
   const char *name;
 };
 
+#if PROFILE
+static InlineEntry inlines[] = {
+  { static_cast<INLINED_PRIMITIVE>(0), NULL }
+};
+#else
 static InlineEntry inlines[] = {
   { FUTURE_BYNEED, "Future.byneed" },
   { CHAR_ORD,      "Char.ord" },
@@ -2556,6 +2586,7 @@ static InlineEntry inlines[] = {
   { INT_OPLESS,    "Int.<" },
   { static_cast<INLINED_PRIMITIVE>(0), NULL }
 };
+#endif
 
 ::Chunk *NativeCodeJitter::CopyCode(char *start) {
   char *end = jit_get_ip().ptr;
@@ -2586,7 +2617,7 @@ void NativeCodeJitter::Init(u_int bufferSize) {
   // InitInlines
   IntMap *inlineMap = IntMap::New(10);
   u_int i = 0;
-  do {
+  while (inlines[i].name != NULL) {
     ::Chunk *name = (::Chunk *) (String::New(inlines[i].name));
     word value = PrimitiveTable::LookupValue(name);
     Closure *closure = Closure::FromWordDirect(value);
@@ -2595,8 +2626,8 @@ void NativeCodeJitter::Init(u_int bufferSize) {
     Interpreter *interpreter = concreteCode->GetInterpreter();
     void *cFunction = (void *) interpreter->GetCFunction();
     word wCFunction = Store::UnmanagedPointerToWord(cFunction);
-    inlineMap->Put(wCFunction, Store::IntToWord(inlines[i].tag));
-  } while (inlines[++i].name != NULL);
+    inlineMap->Put(wCFunction, Store::IntToWord(inlines[i++].tag));
+  }
   inlineTable = inlineMap->ToWord();
   actualIdRefVector = Vector::New(1)->ToWord();
   RootSet::Add(inlineTable);

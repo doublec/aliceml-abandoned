@@ -185,18 +185,11 @@ void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame) {
 }
 
 #if PROFILE
-word NativeCodeInterpreter::GetProfileKey(StackFrame *frame) {
-  Block *p = (Block *) frame;
-  if (p->GetLabel() == (BlockLabel) NATIVE_CODE_FRAME) {
-    NativeCodeFrame *f = (NativeCodeFrame *) frame;
-    word concreteCode = f->GetClosure()->GetConcreteCode();
-    return ConcreteCode::FromWord(concreteCode)->ToWord();
-  }
-  else {
-    NativeCodeHandlerFrame *f = (NativeCodeHandlerFrame *) frame;
-    word concreteCode = f->GetCodeFrame()->GetClosure()->GetConcreteCode();
-    return ConcreteCode::FromWord(concreteCode)->ToWord();
-  }
+word NativeCodeInterpreter::GetProfileKey(StackFrame *sFrame) {
+  NativeCodeFrame *frame = static_cast<NativeCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  word concreteCode = frame->GetClosure()->GetConcreteCode();
+  return ConcreteCode::FromWord(concreteCode)->ToWord();
 }
 
 word NativeCodeInterpreter::GetProfileKey(ConcreteCode *concreteCode) {
@@ -218,12 +211,13 @@ MakeProfileName(NativeConcreteCode *concreteCode, const char *type) {
   return String::New(buf);
 }
 
-String *NativeCodeInterpreter::GetProfileName(StackFrame *frame) {
-  NativeCodeFrame *codeFrame = NativeCodeFrame::FromWordDirect(frame->ToWord());
+String *NativeCodeInterpreter::GetProfileName(StackFrame *sFrame) {
+  NativeCodeFrame *frame = static_cast<NativeCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   const char *frameType;
   frameType = "function";
   // to be done: frameType = "handler";
-  Closure *closure = codeFrame->GetClosure();
+  Closure *closure = frame->GetClosure();
   NativeConcreteCode *nativeConcreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
   return MakeProfileName(nativeConcreteCode, frameType);
