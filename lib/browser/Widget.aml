@@ -766,15 +766,14 @@ struct
 			 else
 			     postType("  " ^ text)
 		     end
-	       | Node.I_VALUE(r) =>
-		     postType("  " 
-			      ^ String.extract(PrettyPrint.toString
-					       (PPInf.ppInf(#typ(r)),
-						positions_displayed	),
-					       0,
-					       SOME( positions_displayed)) 
-			      ^ " ... ")
-		     ;()) handle _ => ()
+	       | Node.I_VALUE(r) => 
+		     let 
+			 val post = createTextWindow()
+		     in
+			 (post (PrettyPrint.toString(PPInf.ppInf(#typ(r)),
+			       10000)) 
+			  ;0)
+		     end)
 	 end
    
 	(* creates popup when a node is clicked on *)

@@ -132,6 +132,8 @@ signature GTK_SUPPORT =
 	
 	val stopButton: tag
 	val stopButtonSetActive: bool -> unit
+
+	val createTextWindow: unit -> (string -> unit)
 	    
 	(** Complex Handler Functions **)
 
