@@ -27,6 +27,11 @@ Library:
 * [NEW] Compiler: new component that gives runtime access to the compiler,
         including a Lisp-style eval function on strings containg Alice programs.
 * [NEW] Store: new low-level interface to runtime heap and garbage collector.
+* [NEW] Search-factory (Gecode): new gecode-based library that performs 
+        search for constraint problems. Takes care of recomputation and
+        Branch & Bound optimization.
+* [NEW] Distributed-search (Gecode): new library that can solve a constraint
+        problem by using several machines on a network.
 * [NEW] Promise: added isFulfilled predicate.
 * [NEW] ListPair: added exists[i]Eq and filter[i]Eq.
 * [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
