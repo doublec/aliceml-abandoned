@@ -444,7 +444,7 @@ prepare
 	 fun {$ Name} BuiltinTable.{VirtualString.toAtom Name} end
       'Unsafe.makeClosure':
 	 fun {$ _ _} {Exception.raiseError notImplemented} unit end
-      'Unsafe.makeFunction':
+      'Unsafe.makeConcreteCode':
 	 fun {$ _} {Exception.raiseError notImplemented} unit end
       'Unsafe.makeTaggedValue':
 	 fun {$ _ _} {Exception.raiseError notImplemented} unit end
