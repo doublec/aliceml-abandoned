@@ -392,7 +392,25 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
       }
       break;
     case Pickle::StringTest: // of id * (string * instr) vector * instr
-      //--** StringTest not implemented
+      {
+	word suspendWord = localEnv->Lookup(pc->Sel(0));
+	String *string = String::FromWord(suspendWord);
+	if (string == INVALID_POINTER) SUSPEND(suspendWord);
+	const char *value = string->GetValue();
+	u_int length = string->GetLength();
+	Vector *tests = Vector::FromWord(pc->Sel(1));
+	u_int ntests = tests->GetLength();
+	for (u_int i = 0; i < ntests; i++) {
+	  Tuple *pair = Tuple::FromWord(tests->Sub(i));
+	  string = String::FromWord(pair->Sel(0));
+	  if (string->GetLength() == length &&
+	      !memcmp(string->GetValue(), value, length)) {
+	    pc = TagVal::FromWord(pair->Sel(1));
+	    goto loop;
+	  }
+	}
+	pc = TagVal::FromWord(pc->Sel(2));
+      }
       break;
     case Pickle::TagTest:
       // of id * (int * instr) vector
