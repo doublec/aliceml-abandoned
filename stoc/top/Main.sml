@@ -174,6 +174,26 @@ structure Main :> MAIN =
 
     (* Tell the composer how to compile Alice source files *)
 
+    fun parseFileUrl url =
+	(case (Url.getScheme url, Url.getAuthority url) of
+	     ((NONE | SOME "file"), NONE) => ()
+	   | _ => raise Crash.Crash "Main.parseFileUrl";
+	 Url.setScheme (url, NONE);
+	 Url.toString url)
+
+    fun existsFile filename =
+	(TextIO.closeIn (TextIO.openIn filename); true) handle IO.Io _ => false
+
+    fun changeExtension (filename, fro, to) =
+	let
+	    val n = String.size filename
+	    val m = String.size fro
+	in
+	    if String.substring (filename, n - m, m) = fro then
+		String.substring (filename, 0, n - m) ^ to
+	    else raise Crash.Crash "Main.changeExtension"
+	end
+
     fun compileSign filename =
 	let
 	    val (_, (_, sign)) = translateFile filename
@@ -183,32 +203,21 @@ structure Main :> MAIN =
 	      | _ => raise Crash.Crash "Composer.compileSign"
 	end
 
-    fun parseFileUrl url =
-	(case (Url.getScheme url, Url.getAuthority url) of
-	     ((NONE | SOME "file"), NONE) => ()
-	   | _ => raise Crash.Crash "Main.parseFileUrl";
-	 Url.setScheme (url, NONE);
-	 Url.toString url)
-
-    fun changeExtension (filename, fro, to) =
+    fun acquireSign url =
 	let
-	    val n = String.size filename
-	    val m = String.size fro
+	    val targetFilename = parseFileUrl url
+	    val sigFilename = targetFilename ^ ".sig"
 	in
-	    if String.substring (filename, n - m, m) = fro then
-		String.substring (filename, 0, n - m) ^ to
+	    if existsFile sigFilename then compileSign sigFilename
 	    else
-		raise Crash.Crash "Main.changeExtension"
+		let
+		    val sourceFilename =
+			changeExtension (targetFilename, ".ozf", ".sml")
+		in
+		    compileForMozart (sourceFilename, targetFilename)
+		end
 	end
 
-    val _ =
-	Composer.setAcquisitionMethod
-	(fn url =>
-	 let
-	     val targetFilename = parseFileUrl url
-	     val sourceFilename =
-		 changeExtension (targetFilename, ".ozf", ".sml")
-	 in
-	     compileForMozart (sourceFilename, targetFilename)
-	 end)
+    val _ = Composer.setAcquisitionMethod acquireSign
+
   end
