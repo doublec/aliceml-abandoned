@@ -12,6 +12,7 @@ signature LABEL =
     val fromName :	Name.t -> lab
     val toName :	lab    -> Name.t
     val toString :	lab    -> string
+    val toInt :		lab    -> int option
 
     val compare :	lab * lab -> order
     val hash :		lab -> int

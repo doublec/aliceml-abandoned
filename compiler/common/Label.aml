@@ -23,6 +23,9 @@ structure Label :> LABEL =
     fun toString(NUM n)		= Int.toString n
       | toString(ALPHA s)	= s
 
+    fun toInt(NUM n)		= SOME n
+      | toInt(ALPHA s)		= NONE
+
 
     (* Ordering and hashing *)
 
