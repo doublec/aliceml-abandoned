@@ -372,17 +372,17 @@ define
 		      fun {$ I1 I2}
 			 case {FS.reflect.lowerBound V.I1.scope} of nil
 			 then true
-			 elseof [J1] then
-			    case {FS.reflect.lowerBound V.I2.scope} of nil
-			    then false
-			    elseof [J2] then J1 < J2
-			    elseof [J2#_] then J1 < J2
-			    end
 			 elseof [J1#_] then
 			    case {FS.reflect.lowerBound V.I2.scope} of nil
 			    then false
-			    elseof [J2] then J1 < J2
 			    elseof [J2#_] then J1 < J2
+			    elseof [J2] then J1 < J2
+			    end
+			 elseof [J1] then
+			    case {FS.reflect.lowerBound V.I2.scope} of nil
+			    then false
+			    elseof [J2#_] then J1 < J2
+			    elseof [J2] then J1 < J2
 			    end
 			 end
 		      end}
