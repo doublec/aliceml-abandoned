@@ -184,7 +184,7 @@ public:
     return Constructor::FromWordDirect(GetArg(CON_POS));
   }
   void AssertWidth(u_int n) {
-    Assert(Store::SizeToBlockSize(BASE_SIZE + n) == GetSize());
+    Assert(Store::SizeToBlockSize(BASE_SIZE + n) == GetSize()); n = n;
   }
   void Init(u_int index, word value) {
     InitArg(BASE_SIZE + index, value);
@@ -277,7 +277,7 @@ public:
     return Alice::LabelToTag(GetLabel());
   }
   void AssertWidth(u_int n) {
-    Assert(Store::SizeToBlockSize(n) == GetSize());
+    Assert(Store::SizeToBlockSize(n) == GetSize()); n = n;
   }
   void Init(u_int index, word value) {
     InitArg(index, value);

@@ -377,8 +377,7 @@ word ApplyTransform(Chunk *f, word x) {
       ConcreteCode::New(AbstractCodeInterpreter::self, 2);
     Chunk *name =
       Store::DirectWordToChunk(Unpickler::aliceFunctionTransformName);
-    Transform *transform =
-      Transform::New(name, x);
+    Transform *transform = Transform::New(name, x);
     concreteCode->Init(0, x);
     concreteCode->Init(1, transform->ToWord());
     return concreteCode->ToWord();
@@ -518,7 +517,7 @@ void Set(word block, u_int i, word y) {
 static inline
 void AddToEnv(word env, u_int count, word value) {
   Stack *stack = Stack::FromWordDirect(env);
-  Assert(stack->GetStackSize() == count);
+  Assert(stack->GetStackSize() == count); count = count;
   stack->SlowPush(value);
 }
 

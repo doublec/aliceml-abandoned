@@ -41,7 +41,7 @@ public:
 
   // Tuple Accessors
   void AssertWidth(u_int n) {
-    Assert(Store::SizeToBlockSize(n) == GetSize());
+    Assert(Store::SizeToBlockSize(n) == GetSize()); n = n;
   }
   void Init(u_int index, word value) {
     InitArg(index, value);
