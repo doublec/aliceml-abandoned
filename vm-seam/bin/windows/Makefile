@@ -9,8 +9,7 @@ LDFLAGS = -L$(PREFIX)/lib -lseam
 
 EXES = \
 	alicerun.exe alice.exe alicec.exe \
-	aliceserv.exe alicelink.exe alicedep.exe \
-	aide.exe
+	alicelink.exe alicedep.exe
 SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
 all: $(EXES)
@@ -20,16 +19,12 @@ alicerun.o: alicex.cc
         -c alicex.cc -o alicerun.o
 
 alice.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/ToplevelMain"' \
+	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Toplevel"' \
         -c alicex.cc -o alice.o
 
 alicec.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/CompilerMain"' \
         -c alicex.cc -o alicec.o
-
-aliceserv.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/CompilerServerMain"' \
-        -c alicex.cc -o aliceserv.o
 
 alicelink.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Linker"' \
@@ -38,10 +33,6 @@ alicelink.o: alicex.cc
 alicedep.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Depend"' \
         -c alicex.cc -o alicedep.o
-
-aide.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/AIDE"' \
-        -c alicex.cc -o aide.o
 
 %.exe: %.o
 	$(LD) $< -o $@ $(LDFLAGS)
