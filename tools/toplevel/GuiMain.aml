@@ -21,7 +21,6 @@ import structure Buffer from "Buffer"
 import structure Config from "Config"
 import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
-import structure Core from "x-alice:/lib/gtk/Core"
 import structure BufferHighlight from "BufferHighlight"
 import structure Preferences from "Preferences"
 
@@ -87,7 +86,7 @@ print ("["^text^"]");
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
-		val str = Lock.sync Core.lock
+		val str = Lock.sync Gtk.lock
 		    (fn () => let
 		     val startiter = Gtk.textIterNew()
 		     val _ = Gtk.textBufferGetStartIter(buf,startiter)
@@ -95,7 +94,7 @@ print ("["^text^"]");
 		     val _ = Gtk.textBufferGetEndIter(buf,enditer)
 		     in Gtk.textBufferGetText(buf, startiter, enditer, false)
 		     end) ()
-                val str = Core.utf8ToLatin1 str
+                val str = Gtk.utf8ToLatin1 str
             in
                 eval true str
             end
@@ -138,7 +137,7 @@ print ("["^text^"]");
                 val buf = Gtk.textViewGetBuffer view
 
 		val (sel, txt, line, col) =
-		    Lock.sync Core.lock
+		    Lock.sync Gtk.lock
 		    (fn () =>
 		     let
 		     val startiter = Gtk.textIterNew()
@@ -153,7 +152,7 @@ print ("["^text^"]");
             in
                 if sel
                 then eval true (addSpace(line, col,
-					 Core.utf8ToLatin1 txt))
+					 Gtk.utf8ToLatin1 txt))
                 else ()
             end
            | _ => ()
@@ -163,7 +162,7 @@ print ("["^text^"]");
             let
                 val buf = Gtk.textViewGetBuffer view
 		    
-		val (startline, str) = Lock.sync Core.lock
+		val (startline, str) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
 			 val startiter = Buffer.getCursorIter buf
@@ -176,7 +175,7 @@ print ("["^text^"]");
 						startiter, enditer, false))
 		     end) ()
                 val str = addSpace(startline, 0,
-                                   Core.utf8ToLatin1 str)
+                                   Gtk.utf8ToLatin1 str)
             in
                 eval true str
             end
@@ -247,7 +246,7 @@ print ("["^text^"]");
             let
                 val buf = Gtk.textViewGetBuffer view
 
-		val (str, line, col) = Lock.sync Core.lock
+		val (str, line, col) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
 		     val startiter = Gtk.textIterNew()
@@ -265,7 +264,7 @@ print ("["^text^"]");
 			  getColumn startiter)
 		     end) ()
 
-                val str = addSpace(line, col, Core.utf8ToLatin1 str)
+                val str = addSpace(line, col, Gtk.utf8ToLatin1 str)
             in
                 eval true (str^"\n")
             end
@@ -353,7 +352,7 @@ print ("["^text^"]");
         fun markSet (buf,_) =
             let
                 val cursor = Gtk.textBufferGetInsert buf
-		val (line, col) = Lock.sync Core.lock
+		val (line, col) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
 			 val iter = Gtk.textIterNew()
@@ -433,7 +432,7 @@ print ("["^text^"]");
 
         fun new' file =
             let
-		val _ = Core.signalHandlerBlock(Gui.notebook1,
+		val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						notebookSwitchEventId)
                 val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
                                                     id=(!numberOfPages),
@@ -447,7 +446,7 @@ print ("["^text^"]");
                 addPage(!numberOfPages);
                 numberOfPages := (!numberOfPages) + 1;
 		switchPage Gui.notebook1;
-		Core.signalHandlerUnblock(Gui.notebook1,
+		Gtk.signalHandlerUnblock(Gui.notebook1,
 					  notebookSwitchEventId);
                 changeFocus (BUFFER view) ();
                 checkNotebookSize()
@@ -456,7 +455,7 @@ print ("["^text^"]");
 
         fun openGivenFile f =
                 let
-		    val _ = Core.signalHandlerBlock(Gui.notebook1,
+		    val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						    notebookSwitchEventId)
                     val {buf,view,highlight,...} =
                         Buffer.buffer {notebook=Gui.notebook1, loadFile=true,
@@ -469,7 +468,7 @@ print ("["^text^"]");
                     addPage(!numberOfPages);
                     numberOfPages := (!numberOfPages) + 1;
 		    switchPage Gui.notebook1;
-		    Core.signalHandlerUnblock(Gui.notebook1,
+		    Gtk.signalHandlerUnblock(Gui.notebook1,
 					      notebookSwitchEventId);
 		    changeFocus (BUFFER view) ();
 		    Promise.fulfill(!highlight, SOME 0);
@@ -558,7 +557,7 @@ print ("["^text^"]");
 		case buf of
 		    NONE => ()
 		  | SOME buf =>
-	    Lock.sync Core.lock
+	    Lock.sync Gtk.lock
 	    (fn () =>
 	    let
                 val lineCount = Gtk.textBufferGetLineCount buf
@@ -649,7 +648,7 @@ print ("["^text^"]");
                 val buf = Gtk.textViewGetBuffer view
                 val cursor = Gtk.textBufferGetInsert(buf)
 	    in
-		Lock.sync Core.lock
+		Lock.sync Gtk.lock
 		(fn () =>
 		 let
 		     val iter = Gtk.textIterNew()
@@ -666,7 +665,7 @@ print ("["^text^"]");
 			     val _ = findErrorStart (iter, errorTag)
 			     val iter2 = Gtk.textIterCopy iter
 			     val _ = Gtk.textIterForwardLine iter2
-			     val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
+			     val str = Gtk.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
 			     val coords = parseErrorCoords str
 			 in
 			     case coords of NONE => Gtk.widgetSetSensitive(showError,
@@ -686,7 +685,7 @@ print ("["^text^"]");
           | populatePopup _ = print "Gtk is crazy\n"
 
 	fun jumpToLastError () =
-	    Lock.sync Core.lock
+	    Lock.sync Gtk.lock
 	    (fn () =>
 	     let
 		 val buf = Gtk.textViewGetBuffer Gui.compilerout
@@ -698,7 +697,7 @@ print ("["^text^"]");
 		 val _ = findErrorStart (iter, errorTag)
 		 val iter2 = Gtk.textIterCopy iter
 		 val _ = Gtk.textIterForwardLine iter2
-		 val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
+		 val str = Gtk.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
 		 val coords = parseErrorCoords str
 	     in
 		 case coords of

@@ -13,7 +13,6 @@
 
 import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Core from "x-alice:/lib/gtk/Core"
 import structure FileDialog from "FileDialog"
 import structure Config from "Config"
 import structure BufferHighlight from "BufferHighlight"
@@ -174,7 +173,7 @@ structure Buffer =
           end
         | insertText' _ = print "Gtk is crazy: insert"
 
-      fun insertText id args = Lock.sync Core.lock insertText' (id,args)
+      fun insertText id args = Lock.sync Gtk.lock insertText' (id,args)
 
       fun userAction (id,begin) _ =
           let
@@ -187,7 +186,7 @@ structure Buffer =
       fun getSelection id =
           let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
-	      val (txt,equal) = Lock.sync Core.lock
+	      val (txt,equal) = Lock.sync Gtk.lock
 		  (fn () =>
 		   let
 		       val startiter = Gtk.textIterNew()
@@ -247,7 +246,7 @@ structure Buffer =
 	  end
 
       fun indentSelection(id, indent) =
-	  Lock.sync Core.lock
+	  Lock.sync Gtk.lock
 	  (fn () =>
 	  let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -334,7 +333,7 @@ structure Buffer =
 	  let
               val {undo=undoBuf,buf,...} = BufferMap.lookupExistent(bufferMap, id)
 	  in
-	      Lock.sync Core.lock undo' (undoBuf, buf, false);
+	      Lock.sync Gtk.lock undo' (undoBuf, buf, false);
 	      scrollToCursor id
 	  end
 
@@ -357,7 +356,7 @@ structure Buffer =
 		  (Promise.fulfill (!highlight, SOME 0)
 		   handle Promise.Promise => ())
 	      else
-		  Lock.sync Core.lock
+		  Lock.sync Gtk.lock
 		  (fn () =>
 		   let
 		       val startiter = Gtk.textIterNew()
@@ -446,9 +445,9 @@ structure Buffer =
 		  let
 		      val fileD = TextIO.openIn f
 		      val text = TextIO.inputAll fileD
-		      val text = Core.latin1ToUtf8 text
+		      val text = Gtk.latin1ToUtf8 text
 		  in
-		      Lock.sync Core.lock
+		      Lock.sync Gtk.lock
 		      (fn () =>
 		       let
 			   val iter = Gtk.textIterNew()
@@ -496,7 +495,7 @@ structure Buffer =
                             (if modified then
                                  let
                                      val file = TextIO.openOut f
-				     val str = Lock.sync Core.lock
+				     val str = Lock.sync Gtk.lock
 					 (fn () =>
 					  let
 					      val startiter = Gtk.textIterNew()
@@ -506,7 +505,7 @@ structure Buffer =
 					  in
 					      Gtk.textBufferGetText(buf, startiter, enditer, false)
 					  end) ()
-                                     val str = Core.utf8ToLatin1 str
+                                     val str = Gtk.utf8ToLatin1 str
                                  in 
                                      TextIO.output(file, str);
                                      TextIO.closeOut file;
@@ -560,7 +559,7 @@ structure Buffer =
 		 find' (iter, 0, txt, caseSensitive, true)))
 
       fun find(id, txt, caseSensitive) =
-	  Lock.sync Core.lock
+	  Lock.sync Gtk.lock
 	  (fn () =>
           let
               val {view,buf,lastSearchPos,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -584,7 +583,7 @@ structure Buffer =
           end) ()
 
       fun replace(id, replaceString) =
-	  Lock.sync Core.lock
+	  Lock.sync Gtk.lock
 	  (fn () =>
           let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)

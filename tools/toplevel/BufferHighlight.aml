@@ -12,7 +12,6 @@
  *)
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Core from "x-alice:/lib/gtk/Core"
 import structure Highlight from "HighlightString"
 
 structure BufferHighlight =
@@ -42,7 +41,7 @@ structure BufferHighlight =
 	      true
           end
 
-      val colorRegion = Lock.sync Core.lock colorRegion
+      val colorRegion = Lock.sync Gtk.lock colorRegion
 
       fun highlight (buf, str, offset, removeTags, kill) =
           let
@@ -60,9 +59,9 @@ structure BufferHighlight =
                val enditer = Gtk.textIterNew()
                val _ = Gtk.textBufferGetEndIter(buf,enditer)
            in
-               Core.utf8ToLatin1 (Gtk.textBufferGetText(buf, startiter, enditer, false))
+               Gtk.utf8ToLatin1 (Gtk.textBufferGetText(buf, startiter, enditer, false))
 	   end
-       val getAll = Lock.sync Core.lock getAll
+       val getAll = Lock.sync Gtk.lock getAll
 
        fun highlightAll(buf, kill) = highlight(buf, getAll buf, 0, true, kill)
 
@@ -88,11 +87,11 @@ structure BufferHighlight =
 	       val _ = Gtk.textBufferGetEndIter(buf, enditer)
 	   in
                 findPlainSpace(startiter, plaintag);
-		(Core.utf8ToLatin1
+		(Gtk.utf8ToLatin1
 		(Gtk.textBufferGetText(buf, startiter, enditer, false)),
 		 Gtk.textIterGetOffset startiter)
 	   end
-       val getOffset = Lock.sync Core.lock getOffset
+       val getOffset = Lock.sync Gtk.lock getOffset
 
        fun highlightOffset(buf, offset, plaintag, kill) =
 	   let
