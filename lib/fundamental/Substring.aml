@@ -14,25 +14,35 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                           from "Pervasive"
-import type int and bool and order and option and list from "ToplevelTypes"
-import signature SUBSTRING                             from "SUBSTRING-sig"
+import structure __pervasive                       from "Pervasive"
+import type int and string
+       datatype bool and order and option and list from "ToplevelTypes"
+import infix 6 + - infix 4 = < >
+       val op = and op < and op >
+       val op + and op -                           from "ToplevelValues"
+import structure General                           from "General"
+import structure Option                            from "Option"
+import structure List                              from "List"
+import structure String                            from "String"
+import signature SUBSTRING                         from "SUBSTRING-sig"
 
-structure Substring :> SUBSTRING =
+structure Substring :> SUBSTRING where String = String =
 struct
     structure String		= String
     type substring		= string * int * int
+    type t			= substring
 
     fun base ss			= ss : substring
-    val string			= String.substring o base
-    val size			= #3 o base
+    fun string ss		= String.substring(base ss)
+    fun size ss			= #3(base ss)
     fun sub(ss, i)		= String.sub(string ss, i)
 
     fun substring(s, i, j)	= (if i < 0 orelse j < 0 orelse
 				     String.size s < i + j
-				   then raise Subscript
+				   then raise General.Subscript
 				   else (s, i, j)
-				  ) handle Overflow => raise Subscript
+				  ) handle General.Overflow =>
+					   raise General.Subscript
     fun extract(s, i, NONE)	= substring(s, i, String.size s - i)
       | extract(s, i, SOME j)	= substring(s, i, j)
     fun all s			= substring(s, 0, String.size s)
@@ -41,20 +51,20 @@ struct
 
     fun getc (s,i,0)		= NONE
       | getc (s,i,n)		= SOME (String.sub(s, i), (s, i+1, n-1))
-    val first			= Option.map #1 o getc
+    fun first ss		= Option.map #1 (getc ss)
 
     fun Int_max(i, j)		= if i > j then i else j
-    fun triml k (s,i,n)		= if k < 0 then raise Subscript else
+    fun triml k (s,i,n)		= if k < 0 then raise General.Subscript else
 				  (s, i+k, Int_max(n-k, 0))
-    fun trimr k (s,i,n)		= if k < 0 then raise Subscript else
+    fun trimr k (s,i,n)		= if k < 0 then raise General.Subscript else
 				  (s, i, Int_max(n-k, 0))
 
     fun slice(ss, i, SOME m)	= slice'(ss, i, m)
       | slice(ss, i, NONE)	= slice'(ss, i, size ss - i)
-    and slice'((s,i,n), j, m)	= if j + m > n then raise Subscript else
+    and slice'((s,i,n), j, m)	= if j + m > n then raise General.Subscript else
 				  substring(s, i+j, m)
 
-    val concat			= String.concat o (List.map string)
+    fun concat sss		= String.concat(List.map string sss)
     fun explode	ss		= String.explode(string ss)
     fun translate f ss		= String.concat(List.map f (explode ss))
     fun isPrefix s ss		= String.isPrefix s (string ss)
@@ -63,8 +73,9 @@ struct
     fun compare(ss, st)		= String.compare(string ss, string st)
     fun collate f (ss, st)	= String.collate f (string ss, string st)
 
-    fun splitAt((s,i,n), j)	= if j < 0 orelse j> n then raise Subscript else
-				  ((s,i,j), (s, i+j, n-j))
+    fun splitAt((s,i,n), j)	= if j < 0 orelse j> n
+				  then raise General.Subscript
+				  else ((s,i,j), (s, i+j, n-j))
 
     fun splitl f (s,i,n)	= splitl'(f, s, i, n, i)
     and splitl'(f, s, i, n, j)	= if j = i+n then
