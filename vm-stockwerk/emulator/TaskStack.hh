@@ -25,7 +25,7 @@
 
 class TaskStack : private Stack {
 private:
-  static const u_int INITIAL_SIZE = 16;
+  static const u_int INITIAL_SIZE = 16; // to be checked
 public:
   using Stack::ToWord;
   using Stack::IsEmpty;
