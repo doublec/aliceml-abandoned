@@ -1,4 +1,5 @@
 	    type object = GtkTypes.object
+	    type sigid  = GtkTypes.sigid
 
 	    datatype inputSource =
 		GDK_SOURCE_MOUSE

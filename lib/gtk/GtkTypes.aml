@@ -17,6 +17,7 @@ in
     structure GtkTypes =
 	struct
 	    type object
+	    type sigid
 
 	    datatype inputSource =
 		GDK_SOURCE_MOUSE
