@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -11,6 +11,7 @@
  *)
 
 import structure Assert from "../utility/Assert"
+import structure Config from "Config"
 import signature URL    from "URL-sig"
 
 (*
@@ -37,6 +38,9 @@ structure Url :> URL =
 	type t = url
 
 	exception Malformed
+	exception NotLocal
+
+	(* Helper Functions *)
 
 	(*
 	 * Split a string at the 1st occurrence of a separator character.
@@ -157,15 +161,15 @@ structure Url :> URL =
 	fun isQuery #"#" = true
 	  | isQuery _ = false
 
-	(* Accessing URL Constituents *)
+	(* Constructing URLs *)
 
-	fun getScheme ({scheme, ...}: url) = scheme
-	fun getAuthority ({authority, ...}: url) = authority
-	fun getDevice ({device, ...}: url) = device
-	fun isAbsolutePath ({absolute, ...}: url) = absolute
-	fun getPath ({path, ...}: url) = path
-	fun getQuery ({query, ...}: url) = query
-	fun getFragment ({fragment, ...}: url) = fragment
+	val empty =
+	    {scheme = NONE, authority = NONE, device = NONE,
+	     absolute = false, path = nil, query = NONE, fragment = NONE}
+
+	(*--** when we have the {url where absolute = true} syntax,
+	 * these should be rewritten for simplicity
+	 *)
 
 	fun setScheme ({scheme = _, authority, device, absolute, path,
 			query, fragment}: url, scheme) =
@@ -231,9 +235,17 @@ structure Url :> URL =
 	     absolute = absolute, path = path, query = query,
 	     fragment = fragment}
 
-	val empty =
-	    {scheme = NONE, authority = NONE, device = NONE,
-	     absolute = false, path = nil, query = NONE, fragment = NONE}
+	(* Accessing URL Constituents *)
+
+	fun getScheme ({scheme, ...}: url) = scheme
+	fun getAuthority ({authority, ...}: url) = authority
+	fun getDevice ({device, ...}: url) = device
+	fun isAbsolutePath ({absolute, ...}: url) = absolute
+	fun getPath ({path, ...}: url) = path
+	fun getQuery ({query, ...}: url) = query
+	fun getFragment ({fragment, ...}: url) = fragment
+
+	(* Operations on URLs *)
 
 	(*
 	 * This parser traverses the string only once and uses character
@@ -388,6 +400,65 @@ structure Url :> URL =
 
 	val toString = toStringEncode (encode isPathChar)
 	val toStringRaw = toStringEncode General.id
+
+	(*
+	 * The toLocalFile operation ...
+	 * -- ignores any query and fragment
+	 * -- ignores either the "file" or the absent scheme
+	 *    and rejects any other scheme
+	 * -- in Windows mode:
+	 *    -- allows at most one of device or authority
+	 *    -- translates device and path to a local file name,
+	 *       which may be relative or absolute
+	 *    -- translates authority and path to a UNC path,
+	 *       unless the path is relative, in which case it is rejected
+	 *    -- uses backslashes to separate path components
+	 * -- in Unix mode:
+	 *    -- rejects any device or authority
+	 *    -- uses slashes to separate path components
+	 * -- does not do any encoding
+	 *)
+(*--** this function should be sited! *)
+	fun toLocalFile ({scheme = SOME "x-alice", authority = NONE,
+			  device = NONE, path, ...}: url) =
+	    (case Config.homeDir of
+		 SOME homeDir =>
+		     let
+			 val windows = Config.platform = Config.WIN32
+			 val slash = if windows then "\\" else "/"
+			 val l = List.foldr (fn (s, nil) => [s]
+					      | (s, rest) => s::slash::rest)
+					    nil path
+		     in
+			 String.concat (homeDir::slash::l)
+		     end
+	       | NONE => raise NotLocal)
+	  | toLocalFile {scheme = (NONE | SOME "file"), authority,
+			 device, absolute, path, ...} =
+	    let
+		val windows = Config.platform = Config.WIN32
+		val slash = if windows then "\\" else "/"
+		val l = List.foldr (fn (s, nil) => [s]
+				     | (s, rest) => s::slash::rest) nil path
+		val l = if absolute then slash::l else l
+		val l = case device of
+			    SOME device =>
+				if windows then
+				    if isSome authority then raise NotLocal
+				    else String.str device::":"::l
+				else raise NotLocal
+			  | NONE => l
+		val l = case authority of
+			    SOME authority =>
+				if windows then
+				    if absolute then "\\\\"::authority::l
+				    else raise NotLocal
+				else raise NotLocal
+			  | NONE => l
+	    in
+		String.concat l
+	    end
+	  | toLocalFile _ = raise NotLocal
 
 	fun isAbsolute ({scheme, device, absolute, path, ...}: url) =
 	    isSome scheme orelse isSome device orelse absolute orelse
