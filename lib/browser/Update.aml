@@ -200,8 +200,16 @@ struct
     (* main part of update - 
        is essential for reinspect, foldDepth, foldWith and watcher *)
 
-    fun updateTree (no,va,f,g,canvas) = 
+    fun updateTree (no',va',f,g,canvas) = 
 	let 
+	    val val_anc = getValueAnc(no')
+	    val val_anc_va =getReflectValue val_anc 
+	    val (no,va) =  (if isListType(getTyp(getDesc(no')))
+			   andalso 
+			   isListType(getTyp(getDesc(val_anc)))
+			   then (val_anc,val_anc_va)
+			       else (no',va'))
+		handle _ => (no',va')
 	    val  n = if !(Settings.relmode) 
 	             andalso isRelNode(getParent(no))
 			 then getParent(no) 
@@ -259,7 +267,7 @@ struct
 	    val (topnode,old_ydim,y_pos) = 
 		(GtkSupport.busyButtonSetActive(true)
 		 ;GtkSupport.layoutFreeze(canvas)
-		 ;updateTree (no,va,f,g,canvas))
+	         ;updateTree (no,va,f,g,canvas))
 	in
 	    (layoutDrawTree(topnode,canvas,old_ydim,y_pos) 
 	     ;GtkSupport.busyButtonSetActive(false)
