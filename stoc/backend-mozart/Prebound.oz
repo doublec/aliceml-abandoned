@@ -146,6 +146,7 @@ define
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
+      'IO.Io': {NewUniqueName 'IO.Io'}
       'Int.compare':
 	 fun {$ I J}
 	    if I == J then 'EQUAL'
