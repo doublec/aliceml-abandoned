@@ -388,6 +388,10 @@ public:
       Assert(i != index);
     }
   }
+  static word PolySel(UniqueString *label, Record *record) {
+    Assert(Record::FromWordDirect(record->ToWord()));
+    return record->PolySel(label);
+  }
 };
 
 #endif

@@ -63,7 +63,7 @@ protected:
   static void KillIdRef(word idRef);
   static void GlobalEnvSel(u_int Dest, u_int Ptr, word pos);
   static void ImmediateSel(u_int Dest, u_int Ptr, u_int pos);
-  static void LazySelClosureNew(word tuple, word label);
+  static void LazySelClosureNew(u_int tuple, u_int label);
   // StackFrame Accessors
   static void Prepare();
   static void Finish();

@@ -562,16 +562,18 @@ void NativeCodeJitter::ImmediateSel(u_int Dest, u_int Ptr, u_int pos) {
 }
 
 // LazySelClosure (belongs to alice, of course)
-void NativeCodeJitter::LazySelClosureNew(word tuple, word label) {
+void NativeCodeJitter::LazySelClosureNew(u_int Tuple, u_int label) {
+  jit_pushr_ui(Tuple); // Save Tuple
   Generic::ConcreteCode::New(JIT_V1, LazySelInterpreter::self, 0);
   jit_pushr_ui(JIT_V1); // Save ConcreteCode Ptr
   Generic::Closure::New(JIT_V1, 3);
   jit_popr_ui(JIT_R0); // Restore ConcreteCode Ptr
   Generic::Closure::InitCC(JIT_V1, JIT_R0);
-  u_int reg = LoadIdRefKill(JIT_R0, tuple);
-  Generic::Closure::Put(JIT_V1, 0, reg);
-  u_int i1 = ImmediateEnv::Register(label);
-  ImmediateSel(JIT_R0, JIT_V2, i1);
+  jit_popr_ui(JIT_R0); // Restore Tuple
+    //  u_int reg = LoadIdRefKill(JIT_R0, tuple);
+  Generic::Closure::Put(JIT_V1, 0, JIT_R0);
+  //  u_int i1 = ImmediateEnv::Register(label);
+  ImmediateSel(JIT_R0, JIT_V2, label);
   Generic::Closure::Put(JIT_V1, 1, JIT_R0);
 }
 
@@ -936,9 +938,8 @@ void NativeCodeJitter::InlineAppPrim(INLINED_PRIMITIVE primitive, TagVal *pc) {
     CompileInstr(TagVal::FromWordDirect(idDefInstr->Sel(1)));
   }
   else {
-    Generic::Primitive::Return1(JIT_V1);
     Generic::Scheduler::PopFrames(1);
-    RETURN();
+    Generic::Primitive::Return1(JIT_V1);
   }
 }
 
@@ -1343,12 +1344,32 @@ TagVal *NativeCodeJitter::InstrSel(TagVal *pc) {
 // to be done: Eager, if determined
 TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
   PrintPC("LazyPolySel\n");
-  LazySelClosureNew(pc->Sel(1), pc->Sel(2));
-  jit_pushr_ui(JIT_V1); // Save Closure Ptr
+  u_int wRecord = LoadIdRefKill(JIT_V1, pc->Sel(1));
+  u_int label   = ImmediateEnv::Register(pc->Sel(2));
+  JITStore::Deref(wRecord);
+  JITStore::LogMesg("Deref result\n");
+  JITStore::LogReg(wRecord);
+  jit_insn *poly_sel = jit_beqi_ui(jit_forward(), JIT_R0, BLKTAG);
+  // Create LazySel Closure
+  LazySelClosureNew(wRecord, label);
+  jit_pushr_ui(JIT_V1); // Save LazySel Closure
   Generic::Byneed::New(JIT_V1);
-  jit_popr_ui(JIT_R0); // Restore Closure Ptr
+  jit_popr_ui(JIT_R0); // Restore LazySel Closure
   Generic::Byneed::InitClosure(JIT_V1, JIT_R0);
   JITStore::SetTransientTag(JIT_V1);
+  jit_insn *skip = jit_jmpi(jit_forward());
+  jit_patch(poly_sel);
+  // Do Selection
+  Prepare();
+  jit_pushr_ui(wRecord);
+  ImmediateSel(JIT_R0, JIT_V2, label);
+  jit_pushr_ui(JIT_R0);
+  void *ptr = (void *)
+    static_cast<word (*)(::UniqueString *, ::Record *)>(&::Record::PolySel);
+  JITStore::Call(2, ptr);
+  jit_movr_p(JIT_V1, JIT_R0);
+  Finish();
+  jit_patch(skip);
   LocalEnvPut(JIT_V2, pc->Sel(0), JIT_V1);
   return TagVal::FromWordDirect(pc->Sel(3));
 }
@@ -1938,7 +1959,7 @@ struct InlineEntry {
 };
 
 static InlineEntry inlines[] = {
-  //--** { FUTURE_BYNEED, "Future.byneed" },
+  { FUTURE_BYNEED, "Future.byneed" },
   { CHAR_ORD,      "Char.ord" },
   { INT_OPPLUS,    "Int.+" },
   { INT_OPMUL,     "Int.*" },
