@@ -68,6 +68,7 @@ SRCS = $(GENERICSRCS) \
        $(UNSAFESSRCS) \
        $(INTERPRETERSRCS) \
        Base.cc \
+       Outline.cc \
        Properties.cc \
        Main.cc
 
