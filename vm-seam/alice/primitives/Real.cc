@@ -15,7 +15,6 @@
 //#include <cmath> // does not work under Cygwin: linking fails for isnan, isinf!
 #include <math.h>
 #include <cstdio>
-#include <cctype>
 #include "alice/Authoring.hh"
 
 //using namespace std;
@@ -151,35 +150,35 @@ REAL_TO_INTINF(Real_largeRound, Rint)
 DEFINE1(Real_toString) {
   static char buf[50];
   DECLARE_REAL(real, x0);
-  // TODO: This sometimes inserts ',' instead of '.' as decimalpoint
   double value = real->GetValue();
-  std::sprintf(buf, "%.12G", value);
-  bool hasDecimalPoint = false, done = false;
-  u_int i = 0;
-  while (!done)
-    switch (buf[i++]) {
-    case '\0':
-      done = true;
-      break;
-    case '-':
-      buf[i - 1] = '~';
-      break;
-    case ',':
-      buf[i - 1] = '.';
-      hasDecimalPoint = true;
-      break;
-    case '.':
-      hasDecimalPoint = true;
-      break;
-    case 'A': // INF and NAN must be lower-case
-    case 'F':
-    case 'I':
-    case 'N':
-      buf[i - 1] = std::tolower(buf[i - 1]);
-    }
-  if (!hasDecimalPoint &&
-      !/*std::*/isnan(value) &&
-      !/*std::*/isinf(value)) std::strcpy(&buf[i - 1], ".0");
+  if (/*std::*/isnan(value)) {
+    std::strcpy(buf, "nan");
+  } else if (/*std::*/isinf(value)) {
+    if (value > 0.0)
+      std::strcpy(buf, "inf");
+    else
+      std::strcpy(buf, "~inf");
+  } else {
+    std::sprintf(buf, "%.12G", value);
+    bool hasDecimalPoint = false, done = false;
+    u_int i = 0;
+    while (!done)
+      switch (buf[i++]) {
+      case '\0':
+	done = true;
+	break;
+      case '-':
+	buf[i - 1] = '~';
+	break;
+      case ',':
+	buf[i - 1] = '.';
+	hasDecimalPoint = true;
+	break;
+      case '.':
+	hasDecimalPoint = true;
+      }
+    if (!hasDecimalPoint) std::strcpy(&buf[i - 1], ".0");
+  }
   RETURN(String::New(buf)->ToWord());
 } END
 
