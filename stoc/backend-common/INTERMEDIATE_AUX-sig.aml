@@ -34,6 +34,5 @@ signature INTERMEDIATE_AUX =
 	val rowLabels: Type.row -> Label.t list
 	val typToArity: Type.t -> O.arity
 	val makeConArity: Type.t * bool -> O.conArity
-	val isZeroTyp: Type.t -> bool
 	val labelToIndex: Type.t * Label.t -> int
     end

@@ -146,13 +146,13 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	fun tagAppExp (info, label, n, args, SOME arity) =
 	    expArity (args, arity, info,
 		      fn args => O.TagAppExp (id_info info, label, n, args))
-	  | tagAppExp (_, _, _, _, NONE) =
+	  | tagAppExp (info, _, _, _, NONE) =
 	    raise Crash.Crash "FlatteningPhase.tagAppExp"
 
 	fun conAppExp (info, id, args, SOME arity) =
 	    expArity (args, arity, info,
 		      fn args => O.ConAppExp (id_info info, id, args))
-	  | conAppExp (_, _, _, NONE) =
+	  | conAppExp (info, _, _, NONE) =
 	    raise Crash.Crash "FlatteningPhase.conAppExp"
 
 	(* Translation *)
@@ -331,8 +331,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (PrimExp (info, name), f, cont) =
 	    f (O.PrimExp (id_info info, name))::translateCont cont
 	  | translateExp (NewExp (info, isNAry), f, cont) =
-	    f (O.NewExp (id_info info, makeConArity (#typ info, isNAry)))::
-	    translateCont cont
+	    f (O.NewExp (id_info info))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
 		val (stms, id, _) = translateLongid longid
@@ -341,58 +340,59 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateExp (TagExp (info, Lab (_, label), exp, isNAry),
 			  f, cont) =
-	    if isZeroTyp (#typ (infoExp exp)) then
-		f (O.TagExp (id_info info, label,
-			     labelToIndex (#typ info, label),
-			     makeConArity (#typ info, isNAry)))::
-		translateCont cont
-	    else
-		let
-		    val r = ref NONE
-		    val rest = [O.IndirectStm (stm_info (#region info), r)]
-		    val (stms, args) = unfoldArgs (exp, rest, isNAry)
-		    val n = labelToIndex (#typ info, label)
-		    val conArity = makeConArity (#typ (infoExp exp), isNAry)
-		    val (stms', exp') =
-			tagAppExp (info, label, n, args, conArity)
-		in
-		    r := SOME (stms' @ f exp'::translateCont cont); stms
-		end
-	  | translateExp (ConExp (info, longid, exp, isNAry), f, cont) =
-	    if isZeroTyp (#typ (infoExp exp)) then
-		let
-		    val (stms, id, _) = translateLongid longid
-		in
-		    stms @ f (O.ConExp (id_info info, O.Con id,
-					makeConArity (#typ info, isNAry)))::
+	    let
+		val conArity = makeConArity (#typ (infoExp exp), isNAry)
+	    in
+		if isSome conArity then
+		    let
+			val r = ref NONE
+			val rest = [O.IndirectStm (stm_info (#region info), r)]
+			val (stms, args) = unfoldArgs (exp, rest, isNAry)
+			val n = labelToIndex (#typ info, label)
+			val (stms', exp') =
+			    tagAppExp (info, label, n, args, conArity)
+		    in
+			r := SOME (stms' @ f exp'::translateCont cont); stms
+		    end
+		else
+		    f (O.TagExp (id_info info, label,
+				 labelToIndex (#typ info, label), conArity))::
 		    translateCont cont
-		end
-	    else
-		let
-		    val r = ref NONE
-		    val rest = [O.IndirectStm (stm_info (#region info), r)]
-		    val (stms2, args) = unfoldArgs (exp, rest, isNAry)
-		    val (stms1, id1, _) = translateLongid longid
-		    val conArity = makeConArity (#typ (infoExp exp), isNAry)
-		    val (stms', exp') =
-			conAppExp (info, O.Con id1, args, conArity)
-		in
-		    r := SOME (stms' @ f exp'::translateCont cont);
-		    stms1 @ stms2
-		end
+	    end
+	  | translateExp (ConExp (info, longid, exp, isNAry), f, cont) =
+	    let
+		val conArity = makeConArity (#typ (infoExp exp), isNAry)
+	    in
+		if isSome conArity then
+		    let
+			val r = ref NONE
+			val rest = [O.IndirectStm (stm_info (#region info), r)]
+			val (stms2, args) = unfoldArgs (exp, rest, isNAry)
+			val (stms1, id1, _) = translateLongid longid
+			val (stms', exp') =
+			    conAppExp (info, O.Con id1, args, conArity)
+		    in
+			r := SOME (stms' @ f exp'::translateCont cont);
+			stms1 @ stms2
+		    end
+		else
+		    let
+			val (stms, id, _) = translateLongid longid
+		    in
+			stms @ f (O.ConExp (id_info info, O.Con id, NONE))::
+			translateCont cont
+		    end
+	    end
 	  | translateExp (RefExp (info, exp), f, cont) =
-	    if isZeroTyp (#typ (infoExp exp)) then
-		f (O.RefExp (id_info info))::translateCont cont
-	    else
-		let
-		    val r = ref NONE
-		    val rest = [O.IndirectStm (stm_info (#region info), r)]
-		    val (stms2, id) = unfoldTerm (exp, Goto rest)
-		in
-		    (r := SOME (f (O.RefAppExp (id_info info, id))::
-				translateCont cont);
-		     stms2)
-		end
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
+		val (stms2, id) = unfoldTerm (exp, Goto rest)
+	    in
+		(r := SOME (f (O.RefAppExp (id_info info, id))::
+			    translateCont cont);
+		 stms2)
+	    end
 	  | translateExp (TupExp (info, exps), f, cont) =
 	    let
 		val r = ref NONE
@@ -437,8 +437,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id2) = unfoldTerm (exp, Goto rest)
-		val typ = #typ (infoExp exp)
-		val n = labelToIndex (#1 (Type.asArrow' typ), label)
+		val n = labelToIndex (#typ (infoExp exp), label)
 	    in
 		(r := SOME (f (O.SelAppExp (id_info info, label, n, id2))::
 			    translateCont cont);

@@ -295,7 +295,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    let
 		val labels = rowLabels row
 	    in
-		case isTuple (labels, 0) of
+		case isTuple (labels, 1) of
 		    SOME n => TupArity n
 		  | NONE => ProdArity (Vector.fromList labels)
 	    end
@@ -319,15 +319,13 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		rowToArity (Type.asSum typ)
 	    else Unary
 
-	fun makeConArity (typ, isNAry) =
-	    if Type.isArrow typ then
-		SOME (if isNAry then typToArity (#1 (Type.asArrow typ))
-		      else Unary)
-	    else NONE
-
 	fun isZeroTyp typ =
 	    Type.isCon typ andalso
 	    Path.equals (#3 (Type.asCon typ), PervasiveType.path_zero)
+
+	fun makeConArity (typ, isNAry) =
+	    if isZeroTyp typ then NONE
+	    else SOME (if isNAry then typToArity typ else Unary)
 
 	fun find (labels, label', i, n) =
 	    if i = n then NONE

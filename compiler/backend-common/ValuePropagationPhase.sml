@@ -114,7 +114,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun expToValue (LitExp (_, lit)) = LitVal lit
 	  | expToValue (PrimExp (_, name)) = PrimVal name
-	  | expToValue (NewExp (_, conArity)) = UnknownVal   (*--** ConVal? *)
+	  | expToValue (NewExp _) = UnknownVal   (*--** ConVal? *)
 	  | expToValue (VarExp (_, id)) = VarVal id
 	  | expToValue (TagExp (_, label, n, conArity)) =
 	    TagVal (label, n, conArity)
@@ -762,12 +762,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	     handle PrimOps.UnknownPrim =>
 		 Error.error (#region info, "unknown primitive " ^ name);
 	     exp)
-(*--** disabled for now (not all backends support this)
-	  | vpExp (exp as NewExp (_, _), _, false, _) = exp
-	  | vpExp (NewExp (info, conArity), _, true, _) =
-	    ConExp (info, StaticCon (Stamp.new ()), conArity)
-*)
-	  | vpExp (exp as NewExp (_, _), _, _, _) = exp
+	  | vpExp (exp as NewExp _, _, _, _) = exp
+	    (*--** generate StaticCon if on toplevel *)
 	  | vpExp (VarExp (info, id), env, _, _) = getTerm (info, id, env)
 	  | vpExp (exp as TagExp (_, _, _, _), _, _, _) = exp
 	  | vpExp (ConExp (info, con as Con id, conArity), env, _, _) =
@@ -895,8 +891,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared 2")
 
 	fun debug component =
-	    TextIO.print
-	    ("\n" ^ OutputFlatGrammar.outputComponent component ^ "\n")
+	    let
+		val q = TextIO.openOut "vpdebug.txt"
+	    in
+		TextIO.output
+		(q, "\n" ^ OutputFlatGrammar.outputComponent component ^ "\n");
+		TextIO.closeOut q
+	    end
 
 	fun idToString (Id (_, stamp, Name.InId)) =
 	    "$" ^ Stamp.toString stamp
@@ -920,7 +921,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		 | exn =>
 		       (TextIO.print
 			"\nValuePropagationPhase crashed: \
-			 \debug information follows\n";
+			 \dumping debug information to vpdebug.txt\n";
 			debug component;
 			case exn of
 			    IdMap.Lookup id =>

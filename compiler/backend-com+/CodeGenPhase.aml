@@ -451,7 +451,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit (Ldsfld (dottedname, id, System.ObjectTy))
 	    end
-	  | genExp (NewExp (_, _), PREPARE) =
+	  | genExp (NewExp _, PREPARE) =
 	    let
 		val index = allocateLocal System.GuidTy
 	    in

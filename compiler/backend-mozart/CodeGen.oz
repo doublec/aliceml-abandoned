@@ -327,7 +327,7 @@ define
 	 VHd = vEquateConstant(_ Constant Reg VTl)
       [] primExp(_ Builtinname) then
 	 VHd = vEquateConstant(_ BuiltinTable.Builtinname Reg VTl)
-      [] newExp(Region _) then
+      [] newExp(Region) then
 	 VHd = vCallBuiltin(_ 'Name.new' [Reg]
 			    {TranslateRegion Region State} VTl)
       [] varExp(_ Id) then

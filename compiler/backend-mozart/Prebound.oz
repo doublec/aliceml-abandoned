@@ -425,9 +425,13 @@ define
 	 end
       'Vector.tabulate':
 	 fun {$ N F} V in
-	    V = {Tuple.make '#[]' N}
-	    {For 1 N 1 proc {$ I} V.I = {F I} end}
-	    V
+	    try
+	       V = {Tuple.make '#[]' N}
+	       {For 1 N 1 proc {$ I} V.I = {F I} end}
+	       V
+	    catch _ then
+	       {RaiseAliceException BuiltinTable.'General.Size'}
+	    end
 	 end
       'Word.+': BootWord.'+'
       'Word.-': BootWord.'-'

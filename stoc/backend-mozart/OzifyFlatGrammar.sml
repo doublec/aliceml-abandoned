@@ -242,9 +242,8 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, PrimExp (info, name)) =
 	    (f (q, "primExp"); outputExpInfo (q, info); m q;
 	     outputAtom (q, name); r q)
-	  | outputExp (q, NewExp (info, conArity)) =
-	    (f (q, "newExp"); outputExpInfo (q, info); m q;
-	     outputConArity (q, conArity); r q)
+	  | outputExp (q, NewExp info) =
+	    (f (q, "newExp"); outputExpInfo (q, info); r q)
 	  | outputExp (q, VarExp (info, id)) =
 	    (f (q, "varExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)

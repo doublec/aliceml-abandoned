@@ -102,9 +102,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				  (LABEL label::pos, pat)) patFields,
 		      SOME (O.ProdArgs (Vector.map (fn label => (label, ()))
 					labels))))
-	  | makeAppConArgs (pat, _, pos) =
-	    if isZeroTyp (#typ (infoPat pat)) then (#[], NONE)
-	    else (#[(pos, pat)], SOME (O.OneArg ()))
+	  | makeAppConArgs (pat, _, pos) = (#[(pos, pat)], SOME (O.OneArg ()))
 
 	fun makeTestSeq (JokPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
@@ -114,11 +112,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (TagPat (info, Lab (_, label), pat, isNAry),
 			 pos, rest, mapping) =
 	    let
+		val n = labelToIndex (#typ info, label)
+		val conArity = makeConArity (#typ (infoPat pat), isNAry)
 		val (posPatVector, conArgs) =
-		    makeAppConArgs (pat, isNAry, LABEL label::pos)
-		val typ = #typ info
-		val n = labelToIndex (typ, label)
-		val conArity = makeConArity (typ, isNAry)
+		    if isSome conArity then
+			makeAppConArgs (pat, isNAry, LABEL label::pos)
+		    else (#[], NONE)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
 			      makeTestSeq (pat, pos, rest, mapping))
@@ -128,9 +127,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (ConPat (info, longid, pat, isNAry),
 			 pos, rest, mapping) =
 	    let
+		val conArity = makeConArity (#typ (infoPat pat), isNAry)
 		val (posPatVector, conArgs) =
-		    makeAppConArgs (pat, isNAry, longidToSelector longid::pos)
-		val conArity = makeConArity (#typ info, isNAry)
+		    if isSome conArity then
+			makeAppConArgs (pat, isNAry,
+					longidToSelector longid::pos)
+		    else (#[], NONE)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
 			      makeTestSeq (pat, pos, rest, mapping))

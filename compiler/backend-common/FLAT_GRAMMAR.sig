@@ -90,7 +90,7 @@ signature FLAT_GRAMMAR =
 	and exp =
 	    LitExp of exp_info * lit
 	  | PrimExp of exp_info * string
-	  | NewExp of exp_info * conArity
+	  | NewExp of exp_info
 	  | VarExp of exp_info * id
 	  | TagExp of exp_info * label * int * conArity
 	  | ConExp of exp_info * con * conArity

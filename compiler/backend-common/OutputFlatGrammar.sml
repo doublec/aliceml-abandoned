@@ -210,7 +210,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		 idDefsBodyVector)
 	and outputExp (LitExp (_, lit)) = outputLit lit
 	  | outputExp (PrimExp (_, name)) = SEQ #[S "prim \"", S name, S "\""]
-	  | outputExp (NewExp (_, conArity)) = outputCon conArity
+	  | outputExp (NewExp _) = S "new"
 	  | outputExp (VarExp (_, id)) = ID id
 	  | outputExp (TagExp (_, label, n, conArity)) =
 	    SEQ #[outputTag conArity, S " ", S (Label.toString label),

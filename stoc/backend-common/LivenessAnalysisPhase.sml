@@ -269,7 +269,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 			  end) initial vecBodyVec
 	and scanExp (LitExp (_, _), lset) = lset
 	  | scanExp (PrimExp (_, _), lset) = lset
-	  | scanExp (NewExp (_, _), lset) = lset
+	  | scanExp (NewExp _, lset) = lset
 	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
 	  | scanExp (TagExp (_, _, _, _), lset) = lset
 	  | scanExp (ConExp (_, Con id, _), lset) = ins (lset, id)
