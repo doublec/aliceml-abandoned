@@ -15,7 +15,7 @@
   <BODY>
 
 
-  <H1>
+  <H1 class="margin">
 <!--
   <TABLE cellpadding=8 bgcolor=white>
     <TR><TD>
@@ -26,17 +26,18 @@
 -->
   alice<BR>
   manual.<BR>
-  <BR>
-  <BR>
-  <?php echo($chapter) ?>
-  <BR>
   </H1>
-
-  <IMG align="right" src="alice.gif" alt="Alice">
 
   <?php
     include("menu.php3")
   ?>
+
+  <H1>
+  <?php echo($chapter) ?>
+  </H1>
+
+  <IMG class="logo" align="right" src="alice.gif" alt="Alice">
+
 <?php
   };
 
@@ -65,8 +66,8 @@
 	$bar .= "_";
     };
 
-    echo("<H2><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
-	 "</A></H2> <BR><BR>");
+    echo("<BR><H2><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
+	 "</A></H2>");
   };
 
   function subsection($tag, $name)

@@ -32,8 +32,8 @@
   </P>
 
   <PRE>
-	any    constructor   exttype    fct    from       import     non
-	non    pack          unpack     hen    withfun    withval
+	any    constructor   exttype    fct      from       import     non
+	lazy   pack          spawn      unpack   withfun    withval
   </PRE>
 
 

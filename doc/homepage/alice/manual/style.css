@@ -1,45 +1,72 @@
 BODY {
 	background:	url(bg.gif) repeat-y white;
 	position:	relative;
-	margin-left:	210px;
+	margin-left:	200px;
 	margin-right:	10px;
+}
+
+.margin {
+	position:	absolute;
+	left:		20px;
+	width:		150px;
+	color:		#0256A2;
+	text-align:	left;
+}
+
+.logo {
+	position:	absolute;
+	top:		0px;
+	right:		0px;
+	margin-top:	20px;
+	margin-right:	20px;
 }
 
 A:link {
 	color:		#00c000;
+	text-decoration: none;
 }
 
 A:visited {
 	color:		#009000;
+	text-decoration: none;
 }
 
-H1 {
-	position:	absolute;
-	left:		10px;
-	right:		10px;
-	width:		170;
-	font-size:	150%;
+A:hover {
+	text-decoration: underline;
+}
+
+H1, H2 {
 	font-weight:	bold;
 	font-family:	"Courier New", Courier, Monospace;
 	text-align:	left;
+}
+
+H1 {
+	font-size:	150%;
+}
+
+H1.margin {
+	position:	absolute;
+	font-size:	150%;
 	color:		white;
 }
 
 H2 {
-	position:	absolute;
-	left:		10px;
-	right:		10px;
-	width:		100%;
 	font-size:	130%;
-	font-weight:	bold;
-	font-family:	"Courier New", Courier, Monospace;
-	text-align:	left;
 	color:		#ff8833;
 }
 
+H3 {
+	font-size:	110%;
+	font-family:	arial, helvetica, sans-serif;
+}
+
+PRE.code {
+	margin-left:	1.5cm;
+}
+
 P.quote {
-	margin-left:	5em;
-	font-size:	120%;
+	margin-left:	1.5cm;
 	font-style:	italic;
 }
 
@@ -52,14 +79,9 @@ P.note, DIV.note {
 }
 
 P.menu {
-	margin-left:	20px;
+	margin-top:	2cm;
 	width:		100%;
-	font-weight:	bold;
-	background:	url(../musicemb.jpg) no-repeat white left;
-}
-
-P.menu A {
-	font-size:	90%;
+	font-family:	arial, helvetica, sans-serif;
 }
 
 TABLE TR {

@@ -117,11 +117,11 @@ insufficient. The Alice system includes the <EM>Inspector</EM> for browsing
 arbitrary data structures interactively:</P>
 
 <PRE>
-- inspect (List.tabulate (100, fn i => i*i));
+- inspect (List.tabulate (100, fn i => (i, i*i, i*i*i)));
 <I>val it : unit = ()</I></PRE>
 
-<P>An inspector window will pop up displaying the list with the first hundred
-square numbers.</P>
+<P>An inspector window will pop up displaying the table of the first hundred
+square and cubic numbers.</P>
 
 inspect ({hello = "hello, world"}, 3 + 8);
 
