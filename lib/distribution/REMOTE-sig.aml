@@ -1,27 +1,26 @@
 (*
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus, 2001
+ *   Thorsten Brunklaus and Leif Kornstaedt, 2001
  *
  * Last Change:
  *   $Date$ by $Author$
  *   $Revision$
- *
  *)
 
 signature REMOTE =
     sig
-	signature TICKET =
-	    sig
-		val ticket : string
-	    end
+	exception Ticket
 
-	functor Offer(signature S structure X : S) : TICKET
-	functor Take(val ticket : string signature S) : S
+	type ticket = string
 
-	val proxy : ('a -> 'b) -> 'a -> 'b
-	val time : unit -> int
-	val now : unit -> int
+	val proxy: ('a -> 'b) -> 'a -> 'b
+
+	functor Offer(signature S structure X: S):
+		(val ticket: ticket)                      (* Pickle.Sited *)
+
+	functor Take(val ticket: ticket signature S): S   (* Ticket *)
     end

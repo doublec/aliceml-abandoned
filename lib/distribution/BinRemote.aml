@@ -1,41 +1,37 @@
 (*
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus, 2001
+ *   Thorsten Brunklaus and Leif Kornstaedt, 2001
  *
- * Last Change:
+ * Last change:
  *   $Date$ by $Author$
  *   $Revision$
- *
  *)
 
-import structure RemoteCore from "RemoteCore"
-import signature REMOTE     from "REMOTE-sig"
-import structure Packer     from "Packer"
- 
+import signature REMOTE       from "REMOTE-sig"
+import structure UnsafeRemote from "UnsafeRemote"
+
 structure Remote :> REMOTE =
     struct
-	signature TICKET =
-	    sig
-		val ticket : string
-	    end
+	exception Ticket = UnsafeRemote.Ticket
 
-	functor Offer(signature S structure X : S) :> TICKET =
-	    struct
-		val ticket =
-		    let
-			structure P = Packer.Pack(structure X = X signature S = S)
-		    in
-		        RemoteCore.offer P.package
-		    end
-	    end
-	
-	functor Take(val ticket : string signature S) =
-	    Packer.Unpack(val package = RemoteCore.take ticket signature S = S)
+	type ticket = string
 
-	val proxy = RemoteCore.proxy
-	val time  = RemoteCore.time
-	val now   = RemoteCore.now
+	fun proxy f = UnsafeRemote.proxy (fn x => f x)
+
+	functor Offer(signature S structure X: S) =
+	    (val ticket =
+		 let
+		     structure P =
+			 Package.Pack(signature S = S structure X = X)
+		 in
+		     UnsafeRemote.offer P.package
+		 end)
+
+	functor Take(val ticket: string signature S) =
+	    Package.Unpack(val package = UnsafeRemote.take ticket
+			   signature S = S)
     end

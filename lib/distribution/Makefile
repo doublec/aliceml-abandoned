@@ -1,9 +1,11 @@
 ###
 ### Authors:
 ###   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ### 
 ### Copyright:
 ###   Thorsten Brunklaus, 2001
+###   Leif Kornstaedt, 2001
 ### 
 ### Last change:
 ###   $Date$ by $Author$
@@ -19,26 +21,29 @@ BOOTSTRAPDIR = $(SRCTOP)/bootstrap
 
 # No configuration needed from here
 
+SRCDIR = $(SRCTOP)/lib/constraints
+VPATH = $(SRCDIR)
+
 OZC = ozc
 OZCOPTS = -z9
-
 STOC = alicec
-STODEP =  sml @SMLload=$(BOOTSTRAPDIR)/alicedep
-STOCOPTS = --rtt-level=no
+STOCOPTS = 
+STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
+STOL = alicelink
+STOLOPTS = -v
 
-OZSOURCES = UnsafePackage.oz UnsafeRemoteCore.oz
-COMPONENTS = $(OZSOURCES:%.oz=%.ozf)
-UNTYPEDCOMPONENTS = $(OZSOURCES:%.oz=Untyped%.ozf)
+ALICESOURCES = REMOTE-sig.aml Remote.aml
 
-ALICESOURCES = PACKER-sig.aml Packer.aml \
-               REMOTE_CORE-sig.aml RemoteCore.aml \
-               REMOTE-sig.aml Remote.aml
+NATIVES = Remote
 
-ALICECOMPONENTS = $(ALICESOURCES:%.aml=%.ozf)
+OZSOURCES = $(NATIVES:%=Unsafe%.oz)
+
+COMPONENTS = \
+	$(NATIVES:%=Linked%.ozf) \
+	$(ALICESOURCES:%.aml=%.ozf)
 
 INSTALLDIRS = $(PREFIX)/lib/distribution
-INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/distribution/%) \
-               $(ALICECOMPONENTS:%=$(PREFIX)/lib/distribution/%)
+INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.ozf)
 
 .PHONY: all depend install clean veryclean distclean
 
@@ -51,17 +56,21 @@ all: $(COMPONENTS) $(ALICECOMPONENTS)
 depend:
 	$(STODEP) $(ALICESOURCES) > Makefile.depend
 
-Untyped%.ozf: %.oz
+%.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
-$(COMPONENTS):%.ozf: Untyped%.ozf
-	$(STOC) $(STOCOPTS) --replacesign $< $*.asig $@
+Linked%.ozf: %.ozf
+	$(STOL) $(STOLOPTS) $< --norelative \
+	--rewrite=`pwd`/= \
+	--include=`pwd`/$< --include=`pwd`/Unsafe$* -o $@
 
-$(ALICECOMPONENTS): %.ozf: %.aml
+%.ozf: %.aml
 	$(STOC) $(STOCOPTS) -c $< -o $@
 
+-include Makefile.depend
+
 ##
-## Installing
+## Installation
 ##
 
 install: $(INSTALLDIRS) $(INSTALLFILES)
@@ -69,40 +78,21 @@ install: $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(PREFIX)/lib/distribution/%: %
+$(NATIVES:%=$(PREFIX)/lib/distribution/%.ozf): \
+	$(PREFIX)/lib/distribution/%.ozf: Linked%.ozf
 	install -c -m 444 $< $@
 
+$(PREFIX)/lib/distribution/%.ozf: %.ozf
+	install -c -m 444 $< $@
 
 ##
 ## Cleaning Up
 ##
 
 clean:
-	-rm -f $(UNTYPEDCOMPONENTS) $(ALICECOMPONENTS) $(COMPONENTS)
+	-rm -f $(NATIVES:%=Unsafe%.ozf) $(COMPONENTS) *.ozm
 
 veryclean: clean
 
 distclean: veryclean
 	-rm -f Makefile.depend
-
-##
-## Dependencies
-##
-
-# Oz Components
-
-UntypedUnsafePackage.ozf: \
-	UnsafePackage.oz
-
-UnsafePackage.ozf: \
-	UnsafePackage.asig
-
-UntypedUnsafeRemoteCore.ozf: \
-	UnsafeRemoteCore.oz
-
-UnsafeRemoteCore.ozf: \
-	UnsafeRemoteCore.asig
-
-# Alice Components
-
--include Makefile.depend
