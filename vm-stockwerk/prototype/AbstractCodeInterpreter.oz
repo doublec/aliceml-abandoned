@@ -24,8 +24,9 @@ define
    IdDef    = 0
    Wildcard = 1
 
-   Global = 0
-   Local  = 1
+   Global    = 0
+   Immediate = 1
+   Local     = 2
 
    OneArg  = 0
    TupArgs = 1
@@ -111,6 +112,7 @@ define
       elsecase Cases.I of tuple(IdRef ThenInstr) then C2 in
 	 C2 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global J) then Closure.(J + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref C2} of Transient=transient(_) then request(Transient)
 	 elseof C3 then
@@ -126,6 +128,7 @@ define
       elsecase Cases.I of Case=tuple(IdRef _ _) then C2 in
 	 C2 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global J) then Closure.(J + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref C2} of Transient=transient(_) then request(Transient)
 	 elseof C3 then
@@ -157,6 +160,7 @@ define
       [] tag(!PutVar Id IdRef NextInstr) then
 	 L.Id := case IdRef of tag(!Local Id2) then L.Id2
 		 [] tag(!Global I) then Closure.(I + 2)
+		 [] tag(!Immediate X) then X
 		 end
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutNew Id S NextInstr) then
@@ -171,6 +175,7 @@ define
 	 for J in 1..N do
 	    T.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
 			[] tag(!Global K) then Closure.(K + 2)
+			[] tag(!Immediate X) then X
 			end
 	 end
 	 L.Id := T
@@ -180,10 +185,12 @@ define
 	 T = {MakeTuple con N + 1}
 	 T.1 = case IdRef of tag(!Local Id2) then L.Id2
 	       [] tag(!Global I) then Closure.(I + 2)
+	       [] tag(!Immediate X) then X
 	       end
 	 for J in 1..N do
 	    T.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
 			[] tag(!Global K) then Closure.(K + 2)
+			[] tag(!Immediate X) then X
 			end
 	 end
 	 L.Id := T
@@ -191,6 +198,7 @@ define
       [] tag(!PutRef Id IdRef NextInstr) then
 	 L.Id := {NewCell case IdRef of tag(!Local Id2) then L.Id2
 			  [] tag(!Global I) then Closure.(I + 2)
+			  [] tag(!Immediate X) then X
 			  end}
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutTup Id IdRefs NextInstr) then N T in
@@ -199,6 +207,7 @@ define
 	 for J in 1..N do
 	    T.J = case IdRefs.J of tag(!Local Id2) then L.Id2
 		  [] tag(!Global K) then Closure.(K + 2)
+		  [] tag(!Immediate X) then X
 		  end
 	 end
 	 L.Id := T
@@ -209,6 +218,7 @@ define
 	 for J in 1..N do
 	    T.J = case IdRefs.J of tag(!Local Id2) then L.Id2
 		  [] tag(!Global K) then Closure.(K + 2)
+		  [] tag(!Immediate X) then X
 		  end
 	 end
 	 L.Id := T
@@ -220,6 +230,7 @@ define
 	 for J in 1..N do
 	    NewClosure.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
 				 [] tag(!Global K) then Closure.(K + 2)
+				 [] tag(!Immediate X) then X
 				 end
 	 end
 	 L.Id := NewClosure
@@ -228,12 +239,14 @@ define
 	 case {Width IdRefs} of 1 then
 	    Args = arg(case IdRefs.1 of tag(!Local Id) then L.Id
 		       [] tag(!Global K) then Closure.(K + 2)
+		       [] tag(!Immediate X) then X
 		       end)
 	 elseof N then
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
 	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
 			[] tag(!Global K) then Closure.(K + 2)
+			[] tag(!Immediate X) then X
 			end
 	    end
 	 end
@@ -246,6 +259,7 @@ define
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op in
 	 Op = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 {Emulate tag(AppConst Op IdRefArgs IdDefArgsInstrOpt)
 	  Closure L TaskStack}
@@ -254,6 +268,7 @@ define
 	 case IdRefArgs of tag(!OneArg IdRef) then
 	    Args = arg(case IdRef of tag(!Local Id) then L.Id
 		       [] tag(!Global I) then Closure.(I + 2)
+		       [] tag(!Immediate X) then X
 		       end)
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
@@ -261,6 +276,7 @@ define
 	    for J in 1..N do
 	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
 			[] tag(!Global K) then Closure.(K + 2)
+			[] tag(!Immediate X) then X
 			end
 	    end
 	 end
@@ -273,6 +289,7 @@ define
       [] tag(!GetRef Id IdRef NextInstr) then R0 in
 	 R0 = case IdRef of tag(!Local Id2) then L.Id2
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref R0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
@@ -284,6 +301,7 @@ define
       [] tag(!GetTup IdDefs IdRef NextInstr) then T0 in
 	 T0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref T0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
@@ -301,6 +319,7 @@ define
       [] tag(!Sel Id IdRef I NextInstr) then T0 in
 	 T0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref T0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
@@ -312,6 +331,7 @@ define
       [] tag(!LazySel Id IdRef I NextInstr) then X NewClosure in
 	 X = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 2)
+	     [] tag(!Immediate X) then X
 	     end
 	 NewClosure = closure(lazySel(LazySelInterpreter) X I)
 	 L.Id := transient({NewCell byneed(NewClosure)})
@@ -319,11 +339,13 @@ define
       [] tag(!Raise IdRef) then Exn in
 	 Exn = case IdRef of tag(!Local Id) then L.Id
 	       [] tag(!Global I) then Closure.(I + 2)
+	       [] tag(!Immediate X) then X
 	       end
 	 exception(nil Exn TaskStack)
       [] tag(!Reraise IdRef) then X in
 	 X = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 2)
+	     [] tag(!Immediate X) then X
 	     end
 	 case X of package(Debug Exn) then
 	    exception(Debug Exn TaskStack)
@@ -339,8 +361,9 @@ define
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!IntTest IdRef IntInstrVec ElseInstr) then I0 in
 	 I0 = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global J) then Closure.(J + 2)
-	     end
+	      [] tag(!Global J) then Closure.(J + 2)
+	      [] tag(!Immediate X) then X
+	      end
 	 case {Deref I0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -351,6 +374,7 @@ define
       [] tag(!RealTest IdRef RealInstrVec ElseInstr) then F0 in
 	 F0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref F0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
@@ -362,8 +386,9 @@ define
 	 end
       [] tag(!StringTest IdRef StringInstrVec ElseInstr) then S0 in
 	 S0 = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 2)
-	     end
+	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
+	      end
 	 case {Deref S0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -375,6 +400,7 @@ define
       [] tag(!TagTest IdRef NullaryCases NAryCases ElseInstr) then T0 in
 	 T0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref T0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
@@ -401,6 +427,7 @@ define
       [] tag(!ConTest IdRef NullaryCases NAryCases ElseInstr) then C0 in
 	 C0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref C0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
@@ -440,6 +467,7 @@ define
       [] tag(!VecTest IdRef IdDefsInstrVec ElseInstr) then V0 in
 	 V0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
+	      [] tag(!Immediate X) then X
 	      end
 	 case {Deref V0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
@@ -466,6 +494,7 @@ define
 	 case IdRefArgs of tag(!OneArg IdRef) then
 	    Args = arg(case IdRef of tag(!Local Id) then L.Id
 		       [] tag(!Global I) then Closure.(I + 2)
+		       [] tag(!Immediate X) then X
 		       end)
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
@@ -473,6 +502,7 @@ define
 	    for J in 1..N do
 	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
 			[] tag(!Global K) then Closure.(K + 2)
+			[] tag(!Immediate X) then X
 			end
 	    end
 	 end
