@@ -1,6 +1,10 @@
+Language:
+
+* Implemented overloading (except for literals).
+
 Library:
 
-* Sync'ed with latest Basis spec.
+* Sync'ed with latest changes in Basis spec.
 * Fixed {*VectorSlice,Substring}.splitr (also fixes OS.Path.split*).
 
 
