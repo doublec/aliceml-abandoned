@@ -132,23 +132,44 @@ steps 3 and 4):
 
 3. Move codebase to Alice. (AR)
 
-   This concerns all files mentioned in vm-mozart/bootstrap/Makefile.
-   If a *.header file exists, the Alice source is the concatenation
-   of the header and the current SML source.  If a *.body file exists,
-   it is the Alice source; the current SML source becomes a dummy for SML/NJ.
+   All files under stoc are converted to Alice by including the
+   appropriate import annotations and renaming them to *.aml. Signature
+   components are now named using the -sig.aml convention to avoid name
+   clashes, particularly on inferior file systems like Windows.
 
-   The SML/NJ sources should be generated into subdirectories named NJ
-   to avoid cluttering up the source directories.  The *.cm files need
-   to be modified accordingly.
+   For all files mentioned in vm-mozart/bootstrap/Makefile, if a
+   *.header file existed, the Alice source is the concatenation of the
+   header and the previous SML source, modulo URI adaption and some
+   cleanup where necessary.  If a *.body file existed, it is now the
+   Alice source modulo URI adaption; the previous SML source became a
+   dummy for SML/NJ.
 
-   Alternatively, generate SML/NJ sources as temporaries only.
+   Those dummy files and all support files only required to bootstrap
+   with SML/NJ have been moved to /bootstrap. Exceptions are the
+   bootstrap versions of GlobalStamp and MkBackendMozart, which have
+   just been renamed to Bootstrap*. The former will be moved to
+   bootstrap once we use /lib instead of /stoc/misc. The latter remains
+   in /stoc/top because it is not a support file but an essential part of
+   the compiler.
 
-   Some renamings happen at the same time:
+   The bootstrap dir also includes a aml2sml converter and its hooking
+   into CM. The SML/NJ sources are now generated into subdirectories
+   named NJ via aml2sml to avoid cluttering up the source directories. 
+   (It would be nice if we could just generate SML/NJ sources as
+   temporaries. However, this does not seem to be supported by CM.)
+
+   The *.cm files have been modified accordingly.
+
+   Some long-outstanding file and module renamings have been done on the
+   way:
 
       Make* -> Mk*
       CountPosLexer -> MkCountPosLexer
+      LexerError -> MkLexerError
       ParsingPhase -> MkParsingPhase
       frontend-common/StringMap -> misc/StringMap
+      SORT -> LIST_SORT
+      Sort -> ListSort
 
 4. Get vm-mozart-bootstrap to work again. (LK)
 
@@ -203,6 +224,8 @@ steps 3 and 4):
    case for some sources formerly residing in stoc/misc and
    stoc/common.  These sources should now be handled using
    aml2sml.
+
+   Move misc/BootstrapGlobalStamp to bootstrap.
 
 12. Generate dependencies automatically. (AR)
 

@@ -1,5 +1,14 @@
-#!/bin/csh
+#!/bin/sh
 
-# AML to SML converter dummy (actually should remove imports)
+infile=$1
+outdir=`dirname $1`/NJ
+outfile=$outdir/`basename $1 .aml`.sml
 
-cp $1 $1.sml
+#echo $infile --> $outfile
+
+if [ ! -d $outdir ]
+then mkdir $outdir
+fi
+
+#sed 's/^import[^"]*"[^"]*"//g' $infile >$outfile
+exec awk -f $0.awk $infile >$outfile
