@@ -122,7 +122,8 @@ define
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
-      'GlobalStamp.new': NewName
+      'GlobalStamp.new':
+	 fun {$ unit} {NewName} end
       'GlobalStamp.fromString':
 	 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
       'GlobalStamp.toString':
@@ -176,6 +177,7 @@ define
       'Real.>=': Value.'>='
       'Real.compare': NumberCompare
       'Real.fromInt': IntToFloat
+      'Real.toString': FloatToString
       'Real.trunc':
 	 fun {$ R}
 	    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
