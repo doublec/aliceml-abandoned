@@ -25,6 +25,8 @@ local
 		 | "__attribute__((format"      => (incCounter(); ";")
 		 | "__attribute__(("            => (incCounter(); "")
 		 | "__attribute__((__cdecl__))" => ""
+		 | "__attribute__((dllimport))" => ""
+		 | "__builtin_va_list"          => "void *"
 		 | "dllimport"                  => ""
 		 | "))"                         => 
 			   if decCounter() then "" else "))"
