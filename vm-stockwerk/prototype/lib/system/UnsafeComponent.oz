@@ -14,7 +14,7 @@ functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Property(get)
-   Pickle(load save) at '../../Pickle.ozf'
+   Pickle(save load pack unpack) at '../../Pickle.ozf'
 export
    module: ComponentComponent
 define
@@ -30,7 +30,9 @@ define
    I_extension       = 5
    I_getInitialTable = 6
    I_load            = 7
-   I_save            = 8
+   I_pack_           = 8
+   I_save            = 9
+   I_unpack_         = 10
 
    Component =
    tuple(I_Sited: value(SitedException)
@@ -40,5 +42,7 @@ define
 	 I_extension: value({ByteString.make "stc"})
 	 I_getInitialTable: {Property.get 'alice.getInitialTable'}#n_v
 	 I_save: Pickle.save#ri_t
-	 I_load: Pickle.load#r_t)
+	 I_load: Pickle.load#r_t
+	 I_pack_: Pickle.pack#i_t
+	 I_unpack_: Pickle.unpack#r_t)
 end
