@@ -134,7 +134,7 @@ TABLE.dyptic {
 	width:		80%;
 }
 
-TABLE.dyptic TH, TABLE.dyptic TD {
+TABLE.dyptic TH, TABLE.dyptic TD, TABLE.df TH, TABLE.df TD {
 	text-align:	left;
 	padding:	3px;
 	background:	#eeeeee;
