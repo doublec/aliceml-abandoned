@@ -11,6 +11,7 @@
 //
 
 #if defined(INTERFACE)
+#pragma implementation "java/StackFrame.hh"
 #pragma implementation "java/Data.hh"
 #pragma implementation "java/ClassInfo.hh"
 #endif
