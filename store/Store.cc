@@ -468,9 +468,11 @@ void Store::DoGCWithoutFinalize(word &root) {
   std::fflush(stderr);
 #endif
 #if defined(STORE_GC_DEBUG)
-  std::fprintf(stderr, "Pre-GC checking...\n");
+  std::fprintf(stderr, "Pre-GC checking...");
+  std::fflush(stderr);
   VerifyGC(root);
   std::fprintf(stderr, "passed.\n");
+  std::fflush(stderr);
 #endif
 #if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
   double start_t, end_t;
@@ -536,11 +538,14 @@ void Store::DoGCWithoutFinalize(word &root) {
   gcLiveMem += (GetMemUsage(roots[hdrGen]) - memUsage);
 #endif
 #if defined(STORE_GC_DEBUG)
-  std::fprintf(stderr, "Post-GC checking...\n");
+  std::fprintf(stderr, "Post-GC checking...");
+  std::fflush(stderr);
   VerifyGC(root);
+  std::fprintf(stderr, "passed.\n");
+  std::fflush(stderr);
 #endif
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "done.\n");
+  std::fprintf(stderr, "GC done.\n");
 #endif
 }
 
@@ -615,6 +620,8 @@ static const char *LabelToString(u_int l) {
     return "CLOSURE";
   case CONCRETE_LABEL:
     return "CONCRETE";
+  case DYNAMIC_LABEL:
+    return "DYNAMIC_BLOCK";
   default:
     return NULL;
   }
@@ -629,6 +636,11 @@ static void PrintFailurePath() {
     if (s == NULL)
       std::fprintf(stderr, "Branch %d/%d in %x, type %d\n",
 		   branch, sz, level, label);
+    else if (label == DYNAMIC_LABEL) {
+      u_int aSz = ((DynamicBlock *) level)->GetActiveSize();
+      std::fprintf(stderr, "Branch %d/%d (%d) in %x, type %s\n",
+		   branch, aSz, sz, level, s);
+    }
     else
       std::fprintf(stderr, "Branch %d/%d in %x, type %s\n",
 		   branch, sz, level, s);
@@ -645,9 +657,10 @@ static void PrintLocatePath() {
   std::fprintf(stderr, "\n");
 }
 
-static bool IsAlive(Heap *roots, char *p) {
+static bool IsAlive(Heap *roots, char *p,
+		    const u_int maxGen = STORE_GENERATION_NUM - 1) {
   if (p != NULL) {
-    for (u_int i = 0; i < STORE_GENERATION_NUM - 1; i++) {
+    for (u_int i = 0; i < maxGen; i++) {
       HeapChunk *chunk = roots[i].GetChain();
       while (chunk != NULL) {
 	if (p >= chunk->GetBase() && (p < chunk->GetTop()))
@@ -662,6 +675,16 @@ static bool IsAlive(Heap *roots, char *p) {
 static void Verify(Heap *roots, word x) {
   AssertStore(depth < MAX_ITERATION_STEPS);
   AssertStore(size < MAX_ITERATION_STEPS);
+  if (size >= MAX_ITERATION_STEPS) {
+    std::fprintf(stderr, "Verify: size exceeded MAX_ITERATION_STEPS\n");
+    std::fflush(stderr);
+    AssertStore(0);
+  }
+  if (depth >= MAX_ITERATION_STEPS) {
+    std::fprintf(stderr, "Verify: depth exceeded MAX_ITERATION_STEPS\n");
+    std::fflush(stderr);
+    AssertStore(0);
+  }
   if (PointerOp::IsInt(x)) {
     AssertStore(PointerOp::DecodeInt(x) != INVALID_INT);
   } else {
@@ -669,6 +692,12 @@ static void Verify(Heap *roots, word x) {
     if (p == NULL) {
       std::fprintf(stderr, "Verify: null pointer encountered: %x --> %x\n",
 	      (word) p, x);
+      PrintFailurePath();
+      AssertStore(0);
+    }
+    else if (!IsAlive(roots, (char *) p, STORE_GENERATION_NUM)) {
+      std::fprintf(stderr, "Verify: found stale pointer %x (word=%x)\n",
+		   p, x);
       PrintFailurePath();
       AssertStore(0);
     }
