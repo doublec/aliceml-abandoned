@@ -19,6 +19,7 @@ SOURCES = \
 	FileDialog.aml \
 	SearchDialog.aml \
 	Config.aml \
+	History.aml \
 	BufferHighlight.aml \
 	AboutDialog.aml \
 	Preferences.aml

@@ -15,7 +15,7 @@ import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gui from "Gui"
 import structure Config from "Config"
-import structure OutputWriters from "OutputWriters"
+import structure History from "History"
 import structure Buffer from "Buffer"
 
 structure Preferences =
@@ -183,9 +183,7 @@ structure Preferences =
 				  fontCallback)
 
         val _ = Gtk.signalConnect(Gui.clear_history_button, "clicked",
-				  fn _ =>
-				  OutputWriters.history :=
-				  {prev=[], current="",next=[]})
+				  fn _ => History.set [])
 
         fun closeCallback _ = (Gtk.windowSetModal(Gui.preferences, false);
 			       Gtk.widgetUnmap Gui.preferences)

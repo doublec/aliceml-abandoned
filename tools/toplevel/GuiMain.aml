@@ -19,6 +19,7 @@ import structure OutputWriters from "OutputWriters"
 import structure Evaluator from "Evaluator"
 import structure Buffer from "Buffer"
 import structure Config from "Config"
+import structure History from "History"
 import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure BufferHighlight from "BufferHighlight"
@@ -75,7 +76,6 @@ structure GuiMain =
                 evalSignal := SOME signalP;
 		if echo then TextIO.StreamIO.output (OutputWriters.compilerIn, find(0,text))
                 else ();
-print ("["^text^"]");
 		spawn (Evaluator.eval (text, signal);
                        evalSignal := NONE)
 	    end
@@ -126,7 +126,7 @@ print ("["^text^"]");
 		val offset = Gtk.textIterGetLineOffset iter
 		val iter' = Gtk.textIterCopy iter
 	    in
-		Gtk.textIterSetLine(iter', line);
+		Gtk.textIterSetLineOffset(iter', 0);
 		getColFromOffset(iter', offset, 0)
 	    end
 	fun getLine iter = Gtk.textIterGetLine iter + 1
@@ -237,6 +237,7 @@ print ("["^text^"]");
                 val _ = findNonWS startiter Gtk.textIterForwardChar
                 val _ = findNonWS enditer Gtk.textIterBackwardChar
                 val _ = Gtk.textIterForwardChar enditer (* end is exclusive! *)
+		val _ = Gtk.textIterSetLineOffset(startiter, 0)
             in
                 (startiter, enditer)
             end
@@ -682,7 +683,7 @@ print ("["^text^"]");
                 Gtk.containerAdd(menu, separator);
                 Gtk.containerAdd(menu, showError)
             end
-          | populatePopup _ = print "Gtk is crazy\n"
+          | populatePopup _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: popup\n")
 
 	fun jumpToLastError () =
 	    Lock.sync Gtk.lock
@@ -731,7 +732,7 @@ print ("["^text^"]");
 		    Buffer.setSyntaxHighlighting
 		    (id, Gtk.checkMenuItemGetActive Gui.syntax_colouring)
 
-	fun doQuit () = (Config.saveHistory (!OutputWriters.history,
+	fun doQuit () = (Config.saveHistory (History.get(),
 					     Buffer.getFileNames());
 			 OS.Process.exit OS.Process.success)
         fun quit () = if Buffer.haveModified ()
@@ -750,6 +751,7 @@ print ("["^text^"]");
                                changeFocus STDSTREAMS);
 	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
 	     OutputWriters.makeWriters (eval false);
+	     History.set (Config.loadHistory());
 	     Gtk.textViewSetEditable(Gui.compilerout, false);
 	     Gtk.windowSetDefaultSize(Gui.mainwidget,
 				      Config.sizeX,Config.sizeY);

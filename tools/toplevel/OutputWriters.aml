@@ -17,6 +17,7 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gui from "Gui"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Config from "Config"
+import structure History from "History"
 import structure Evaluator from "Evaluator"
 import structure BufferHighlight from "BufferHighlight"
 
@@ -72,51 +73,6 @@ structure OutputWriters =
       val _ = Evaluator.setTraceStream compilerTrace
 
       val (rowCol, rowColText) = Stream.stream ()
-
-
-      (* History *)
-
-      val history = ref (Config.loadHistory())
-
-      fun extendHistory s =
-	  let
-	      val p = Promise.promise ()
-	      val prev =
-		  case Ref.exchange (history, Promise.future p)
-		   of {prev = [], current, next = []} => [s]
-		    | {prev = s'::prev', current, next = []} =>
-		      if s = s' then s::prev' else s::s'::prev'
-		    | {prev, current = s', next} => (* throw away initial input *)
-		      s :: List.tl (List.rev (if s = s' then next else s'::next)) @ prev
-	  in
-	      Promise.fulfill (p, {prev, current = "", next = []})
-	  end
-
-      fun backwards s =
-	  let
-	      val p = Promise.promise ()
-	      val (history',s') =
-		  case Ref.exchange (history, Promise.future p)
-		   of h' as {prev = [], current, next} => (h', s)
-		    | {prev = s'::prev', current, next} =>
-		      ({prev = prev', current = s', next = s::next}, s')
-	  in
-	      Promise.fulfill (p, history');
-	      s'
-	  end
-
-      fun forwards s =
-	  let
-	      val p = Promise.promise ()
-	      val (history',s') =
-		  case Ref.exchange (history, Promise.future p)
-		   of h' as {prev, current, next = []} => (h', s)
-		    | {prev, current, next = s'::next'} =>
-		      ({prev = s::prev, current = s', next = next'}, s')
-	  in
-	      Promise.fulfill (p, history');
-	      s'
-	  end
 
 
       (* Highlight *)
@@ -258,7 +214,7 @@ structure OutputWriters =
                 	    val _ = highlight(buf, str, offset, startiter, enditer)
                 	    val _ = eval str
                 	in
-                	    extendHistory (String.substring (str, 0, String.size str-1))
+                	    History.extend (String.substring (str, 0, String.size str-1))
                 	end
 		    else
 			Gtk.textBufferInsertAtCursor(buf, "  ", ~1)
@@ -296,8 +252,8 @@ structure OutputWriters =
 		Gtk.textBufferInsertAtCursor(buf, s', ~1)
 	    end
 
-      val historyPrev = compilerHistory backwards
-      val historyNext = compilerHistory forwards
+      val historyPrev = compilerHistory History.backwards
+      val historyNext = compilerHistory History.forwards
 
       fun makeWriters eval =
           let
@@ -313,7 +269,7 @@ structure OutputWriters =
               fun forward (widget, buf, signal, noed, styles, highlights) =
 		  let
 		      fun receive (text, mark) =
-			  if String.size text = 0 then mark else
+			  (if String.size text = 0 then mark else
 			  if String.sub (text, 0) <= #"\002"
 			  then receive (String.extract (text, 1, NONE),
 					Char.ord (String.sub (text, 0)))
@@ -322,6 +278,11 @@ structure OutputWriters =
 					 [Vector.sub (styles, mark)], noed,
 					 Vector.sub (highlights, mark), text);
 				mark)
+			  ) handle e =>
+				(TextIO.output(TextIO.stdErr,
+					       "** uncaught exception " ^ Exn.name e ^
+					       " in output writer\n");
+				 mark)
 		  in
 		      receive
 		  end

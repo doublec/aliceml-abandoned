@@ -1,0 +1,75 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature HISTORY =
+sig
+    val get		: unit -> string list
+    val set		: string list -> unit
+    val extend		: string -> unit
+    val backwards	: string -> string
+    val forwards	: string -> string
+end
+
+structure History : HISTORY =
+struct
+    val history = ref {prev = [], current = "", next = []}
+
+    fun set prev = history := {prev, current = "", next = []}
+
+    fun get () =
+	let
+	    val {prev, current, next} = !history
+	in
+	    (* throw away initial input *)
+	    List.tl (List.rev (current::next)) @ prev
+	end
+
+    fun extend s =
+	let
+	    val p = Promise.promise ()
+	    val prev =
+		case Ref.exchange (history, Promise.future p)
+		 of {prev = [], current, next = []} => [s]
+		  | {prev = s'::prev', current, next = []} =>
+		    if s = s' then s::prev' else s::s'::prev'
+		  | {prev, current = s', next} => (* throw away initial input *)
+		    s :: List.tl (List.rev (if s = s' then next else s'::next)) @ prev
+	in
+	    Promise.fulfill (p, {prev, current = "", next = []})
+	end
+
+    fun backwards s =
+	let
+	    val p = Promise.promise ()
+	    val (history',s') =
+		case Ref.exchange (history, Promise.future p)
+		 of h' as {prev = [], current, next} => (h', s)
+		  | {prev = s'::prev', current, next} =>
+		    ({prev = prev', current = s', next = s::next}, s')
+	in
+	    Promise.fulfill (p, history');
+	    s'
+	end
+
+    fun forwards s =
+	let
+	    val p = Promise.promise ()
+	    val (history',s') =
+		case Ref.exchange (history, Promise.future p)
+		 of h' as {prev, current, next = []} => (h', s)
+		  | {prev, current, next = s'::next'} =>
+		    ({prev = s::prev, current = s', next = next'}, s')
+	in
+	    Promise.fulfill (p, history');
+	    s'
+	end
+end

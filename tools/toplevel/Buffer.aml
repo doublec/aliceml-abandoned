@@ -129,7 +129,7 @@ structure Buffer =
                   undo := DELETE(off, txt) :: (!undo);
 	      Promise.fulfill (!highlight, SOME off) handle Promise.Promise => ()
           end
-        | deleteText _ _ = print "Gtk is crazy: delete"
+        | deleteText _ _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: delete\n")
 
       fun findStartOfLine iter =
 	  if Gtk.textIterGetChar iter = Char.ord #"\n" then
@@ -171,7 +171,7 @@ structure Buffer =
 		  Gtk.textBufferInsert(buf, startiter, indent, ~1)
 	      end
           end
-        | insertText' _ = print "Gtk is crazy: insert"
+        | insertText' _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: insert\n")
 
       fun insertText id args = Lock.sync Gtk.lock insertText' (id,args)
 

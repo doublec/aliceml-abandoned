@@ -187,21 +187,15 @@ structure Config =
 	      val p = Pickle.load (cDir^"/History."^Pickle.extension)
 	      structure C = unpack p : (val history : string list)
 	  in
-	      {prev=C.history, current="", next=[]}
-	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) =>
-	      {prev=[], current="",next=[]}
+	      C.history
+	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => []
 
-      fun saveHistory ({prev,current,next}, openFiles) =
+      fun saveHistory (history, openFiles) =
 	  let
 	      val cDir = createConfigDir ()
-	      val prev =
-		  case next of nil   => rev prev
-		             | n::nr => rev (prev@nr)
-	      val prev =
-		  if List.length prev <= !historySize then rev prev
-		  else rev (List.take (prev, !historySize))
 	      structure C = struct
-				val history = prev
+				val history = List.take(history, !historySize)
+					      handle Subscript => history
 				val openFiles = openFiles
 			    end
 	  in
@@ -219,5 +213,7 @@ structure Config =
 	  in
 	      C.openFiles
 	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => nil
-
+		| e => (TextIO.output(TextIO.stdErr,
+				    "** error loading history: uncaught \
+				    \exception " ^ Exn.name e ^ "\n"); nil)
    end
