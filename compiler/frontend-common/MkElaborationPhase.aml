@@ -1802,8 +1802,9 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 	    val s     = loadSig(desc, url)
 	    val s'    = Inf.emptySig()
 	    val imps' = elabImps(E, s, s', imps)
+	    val s''   = if !Switches.Language.retainFullImport then s else s'
 	in
-	    O.ImpAnn(sigInfo(i,s'), imps', url)
+	    O.ImpAnn(sigInfo(i,s''), imps', url)
 	end
 
     and elabAnns(E, desc, anns) =
