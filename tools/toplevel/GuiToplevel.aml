@@ -1,18 +1,18 @@
 import structure GuiMain from "GuiMain"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gui from "Gui"
+import structure Evaluator from "Evaluator"
 import functor GuiSignals from "GuiSignals"
 import structure EventHandler from "EventHandler"
-import structure Evaluator from "Evaluator"
 
 structure GuiToplevel =
   struct
     fun run files =
 	let
-	    structure S = GuiSignals (structure S = EventHandler)
+	    structure EH = GuiSignals (structure S = EventHandler)
 	in
 	    Gtk.widgetShowAll Gui.mainwidget;
-	    GuiMain.init ();
+	    GuiMain.init EH.notebook1_on_notebook1_switch_page;
 	    List.app GuiMain.openGivenFile files;
 	    Evaluator.init ();
 	    GuiMain.initDone ();

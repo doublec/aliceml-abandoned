@@ -5,7 +5,6 @@ Bugs:
 
 * undo all marks buffer unchanged
 * jump-to-error with paths
-* uncaught handler exceptions with alice -g *.aml
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
 * cannot make window smaller
