@@ -183,7 +183,7 @@ define
       Brown  = '#b886b0'
 
       DefaultWidths = [1 5 10 0 ~1 ~5 ~10]
-      DefaultDepths = [1 5 10 0 ~1 ~5 ~10]
+      DefaultDepths = [~1 0 1 2 3 4 5 10 20]
 
       DefaultActions = ['Reinspect'(reinspect)
 			'Print'(System.show)]
