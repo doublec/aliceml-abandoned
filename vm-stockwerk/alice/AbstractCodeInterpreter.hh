@@ -24,7 +24,7 @@
 class AbstractCodeInterpreter: public Interpreter {
 private:
   // AbstractCodeInterpreter Constructor
-  AbstractCodeInterpreter() : Interpreter() {}
+  AbstractCodeInterpreter(): Interpreter() {}
 public:
   // Exported AbstractCodeInterpreter Instance
   static AbstractCodeInterpreter *self;
@@ -33,10 +33,10 @@ public:
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
-  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PushCall(Closure *closure);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
-  virtual Result Handle(TaskStack *taskStack);
+  virtual Result Run();
+  virtual Result Handle();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
