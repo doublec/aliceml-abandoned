@@ -13,7 +13,7 @@ all: $(MANPAGES)
 install: $(PREFIX) $(INSTALLFILES)
 
 alicerun.1: alicerun
-	help2man -I see_also -N $< -o $@
+	help2man -I see_also -N ./$< -o $@
 
 %.1: $(BINDIR)/%
 	help2man -I see_also -N $< -o $@

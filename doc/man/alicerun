@@ -14,6 +14,9 @@ usage () {
     echo "CommandLine library structure. To terminate an application, the        "
     echo "OS.Process.terminate function must be invoked. The virtual machine will"
     echo "not be terminated automatically, even if no live threads are left.     "
+    echo "                                                                       "
+    echo "Report bugs using our online bug-tracking system:                      "
+    echo "http://www.ps.uni-sb.de/alice/bugzilla/                                "
 }
 
 version () {
