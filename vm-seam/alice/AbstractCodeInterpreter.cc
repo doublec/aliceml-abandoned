@@ -276,7 +276,7 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
 }
 
 #define CHECK_PREEMPT() {				\
-  if (Scheduler::TestPreempt() || Store::NeedGC())	\
+  if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) \
     return Interpreter::PREEMPT;			\
   else							\
     return Interpreter::CONTINUE;			\
@@ -536,7 +536,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	  }
 	  break;
 	}
-	if (Scheduler::TestPreempt() || Store::NeedGC()) {
+	if (StatusWord::GetStatus(Store::GCStatus() |
+				  Scheduler::PreemptStatus())) {
 	  Interpreter::Result res =
 	    taskStack->PushCall(GetIdRefKill(pc->Sel(0), globalEnv, localEnv));
 	  return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;

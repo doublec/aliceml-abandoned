@@ -340,9 +340,9 @@ public:
   static void DirectWordToPointer(u_int Dest, u_int Ptr) {
     jit_rshi_ui(Dest, Ptr, 1);
   }
-  // NeedGC
-  static void NeedGC(u_int Dest) {
-    jit_ldi_ui(Dest, &Store::needGC);
+  // Machine Status
+  static void LoadStatus(u_int Dest) {
+    jit_ldi_ui(Dest, &StatusWord::status);
   }
   //
   // Store Values

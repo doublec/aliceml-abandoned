@@ -1817,10 +1817,10 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
   NativeCodeFrame::GetTaskStack(JIT_V1, JIT_V2);
   Generic::TaskStack::PopFrames(JIT_V1, 1);
   jit_movi_ui(JIT_R0, Interpreter::CONTINUE);
-  jit_ldi_ui(JIT_R1, &Scheduler::preempt);
-  JITStore::NeedGC(JIT_R2);
-  jit_addi_ui(JIT_R1, JIT_R1, JIT_R2);
-  jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R1, 0);
+  JITStore::LoadStatus(JIT_V1);
+  u_int mask = Store::GCStatus() | Scheduler::PreemptStatus();
+  jit_andi_ui(JIT_V1, JIT_V1, mask);
+  jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_V1, 0);
   jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
   jit_patch(no_preempt);
   RETURN();
