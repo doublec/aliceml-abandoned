@@ -308,7 +308,15 @@ prepare
 	 end
       'Future.Cyclic': {NewUniqueName 'Future.Cyclic'}
       'Future.alarm\'':
+\ifdef OLD_BYNEED
 	 fun {$ X} !!{Alarm (X + 500) div 1000} end
+\else
+	 fun {$ X} Y in
+	    Y = !!{Alarm (X + 500) div 1000}
+	    {Value.makeNeeded Y}
+	    Y
+	 end
+\endif
       'Future.await':
 	 fun {$ X} {Wait X} X end
       'Future.awaitEither\'':
@@ -324,13 +332,7 @@ prepare
 	 end
 \else
 	 fun {$ P}
-	    {ByNeedFuture fun {$}
-			     try
-				{P unit}
-			     catch error(InnerE ...) then
-				{Value.failed error(InnerE)}
-			     end
-			  end}
+	    {ByNeedFuture fun {$} {P unit} end}
 	 end
 \endif
       'Future.concur':
@@ -345,14 +347,16 @@ prepare
 	      end
 	 end
 \else
-	 fun {$ P}
-	    !!thread
-		 try
-		    {P unit}
-		 catch error(InnerE ...) then
-		    {Value.failed error(InnerE)}
-		 end
-	      end
+	 fun {$ P} Y in
+	    Y = !!thread
+		     try
+			{P unit}
+		     catch error(InnerE ...) then
+			{Value.failed error(InnerE)}
+		     end
+		  end
+	    {Value.makeNeeded Y}
+	    Y
 	 end
 \endif
       'Future.isByneed':
@@ -453,11 +457,13 @@ prepare
 	    unit
 	 end
       'Hole.future':
-	 fun {$ X}
+	 fun {$ X} Y in
 	    if {IsFuture X} orelse {Not {IsFree X}} then
 	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
-	    !!X
+	    Y = !!X
+	    {Value.makeNeeded Y}
+	    Y
 	 end
       'Hole.hole':
 	 fun {$ unit} _ end
