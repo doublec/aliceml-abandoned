@@ -1,0 +1,37 @@
+(*
+ * Start this example in the `alice' interactive toplevel using
+ *    use "HttpServerExample.aml";
+ * then test it by
+ * - creating a directory as given in `documentRoot', below;
+ * - placing a file `foo.txt' in this directory;
+ * - using a browser to navigate to
+ *      http://localhost/foo.txt
+ *)
+
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import structure Url         from "x-alice:/lib/system/Url"
+import structure Http        from "x-alice:/lib/system/Http"
+import structure HttpServer  from "x-alice:/lib/system/HttpServer"
+
+val documentRoot = "/tmp/httproot"
+
+val notFoundDocument = "The requested document could not be found\n"
+
+fun documentHandler (request: Http.request) =
+    let
+	val relFile = Url.toString (Url.setQuery (#uri request, NONE))
+	val file = TextIO.openIn (documentRoot ^ relFile)
+	val body = TextIO.inputAll file
+    in
+	TextIO.closeIn file;
+	Http.makeResponse
+	    {statusCode = 200, contentType = "text/plain", body}
+    end handle IO.Io {...} =>
+	Http.makeResponse
+	    {statusCode = 404, contentType = "text/plain",
+	     body = notFoundDocument}
+
+val port = HttpServer.start NONE
+val _ = HttpServer.register (Url.empty, documentHandler)
+val _ = TextIO.print ("started server at port " ^
+		      Int.toString port ^ "\n")
