@@ -60,6 +60,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
+	| CompInfMismatch	of inf_mismatch
 
     datatype warning =
 	  NotGeneralized	of id * typ
@@ -272,6 +273,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["module","expression","does","not","match","signature:"], im)
       | ppError(GroundInfKind k) =
 	  par["missing","arguments","in","signature","expression"]
+      | ppError(CompInfMismatch im) =
+	ppMismatch(
+	  par["inconsistency","at","signature","specialization:"], im)
 
     fun ppWarning(NotGeneralized(x,t)) =
 	vbox(

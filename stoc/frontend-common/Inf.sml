@@ -1,4 +1,4 @@
-(* Interfaces contain state. This means that they must be cloned
+(* Interfaces contain state. This means that they must be instantiated
    at each occurance. *)
 
 structure InfPrivate =
@@ -763,7 +763,7 @@ structure InfPrivate =
 		    ( if b then PathMap.insert(rea', idPath x2, z) else ()
 		    ; true )
 	      | pairDef(rea', toZ, b, x1, SOME z1, x2, SOME z2) =
-		    ( if b then PathMap.insert(rea', idPath x2, z2) else ()
+		    ( if b then PathMap.insert(rea', idPath x2, z1) else ()
 		    ; true )
 	      | pairDef(rea', toZ, b, x1, NONE, x2, NONE) =
 		    ( if b then PathMap.insert(rea', idPath x2, toZ(idPath x1))
@@ -791,11 +791,11 @@ structure InfPrivate =
 		     (* Nested structures are already realised.
 		      * We would loop during realisation if we inserted
 		      * identity realisations. *)
-		     if pair1(itemPath item1 = itemPath item2,
-			      !item1, !item2) then
-			pair(m1, items, (item1,item2)::pairs, left)
-		     else
-			pair(m1, items, (item2,item1)::pairs, left)
+		     ( if pair1(itemPath item1 <> itemPath item2,
+				!item1, !item2) then () else
+			  Misc.General_swap(item1, item2)
+		     ; pair(m1, items, (item1,item2)::pairs, left)
+		     )
 
 	    (* Necessary to create complete realisation. *)
 	    and pairNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =

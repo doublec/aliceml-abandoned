@@ -52,6 +52,7 @@ signature ELABORATION_ERROR =
 	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
+	| CompInfMismatch	of inf_mismatch
 
     datatype warning =
 	  NotGeneralized	of id * typ

@@ -173,6 +173,28 @@ structure Str :> SIG =
 
 ;
 
+
+(* Signature intersection *)
+
+signature S1 =
+  sig
+    type t
+    type u = t
+    val t : t
+    val u : u
+    structure M : sig type t end
+    type v = M.t
+    val Mt : M.t
+    val v : v
+  end
+
+signature S2 = S1
+  where type t   = int
+    and type M.t = bool
+
+;
+
+
 (* General *)
 
 structure General =
@@ -986,9 +1008,9 @@ structure K : ORD_KEY =
 structure Test1 = BinaryMapFn(K)
 structure Test2 = BinaryMapFn(K) : ORD_MAP
 structure Test3 = BinaryMapFn(K) :> ORD_MAP
-(*
+
 signature K_MAP = ORD_MAP where type Key.ord_key = K.ord_key
 structure Test4 = BinaryMapFn(K) :> K_MAP
 structure Test5 = BinaryMapFn(K) :> ORD_MAP where type Key.ord_key = K.ord_key
-*)
+
 ;

@@ -1212,10 +1212,10 @@ val _=print "\n"
 	let
 	    val (j1,inf1') = elabGroundInf(E, inf1)
 	    val (j2,inf2') = elabGroundInf(E, inf2)
-	(*UNFINISHED*)
-	    val j = j1
+	    val  j         = Inf.intersect(j1,j2)
+			     handle Inf.Mismatch mismatch =>
+				error(i, E.CompInfMismatch mismatch)
 	in
-	    unfinished i "elabMod" "interface restriction";
 	    ( j, O.CompInf(infInfo(i,j), inf1', inf2') )
 	end
 
