@@ -56,6 +56,7 @@ public:
       StackFrame *frame = Scheduler::PushFrame(size);
       StackFrame::New(frame, size, wFrame);
       Worker *worker = frame->GetWorker();
+      fprintf(stderr, "- ");
       worker->DumpFrame(frame);
       Scheduler::PopFrame(size);
     }

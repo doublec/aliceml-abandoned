@@ -91,7 +91,11 @@ Worker::Result BindFutureWorker::Run(StackFrame *sFrame) {
   Construct();
   word arg = Scheduler::currentArgs[0];
   if (IsCyclic(arg, future)) { // cancel future with Cyclic exception
-    future->Become(CANCELLED_LABEL, Hole::cyclicExn);
+    Tuple *package = Tuple::New(2);
+    Backtrace *backtrace = Backtrace::New();
+    package->Init(0, Hole::cyclicExn);
+    package->Init(1, backtrace->ToWord());
+    future->Become(CANCELLED_LABEL, package->ToWord());
     Assert(Scheduler::nArgs == 1);
     Scheduler::currentArgs[0] = future->ToWord();
     return Worker::CONTINUE;
@@ -117,7 +121,10 @@ Worker::Result BindFutureWorker::Handle(word) {
   Future *future = frame->GetFuture();
   Scheduler::PopFrame(frame->GetSize());
   future->ScheduleWaitingThreads();
-  future->Become(CANCELLED_LABEL, Scheduler::currentData);
+  Tuple *package = Tuple::New(2);
+  package->Init(0, Scheduler::currentData);
+  package->Init(1, Scheduler::currentBacktrace->ToWord());
+  future->Become(CANCELLED_LABEL, package->ToWord());
   Scheduler::nArgs = 1;
   Scheduler::currentArgs[0] = future->ToWord();
   return Worker::CONTINUE;

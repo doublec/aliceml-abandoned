@@ -20,6 +20,8 @@
 #include "adt/Queue.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Closure.hh"
+#include "generic/Tuple.hh"
+#include "generic/Backtrace.hh"
 
 //
 // Transient Representation:
@@ -28,7 +30,7 @@
 //    -----             --------
 //    HOLE_LABEL        associated future (or an integer if not created)
 //    FUTURE_LABEL      wait queue (or an integer if not created)
-//    CANCELLED_LABEL   exception
+//    CANCELLED_LABEL   tuple of exception and backtrace
 //    BYNEED_LABEL      closure
 //    REF_LABEL         value
 //
@@ -106,11 +108,15 @@ public:
   }
   void Fail(word exn) {
     Future *future = STATIC_CAST(Future *, Store::WordToTransient(GetArg()));
+    Tuple *package = Tuple::New(2);
+    Backtrace *backtrace = Backtrace::New(); // TODO: have primitive in BT
+    package->Init(0, exn);
+    package->Init(1, backtrace->ToWord());
     if (future != INVALID_POINTER) { // eliminate associated future
       future->ScheduleWaitingThreads();
-      future->Become(CANCELLED_LABEL, exn);
+      future->Become(CANCELLED_LABEL, package->ToWord());
     }
-    Become(CANCELLED_LABEL, exn);
+    Become(CANCELLED_LABEL, package->ToWord());
   }
 };
 

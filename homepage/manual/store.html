@@ -402,7 +402,8 @@ public:
         <LI><TT>REF_LABEL</TT> makes the transient transparent, that is,
             replaces it by value <TT>w</TT>. The garbage collector eventually
             eliminates reference chains.
-        <LI><TT>CANCELLED_LABEL</TT> fails the transient with value <TT>w</TT>.
+        <LI><TT>CANCELLED_LABEL</TT> fails the transient with value <TT>w</TT>,
+	    which must be a tuple of some value and a backtrace.
         <LI><TT>HOLE_LABEL</TT> denotes a hole. A hole is a placeholder for
             a unknown value that cannot be synchronized on. That is, an exception
             will be raised in case a hole is encountered in a value-strict

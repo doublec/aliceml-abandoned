@@ -182,11 +182,12 @@ int Scheduler::Run() {
 	      }
 	      break;
 	    case CANCELLED_LABEL:
-	      currentData = transient->GetArg();
-	      // TODO: This might cut down existing traces; we need
-	      //       method to figure out whether there is a valid trace or not
-	      currentBacktrace = Backtrace::New();
-	      goto raise;
+	      {
+		Tuple *package = Tuple::FromWord(transient->GetArg());
+		currentData = package->Sel(0);
+		currentBacktrace = Backtrace::FromWord(package->Sel(1));
+		goto raise;
+	      }
 	    case BYNEED_LABEL:
 	      {
 		Thread *newThread = NewThread(0, Store::IntToWord(0));
