@@ -18,38 +18,50 @@ struct
 
     exception Unknown
 
-    datatype color = C of string * real * real * real
+    type color = int
+
+    datatype color_rep = C of string * real * real * real
 
     type t = color
 
-    fun equal (C (n1, _, _, _) , C (n2, _, _, _)) = n1 = n2
+    val equal = Int.equal
 
-    fun compare (C (n1, _, _, _), C (n2, _, _, _)) = String.compare (n1, n2)
+    val compare = Int.compare
+
     
-    val all = [C("brown",     0.4,  0.4,  0.0),
-	       C("blue",      0.0,  0.0,  1.0),
-	       C("yellow",    1.0,  1.0,  0.0),
-	       C("turquoise", 0.24, 0.66, 0.61),
-	       C("violet",    0.66, 0.11, 0.48),
-	       C("silver",    0.75, 0.75, 0.75),
-	       C("lightblue", 0.4,  0.8,  1.0 ),
-	       C("orange",    1.0,  0.6,  0.0 )]
+    val all_rep = #[C("brown",      0.4,  0.4,  0.0),
+	       C("blue",       0.0,  0.0,  1.0),
+	       C("yellow",     1.0,  1.0,  0.0),
+	       C("turquoise",  0.24, 0.66, 0.61),
+	       C("violet",     0.66, 0.11, 0.48),
+	       C("silver",     0.75, 0.75, 0.75),
+	       C("lightblue",  0.4,  0.8,  1.0 ),
+	       C("orange",     1.0,  0.6,  0.0 ),
+	       C("neon-blue",  0.25, 1.0,  1.0 ),
+	       C("neon-green", 0.25, 1.0,  0.25),
+	       C("dark-violet",0.25, 0.0,  0.25),
+	       C("pig",        1.0,  0.75, 0.75)]
     (** [all] is a list of all available colors *)
 
-    fun toString (C (s, _, _, _)) = s
+    val all = List.tabulate (Vector.length all_rep, id)
+
+    fun toString' (C (s, _, _, _)) = s
     (** [toString c] returns the [english] name of [c]. *)
  
-    fun fromString s = 
-        case List.find (fn x => toString x = s) all of
-	    NONE   => raise Unknown
-	  | SOME x => x
+    fun toString r = toString' (Vector.sub (all_rep, r))
 
+    fun fromString s =
+	case Vector.findi (fn (i, x) => toString' x = s) all_rep of
+	    NONE        => raise Unknown
+          | SOME (i, _) => i
     (** [fromString name] is the inverse operation of toString.
         In case you apply ofString to a invalid/unknown color name
         [Unknown] is raised.
       *)
 
-    fun rgb (C (_, r, g, b)) = (r, g, b)
+    fun rgb' (C (_, r, g, b)) = (r, g, b)
+
+    fun rgb r = rgb' (Vector.sub (all_rep, r))
 
     (** [rgb color] returns a triple [(red, green, blue)], with
         the usual meaning and range [0.0 - 1.0]
