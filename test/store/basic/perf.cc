@@ -135,7 +135,7 @@ int main(void) {
   p->InitArg(0, CreateList(4000000));
   gettimeofday(&end_t, INVALID_POINTER);
   std::printf("Done\n");
-  Store::ResetTime();
+  //Store::ResetTime();
   double all_time = (((end_t.tv_sec - start_t.tv_sec) * 1000) +
 		    ((end_t.tv_usec - start_t.tv_usec) / 1000));
   double all_mb  = ((0.0 + Store::totalMem) / (1024 * 1024));
