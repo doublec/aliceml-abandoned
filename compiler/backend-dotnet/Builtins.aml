@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,43 +18,43 @@ structure Builtins :> BUILTINS =
 	    let
 		val map = Map.new ()
 	    in
-		Map.insert (map, "=", "opeq");
-		Map.insert (map, "<>", "opnoteq");
-		Map.insert (map, "Char.<", "Char_opless");
-		Map.insert (map, "Char.>", "Char_opgreater");
-		Map.insert (map, "Char.<=", "Char_oplessEq");
-		Map.insert (map, "Char.>=", "Char_opgreaterEq");
+		Map.insert (map, "=", "op_Equality");
+		Map.insert (map, "<>", "op_Inequality");
+		Map.insert (map, "Char.<", "Char_op_LessThan");
+		Map.insert (map, "Char.>", "Char_op_GreaterThan");
+		Map.insert (map, "Char.<=", "Char_op_LessThanOrEqual");
+		Map.insert (map, "Char.>=", "Char_op_GreaterThanOrEqual");
 		Map.insert (map, "Future.alarm'", "Future_alarmQuote");
-		Map.insert (map, "General.:=", "General_assign");
-		Map.insert (map, "Int.~", "Int_opnegate");
-		Map.insert (map, "Int.+", "Int_opadd");
-		Map.insert (map, "Int.-", "Int_opsub");
-		Map.insert (map, "Int.*", "Int_opmul");
-		Map.insert (map, "Int.<", "Int_opless");
-		Map.insert (map, "Int.>", "Int_opgreater");
-		Map.insert (map, "Int.<=", "Int_oplessEq");
-		Map.insert (map, "Int.>=", "Int_opgreaterEq");
-		Map.insert (map, "Real.~", "Real_opnegate");
-		Map.insert (map, "Real.+", "Real_opadd");
-		Map.insert (map, "Real.-", "Real_opsub");
-		Map.insert (map, "Real.*", "Real_opmul");
-		Map.insert (map, "Real./", "Real_opdiv");
-		Map.insert (map, "Real.<", "Real_opless");
-		Map.insert (map, "Real.>", "Real_opgreater");
-		Map.insert (map, "Real.<=", "Real_oplessEq");
-		Map.insert (map, "Real.>=", "Real_opgreaterEq");
-		Map.insert (map, "String.^", "String_append");
-		Map.insert (map, "String.<", "String_opless");
-		Map.insert (map, "String.>", "String_opgreater");
-		Map.insert (map, "String.<=", "String_oplessEq");
-		Map.insert (map, "String.>=", "String_opgreaterEq");
+		Map.insert (map, "General.:=", "General_op_Assignment");
+		Map.insert (map, "Int.~", "Int_op_UnaryNegation");
+		Map.insert (map, "Int.+", "Int_op_Addition");
+		Map.insert (map, "Int.-", "Int_op_Subtraction");
+		Map.insert (map, "Int.*", "Int_op_Multiply");
+		Map.insert (map, "Int.<", "Int_op_LessThan");
+		Map.insert (map, "Int.>", "Int_op_GreaterThan");
+		Map.insert (map, "Int.<=", "Int_op_LessThanOrEqual");
+		Map.insert (map, "Int.>=", "Int_op_GreaterThanOrEqual");
+		Map.insert (map, "Real.~", "Real_op_UnaryNegation");
+		Map.insert (map, "Real.+", "Real_op_Addition");
+		Map.insert (map, "Real.-", "Real_op_Subtraction");
+		Map.insert (map, "Real.*", "Real_op_Multiply");
+		Map.insert (map, "Real./", "Real_op_Division");
+		Map.insert (map, "Real.<", "Real_op_LessThan");
+		Map.insert (map, "Real.>", "Real_op_GreaterThan");
+		Map.insert (map, "Real.<=", "Real_op_LessThanOrEqual");
+		Map.insert (map, "Real.>=", "Real_op_GreaterThanOrEqual");
+		Map.insert (map, "String.^", "String_op_Concatenation");
+		Map.insert (map, "String.<", "String_op_LessThan");
+		Map.insert (map, "String.>", "String_op_GreaterThan");
+		Map.insert (map, "String.<=", "String_op_LessThanOrEqual");
+		Map.insert (map, "String.>=", "String_op_GreaterThanOrEqual");
 		Map.insert (map, "Word.fromInt'", "Word_fromIntQuote");
-		Map.insert (map, "Word.+", "Word_opadd");
-		Map.insert (map, "Word.-", "Word_opsub");
-		Map.insert (map, "Word.*", "Word_opmul");
-		Map.insert (map, "Word.<<", "Word_shl");
-		Map.insert (map, "Word.>>", "Word_shr");
-		Map.insert (map, "Word.~>>", "Word_arithshr");
+		Map.insert (map, "Word.+", "Word_op_Addition");
+		Map.insert (map, "Word.-", "Word_op_Subtraction");
+		Map.insert (map, "Word.*", "Word_op_Multiply");
+		Map.insert (map, "Word.<<", "Word_op_LeftShift");
+		Map.insert (map, "Word.>>", "Word_op_UnsignedRightShift");
+		Map.insert (map, "Word.~>>", "Word_op_SignedRightShift");
 		map
 	    end
 
