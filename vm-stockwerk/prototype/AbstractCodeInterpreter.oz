@@ -14,7 +14,7 @@ functor
 import
    BootName(newNamed: NewNamedName) at 'x-oz://boot/Name'
 export
-   interpreter: Me
+   MakeConcreteCode
 require
    Helper(deref: Deref pushCall: PushCall)
 define
@@ -27,23 +27,21 @@ define
    OneArg  = 0
    TupArgs = 1
 
-   %Function = 0
-
    AppPrim        = 0
    AppVar         = 1
-   CompactIntTest = 2
-   CompactTagTest = 3
-   ConTest        = 4
-   DirectAppVar   = 5
-   EndHandle      = 6
-   EndTry         = 7
-   GetRef         = 8
-   GetTup         = 9
-   IntTest        = 10
-   Kill           = 11
-   LazySel        = 12
-   PutCon         = 13
-   PutFun         = 14
+   Close          = 2
+   CompactIntTest = 3
+   CompactTagTest = 4
+   ConTest        = 5
+   DirectAppVar   = 6
+   EndHandle      = 7
+   EndTry         = 8
+   GetRef         = 9
+   GetTup         = 10
+   IntTest        = 11
+   Kill           = 12
+   LazySel        = 13
+   PutCon         = 14
    PutNew         = 15
    PutRef         = 16
    PutTag         = 17
@@ -56,14 +54,34 @@ define
    Return         = 24
    Sel            = 25
    Shared         = 26
-   StringTest     = 27
-   TagTest        = 28
-   Try            = 29
-   VecTest        = 30
+   Specialize     = 27
+   StringTest     = 28
+   TagTest        = 29
+   Try            = 30
+   VecTest        = 31
 
    Global    = 0
    Immediate = 1
    Local     = 2
+   Toplevel  = 3
+
+   Template = 0
+
+   Function    = 0
+   Specialized = 1
+
+   AliceFunction = {ByteString.make 'Alice.function'}
+
+   fun {MakeConcreteCode AbstractCode}
+      case AbstractCode
+      of tag(!Function tuple(F L C) NG NL IdDefArgs Instr) then
+	 function(Me {VirtualString.toAtom F}#L#C NG NL IdDefArgs Instr
+		  transform(AliceFunction AbstractCode))
+      [] tag(!Specialized tuple(F L C) Xs NL IdDefArgs Instr) then
+	 specialized(Me {VirtualString.toAtom F}#L#C Xs NL IdDefArgs Instr
+		     transform(AliceFunction AbstractCode))
+      end
+   end
 
    LazySelInterpreter =
    lazySelInterpreter(
@@ -94,6 +112,14 @@ define
 	    'Select #'#I
 	 end)
 
+   fun {GetIdRef IdRef Closure L}
+      case IdRef of tag(!Immediate X) then X
+      [] tag(!Local Id) then L.Id
+      [] tag(!Global I) then Closure.(I + 2)
+      [] tag(!Toplevel I) then Closure.(I + 2)
+      end
+   end
+
    fun {LitCase I N X YInstrVec ElseInstr}
       if I > N then ElseInstr
       elsecase YInstrVec.I of tuple(!X ThenInstr) then ThenInstr
@@ -111,10 +137,7 @@ define
    fun {NullaryConCase I N C Cases Closure L ElseInstr}
       if I > N then ElseInstr
       elsecase Cases.I of tuple(IdRef ThenInstr) then C2 in
-	 C2 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global J) then Closure.(J + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 C2 = {GetIdRef IdRef Closure L}
 	 case {Deref C2} of Transient=transient(_) then request(Transient)
 	 elseof C3 then
 	    if C == C3 then ThenInstr
@@ -127,10 +150,7 @@ define
    fun {NAryConCase I N C Cases Closure L}
       if I > N then unit
       elsecase Cases.I of Case=tuple(IdRef _ _) then C2 in
-	 C2 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global J) then Closure.(J + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 C2 = {GetIdRef IdRef Closure L}
 	 case {Deref C2} of Transient=transient(_) then request(Transient)
 	 elseof C3 then
 	    if C == C3 then Case
@@ -156,10 +176,7 @@ define
 	 end
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutVar Id IdRef NextInstr) then
-	 L.Id := case IdRef of tag(!Local Id2) then L.Id2
-		 [] tag(!Global I) then Closure.(I + 2)
-		 [] tag(!Immediate X) then X
-		 end
+	 L.Id := {GetIdRef IdRef Closure L}
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutNew Id S NextInstr) then
 	 L.Id := case {VirtualString.toAtom S} of '' then {NewName}
@@ -171,42 +188,27 @@ define
 	 T = {MakeTuple tag N + 1}
 	 T.1 = I
 	 for J in 1..N do
-	    T.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
-			[] tag(!Global K) then Closure.(K + 2)
-			[] tag(!Immediate X) then X
-			end
+	    T.(J + 1) = {GetIdRef IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutCon Id IdRef IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple con N + 1}
-	 T.1 = case IdRef of tag(!Local Id2) then L.Id2
-	       [] tag(!Global I) then Closure.(I + 2)
-	       [] tag(!Immediate X) then X
-	       end
+	 T.1 = {GetIdRef IdRef Closure L}
 	 for J in 1..N do
-	    T.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
-			[] tag(!Global K) then Closure.(K + 2)
-			[] tag(!Immediate X) then X
-			end
+	    T.(J + 1) = {GetIdRef IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutRef Id IdRef NextInstr) then
-	 L.Id := {NewCell case IdRef of tag(!Local Id2) then L.Id2
-			  [] tag(!Global I) then Closure.(I + 2)
-			  [] tag(!Immediate X) then X
-			  end}
+	 L.Id := {NewCell {GetIdRef IdRef Closure L}}
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutTup Id IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple tuple N}
 	 for J in 1..N do
-	    T.J = case IdRefs.J of tag(!Local Id2) then L.Id2
-		  [] tag(!Global K) then Closure.(K + 2)
-		  [] tag(!Immediate X) then X
-		  end
+	    T.J = {GetIdRef IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
@@ -214,38 +216,40 @@ define
 	 N = {Width IdRefs}
 	 T = {MakeTuple vector N}
 	 for J in 1..N do
-	    T.J = case IdRefs.J of tag(!Local Id2) then L.Id2
-		  [] tag(!Global K) then Closure.(K + 2)
-		  [] tag(!Immediate X) then X
-		  end
+	    T.J = {GetIdRef IdRefs.J Closure L}
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
-      [] tag(!PutFun Id IdRefs Function NextInstr) then N NewClosure in
+      [] tag(!Close Id IdRefs ConcreteCode NextInstr) then N NewClosure in
 	 N = {Width IdRefs}
 	 NewClosure = {MakeTuple closure N + 1}
-	 NewClosure.1 = Function
+	 NewClosure.1 = ConcreteCode
 	 for J in 1..N do
-	    NewClosure.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
-				 [] tag(!Global K) then Closure.(K + 2)
-				 [] tag(!Immediate X) then X
-				 end
+	    NewClosure.(J + 1) = {GetIdRef IdRefs.J Closure L}
+	 end
+	 L.Id := NewClosure
+	 {Emulate NextInstr Closure L TaskStack}
+      [] tag(!Specialize Id IdRefs
+	     tag(!Template Coord NT NL IdDefArgs Instr) NextInstr)
+      then Toplevels AbstractCode NewClosure in
+	 Toplevels = {MakeTuple vector NT}
+	 AbstractCode = tag(Specialized Coord Toplevels NL IdDefArgs Instr)
+	 NewClosure = {MakeTuple closure NT + 1}
+	 NewClosure.1 = {MakeConcreteCode AbstractCode}
+	 for J in 1..NT do X in
+	    X = {GetIdRef IdRefs.J Closure L}
+	    Toplevels.J = X
+	    NewClosure.(J + 1) = X
 	 end
 	 L.Id := NewClosure
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!AppPrim Op IdRefs IdDefInstrOpt) then Args in
 	 case {Width IdRefs} of 1 then
-	    Args = arg(case IdRefs.1 of tag(!Local Id) then L.Id
-		       [] tag(!Global K) then Closure.(K + 2)
-		       [] tag(!Immediate X) then X
-		       end)
+	    Args = arg({GetIdRef IdRefs.1 Closure L})
 	 elseof N then
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
-	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
-			[] tag(!Global K) then Closure.(K + 2)
-			[] tag(!Immediate X) then X
-			end
+	       Args.J = {GetIdRef IdRefs.J Closure L}
 	    end
 	 end
 	 case IdDefInstrOpt of !NONE then   % tail call
@@ -255,24 +259,15 @@ define
 	    {PushCall Args Op NewFrame|TaskStack}
 	 end
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op Args in
-	 Op = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 Op = {GetIdRef IdRef Closure L}
 	 %% construct argument:
 	 case IdRefArgs of tag(!OneArg IdRef) then
-	    Args = arg(case IdRef of tag(!Local Id) then L.Id
-		       [] tag(!Global I) then Closure.(I + 2)
-		       [] tag(!Immediate X) then X
-		       end)
+	    Args = arg({GetIdRef IdRef Closure L})
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
-	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
-			[] tag(!Global K) then Closure.(K + 2)
-			[] tag(!Immediate X) then X
-			end
+	       Args.J = {GetIdRef IdRefs.J Closure L}
 	    end
 	 end
 	 case IdDefArgsInstrOpt of !NONE then   % tail call
@@ -285,10 +280,7 @@ define
 	 {Emulate tag(AppVar IdRef IdRefArgs IdDefArgsInstrOpt)
 	  Closure L TaskStack}
       [] tag(!GetRef Id IdRef NextInstr) then R0 in
-	 R0 = case IdRef of tag(!Local Id2) then L.Id2
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 R0 = {GetIdRef IdRef Closure L}
 	 case {Deref R0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -297,10 +289,7 @@ define
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
       [] tag(!GetTup IdDefs IdRef NextInstr) then T0 in
-	 T0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 T0 = {GetIdRef IdRef Closure L}
 	 case {Deref T0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -315,10 +304,7 @@ define
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
       [] tag(!Sel Id IdRef I NextInstr) then T0 in
-	 T0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 T0 = {GetIdRef IdRef Closure L}
 	 case {Deref T0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -327,24 +313,15 @@ define
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
       [] tag(!LazySel Id IdRef I NextInstr) then X NewClosure in
-	 X = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 2)
-	     [] tag(!Immediate X) then X
-	     end
+	 X = {GetIdRef IdRef Closure L}
 	 NewClosure = closure(lazySel(LazySelInterpreter) X I)
 	 L.Id := transient({NewCell byneed(NewClosure)})
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!Raise IdRef) then Exn in
-	 Exn = case IdRef of tag(!Local Id) then L.Id
-	       [] tag(!Global I) then Closure.(I + 2)
-	       [] tag(!Immediate X) then X
-	       end
+	 Exn = {GetIdRef IdRef Closure L}
 	 exception(nil Exn TaskStack)
       [] tag(!Reraise IdRef) then X in
-	 X = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 2)
-	     [] tag(!Immediate X) then X
-	     end
+	 X = {GetIdRef IdRef Closure L}
 	 case X of package(Debug Exn) then
 	    exception(Debug Exn TaskStack)
 	 end
@@ -358,10 +335,7 @@ define
       [] tag(!EndHandle NextInstr) then
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!IntTest IdRef IntInstrVec ElseInstr) then I0 in
-	 I0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global J) then Closure.(J + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 I0 = {GetIdRef IdRef Closure L}
 	 case {Deref I0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -370,10 +344,7 @@ define
 	    {Emulate ThenInstr Closure L TaskStack}
 	 end
       [] tag(!CompactIntTest IdRef Offset Instrs ElseInstr) then I0 in
-	 I0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global J) then Closure.(J + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 I0 = {GetIdRef IdRef Closure L}
 	 case {Deref I0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -386,10 +357,7 @@ define
 	    end
 	 end
       [] tag(!RealTest IdRef RealInstrVec ElseInstr) then F0 in
-	 F0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 F0 = {GetIdRef IdRef Closure L}
 	 case {Deref F0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -399,10 +367,7 @@ define
 	    {Emulate ThenInstr Closure L TaskStack}
 	 end
       [] tag(!StringTest IdRef StringInstrVec ElseInstr) then S0 in
-	 S0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 S0 = {GetIdRef IdRef Closure L}
 	 case {Deref S0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -412,10 +377,7 @@ define
 	    {Emulate ThenInstr Closure L TaskStack}
 	 end
       [] tag(!TagTest IdRef NullaryCases NAryCases ElseInstr) then T0 in
-	 T0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 T0 = {GetIdRef IdRef Closure L}
 	 case {Deref T0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -438,10 +400,7 @@ define
 	    end
 	 end
       [] tag(!CompactTagTest IdRef Tests ElseInstr) then T0 in
-	 T0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 T0 = {GetIdRef IdRef Closure L}
 	 case {Deref T0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -462,10 +421,7 @@ define
 	    end
 	 end
       [] tag(!ConTest IdRef NullaryCases NAryCases ElseInstr) then C0 in
-	 C0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	    C0 = {GetIdRef IdRef Closure L}
 	 case {Deref C0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -502,10 +458,7 @@ define
 	    end
 	 end
       [] tag(!VecTest IdRef IdDefsInstrVec ElseInstr) then V0 in
-	 V0 = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then Closure.(I + 2)
-	      [] tag(!Immediate X) then X
-	      end
+	 V0 = {GetIdRef IdRef Closure L}
 	 case {Deref V0} of Transient=transient(_) then NewFrame in
 	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	    request(Transient args() NewFrame|TaskStack)
@@ -529,18 +482,12 @@ define
       [] tag(!Return IdRefArgs) then Args in
 	 %% construct arguments to call the continuation with:
 	 case IdRefArgs of tag(!OneArg IdRef) then
-	    Args = arg(case IdRef of tag(!Local Id) then L.Id
-		       [] tag(!Global I) then Closure.(I + 2)
-		       [] tag(!Immediate X) then X
-		       end)
+	    Args = arg({GetIdRef IdRef Closure L})
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
-	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
-			[] tag(!Global K) then Closure.(K + 2)
-			[] tag(!Immediate X) then X
-			end
+	       Args.J = {GetIdRef IdRefs.J Closure L}
 	    end
 	 end
 	 continue(Args TaskStack)
@@ -608,9 +555,17 @@ define
 	    case Function of function(_ _ _ NL IdDefArgs BodyInstr _) then L in
 	       L = {NewArray 0 NL - 1 uninitialized}
 	       frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
+	    [] specialized(_ _ _ NL IdDefArgs BodyInstr _) then L in
+	       L = {NewArray 0 NL - 1 uninitialized}
+	       frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
 	    end
 	 end
-      abstract: fun {$ function(_ _ _ _ _ _ Transform)} Transform end
+      abstract:
+	 fun {$ ConcreteCode}
+	    case ConcreteCode of function(_ _ _ _ _ _ Transform) then Transform
+	    [] specialized(_ _ _ _ _ _ Transform) then Transform
+	    end
+	 end
       toString:
 	 fun {$ Frame}
 	    case Frame of frame(_ _ _ closure(Function ...) _) then
