@@ -15,6 +15,8 @@ OPTS3= # '--dump-phases' # --dump-intermediate'
 ## End of Configuration Section
 ##
 
+: ${prefix="$(pwd)/install"}
+
 case `uname -s` in
     CYGWIN*)
 	WINDOWS=1
