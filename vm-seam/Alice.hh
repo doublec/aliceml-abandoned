@@ -16,6 +16,7 @@
 #include "Stockwerk.hh"
 #include "alice/Guid.hh"
 #include "alice/Data.hh"
+#include "alice/StackFrame.hh"
 #include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/AbstractCodeInterpreter.hh"
