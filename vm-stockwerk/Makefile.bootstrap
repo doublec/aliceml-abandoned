@@ -648,7 +648,8 @@ INSTALL3TOPFILES = alicec.import alice.import COPYING
 INSTALL3BINFILES = alicerun alice alicec alicelink alicedep alicetool
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.stc) \
-	fundamental/Core.stc
+	fundamental/Pervasive.ozf fundamental/Core.ozf \
+	fundamental/PACKAGE-sig.ozf fundamental/Package.ozf
 INSTALL3COMPILERFILES = CompilerMain.stc ToplevelMain.stc
 INSTALL3COMPILERTOPFILES = \
 	SMLToStockwerkRecursiveCompiler.stc
