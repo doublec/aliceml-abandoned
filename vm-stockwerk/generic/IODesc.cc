@@ -201,6 +201,13 @@ void IODescFinalizationSet::Finalize(word value) {
 IODescFinalizationSet *IODesc::finalizationSet;
 
 void IODesc::Init() {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  WSADATA wsa_data;
+  WORD req_version = MAKEWORD(1, 1);
+  if (WSAStartup(req_version, &wsa_data) != 0)
+    Error("no usable WinSock DLL found");
+#endif
+
   finalizationSet = new IODescFinalizationSet();
 }
 

@@ -12,13 +12,6 @@
 //   $Revision$
 //
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <winsock.h>
-#endif
-
 #include "generic/SignalHandler.hh"
 #include "generic/RootSet.hh"
 #include "generic/UniqueString.hh"
@@ -88,13 +81,6 @@ DllExport int AliceMain(char *home, u_int argc, char *argv[]) {
     std::fprintf(stderr, "usage: %s <component> <args...>\n", argv[0]);
     return 2;
   }
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  WSADATA wsa_data;
-  WORD req_version = MAKEWORD(1, 1);
-  if (WSAStartup(req_version, &wsa_data) != 0)
-    Error("no usable WinSock DLL found");
-#endif
 
   // Set up the store:
   u_int memLimits[STORE_GENERATION_NUM];
