@@ -366,28 +366,43 @@ structure GtkSupport :> GTK_SUPPORT  =
 
 	fun createTextWindow() = 
 	    let
-		val textwindow = toplevelWindowNew() 
+		val textwindow = ref uglyNULL
+		val alive = ref false
 		val text = 
 		    Gtk.textNew(uglyNULL,uglyNULL)
 		val scrolled = Gtk.scrolledWindowNew(uglyNULL,uglyNULL)
+		fun send str = 
+		    (if not(!alive) 
+			 then 
+			     (textwindow := toplevelWindowNew()  
+			      ; containerAdd(!textwindow,scrolled)
+			      ;Gtk.widgetSetUsize(!textwindow,300,200)
+			      ;Gtk.windowSetTitle(!textwindow,
+			   "Alice Browser - Type Information")
+			      ;widgetShowAll(!textwindow)
+			      ; signalConnect (!textwindow, 
+					       "delete-event", 
+					       fn _ => 
+				    (Gtk.containerRemove(!textwindow,
+							 scrolled)
+				     ; alive := false
+				     ; widgetDestroy(!textwindow)))
+			      ; alive := true;0)
+		     else 
+			 Gtk.textBackwardDelete(text,
+				                Gtk.textGetLength(text))
+		     ;Gtk.textInsert(text,
+				     uglyNULL,
+				     uglyNULL,
+				     uglyNULL,
+				     str,
+				     ~1))
 	    in
-		(  containerAdd(textwindow,scrolled)
-		 ; containerAdd(scrolled,text)
+		( containerAdd(scrolled,text)
 		 ; Gtk.scrolledWindowSetPolicy(scrolled,
 					       Gtk.POLICY_AUTOMATIC,
 					       Gtk.POLICY_AUTOMATIC)
-		 ;Gtk.widgetSetUsize(textwindow,300,200)
-		 ;Gtk.windowSetTitle(textwindow,
-				    "Alice Browser - Type Information")
-		 ; signalConnect (textwindow, "delete-event", 
-				  fn _ => widgetDestroy(textwindow))
-		 ;widgetShowAll(textwindow)
-		; (fn str => Gtk.textInsert(text,
-					 uglyNULL,
-					 uglyNULL,
-					 uglyNULL,
-					 str,
-					~1)))
+		; send)
 	    end
 
 (******************** Complex Handler Functions **************************)

@@ -729,10 +729,8 @@ struct
 					     Preferences)],true)],
 		  sensitive = true}]) 
 
-     
-		  
-	val _ = menuBarAppend(bar,stopButton)
-	val _ = menuItemRightJustify(stopButton)
+     	
+	val postToWindow = createTextWindow()
 
  
 	(* function sends type informations to statusbar *)
@@ -760,13 +758,9 @@ struct
 			     postType("  " ^ text)
 		     end
 	       | I_VALUE(r) => 
-		     let 
-			 val post = createTextWindow()
-		     in
-			 (post (PrettyPrint.toString(PPInf.ppInf(#typ(r)),
-			       10000)) 
-			  ;0)
-		     end)
+			 (postToWindow 
+			  (PrettyPrint.toString(PPInf.ppInf(#typ(r)),
+			       10000)) ;0))
 	 end
    
 	(* creates popup when a node is clicked on *)
@@ -1012,11 +1006,13 @@ struct
 	val _ = new() (* creates initial window *)
 
 	(* window initialisation *)
-	val _ = (windowSetTitle (window, "Alice Browser V 0.9")
+	val _ = (windowSetTitle (window, "Alice Browser")
 		 ; widgetSetUsize (window, 200, 100) 
 		 ; windowSetDefaultSize(window, 600,500)
 		 ;signalConnect (window, "delete-event", DeleteWindow)
 		 ;setSelectionMenuSensitive (bar,false)  
+		 ;menuBarAppend(bar,stopButton)
+		 ;menuItemRightJustify(stopButton)
 		 ;containerAdd(window,createVBox[(bar,
 						  false 
 						  ,false,
