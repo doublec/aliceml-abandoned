@@ -57,7 +57,7 @@ struct
     fun ppError(UnclosedComment) =
 	  textpar["unclosed","comment"]
       | ppError(InvalidChar c) =
-	  textpar["invalid","character",ppQuoted(Char.toCString c)]
+	  textpar["invalid","character",ppQuoted(Char.toString c)]
       | ppError(InvalidString) =
 	  textpar["invalid","string","constant"]
       | ppError(IntTooLarge) =
