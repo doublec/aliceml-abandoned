@@ -13,13 +13,13 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Properties.hh"
+#pragma implementation "generic/Properties.hh"
 #endif
 
 #include <cstdlib>
 #include <cstring>
-#include "emulator/Properties.hh"
-#include "emulator/RootSet.hh"
+#include "generic/Properties.hh"
+#include "generic/RootSet.hh"
 
 word Properties::aliceHome;
 word Properties::rootUrl;
