@@ -462,7 +462,9 @@ prepare
 	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    Y = !!X
+\ifndef OLD_BYNEED
 	    {Value.makeNeeded Y}
+\endif
 	    Y
 	 end
       'Hole.hole':
