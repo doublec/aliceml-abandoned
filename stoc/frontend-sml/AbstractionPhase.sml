@@ -389,8 +389,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	      of (longid', V) =>
 		 O.VarExp(i, longid')
 
-	       | (longid', C _) =>
-		 O.ConExp(i, longid')
+	       | (longid', C k) =>
+		 O.ConExp(i, k, longid')
 
 	       | (longid', R) =>
 		 O.RefExp(i)

@@ -36,7 +36,7 @@ signature ABSTRACT_GRAMMAR =
     datatype exp =
 	  LitExp    of info * lit		(* literal *)
 	| VarExp    of info * longid		(* variable *)
-	| ConExp    of info * longid		(* constructor *)
+	| ConExp    of info * int * longid	(* constructor *)
 	| RefExp    of info			(* reference constructor *)
 	| TupExp    of info * exp list		(* tuple *)
 	| RowExp    of info * exp row		(* row (record) *)

@@ -37,7 +37,7 @@ functor MakeIntermediateGrammar(type info) :>
     datatype exp =
 	  LitExp    of info * lit
 	| VarExp    of info * longid
-	| ConExp    of info * longid
+	| ConExp    of info * longid * bool
 	| RefExp    of info
 	| TupExp    of info * exp list
 	| RowExp    of info * exp field list
@@ -86,7 +86,12 @@ functor MakeIntermediateGrammar(type info) :>
 	  		(* if inside RecDec, then
 			 * (1) pat may not contain WithPat
 			 * (2) exp may only contain LitExp, VarExp, ConExp,
-			 *     RefExp, TupExp, RowExp, FunExp *)
+			 *     RefExp, TupExp, RowExp, FunExp
+			 * (3) AppExps may only contain ConExp or RefExp
+			 *     as first argument
+			 * (4) if an VarExp on the LHS structurally corresponds
+			 *     to an VarExp on the RHS then the RHS id may not
+			 *     be bound on the LHS *)
 	| ConDec    of info * id * bool (* has args *)
 	| RecDec    of info * dec list
 			(* may only contain ValDec *)
@@ -105,7 +110,7 @@ functor MakeIntermediateGrammar(type info) :>
 
     fun infoExp(LitExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
-      | infoExp(ConExp(i,_))		= i
+      | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i))		= i
       | infoExp(TupExp(i,_))		= i
       | infoExp(RowExp(i,_))		= i

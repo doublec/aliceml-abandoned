@@ -37,7 +37,7 @@ functor MakeAbstractGrammar(type info) :>
     datatype exp =
 	  LitExp    of info * lit		(* literal *)
 	| VarExp    of info * longid		(* variable *)
-	| ConExp    of info * longid		(* constructor *)
+	| ConExp    of info * int * longid	(* constructor *)
 	| RefExp    of info			(* reference constructor *)
 	| TupExp    of info * exp list		(* tuple *)
 	| RowExp    of info * exp row		(* row (record) *)
@@ -165,7 +165,7 @@ functor MakeAbstractGrammar(type info) :>
 
     fun infoExp(LitExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
-      | infoExp(ConExp(i,_))		= i
+      | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i))		= i
       | infoExp(TupExp(i,_))		= i
       | infoExp(RowExp(i,_))		= i

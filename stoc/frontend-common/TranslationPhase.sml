@@ -21,6 +21,21 @@ structure TranslationPhase :> TRANSLATION_PHASE =
       | idToField _ = Crash.crash "TranslationPhase.idToField: internal id"
 
 
+    (* Curry-convert expressions *)
+
+    fun funExp(i,    [],     exp') = exp'
+      | funExp(i, id'::ids', exp') = O.FunExp(i, id', funExp(i, ids', exp'))
+
+    fun curryExp(i,1,exp') = exp'
+      | curryExp(i,k,exp') =
+	let
+	    val ids'  = List.tabulate(k, fn _ => O.Id(i,Stamp.new(),O.InId))
+	    val exps' = List.map (fn id' => O.VarExp(i, O.ShortId(i,id'))) ids'
+	in
+	    funExp(i, ids', O.AppExp(i, exp', O.TupExp(i, exps')))
+	end
+
+
     (* Literals *)
 
     fun trLit(I.WordLit w)		= O.WordLit w
@@ -96,11 +111,11 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     (* Expressions *)
 
-    (* BUG: currently n-ary constructors are not treated properly *)
-
     fun trExp(I.LitExp(i,l))		= O.LitExp(i, trLit l)
       | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
-      | trExp(I.ConExp(i,y))		= O.ConExp(i, trLongid y)
+      | trExp(I.ConExp(i,k,y))		= let val y' = trLongid y in
+					      curryExp(i,k,O.ConExp(i,y',k>0))
+					  end
       | trExp(I.RefExp(i))		= O.RefExp(i)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
       | trExp(I.RowExp(i,r))		= O.RowExp(i, trExpRow r)
@@ -153,7 +168,8 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     and trArgPats []			= NONE
       | trArgPats[p]			= SOME(trPat p)
-      | trArgPats _			= raise Fail "n-ary ConPat"
+      | trArgPats ps			= SOME(O.TupPat(I.infoPat(List.hd ps),
+							trPats ps))
 
     and trPatRow(I.Row(i,fs,b))		= (trPatFields fs, b)
     and trPatField(I.Field(i,a,p))	= O.Field(i, trLab a, trPat p)
