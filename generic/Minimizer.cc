@@ -767,13 +767,15 @@ void Partition::InitBlocks() {
   ReplaceArg(BLOCK_COUNT_POS, blockCount);
 }
 
-bool Partition::splitBlockAtNode(int block, int nodeIndex) {
+bool Partition::splitBlockAtNode(int block, int theNodeIndex) {
   // Marks block "block" as to be split at node with index nodeIndex
   Assert(block >= 0);
 
   DynamicArray *ba = DynamicArray::FromWordDirect(GetArg(BA_POS));
   PBlock *b = PBlock::FromWordDirect(ba->Sub(block));
   DynNodeArray *na = DynNodeArray::FromWordDirect(GetArg(NA_POS));
+
+  int nodeIndex = na->LookUp(theNodeIndex);
   
   int si = b->GetSplitIndex();
   int end = b->GetEnd();
@@ -931,11 +933,11 @@ void Partition::FollowBack(int block, int edge) {
 	if (parentBlock == block) {
 	  // postpone splitting of this block
 	  Tuple *cons = Tuple::New(2);
-	  cons->Init(0, Store::IntToWord(realParent));
+	  cons->Init(0, Store::IntToWord(parent));
 	  cons->Init(1, ownSplit);
 	  ownSplit = cons->ToWord();
 	} else {
-	  splitBlockAtNode(parentBlock, realParent);
+	  splitBlockAtNode(parentBlock, parent);
 	}
       }
     }
