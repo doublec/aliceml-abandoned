@@ -15,13 +15,17 @@
 #include <cstdio>
 #include "alice/primitives/Authoring.hh"
 
-//--** overflow checking missing everywhere
+//--** on many architectures, overflow checks can be much more efficient
 
-#define INT_INT_TO_INT_OP(name, op)		\
+#define INT_INT_TO_INT_OP(name, check, op)	\
   DEFINE2(name) {				\
     DECLARE_INT(i, x0);				\
     DECLARE_INT(j, x1);				\
-    RETURN_INT(i op j);				\
+    if (check(i, j)) {				\
+      RAISE(PrimitiveTable::General_Overflow);	\
+    } else {					\
+      RETURN_INT(i op j);			\
+    }						\
   } END
 
 #define INT_INT_TO_INT_OP_DIV(name, op)		\
@@ -42,12 +46,42 @@
 
 DEFINE1(Int_opnegate) {
   DECLARE_INT(i, x0);
+  if (i == MIN_VALID_INT)
+    RAISE(PrimitiveTable::General_Overflow);
   RETURN_INT(-i);
 } END
 
-INT_INT_TO_INT_OP(Int_opadd, +)
-INT_INT_TO_INT_OP(Int_opsub, -)
-INT_INT_TO_INT_OP(Int_opmul, *)
+static inline bool CheckSum(s_int i, s_int j) {
+  s_int sum = i + j;
+  return sum < MIN_VALID_INT || sum > MAX_VALID_INT;
+}
+
+INT_INT_TO_INT_OP(Int_opadd, CheckSum, +)
+
+static inline bool CheckDifference(s_int i, s_int j) {
+  s_int difference = i - j;
+  return difference < MIN_VALID_INT || difference > MAX_VALID_INT;
+}
+
+INT_INT_TO_INT_OP(Int_opsub, CheckDifference, -)
+
+static inline bool CheckProduct(s_int i, s_int j) {
+  if (j == 0)
+    return false;
+  else if (j > 0)
+    if (i > 0)
+      return i > MAX_VALID_INT / j;
+    else // i < 0
+      return -i > -MIN_VALID_INT / j;
+  else // j < 0
+    if (i > 0)
+      return i > -MIN_VALID_INT / -j;
+    else // i < 0
+      return -i > MAX_VALID_INT / -j;
+}
+
+INT_INT_TO_INT_OP(Int_opmul, CheckProduct, *)
+
 INT_INT_TO_BOOL_OP(Int_opless, <)
 INT_INT_TO_BOOL_OP(Int_opgreater, >)
 INT_INT_TO_BOOL_OP(Int_oplessEq, <=)
@@ -55,7 +89,9 @@ INT_INT_TO_BOOL_OP(Int_opgreaterEq, >=)
 
 DEFINE1(Int_abs) {
   DECLARE_INT(i, x0);
-  RETURN_INT(std::abs(i));
+  if (i == MIN_VALID_INT)
+    RAISE(PrimitiveTable::General_Overflow);
+  RETURN_INT(i >= 0? i: -i);
 } END
 
 DEFINE2(Int_compare) {
