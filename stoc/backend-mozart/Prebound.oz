@@ -95,7 +95,7 @@ define
 	    else X1 >= X2
 	    end
 	 end
-      '<>': fun {$ X1 X2} X1 \= X2 end
+      '<>': fun {$ X1#X2} X1 \= X2 end
       'Char.ord': fun {$ C} C end
       'Char.chr':
 	 fun {$ C}
