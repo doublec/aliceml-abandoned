@@ -86,8 +86,10 @@ public:
     return static_cast<Class *>(b);
   }
 
+  class ClassInfo *GetClassInfo();
   bool IsInterface();
   Class *GetSuperClass();
+
   u_int GetNumberOfInstanceFields() {
     return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
   }

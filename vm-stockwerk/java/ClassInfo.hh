@@ -235,7 +235,9 @@ public:
   }
 
   bool Verify();
-  Class *Prepare();
+  Class *Prepare() {
+    return Class::New(this);
+  }
 };
 
 #endif
