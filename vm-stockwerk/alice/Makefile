@@ -31,8 +31,8 @@ PRIMITIVE_MODULES = \
 	List Math Option Real Ref String Thread UniqueString Unsafe \
 	Vector Word8 Word8Array Word8Vector Word31
 LIB_SYSTEM_MODULES = \
-	BrowserSupport Config IODesc OS CommandLine Component Debug Socket \
-        Rand Value Reflect
+	Config IODesc OS CommandLine Component Debug Socket Rand Value \
+	Reflect BrowserSupport
 LIB_UTILITY_MODULES = ImpMap Cell Addr
 LIB_DISTRIBUTION_MODULES = Remote
 
