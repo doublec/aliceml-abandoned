@@ -53,10 +53,9 @@ local
 		"do", "else", "end", "exception", "fn", "fun", "handle",
 		"if", "in", "infix", "infixr", "let", "local", "nonfix",
 		"of", "op", "open", "orelse", "raise", "rec", "then",
-		"type", "val", "with", "withtype", "while", "(",
-		")", "[", "]", "{", "}", ",", ":", ";", "...", "|", "=",
-		"=>", "->", "#", "eqtype", "functor", "include", "sharing",
-		"sig", "signature", "strcuture", "where", ":>",
+		"type", "val", "with", "withtype", "while",
+		"eqtype", "functor", "include", "sharing",
+		"sig", "signature", "structure", "where",
                 "any", "constructor", "fct", "from", "import", "non",
                 "pack", "unpack", "when", "withfun", "withval"
 	       ]
@@ -66,10 +65,7 @@ local
 
     fun isKeyWord key = searchKey(key, keys) 
 
-    fun isSep #" "  = true
-      | isSep #"\t" = true
-      | isSep #"\n" = true
-      | isSep _     = false
+    val isSep = not o Char.isAlphaNum
 
     fun isToken c = not (isSep c)
 
