@@ -57,8 +57,9 @@ struct
     val turn' = ref (fn d => ())
     val changeView' = ref (fn h => ())
     val giveUp' = ref (fn () => ())
+    val disconnect' = ref (fn () => ())
 
-    fun gameMode ({turn, changeView, giveUp},
+    fun gameMode ({disconnect}, {turn, changeView, giveUp},
 		   guiGame) =
 	let
 	    fun gameFinished h = 
@@ -85,7 +86,8 @@ struct
 	    (* updates procedures *)
 	    turn' := turn;
 	    changeView' := changeView;
-	    giveUp' := giveUp
+	    giveUp' := giveUp;
+	    disconnect' := disconnect
 	end
 	 
 
@@ -107,9 +109,10 @@ struct
 			    QuestionWindow.mkQuestionBox 
 			    ("Sure?", "Do you want to quit?", answer);
 			    case Promise.future answer of
-			     QuestionWindow.YES    => (print "yes";reset NONE)
-			   | QuestionWindow.NO     => (print "no";())
-			   | QuestionWindow.CANCEL => (print "cancel";())
+			     QuestionWindow.YES    => ((!disconnect') ();
+						       reset NONE)
+			   | QuestionWindow.NO     => ()
+			   | QuestionWindow.CANCEL => ()
 			end
 		     
 			
@@ -148,9 +151,10 @@ struct
 	    fun startSinglePlayer () = 
 		case startServer (SOME ("Player", Color.fromString "blue"), 
 				  Config.defaultSingle) of
-		    FST ({start}, _) => 
+		    FST ({start, disconnect}, _, _) => 
 			(case start () of
-			     FST (mGame, guiGame) => gameMode (mGame, guiGame)
+			     FST (mGame, guiGame) => 
+				 gameMode ({disconnect}, mGame, guiGame)
 			   | SND   errorMsg       => 
 				 reset (SOME ("ERROR!!", errorMsg)))
 		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))

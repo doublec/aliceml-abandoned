@@ -56,12 +56,14 @@ struct
 	 play :  string * Color.color -> 
 	 (model_game * gui_game Promise.promise, 
 	  error) alt,
-	 watch : unit -> (model_game * gui_game Promise.promise, error) alt
+	 watch : unit -> (model_game * gui_game Promise.promise, error) alt,
+	 disconnect : unit -> unit
 	 }
 	
     type model_start =
 	{
-	 start : unit -> (model_game * gui_game Promise.promise, error) alt
+	 start : unit -> (model_game * gui_game Promise.promise, error) alt,
+	 disconnect : unit -> unit
 	 }
 	
 	
@@ -70,7 +72,7 @@ struct
 	 connect : string -> (model_join * gui_join Promise.promise, error) alt,
 	 
 	 startServer : (string * Color.color) option * Config.config -> 
-	 (model_start * gui_join Promise.promise, error) alt
+	 (model_start * gui_join Promise.promise * string, error) alt
 	 (* start a new server and display the snake selection
 	  dialog (in server mode i.e. with the ability to
 	  start a tournament)
