@@ -250,7 +250,9 @@
 // General macros that wrap the heterogenous "ToWord" conversion
 #define INT_TO_WORD(i) Store::IntToWord(i)
 #define REAL_TO_WORD(r) Real::New(r)->ToWord()
-#define STRING_TO_WORD(s) String::New( \
-                            reinterpret_cast<const char *>(s))->ToWord()
+#define STRING_TO_WORD(s)					\
+   ((s != NULL) ?						\
+    String::New(reinterpret_cast<const char *>(s))->ToWord() :	\
+    String::New(static_cast<u_int>(0))->ToWord())
 #define UNMANAGED_POINTER_TO_WORD(p) Store::UnmanagedPointerToWord(p)
 #endif
