@@ -1,0 +1,217 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label            from "../../lib/rtt/Label"
+import structure Path             from "../../lib/rtt/Path"
+import structure Type             from "../../lib/rtt/Type"
+import structure Inf              from "../../lib/rtt/Inf"
+import structure PervasiveType    from "../../lib/rtt/PervasiveType"
+
+import structure FixityLib        from "FixityLib"
+import structure LabelLib         from "LabelLib"
+import structure PathLib          from "PathLib"
+import structure PervasiveTypeLib from "PervasiveTypeLib"
+import structure TypeLib          from "TypeLib"
+import structure InfLib           from "InfLib"
+
+import structure TranslationEnv   from "TranslationEnv"
+import structure LabelTranslation from "LabelTranslation"
+import signature TYPE_TRANSLATION from "TYPE_TRANSLATION-sig"
+
+structure TypeTranslation : TYPE_TRANSLATION =
+struct
+  (* Types for annotating RTT code *)
+
+    open PervasiveType
+    open InfLib
+    open TypeLib
+    open PervasiveTypeLib
+    open PathLib
+    open LabelLib
+    open FixityLib
+
+    val typ_unit = Type.tuple #[]
+    val var_poly = Type.newVar(Type.starKind(), Type.Unconstrained)
+    val typ_poly = Type.all(var_poly, Type.var var_poly)
+
+    fun typ(env, modlab, lab) =
+	if not(TranslationEnv.rtt env) then typ_poly else
+	let
+	    val j0 = TranslationEnv.lookupPervasiveInf env
+	    val j1 = Inf.lookupMod(Inf.asSig j0, modlab)
+	    val t  = Inf.lookupTyp'(Inf.asSig j1, lab)
+	in
+	    t
+	end
+
+    fun typ_fix env	= typ(env, modlab_fixity, typlab_fix)
+    fun typ_assoc env	= typ(env, modlab_fixity, typlab_assoc)
+    fun typ_lab env	= typ(env, modlab_label,  typlab_lab)
+    fun typ_path env	= typ(env, modlab_path,   typlab_path)
+    fun typ_typ env	= typ(env, modlab_type,   typlab_typ)
+    fun typ_var env	= typ(env, modlab_type,   typlab_var)
+    fun typ_row env	= typ(env, modlab_type,   typlab_row)
+    fun typ_kind env	= typ(env, modlab_type,   typlab_kind)
+    fun typ_inf env	= typ(env, modlab_inf,    typlab_inf)
+    fun typ_sig env	= typ(env, modlab_inf,    typlab_sig)
+    fun typ_ikind env	= typ(env, modlab_inf,    typlab_kind)
+    fun typ_rea env	= typ(env, modlab_inf,    typlab_rea)
+
+    val lab_package	= Label.fromString "Package__"
+    fun typ_package(env, t) =
+	Type.sum(Type.extendRow(lab_package,
+				Type.apply(PervasiveType.typ_strict,
+					   Type.tuple #[t, typ_inf env]),
+				Type.emptyRow()))
+
+
+  (* Translation of types and interfaces *)
+
+    (*TODO: remove these global variables! *)
+    val typHash = Type.Map.map() : Type.t Type.Map.t
+    val infHash = Inf.Map.map() : Type.t Inf.Map.t
+
+    fun clear() = (Type.Map.removeAll typHash; Inf.Map.removeAll infHash)
+
+    fun compareField((l1,_), (l2,_)) = Label.compare(l1,l2)
+
+    fun typToTyp(env, t) =
+	let
+	    val tcan = Type.canonical t
+	in
+	    case Type.Map.lookup(typHash, tcan)
+	     of SOME t' => t'
+	      | NONE =>
+	    case Type.inspect t
+	     of Type.All(a,t1) =>
+		(case Type.constraintVar a
+		 of Type.Unconstrained => t
+		  | Type.Intensional =>
+		    let
+			val k   = Type.kindVar a
+			val a'  = Type.newVar(k, Type.Unconstrained)
+			val t1' = Type.instanceWith(t, Type.var a')
+			val t'  = Type.all(a', Type.arrow(typ_typ env, t1'))
+		    in
+			Type.Map.insert(typHash, tcan, t');
+			t'
+		    end
+		  | Type.Extensional(p,ps) =>
+		    let
+			val k  = Type.kindVar a
+			val t' = Type.tuple(Vector.map
+				 (fn p => Type.instanceWith(t, Type.con(p,k)))
+				 (Vector.fromList(p::ps)))
+		    in
+			Type.Map.insert(typHash, tcan, t');
+			t'
+		    end
+		)
+	      | _ => t
+	end
+
+    (* A proper translation of interface kinds would require
+     * polymorphic kinds and record kinds, because we have first
+     * class signatures!
+     * Example:
+     *   fun(X:{interface I}) -> fun(Y:X.I) -> something
+     * A faithful translation of this type would be something like
+     *   Fun k -> fun x:{I:*} -> fun x':{I:k} -> something
+     * where Fun denotes big lambda and {I:..} is a record kind.
+     * We don't try this but use SealExp as an (unsound) approximation.
+     *)
+
+    fun ikindToKind k = Type.starKind()
+
+    fun infToTyp(env,j) =
+	Future.byneed(fn() =>
+	case Inf.Map.lookup(infHash, j)
+	 of SOME t => t
+	  | NONE   =>
+	    let
+		val t = infToTyp'(env,j)
+	    in
+		Inf.Map.insert(infHash, j, t);
+		t
+	    end
+	)
+
+    and infToTyp'(env,j) =
+	case Inf.inspect j
+	 of Inf.Top =>
+		(* [any] = top *)
+		typ_unit
+
+	  | Inf.Con p =>
+		(* [p] = p *)
+		Type.con(p, ikindToKind(Inf.kind j))
+
+	  | Inf.Sig s =>
+	    let
+		(* [sig items end] = {[items]} *)
+		val items = Inf.items s
+		val fs    = List.mapPartial (itemToField env) items
+		val r     = List.foldr (fn((l,t),r) => Type.extendRow(l,t,r))
+				       (Type.unknownRow())
+				       (List.sort compareField fs)
+				       (* sort to avoid quadratic behaviour *)
+	    in
+		Type.prod r
+	    end
+
+	  | Inf.Arrow(p,j1,j2) =>
+		(* [fct(x:j1) -> j2] = [j1] -> [j2] *)
+		Type.arrow(infToTyp(env,j1), infToTyp(env,j2))
+
+	  | Inf.Exist(p,j1,j2) =>
+		(* [?x:j1 . j2] = [j2] *)
+		infToTyp(env,j2)
+
+	  | Inf.Sing m =>
+		(* [<p:j'>] = [j'] *)
+		infToTyp(env, #2(Inf.asMod m))
+
+	  | Inf.Lambda(p,j1,j2) =>
+		(* [\x:j1 . j2] = [j2] *)
+		infToTyp(env,j2)
+
+	  | Inf.Apply(j1,m) =>
+		(* [j1(x:j2)] = [j1] *)
+		infToTyp(env,j1)
+
+    and itemToField env item =
+	case Inf.inspectItem item
+	 of (Inf.FixItem _ | Inf.HiddenItem _) =>
+		NONE
+
+	  | Inf.ValItem(l,t) =>
+		SOME(LabelTranslation.trValLabel l, typToTyp(env,t))
+
+	  | Inf.TypItem(p,k) =>
+	    let
+		val t = typ_typ env handle TranslationEnv.Pervasive => typ_poly
+					   (* for bootstrapping *)
+	    in
+		SOME(LabelTranslation.trTypLabel(Path.toLab p), t)
+	    end
+
+	  | Inf.ModItem(p,j) =>
+		SOME(LabelTranslation.trModLabel(Path.toLab p), infToTyp(env,j))
+
+	  | Inf.InfItem(p,k) =>
+	    let
+		val t = typ_inf env handle TranslationEnv.Pervasive => typ_poly
+					   (* for bootstrapping *)
+	    in
+		SOME(LabelTranslation.trInfLabel(Path.toLab p), t)
+	    end
+end

@@ -3,19 +3,19 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Name             from "../../lib/rtt/Name"
-import structure Label            from "../../lib/rtt/Label"
-import structure Path             from "../../lib/rtt/Path"
-import signature PATH_TRANSLATION from "PATH_TRANSLATION-sig"
+import structure Name     from "../../lib/rtt/Name"
+import structure Label    from "../../lib/rtt/Label"
+import structure Path     from "../../lib/rtt/Path"
+import signature PATH_LIB from "PATH_LIB-sig"
 
-structure PathTranslation :> PATH_TRANSLATION =
+structure PathLib : PATH_LIB =
 struct
     fun vallab s	= Label.fromString s
     fun typlab s	= Label.fromString s

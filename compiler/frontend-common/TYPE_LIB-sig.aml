@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,7 +12,7 @@
 
 import structure Label from "../../lib/rtt/Label"
 
-signature TYPE_TRANSLATION =
+signature TYPE_LIB =
 sig
     val modlab_type :		Label.t
     val typlab_kind :		Label.t

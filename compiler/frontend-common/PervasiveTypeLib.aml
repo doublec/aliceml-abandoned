@@ -3,20 +3,20 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Name                       from "../../lib/rtt/Name"
-import structure Label                      from "../../lib/rtt/Label"
-import structure Type                       from "../../lib/rtt/Type"
-import structure PervasiveType              from "../../lib/rtt/PervasiveType"
-import signature PERVASIVE_TYPE_TRANSLATION from "PERVASIVE_TYPE_TRANSLATION-sig"
+import structure Name               from "../../lib/rtt/Name"
+import structure Label              from "../../lib/rtt/Label"
+import structure Type               from "../../lib/rtt/Type"
+import structure PervasiveType      from "../../lib/rtt/PervasiveType"
+import signature PERVASIVE_TYPE_LIB from "PERVASIVE_TYPE_LIB-sig"
 
-structure PervasiveTypeTranslation :> PERVASIVE_TYPE_TRANSLATION =
+structure PervasiveTypeLib : PERVASIVE_TYPE_LIB =
 struct
     fun vallab s	= Label.fromString s
     fun modlab s	= Label.fromString s

@@ -3,20 +3,20 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Name                from "../../lib/rtt/Name"
-import structure Label               from "../../lib/rtt/Label"
-import structure Path                from "../../lib/rtt/Path"
-import structure Type                from "../../lib/rtt/Type"
-import signature TYPE_TRANSLATION from "TYPE_TRANSLATION-sig"
+import structure Name     from "../../lib/rtt/Name"
+import structure Label    from "../../lib/rtt/Label"
+import structure Path     from "../../lib/rtt/Path"
+import structure Type     from "../../lib/rtt/Type"
+import signature TYPE_LIB from "TYPE_LIB-sig"
 
-structure TypeTranslation :> TYPE_TRANSLATION =
+structure TypeLib : TYPE_LIB =
 struct
     fun vallab s	= Label.fromString s
     fun typlab s	= Label.fromString s

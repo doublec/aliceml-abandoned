@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label             from "../../lib/rtt/Label"
+import structure NameTranslation   from "NameTranslation"
+import signature LABEL_TRANSLATION from "LABEL_TRANSLATION-sig"
+
+structure LabelTranslation : LABEL_TRANSLATION =
+struct
+    open NameTranslation
+
+    fun trValLabel lab = Label.fromName(trValName(Label.toName lab))
+    fun trTypLabel lab = Label.fromName(trTypName(Label.toName lab))
+    fun trModLabel lab = Label.fromName(trModName(Label.toName lab))
+    fun trInfLabel lab = Label.fromName(trInfName(Label.toName lab))
+end

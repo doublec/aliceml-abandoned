@@ -1,5 +1,5 @@
 (*
- * Authors:
+ * Author:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
@@ -12,8 +12,10 @@
 
 import structure Label from "../../lib/rtt/Label"
 
-signature PERVASIVE_TYPE_LIB =
+signature LABEL_TRANSLATION =
 sig
-    val modlab_pervasiveType :	Label.t
-    val lab_lookup :		Label.t
+    val trValLabel : Label.t -> Label.t
+    val trTypLabel : Label.t -> Label.t
+    val trModLabel : Label.t -> Label.t
+    val trInfLabel : Label.t -> Label.t
 end

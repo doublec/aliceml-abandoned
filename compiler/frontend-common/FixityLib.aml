@@ -3,19 +3,19 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Name               from "../../lib/rtt/Name"
-import structure Label              from "../../lib/rtt/Label"
-import structure Fixity             from "../../lib/rtt/Fixity"
-import signature FIXITY_TRANSLATION from "FIXITY_TRANSLATION-sig"
+import structure Name       from "../../lib/rtt/Name"
+import structure Label      from "../../lib/rtt/Label"
+import structure Fixity     from "../../lib/rtt/Fixity"
+import signature FIXITY_LIB from "FIXITY_LIB-sig"
 
-structure FixityTranslation :> FIXITY_TRANSLATION =
+structure FixityLib : FIXITY_LIB =
 struct
     fun vallab s	= Label.fromString s
     fun typlab s	= Label.fromString s

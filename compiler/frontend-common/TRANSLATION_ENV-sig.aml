@@ -3,13 +3,14 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import structure Inf                 from "../../lib/rtt/Inf"
 import structure Stamp               from "../common/Stamp"
 import structure TypedGrammar        from "TypedGrammar"
 import structure IntermediateGrammar from "../common/IntermediateGrammar"
@@ -39,4 +40,8 @@ sig
     val insertPervasive' :	env * longid' -> unit
     val lookupPervasive :	env -> modid		(* Pervasive *)
     val lookupPervasive' :	env -> longid'		(* Pervasive *)
+    val lookupPervasiveInf :	env -> Inf.t		(* Pervasive *)
+
+    val rtt :			env -> bool
+    val setRtt :		env * bool -> unit
 end

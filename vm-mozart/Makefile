@@ -244,13 +244,16 @@ COMPILERCOMMONSOURCES0 = \
 COMPILERCOMMONSOURCES = $(COMPILERCOMMONSOURCES0:%=compiler/common/%)
 
 COMPILERFRONTENDCOMMONSOURCES0 = \
+	FIXITY_LIB-sig.aml FixityLib.aml \
+	LABEL_LIB-sig.aml LabelLib.aml \
+	PATH_LIB-sig.aml PathLib.aml \
+	TYPE_LIB-sig.aml TypeLib.aml \
+	PERVASIVE_TYPE_LIB-sig.aml PervasiveTypeLib.aml \
+	INF_LIB-sig.aml InfLib.aml \
 	NAME_TRANSLATION-sig.aml NameTranslation.aml \
 	LABEL_TRANSLATION-sig.aml LabelTranslation.aml \
-	PATH_TRANSLATION-sig.aml PathTranslation.aml \
 	TYPE_TRANSLATION-sig.aml TypeTranslation.aml \
-	PERVASIVE_TYPE_TRANSLATION-sig.aml PervasiveTypeTranslation.aml \
-	FIXITY_TRANSLATION-sig.aml FixityTranslation.aml \
-	INF_TRANSLATION-sig.aml InfTranslation.aml \
+	INTERMEDIATE_CONS-sig.aml IntermediateCons.aml \
 	ABSTRACT_GRAMMAR-sig.aml MkAbstractGrammar.aml \
 	PP_ABSTRACT_GRAMMAR-sig.aml MkPPAbstractGrammar.aml \
 	AbstractGrammar.aml TypedGrammar.aml \

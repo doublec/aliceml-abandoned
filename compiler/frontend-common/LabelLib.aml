@@ -3,18 +3,18 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Name              from "../../lib/rtt/Name"
-import structure Label             from "../../lib/rtt/Label"
-import signature LABEL_TRANSLATION from "LABEL_TRANSLATION-sig"
+import structure Name      from "../../lib/rtt/Name"
+import structure Label     from "../../lib/rtt/Label"
+import signature LABEL_LIB from "LABEL_LIB-sig"
 
-structure LabelTranslation :> LABEL_TRANSLATION =
+structure LabelLib : LABEL_LIB =
 struct
     fun vallab s	= Label.fromString s
     fun typlab s	= Label.fromString s

@@ -3,22 +3,22 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Name                from "../../lib/rtt/Name"
-import structure Label               from "../../lib/rtt/Label"
-import structure Path                from "../../lib/rtt/Path"
-import structure Type                from "../../lib/rtt/Type"
-import structure Fixity              from "../../lib/rtt/Fixity"
-import structure Inf                 from "../../lib/rtt/Inf"
-import signature INF_TRANSLATION     from "INF_TRANSLATION-sig"
+import structure Name    from "../../lib/rtt/Name"
+import structure Label   from "../../lib/rtt/Label"
+import structure Path    from "../../lib/rtt/Path"
+import structure Type    from "../../lib/rtt/Type"
+import structure Fixity  from "../../lib/rtt/Fixity"
+import structure Inf     from "../../lib/rtt/Inf"
+import signature INF_LIB from "INF_LIB-sig"
 
-structure InfTranslation :> INF_TRANSLATION =
+structure InfLib : INF_LIB =
 struct
     fun vallab s	= Label.fromString s
     fun typlab s	= Label.fromString s
