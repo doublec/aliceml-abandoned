@@ -105,7 +105,7 @@ ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --stockwerk
 ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --stockwerk
 
 ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
-ALICEC_EXTRA_OPTS = 
+ALICEC_EXTRA_OPTS = --no-warn-conventions
 
 ALICELINK1 = ALICE_HOME=build1/install build1/install/bin/alicelink
 ALICELINK2 = ALICE_HOME=build1/install build1/install/bin/alicelink
@@ -172,7 +172,7 @@ LIBDATASOURCES0 = \
 	HASHABLE-sig.aml ORDERED-sig.aml \
 	SET-sig.aml MAP-sig.aml MkRedBlackSet.aml MkRedBlackMap.aml \
 	IMP_SET-sig.aml IMP_MAP-sig.aml MkHashImpSet.aml MkHashImpMap.aml \
-	STACK-sig.aml Stack.aml STREAM-sig.aml Stream.aml \
+	STACK-sig.aml Stack.aml STREAM-sig.aml Stream.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	CONFIG-sig.aml IO-sig.aml IO.aml PRIM_IO-sig.aml PrimIO.aml \
