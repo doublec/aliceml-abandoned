@@ -405,26 +405,20 @@ define
    PicklingInterpreter =
    picklingInterpreter(run: PicklingInterpreterRun
 		       handle:
-			  fun {$ Debug Exn TaskStack}
-			     case TaskStack of Frame|Rest then
-				exception(Frame|Debug Exn Rest)
-			     end
+			  fun {$ Debug Exn Frame|Rest}
+			     exception(Frame|Debug Exn Rest)
 			  end
 		       toString: fun {$ _} 'Pickling Task' end)
 
    PicklePackInterpreter =
    picklePackInterpreter(
       run:
-	 fun {$ args(_ OutputStream _) TaskStack}
-	    case TaskStack of picklePack(_)|Rest then
-	       continue(arg({OutputStream close($)}) Rest)
-	    end
+	 fun {$ args(_ OutputStream _) picklePack(_)|Rest}
+	    continue(arg({OutputStream close($)}) Rest)
 	 end
       handle:
-	 fun {$ Debug Exn TaskStack}
-	    case TaskStack of Frame|Rest then
-	       exception(Frame|Debug Exn Rest)
-	    end
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
 	 end
       toString: fun {$ _} 'Pickle Pack' end)
 
@@ -437,17 +431,13 @@ define
    PickleSaveInterpreter =
    pickleSaveInterpreter(
       run:
-	 fun {$ args(_ OutputStream _) TaskStack}
-	    case TaskStack of pickleSave(_)|Rest then
-	       {OutputStream close()}
-	       continue(args() Rest)
-	    end
+	 fun {$ args(_ OutputStream _) pickleSave(_)|Rest}
+	    {OutputStream close()}
+	    continue(args() Rest)
 	 end
       handle:
-	 fun {$ Debug Exn TaskStack}
-	    case TaskStack of Frame|Rest then
-	       exception(Frame|Debug Exn Rest)
-	    end
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
 	 end
       toString: fun {$ _} 'Pickle Save' end)
 
