@@ -13,6 +13,8 @@
 #ifndef __GENERIC__JITTER_GENERIC_DATA_HH__
 #define __GENERIC__JITTER_GENERIC_DATA_HH__
 
+#if HAVE_LIGHTNING
+
 #if defined(INTERFACE)
 #pragma interface "generic/JitterGenericData.hh"
 #endif
@@ -296,5 +298,7 @@ namespace Generic {
     }
   };
 };
+
+#endif
 
 #endif

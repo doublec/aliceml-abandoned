@@ -12,6 +12,8 @@
 #ifndef __STORE__JIT_STORE_HH__
 #define __STORE__JIT_STORE_HH__
 
+#if HAVE_LIGHTNING
+
 #if defined(INTERFACE)
 #pragma interface "store/JITStore.hh"
 #endif
@@ -439,5 +441,7 @@ public:
     }
   };
 };
+
+#endif
 
 #endif

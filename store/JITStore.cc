@@ -10,7 +10,7 @@
 //   $Revision$
 //
 
-#if LIGHTNING
+#if HAVE_LIGHTNING
 
 #if defined(INTERFACE)
 #pragma implementation "store/JITStore.hh"

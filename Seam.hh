@@ -20,6 +20,7 @@
 #include "store/Store.hh"
 #include "store/Map.hh"
 #include "store/WeakMap.hh"
+#include "store/JITStore.hh"
 #include "adt/IntMap.hh"
 #include "adt/ChunkMap.hh"
 #include "adt/Queue.hh"
@@ -57,10 +58,7 @@
 #include "generic/Profiler.hh"
 #include "generic/Broker.hh"
 #include "generic/Authoring.hh"
-#if LIGHTNING
-#include "store/JITStore.hh"
 #include "generic/JitterGenericData.hh"
-#endif
 
 SeamDll void InitSeam();
 
