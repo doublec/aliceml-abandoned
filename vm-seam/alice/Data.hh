@@ -180,7 +180,6 @@ public:
     return static_cast<ConVal *>(b);
   }
   static ConVal *FromWord(word x) {
-    //--** not nice: also succeeds for Constructor
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::ConVal) ||
@@ -188,7 +187,6 @@ public:
     return static_cast<ConVal *>(b);
   }
   static ConVal *FromWordDirect(word x) {
-    //--** not nice: also succeeds for constructor
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::ConVal) ||
 	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
@@ -395,7 +393,6 @@ public:
   }
 
   u_int GetSize() {
-    //--** wrong! store size explicitly
     return Chunk::GetSize() / sizeof(wchar_t);
   }
   wchar_t *GetValue() {
