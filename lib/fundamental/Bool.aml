@@ -15,11 +15,12 @@
  *)
 
 import structure __pervasive              from "Pervasive"
-import type char and string and int
+import __primitive
+       type char and string and int
        datatype bool and order and option from "ToplevelTypes"
-import infix 4 = <= infix 6 +
+import __primitive infix 4 = <= infix 6 +
        val op = and op +                  from "ToplevelValues"
-import signature BOOL                     from "BOOL-sig"
+import __primitive signature BOOL         from "BOOL-sig"
 
 structure Bool :> BOOL =
 struct
