@@ -196,7 +196,7 @@ TO-DO!
 
 *OK* -zusätzlich Lexer.fromList : string list -> (unit -> string option)
 
--statt Ausnahme Error: RegMatch of string
+*OK* -statt Ausnahme Error: RegMatch of string
 
 -tagged transitions einführen
 
@@ -226,7 +226,9 @@ FEATURES
 
 -yycol liefert die Anfangsspalte des Lexems
 
-- '_' steht fuer alle Zeichen '\000' - '\255', nicht fuer 'eof'
+-'_' steht fuer alle Zeichen '\000' - '\255', nicht fuer 'eof'
+
+-reg{n,m} wiederholt reg n bis m Mal, reg{n} bedeutet genau n-mal reg
 
 -[^"..."] steht fuer alles Zeichen ausser den aufgefuehrten und 'eof'
 

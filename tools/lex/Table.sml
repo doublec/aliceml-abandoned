@@ -40,15 +40,15 @@ structure Table :> TABLE =
 	 *)
 	fun firstpos (EPS                ) = IntSet.empty
 	  | firstpos (CAT (re1, re2, _ ) ) =
-	    if nullable(re1) then IntSet.union(firstpos(re1),firstpos(re2) )
-	    else firstpos(re1)
-	  | firstpos (CLOSURE (re, _ )   ) = firstpos(re)
-	  | firstpos (CHARS ( _, i, _ )  ) = IntSet.singleton(i)
+	    if nullable re1 then IntSet.union (firstpos re1, firstpos re2)
+	    else firstpos re1
+	  | firstpos (CLOSURE (re, _ )   ) = firstpos re
+	  | firstpos (CHARS ( _, i, _ )  ) = IntSet.singleton i
 	  | firstpos (ALT (re1, re2, _ ) ) =
-		IntSet.union(firstpos(re1),firstpos(re2) )
+		IntSet.union (firstpos(re1), firstpos re2)
 	  | firstpos (REGID (s, po )     ) =
 		tpError("still regid in regexp: " ^ s, po)
-	  | firstpos (END i              ) = IntSet.singleton(i)
+	  | firstpos (END i              ) = IntSet.singleton i
 
 
 	(* lastpos : regexp -> IntSet.set
@@ -56,15 +56,15 @@ structure Table :> TABLE =
 	 *)
 	fun lastpos (EPS                ) = IntSet.empty
 	  | lastpos (CAT (re1, re2, _ ) ) =
-	    if nullable(re2) then IntSet.union(lastpos(re1),lastpos(re2) )
+	    if nullable re2 then IntSet.union (lastpos re1, lastpos re2)
 	    else lastpos(re2)
-	  | lastpos (CLOSURE (re, _ )   ) = lastpos(re)
-	  | lastpos (CHARS ( _, i, _ )  ) = IntSet.singleton(i)
+	  | lastpos (CLOSURE (re, _ )   ) = lastpos re
+	  | lastpos (CHARS ( _, i, _ )  ) = IntSet.singleton i
 	  | lastpos (ALT (re1, re2, _ ) ) =
-		IntSet.union(lastpos(re1),lastpos(re2) )
+		IntSet.union (lastpos re1, lastpos re2)
 	  | lastpos (REGID (s, po )     ) =
 		tpError("still regid in regexp: " ^ s, po)
-	  | lastpos (END i              ) = IntSet.singleton(i)
+	  | lastpos (END i              ) = IntSet.singleton i
 
 
 	(* fpandchar : regexp -> IntSet.set IntMap.map * regexp IntMap.map
@@ -184,21 +184,23 @@ structure Table :> TABLE =
 		and gettrans state = Vector.tabulate(257, checktrans state)
 
 
-			and checkTr ord (x, r) = 
-			    case IntMap.find(charmap, x) of
-				SOME (CHARS (c,_,_) ) => 
-				    (* if position x accepts character ord
-				     *)
-				    (if BoolVector.sub(c, ord)
-					 (* add the following positions
-					  * of x to the result
-					  *)
-					 then IntSet.union(r, valOf(IntMap.find(fpmap, x) ) )
-				     (* otherwise keep the result
-				      *)
-				     else r)
-			      | NONE                => tError("NONE in checktrans")
-			      | _                   => r
+		and checkTr ord (x, r) = 
+		    case IntMap.find(charmap, x) of
+			SOME (CHARS (c,_,_) ) => 
+			    (* if position x accepts character ord
+			     *)
+			    (if BoolVector.sub(c, ord)
+				 (* add the following positions
+				  * of x to the result
+				  *)
+				 then IntSet.union
+				     (r, valOf (IntMap.find (fpmap, x)))
+			     (* otherwise keep the result
+			      *)
+			     else r)
+		      | NONE                => tError("NONE in checktrans")
+		      | _                   => r
+				 
 
 		(* checktrans : int -> int -> int
 		 * takes a state and a char ord and returns
@@ -217,7 +219,8 @@ structure Table :> TABLE =
 		    end
 
 
-		(* getstate : IntSet.set -> int, returns the number of the state
+		(* getstate : IntSet.set -> int
+		 * returns the number of the state
 		 * if the state is a new one it is inserted and visited
 		 *)
 		and getstate state =
@@ -272,7 +275,9 @@ structure Table :> TABLE =
 		val finstates' = ref finstates
 		val dtran' = ref dtran
 
-		(* part : int list list, final partition, list of groups where each group can be combined to one state
+		(* part : int list list
+		 * final partition, list of groups where each group
+		 * can be combined to one state
 		 *)
 		val part =
 		    let
