@@ -46,6 +46,7 @@ extern word UnsafeOS();
 extern word UnsafeCommandLine();
 extern word UnsafeComponent();
 extern word UnsafeDebug();
+extern word UnsafeForeign();
 extern word UnsafeSocket();
 extern word UnsafeRand();
 extern word UnsafeValue();
@@ -62,6 +63,7 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeCommandLine",  UnsafeCommandLine},
   {"lib/system/UnsafeComponent",    UnsafeComponent},
   {"lib/system/UnsafeDebug",        UnsafeDebug},
+  {"lib/system/UnsafeForeign",      UnsafeForeign},
   {"lib/system/UnsafeSocket",       UnsafeSocket},
   {"lib/system/UnsafeRand",         UnsafeRand},
   {"lib/system/UnsafeValue",        UnsafeValue},
