@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature EVALUATOR =
+sig
+    datatype signal	= INTERRUPT | STOP
+
+    val eval		: string * signal -> unit
+    val setLogStream	: TextIO.StreamIO.outstream -> unit
+    val setTraceStream	: TextIO.StreamIO.outstream -> unit
+end

@@ -1,0 +1,254 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url         from "x-alice:/lib/system/Url"
+import structure Component   from "x-alice:/lib/system/Component"
+import structure PPComponent from "x-alice:/lib/system/PPComponent"
+import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
+import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+
+import structure SMLToSeamRecursiveCompiler
+from "x-alice:/compiler/top/SMLToSeamRecursiveCompiler"
+
+import signature EVALUATOR from "EVALUATOR-sig"
+
+structure Evaluator : EVALUATOR =
+struct
+    structure Compiler = SMLToSeamRecursiveCompiler
+
+    (* Output stream *)
+
+    val logWidth  = ref 120
+    val logStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdErr)
+    val traceStream = Compiler.Switches.Debug.logOut
+
+    fun setLogStream os = (TextIO.setOutstream (logStream, os);
+			   Compiler.setErrorStream os)
+    fun setTraceStream os = TextIO.setOutstream (traceStream, os)
+
+
+    (* Signal handling *)
+
+    datatype signal  = INTERRUPT | STOP
+    datatype 'a term = TERM of 'a
+    fun unTERM (TERM x) = x
+
+    fun run ((thread, result), stoppable, signal) =
+	case Future.awaitEither (result, signal) of
+	    FST (TERM x) => SOME x (* raises if f raised exn *)
+	  | SND STOP where stoppable => SOME (spawn unTERM result)
+	  | SND INTERRUPT =>
+		(Thread.terminate thread handle Thread.Terminated => (); NONE)
+
+    fun interruptable (signal, f) =
+	run (Thread.spawnThread (TERM o f), false, signal)
+    fun stoppable (signal, f) =
+	run (Thread.spawnThread (TERM o f), true, signal)
+
+
+    (* Use *)
+
+    val useFiles: string list ref = ref nil
+
+    fun use filename =
+	let
+	    val new = Promise.promise ()
+	    val old = Ref.exchange (useFiles, Promise.future new)
+	in
+	    Promise.fulfill (new, old @ [filename])
+	end
+
+
+    (* Compilation & evaluation *)
+
+    fun baseUrl () =
+	Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
+		       SOME "file")
+
+    fun eval' compile (printSig, context, source, signal) =
+	let
+	    val (filename, compile') = compile source
+	    fun trace s =
+		TextIO.output (traceStream,
+			       "-- " ^ s ^ (if filename = "" then ""
+					    else " " ^ filename) ^ "...\n")
+	in
+	    trace "Compiling";
+	    case stoppable (signal, fn _ => compile' (context, source))
+	     of NONE => NONE (* interrupted *)
+	      | SOME (context', Compiler.FOREIGN _) =>
+		    raise Compiler.Crash "cross-compilation not supported"
+	      | SOME (context', Compiler.COMPONENT {eval, component, ...}) =>
+	    (trace "Evaluating";
+	    case stoppable (signal, eval o baseUrl)
+	     of NONE => NONE (* interrupted *)
+	      | SOME str => (* completed or stopped *)
+		if not printSig then SOME context' else
+		case Component.inf (component ())
+		 of NONE =>
+		    (TextIO.output (logStream, "no result signature\n");
+		     SOME context')
+		  | SOME inf =>
+		    interruptable
+			(signal,
+			 fn _ =>
+			 let
+			     val _   = trace "Printing"
+			     val doc = PPComponent.ppComp (str, inf)
+			 in
+			     PrettyPrint.output (logStream, doc, !logWidth);
+			     TextIO.output (logStream, "\n");
+			     context'
+			 end)
+	    )
+	end
+	handle Compiler.Error => SOME context
+	     | Compiler.Crash s =>
+		   (TextIO.output (logStream,
+				   "internal failure at " ^ s ^ "\n");
+		    SOME context)   (*--** is this cool or what? *)
+	     | Component.Failure (url, Component.Eval (Assert (file, line))) =>
+		   (TextIO.output (logStream,
+				   "assertion failure at " ^
+				   file ^ ":" ^ Int.toString line ^ "\n");
+		    SOME context)
+	     | Component.Failure (url, Component.Eval exn) =>
+		   (TextIO.output (logStream,
+				   "uncaught exception " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toString url)
+				    then "\n"
+				    else " while evaluating \"" ^
+					 Url.toString url ^ "\"\n"));
+		    SOME context)
+	     | Component.Failure (_, Component.Mismatch
+				     {component, request, cause}) =>
+	       let
+		   val s = "failure type-checking \"" ^
+			   Url.toString component ^ "\"" ^
+			   (case request of
+				NONE => "\n"
+			      | SOME url => "\nas requested by \"" ^
+					    Url.toString url ^ "\":")
+	       in
+		   PrettyPrint.output
+		   (logStream,
+		    PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
+		    !logWidth);
+		    TextIO.output (logStream, "\n");
+		   SOME context
+	       end
+	     | Component.Failure (url, IO.Io _) =>
+		   (TextIO.output (logStream,
+				   "failure loading \"" ^
+				   Url.toString url ^ "\"\n");
+		    SOME context)
+	     | Component.Failure (url, Component.Internal exn) =>
+		   (TextIO.output (logStream,
+				   "internal exception " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toString url)
+				    then "\n"
+				    else " while linking \"" ^
+					 Url.toString url ^ "\"\n"));
+		    SOME context)
+	     | Component.Failure (url, exn) =>
+		   (TextIO.output (logStream,
+				   "unknown failure " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toString url)
+				    then "\n"
+				    else " while linking \"" ^
+					 Url.toString url ^ "\"\n"));
+		    SOME context)
+	     | Assert (file, line) =>
+		   (TextIO.output (logStream,
+				   "internal assertion failure at " ^
+				   file ^ ":" ^ Int.toString line ^ "\n");
+		    SOME context)   (* Is this really cool? *)
+	     | exn =>
+		   (TextIO.output (logStream,
+				   "internal exception " ^
+				   General.exnName exn ^ "\n");
+		    SOME context)   (* Is this really cool? *)
+
+    val evalString = eval' (fn s => ("", Compiler.compileString))
+    val evalFile   = eval' (fn s => (s, Compiler.compileFile))
+
+
+    (* Initialization *)
+
+    fun defaults () = (* override defaults from MkSwitches here *)
+	let
+	    open Compiler.Switches
+	in
+	    Language.implicitImportFile := SOME "x-alice:/alice.import";
+	    Language.allowUnclosedComponents := true;
+	    Language.reexportImport := true;
+	    Language.retainFullImport := true;
+	    Warn.inaccessibleExport := false;
+	    Global.traceComponentAccess := true;
+	    Debug.dumpPhases := false
+	end
+
+    fun init () =
+	let
+	    open Compiler.Switches
+	    val dummySignal = Promise.future (Promise.promise ())
+	in
+	    defaults ();
+	    Language.unsafeImport := true;
+	    case evalString (false, Compiler.Context.empty, "", dummySignal)
+	     of NONE =>
+		spawn raise Compiler.Crash "could not initialise environment"
+	      | SOME context =>
+		(Language.implicitImportFile := NONE;
+		 Language.unsafeImport := false;
+		 context)
+	end
+
+
+    (* Public *)
+
+    val currentContext = ref (init ())
+
+    fun loopUses (context, signal) =
+	let
+	    val new = Promise.promise ()
+	    val old = Ref.exchange (useFiles, Promise.future new)
+	in
+	    case old
+	     of filename::rest =>
+		(Promise.fulfill (new, rest);
+		 case evalFile (true, context, filename, signal)
+		   of SOME context' => loopUses (context', signal)
+		    | NONE => (TextIO.output (logStream, "interrupted");
+			       useFiles := nil;
+			       context)
+		)
+	      | nil => (Promise.fulfill (new, nil); context)
+	end
+
+    val currentContext = ref (init ())
+
+    fun eval (source, signal) =
+	let
+	    val p       = Promise.promise ()
+	    val context = Ref.exchange (currentContext, Promise.future p)
+	in
+	    case evalString (true, context, source, signal)
+	     of NONE => Promise.fulfill (p, context)
+	      | SOME context' =>
+		Promise.fulfill (p, loopUses (context', signal));
+	    TextIO.output (traceStream, "-- Ready.\n")
+	end
+end
