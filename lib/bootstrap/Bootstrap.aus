@@ -1691,10 +1691,10 @@ signature REAL =
     val maxFinite :	real
     val minPos :	real
     val minNormalPos :	real
+*)
 
     val posInf :	real
     val negInf :	real
-*)
 
     val ~ :		real -> real
     val op + :		real * real -> real
@@ -1796,6 +1796,9 @@ structure Real : REAL =
     __primitive val op <= :	real * real -> bool	= "Real.<="
     __primitive val op >= :	real * real -> bool	= "Real.>="
     __primitive val compare :	real * real -> order	= "Real.compare"
+
+    val posInf = 1.0 / 0.0
+    val negInf = ~1.0 / 0.0
 
     fun compareReal(x,y) =
 	(case compare(x,y)
