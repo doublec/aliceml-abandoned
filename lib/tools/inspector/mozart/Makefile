@@ -30,7 +30,7 @@ OZLOPTS = -z9
 STOC = alicec
 STOL = alicelink
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
-STOCOPTS = 
+STOCOPTS = --implicit-import-file ../fundamental/Fundamental.import
 OZSOURCES = \
 	CreateObjects.oz LayoutObjects.oz DrawObjects.oz TreeNodes.oz \
 	Helper.oz UnsafeInspector.oz
