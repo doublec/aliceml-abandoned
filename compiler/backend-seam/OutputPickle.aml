@@ -40,7 +40,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val wildcard = 1: LargeInt.int
 
 		val global = TAG 0
-		val local_ = TAG 1
+		val immediate = TAG 1
+		val local_ = TAG 2
 
 		val oneArg = TAG 0
 		val tupArgs = TAG 1
@@ -59,24 +60,23 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val kill = TAG 9
 		val lazySel = TAG 10
 		val putCon = TAG 11
-		val putConst = TAG 12
-		val putFun = TAG 13
-		val putNew = TAG 14
-		val putRef = TAG 15
-		val putTag = TAG 16
-		val putTup = TAG 17
-		val putVar = TAG 18
-		val putVec = TAG 19
-		val raise_ = TAG 20
-		val realTest = TAG 21
-		val reraise = TAG 22
-		val return = TAG 23
-		val sel = TAG 24
-		val shared = TAG 25
-		val stringTest = TAG 26
-		val tagTest = TAG 27
-		val try = TAG 28
-		val vecTest = TAG 29
+		val putFun = TAG 12
+		val putNew = TAG 13
+		val putRef = TAG 14
+		val putTag = TAG 15
+		val putTup = TAG 16
+		val putVar = TAG 17
+		val putVec = TAG 18
+		val raise_ = TAG 19
+		val realTest = TAG 20
+		val reraise = TAG 21
+		val return = TAG 22
+		val sel = TAG 23
+		val shared = TAG 24
+		val stringTest = TAG 25
+		val tagTest = TAG 26
+		val try = TAG 27
+		val vecTest = TAG 28
 
 		fun toInt ARRAY        = 0
 		  | toInt CELL         = 1
@@ -124,11 +124,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.idDef, 1); outputId (context, id))
 	  | outputIdDef (context, Wildcard) =
 	    outputInt (context, Label.wildcard)
-
-	fun outputIdRef (context, Local id) =
-	    (outputBlock (context, Label.local_, 1); outputId (context, id))
-	  | outputIdRef (context, Global id) =
-	    (outputBlock (context, Label.global, 1); outputId (context, id))
 
 	fun outputArgs outputArg (context, OneArg x) =
 	    (outputBlock (context, Label.oneArg, 1); outputArg (context, x))
@@ -201,9 +196,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.kill, 2);
 	     outputVector outputId (context, ids);
 	     outputInstr (context, instr))
-	  | outputInstr (context, PutConst (id, value, instr)) =
-	    (outputBlock (context, Label.putConst, 3); outputId (context, id);
-	     outputValue (context, value); outputInstr (context, instr))
 	  | outputInstr (context, PutVar (id, idRef, instr)) =
 	    (outputBlock (context, Label.putVar, 3); outputId (context, id);
 	     outputIdRef (context, idRef); outputInstr (context, instr))
@@ -376,6 +368,13 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputInstr (context, Return args) =
 	    (outputBlock (context, Label.return, 1);
 	     outputArgs outputIdRef (context, args))
+	and outputIdRef (context, Local id) =
+	    (outputBlock (context, Label.local_, 1); outputId (context, id))
+	  | outputIdRef (context, Global id) =
+	    (outputBlock (context, Label.global, 1); outputId (context, id))
+	  | outputIdRef (context, Immediate value) =
+	    (outputBlock (context, Label.immediate, 1);
+	     outputValue (context, value))
 
 	fun output (outstream, value) =
 	    outputValue ({outstream = outstream, shared = StampMap.new ()},
