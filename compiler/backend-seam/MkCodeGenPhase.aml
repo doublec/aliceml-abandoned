@@ -630,7 +630,12 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val _ = startFn env
 		val (args, body) =
 		    case args of
-		        (TupArgs #[] | ProdArgs #[]) =>
+		        (* if we still had enough type information here,
+			 * we could also transform
+			 *   (OneArg Wildcard) => (TupArgs #[], body)
+			 * whenever arg has type unit.
+			 *)
+			(TupArgs #[] | ProdArgs #[]) =>
 			let
 			    val idInfo = {region = region, typ = Type.tuple #[]}
 			    val id = Id (idInfo, Stamp.stamp (), Name.InId)

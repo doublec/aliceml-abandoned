@@ -855,6 +855,16 @@ void NativeCodeJitter::SetRelativePC(word pc) {
 //
 void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
   switch (calleeArity) {
+  case 0:
+    {
+      // primitives can have 0 args
+      JIT_LOG_MESG("CCC 0\n");
+      jit_movi_ui(JIT_R0, 0);
+      Scheduler_PutNArgs(JIT_R0);
+      if (update)
+	initialNoCCCPC = initialPC;
+    }
+    break;
   case 1:
     {
       JIT_LOG_MESG("Worker::Construct\n");
@@ -862,12 +872,6 @@ void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
       JITStore::Finish((void *) Worker::Construct);
       if (update)
 	initialNoCCCPC = Store::IntToWord(GetRelativePC());
-    }
-    break;
-  case 0:
-    {
-      if (update)
-	initialNoCCCPC = initialPC;
     }
     break;
   default:
@@ -1179,6 +1183,14 @@ word NativeCodeJitter::CompileContinuation(TagVal *idDefsInstrOpt,
 void NativeCodeJitter::LoadArguments(Vector *actualIdRefs) {
   u_int nArgs = actualIdRefs->GetLength();
   switch (nArgs) {
+  case 0:
+    {
+      jit_movi_ui(JIT_R0, 1);
+      Scheduler_PutNArgs(JIT_R0);
+      jit_movi_ui(JIT_R0, Store::IntToWord(0));
+      Scheduler_PutZeroArg(JIT_R0);
+    }
+    break;
   case 1:
     {
       jit_movi_ui(JIT_R0, 1);
@@ -1193,6 +1205,7 @@ void NativeCodeJitter::LoadArguments(Vector *actualIdRefs) {
       Scheduler_PutNArgs(JIT_R0);
       Scheduler_GetCurrentArgs(JIT_V1);
       for (u_int i = nArgs; i--;) {
+	CheckCodeBuffer();
 	u_int Reg = LoadIdRefKill(JIT_R0, actualIdRefs->Sub(i));
 	Scheduler_PutArg(JIT_V1, i, Reg);
       }
@@ -1339,7 +1352,8 @@ void NativeCodeJitter::AnalyzeApply(CallInfo *info, TagVal *pc, word wClosure) {
 	      info->interpreter = interpreter;
 	      info->inArity     = calleeArity;
 	      info->pc = 
-		((isDirectIn == Types::_false) && (calleeArity != actualArity));
+		((isDirectIn == Types::_false) && (calleeArity != actualArity))
+					       || (actualArity == 0);
 	    }
 	  }
 	}
@@ -1860,7 +1874,13 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
       jit_patch(docall);
       SetRelativePC(contPC);
     }
-    // Load Arguments
+    //LoadArguments(Vector::FromWordDirect(pc->Sel(1)));
+    // Don't use LoadArguments because when we call a primitive directly,
+    // we may NOT pass UNIT instead of zero arguments
+    // (there is no CCC in between, and the Alice compiler does not
+    //  treat nullary functions consistently)
+    // This is rather a workaround. We have to clean up the treatment of
+    // nullary functions in the compiler backend eventually.
     Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
     u_int nArgs          = actualIdRefs->GetLength();
     jit_movi_ui(JIT_R0, nArgs);
@@ -1872,7 +1892,10 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
       Scheduler_PutArg(JIT_V1, i, reg);
     }
 #if defined(DEBUG_CHECK)
+    //Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
+    //u_int nArgs = actualIdRefs->GetLength();
     u_int arity = interpreter->GetInArity(concreteCode);
+    // What stupid assertion is this??? Isn't this equivalent to arity==nArgs ?
     Assert(arity == 1 && nArgs == 1 ||
 	   arity != 1 && nArgs == arity); arity = arity;
 #endif
@@ -2553,6 +2576,14 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
   Vector *returnIdRefs = Vector::FromWordDirect(pc->Sel(0));
   u_int nArgs          = returnIdRefs->GetLength();
   switch (nArgs) {
+  case 0:
+    {
+      jit_movi_ui(JIT_R0, 1);
+      Scheduler_PutNArgs(JIT_R0);
+      jit_movi_ui(JIT_R0, Store::IntToWord(0));
+      Scheduler_PutZeroArg(JIT_R0);
+    }
+    break;
   case 1:
     {
       jit_movi_ui(JIT_R0, 1);
