@@ -1,7 +1,8 @@
 SIMULATOR_SOURCES = \
 	Ant.aml \
 	Instructions.aml \
-	World.aml
+	World.aml \
+	InstructionsParser.aml
 
 SIMULATOR_TARGETS = $(SIMULATOR_SOURCES:%.aml=%.stc)
 

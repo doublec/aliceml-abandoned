@@ -1,0 +1,143 @@
+import structure CharParser    from "parsec/CharParser"
+import structure Instructions  from "Instructions"
+
+
+structure InstructionsParser :>
+sig
+    exception Error of string
+
+    val parseString : string -> unit Instructions.ant 
+    val parseFile : string -> unit Instructions.ant
+    val testParserOnFile : string -> (string, unit Instructions.ant) alt
+end
+=
+struct
+    open CharParser
+    structure I = Instructions
+
+    fun lexeme p =
+        try (p ignoreR (skipMany (oneCharOf " \t")))
+
+    fun reserved s =
+        try (istring s ignoreR (skipMany (oneCharOf " \t")) ) 
+
+    fun instruction () =
+        instruction' () >>= (fn i =>
+            (comment () >> return i)
+        <|> return i)
+    
+    and comment () =
+        reserved ";" >> (skipMany (satisfy (fn c => c <> #"\n")))
+        <?> "comment"
+ 
+    and instruction' () =
+          sensIns ()
+      <|> markIns ()
+      <|> unmarkIns ()
+      <|> pickUpIns ()
+      <|> dropIns ()
+      <|> turnIns ()
+      <|> moveIns ()
+      <|> flipIns ()
+   
+    and sensIns () =
+        reserved "sense" >> 
+        (seq5 (senseDir (), state (), state (), condition (), return ()) 
+         using I.Sense)
+
+    and markIns () =
+        reserved "mark" >>
+        (seq3 (marker (), state (), return ()) using I.Mark)
+
+    and unmarkIns () =
+        reserved "unmark" >>
+        (seq3 (marker (), state (), return ()) using I.Unmark)
+
+    and pickUpIns () =
+        reserved "pickup" >>
+        (seq3 (state (), state (), return ()) using I.PickUp)
+
+    and dropIns () =
+        reserved "drop" >>
+        (seq (state (), return ()) using I.Drop)
+
+    and turnIns () =
+        reserved "turn" >>
+        (seq3 (leftOrRight (), state (), return ())  using I.Turn)
+    
+    and moveIns () =
+        reserved "move" >>
+        (seq3 (state (), state (), return ()) using I.Move)
+
+    and flipIns () =
+        reserved "flip" >>
+        (seq4 (int (), state (), state (), return ()) using I.Flip)
+
+    and int () =
+        lexeme (many1 (digit ())) >>= (fn s =>
+        case Int.fromString (implode s) of
+            SOME i => if i >= 0 then 
+                    return i
+                 else 
+                    unexpected "negative number"
+        |   NONE => fail "invalid number")
+
+    and state () = int ()
+
+    and marker () = 
+        int () >>= (fn m => 
+        if m <= 5 then 
+            return m 
+        else fail "marker invalid (out-of-range)")
+    
+    and senseDir () =
+            reserved "here" >> return I.Here
+        <|> reserved "ahead" >> return I.Ahead
+        <|> reserved "leftahead" >> return I.LeftAhead
+        <|> reserved "rightahead" >> return I.RightAhead
+    
+    and leftOrRight () =
+            reserved "left" >> return I.LEFT
+        <|> reserved "right" >> return I.RIGHT
+
+    and condition () =
+            reserved "friendwithfood" >> return I.FriendWithFood
+        <|> reserved "friend" >> return I.Friend
+        <|> reserved "foewithfood" >> return I.Foe
+        <|> reserved "food" >> return I.Food
+        <|> reserved "rock" >> return I.Rock
+        <|> reserved "marker" >> (marker () using I.Marker)
+        <|> reserved "foemarker" >> return I.FoeMarker
+        <|> reserved "home" >> return I.Home
+        <|> reserved "foehome" >> return I.FoeHome
+        <|> reserved "foe" >> return I.Foe
+
+    fun instructions () =
+        (endBy (instruction (), char #"\n" <?> "newline") ignoreR eof)
+        using Vector.fromList
+
+    exception Error of string
+    
+    val parseString' = parseString
+
+    fun parseString s =
+        case parseString' (instructions ()) () s of
+            FST error       => raise Error (errorToString error)
+        |   SND (res, _)    => res
+       
+    val parseFile' = parseFile
+ 
+    fun parseFile s =
+        case parseFile' (instructions ()) () s of
+            FST error       => raise Error (errorToString error)
+        |   SND (res, _)    => res
+       
+    fun testParserOnFile s = 
+        case parseFile' (instructions ()) () s of
+            FST error       => FST (errorToString error)
+        |   SND (res, _)    => SND res
+
+  
+end
+
+

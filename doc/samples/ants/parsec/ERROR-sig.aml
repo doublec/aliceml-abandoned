@@ -1,0 +1,45 @@
+import signature TOKEN   from "TOKEN-sig"
+
+signature ERROR = 
+sig
+    structure Token : TOKEN
+
+    datatype message = 
+        SYS_UNEXPECTED  of string
+    |   UNEXPECTED      of string
+    |   EXPECTED        of string
+    |   MESSAGE         of string
+
+    type error   
+
+    val unknownError :  Token.position -> error
+    val error :         message * Token.position -> error
+    
+    val errorPos :      error -> Token.position 
+    val errorMessages : error -> message list
+    val isUnknownError: error -> bool
+
+    val addMessage :    message * error -> error
+    val setPosition :   Token.position * error -> error
+    
+    val setMessage :    message * error -> error
+
+    val merge :         error * error -> error
+
+   
+    type message_config = {
+            orText :            string,
+            unknownText :       string,
+            expectedText :     string,
+            unexpectedText :    string,
+            endOfInputText :    string
+        }
+
+    val englishMsgCfg :     message_config
+    
+    val messagesToString :  message_config -> message list -> string
+
+    val toString :          message_config -> error -> string
+    
+end
+

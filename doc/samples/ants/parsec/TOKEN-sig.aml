@@ -1,0 +1,19 @@
+signature TOKEN =
+sig
+    type position
+    type token
+    type t = token
+
+    val position :  string -> position
+    val nextPos :   position * token -> position
+    
+    val file :      position -> string
+    val line :      position -> int
+    val column :    position -> int
+    
+    val toString :  token -> string
+
+    val equal :     token * token -> bool
+end
+
+

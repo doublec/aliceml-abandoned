@@ -1,0 +1,54 @@
+import signature COMBINATORS    from "COMBINATORS-sig"
+import signature PRIM           from "PRIM-sig"
+
+
+functor MkCombinators (Prim: PRIM) :> 
+    (COMBINATORS where type parser = Prim.parser)=
+struct
+    structure Prim = Prim
+    open Prim
+
+    fun lazy many1 p = 
+        p                       >>= (fn x =>
+        (many1 p <|> return []) >>= (fn xs =>
+        return (x :: xs) ))
+
+    fun many p = many1 p <|> return []
+
+    fun lazy skipMany1 p =
+        p >> (skipMany1 p <|> return ())
+
+    fun skipMany p =
+        skipMany1 p <|> return ()
+
+    fun combine (v, [])         = v
+      | combine (v, (f, v')::l) = combine (f (v, v'), l)
+
+    fun lazy chainl1 (p, sep) =
+        p                   >>= (fn x =>
+        many (seq (sep, p)) >>= (fn xs =>
+        return (combine (x, xs)) ))
+    
+    fun chainl (p, sep, default) =
+        chainl1 (p, sep) <|> return default
+
+    fun sepBy1 (p, sep) =
+        p                   >>= (fn x =>
+        many (sep >> p) >>= (fn xs =>
+        return (x :: xs) ))
+
+    fun sepBy (p, sep) =
+        sepBy1 (p, sep) <|> return []
+
+    
+    fun endBy (p, sep) =
+        many (p ignoreR sep)
+
+    fun endBy1 (p, sep) =
+        many1 (p ignoreR sep)
+
+    fun between (start, stop) p =
+        start >> p ignoreR stop
+
+end
+

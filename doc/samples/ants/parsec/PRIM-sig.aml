@@ -1,0 +1,85 @@
+import signature TOKEN   from "TOKEN-sig"
+import signature ERROR   from "ERROR-sig"
+
+
+signature PRIM =
+sig
+    structure Token : TOKEN
+    structure Error : ERROR where 
+            type Token.position = Token.position and
+            type Token.token    = Token.token
+    
+    type ('res, 'user_state) parser 
+
+    infix 3 >>= 
+    infix 3 >>
+    infix 2 <|>
+    infix 2 <?>
+    infix 3 ignoreR
+    infix 3 using    
+
+    
+    val return :    'a -> ('a, 'b) parser
+
+    val fail :      string -> ('a, 'd) parser
+
+    val unexpected : string -> ('a, 'd) parser
+
+    val setState :  'd -> (unit, 'd) parser
+    val getState :  ('d, 'd) parser
+    val updateState : ('d -> 'd) -> (unit, 'd) parser
+
+    (* primitive single Token.token parsers *)
+    val satisfy :   (Token.token -> bool) -> (Token.token, 'a) parser
+
+    val char :      Token.token -> (Token.token, 'a) parser
+    val anyChar :   unit -> (Token.token, 'a) parser
+
+    val eof :       (unit, 'a) parser
+
+    (* primitive combinators *)
+
+    val >>= :       ('a, 'd) parser * ('a -> ('b, 'd) parser) -> 
+                        ('b, 'd) parser
+
+    val <|> :       ('a, 'd) parser * ('a, 'd) parser -> ('a, 'd) parser
+    
+    val <?> :       ('a, 'd) parser * string -> ('a, 'd) parser
+
+    val try :       ('a, 'd) parser -> ('a, 'd) parser
+
+    (* basic combinators *)
+    
+    val >> :        ('a, 'd) parser * ('b, 'd) parser -> ('b, 'd) parser
+    
+    val ignoreR :   ('a, 'd) parser * ('b, 'd) parser -> ('a, 'd) parser
+    
+    val seq :       ('a, 'd) parser * ('b, 'd) parser -> ('a * 'b, 'd) parser
+
+    val seq3 :      ('a, 'z) parser * ('b, 'z) parser * 
+                    ('c, 'z) parser ->
+                    ('a * 'b * 'c, 'z) parser
+
+    val seq4 :      ('a, 'z) parser * ('b, 'z) parser * 
+                    ('c, 'z) parser * ('d, 'z) parser -> 
+                    ('a * 'b * 'c * 'd, 'z) parser
+
+    val seq5 :      ('a, 'z) parser * ('b, 'z) parser * 
+                    ('c, 'z) parser * ('d, 'z) parser * 
+                    ('e, 'z) parser ->
+                    ('a * 'b * 'c * 'd * 'e, 'z) parser
+
+    val using :     ('a, 'd) parser * ('a -> 'b) -> ('b, 'd) parser
+
+    (* parser execution *)
+
+    val parse : ('a, 'd) parser -> 'd -> Token.token list -> 
+                    (Error.error, 'a * Token.token list) alt
+
+    val executeParser : ('a, 'd) parser -> 'd -> Token.token list ->
+                    (Error.error, 'a * Token.token list * 'd) alt 
+   
+    val errorToString :     Error.error -> string
+end
+
+

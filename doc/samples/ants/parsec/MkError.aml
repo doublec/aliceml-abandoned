@@ -1,0 +1,148 @@
+import signature ERROR   from "ERROR-sig"
+import signature TOKEN   from "TOKEN-sig"
+
+functor MkError (T: TOKEN) :> ERROR where 
+                    type Token.position = T.position and
+                    type Token.token    = T.token =
+struct
+    structure Token = T
+
+    datatype message = 
+        SYS_UNEXPECTED  of string
+    |   UNEXPECTED      of string
+    |   EXPECTED        of string
+    |   MESSAGE         of string
+
+    
+    fun enumerateMsg (SYS_UNEXPECTED _) = 0
+      | enumerateMsg (UNEXPECTED _)     = 1
+      | enumerateMsg (EXPECTED _)       = 2
+      | enumerateMsg (MESSAGE _)        = 3
+
+    
+    fun compareMsg (m1, m2) = Int.compare (enumerateMsg m1, enumerateMsg m2)
+
+    fun stringFromMsg (SYS_UNEXPECTED s)    = s
+      | stringFromMsg (EXPECTED s)          = s
+      | stringFromMsg (UNEXPECTED s)        = s
+      | stringFromMsg (MESSAGE s)           = s
+
+    fun equalMsg (m1, m2) = compareMsg (m1, m2) = EQUAL
+
+
+    datatype error = 
+        ERROR of Token.position * message list
+
+   
+    fun unknownError p = 
+        ERROR (p, [])
+
+    fun error (m, p) =
+        ERROR (p, [m])
+
+    fun errorPos (ERROR (p, _))     = p
+
+    fun errorMessages (ERROR (_, ms))   = ms
+
+    fun isUnknownError (ERROR (p, []))  = true
+      | isUnknownError _                = false
+
+  
+    fun addMessage (m, ERROR (p, ms)) =
+        ERROR (p, m :: ms)
+
+    fun setPosition (p, ERROR (_, ms)) =
+        ERROR (p, ms)
+
+    fun setMessage (m, ERROR (p, ms)) =
+        ERROR (p, lazy (m :: (List.filter (not o (curry equalMsg m)) ms)))
+        
+    fun merge (ERROR (p, ms1), ERROR (_, ms2)) =
+        ERROR (p, ms1 @ ms2)
+
+
+    type message_config = {
+            orText :            string,
+            unknownText :       string,
+            expectedText :     string,
+            unexpectedText :    string,
+            endOfInputText :    string
+        }
+
+    val englishMsgCfg = {
+            orText          = "or",
+            unknownText     = "unknown parse error",
+            expectedText   = "expecting",
+            unexpectedText  = "unexpected",
+            endOfInputText  = "end of input"
+        }
+
+
+    fun messagesToString { orText, unknownText, expectedText, 
+                            unexpectedText, endOfInputText }  []    = unknownText
+      | messagesToString { orText, unknownText, expectedText, 
+                            unexpectedText, endOfInputText }  msgs  =
+        let
+            fun clean res []        = List.rev res
+              | clean res (""::xs)  = clean res xs  (* remove empty lines *)
+              | clean res (x::xs)   = if List.contains res x
+                                        then clean res xs (* remove duplicates *)
+                                        else clean (x :: res) xs
+            val clean = clean []
+
+            fun splitLast l     =
+                let val l'  = List.rev l 
+                in
+                    (List.rev (tl l'), hd l')
+                end
+
+            val commaSep = String.concatWith ", " o clean
+
+            fun commasOr []     = ""
+              | commasOr [m]    = m
+              | commasOr ms     = 
+                let val (init, last)    = splitLast ms
+                in
+                    commaSep init ^ " " ^ orText ^ " " ^ last
+                end
+            
+
+            fun showMany (pre, msgs) =
+                case clean (map stringFromMsg msgs) of
+                    []  => ""
+                |   ms  => if pre = "" 
+                            then commasOr ms
+                            else pre ^ " " ^ commasOr ms
+        
+            val sysUnexpected   = List.filter (curry equalMsg (SYS_UNEXPECTED "")) msgs
+            val unexpected      = List.filter (curry equalMsg (UNEXPECTED "")) msgs
+            val expected        = List.filter (curry equalMsg (EXPECTED "")) msgs
+            val messages        = List.filter (curry equalMsg (MESSAGE "")) msgs
+        
+            val showExpected    = showMany (expectedText, expected)
+            val showUnexpected  = showMany (unexpectedText, unexpected)
+            val showSysUnexpected = 
+                if not (null unexpected) orelse null sysUnexpected 
+                    then ""  (* only show sysUnexpected if no expected *)
+                    else let val firstMsg = stringFromMsg (hd sysUnexpected) in
+                        if firstMsg = "" 
+                            then unexpectedText ^ " " ^ endOfInputText
+                            else unexpectedText ^ " " ^ firstMsg
+                    end
+                        
+            val showMessages    = showMany ("", messages)
+        in 
+            String.concatWith "\n" (clean [showSysUnexpected, showUnexpected, 
+                                           showExpected, showMessages])
+        end
+
+    fun positionToString p =
+        T.file p ^ " " ^ 
+            Int.toString (T.line p) ^ "." ^ 
+            Int.toString (T.column p)
+
+    fun toString cfg e =
+        positionToString (errorPos e) ^ ":\n" ^
+        messagesToString cfg (errorMessages e)
+
+end
