@@ -75,16 +75,21 @@ protected:
   }
   void RemoveNthElement(u_int n) {
     Assert(n < GetNumberOfElements());
+    Block *array = GetArray();
+    u_int size = array->GetSize();
     u_int readIndex = GetReadIndex();
-    word *base = GetArray()->GetBase();
-    if (n >= readIndex) { // shorten queue at beginning
+    u_int index = readIndex + n;
+    if (index >= size)
+      index -= size;
+    word *base = array->GetBase();
+    if (index >= readIndex) { // shorten queue at beginning
       std::memmove(base + readIndex + 1, base + readIndex,
-		   (n - readIndex) * sizeof(word));
+		   (index - readIndex) * sizeof(word));
       SetReadIndex(readIndex + 1);
     } else { // shorten queue at end
       u_int writeIndex = GetWriteIndex();
-      std::memmove(base + n, base + n + 1,
-		   (writeIndex - n) * sizeof(word));
+      std::memmove(base + index, base + index + 1,
+		   (writeIndex - index) * sizeof(word));
       SetWriteIndex(writeIndex - 1);
     }
   }
