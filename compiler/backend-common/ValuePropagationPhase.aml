@@ -199,9 +199,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (FailExp _) = FailedVal
 
 	(*
-	 * For each identifier, we store in the environment whether it
-	 * has been declared on the top level (i.e., outside any function)
-	 * and what approximation we can give about its value.
+	 * For each identifier, we store in the environment whether it is
+	 * declared on the top level of the current component (i.e., outside
+	 * any function) and what approximation we can give about its value.
 	 *)
 
 	type isToplevel = bool
@@ -1034,7 +1034,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				       (label, deref (id, env))) labelIdVec))
 	  | vpExp (VecExp (info, ids), env, _, _) =
 	    (nil, VecExp (info, Vector.map (fn id => deref (id, env)) ids))
-	  | vpExp (FunExp (info, stamp, flags, args, body), env, _, lazySels) =
+	  | vpExp (FunExp (info, stamp, flags, args, body),
+		   env, isToplevel, lazySels) =
 	    let
 		val _ = IdMap.insertScope env
 		val _ = declareArgs (env, args, false)
@@ -1042,6 +1043,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		    vpBodyShared (body, stamp,
 				  {env = env, isToplevel = false,
 				   export = NONE, lazySels = lazySels})
+		val flags =
+		    if List.exists (fn IsToplevel => true | _ => false) flags
+		    then flags
+		    else IsToplevel::flags
 	    in
 		IdMap.deleteScope env;
 		(nil, FunExp (info, stamp, flags, args,
