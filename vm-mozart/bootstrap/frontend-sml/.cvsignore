@@ -1,4 +1,0 @@
-Lexer.lex Parser.grm Parser.grm.desc
-*.sig *.sml
-*.ozf *.ozm
-*.ozp

@@ -327,21 +327,21 @@ build1/stoc/frontend-sml/Lexer.lex: stoc/frontend-sml/Lexer.lex
 	cp $< $@
 
 build1/stoc/frontend-sml/Lexer.aml: build1/stoc/frontend-sml/Lexer.lex.sml \
-	frontend-sml/Lexer.aml.header Rel2.import
-	cat Rel2.import frontend-sml/Lexer.aml.header $< > $@
+	stoc/frontend-sml/Lexer.aml.header Rel2.import
+	cat Rel2.import $(SRCTOP)/stoc/frontend-sml/Lexer.aml.header $< > $@
 
 build1/stoc/frontend-sml/Parser.grm: stoc/frontend-sml/Parser.grm
 	cp $< $@
 
 build1/stoc/frontend-sml/PARSER-sig.aml: \
 	build1/stoc/frontend-sml/Parser.grm.sig \
-	Rel2.import frontend-sml/PARSER-sig.aml.header fixparser.awk
-	(cat Rel2.import frontend-sml/PARSER-sig.aml.header && \
+	Rel2.import stoc/frontend-sml/PARSER-sig.aml.header fixparser.awk
+	(cat Rel2.import $(SRCTOP)/stoc/frontend-sml/PARSER-sig.aml.header && \
 	 awk -f fixparser.awk < $<) > $@ || rm $@
 
 build1/stoc/frontend-sml/Parser.aml: build1/stoc/frontend-sml/Parser.grm.sml \
-	Rel2.import frontend-sml/Parser.aml.header
-	cat Rel2.import frontend-sml/Parser.aml.header $< > $@
+	Rel2.import stoc/frontend-sml/Parser.aml.header
+	cat Rel2.import $(SRCTOP)/stoc/frontend-sml/Parser.aml.header $< > $@
 
 build1/stoc/backend-common/%.aml: stoc/backend-common/%.aml Rel2.import
 	cat Rel2.import $< > $@
