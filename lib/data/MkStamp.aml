@@ -3,14 +3,15 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature STAMP from "STAMP-sig"
+import structure TextIO from "../system/TextIO"
+import signature STAMP  from "STAMP-sig"
 
 functor MkStamp() :> STAMP =
 struct
