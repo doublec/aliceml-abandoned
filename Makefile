@@ -10,7 +10,7 @@ DEBUG = 0
 
 VERSION = 1.0.1
 
-GECODEDIR = /usr
+GECODEDIR = /opt/gecode
 SQLITEDIR = /usr
 LIBXMLDIR = /usr
 
