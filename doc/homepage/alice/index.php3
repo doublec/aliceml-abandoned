@@ -70,6 +70,7 @@
 <?php section("news", "news") ?>
 
   <UL>
+    <LI> 2001/04/24: <A href="logos/">logos</A> online
     <LI> 2001/04/20: <A href="bugzilla/">bug-tracking system</A> online
     <LI> 2001/03/14: new Alice home page
   </UL>
