@@ -118,6 +118,8 @@ define
       {Property.put 'ozd.args' Rest}
       {Property.put 'errors.depth' 20}
       {Property.put 'errors.width' 10}
+%     {Property.put 'gc.on' false}
+%     {Property.put 'messages.gc' true}
       {Boot {ByteString.make Name} _}
    [] nil then
       {Usage 2}
