@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -22,6 +22,7 @@
  *   - longids have been moved to the context-free grammar,
  *     so the LONGID token is substituted by a DOT token
  *   - #[ keyword for vector expressions
+ *   - FINALLY keyword
  *   - ASSERT keyword(s)
  *   - EXTTYPE and CONSTRUCTOR keywords for extensible datatypes
  *   - NON keyword added for negated patterns
@@ -335,6 +336,7 @@
   <INITIAL>"exception"	=> ( token(EXCEPTION, yypos, yytext) );
   <INITIAL>"exttype"	=> ( token(EXTTYPE,   yypos, yytext) );
   <INITIAL>"fct"       	=> ( token(FCT,       yypos, yytext) );
+  <INITIAL>"finally"	=> ( token(FINALLY,   yypos, yytext) );
   <INITIAL>"fn"		=> ( token(FN,        yypos, yytext) );
   <INITIAL>"from"	=> ( token(FROM,      yypos, yytext) );
   <INITIAL>"fun"	=> ( token(FUN,       yypos, yytext) );

@@ -1,5 +1,6 @@
 Language:
 
+* Syntactic sugar for finalization.
 * Nicer syntax (derived forms) for functors.
 * Lazy and spawn syntax for modules.
 * Pack can now use a transparent annotation, as this is usually more convenient.

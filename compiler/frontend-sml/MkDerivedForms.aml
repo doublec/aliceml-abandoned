@@ -23,6 +23,8 @@
  *   - file and line expansion:
  *      _file_  ==>  "myfile.aml"
  *      _line_  ==>  42
+ *   - finalization:
+ *	  exp ::= exp_1 finally exp_1
  *   - assertions:
  *      assert<d> exp1 do exp2         ==>  if exp1 then exp2 else raise Assert(_file_,_line_)
  *	assert<d> exp1 of pat do exp2  ==>  assert (case exp1 of pat => true | _ => false) do exp2
@@ -467,6 +469,43 @@ struct
 	    G.ATEXPExp(I, G.LETAtExp(I, dec, callVid))
 	end
 
+    fun FINALLYExp(I, exp1, exp2) =
+	let
+	    val vid1       = G.VId(I, VId.invent())
+	    val vid2       = G.VId(I, VId.invent())
+	    val vid3       = G.VId(I, VId.invent())
+	    val longvid1   = G.SHORTLong(I, vid1)
+	    val longvid2   = G.SHORTLong(I, vid2)
+	    val longvid3   = G.SHORTLong(I, vid3)
+	    val vidExp1    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,longvid1))
+	    val vidExp2    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,longvid2))
+	    val vidExp3    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,longvid3))
+
+	    val appExp     = G.APPExp(I, vidExp2, UNITAtExp(I))
+	    val letBody    = G.ATEXPExp(I, G.SEQAtExp(I, [appExp, vidExp1]))
+
+	    val mrule2     = G.Mrule(I, G.ATPATPat(I, G.WILDCARDAtPat(I)), exp2)
+	    val fnExp      = G.FNExp(I, G.Match(I, mrule2, NONE))
+	    val valbind2   = G.PLAINValBind(I, VIDPat(I, vid2), fnExp, NONE)
+	    val dec2       = G.VALDec(I, G.Seq(I, []), valbind2)
+
+	    val raiseExp   = G.RAISEExp(I, vidExp3)
+	    val handleBody = G.ATEXPExp(I, G.SEQAtExp(I, [appExp, raiseExp]))
+	    val mrule1     = G.Mrule(I, VIDPat(I,vid3), handleBody)
+	    val handleExp  = G.HANDLEExp(I, exp1, G.Match(I, mrule1, NONE))
+	    val valbind1   = G.PLAINValBind(I, VIDPat(I, vid1), handleExp, NONE)
+	    val dec1       = G.VALDec(I, G.Seq(I, []), valbind1)
+	in
+	    G.ATEXPExp(I, G.LETAtExp(I, G.SEQDec(I, dec2, dec1), letBody))
+	end
+(*
+let
+    val vid2 = fn _ => exp2
+    val vid1 = exp1 handle vid3 => (vid2(); raise vid3)
+in
+    vid2(); vid1
+end
+*)
     val TRANSPACKExp = G.PACKExp
 
     fun OPAQPACKExp(I, atstrexp, atsigexp) =

@@ -16,6 +16,7 @@ expressible by other, less convenient means:</P>
   <LI> <A href="#records">Records</A> </LI>
   <LI> <A href="#patterns">Pattern language</A> </LI>
   <LI> <A href="#rec">Recursive definitions</A> </LI>
+  <LI> <A href="#finally">Finalization</A> </LI>
   <LI> <A href="#assert">Assertions</A> </LI>
 </UL>
 
@@ -360,6 +361,56 @@ val l = rec xs => 1::2::xs</PRE>
 <P>where <I>vid</I> is a new identifier.</P>
 
 
+<?php section("finally", "Finalization") ?>
+
+<P>Cleaning up resources after a computation usually has to be done even if the computation exits abnormally, with an exception. To make this convenient,
+Alice ML has syntactic sugar for performing a finalization action after evaluating another expression, regardless of whether this other expression terminates regularly or exceptionally.</P>
+
+
+<?php subsection("finally-syntax", "Finalization syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>exp</I><SUB>1</SUB> <TT>finally</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> finalization (L) </TD>
+  </TR>
+</TABLE>
+
+<P>Finalization is a derived form:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I><SUB>1</SUB> <TT>finally</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>let</TT> <BR>
+         &nbsp;&nbsp;&nbsp;&nbsp;<TT>val</TT> <I>vid</I><SUB>2</SUB> <TT>=</TT>
+              <TT>fn</TT> <TT>_</TT> <TT>=></TT> <I>exp</I><SUB>2</SUB> <BR>
+         &nbsp;&nbsp;&nbsp;&nbsp;<TT>val</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT>
+              <I>exp</I><SUB>1</SUB> <TT>handle</TT> <I>vid</I><SUB>3</SUB> <TT>=></TT> <TT>(</TT><I>vid</I><SUB>2</SUB><TT>();</TT> <TT>raise</TT> <I>vid</I><SUB>3</SUB><TT>)</TT> <BR>
+         <TT>in</TT> <BR>
+         &nbsp;&nbsp;&nbsp;&nbsp;<I>vid</I><SUB>2</SUB><TT>();</TT> <I>vid</I><SUB>1</SUB> <BR>
+         <TT>end</TT>
+    </TD>
+</TABLE>
+
+<P>where <I>vid</I><SUB>1</SUB>,...,<I>vid</I><SUB>3</SUB> are new identifiers.</P>
+
+<P>Note that <TT>finally</TT> can be conveniently combined with <TT>handle</TT>, to achieve an effect similar to the <TT>try</TT>...<TT>catch</TT>...<TT>finally</TT> syntax known from other languages, e.g.:</P>
+
+<PRE class=code>
+exp0
+handle p1 => exp1
+     | p2 => exp2
+finally exp3</PRE>
+
+
 <?php section("assert", "Assertions") ?>
 
 <P>Syntactic sugar is provided for expressing preconditions and other assertions conveniently. If an assertion fails, the exception <A href="library/toplevel.html#interface"><TT>Assert</TT></A> is raised, indicating the location of the failed assertion. Assertions can be activated selectively with the <A href="compiler.html#options"><TT>--assert</TT></A> compiler switch.</P>
@@ -405,14 +456,14 @@ val l = rec xs => 1::2::xs</PRE>
 
 <TABLE class=bnf>
   <TR>
-    <TD> <TT>assert</TT> <I>exp<SUB>1</SUB></I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> <TT>assert</TT> <I>exp</I><SUB>1</SUB> <TT>do</TT> <I>exp</I><SUB>2</SUB> </TD>
     <TD> ==> </TD>
-    <TD> <TT>if</TT> <I>exp<SUB>1</SUB></I> <TT>then</TT> <I>exp<SUB>2</SUB></I> <TT>else</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> <TT>else</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
   </TR>
   <TR>
-    <TD> <TT>assert</TT> <I>exp<SUB>1</SUB></I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> <TT>assert</TT> <I>exp</I><SUB>1</SUB> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp</I><SUB>2</SUB> </TD>
     <TD> ==> </TD>
-    <TD> <TT>assert</TT> <TT>(case</TT> <I>exp<SUB>1</SUB></I> <TT>of</TT> <I>pat</I> <TT>=></TT> <TT>true</TT> <TT>|</TT> <TT>_</TT> <TT>=></TT> <TT>false)</TT> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> <TT>assert</TT> <TT>(case</TT> <I>exp</I><SUB>1</SUB> <TT>of</TT> <I>pat</I> <TT>=></TT> <TT>true</TT> <TT>|</TT> <TT>_</TT> <TT>=></TT> <TT>false)</TT> <TT>do</TT> <I>exp</I><SUB>2</SUB> </TD>
   </TR>
   <TR>
     <TD> <TT>assert</TT> <I>exp</I> </TD>

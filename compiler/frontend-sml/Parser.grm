@@ -28,6 +28,8 @@
 (*	  exp ::= lazy exp							*)
 (*   - spawn expressions:							*)
 (*	  exp ::= spawn exp							*)
+(*   - finalization:								*)
+(*	  exp ::= exp_1 finally exp_1						*)
 (*   - assertions:								*)
 (*	  exp ::= assert<d> exp							*)
 (*		  assert<d> exp of pat						*)
@@ -287,8 +289,11 @@
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
 
 	(* Alice core extensions *)
+	| DOT | HASHBRACK
+	| FINALLY
 	| ASSERT of int option | FILE | LINE
-	| EXTTYPE | CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| EXTTYPE | CONSTRUCTOR
+	| NON | WITHFUN | WITHVAL
 	| LAZY | SPAWN
 
 	(* Additional reserved words for the modules language *)
@@ -320,7 +325,9 @@
 	 RAISE REC THEN TYPE VAL WITH WITHTYPE WHILE
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
-	 EXTTYPE CONSTRUCTOR NON WITHFUN WITHVAL
+	 FINALLY
+	 EXTTYPE CONSTRUCTOR
+	 NON WITHFUN WITHVAL
 	 ASSERT FILE LINE
 	 LAZY SPAWN
 	 ANY FCT PACK UNPACK
@@ -348,7 +355,7 @@
 %left  SPAWN		(* L/R is arbitrary *)
 %left  RAISE		(* L/R is arbitrary *)
 %left  IN		(* L/R is arbitrary *)
-%right HANDLE
+%left  HANDLE FINALLY
 %right ORELSE
 %right ANDALSO
 %left  WITHVAL
@@ -787,6 +794,7 @@
 	| exp COLON ty		( TYPEDExp(I(expleft,tyright), exp, ty) )
 	| exp ANDALSO exp	( ANDALSOExp(I(exp1left,exp2right), exp1, exp2))
 	| exp ORELSE exp	( ORELSEExp(I(exp1left,exp2right), exp1, exp2) )
+	| exp FINALLY exp	( FINALLYExp(I(exp1left,exp2right), exp1, exp2))
 	| exp HANDLE match	( HANDLEExp(I(expleft,matchright), exp, match) )
 	| RAISE exp		( RAISEExp(I(RAISEleft,expright), exp) )
 	| LAZY exp		( LAZYExp(I(LAZYleft,expright), exp) )

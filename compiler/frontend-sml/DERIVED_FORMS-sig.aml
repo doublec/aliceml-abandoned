@@ -23,6 +23,8 @@
  *   - file and line expansion:
  *      _file_  ==>  "myfile.aml"
  *      _line_  ==>  42
+ *   - finalization:
+ *	  exp ::= exp_1 finally exp_1
  *   - assertions:
  *      assert<d> exp1 do exp2         ==>  if exp1 then exp2 else raise Assert(_file_,_line_)
  *	assert<d> exp1 of pat do exp2  ==>  assert (case exp1 of pat => true | _ => false) do exp2
@@ -127,6 +129,7 @@ sig
     val SEQAtExp:     Info * Exp list                           -> AtExp
     val LETAtExp:     Info * Dec * Exp list                     -> AtExp
     val WHILEExp:     Info * Exp * Exp                          -> Exp
+    val FINALLYExp:   Info * Exp * Exp                          -> Exp
     val LISTAtExp:    Info * Exp list                           -> AtExp
     val RECExp:       Info * Pat * Exp                          -> Exp
     val TRANSPACKExp: Info * AtStrExp * AtSigExp                -> Exp
