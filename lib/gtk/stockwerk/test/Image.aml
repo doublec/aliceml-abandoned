@@ -1,19 +1,9 @@
 structure Image :> 
 sig 
-    val pixmap : string array 
+    val pixmap : string vector 
 end 
 =
 struct
-
-  fun arrayFromList xs =
-  let
-      val a = Array.array(length xs, hd xs)
-      fun put n nil = ()
-	| put n (l::ls) = ( Array.update(a,n,l) ; put (n+1) ls )
-  in
-      ( put 0 xs ; a )
-  end
-
   val pixmapData = [
 "107 140 16 1",
 "  c #06060a",
@@ -174,5 +164,5 @@ struct
 "==========================================================================================================="
 ]
 
-  val pixmap = arrayFromList pixmapData
+  val pixmap = Vector.fromList pixmapData
 end
