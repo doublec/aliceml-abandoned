@@ -119,15 +119,14 @@ signature TYPE =
 
     val unknownRow :	unit -> row
     val emptyRow :	unit -> row
-    val extendRow :	lab * typ vector * row -> row	(* [Row] *)
+    val openRow :	row  -> row
+    val extendRow :	lab * typ * row -> row		(* [Row] *)
 
-    val openRowType :	typ -> unit			(* [Row] *)
-
-    val isEmptyRow :	row -> bool
+    val isEmptyRow :	row -> bool			(* no known fields *)
     val isUnknownRow :	row -> bool
-    val headRow :	row -> lab * typ vector		(* [Row] *)
-    val tailRow :	row -> row			(* [Row] *)
-    val lookupRow :	row * lab -> typ vector		(* [Row] *)
+    val headRow :	row -> lab * typ		(* sorted, [Row] *)
+    val tailRow :	row -> row			(* sorted, [Row] *)
+    val lookupRow :	row * lab -> typ		(* [Row] *)
 
   (* Copying and instantiation *)
 
@@ -146,13 +145,11 @@ signature TYPE =
   (* Unification and closure *)
 
     exception Unify of typ * typ
-    exception UnifyList of int * typ * typ
     exception Intersect
 
-    val fill :		typ * typ -> unit	(* does no occur check! *)
-    val unify :		typ * typ -> unit	(* [Unify] *)
-    val unifyList :	typ list  -> unit	(* [UnifyList] *)
-    val intersect :	typ * typ -> unit
+    val fill :		typ * typ  -> unit	(* does no occur check! *)
+    val unify :		typ * typ  -> unit	(* [Unify] *)
+    val intersect :	typ * typ  -> unit
     val close :		typ -> typ
     val isClosed :	typ -> bool
 

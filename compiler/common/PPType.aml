@@ -251,23 +251,22 @@ text "(" ^^
 
 	    and ppProd NIL		= empty
 	      | ppProd(RHO _)		= text "..."
-	      | ppProd(FIELD(l,ts,NIL))	= ppField(l,ts)
-	      | ppProd(FIELD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppProd r
+	      | ppProd(FIELD(l,t,NIL))	= ppField(l,t)
+	      | ppProd(FIELD(l,t,r))	= ppField(l,t) ^^ text "," ^/^ ppProd r
 
 	    and ppSum NIL		= empty
 	      | ppSum(RHO _)		= text "..."
-	      | ppSum(FIELD(l,ts,NIL))	= ppField(l,ts)
-	      | ppSum(FIELD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
+	      | ppSum(FIELD(l,t,NIL))	= ppField(l,t)
+	      | ppSum(FIELD(l,t,r))	= ppField(l,t) ^/^ text "|" ^/^ ppSum r
 
-	    and ppField(l,#[]) = ppLab l
-	      | ppField(l,ts) =
+	    and ppField(l,t) =
 		    abox(
 			hbox(
 			    ppLab l ^/^
 			    text ":"
 			) ^^
-			below(break ^^
-			    ppCommaList ppTyp (Vector.toList ts)
+			nest(break ^^
+			    ppTyp t
 			)
 		    )
 

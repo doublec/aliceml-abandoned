@@ -102,7 +102,7 @@ structure TypePrivate =
     and row =						(* [rho,r] *)
 	  NIL
 	| RHO   of int ref * row
-	| FIELD of lab * typ vector * row
+	| FIELD of lab * typ * row
 
     withtype typ = typ' ref				(* [tau,t] *)
     and      var = typ' ref				(* [alpha,a] *)
@@ -215,7 +215,7 @@ structure TypePrivate =
 	      | SUM r ), f, b)		= appRow(r,f)
       | app1'(( MARK _ ), f, b)		= raise Assert.failure
 
-    and appRow(FIELD(_,ts,r), f)	= (Vector.app f ts ; appRow(r,f))
+    and appRow(FIELD(_,t,r), f)		= (f t ; appRow(r,f))
       | appRow(RHO(_,r), f)		= appRow(r,f)
       | appRow(NIL, f)			= ()
 
@@ -236,7 +236,7 @@ structure TypePrivate =
 		| SUM r ), f,a,b)	= foldlRow(r,f,a)
       | foldl1'(( MARK _ ), f,a,b)	= raise Assert.failure
 
-    and foldlRow(FIELD(_,ts,r), f,a)	= foldlRow(r, f, Vector.foldl f a ts)
+    and foldlRow(FIELD(_,t,r), f,a)	= foldlRow(r, f, f(t,a))
       | foldlRow(RHO(_,r), f,a)		= foldlRow(r, f, a)
       | foldlRow(NIL, f,a)		= a
 
@@ -335,8 +335,7 @@ structure TypePrivate =
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
 	      | clone' _		= raise Assert.failure
 
-	    and cloneRow(FIELD(a,ts,r))	= FIELD(a, Vector.map clone ts,
-						cloneRow r)
+	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
 	      | cloneRow(NIL)		= NIL
 
@@ -399,8 +398,7 @@ structure TypePrivate =
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
 	      | clone' _		= raise Assert.failure
 
-	    and cloneRow(FIELD(a,ts,r))	= FIELD(a, Vector.map clone ts,
-						cloneRow r)
+	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
 	      | cloneRow(NIL)		= NIL
 
@@ -569,11 +567,11 @@ structure TypePrivate =
       | isType'(t as ref(APPLY _))		= isTypeApply'(t,0)
       | isType'(ref(MU t))			= isType' t
       | isType'(ref t')				= t'
-    and isTypeApply'(ref(APPLY(t1,t2)), n)	= isTypeApply'(t1,n+1)
+    and isTypeApply'(ref(LINK t1 | MU t1), n)	= isTypeApply''(t1,n)
+      | isTypeApply'(ref(APPLY(t1,t2)), n)	= isTypeApply'(t1,n+1)
       | isTypeApply'(ref(ABBREV(t1,t2)), n)	= isTypeApply'(t2,n)
-      | isTypeApply'(ref(MU t1), n)		= isTypeApply''(t1,n)
       | isTypeApply'(t, n)			= APPLY(t,t)	(*dummy*)
-    and isTypeApply''(ref(MU t1), n)		= isTypeApply''(t1,n)
+    and isTypeApply''(ref(LINK t1 | MU t1), n)	= isTypeApply''(t1,n)
       | isTypeApply''(ref(ABBREV(t1,t2)), n)	= isTypeApply''(t2,n)
       | isTypeApply''(ref t', 0)		= t'
       | isTypeApply''(ref(LAMBDA(a,t1)), n)	= isTypeApply''(t1,n-1)
@@ -598,7 +596,8 @@ structure TypePrivate =
       | asType'(ref t')				= t'
     (* Note that we can only legally have a LAMBDA node following an APPLY
        node if there is a MU node inbetween. *)
-    and asTypeApply'(t', ref(APPLY(t1,t2)), ts)	= asTypeApply'(t', t1, t2::ts)
+    and asTypeApply'(t', ref(LINK t1), ts)	= asTypeApply'(t', t1, ts)
+      | asTypeApply'(t', ref(APPLY(t1,t2)), ts)	= asTypeApply'(t', t1, t2::ts)
       | asTypeApply'(t', ref(ABBREV(t1,t2)),ts)	= asTypeApply'(t', t2, ts)
       | asTypeApply'(t', t as ref(MU _), ts)	=
 	let (* unroll *)
@@ -607,14 +606,14 @@ structure TypePrivate =
 	in
 	    tt := LINK t; asTypeApply''(t1, ts)
 	end
-      | asTypeApply'(t', _, _)		= t'
-    and asTypeApply''(ref(MU t1), ts)	= asTypeApply''(t1,ts)
-      | asTypeApply''(ref(ABBREV(t1,t2)), ts)
-					= asTypeApply''(t2,ts)
-      | asTypeApply''(ref(LAMBDA(a,t1)), t::ts)
-					= (a := LINK t ; asTypeApply''(t1, ts))
-      | asTypeApply''(t1, t::ts)	= asTypeApply''(ref(APPLY(t1,t)), ts)
-      | asTypeApply''(ref t', [])	= t'
+      | asTypeApply'(t', _, _)			= t'
+    and asTypeApply''(ref(LINK t1 | MU t1), ts)	= asTypeApply''(t1,ts)
+      | asTypeApply''(ref(ABBREV(t1,t2)), ts)	= asTypeApply''(t2,ts)
+      | asTypeApply''(ref(LAMBDA(a,t1)), t::ts)	= (a := LINK t ;
+						   asTypeApply''(t1, ts))
+      | asTypeApply''(t1, t::ts)		= asTypeApply''
+							(ref(APPLY(t1,t)), ts)
+      | asTypeApply''(ref t', [])		= t'
 
     fun asArrow' t	= case asType' t of FUN tt    => tt | _ => raise Type
     fun asTuple' t	= case asType' t of TUPLE ts  => ts | _ => raise Type
@@ -695,33 +694,27 @@ structure TypePrivate =
 
     exception Row
 
-    fun unknownRow()	= RHO(ref(!level), NIL)
-    fun emptyRow()	= NIL
+    fun unknownRow()		= RHO(ref(!level), NIL)
+    fun emptyRow()		= NIL
 
-    fun extendRow(l,ts,NIL)      = FIELD(l,ts,NIL)
-      | extendRow(l,ts,RHO(n,r)) = RHO(n, extendRow(l,ts,r))
-      | extendRow(l1,ts1, r1 as FIELD(l2,ts2,r2)) =
+    fun openRow(r as RHO _)	= r
+      | openRow r		= RHO(ref(!level), r)
+
+    fun extendRow(l,t,NIL)	= FIELD(l,t,NIL)
+      | extendRow(l,t,RHO(n,r))	= RHO(n, extendRow(l,t,r))
+      | extendRow(l1,t1, r1 as FIELD(l2,t2,r2)) =
 	case Label.compare(l1,l2)
 	  of EQUAL   => raise Row
-	   | LESS    => FIELD(l1, ts1, r1)
-	   | GREATER => FIELD(l2, ts2, extendRow(l1,ts1,r2))
+	   | LESS    => FIELD(l1, t1, r1)
+	   | GREATER => FIELD(l2, t2, extendRow(l1,t1,r2))
 
     fun tupToRow  ts			= tupToRow'(ts,0)
     and tupToRow'(ts,i)			= if i = Vector.length ts then
 					      NIL
 					  else
 					      FIELD(Label.fromInt(i+1),
-						    #[Vector.sub(ts,i)],
+						    Vector.sub(ts,i),
 						    tupToRow'(ts,i+1))
-
-    fun openRow(r as RHO _)		= r
-      | openRow r			= RHO(ref(!level), r)
-
-    fun openRowType(ref(LINK t))	= openRowType t
-      | openRowType(t as ref(PROD r))	= t := PROD(openRow r)
-      | openRowType(t as ref(SUM r))	= t := SUM(openRow r)
-      | openRowType _			= raise Row
-
 
     fun isEmptyRow(NIL | RHO _)		= true
       | isEmptyRow _			= false
@@ -729,20 +722,20 @@ structure TypePrivate =
     fun isUnknownRow(RHO _)		= true
       | isUnknownRow _			= false
 
-    fun headRow(FIELD(a,ts,r))		= (a,ts)
+    fun headRow(FIELD(a,t,r))		= (a,t)
       | headRow(RHO(_,r))		= headRow r
       | headRow(NIL)			= raise Row
 
-    fun tailRow(FIELD(a,ts,r))		= r
+    fun tailRow(FIELD(a,t,r))		= r
       | tailRow(RHO(n,r))		= RHO(n, tailRow r)
       | tailRow(NIL)			= raise Row
 
     fun lookupRow(NIL, a)		= (print(Label.toString a);raise Row)
       | lookupRow(RHO(_,r), a)		= lookupRow(r,a)
-      | lookupRow(FIELD(a',ts,r), a)	= case Label.compare(a',a)
-					    of EQUAL   => ts
+      | lookupRow(FIELD(a',t,r), a)	= case Label.compare(a',a)
+					    of EQUAL   => t
 					     | LESS    => lookupRow(r,a)
-					     | GREATER => (print(Label.toString a);raise Row)
+					     | GREATER => raise Row
 
 
   (* Closure *)
@@ -968,20 +961,19 @@ val timer = Timer.startRealTimer()
 			    loop(r1, false, r2, true)
 		      | loop(NIL, _, NIL, _) =
 			    NIL
-		      | loop(NIL, true, FIELD(l,ts,r2'), b2) =
-			    FIELD(l,ts, loop(NIL, true, r2', b2))
-		      | loop(FIELD(l,ts,r1'), b1, NIL, true) =
-			    FIELD(l,ts, loop(r1', b1, NIL, true))
-		      | loop(r1 as FIELD(l1,ts1,r1'), b1,
-			     r2 as FIELD(l2,ts2,r2'), b2) =
+		      | loop(NIL, true, FIELD(l,t,r2'), b2) =
+			    FIELD(l,t, loop(NIL, true, r2', b2))
+		      | loop(FIELD(l,t,r1'), b1, NIL, true) =
+			    FIELD(l,t, loop(r1', b1, NIL, true))
+		      | loop(r1 as FIELD(l1,t11,r1'), b1,
+			     r2 as FIELD(l2,t21,r2'), b2) =
 			(case Label.compare(l1,l2)
-			   of EQUAL   => ( unifyVector(ts1,ts2)
-					   handle Domain => raise Unify(t1,t2)
-					 ; FIELD(l1,ts1, loop(r1',b1, r2',b2)) )
+			   of EQUAL   => ( unify(t11,t21)
+					 ; FIELD(l1,t11, loop(r1',b1, r2',b2)) )
 			    | LESS    => if not b2 then raise Unify(t1,t2) else
-					 FIELD(l1,ts1, loop(r1',b1, r2,b2))
+					 FIELD(l1,t11, loop(r1',b1, r2,b2))
 			    | GREATER => if not b1 then raise Unify(t1,t2) else
-					 FIELD(l2,ts2, loop(r1,b1, r2',b2))
+					 FIELD(l2,t21, loop(r1,b1, r2',b2))
 			)
 		      | loop _ = raise Unify(t1,t2)
 		in
@@ -995,24 +987,6 @@ end*)
 	in
 	    unify(t1,t2)
 	    handle Unify tt => ( List.app op:= (!trail) ; raise Unify tt )
-	end
-
-
-  (* Unification of lists *)
-
-    exception UnifyList of int * typ * typ
-
-    fun unifyList  []    = ()
-      | unifyList(t::ts) = 
-	let
-	    fun loop(n,   []   ) = ()
-	      | loop(n, t'::ts') =
-	        ( unify(t,t')
-		  handle Unify(t1,t2) => raise UnifyList(n,t1,t2)
-		; loop(n+1, ts')
-		)
-	in
-	    loop(0,ts)
 	end
 
 
@@ -1121,10 +1095,10 @@ let
 val timer = Timer.startRealTimer()
 fun f() = ()
 *)
-	    and equalsRow(NIL,              NIL)              = true
-	      | equalsRow(RHO(_,r1),        RHO(_,r2))        = equalsRow(r1,r2)
-	      | equalsRow(FIELD(l1,ts1,r1), FIELD(l2,ts2,r2)) =
-		l1 = l2 andalso equalsVector(ts1,ts2) andalso equalsRow(r1,r2)
+	    and equalsRow(NIL,             NIL)             = true
+	      | equalsRow(RHO(_,r1),       RHO(_,r2))       = equalsRow(r1,r2)
+	      | equalsRow(FIELD(l1,t1,r1), FIELD(l2,t2,r2)) =
+		l1 = l2 andalso equals(t1,t2) andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
 (*in
 equalsRow rr

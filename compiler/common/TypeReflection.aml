@@ -14,8 +14,9 @@ structure TypeReflection :> TYPE_REFLECTION =
 
     val lab_open	= Label.fromString "OPEN"
     val lab_closed	= Label.fromString "CLOSED"
-    val row_sort	= Type.extendRow(lab_closed, #[],
-			  Type.extendRow(lab_open, #[], Type.emptyRow()))
+    val row_sort	= Type.extendRow(lab_closed, PervasiveType.typ_zero,
+			  Type.extendRow(lab_open, PervasiveType.typ_zero,
+					 Type.emptyRow()))
     val typ_sort	= Type.inMu(Type.inSum row_sort)
     datatype sort	= datatype Type.sort			(* verify *)
     val _		= OPEN : sort				(* verify *)
@@ -25,8 +26,9 @@ structure TypeReflection :> TYPE_REFLECTION =
     val lab_arrow	= Label.fromString "ARROW"
     val typ_kind	= Type.unknown(Type.STAR)
     val typ_kindkind	= Type.inTuple #[typ_kind, typ_kind]
-    val row_kind	= Type.extendRow(lab_arrow, #[typ_kindkind],
-			  Type.extendRow(lab_star, #[], Type.emptyRow()))
+    val row_kind	= Type.extendRow(lab_arrow, typ_kindkind,
+			  Type.extendRow(lab_star, PervasiveType.typ_zero,
+					 Type.emptyRow()))
     val _		= Type.fill(typ_kind, Type.inMu(Type.inSum row_kind))
     datatype kind	= datatype Type.kind			(* verify *)
     val _		= STAR : kind				(* verify *)
@@ -97,7 +99,7 @@ structure TypeReflection :> TYPE_REFLECTION =
     val lab_emptyRow	= Label.fromString "emptyRow"
     val _		= Type.emptyRow : unit -> row		(* verify *)
     val lab_extendRow	= Label.fromString "extendRow"
-    val _		= Type.extendRow : lab * typ vector * row -> row (* v.*)
+    val _		= Type.extendRow : lab * typ * row -> row (* verify *)
 
     val lab_fill	= Label.fromString "fill"
     val _		= Type.fill : typ * typ -> unit		(* verify *)
