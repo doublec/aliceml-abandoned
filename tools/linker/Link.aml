@@ -224,29 +224,36 @@ structure Link :> LINK =
 		MyComponent.new {imports, body, sign}
 	    end
 
-	fun link {root, boundary, rewrite = rewrites} =
+	fun link {root, verbose, boundary, rewrite = rewrites} =
 	    let
 		val {componentMap, includeMap, excludeMap} =
 		    collect boundary root
-		val order = sort (includeMap, excludeMap)
-		val includes =
-		    List.filter (fn url =>
-				    url <> root andalso
-				    UrlMap.member (includeMap, url)) order @
-		    [root]
-		val imports =
-		    List.filter (fn url => UrlMap.member (excludeMap, url))
-				order
+		val rewrite = rewrite rewrites
 	    in
-		TextIO.print ("Include:\n");
-		List.app (fn url =>
-			     TextIO.print ("   " ^ Url.toString url ^ "\n"))
-			 includes;
-		TextIO.print ("Import:\n");
-		List.app (fn url =>
-			     TextIO.print ("   " ^ Url.toString url ^ "\n"))
-			 imports;
-		build (root, componentMap, includeMap, excludeMap,
-		       rewrite rewrites)
+		if verbose then
+		    let
+			val order = sort (includeMap, excludeMap)
+			val includes =
+			    List.filter (fn url =>
+					    url <> root andalso
+					    UrlMap.member (includeMap, url))
+					order @ [root]
+			val imports =
+			    List.filter (fn url =>
+					    UrlMap.member (excludeMap, url))
+					order
+		    in
+			TextIO.print ("Included components:\n");
+			List.app (fn url =>
+				     TextIO.print ("   " ^ Url.toString url ^
+						   "\n")) includes;
+			TextIO.print ("Imports (after rewrite):\n");
+			List.app (fn url =>
+				     TextIO.print ("   " ^
+						   rewrite (Url.toString url) ^
+						   "\n")) imports
+		    end
+		else ();
+		build (root, componentMap, includeMap, excludeMap, rewrite)
 	    end
     end
