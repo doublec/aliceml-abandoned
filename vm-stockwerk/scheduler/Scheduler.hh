@@ -13,7 +13,8 @@
 #ifndef __SCHEDULER_HH__
 #define __SCHEDULER_HH__
 
-#include "ThreadPool.hh"
+#include "scheduler/ThreadPool.hh"
+#include "scheduler/Thread.hh"
 
 //
 // Scheduler Interface
@@ -21,7 +22,9 @@
 
 class Scheduler {
 private:
+  static StoreConfig *storeConfig; //--** probably not the correct place
   static ThreadPool *threadPool;
+  static Thread *currentThread;
   static bool preempt;
 
   static void Timer();
@@ -29,8 +32,17 @@ public:
   static void Run();
 
   static void AddThread(Thread *thread) {
-    threadPool->Enqueue(thread);
+    if (thread->GetState() != Thread::BLOCKED) {
+      // The thread could also be TERMINATED or RUNNABLE because
+      // it had been in the wait queues of several transients.
+      thread->SetState(Thread::RUNNABLE);
+      threadPool->Enqueue(thread);
+    }
   }
+  static Thread *GetCurrentThread() {
+    return currentThread;
+  }
+
   static bool TestPreempt() {
     return preempt;
   }
