@@ -33,7 +33,7 @@ static word SysErrConstructor;
 //
 // Primitives
 //
-#define INTERPRET_RESULT(result, fct) {				\
+#define INTERPRET_RESULT(result) {				\
   switch (result) {						\
   case IODesc::result_ok: RETURN_UNIT;				\
   case IODesc::result_closed: RAISE(ClosedStreamConstructor);	\
@@ -121,7 +121,7 @@ DEFINE1(UnsafeIODesc_chunkSize) {
 
 DEFINE1(UnsafeIODesc_close) {
   DECLARE_IODESC(ioDesc, x0);
-  INTERPRET_RESULT(ioDesc->Close(), "close");
+  INTERPRET_RESULT(ioDesc->Close());
 } END
 
 DEFINE1(UnsafeIODesc_capabilities) {
@@ -136,20 +136,20 @@ DEFINE1(UnsafeIODesc_capabilities) {
 
 DEFINE1(UnsafeIODesc_block) {
   DECLARE_IODESC(ioDesc, x0);
-  INTERPRET_RESULT(ioDesc->DoBlock(), "block");
+  INTERPRET_RESULT(ioDesc->DoBlock());
 } END
 
 DEFINE2(UnsafeIODesc_setPos) {
   DECLARE_IODESC(ioDesc, x0);
   DECLARE_INT(pos, x1);
-  INTERPRET_RESULT(ioDesc->SetPos(pos), "setPos");
+  INTERPRET_RESULT(ioDesc->SetPos(pos));
 } END
 
 DEFINE1(UnsafeIODesc_endPos) {
   DECLARE_IODESC(ioDesc, x0);
   u_int out;
   IODesc::result result = ioDesc->EndPos(out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "endPos");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
 
@@ -157,7 +157,7 @@ DEFINE1(UnsafeIODesc_verifyPos) {
   DECLARE_IODESC(ioDesc, x0);
   u_int out;
   IODesc::result result = ioDesc->GetPos(out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "verifyPos");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
 
@@ -165,7 +165,7 @@ DEFINE1(UnsafeIODesc_avail) {
   DECLARE_IODESC(ioDesc, x0);
   int out;
   IODesc::result result = ioDesc->GetNumberOfAvailableBytes(out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "avail");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   if (out < 0) RETURN_INT(Types::NONE);
   TagVal *some = TagVal::New(Types::SOME, 1);
   some->Init(0, Store::IntToWord(out));
@@ -194,7 +194,7 @@ DEFINE2(UnsafeIODesc_readVec) {
   u_char *buf = string0->GetValue();
   int out;
   IODesc::result result = ioDesc->Read(buf, n, out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "readVec");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   if (out == n) RETURN(string0->ToWord());
   String *string = String::New(out);
   std::memcpy(string->GetValue(), buf, out);
@@ -205,7 +205,7 @@ DEFINE4(UnsafeIODesc_readArr) {
   DECLARE_BUF(DECLARE_WORD8ARRAY);
   int out;
   IODesc::result result = ioDesc->Read(buf, sz, out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "readArr");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
 
@@ -228,7 +228,7 @@ DEFINE2(UnsafeIODesc_readVecNB) {
     RETURN(some->ToWord());
   } else if (result == IODesc::result_would_block) {
     RETURN_INT(Types::NONE);
-  } else INTERPRET_RESULT(result, "readVecNB");
+  } else INTERPRET_RESULT(result);
 } END
 
 DEFINE4(UnsafeIODesc_readArrNB) {
@@ -241,14 +241,14 @@ DEFINE4(UnsafeIODesc_readArrNB) {
     RETURN(some->ToWord());
   } else if (result == IODesc::result_would_block) {
     RETURN_INT(Types::NONE);
-  } else INTERPRET_RESULT(result, "readArrNB");
+  } else INTERPRET_RESULT(result);
 } END
 
 DEFINE1(UnsafeIODesc_canInput) {
   DECLARE_IODESC(ioDesc, x0);
   bool out;
   IODesc::result result = ioDesc->CanInput(out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "canInput");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_BOOL(out);
 } END
 
@@ -268,7 +268,7 @@ DEFINE4(UnsafeIODesc_writeVec) {
   DECLARE_BUF(DECLARE_WORD8VECTOR);
   int out;
   IODesc::result result = ioDesc->Write(buf, sz, out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "writeVec");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
 
@@ -276,7 +276,7 @@ DEFINE4(UnsafeIODesc_writeArr) {
   DECLARE_BUF(DECLARE_WORD8ARRAY);
   int out;
   IODesc::result result = ioDesc->Write(buf, sz, out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "writeArr");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
 
@@ -290,7 +290,7 @@ DEFINE4(UnsafeIODesc_writeVecNB) {
     RETURN(some->ToWord());
   } else if (result == IODesc::result_would_block) {
     RETURN_INT(Types::NONE);
-  } else INTERPRET_RESULT(result, "writeVecNB");
+  } else INTERPRET_RESULT(result);
 } END
 
 DEFINE4(UnsafeIODesc_writeArrNB) {
@@ -303,14 +303,14 @@ DEFINE4(UnsafeIODesc_writeArrNB) {
     RETURN(some->ToWord());
   } else if (result == IODesc::result_would_block) {
     RETURN_INT(Types::NONE);
-  } else INTERPRET_RESULT(result, "writeArrNB");
+  } else INTERPRET_RESULT(result);
 } END
 
 DEFINE1(UnsafeIODesc_canOutput) {
   DECLARE_IODESC(ioDesc, x0);
   bool out;
   IODesc::result result = ioDesc->CanOutput(out);
-  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "canOutput");
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_BOOL(out);
 } END
 
