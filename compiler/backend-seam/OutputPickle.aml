@@ -11,7 +11,6 @@
  *)
 
 import structure Reflect             from "../../lib/system/Reflect"
-import structure MkHashImpMap        from "../../lib/utility/MkHashImpMap"
 import structure Crash               from "../infrastructure/Crash"
 import structure Stamp               from "../common/Stamp"
 import structure StampMap            from "../common/StampMap"
@@ -24,8 +23,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
     struct
 	structure V = Value
 	open AbstractCodeGrammar
-
-	structure LabelMap = MkHashImpMap(UniqueString)
 
 	structure Label =
 	    struct
@@ -100,13 +97,14 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
-			shared: PrimPickle.id StampMap.t,
-			labels: PrimPickle.id LabelMap.t}
+			shared: PrimPickle.id StampMap.t}
 
 	fun outputInt ({outstream, ...}: context, i) =
 	    PrimPickle.outputInt (outstream, i)
 	fun outputChunk ({outstream, ...}: context, words) =
 	    PrimPickle.outputChunk (outstream, words)
+	fun outputUnique ({outstream, ...}: context) =
+	    PrimPickle.outputUnique outstream
 	fun outputBlock ({outstream, ...}: context, label, size) =
 	    PrimPickle.outputBlock (outstream, Label.toInt label, size)
 	fun outputTuple ({outstream, ...}: context, size) =
@@ -117,6 +115,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    PrimPickle.outputReference (outstream, id)
 	fun outputString ({outstream, ...}: context, s) =
 	    PrimPickle.outputString (outstream, s)
+	fun outputUniqueString ({outstream, ...}: context, s) =
+	    PrimPickle.outputUniqueString (outstream, s)
 	fun outputTransform ({outstream, ...}: context, name) =
 	    PrimPickle.outputTransform (outstream, name)
 
@@ -177,17 +177,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		()
 	    end
 
-	fun outputLabel (context as {labels, ...}: context, label) =
-	    case LabelMap.lookup (labels, label) of
-		SOME id => outputReference (context, id)
-	      | NONE =>
-		    let
-			val id =
-			    outputTransform (context, "Alice.uniqueString")
-		    in
-			outputString (context, UniqueString.string label);
-			LabelMap.insert (labels, label, id)
-		    end
+	fun outputLabel (context, label) =
+	    ignore (outputUniqueString (context, label))
 
 	fun outputValue (context, V.Prim name) =
 	    (outputTransform (context, "Alice.primitive.value");
@@ -455,7 +446,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputInstr (context, body); outputLiveness (context, liveness))
 
 	fun output (outstream, value) =
-	    outputValue ({outstream = outstream,
-			  shared = StampMap.new (),
-			  labels = LabelMap.new ()}, value)
+	    outputValue ({outstream = outstream, shared = StampMap.new ()},
+			 value)
     end
