@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -42,7 +42,8 @@ signature INTERMEDIATE_AUX =
 
 	val getUsedVars: O.exp * IdSet.t -> IdSet.t
 
-	val rowLabels: Type.row -> Label.t list
 	val typToArity: Type.t -> Arity.t
 	val labelToIndex: Type.t * Label.t -> O.prod * int
+
+	val reset: unit -> unit
     end
