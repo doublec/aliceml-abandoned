@@ -117,6 +117,7 @@
     .field static public initonly class StockWerk.StockWert Assembler$methodGetILGenerator
     .field static public initonly class StockWerk.StockWert Char$chr
     .field static public initonly class StockWerk.StockWert Char$le
+    .field static public initonly class StockWerk.StockWert Char$isAlphaNum
     .field static public initonly class StockWerk.StockWert Char$isDigit
     .field static public initonly class StockWerk.StockWert Char$isHexDigit
     .field static public initonly class StockWerk.StockWert Char$isSpace
@@ -359,6 +360,8 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$methodDeclareLocal
       newobj instance void StockWerk.Builtins.Assembler$methodGetILGenerator::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$methodGetILGenerator
+      newobj instance void StockWerk.Builtins.Char$isAlphaNum::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Char$isAlphaNum
       newobj instance void StockWerk.Builtins.Char$isDigit::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Char$isDigit
       newobj instance void StockWerk.Builtins.Char$isHexDigit::.ctor()
@@ -5213,6 +5216,42 @@
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 2
       br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Char$isAlphaNum extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Char
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Char
+      ldfld wchar StockWerk.Char::Value
+      call bool System.Globalization.CharacterInfo::IsLetterOrDigit(wchar)
+      brfalse.s retFalse
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::true
+      ret
+    retFalse:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::false
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
