@@ -314,7 +314,10 @@ struct
                         in
                             quitters := nc :: !quitters;
                             cancelGame p;
-                            ()
+			    if PState.isPlaying (#state pdesc) then
+				Arena.removeSnake (arena, PState.snake (#state pdesc))
+			    else
+                            	()
                         end
 
                     fun nextId (lastId, d) = 
@@ -356,7 +359,7 @@ struct
                             val state       = #state pd
                         in
                             if ! $ #giveUp ev then 
-                                giveUp part 
+                                (#giveUp ev := false; giveUp part) 
                             else if PState.hasEnteredGate state then
                                 (* user can not do anything but giving up 
                                    right now... *)

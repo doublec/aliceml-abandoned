@@ -40,7 +40,6 @@ __overload 'a log: string * 'a -> unit = log''
    differentiated by newlines *)
 fun highscoreToString score =
     let
-	val _ = log ("highscoreToString", "begins")
 	fun pToString p = (if p <= 9 then "    " 
 				else if p <= 99 then "   "
 				else if p <= 999 then "  " 
@@ -60,13 +59,12 @@ fun highscoreToString score =
 		""	=> "Highscore is empty."
 	    |	s 	=> s
     in
-        toString score before log ("highscoreToString", "ends")
+        toString score
     end
 
 (* creates a string from a given time with : h : m : s *)
   fun timeToString t =
     let
-	val _ = log ("timeToString", "begins")
 	val time    = Time.toSeconds t
 	val hours   = LargeInt.toInt (time div Int.toLarge 3600)
 	val minutes = 
@@ -80,8 +78,6 @@ fun highscoreToString score =
                 else "") ^ Int.toString d 
     in
         toStr hours ^ " : " ^ toStr minutes ^ " : " ^ toStr seconds 
-	before log ("timeToString", "ends") 
-
     end
 
 
@@ -223,7 +219,6 @@ struct
 		
 	    fun countdown (display, n, win, arena)  =
 		let 
-		    val _ = log ("countdown", n)
 		    val displ = case !display of
 			NONE    =>
 			    let 
@@ -246,7 +241,6 @@ struct
 	     by newlines *)
 	    fun updatePoints pointsLabel plist =
 		let
-		    val _ = log ("updatePoints", "starts")
 		    fun pToString p = (if p <= 9 then "    " 
 				       else if p <= 99 then "   "
 				       else if p <= 999 then "  " 
@@ -277,8 +271,6 @@ struct
 			 ^ "\n\n</i></span>")
 		    fun toString () = List.foldl toString' "" plist
 		in
-		    log("updatePoints", "ends with setting markups") 
-		    before
 		    Gtk.labelSetMarkup (pointsLabel, toString ())
 		end
 		
@@ -288,8 +280,7 @@ struct
 		 Gtk.widgetSetSensitive (menuGiveUpItem, true);
 		 Gtk.widgetSetSensitive (menuMenuItem, false);
 		 Gtk.widgetShow canvas;
-		 Gtk.widgetShow rightHBox;
-		 log ("gameMode", "ends"))
+		 Gtk.widgetShow rightHBox)
 
 	    fun reset' (p : mainwindow_type) = 
 		#reset p {mode = #mode p, menuGiveUpItem = #menuGiveUpItem p,
@@ -298,12 +289,11 @@ struct
 
 	    fun reset {mode, menuGiveUpItem, menuMenuItem,
 		       canvas, rightHBox} =
-		(mode := GAME(false);
-		 Gtk.widgetSetSensitive (menuGiveUpItem, true);
-		 Gtk.widgetSetSensitive (menuMenuItem, false);
+		(mode := START;
+		 Gtk.widgetSetSensitive (menuGiveUpItem, false);
+		 Gtk.widgetSetSensitive (menuMenuItem, true);
 		 Gtk.widgetHide canvas;
-		 Gtk.widgetHide rightHBox;
-		 log ("gameMode", "ends"))
+		 Gtk.widgetHide rightHBox)
 
 	    val mainWindowWidget = {object = mainWindow,
 				    radar, arena, mode,
@@ -334,7 +324,8 @@ struct
 			    NONE => log ("giveUp", "everything was ok")
 			  | SOME msg => 
 				(Text.mkTextWindow (#object p, "ERROR!",
-					   "error, while disconnecting!");())))
+					   "error, while disconnecting!");()));
+			    log ("giveUp", "calling finished!"))
 		      
 	    fun backToStart (p : mainwindow_type) = 
 		(case !mode of
