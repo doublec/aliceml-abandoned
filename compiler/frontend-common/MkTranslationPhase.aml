@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -409,8 +409,7 @@ struct
       | trFix(E, r, Fixity.POSTFIX n) =
 	callFix(E, lab_postfix, trInt(r,n))
       | trFix(E, r, Fixity.INFIX(n,a)) =
-	callFix(E, lab_infix,
-		trStrictExp(trTuple(r, #[trInt(r,n), trAssoc(E,r,a)])))
+	callFix(E, lab_infix, trTuple(r, #[trInt(r,n), trAssoc(E,r,a)]))
 
     fun trLab(E, r, l) =
 	callLab(E, lab_fromString, trString(r, Label.toString l))
