@@ -3,7 +3,7 @@
 %%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Andreas Rossberg, 2001-2002
+%%%   Andreas Rossberg, 2001-2003
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -24,7 +24,7 @@ define
    % type 'a cell = stamp * 'a ref
 
    Cell = 'Cell'(
-      'new':       fun sited {$ X} {NewStamp}#{NewCell X} end
+      'cell':      fun sited {$ X} {NewStamp}#{NewCell X} end
       'content' :  fun {$ C} {Access C.2} end
       'replace' :  fun {$ C X} {Assign C.2 X} unit end
       'Map$' :     Map
@@ -72,8 +72,17 @@ define
       Is
    end
 
+   fun {Entries M}
+      N = {Size M}
+      {Dictionary.remove M SizeIndex}
+      Es = {Dictionary.entries M}
+      {Dictionary.put M SizeIndex N}
+   in
+      Es
+   end
+
    Map = 'Map'(
-      'new':        fun {$ unit}
+      'map':        fun {$ unit}
 			M = {Dictionary.new}
 		    in
 			{ResetSize M}
@@ -150,6 +159,62 @@ define
 		    in
 			{List.forAll {Items M}
 				     proc {$ Es} {List.forAll Es P} end}
+			unit
+		    end
+      'modify':	    fun {$ F M}
+			P = case {Procedure.arity F}
+			    of 2 then fun {$ C#X} C#{F X} end
+			    [] _ then fun {$ C#X} R in
+					  {Procedure.apply F
+						 {Append {Record.toList X} [R]}}
+					  C#R
+				      end
+			    end
+		    in
+			{List.forAll {Entries M}
+				     proc {$ K#Es}
+				         {Dictionary.put M K {List.map Es P}}
+				     end}
+			unit
+		    end
+      'modifyi':    fun {$ F M}
+			P = case {Procedure.arity F}
+			    of 3 then fun {$ C#X} C#{F C X} end
+			    [] 2 then fun {$ C#X} C#{F C#X} end
+			    end
+		    in
+			{List.forAll {Entries M}
+				     proc {$ K#Es}
+				         {Dictionary.put M K {List.map Es P}}
+				     end}
+			unit
+		    end
+      'filter':	    fun {$ F M}
+			P = case {Procedure.arity F}
+			    of 2 then fun {$ _#X} {F X} end
+			    [] _ then fun {$ _#X} R in
+					  {Procedure.apply F
+						 {Append {Record.toList X} [R]}}
+					  R
+				      end
+			    end
+		    in
+			{List.forAll {Entries M}
+				     proc {$ K#Es}
+				         {Dictionary.put M K {List.filter Es P}}
+				     end}
+			unit
+		    end
+      'filteri':    fun {$ F M}
+			P = case {Procedure.arity F}
+			    of 3 then fun {$ C#X} {F C X} end
+			    [] 2 then fun {$ C#X} {F C#X} end
+			    end
+		    in
+			{List.forAll {Entries M}
+				     proc {$ K#Es}
+				         {Dictionary.put M K {List.filter Es P}}
+				     end}
 			unit
 		    end
       'fold':	    fun {$ F Y M}

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,13 +14,13 @@ signature UNSAFE_CELL_COMPONENT =
 sig
     structure UnsafeCell :
     sig
-	val new :		'a -> 'a_cell
+	val cell :		'a -> 'a_cell
 	val content :		'a_cell -> 'a
 	val replace :		'a_cell * 'a -> unit
 
 	structure Map :
 	sig
-	    val new :		unit -> 'ab_map
+	    val map :		unit -> 'ab_map
 	    val clone :		'ab_map -> 'ab_map
 
 	    val insertWithi :	('a * 'b * 'b -> 'b) * 'ab_map * 'a_cell * 'b -> unit
@@ -33,8 +33,16 @@ sig
 
 	    val app :		('b -> unit) * 'ab_map -> unit
 	    val appi :		('a_cell * 'b -> unit) * 'ab_map -> unit
+(*--** TODO: should be primitive
+	    val modify :	('b -> 'b) * 'ab_map -> unit
+	    val modifyi :	('a_cell * 'b -> 'b) * 'ab_map -> unit
+*)
 	    val fold :		('b * 'c -> 'c) * 'c * 'ab_map -> 'c
 	    val foldi :		('a_cell * 'b * 'c -> 'c) * 'c * 'ab_map -> 'c
+(*--** TODO: should be primitive
+	    val filter :	('b -> bool) * 'ab_map -> unit
+	    val filteri :	('a_cell * 'b -> bool) * 'ab_map -> unit
+*)
 	    val find :		('b -> bool) * 'ab_map -> 'b option
 	    val findi :		('a_cell * 'b -> bool) * 'ab_map -> ('a_cell * 'b) option
 	end
