@@ -17,7 +17,7 @@ store:
 	cd ../../../store && $(MAKE) distclean && $(MAKE)
 
 clean:
-	rm -f test $(OBJS)
+	rm -f test perf $(OBJS)
 
 distclean: clean
 	rm -rf *~
