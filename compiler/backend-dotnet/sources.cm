@@ -1,4 +1,9 @@
-Group is
+Group
+
+    structure CodeGenPhase
+    structure IL
+
+is
 
     ../error/sources.cm
     ../misc/sources.cm
