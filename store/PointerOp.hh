@@ -1,5 +1,9 @@
-#ifndef __pointerop_hh__
-#define __pointerop_hh__
+#ifndef __POINTEROP_HH__
+#define __POINTEROP_HH__
+
+#if defined(INTERFACE)
+#pragma interface
+#endif
 
 #include "base.hh"
 
@@ -53,7 +57,7 @@ public:
       Assert(v != NULL);
       if ((vi & TAGMASK) == (u_int) TRTAG) {
 	vi -= (u_int) TRTAG;
-	if (HeaderOp::DecodeLabel((Block *) vi) == REF) {
+	if (HeaderOp::DecodeLabel((Block *) vi) == BlockLabel::REF) {
 	  v = ((word *) vi)[1];
 	}
 	else {

@@ -1,24 +1,27 @@
 CC     = g++
-CFLAGS = -ggdb -DDEBUG_CHECK
+CFLAGS = -DDEBUG_CHECK -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
 
-SRCS = store.cc
+SRCS = alicedata.cc headerdef.cc store.cc
 
-OBJS = store.o
+OBJS = alicedata.o headerdef.o store.o
 
-all: test.cc $(OBJS)
-	$(CC) $(CFLAGS) -o test test.cc $(OBJS)
+LIBPATH = /home/thor/devel/stockhausen/vm-stockwerk/store
+
+all: lib test.cc
+	$(CC) $(CFLAGS) -o test test.cc $(LIBPATH)/libstore.so
 
 %.o : %.cc base.hh types.hh headerdef.hh
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 lib: $(OBJS)
-	ar -r libstore.a $(OBJS)
-	ranlib libstore.a
+	ld -shared -o libstore.so $(OBJS)
 
+alicedata.cc: alicedata.hh
+headerdef.cc: headerdef.hh
 store.cc: memchunk.hh store.hh headerop.hh pointerop.hh dataset.hh gchelper.hh
 
 clean:
-	rm -rf test $(OBJS) libstore.a
+	rm -rf test $(OBJS) libstore.so
 
 distclean: clean
 	rm -rf *.s *~

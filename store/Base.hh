@@ -1,15 +1,15 @@
-#ifndef __base_hh__
-#define __base_hh__
+#ifndef __BASE_HH__
+#define __BASE_HH__
 
-#include <stdio.h>
+#include <cstdio>
 
 #ifdef DEBUG_CHECK
-#define Assert(Cond)                                                             \
-  if (!(Cond)) {                                                                 \
-    char *t = NULL;                                                              \
-    fprintf(stderr, "%s:%d assertion '%s' failed\n", __FILE__, __LINE__, #Cond); \
-    t[0] = 0;                                                                 \
-    exit(0);                                                                     \
+#define Assert(Cond)                                                                 \
+  if (!(Cond)) {                                                                      \
+    char *t = NULL;                                                                   \
+    std::fprintf(stderr, "%s:%d assertion '%s' failed\n", __FILE__, __LINE__, #Cond); \
+    t[0] = 0;                                                                         \
+    exit(0);                                                                          \
   }
 #else
 #define Assert(Cond)

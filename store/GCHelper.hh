@@ -1,5 +1,9 @@
-#ifndef __gchelper_hh__
-#define __gchelper_hh__
+#ifndef __GCHELPER_HH__
+#define __GCHELPER_HH__
+
+#if defined(INTERFACE)
+#pragma interface
+#endif
 
 #include "base.hh"
 #include "headerdef.hh"
@@ -27,4 +31,3 @@ public:
 };
 
 #endif
-

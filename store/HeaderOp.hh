@@ -1,5 +1,9 @@
-#ifndef __headerop_hh__
-#define __headerop_hh__
+#ifndef __HEADEROP_HH__
+#define __HEADEROP_HH__
+
+#if defined(INTERFACE)
+#pragma interface
+#endif
 
 #include "base.hh"
 #include "headerdef.hh"
@@ -39,6 +43,10 @@ public:
     else {
       *((u_int *) p) = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
     }
+  }
+  // Generation Access
+  static u_int DecodeGeneration(Block *p) {
+    Assert(p != NULL); return ((*((u_int *) p)) >> HeaderDef::GEN_SHIFT);
   }
 };
 

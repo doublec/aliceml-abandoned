@@ -1,8 +1,17 @@
 #include <iostream.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
+
+#if defined(INTERFACE)
+#pragma implementation "store.hh"
+#endif
 #include "store.hh"
+
+#if defined(INTERFACE)
+#pragma implementation "gchelper.hh"
+#endif
 #include "gchelper.hh"
+
 //
 // Helper Functions
 //
@@ -31,9 +40,7 @@ static void ClearList(MemChunk *list) {
 //
 // Helper Class Implementation
 //
-const unsigned int HeaderDef::GEN_LIMIT[] = { 0x0FFFFFFF, 0x4FFFFFFF, 0x8FFFFFFF };
-
-MemConfig *Store::config   = INVALID_POINTER;
+StoreConfig *Store::config = INVALID_POINTER;
 MemChain **Store::roots    = INVALID_POINTER;
 u_int Store::totalHeapSize = 0;
 
@@ -58,7 +65,7 @@ Block *Store::Alloc(MemChain *chain, u_int size) {
     MemChunk *anchor = chain->anchor;
 
     if (alloc_size < size) {
-      div_t d    = div(size, MEMCHUNK_SIZE);
+      div_t d    = std::div(size, MEMCHUNK_SIZE);
       alloc_size = (d.quot + (d.rem ? 1 : 0)) * MEMCHUNK_SIZE;
     }
     
@@ -120,14 +127,14 @@ Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     newp   = Store::Alloc(dst, (s + 2));
     realnp = (Block *) ((char *) newp + 4);
     
-    memcpy(newp, p, (s + 2) << 2);
+    std::memcpy(newp, p, (s + 2) << 2);
     GCHelper::EncodeGen(realnp, dst->gen);
     return realnp;
   }
   else {
     Block *newp = Store::Alloc(dst, (s + 1));
     
-    memcpy(newp, p, (s + 1) << 2);
+    std::memcpy(newp, p, (s + 1) << 2);
     GCHelper::EncodeGen(newp, dst->gen);
     return newp;
   }
@@ -151,7 +158,7 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
       }
       
       // Scan current tuple (if label != CHUNK)
-      if (curp->GetLabel() != CHUNK) {
+      if (curp->GetLabel() != BlockLabel::CHUNK) {
 	for (u_int i = 1; i <= cursize; i++) {
 	  word p    = PointerOp::Deref(curp->GetArg(i));
 	  Block *sp = PointerOp::RemoveTag(p);
@@ -179,9 +186,13 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
   }
 }
 
-void Store::InitStore(MemConfig *cfg) {
+void Store::InitStore(StoreConfig *cfg) {
+  static unsigned int lim[] = { 0x0FFFFFFF, 0x4FFFFFFF, 0x8FFFFFFF };
   config = cfg;
-  roots  = (MemChain **) malloc(sizeof(MemChain) * cfg->max_gen);
+  roots  = (MemChain **) std::malloc(sizeof(MemChain) * cfg->max_gen);
+
+  HeaderDef::CreateHeader(cfg->word_width, cfg->tag_width, cfg->size_width, cfg->generation_width);
+
   for (u_int i = 0; i < cfg->max_gen; i++) {
     MemChain *chain = new MemChain();
 
@@ -202,7 +213,7 @@ void Store::CloseStore() {
     MemChain *chain = roots[i];
 
     ClearList(chain->anchor);
-    free(chain);
+    std::free(chain);
   }
 }
 

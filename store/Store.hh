@@ -1,5 +1,9 @@
-#ifndef __store_hh__
-#define __store_hh__
+#ifndef __STORE_HH__
+#define __STORE_HH__
+
+#if defined(INTERFACE)
+#pragma interface
+#endif
 
 #include "base.hh"
 #include "memchunk.hh"
@@ -15,15 +19,19 @@ public:
   u_int gen;        // generation index
 };
 
-class MemConfig {
+class StoreConfig {
 public:
-  u_int max_gen;     // maximum number of generations
-  u_int *gen_limits; // limit for each memory section (in Bytes)
+  u_int word_width;       // word datatype width (e.g. 32 or 64)
+  u_int tag_width;        // block tag width
+  u_int size_width;       // block size field width
+  u_int generation_width; // block generations field width (max num below must fit in)
+  u_int max_gen;          // maximum number of generations
+  u_int *gen_limits;      // limit for each memory section (in Bytes)
 };
 
 class Store {
 protected:
-  static MemConfig *config;
+  static StoreConfig *config;
   static MemChain **roots;
   static u_int totalHeapSize;
   static DataSet *intgen_set;
@@ -37,12 +45,14 @@ protected:
     if (s < HeaderDef::MAX_HBSIZE) {
       Block *t = Store::Alloc(roots[0], (u_int) s + 1);
       
+      Assert(t != NULL);
       HeaderOp::EncodeHeader(t, l, s, 0);
       return t;
     }
     else {
       char *t = (((char *) Store::Alloc(roots[0], (u_int) s + 1)) + 4);
       
+      Assert(t != NULL);
       HeaderOp::EncodeHeader((Block *) t, l, HeaderDef::MAX_HBSIZE, 0);
       ((u_int *) t)[-1] = (u_int) s;
       
@@ -50,21 +60,23 @@ protected:
     }
   }
 public:
-  static void InitStore(MemConfig *cfg);
+  static void InitStore(StoreConfig *cfg);
   static void CloseStore();
   // Type Access Functions
   static t_label MakeLabel(int l) {
-    Assert(l> TAG0); Assert(l <= MAX_LSIZE); return (t_label) l;
+    Assert(l>= BlockLabel::MIN_LSIZE); Assert(l <= BlockLabel::MAX_LSIZE); return (t_label) l;
   }
   // Allocation Functions
   static Block *AllocBlock(t_label l, u_int s) {
-    Assert(l >= TAG0); Assert(l <= MAX_LSIZE); return InternalAllocBlock(l, s);
+    Assert(l >= BlockLabel::MIN_LSIZE);
+    Assert(l <= BlockLabel::MAX_LSIZE);
+    return InternalAllocBlock(l, s);
   }
   static Block *AllocChunk(u_int s) {
-    return Store::InternalAllocBlock(CHUNK, s);
+    return Store::InternalAllocBlock(BlockLabel::CHUNK, s);
   }
   static Transient *AllocTransient(t_label l) {
-    Assert((l == PROMISE) || (l == FUTURE) || (l == BYNEED));
+    Assert((l == BlockLabel::PROMISE) || (l == BlockLabel::FUTURE) || (l == BlockLabel::BYNEED));
     return (Transient *) Store::InternalAllocBlock(l, 2);
   }
   // Conversion Functions
