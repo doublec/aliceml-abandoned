@@ -16,6 +16,7 @@ signature UNSAFE_COMPONENT_COMPONENT =
 	    sig
 		exception Sited
 		exception Corrupt
+		exception Native of string
 
 		val extension: string
 
@@ -23,6 +24,7 @@ signature UNSAFE_COMPONENT_COMPONENT =
 
 		val save: string * 'component -> unit   (* IO.Io, Sited *)
 		val load: string -> 'component          (* IO.Io, Corrupt *)
+		val linkNative: string -> 'component    (* Native, Corrupt *)
 
 		val pack_: 'component -> string         (* Sited *)
 		val unpack_: string -> 'component       (* Corrupt *)
