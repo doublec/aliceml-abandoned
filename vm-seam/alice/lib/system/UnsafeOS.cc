@@ -366,9 +366,23 @@ DEFINE1(UnsafeOS_Process_atExn) {
   RETURN_UNIT;
 } END
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+// Platform SDK: 32767 maximum size excluding zero
+#define MAX_ENV_VALUE_SIZE 32768
+static char envValBuf[MAX_ENV_VALUE_SIZE];
+#endif
+
 DEFINE1(UnsafeOS_Process_getEnv) {
   DECLARE_STRING(envVar, x0);
-  char *envVal = std::getenv(envVar->ExportC());
+  char *envVal;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (!GetEnvironmentVariable(envVar->ExportC(), envValBuf, MAX_ENV_VALUE_SIZE))
+    envVal = NULL;
+  else
+    envVal = envValBuf;
+#else
+  envVal = std::getenv(envVar->ExportC());
+#endif
   if (envVal != NULL) {
     TagVal *val = TagVal::New(Types::SOME, 1);
     val->Init(0, String::New(envVal)->ToWord());
