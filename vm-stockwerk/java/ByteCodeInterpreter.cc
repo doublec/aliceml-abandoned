@@ -346,6 +346,23 @@ public:
   }
 };
 
+// to be done: this should reside in data
+class JavaByteArray : public Chunk {
+public:
+  unsigned char Get(u_int i) {
+    return ((unsigned char *) GetBase())[i];
+  }
+  void Put(u_int i, unsigned char value) {
+    ((unsigned char *) GetBase())[i] = value;
+  }
+  static JavaByteArray *New(u_int size) {
+    return static_cast<JavaByteArray *>(Store::AllocChunk(size));
+  }
+  static JavaByteArray *FromWord(word array) {
+    return static_cast<JavaByteArray *>(Store::WordToChunk(array));
+  }
+};
+
 //
 // Helper Stuff
 //
@@ -436,13 +453,14 @@ Worker::Result ByteCodeInterpreter::Run() {
   while (1) {
     switch (static_cast<Instr::Opcode>(code[pc])) {
     case Instr::AALOAD:
+    case Instr::CALOAD:
     case Instr::DALOAD: // reals are boxed
     case Instr::FALOAD: // reals are boxed
     case Instr::IALOAD:
     case Instr::LALOAD:
     case Instr::SALOAD:
       {
-	JavaDebug::Print("(A|D||F|I|L|S)ASTORE");
+	JavaDebug::Print("(A|C|D||F|I|L|S)ASTORE");
 	u_int index        = JavaInt::FromWord(frame->Pop());
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
@@ -492,13 +510,14 @@ Worker::Result ByteCodeInterpreter::Run() {
 	pc += 1;
       }
       break;
+    case Instr::CASTORE:
     case Instr::DASTORE: // reals are boxed
     case Instr::FASTORE: // reals are boxed
     case Instr::IASTORE:
     case Instr::LASTORE:
     case Instr::SASTORE:
       {
-	JavaDebug::Print("(D|F|I|L|S)ASTORE");
+	JavaDebug::Print("(C|D|F|I|L|S)ASTORE");
 	word value         = frame->Pop();
 	u_int index        = Store::DirectWordToInt(frame->Pop());
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
@@ -690,33 +709,45 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::BALOAD:
-    case Instr::CALOAD:
       {
-	JavaDebug::Print("(B|C)ALOAD");	
-	u_int index    = Store::DirectWordToInt(frame->Pop());
-	Chunk *byteArr = Store::DirectWordToChunk(frame->Pop());
-	if (index < byteArr->GetSize()) {
-	  frame->Push(Store::IntToWord(byteArr->GetBase()[index]));
-	  pc += 1;
+	JavaDebug::Print("(BALOAD");	
+	u_int index          = Store::DirectWordToInt(frame->Pop());
+	JavaByteArray *array = JavaByteArray::FromWord(frame->Pop());
+	if (array != INVALID_POINTER) {
+	  if (index < array->GetSize()) {
+	    frame->Push(Store::IntToWord(array->Get(index)));
+	    pc += 1;
+	  }
+	  else {
+	    // to be done: raise ArrayIndexOutOfBoundsException
+	    Error("ArrayIndexOutOfBoundsException");
+	  }
 	}
 	else {
-	  // to be done: throw invalid something
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
 	}
       }
       break;
     case Instr::BASTORE:
-    case Instr::CASTORE:
       {
-	JavaDebug::Print("(B|C)ÁSTORE");
-	u_int value    = Store::DirectWordToInt(frame->Pop());
-	u_int index    = Store::DirectWordToInt(frame->Pop());
-	Chunk *byteArr = Store::DirectWordToChunk(frame->Pop());
-	if (index < byteArr->GetSize()) {
-	  byteArr->GetBase()[index] = (char) value;
-	  pc += 1;
+	JavaDebug::Print("(BASTORE");
+	u_int value          = Store::DirectWordToInt(frame->Pop());
+	u_int index          = Store::DirectWordToInt(frame->Pop());
+	JavaByteArray *array = JavaByteArray::FromWord(frame->Pop());
+	if (array != INVALID_POINTER) {
+	  if (index < array->GetSize()) {
+	    array->Put(index, value);
+	    pc += 1;
+	  }
+	  else {
+	    // to be done: raise ArrayIndexOutOfBoundsException
+	    Error("ArrayIndexOutOfBoundsException");
+	  }
 	}
 	else {
-	  // to be done: throw invalid something
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
 	}
       }
       break;
@@ -1660,11 +1691,30 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::NEWARRAY:
       {
 	JavaDebug::Print("NEWARRAY");
-	pc++; // Ignore ATYPE indicator
 	int count = Store::DirectWordToInt(frame->Pop());
-	Type *type = INVALID_POINTER; // to be done
-	ObjectArray *arr = ObjectArray::New(type, count);
-	frame->Push(arr->ToWord());
+	if (count >= 0) {
+	  word array;
+	  BaseType::type baseType = static_cast<BaseType::type>(code[pc + 1]);
+	  switch (baseType) {
+	  case BaseType::Byte:
+	  case BaseType::Boolean:
+	    {
+	      array = JavaByteArray::New(count)->ToWord();
+	    }
+	    break;
+	  default:
+	    {
+	      Type *type = static_cast<Type *>(BaseType::New(baseType));
+	      array = ObjectArray::New(type, count)->ToWord();
+	    }
+	  }
+	  frame->Push(array);
+	}
+	else {
+	  // to be done: raise NegativeArraySizeException
+	  Error("NegativeArraySizeException");
+	}
+	pc += 2;
       }
       break;
     case Instr::NOP:
