@@ -1852,6 +1852,7 @@
       ldarg.0
       call void System.CriticalSection::Exit(class System.Object)
       ldloc.0
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       ret
     raise:
       ldarg.0
