@@ -13,15 +13,17 @@
  *
  *)
 
+import structure Doc from "Doc"
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
+
 import structure Color from "Color"
 import structure Layout from "Layout"
 import structure Settings from "Settings"
 
 import signature DRAW from "DRAW-sig"
 
-local open Node Layout 
+local open Node Doc Layout 
 
 in
 
@@ -106,7 +108,7 @@ struct
     (* Draws Limit Nodes *)
     fun drawLimit (node,x,y,upd) = 
 	let 
-	    val createArrow = if getSort(node) = DEPTH_LIMIT
+	    val createArrow = if isDepthLimit node
 				  then createArrowDown
 			      else createArrowRight
 	in
