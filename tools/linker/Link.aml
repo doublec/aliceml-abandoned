@@ -11,7 +11,7 @@
  *)
 
 import structure TextIO             from "../lib/system/TextIO"
-import structure Signature          from "../lib/system/Signature"
+import structure Inf                from "../lib/rtt/Inf"
 import structure FromEqHashKey      from "../lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
 import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
@@ -34,10 +34,11 @@ structure Link :> LINK =
 	structure UrlHashKey = FromEqHashKey(Url)
 	structure UrlMap = MkHashImpMap(UrlHashKey)
 
-	fun signMatches (SOME s1, SOME s2) = Signature.matches (s1, s2)
-	  | signMatches (_, _) = true
+	fun infMatches (SOME j1, SOME j2) =
+	    ((Inf.match (j1, j2); true) handle Inf.Mismatch _ => false)
+	  | infMatches (_, _) = true
 
-	fun signIntersect (sign1, sign2) = SOME sign1   (*--** *)
+	fun infIntersect (inf1, inf2) = SOME inf1   (*--** *)
 
 	fun isExcluded (url, boundary) =
 	    isExcluded' (Url.toString url, boundary, 0, Vector.length boundary)
@@ -56,46 +57,46 @@ structure Link :> LINK =
 		val includeMap = UrlMap.new ()
 		val excludeMap = UrlMap.new ()
 
-		fun collect' (url, parent, expectedSign) =
+		fun collect' (url, parent, expectedInf) =
 		    if UrlMap.member (componentMap, url) then
 			let
 			    val component =
 				UrlMap.lookupExistent (componentMap, url)
-			    val actualSign = MyComponent.sign component
+			    val actualInf = MyComponent.inf component
 			in
-			    if signMatches (actualSign, expectedSign) then ()
+			    if infMatches (actualInf, expectedInf) then ()
 			    else raise Mismatch (url, parent)
 			end
 		    else if UrlMap.member (excludeMap, url) then
 			let
-			    val sign' = UrlMap.lookupExistent (excludeMap, url)
+			    val inf' = UrlMap.lookupExistent (excludeMap, url)
 			in
-			    case signIntersect (expectedSign, sign') of
-				SOME sign'' =>
-				    UrlMap.insert (excludeMap, url, sign'')
+			    case infIntersect (expectedInf, inf') of
+				SOME inf'' =>
+				    UrlMap.insert (excludeMap, url, inf'')
 			      | NONE => raise Conflict url
 			end
 		    else if isExcluded (url, boundary) then
-			UrlMap.insert (excludeMap, url, expectedSign)
+			UrlMap.insert (excludeMap, url, expectedInf)
 		    else
 			let
 			    val component = MyComponent.load url
-			    val actualSign = MyComponent.sign component
-			    val _ = if signMatches (actualSign, expectedSign)
+			    val actualInf = MyComponent.inf component
+			    val _ = if infMatches (actualInf, expectedInf)
 				    then () else raise Mismatch (url, parent)
 			    val component' =
 				if url = root then component
-				else MyComponent.stripImportSigns component
+				else MyComponent.stripImportInfs component
 			    val _ =
 				UrlMap.insert (componentMap, url, component')
 			    val resolve = Url.resolve url
 			    val importUrls =
 				Vector.map
-				(fn (s, sign) =>
+				(fn (s, inf) =>
 				    let
 					val url' = resolve (Url.fromString s)
 				    in
-					collect' (url', url, sign); url'
+					collect' (url', url, inf); url'
 				    end) (MyComponent.imports component)
 			in
 			    UrlMap.insert (includeMap, url, importUrls)
@@ -212,9 +213,9 @@ structure Link :> LINK =
 			    end) (includeTable, 0, NONE);
 			Vector.sub (strs, rootIndex)
 		    end
-		val sign = MyComponent.sign (getComponent root)
+		val inf = MyComponent.inf (getComponent root)
 	    in
-		MyComponent.new {imports, body, sign}
+		MyComponent.new {imports, body, inf}
 	    end
 
 	fun link {root, verbose, boundary, rewrite = rewrites} =
