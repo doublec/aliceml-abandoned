@@ -1,0 +1,395 @@
+Import
+------
+
+Alle hier beschriebenen Komponenten sind Teil der Alice-Bibliothek und können direkt importiert werden. Eine Struktur "Bla" kann zum Beispiel mit der Deklaration
+
+    import structure Bla from "x-alice:/lib/.../Bla"
+
+aus der entsprechenden Komponente importiert werden.
+
+
+Typrepräsentation
+-----------------
+
+Typen werden repräsentiert durch einen Satz abstrakter Typen, die in der Komponente "/lib/rtt/Type" definiert sind:
+
+    type typ			(* Typen *)
+    type var			(* Typvariablen *)
+    type row			(* Records / Datatypes *)
+    type lab  = Label.lab	(* Record-Label / Konstruktoren *)
+    type path = Path.path	(* Typnamen *)
+
+Typen können analysisert werden mit der Funktion
+
+    val inspect : typ -> desc
+
+die eine Beschreibung des dargestellten Typs liefert:
+
+    datatype desc =
+	  Unknown		(* unbekannter Typ *)
+	| Var	of var		(* Typvariable *)
+	| Con	of path		(* abstrakter/vordefinierter Typ *)
+	| Arrow	of typ * typ	(* t1 -> t2 *)
+	| Prod	of row		(* Record *)
+	| Sum	of row		(* Datatype *)
+	| Mu	of typ		(* rekursiver Typ *)
+	| All	of var * typ	(* Allquantifizierung *)
+	| Exist	of var * typ	(* Existenzquantifizierung *)
+	| Lambda of var * typ	(* Typfunktion *)
+	| Apply	of typ * typ	(* Typapplikation *)
+
+Die in der Beschreibung enthaltenen Teiltypen können dann rekursiv wiederum auf dieselbe Weise inspiziert werden.
+
+Unknown:
+
+Der Fall Unknown tritt auf, wenn die Typinferenz (noch) keinen eindeutigen Typ ermitteln konnte, z.B. als Elementtyp der Liste in der SML-Deklaration
+
+    - val r = ref []
+    val r : '123 list ref
+
+Die Pseudo-Typvariable /'123/ steht für einen noch unbekannten Typ (erinnert euch an die Transparenzbedingung, die verhindert, dass r polymorph wird).
+
+Con:
+
+Vordefinierte Typen wie /int/ und benutzerdefinierte abstrakte Typen (durch :>), sowie Extensible Datatypes (siehe unten) werden einheitlich als Typkonstruktoren dargestellt, die über so genannte Pfade identifiziert werden (siehe unten).
+
+Prod und Sum:
+
+Records und Datatypes (Produkt- und Summentypen) werden uniform durch so genannte Rows repräsentiert, im wesentlichen Listen aus Label/Typ-Paaren. Solche Rows können ebenfalls inspiziert werden:
+
+    datatype row_desc =
+	  UnknownRow
+	| EmptyRow
+	| FieldRow of lab * typ * row
+
+    val inspectRow : row -> row_desc
+
+Der Fall UnknownRow kann im Inspektor nicht auftreten. Im Fall /FieldRow/ wird die Rest-Row mitgeliefert. Bei sukzessiver Anwendung erhält man die Felder in nach Labels (aufsteigend) sortierter Reihenfolge. Labels sind als abstrakter Typ in einer eigenen Komponente definiert (siehe unten).
+
+Beachte, dass in SML Tupel nichts als ein Spezialfall von Records mit numerischen Labels sind. Zum Beispiel:
+
+    ("a", true, 3.14) = {1 = "a", 2 = true, 3 = 3.14}
+
+Der Inspektor sollte also Records, die Tupel sind, in der besser lesbaren Form darstellen. Die folgenden Funktionen im /Type/-Modul ermöglichen, diesen Fall komfortabel festzustellen und zu behandeln:
+
+    val isTupleRow : row -> bool
+    val asTupleRow : row -> typ vector
+
+Die zweite Funktion wirft die Ausnahme /Row/ wenn die erste /false/ liefert.
+
+All und Exist:
+
+Alice kennt neben normalen ML-Polymorphismus, sprich allquantifizierten Typen wie bei
+
+    val nil : 'a list
+
+der als
+
+    all a . list(a)
+
+repräsentiert ist, auch existenzquantifizierte Typen. Diese sind jedoch z.Z. nur intern verfügbar. Ihre Behandlung im Inspektor ist analog zu allquantifizierten Typen.
+
+Lambda und Apply:
+
+Variablen, Lambdas und Applikation realisieren einen Lambda-Kalkül auf Typebene. So wird der Typ
+
+    type ('a,'b) mytype = 'a * 'b * bool
+
+dargestellt als Funktion
+
+    lambda a . lambda b . a * b * bool
+
+und entsprechend der Typ /(string, int) mytype/ als Applikation
+
+    mytype(string)(int)
+
+die automatisch zu /string * int * bool/ reduziert wird. Typterme sind also immer in Normalform dargestellt. Lambdas können deshalb in vom Inspektor betrachteten Typen nicht auftreten. Applikationen können jedoch auftreten, wenn die Funktion ein abstrakter Typkonstruktor ist. Zum Beispiel:
+
+    structure S :> sig type 'a t val x : int t end = ...
+
+Der Typ von /S.x/ wird als
+
+    t(int)
+
+dargestellt (wobei /t/ über seinen eindeutigen Pfad als /S.t/ indentifizierbar ist). Man muss also unter die Applikation absteigen bis zu einem /Con/-Term, um zu erkennen, um welchen abstrakten Typ es sich handelt.
+
+Mu:
+
+Ein weiterer Fall, bei dem eine Applikation nicht reduziert wird, sind rekursive Datatypes. Dazu später mehr.
+
+
+Pfade und vordefinierte Typen
+-----------------------------
+
+Pfade werden durch die Komponente "/lib/rtt/Path" repräsentiert:
+
+    type path			(* Pfad *)
+
+Ihre wichtigste Eigenschaft ist, dass sie eine Identität besitzen, die global eindeutig ist. Mit der Funktion
+
+    val equal : path * path -> bool
+
+können Pfade verglichen werden.
+
+Die Komponente "/lib/rtt/PervasiveType" enthält die Pfadnamen aller primitiven SML-Typen:
+
+    val path_int :	path
+    val path_word :	path
+    val path_real :	path
+    val path_char :	path
+    val path_string :	path
+    val path_vec :	path
+    val path_array :	path
+    val path_ref :	path
+    val path_exn :	path
+    val path_strict :	path
+
+Der letzte Typ wird nur intern zur Kodierung von Datatypes benutzt, siehe unten. Es gibt zudem in der Library mit "/lib/rtt/PathMap" schon eine fertige Komponente für Hastabellen über Pfaden.
+
+
+Labels und Namen
+----------------
+
+Die Komponente "/lib/rtt/Label" enthält die abstrakte Repräsentation von allgemeinen Labels, die für Record-Labels, Datatype-Konstrukturen, und auch Struktur-Feldnamen benutzt werden:
+
+    eqtype lab			(* Label *)
+
+Für den Inspektor ist nur interessant, dass sie in Strings konvertiert werden können:
+
+    val toString : lab -> string
+
+Man beachte, dass Labels auch numerisch sein können (Tupel).
+
+Die noch einfachere Komponente "/lib/rtt/Name" enthält eine Repräsentation von allgemeinen Namen:
+
+    datatype name = InId | ExId of string
+
+Diese werden z.B. für die Konstruktoren von Extensible Datatypes benutzt (siehe unten). Wiederum ist im wesentlichen die String-Konversion interessant:
+
+    val toString : name -> string
+
+
+Werte
+-----
+
+Die Komponente "/lib/system/UnsafeValue" enthält Funktionen, mit der auf der Low-Level-Repräsentation von Werten operiert werden kann. Falsche Benutzung dieser Funktionen führt zu Crashs oder Hängern der VM!
+
+Die universellste Operation ist der allgemeine Typcast:
+
+    val cast : 'a -> 'b
+
+Damit können einfache Typen, wie Integers, Vektoren, etc. behandelt werden, indem einfach in den passenden Typ gewandelt wird.
+
+Die übrigen Operationen dienen zum Zugriff auf Records und Werten von Datatypes.
+
+
+Records und Tupel
+-----------------
+
+Records sind relativ einfach zu handhaben:
+
+    val proj : 'a * lab vector * int -> 'b
+
+Diese Operation ermöglicht es, aus einem Record/Tupel (welches sich hinter /'a/ verbergen muss) ein einzelnes Feld zuzugreifen. Dazu muss der aufsteigend sortierte Vektor der im Record vorhandenen Feldlabels übergeben werden, und der Index des zu selektierenden Labels in diesem Vektor.
+
+Beispiel: Die Inspektion der Typrepräsentation liefert die Information, dass ein Wert x ein Record ist, z.B. vom Typ {a : int, b : bool, c : string}. Aus der zugehörigen Row können wir den Label-Vektor labs = #[a,b,c]  konstruieren. Durch einfache Iteration über die Länge des Vektors können die einzelnen Felder von x extrahiert werden (/proj(x, labs, 0)/ .. /proj(x, labs, 2)/.
+
+Auch Tupel lassen sich auf diese Weise zugreifen. Um jedoch die Erzeugung des Labelvektors in diesem häufigen Fall zu sparen, gibt es eine spezielle Operation
+
+    val projTuple : 'a * int * int -> 'b
+
+Dabei gibt der erste Integer die Tupelbreite an, der zweite das zu selektierende Feld. Dies started wie gehabt bei 0, ist also immer um 1 geringer als das implizite Label!
+
+
+Datatypes
+---------
+
+ML-Datatypes vereinen zwei Konzepte: (gelabelte) Summentypen und Typrekursion. In der Typrepräsentation sind diese beiden Aspekte getrennt.
+
+Summentypen werden analog zu Records über Rows dargestellt. Zum Beispiel könnte der Datatype
+
+    datatype intoption = None | Some of int
+
+als Summentyp
+
+    intoption = [None : unit, Some : int]
+
+dargestellt werden. Zur Unterscheidung von Produkten schreibe ich eckige Klammern für Summentypen. Man beachte, dass Konstruktoren ohne Argumente mit unit dargestellt werden. Statt von Labels spricht man bei Summen üblicherweise von Tags.
+
+Rekursive Typen wie
+
+    datatype intlist = Empty | Cons of int * intlist
+
+werden üblicherweise mit einem expliziten Fixpunktoperator notiert:
+
+    intlist = mu a. [Empty : unit, Cons : int * a]
+
+Da unsere Typrepräsentation aber ein zyklischer Graph ist, sparen wir uns die explizite Variable und repräsentieren den Typ tatsächlich zyklisch als
+
+    intlist = mu. [Empty : unit, Cons : int * intlist]
+
+wobei das intlist auf der rechten Seite tatsächlich wieder den Gesamtterm repräsentiert. Das mu bleibt als Marker trotzdem erhalten, u.a. um Zyklen leichter erkennen zu kennen.
+
+Verkompliziert wird das Ganze durch rekursive Typfunktionen.
+
+    datatype 'a list = nil | :: of 'a * 'a list
+
+wird dargestellt wie folgt:
+
+    list = mu. lambda a. [nil : unit, :: : a * list(a)]
+
+Man beachte, dass das lambda unter dem mu steht. Bei der Applikation werden rekursive Funktionen nicht automatisch beta-reduziert, da dieser Vorgang im allgemeinen nicht terminieren würde. Um immer eine endliche Darstellung zu garantieren, wird also die Applikation explizit dargestellt, ähnlich wie bei abstrakten Typen. Zum Beispiel wäre /int list/ repräsentiert durch
+
+    intlist' = (mu. lambda a. [nil : unit, :: : a * list(a)])(int)
+
+Will man den genauen Typ eines Konstruktors ermitteln, muss man also die Applikation gewissermassen `von Hand' reduzieren, d.h. man erzeugt beim Abstieg eine Substitution Variablen->Argumente, selektiert das passende Feld aus der Row, und wendet dann die Substitution an.
+
+
+Verschmolzene Konstruktoren
+---------------------------
+
+Leider ist das noch nicht die ganze Geschichte. Um Konstruktoren effizienter zu repräsentieren, nimmt der Compiler nämlich eine sogenannte Konstruktorverschmelzung vor. Das bedeutet, dass der Konstruktor /C/ des Typs
+
+    datatype t = A | B of int | C of int * int
+
+nicht 2 Speicherbereiche verbraucht, sondern das Argumentpaar direkt zusammen mit dem Tag abgelegt wird. Der Wert C(2,3) wird also gespeichert als Block
+
+   +---+---+---+
+   | C | 2 | 3 |
+   +---+---+---+
+
+und nicht in 2 Blöcken
+
+   +---+---+     +---+---+
+   | C | *-+---->| 2 | 3 |
+   +---+---+     +---+---+
+
+Genauso werden die unit-Argumente von 0-stelligen Konstruktoren wegoptimiert, also für /t/
+
+   +---+
+   | A |
+   +---+
+
+statt
+
+   +---+----+
+   | A | () +
+   +---+----+
+
+Leider darf man das nur machen, wenn dies direkt aus der Typdeklaration ersichtlich ist. Bei einem polymorphen Typ ist das z.B. nicht der Fall:
+
+   datatype 'a option = NONE | SOME of 'a
+
+Der Wert /SOME(2,3)/ muss im Speicher als
+
+   +----+---+     +---+---+
+   |SOME| *-+---->| 2 | 3 |
+   +----+---+     +---+---+
+
+repräsentiert werden, da polymorphe Funktionen sonst keine einheitliche Repräsentation für option-Werte vorfinden würden. Genauso muss /SOME()/ explizit gemacht werden:
+
+   +----+----+
+   |SOME| () +
+   +----+----+
+
+Als Konsequenz findet Konstruktorverschmelzung genau dann statt, wenn der Konstruktor in der Datatype-Deklaration syntaktisch ein mehrstelliges Record/Tupel-Argument hat oder nullstellig ist.
+
+Um diese Fälle zu unterscheiden, gibt es in der internen Typdarstellung einen speziellen abstrakten Typ /strict/, der nur für Konstruktorargumente benutzt wird und anzeigt, dass diese verschmolzen sind. Die exakte Darstellung von /option/ und /list/ in Alice ist daher:
+
+    option = mu. lambda a. [NONE : strict(unit), SOME : a]
+    list   = mu. lambda a. [nil : strict(unit), :: : strict(a * list(a))]
+
+Man beachte, dass /SOME/ kein striktes Argument hat. Selbst wenn /a/ mit einem Tupeltyp instanziiert wird, findet deshalb keine Konstruktorverschmelzung statt.
+
+Im Inspektor wirkt sich all dies auf zweierlei Art aus: erstens muss man beim Argumenttypen eines Konstruktors gucken, ob er in eine Applikation von /strict/ eingebettet ist, und zweitens muss davon abhängig der Wert anders zerlegt werden.
+
+Die Komponente "lib/system/UnsafeValue" bietet zunächst eine Funktion
+
+    val tag : 'a * lab vector -> int
+
+Diese bekommt einen Wert eines Summentypes, der sich hinter /'a/ verbirgt, und den sortierten Tagvektor dieser Summe - analog zur /proj/-Funktion für Records. Damit kann ermittelt werden, welchen Konstruktor der vorliegende Wert trägt (Index im Vektor). Mit der Funktion
+
+    val projTagged : 'a * lab vector * int -> 'b
+
+kann dann eines der verschmolzenen Argumente des Wertes selektiert werden. Dazu muss wiederum der Labelvektor des *Argumenttyps* des entsprechenden Konstruktors und der Index des gewünschten Feldes übergeben werden - genau wie bei /proj/. Entsprechend gibt es auch eine abkürzende Funktion
+
+    val projTaggedTuple : 'a * int * int -> 'b
+
+zum Zugriff auf Konstruktoren, deren Argument ein Tupel-Record ist.
+
+Argumente nicht verschmolzener Konstruktoren sind zu behandeln, als wären sie Teil eines 1-Tupels, das mit dem Konstruktor verschmolzen ist.
+
+Beispiele:
+
+    (* deconstruct a list value x *)
+    if tag(x, #[lab_cons, lab_nil]) = 1 then
+	(* x = nil *)
+	...
+    else
+	(* x = y::z *)
+	let
+	    val y = projTagged(x, #[lab_one, lab_two], 0)
+	    val z = projTagged(x, #[lab_one, lab_two], 1)
+	    (* or shorter: *)
+	    val y = projTaggedTuple(x, 2, 0)
+	    val z = projTaggedTuple(x, 2, 1)
+	in
+	    ...
+	end
+
+    (* deconstruct an option value x *)
+    if tag(x, #[lab_none, lab_some]) = 0 then
+	(* x = NONE *)
+	...
+    else
+	(* x = SOME y *)
+	let
+	    val y = projTaggedTuple(x, 1, 0)
+	in
+	    ...
+	end
+
+
+
+Exttypes
+--------
+
+Neben Datatypes gibt es noch ein weitere Form von Typen mit Konstruktoren, die sogenannten Extensible Datatypes. Bekanntestes Beispiel ist der Exception-Typ /exn/ von SML. Zu diesem lassen sich beliebig neue Konstruktoren hinzufügen:
+
+    exception A
+    exception B of int
+    exception C of int * int
+
+Alice verallgemeinert dies und erlaubt dem Programmierer eigene derartige Typen zu definieren:
+
+    exttype 'a t
+    constructor A : 'a t
+    constructor B of int : 'a t
+    constructor C of 'a * 'a : 'a t
+
+Ein Typ wie /t/ wird durch einen Typkonstruktor repräsentiert, der eine spezielle Kind besitzt. Um Exttypes zu erkennen, muss also die Kind von Typkonstruktoren abgefragt werden:
+
+    val isExtKind : typ -> bool
+
+Liefert diese Funktion der /Type/-Komponente /true/, so handelt es sich beim fraglichen Typ um einen Extensible Datatype. Werte eines solchen Typs können ähnlich wie Werte von Datatypes zerlegt werden. Mit
+
+    val con : 'a -> 'b
+
+kann ermittelt werden, welchen Konstruktor (/'b/) der Wert (/'a/) trägt. Konstruktoren von Extensible Datatypes werden selbst als spezielle Werte repräsentiert. Mit
+
+    val conName : 'b -> name
+
+kann der Name eines solchen Konstruktors ermittelt werden. Mit
+
+    val conType : 'b -> typ
+
+kann der Typ eines Konstruktor festgestellt werden.
+
+Die Argumente des Konstruktors werden wie bei normalen Datatypes zugegriffen - es gibt die analogen Operationen
+
+    val projConstructed: 'a * lab vector * int -> 'b
+    val projConstructedTuple: 'a * int * int -> 'b
+
+Auch Exttype-Konstruktoren werden verschmolzen. Der von /con/ gelieferte Typ kann deshalb ebenfalls eine Applikation des speziellen Typs /strict/ sein.
+
+Der Hauptunterschied zu normalen Datatypes ist also, dass die Konstruktoren und ihre Argumenttypen nicht aus dem Gesamttyp selbst ersichtlich sind (es gibt ja potentiell unendlich viele), sondern mittels /con/ und /conType/ aus dem jeweiligen Wert extrahiert werden müssen.

@@ -1,0 +1,130 @@
+Gert, Leif, and me discussed terminology and operations for transients in the
+Stockhausen context yesterday. These are the results. Note that the use of
+terms like future and promise differs from Oz. Our goal was to find names
+intuitive and speaking not only to the logic programmer and to get rid of the
+unsatisfactory term `logic variable'.
+
+We will collectively call logic variables, futures, etc. *transients*.
+Transients are either
+
+  * writable, or
+  * read-only
+
+and either
+
+  * concurrent (blocking), or
+  * sequential (throwing an exception).
+
+We will speak of *futures* (concurrent) and *holes* (sequential). Futures
+correspond to logic variables, while holes are a somewhat novel concept wrt Oz,
+whose main purpose from the functional view point is to build data structures
+with holes in it, that are filled in later.
+
+Accordingly, the operations to create them are:
+
+	future :	unit -> 'a
+	hole :		unit -> 'a
+
+And they are bound by
+
+	bind :		'a * 'a -> unit		(* bind a future *)
+	fill :		'a * 'a -> unit		(* fill a hole *)
+
+(Note: The name `bind' is not optimal, see below.)
+
+The function
+
+	promise :	'a -> 'a
+
+extracts a read-only view from a future or hole -- the caller of this operation
+promises to deliver a value later.
+
+The operation
+
+	isTransient :	'a -> bool
+
+allows to inquire the status of value.
+
+Finally,
+
+	await :		'a -> 'a
+
+waits for a future to be bound *and* returns its value (the name `wait' seemed
+too imperative, suggesting a return value of type unit). Note that this
+operation is not defined on holes, as they are sequential.
+
+The following operations represent the Multi Lisp like abstractions on futures:
+
+	concurrent :	(unit -> 'a) -> 'a
+	byNeed :	(unit -> 'a) -> 'a
+
+Both return a read-only future. By-need futures are a special case of read-only
+futures. (I avoided the name `delay' instead of `byNeed' here, since in the
+expression
+
+	byNeed (fn() => exp)
+
+evaluation of exp is delayed by the abstraction, while byNeed describes when to
+force the delayed evaluation. Does this make sense?)
+
+
+Modularisation
+==============
+
+Since there is usually no need to mix the use of sequential and concurrent
+transients, the library should provide them in separate structures:
+
+  structure Hole :			(* sequential transients *)
+    sig
+      exception Hole
+      exception Fill
+      val hole :	unit -> 'a
+      val fill :	'a * 'a -> unit		(* Fill *)
+      val promise :	'a -> 'a
+      val isTransient :	'a -> bool
+    end
+
+  structure Future :			(* concurrent transients *)
+    sig
+      exception Bind
+      val future :	unit -> 'a
+      val bind :	'a * 'a -> unit		(* Bind *)
+      val await :	'a -> 'a
+      val promise :	'a -> 'a
+      val isTransient :	'a -> bool
+    end
+
+(Note: The exception name Bind is already used in SML for pattern matching
+failure. So maybe we should find another name for the bind operation on
+futures. Suggestions?)
+
+The common functions are just imported and reexported from the more basic
+structure
+
+  structure Transient :
+    sig
+      val promise :	'a -> 'a
+      val isTransient :	'a -> bool
+      ...
+    end
+
+(Maybe this is redundant, however, and the two structures above could suffice.)
+
+The `concurrent' procedure is best put into the Thread structure:
+
+  structure Thread :			(* threads *)
+    sig
+      val concurrent :	(unit -> 'a) -> 'a
+      ...
+    end
+
+From the point of view of a lazy functional programmer, the byNeed function has
+nothing to do with threads, but is of quite general interest. It should
+probably be in the toplevel. Therefore, it will be defined in the SML standard
+structure General (together with function composition, assignment, etc.):
+
+  structure General :			(* SML standard structure *)
+    sig
+      val byNeed :	(unit -> 'a) -> 'a
+      ...
+    end

@@ -1,0 +1,48 @@
+OPEN SUMS
+=========
+
+Stockhausen generalises SML's exceptions to user-definable open sum types. They
+provide a typed alternative to names. The following syntax is used:
+
+	dec ::=		...
+			`constructor' dconbind
+
+	datbind ::=	...
+			tyvarseq tycon
+	
+	dconbind ::=	<`op'> vid <`of' ty> `:' tyvarseq longtycon <`and' dconbind>
+			<`op'> vid `=' <`op'> longvid <`and' dconbind>
+
+
+	spec ::=	...
+			`constructor' dcondesc
+
+	datdesc ::=	...
+			tyvarseq tycon
+
+	dcondesc ::=	vid <`of' ty> : tyvarseq longtycon <`and' dcondesc>
+
+You can declare an open datatype like follows:
+
+	datatype 'a message
+
+	constructor DoThis of int : 'a message
+	constructor DoThat of bool * 'a : 'a message
+	constructor StopIt : message
+	constructor Abort = StopIt
+
+Constructors can be added at any point. Like exceptions in SML, constructor
+declarations are dynamically generative, i.e. the following function returns a
+different constructor on each call:
+
+	fun genMsg() = let constructor C : 'a message in C end
+
+The type of genMsg of course is unit -> 'a message.
+
+Note that -- like exceptions -- open datatypes cannot admit equality (since it
+is unknown whether there will be any constructors for it prohibiting that).
+
+Exception declarations and specifications can be turned into a derived form,
+e.g.
+
+	exception Error of string    ==>    constructor Error of string : exn

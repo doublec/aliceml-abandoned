@@ -1,0 +1,162 @@
+Typing of Pickling and Tickets
+==============================
+
+Pickling (marshalling) requires a new approach in a
+statically typed language. I will give two alternative
+suggestions on how to tackle the problem in SML, and in a
+slightly extended version of SML. Both suggestions make
+use of SML's module system.
+
+
+Idea 1: A Pickle functor
+========================
+
+The system provides a builtin functor with the following
+signature:
+
+	functor Pickle(type t) :
+		sig
+		    val save : string * t -> unit
+		    val load : string -> t
+		end
+
+To pickle an arbitrary type, we just need to build an
+appropriate structure:
+
+	datatype my_type = A | B of int | C of my_type * my_type
+
+	structure PickleMyType = Pickle(type t = my_type)
+
+	val _ = PickleMyType.save("file", C(A, B 99))
+	val x = PickleMyType.load "file"
+
+The same idea can be used for providing tickets:
+
+	functor Connection(type t) :
+		sig
+		    type ticket
+		    val offer : t -> ticket
+		    val take : ticket -> t
+		end
+
++ No change is required for the SML type system. The
+  compiler just requires some magic to implement the
+  Pickle functor.
+
+- Only monomorphic values can be pickled.
+
+- Does not handle structures.
+
+
+Idea 2: Load and Save functors
+==============================
+
+The system provides two builtin functors:
+
+	signature UNIT = sig end
+
+	functor Save(val file : string
+		     signature SIG
+		     structure S : SIG) : UNIT
+
+	functor Load(val url : string
+		     signature SIG) : SIG
+
+This approach requires an extension to the static
+semantics of the SML module system: signatures must be
+allowed to appear as structure members (and therefore as
+functor arguments).
+
+The functor Save pickles an arbitrary structure. It is
+parameterised over the signature of that structure. As a
+result it delivers an empty dummy structure
+(corresponding to the use of type unit in the core
+language).
+
+The functor Load can load an arbitrary pickled
+structure, given the expected signature. It loads the
+structure and dynamically checks consistency with
+the demanded signature. On success, it delivers the
+structure. In case of error it will raise an exception.
+
+The functors can be used as follows:
+
+        signature MY_SIG =
+	  sig
+	    val head : 'a list -> 'a
+	  end
+
+	structure MyStruct =
+	  struct
+	    fun head(x::xs) = x
+	  end
+
+	structure _ =
+		Save(val file = "file"
+		     signature SIG = MY_SIG
+		     structure S = MyStruct)
+
+	structure MyStruct' =
+		Load(val url = "file"
+		     signature SIG = MY_SIG)
+
+For more flexibility it may be important to extend SML
+to allow structure declarations inside let, so that
+values can be (un)pickled inside functions and errors
+can be handled.
+
+The same idea can be used to model active objects,
+which are second class, but can have polymorphic
+methods.
+
+Of course, the Pickle functor can be
+implemented using Load and Save:
+
+	functor Pickle(type t) =
+	    struct
+		fun load url =
+		    let structure S =
+			   Load(val url = url
+			  	signature SIG = sig val x : t end)
+		    in S.x end
+
+		fun save(file, x) =
+		    let structure _ =
+			   Save(val file = file
+			  	signature SIG = sig val x : t end
+				structure S = struct val x = x end)
+		    in () end
+	    end
+
+
++ Full support for polymorphic objects.
+
++ Pickling of structures (and possibly functors)
+
+- Requires a modest extension of SML's module system.
+
+
+The required extensions to module typing (signatures
+inside structures; local structure declarations) are
+already implemented in OCaml, so there should be no
+fundamental problems.
+
+
+NOTE
+====
+
+OCaml also provides Marshalling, but in an unsafe way,
+via the structure
+
+	Marshal :
+	    sig
+		type extern_flags = No_sharing | Closures
+ 		val to_channel : out_channel -> 'a -> extern_flags list -> unit
+		val to_string : 'a -> extern_flags list -> string
+		val from_channel : in_channel -> 'a
+		val from_string : string -> int -> 'a
+		...
+	    end
+
+Our low-level interface (not visible to the user) will
+probably look similar.

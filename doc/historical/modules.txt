@@ -1,0 +1,165 @@
+Here is the syntax for modules in Stockhausen. In addition to SML it provides:
+
+- local modules
+- higher-order functors
+- manifest structures and values
+- signature members
+- a top signature
+- intersection types
+- parameterized signatures
+- first-class modules (see below)
+
+It introduces one main incompatibility with SML, namely that it removes the
+separation of namespaces between structure and functor identifiers. I do not
+see how this could be avoided without giving up considerable amounts of
+expressiveness in the system (SML/NJ has higher-order functors while retaining
+separate namespaces, but at the cost of treating functors only semi-first-class
+in the module language, requiring them to be wrapped into structures when
+passed around - I do not consider this very elegant, and it introduces further
+complications). Another minor incompatibility is that the multiple `include'
+derived form can longer be supported - this should not be critical.
+
+Structure declarations can now introduce higher-order modules (ie. functors). I
+decided to keep the keyword `structure' (and the syntactic classes strid,
+strexp, etc.) for compatibility reasons, however, although `module' might now
+be more appropriate. Functor declarations become derived forms, much like
+function declarations in the core language.
+
+Similarly, the language of signature expressions has been extended to cover
+functor types. For completeness, I also added a top type `any', although it
+might be of limited utility.
+
+Note that signatures can be structure members. Corresponding signature
+specifications may be abstract, similarly to types. This is necessary to enable
+us declaring our pickling functors. Adding it results in an undecidable type
+system (like O'Caml), but that seems to be no problem in practice since even
+the simplest examples of uncheckable programs are highly artificial. Moreover,
+I am planning to have parameterized signatures that I found to be very elegant
+and which allow more concise expression of sharing in many cases where `where'
+constraints are needed. They also increase expressiveness in combination with
+abstract signatures.
+
+SML's `where' constraints have been generalized to arbitrary intersection types.
+This is still a bit experimental but I am positive that it works - and it is
+useful. The `where' constraint found in SML degenerates to a derived form
+(beneath others).
+
+A further extension to the module type language is to allow not only manifest
+types and signature specifications in signatures, but also manifest values and
+structures. Most of this is already implemented in the elaborator (as it is
+quite simple) and it regains the ability to express structure sharing as in
+SML'90 as well as eg. exception sharing which sometimes is desirable.
+
+Last but not least I was forced to introduce `let' for signature expressions -
+otherwise there is no way to explain certain derived forms after generalizing to
+higher-order functors.
+
+
+Structures
+----------
+
+atstrexp ::=	`struct' dec `end'		structure
+		longstrid			structure identifier
+		`let' dec `in' strexp `end'	local declarations
+		`(' strexp `)'			parentheses
+appstrexp ::=	atstrexp
+		appstrexp atstrexp		functor application
+strexp ::=	appstrexp
+		strexp `:' sigexp		transparent constraint
+		strexp `:>' sigexp		opaque constraint
+		`fct' strpat `=>' strexp	functor
+
+strpat ::=	`(' strid `:' sigexp `)'
+
+
+Signatures
+----------
+
+atsigexp ::=	`any'				top
+		`sig' spec `end'		ground signature
+		longsigid			signature identifier
+		`let' dec `in' sigexp `end'	local declarations
+		`(' sigexp `)'			parentheses
+appsigexp ::=	atsigexp
+		appsigexp atstrexp		application of param. signature
+sigexp ::=	appsigexp
+		`fct' strpat `->' sigexp	functor
+		sigexp `where' sigexp		intersection
+
+sigbind ::=	sigid strpat_1 ... strpat_n `=' sigexp <`and' sigbind>	(n>=0)
+
+valdesc ::=	vid `:' ty <`and' valdesc>
+		vid <`:' ty> `=' longvid <`and' valdesc>
+typdesc ::=	tyvarseq tycon <`and' typdesc>
+		tyvarseq tycon `=' ty <`and' typdesc>
+strdesc ::=	strid `:' sigexp <`and' strdesc>
+		strid <`:' sigexp> `=' longstrid <`and' strdesc>
+sigdesc ::=	sigid strpat_1 .... strpat_n <`and' sigdesc>		(n>=0)
+		sigid strpat_1 .... strpat_n `=' sigexp <`and' sigdesc>	(n>=0)
+
+
+First-class modules
+-------------------
+
+If we want to have first-class modules then I would propose the following
+syntax. It is based on Russo's approach but is syntactically simpler as well as
+more flexible since it allows packages to be opened outside the core language.
+This cripples the possibility of applicative functors a la Leroy but those are
+incompatible with our pickling functors anyway. It remains an open question
+whether we can recover some sort of applicative functors nevertheless.
+
+strexp ::=	...
+		`unpack' atexp `:' sigexp	package elimination
+
+exp ::=		...
+		`pack' longstrid		package introduction
+
+ty ::=		...
+		`pack' longsigid		package type
+
+
+Derived forms
+-------------
+
+atstrexp:	`(' dec `)'
+strpat:		`(' spec `)'
+		`(' `_' `:' sigexp `)'
+
+dec:		`functor' fstrbind
+
+strbind:	`_' <`:' sigexp> `=' strexp <`and' strbind>
+fstrbind:	strid strpat_1 ... strpat_n `=' strexp <`and' fstrbind>	(n>=1)
+
+sigexp:		sigexp `where' rea
+rea:		`val' longvid `=' longvid
+		`constructor' longvid `=' longvid
+		`type' tyvarseq longtycon `=' ty
+		`structure' longstrid `=' longstrid
+		`signature' longsigid strpat_1 ... strpat_n `=' sigexp	(n>=0)
+
+Discussion: Should we have a derived form for functor specifications? Like
+
+spec:		`functor' fstrdesc
+fstrdesc:	strid strpat_1 ... strpat_n `:' sigexp <`and' fstrdesc>	(n>=1)
+
+This is the syntax used to specify functors in SML/NJ. If we do this however,
+for symmetry reasons there should also be something along the lines of
+
+spec:		`fun' fvaldesc
+fvaldesc:	vid patdesc_1 ... patdesc_n `:' ty <`and' fvaldesc>	(n>=1)
+patdesc:	`(' vid_1 `:' ty_1 `,' ... `,' vid_n `:' ty_n `)'	(n>=1)
+
+to describe functions, although it seems like a bit of an overkill. To be
+really complete one could even imagine
+
+rea:		`fun' longvid `=' longvid
+		`functor' longstrid `=' longstrid
+		`exception' longvid `=' longvid
+
+It is also worth considering
+
+sigexp:		sigexp `->' sigexp
+
+as a derived form for
+
+		`fct' `(' `_' `:' sigexp `)' `->' sigexp
