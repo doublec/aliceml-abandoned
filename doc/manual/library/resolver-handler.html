@@ -55,7 +55,7 @@
 
 	val <A href="#parse">parse</A> : string -> handler list
 
-	val <A href="#apply">apply</A> : handler list -> <A href="url.html#t">Url.t</A> -> (<A href="url.html#t">Url.t</A> * handler list) option
+	val <A href="#apply">apply</A> : <A href="url.html#t">Url.t</A> -> handler list -> (<A href="url.html#t">Url.t</A> * handler list) option
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -158,16 +158,26 @@
     </DD>
 
     <DT>
-      <TT><A name="apply">apply</A> <I>handlers</I> <I>url</I></TT>
+      <TT><A name="apply">apply</A> <I>url</I> <I>handlers</I></TT>
     </DT>
     <DD>
-      <P>rewrites <I>url</I> using <I>handlers</I>.  The <I>handlers</I>
-	are tested for applicability in order.  If an applicable handler is
-	found, returns <TT>SOME (<I>url'</I>, <I>handlers'</I>)</TT>, where
-	<TT><I>url'</I></TT> is the result of the applicable handler and
-	<TT><I>handlers'</I></TT> is the list of handlers that have not
-	been tested for applicability.  If no handler is applicable,
-	returns <TT>NONE</TT>.</P>
+      <P>rewrites <TT><I>url</I></TT> using <TT><I>handlers</I></TT>.
+	The <TT><I>handlers</I></TT> are tested for applicability in order.
+	If an applicable handler is found, returns <TT>SOME (<I>url'</I>,
+	<I>handlers'</I>)</TT>, where <TT><I>url'</I></TT> is the result
+	of the applicable handler and <TT><I>handlers'</I></TT> is the list
+	of handlers that have not been tested for applicability.  If no
+	handler is applicable, returns <TT>NONE</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="tracingApply">tracingApply</A> <I>trace</I> <I>url</I> <I>handlers</I></TT>
+    </DT>
+    <DD>
+      <P>rewrites <TT><I>url</I></TT> using <TT><I>handlers</I></TT>,
+	similarly to <TT><A href="apply">apply</A></TT>, and outputs
+	tracing information about tested handlers and their results using
+	<TT><I>trace</I></TT>.</P>
     </DD>
   </DL>
 
