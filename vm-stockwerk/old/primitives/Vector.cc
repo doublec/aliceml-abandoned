@@ -43,6 +43,8 @@ DEFINE2(Vector_sub) {
 DEFINE2(Vector_tabulate) {
   DECLARE_INT(length, x0);
   DECLARE_CLOSURE(closure, x1);
+  if (length == 0)
+    RETURN(Vector::New(0)->ToWord());
   if (length < 0 || static_cast<u_int>(length) > Vector::maxLen)
     RAISE(GlobalPrimitives::General_Size);
   taskStack->PushFrame(3);
@@ -52,14 +54,14 @@ DEFINE2(Vector_tabulate) {
   taskStack->
     PushCall(Closure::FromWordDirect(GlobalPrimitives::Vector_tabulate_cont));
   taskStack->PushCall(closure);
-  RETURN_INT(0);
+  RETURN_INT(0); // applying the closure for the first time
 } END
 
 DEFINE1(Vector_tabulate_cont) {
   u_int index = Store::DirectWordToInt(taskStack->GetWord(0));
   Vector *vector = Vector::FromWordDirect(taskStack->GetWord(1));
   Closure *closure = Closure::FromWordDirect(taskStack->GetWord(2));
-  vector->Init(index, x0); //--** must use ReplaceArg!
+  vector->Replace(index, x0);
   index++;
   if (index == vector->GetLength())
     RETURN(vector->ToWord());
@@ -70,7 +72,7 @@ DEFINE1(Vector_tabulate_cont) {
   taskStack->
     PushCall(Closure::FromWordDirect(GlobalPrimitives::Vector_tabulate_cont));
   taskStack->PushCall(closure);
-  RETURN_INT(index);
+  RETURN_INT(index); // applying the closure
 } END
 
 void Primitive::RegisterVector() {
