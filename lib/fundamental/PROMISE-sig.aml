@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,7 +19,7 @@ import __primitive type unit and exn from "ToplevelTypes"
 
 signature PROMISE =					(**)
 sig
-    type 'a promise
+    __eqeqtype 'a promise
     type 'a t = 'a promise
 
     exception Promise
