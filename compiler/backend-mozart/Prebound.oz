@@ -337,7 +337,6 @@ prepare
 	       unit
 	    end
 	 end
-      'LargeWord.wordSize': 32
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Math.acos': Acos
       'Math.acosh': Float.acosh
@@ -523,18 +522,18 @@ prepare
 	    {For 1 N 1 proc {$ I} V.I = {F I - 1} end}
 	    V
 	 end
-      'Word.+': BootWord.'+'
-      'Word.-': BootWord.'-'
-      'Word.*': BootWord.'*'
-      'Word.<<': BootWord.'<<'
-      'Word.>>': BootWord.'>>'
-      'Word.~>>': BootWord.'~>>'
-      'Word.<': BootWord.'<'
-      'Word.>': BootWord.'>'
-      'Word.<=': BootWord.'=<'
-      'Word.>=': BootWord.'>='
-      'Word.andb': BootWord.'andb'
-      'Word.div':
+      'Word8.+': BootWord.'+'
+      'Word8.-': BootWord.'-'
+      'Word8.*': BootWord.'*'
+      'Word8.<<': BootWord.'<<'
+      'Word8.>>': BootWord.'>>'
+      'Word8.~>>': BootWord.'~>>'
+      'Word8.<': BootWord.'<'
+      'Word8.>': BootWord.'>'
+      'Word8.<=': BootWord.'=<'
+      'Word8.>=': BootWord.'>='
+      'Word8.andb': BootWord.'andb'
+      'Word8.div':
 	 fun {$ W1 W2}
 	    try
 	       {BootWord.'div' W1 W2}
@@ -543,12 +542,13 @@ prepare
 	       unit
 	    end
 	 end
-      'Word.fromInt\'': BootWord.make
-      'Word.fromWord\'':
-	 fun {$ N W} {BootWord.make N {BootWord.toInt W}} end
-      'Word.fromWordX\'':
-	 fun {$ N W} {BootWord.make N {BootWord.toIntX W}} end
-      'Word.mod':
+      'Word8.fromInt':
+	 fun {$ I} {BootWord.make 8 I} end
+      'Word8.fromLargeWord':
+	 fun {$ W} {BootWord.make 8 {BootWord.toInt W}} end
+      'Word8.fromLargeWordX':
+	 fun {$ W} {BootWord.make 8 {BootWord.toIntX W}} end
+      'Word8.mod':
 	 fun {$ W1 W2}
 	    try
 	       {BootWord.'mod' W1 W2}
@@ -557,10 +557,59 @@ prepare
 	       unit
 	    end
 	 end
-      'Word.notb': BootWord.notb
-      'Word.orb': BootWord.orb
-      'Word.toInt': BootWord.toInt
-      'Word.toIntX': BootWord.toIntX
-      'Word.wordSize': 31
-      'Word.xorb': BootWord.'xorb')
+      'Word8.notb': BootWord.notb
+      'Word8.orb': BootWord.orb
+      'Word8.toInt': BootWord.toInt
+      'Word8.toIntX': BootWord.toIntX
+      'Word8.toLargeWord':
+	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
+      'Word8.toLargeWordX':
+	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
+      'Word8.wordSize': 31
+      'Word8.xorb': BootWord.'xorb'
+      'Word31.+': BootWord.'+'
+      'Word31.-': BootWord.'-'
+      'Word31.*': BootWord.'*'
+      'Word31.<<': BootWord.'<<'
+      'Word31.>>': BootWord.'>>'
+      'Word31.~>>': BootWord.'~>>'
+      'Word31.<': BootWord.'<'
+      'Word31.>': BootWord.'>'
+      'Word31.<=': BootWord.'=<'
+      'Word31.>=': BootWord.'>='
+      'Word31.andb': BootWord.'andb'
+      'Word31.div':
+	 fun {$ W1 W2}
+	    try
+	       {BootWord.'div' W1 W2}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'Word31.fromInt':
+	 fun {$ I} {BootWord.make 31 I} end
+      'Word31.fromLargeWord':
+	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
+      'Word31.fromLargeWordX':
+	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
+      'Word31.mod':
+	 fun {$ W1 W2}
+	    try
+	       {BootWord.'mod' W1 W2}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'Word31.notb': BootWord.notb
+      'Word31.orb': BootWord.orb
+      'Word31.toInt': BootWord.toInt
+      'Word31.toIntX': BootWord.toIntX
+      'Word31.toLargeWord':
+	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
+      'Word31.toLargeWordX':
+	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
+      'Word31.wordSize': 31
+      'Word31.xorb': BootWord.'xorb')
 end
