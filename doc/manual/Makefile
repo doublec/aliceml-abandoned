@@ -1,6 +1,13 @@
 PHP = php
 
-ifeq ($(TARGET), seam)
+ifeq ($(TARGET), mozart)
+INTEROP = interop.html
+CONSTRAINTS = constraints_mozart.html
+PLATFORM_LIB = fd.html fs.html space.html search.html \
+	linear.html explorer.html \
+	gtk.html gtk-canvas.html gtk-overview.html gdk.html
+PLATFORM = mozart
+else
 INTEROP =
 CONSTRAINTS = constraints_gecode.html
 PLATFORM_LIB = \
@@ -8,13 +15,6 @@ PLATFORM_LIB = \
 	linear.html explorer.html \
 	gtk.html gtk-canvas.html gtk-overview.html gdk.html
 PLATFORM = seam
-else
-INTEROP = interop.html
-CONSTRAINTS = constraints_mozart.html
-PLATFORM_LIB = fd.html fs.html space.html search.html \
-	linear.html explorer.html \
-	gtk.html gtk-canvas.html gtk-overview.html gdk.html
-PLATFORM = mozart
 endif
 
 PREFIX = /opt/alice-devel/doc
