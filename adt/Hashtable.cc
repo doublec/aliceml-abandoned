@@ -182,7 +182,7 @@ HashTable *HashTable::New(hashkeytype type, u_int size) {
     arr->InitArg(i, HashNode::New()->ToWord());
   }
   
-  return FromBlock(p);
+  return (HashTable *) p;
 }
 
 void HashTable::InsertItem(word key, word value) {
@@ -202,6 +202,15 @@ void HashTable::InsertItem(word key, word value) {
   
   entry->SetKey(key);
   entry->SetValue(value);
+}
+
+void HashTable::DeleteItem(word key) {
+  u_int keyval    = FindKey(key);
+  HashNode *entry = GetEntry(keyval);
+
+  if (!entry->IsEmpty()) {
+    entry->MakeEmpty();
+  }
 }
 
 int HashTable::IsMember(word key) {
