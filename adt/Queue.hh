@@ -28,19 +28,19 @@ private:
   static const u_int ARRAY_POS = 3;
 
   u_int GetWriteIndex() {
-    return Store::UnsafeWordToInt(GetArg(WRITE_INDEX_POS));
+    return Store::DirectWordToInt(GetArg(WRITE_INDEX_POS));
   }
   void SetWriteIndex(u_int writeIndex) {
     ReplaceArg(WRITE_INDEX_POS, writeIndex);
   }
   u_int GetReadIndex() {
-    return Store::UnsafeWordToInt(GetArg(READ_INDEX_POS));
+    return Store::DirectWordToInt(GetArg(READ_INDEX_POS));
   }
   void SetReadIndex(u_int readIndex) {
     ReplaceArg(READ_INDEX_POS, readIndex);
   }
   Block *GetArray() {
-    return Store::UnsafeWordToBlock(GetArg(ARRAY_POS));
+    return Store::DirectWordToBlock(GetArg(ARRAY_POS));
   }
   void SetArray(Block *array) {
     ReplaceArg(ARRAY_POS, array->ToWord());
