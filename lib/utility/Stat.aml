@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure UnsafeValue  from "../lib/system/UnsafeValue"
+import structure UnsafeValue  from "../system/UnsafeValue"
 import structure GlobalStamp  from "GlobalStamp"
 import functor   MkHashImpMap from "MkHashImpMap"
 import signature STAT         from "STAT-sig"
