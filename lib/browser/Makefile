@@ -54,6 +54,6 @@ distclean: clean
 	-rm -f Makefile.depend
 
 install: LinkedInspector.stc
-	install -d $(INSTALLTO)
+	mkdir -p -m 775 $(INSTALLTO) #install -d $(INSTALLTO)
 	install -c -m444 LinkedInspector.stc $(INSTALLTO)/Inspector.stc
 	install -c -m444 stop.xbm $(INSTALLTO)/stop.xbm
