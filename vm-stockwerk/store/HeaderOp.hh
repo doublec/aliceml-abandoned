@@ -71,6 +71,12 @@ public:
     AssertStore(p != INVALID_POINTER);
     return (((u_int *) p)[-1] & CHILDISH_MASK);
   }
+  static u_int TranslateSize(u_int size) {
+    if (size <= MAX_BLOCKSIZE) {
+      return size;
+    }
+    return ((((size + BIGSIZE_MIN) >> SIZESHIFT_MASK) << SIZESHIFT_MASK));
+  }
 };
 
 #endif __STORE__HEADEROP_HH__
