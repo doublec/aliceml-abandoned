@@ -1,0 +1,26 @@
+
+Installation instructions
+=========================
+
+To compile the GTK binding for Alice (SEAM) you need:
+- the GTK+ 2.x libraries
+- the GnomeCanvas library (libgnomecanvas)
+- the pkgconfig utility
+
+Let's assume you have installed the libraries and accompanying programs/files
+into the directories /prefix/lib, /prefix/lib/pkgconfig, /prefix/bin, etc. 
+(where "prefix" is usually "usr").
+
+Now, set the GTK_PREFIX environment variable to "/prefix/"
+(not to "/prefix/lib/"!)
+
+Then execute the BUILD_ALL script in the binding directory.
+This should build the whole binding, including sample files in the "samples"
+directory.
+
+Use "make distclean" to remove all files created during the build process.
+
+
+To run Alice applications that use the GTK libraries, you may need to make
+your LD_LIBRARY_PATH (Linux) or PATH (Windows) point to the location
+of the libraries.

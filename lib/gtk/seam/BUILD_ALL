@@ -2,11 +2,18 @@
 
 PC_OPTS="gtk+-2.0 libgnomecanvas-2.0"
 
+# GTK_PREFIX variable: shortcut to define several paths
 if test "$GTK_PREFIX" ; then
   echo "BUILD_ALL: Using GTK library root prefix: $GTK_PREFIX."
+
+  # path to pkgconfig's package descriptions (*.pc)
   export PKG_CONFIG_PATH=$GTK_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
-  export PATH=$GTK_PREFIX/bin:$GTK_PREFIX/lib:$PATH
+
+  # override the "prefix" setting in the package descriptions
   PC_OPTS="$PC_OPTS --define-variable=prefix=$GTK_PREFIX" ;
+
+  # make Windows find DLLs during build process
+  export PATH=$GTK_PREFIX/bin:$GTK_PREFIX/lib:$PATH
 fi
 
 # check libs
