@@ -194,7 +194,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	    let
 		val (tyvarseq', ty') = lookupTyCon(tycon, typbind)
 	    in
-		replaceTy (tyvarseq',tyseq) ty'
+		replaceTy (tyvarseq',tyseq') ty'
 	    end
 	    handle Option => G.TYCONTy(I, tyseq', longtycon)
 	end
