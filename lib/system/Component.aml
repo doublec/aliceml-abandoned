@@ -23,6 +23,7 @@ import structure OS                from "OS"
 import structure Reflect           from "Reflect"
 import structure Url               from "Url"
 import structure Resolver          from "Resolver"
+import structure UnsafeValue       from "UnsafeValue"
 import structure UnsafeComponent   from "UnsafeComponent"
 import structure DynMatch          from "DynMatch"
 import structure UrlMap            from "UrlMap"
@@ -199,8 +200,10 @@ struct
 					| NONE => " linked explicitly")
 	    in
 		trace (!logStream, "type-checking " ^ message);
-		matchWith (rea, inf, importInf)
-		handle Inf.Mismatch m =>
+		UnsafeValue.catch
+		  (fn (exn, bt) =>
+		   case exn of
+		     Inf.Mismatch m =>
 		     (trace (!logStream, "type-checking failed");
 		      trace (!logStream, "signature expected" ^
 					 (case baseUrlOpt' of
@@ -217,20 +220,21 @@ struct
 					     pathToString path ^ " ->\n" ^
 					     infToString (SOME inf)^ "\n" ^ s)
 					  "" (#inf_rea rea)) (#typ_rea rea));
-		      raise Failure (url,
-				     Mismatch {component = url,
+		      UnsafeValue.reraise
+		      (Failure (url, Mismatch {component = url,
 					       request = baseUrlOpt,
-					       cause = m}))
+					       cause = m}), bt))
 		   | Failure (url', e) =>
 		     (trace (!logStream, "exception " ^ exnName e ^
 					 " propagated from " ^
 					 Url.toString url' ^
 					 " during type-checking");
-		      raise Failure (url, e))
+		      UnsafeValue.reraise (Failure (url, e), bt))
 		   | e =>
 		     (trace (!logStream, "internal exception " ^ exnName e ^
 					 " during type-checking");
-		      raise Failure (url, Internal e));
+		      UnsafeValue.reraise (Failure (url, Internal e), bt)),
+		   fn _ => matchWith (rea, inf, importInf));
 		trace (!logStream, "type-checked  " ^ message);
 		mod
 	    end
@@ -243,8 +247,11 @@ struct
 	      | UrlMap.NEW p =>
 		    let
 			val result =
-			    lazy eval' (url, load url handle e =>
-						      raise Failure (url, e))
+			    lazy eval' (url, UnsafeValue.catch
+					     (fn (e, bt) =>
+						 UnsafeValue.reraise
+						 (Failure (url, e), bt),
+					      fn _ => load url))
 			val entry = (lazy #1 result, lazy #2 result)
 		    in
 			Promise.fulfill (p, entry); entry
@@ -290,12 +297,16 @@ val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
 					      importInf, SOME baseUrl))
 			       imports
 		val _ = trace (!logStream, "evaluating " ^ Url.toString baseUrl)
-		val mod = body imports'
-			 handle e as (non (Failure (_, _))) =>
-			     (trace (!logStream,
-				     "evaluation failed in " ^
-				     Url.toString baseUrl);
-			      raise Failure (baseUrl, Eval e))
+		val mod = UnsafeValue.catch
+			  (fn (e as Failure _, bt) =>
+			      UnsafeValue.reraise (e, bt)
+			    | (e, bt) =>
+			      (trace (!logStream,
+				      "evaluation failed in " ^
+				      Url.toString baseUrl);
+			       UnsafeValue.reraise (Failure (baseUrl, Eval e),
+						    bt)),
+			   fn _ => body imports')
 		val _ = trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
 		val dynInf =
 		    case inf of
