@@ -1,18 +1,21 @@
-structure AbsSyn :> ABS_SYN=
-    struct
+import structure BoolVector         from "Container"
+
+
+signature ABS_SYN =
+    sig
 
 	type position = int * int
 
 
 	exception Error of string
 
-	(* resulting string must be something usable within an identifier
-	 * because it is used to generate lexer-names for regcases
-	 *)
-	fun posToString (a, b) = if a = b then  Int.toString a
-				 else Int.toString a ^ "_" ^ Int.toString b
 
-	val errorFile = ref "?"
+	(* make position printable *)
+	val posToString : position -> string
+
+
+	(* stores the actual filename for error-messages *)
+	val errorFile : string ref
 
 
 	datatype regexp = 
@@ -33,7 +36,6 @@ structure AbsSyn :> ABS_SYN=
 	  | PAREXP of lex list * position
 	  | REGCASE of atexp list * lmatch * position
 
-
 	and exp = EXP of atexp list * position
 
 
@@ -52,3 +54,4 @@ structure AbsSyn :> ABS_SYN=
 	  | LEX of lexbind list * position
 
     end
+

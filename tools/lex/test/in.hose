@@ -1,5 +1,4 @@
-use "../LEXER-sig.sml";
-use "../Lexer.sml";
+import structure Lexer      from "x-alice:/lib/lex/Lexer"
 
 fun e () = OS.Process.exit OS.Process.success
 
@@ -168,7 +167,7 @@ fun get () = getList (TextIO.openIn "in.hose.sml") []
 (* regcase test *)
 
 fun what () =
-    regcase (TextIO.inputLine TextIO.stdIn) of
+    regcase (valOf ( TextIO.inputLine TextIO.stdIn) ) of
      "b" _ *       => ( print "\nDa war ein 'b' am Anfang!\n" )
      | _ {1,5} "\n" => ( print "\nDas '\\n' der Zeile wird mit uebergeben!\n" )
 

@@ -1,3 +1,9 @@
+import signature EXTRACT            from "EXTRACT-sig"
+import structure AbsSyn             from "AbsSyn"
+import structure IntMap            
+       structure StringMap          from "Container"
+
+
 structure Extract :> EXTRACT= 
     struct
 
@@ -53,7 +59,7 @@ structure Extract :> EXTRACT=
 		val map' = fromAtL (atl', map)
 		val lexid = "reglex" ^ posToString po
 		val map'' =
-		    if StringMap.inDomain (map', lexid)
+		    if StringMap.member (map', lexid)
 			then eError("lexer id already defined: " ^ lexid, po)
 		    else StringMap.insert(map', lexid, lm)
 		val map''' = fromLm (lm, map'') 
@@ -65,7 +71,7 @@ structure Extract :> EXTRACT=
 
 	and fromLbL ( (LEXBIND (s, lm, po) ) :: lbl, map) = 
 	    let
-		val map' = if StringMap.inDomain (map,s)
+		val map' = if StringMap.member (map,s)
 			       then eError("lexer id already defined: " ^ s, po)
 			   else StringMap.insert(map, s, lm)
 		val map'' = fromLm (lm, map')

@@ -1,3 +1,6 @@
+import signature LEXER          from "LEXER-sig"
+
+
 structure Lexer :> LEXER =
     struct
 

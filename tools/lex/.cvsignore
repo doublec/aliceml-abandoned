@@ -1,7 +1,5 @@
-CM
-.cm
-*~
-*-image.*
-hose.grm.sig
-hose.grm.sml
-hose.lex.sml
+*.alc
+Makefile.depend
+HOSE_PARSER-sig.aml
+HoseParser.aml
+HoseLexer.aml

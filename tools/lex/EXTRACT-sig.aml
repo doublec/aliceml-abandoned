@@ -1,3 +1,7 @@
+import structure AbsSyn     from "AbsSyn"
+import structure StringMap  
+       structure IntMap     from "Container"
+
 signature EXTRACT =
     sig
 

@@ -1,3 +1,8 @@
+import signature OUTPUT     from "OUTPUT-sig"
+import structure AbsSyn     from "AbsSyn"
+import structure IntMap    
+       structure StringMap  from "Container"
+
 structure Output :> OUTPUT =
     struct
 	
@@ -239,7 +244,7 @@ structure Output :> OUTPUT =
 	 *)
 	fun printTransLbL say lexid dtran =
 	    let
-		val tranList = IntMap.listItemsi dtran
+		val tranList = IntMap.toList dtran
 		    
 		val bigTable =
 		    case List.find (fn (x, _ ) => x > 255) tranList of
@@ -283,7 +288,7 @@ structure Output :> OUTPUT =
 	    let
 		val maxState = ref ~1
 		val printedStates = ref 0
-		val numStates = IntMap.numItems finstates
+		val numStates = IntMap.size finstates
 		    
 		fun pretty pos =
 		    let
@@ -295,7 +300,7 @@ structure Output :> OUTPUT =
 		    end
 		
 		fun printOne state =
-		    case IntMap.find(finstates, state) of
+		    case IntMap.lookup(finstates, state) of
 			SOME pos => say [pretty pos]
 		      | NONE     => (++printedStates;
 				     say ["0 (* unused state 0 *)"] )
@@ -439,7 +444,7 @@ structure Output :> OUTPUT =
 		and printLexbindList ((LEXBIND (lexid, _, _)) :: lbl, idList ) =
 		    let
 			val (finstates, dtran, atMap) =
-					valOf (StringMap.find(autoMap, lexid) )
+					valOf (StringMap.lookup(autoMap, lexid) )
 					
 			val pTransLbL = printTransLbL say lexid
 					

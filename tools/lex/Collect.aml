@@ -1,3 +1,9 @@
+import structure AbsSyn     from "AbsSyn"
+import signature COLLECT    from "COLLECT-sig"
+import structure StringMap  
+       structure BoolVector from "Container"
+
+
 structure Collect :> COLLECT =
     struct
 
@@ -13,7 +19,7 @@ structure Collect :> COLLECT =
 	 * returns the regexp for the id
 	 *)
 	fun lookup (map, id, po) = 
-	    case StringMap.find (map, id) of
+	    case StringMap.lookup (map, id) of
 		SOME (re, _ ) => re
 	      | NONE          => cError( "unbound regid '" ^ id ^ "'", po)
 
@@ -22,7 +28,7 @@ structure Collect :> COLLECT =
 	 * inserts the regexp for the regid into the map and returns the new Map
 	 *)
 	fun insert (map, id, (re, po) ) =
-	    if StringMap.inDomain (map, id)
+	    if StringMap.member (map, id)
 		then cError( "regid '"  ^ id ^ "' already declared", po)
 	    else StringMap.insert(map, id, (re, po))
 

@@ -1,3 +1,9 @@
+import structure AbsSyn         from "AbsSyn"
+import structure IntMap
+       structure StringMap      from "Container"
+import structure Extract        from "Extract"
+
+
 signature TABLE =
     sig
 

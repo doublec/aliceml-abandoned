@@ -1,3 +1,8 @@
+import structure AbsSyn         from "AbsSyn"
+import structure TextIO         from "x-alice:/lib/system/TextIO"
+import structure Table          from "Table"
+
+
 signature OUTPUT =
     sig
 

@@ -1,3 +1,6 @@
+import structure TextIO                 from "x-alice:/lib/system/TextIO"
+
+
 signature LEXER =
     sig
 

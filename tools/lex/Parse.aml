@@ -1,11 +1,20 @@
+import signature PARSE      from "PARSE-sig"
+import structure MkLexer    from "HoseLexer"
+import structure LrParser   from "x-alice:/lib/ml-yacc/parser2"
+import functor Join         from "x-alice:/lib/ml-yacc/join"
+import functor MkLrVals     from "HoseParser"
+import structure AbsSyn     from "AbsSyn"
+
+
+
 structure Parse :> PARSE =
     struct
 
 	(* structure deklarations for ml-yacc and ml-lex *)
 
-	structure HoseLrVals = HoseLrValsFun(structure Token = LrParser.Token)
+	structure HoseLrVals = MkLrVals(structure Token = LrParser.Token)
 	    
-	structure HoseLex = HoseLexFun(structure Tokens = HoseLrVals.Tokens);
+	structure HoseLex    = MkLexer(structure Tokens = HoseLrVals.Tokens);
 
 	structure HoseParser = Join(structure LrParser = LrParser
 				    structure ParserData = HoseLrVals.ParserData

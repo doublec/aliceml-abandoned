@@ -38,7 +38,7 @@ fun countlines s =
 %%
 
 
-%header (functor HoseLexFun(structure Tokens: Hose_TOKENS));
+%header (functor MkLexer(structure Tokens: Parser_TOKENS));
 
 %s COMMENT;
 

@@ -1,3 +1,6 @@
+import structure AbsSyn         from "AbsSyn"
+
+
 signature COLLECT =
     sig
 

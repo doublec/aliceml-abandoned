@@ -188,7 +188,7 @@ fun addEof [] ys = rev ys
 %%
 
 
-
+%header (functor MkLrVals (structure Token: TOKEN))
 
 
 %eop EOF
@@ -242,7 +242,7 @@ fun addEof [] ys = rev ys
         | atexp' of atexp
 	| atexp of atexp
 
-%name Hose
+%name Parser
 
 %noshift EOF
 %nodefault

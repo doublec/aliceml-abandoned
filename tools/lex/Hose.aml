@@ -1,5 +1,18 @@
+import signature HOSE           from "HOSE-sig"
+import structure TextIO         from "x-alice:/lib/system/TextIO"
+import structure OS             from "x-alice:/lib/system/OS"
+import structure AbsSyn         from "AbsSyn"
+import structure Collect        from "Collect"
+import structure Parse          from "Parse"
+import structure Extract        from "Extract"
+import structure Table          from "Table"
+import structure Output         from "Output"
+
+
 structure Hose :> HOSE =
     struct
+
+    val binName = "aliceyacc"
 
 	val inFile = ref ""
 	val outFile = ref ""
@@ -12,7 +25,7 @@ structure Hose :> HOSE =
 
 	fun handleEx (AbsSyn.Error s) = printEx s
 	  | handleEx exn =
-	    printEx ("Hose: unhandled internal exception: "
+	    printEx (binName ^ ": unhandled internal exception: "
 		     ^ General.exnName exn ^ "\n")
 
 
@@ -42,7 +55,11 @@ structure Hose :> HOSE =
 	    end
 
 
-	fun usage() = printEx "Usage: hose infile [-o outfile]\n"
+	fun usage() = printEx ("Usage: " ^ binName ^" infile [-o outfile]\n"  ^
+                    "Report bugs using our online bug-tracking system:\n" ^
+                    "http://www.ps.uni-sb.de/alice/bugzilla\n") 
+
+
 
 	    
 	fun start process = (process(); OS.Process.success)
@@ -51,17 +68,18 @@ structure Hose :> HOSE =
 	fun setFiles infile outfile = (inFile := infile; outFile := outfile)
 
 
-	fun main' [infile, "-o", outfile] = (setFiles infile outfile;
-					     start hose) 
+	fun  main' [infile, "-o", outfile] = (setFiles infile outfile;
+					                      start hose) 
 	  | main' ["-o", outfile, infile] = (setFiles infile outfile;
 					     start hose) 
-	  | main' [infile]                = (setFiles infile (infile ^ ".sml");
-					     start hose)
+	  | main' [infile]                = (setFiles infile ( infile ^ ".aml" );
+					                     start hose)
 	  | main' _                       = usage () 
 
 
 	fun main() =
 	    let
+        (*
 		(* ugly hack to circumvent the problem that "hose-image"
 		 * is sometimes an element of the CommandLine.arguments()
 		 * (Windows)
@@ -69,7 +87,10 @@ structure Hose :> HOSE =
 		val args = case CommandLine.arguments() of
 		    ("hose-image"::xs) => xs
 		  | xs                 => xs
+          *)
+        val args = CommandLine.arguments ()
 	    in
+        
 		OS.Process.exit(main' args)
 	    end
 	handle (IO.Io {name,function="openIn",cause}) =>
@@ -81,3 +102,6 @@ structure Hose :> HOSE =
 	     | exn => handleEx exn
        
     end
+
+
+val _   = Hose.main () 
