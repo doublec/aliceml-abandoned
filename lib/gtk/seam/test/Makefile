@@ -18,7 +18,7 @@ all: gtktest.stc
 	$(ALICEC) -c $< -o $@
 
 depend:
-	$(CC) -M *.cc > Makefile.depend
+	$(CC) -M *.cc $(FLAGS) > Makefile.depend
 	$(ALICEDEP) *.aml >> Makefile.depend
 
 -include Makefile.depend
