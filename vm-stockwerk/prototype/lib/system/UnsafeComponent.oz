@@ -83,7 +83,7 @@ define
 	 else
 	    try {Pickle.load HU TaskStack}
 	    catch E=system(os(os ...) ...) then
-	       try continue(arg({Pickle.load HU#'.'#Extension}) TaskStack.2)
+	       try {Pickle.load HU#'.'#Extension TaskStack}
 	       catch system(os(os ...) ...) then
 		  exception(nil con(IoException
 				    I_name: U
