@@ -62,12 +62,12 @@ int main(void) {
   Store::MemStat();
   Store::ForceGCGen(0);
   std::printf("GCing gen 0...\n");
-  root = Store::DoGC(root);
+  Store::DoGC(root);
   Store::MemStat();
 #else
   if (Store::NeedGC()) {
     std::printf("GCing..\n");
-    root = Store::DoGC(root);
+    Store::DoGC(root);
   }
 #endif
 
@@ -82,12 +82,12 @@ int main(void) {
   Store::MemStat();
   std::printf("GCing gen 0,1...\n");
   Store::ForceGCGen(1);
-  root = Store::DoGC(root);
+  Store::DoGC(root);
   Store::MemStat();
 #else
   if (Store::NeedGC()) {
     std::printf("GCing..\n");
-    root = Store::DoGC(root);
+    Store::DoGC(root);
   }
 #endif
 
@@ -100,12 +100,12 @@ int main(void) {
 #if defined(STORE_DEBUG)
   Store::ForceGCGen(0);
   std::printf("GCing gen 0...\n");
-  root = Store::DoGC(root);
+  Store::DoGC(root);
   Store::MemStat();
 #else
   if (Store::NeedGC()) {
     std::printf("GCing..\n");
-    root = Store::DoGC(root);
+    Store::DoGC(root);
   }
 #endif
 
