@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999-2000
+%%%   Leif Kornstaedt, 1999-2001
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -11,7 +11,7 @@
 %%%
 
 functor
-import
+require
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
@@ -19,7 +19,7 @@ export
    BuiltinTable
    RaiseAliceException
    UnwrapAliceException
-define
+prepare
    proc {RaiseAliceException E Coord}
       {Exception.raiseError alice(E Coord)}
    end
@@ -153,7 +153,18 @@ define
 		    end}
 	 end
       'Future.concur':
-	 fun {$ P} !!thread {P unit} end end
+	 fun {$ P}
+	    !!thread
+		 try
+		    {P unit}
+		 catch error(AliceE=alice(InnerE ...) ...) then
+		    {Value.byNeedFail
+		     error({AdjoinAt AliceE 1 FutureException(InnerE)})}
+		 [] error(InnerE ...) then
+		    {Value.byNeedFail error(FutureException(InnerE))}
+		 end
+	      end
+	 end
       'Future.isFailed':
 	 fun {$ X}
 	    false   %--** unimplemented
