@@ -21,6 +21,8 @@ scheme. The library is organized hierarchically as follows:</P>
 <UL>
   <LI><A href="#fundamental"><TT>"x-alice:/lib/fundamental/"</TT></A>
 	- fundamental types and data structures </LI>
+  <LI><A href="#data"><TT>"x-alice:/lib/data/"</TT></A>
+	- higher-level data structures </LI>
   <LI><A href="#system"><TT>"x-alice:/lib/system/"</TT></A>
 	- I/O and other system related functionality </LI>
   <LI><A href="#distribution"><TT>"x-alice:/lib/distribution/"</TT></A>
@@ -189,6 +191,41 @@ types, exceptions and values that are available unqualified.</P>
 
   <TABLE class=tt>
     <TR> <TD><A href="byneed.html">ByNeed</A></TD> </TR>
+  </TABLE>
+
+
+<?php section("data", "data library") ?>
+
+<?php subsection("data-sigs", "Signatures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="hashable.html">HASHABLE</A></TD> </TR>
+    <TR> <TD><A href="imp-map.html">IMP_MAP</A></TD> </TR>
+    <TR> <TD><A href="imp-set.html">IMP_SET</A></TD> </TR>
+    <TR> <TD><A href="map.html">MAP</A></TD> </TR>
+    <TR> <TD><A href="ordered.html">ORDERED</A></TD> </TR>
+    <TR> <TD><A href="set.html">SET</A></TD> </TR>
+    <TR> <TD><A href="stack.html">STACK</A></TD> </TR>
+    <TR> <TD><A href="stamp.html">STAMP</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("data-structs", "Structures") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="stamp.html">GlobalStamp</A></TD> </TR>
+    <TR> <TD><A href="stack.html">Stack</A></TD> </TR>
+  </TABLE>
+
+<?php subsection("data-funs", "Functors") ?>
+
+  <TABLE class=tt>
+    <TR> <TD><A href="imp-map.html">MkHashImpMap</A></TD> </TR>
+    <TR> <TD><A href="imp-set.html">MkHashImpSet</A></TD> </TR>
+    <TR> <TD><A href="imp-map.html">MkRedBlackImpMap</A></TD> </TR>
+    <TR> <TD><A href="imp-set.html">MkRedBlackImpSet</A></TD> </TR>
+    <TR> <TD><A href="map.html">MkRedBlackMap</A></TD> </TR>
+    <TR> <TD><A href="set.html">MkRedBlackSet</A></TD> </TR>
+    <TR> <TD><A href="stamp.html">MkStamp</A></TD> </TR>
   </TABLE>
 
 
