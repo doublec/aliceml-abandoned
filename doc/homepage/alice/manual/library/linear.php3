@@ -12,7 +12,7 @@
     linear equality constraints using a convenient infix operator syntax.
   </P>
 
->?php section("import", "import"); ?>
+<?php section("import", "import"); ?>
 
   <PRE>
     import signature LINEAR from "x-alice:/lib/constraints/LINEAR-sig"
@@ -113,17 +113,17 @@
       </P>
       <UL>
         <LI><TT>`<(<I>x</I>,<I>y</I>)</TT> denotes that
-            <I>x</I> is less than </I>y</I>.
+            <I>x</I> is less than <I>y</I>.
         <LI><TT>`<=(<I>x</I>,<I>y</I>)</TT> denotes that
-            <I>x</I> is less than or equal to </I>y</I>.
+            <I>x</I> is less than or equal to <I>y</I>.
         <LI><TT>`=(<I>x</I>,<I>y</I>)</TT> denotes that
-            <I>x</I> equals </I>y</I>.
+            <I>x</I> equals <I>y</I>.
         <LI><TT>`<>(<I>x</I>,<I>y</I>)</TT> denotes that
-            <I>x</I> is no equal to </I>y</I>.
+            <I>x</I> is no equal to <I>y</I>.
         <LI><TT>`>=(<I>x</I>,<I>y</I>)</TT> denotes that
-            <I>x</I> is greater than or equal to </I>y</I>.
+            <I>x</I> is greater than or equal to <I>y</I>.
         <LI><TT>`>(<I>x</I>,<I>y</I>)</TT> denotes that
-            <I>x</I> is greater than </I>y</I>.
+            <I>x</I> is greater than <I>y</I>.
         <LI><TT>`<->(<I>e</I>,<I>c</I>)</TT> reifies
             the equation <I>e</I> into <I>c</I>.
       </UL>
@@ -142,7 +142,7 @@
       <TT>bin ()</TT>
     </DT>
     <DD>
-      <P>returns a freshly created 0/1 variable term which can be used
+      <P>returns a freshly created <TT>0/1</TT> variable term which can be used
          for reification.
       </P>
     </DD>
