@@ -99,6 +99,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		end
 	end
 
+	fun emitCoord (s, ((a, b), _)) =
+	    emit (Comment (s ^ " at " ^ Int.toString a ^ "." ^ Int.toString b))
+
 	fun emitRecordArity labs =
 	    (emit (LdcI4 (List.length labs)); emit (Newarr System.StringTy);
 	     appi (fn (i, lab) =>
@@ -258,6 +261,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit (LdcR4 s);
 	     emit (Newobj (StockWerk.Real, [Float32Ty])))
 
+	(*--** in EvalStm and declarations of unused variables,
+	 * remove all of exp but side-effects *)
+
 	fun genStm (ValDec (_, id, exp, _)) =
 	    (genExp (exp, BOTH); declareLocal id)
 	  | genStm (RecDec (_, idExpList, _)) =
@@ -297,9 +303,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    let
 		val label = newLabel ()
 	    in
-		emit (Label label);
-		shared := label;
-		genBody body
+		emit (Label label); shared := label; genBody body
 	    end
 	  | genStm (SharedStm (_, _, ref i)) = emit (Br i)
 	  | genStm (ReturnStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
@@ -326,9 +330,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		List.app (fn (test, bodyFun) =>
 			  let
 			      val elseLabel = newLabel ()
+			      val regState = saveRegState ()
 			  in
-			      genTest (test, elseLabel);
-			      bodyFun (); emit (Label elseLabel)
+			      genTest (test, elseLabel); bodyFun ();
+			      emit (Label elseLabel); restoreRegState regState
 			  end) testBodyFunList;
 		emit Dup; emit (Isinst StockWerk.Transient);
 		emit (B (FALSE, falseLabel));
@@ -435,8 +440,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     appi (fn (i, id) =>
 		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
 	     emit Pop)
-	  | genExp (FunExp (_, stamp, _, argsBodyList), PREPARE) =
-	    (emit (Newobj (className stamp, nil));
+	  | genExp (FunExp (coord, stamp, _, argsBodyList), PREPARE) =
+	    (emitCoord ("FunExp", coord); emit (Newobj (className stamp, nil));
 	     defineClass (stamp, StockWerk.Procedure, nil))
 	  | genExp (FunExp (_, stamp, _, argsBodyList), FILL) =
 	    (case argsBodyList of
@@ -534,9 +539,15 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genArgs (TupArgs ids) = genExp (TupExp (Source.nowhere, ids), BOTH)
 	  | genArgs (RecArgs idExpList) =
 	    genExp (RecExp (Source.nowhere, idExpList), BOTH)
-	and genBody stms = List.app genStm stms
+	and genBody (stm::stms) =
+	    (case infoStm stm of
+		 (_, ref (Kill set)) => kill set
+	       | (_, ref _) => ();
+	     genStm stm; genBody stms)
+	  | genBody nil = ()
 
-	fun genComponent (nil, _, body) =
-	    (init ["Test"]; genBody body; close())
+	fun genComponent (component as (nil, _, body)) =
+	    (LivenessAnalysisPhase.annotate component;
+	     init ["Test"]; genBody body; close())
 	  | genComponent (_::_, _, _) = Crash.crash "CodeGenPhase.genComponent"
     end

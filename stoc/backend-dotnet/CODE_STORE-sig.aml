@@ -18,9 +18,11 @@
  *
  *    <method> ::= defineClass
  *              |  defineMethod { <method> } closeMethod
- *              |  declareLocal
  *              |  emit
  *              |  emitId
+ *              |  declareLocal
+ *              |  kill
+ *              |  saveRegState { <method> } restoreRegState
  *
  * Methods may be defined in classes before the corresponding
  * invocation of defineClass.  All classes must have been defined
@@ -33,12 +35,17 @@ signature CODE_STORE =
 
 	val className: class -> IL.dottedname
 
+	type savedRegState
+
 	val init: IL.dottedname -> unit
 	val defineClass: class * IL.extends * IL.implements -> unit
 	val defineMethod: class * IL.id * ImperativeGrammar.id list -> unit
 	val emit: IL.instr -> unit
 	val emitId: ImperativeGrammar.id -> unit
 	val declareLocal: ImperativeGrammar.id -> unit
+	val kill: ImperativeGrammar.StampSet.t -> unit
+	val saveRegState: unit -> savedRegState
+	val restoreRegState: savedRegState -> unit
 	val closeMethod: unit -> unit
 	val close: unit -> IL.program
     end
