@@ -12,7 +12,7 @@
 
 #include "emulator/Transients.hh"
 #include "emulator/Closure.hh"
-#include "emulator/Interpreter.hh"
+#include "emulator/ByneedInterpreter.hh"
 #include "emulator/Scheduler.hh"
 #include "emulator/Authoring.hh"
 

@@ -21,7 +21,6 @@
 
 #include "emulator/ThreadQueue.hh"
 #include "emulator/Thread.hh"
-#include "emulator/ByneedInterpreter.hh"
 
 class Scheduler {
 private:
