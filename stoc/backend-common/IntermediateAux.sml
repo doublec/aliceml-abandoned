@@ -13,6 +13,8 @@
 structure IntermediateAux :> INTERMEDIATE_AUX =
     struct
 	structure I = IntermediateGrammar
+	structure O = FlatGrammar
+
 	open I
 
 	fun id_info {region, typ = _} = {region = region}
@@ -302,7 +304,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun find (labels, label', i, n) =
 	    if i = n then NONE
-	    else if Vector.sub (labels, i) = label' then SOME i
+	    else if Vector.sub (labels, i) = label' then
+		SOME (O.Product labels, i)
 	    else find (labels, label', i + 1, n)
 
 	fun findLabel (Arity.Unary, label) =
@@ -313,7 +316,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		     let
 			 val i = LargeInt.toInt li
 		     in
-			 if i <= n then SOME (i - 1) else NONE
+			 if i <= n then SOME (O.Tuple n, i - 1) else NONE
 		     end
 	       | NONE => NONE)
 	  | findLabel (Arity.Product labels, label) =
@@ -321,6 +324,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun labelToIndex (typ, label) =
 	    case findLabel (typToArity typ, label) of
-		SOME i => i
+		SOME (prod, index) => (prod, index)
 	      | NONE => raise Crash.Crash "IntermediateAux.labelToIndex"
     end

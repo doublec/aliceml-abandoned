@@ -56,6 +56,10 @@ signature FLAT_GRAMMAR =
 
 	type 'a conArgs = 'a args option
 
+	datatype prod =
+	    Tuple of int
+	  | Product of label vector
+
 	datatype stm =
 	  (* the following may never be last *)
 	    ValDec of stm_info * idDef * exp
@@ -96,7 +100,7 @@ signature FLAT_GRAMMAR =
 	  | TagAppExp of exp_info * label * int * id args
 	  | ConAppExp of exp_info * con * id args
 	  | RefAppExp of exp_info * id
-	  | SelAppExp of exp_info * label * int * id
+	  | SelAppExp of exp_info * prod * label * int * id
 	  | FunAppExp of exp_info * id * stamp * id args
 	withtype body = stm list
 

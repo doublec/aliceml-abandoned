@@ -240,7 +240,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  outputArgs ID args]
 	  | outputExp (RefAppExp (_, id)) =
 	    SEQ #[S "ref ", ID id]
-	  | outputExp (SelAppExp (_, label, n, id)) =
+	  | outputExp (SelAppExp (_, _, label, n, id)) =
 	    SEQ #[S "#", S (Label.toString label), S "/", I n, S " ", ID id]
 	  | outputExp (FunAppExp (_, id, _, args)) =
 	    SEQ #[ID id, S " ", outputArgs ID args]

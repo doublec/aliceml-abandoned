@@ -294,7 +294,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (ConAppExp (_, StaticCon _, args), lset) =
 	    processArgs (args, lset, ins)
 	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
-	  | scanExp (SelAppExp (_, _, _, id), lset) = ins (lset, id)
+	  | scanExp (SelAppExp (_, _, _, _, id), lset) = ins (lset, id)
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
 

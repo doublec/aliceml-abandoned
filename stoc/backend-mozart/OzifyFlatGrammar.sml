@@ -158,6 +158,11 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 
 	fun outputConArgs outputX = outputOption (outputArgs outputX)
 
+	fun outputProd (q, Tuple n) =
+	    (f (q, "tuple"); outputInt (q, n); r q)
+	  | outputProd (q, Product labels) =
+	    (f (q, "product"); outputVector outputLabel (q, labels); r q)
+
 	fun outputStm (q, ValDec (info, idDef, exp)) =
 	    (f (q, "valDec"); outputStmInfo (q, info); m q;
 	     outputIdDef (q, idDef); m q; outputExp (q, exp); r q)
@@ -276,10 +281,10 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, RefAppExp (info, id)) =
 	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, SelAppExp (info, label, n, id)) =
+	  | outputExp (q, SelAppExp (info, prod, label, n, id)) =
 	    (f (q, "selAppExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputInt (q, n); m q;
-	     outputId (q, id); r q)
+	     outputProd (q, prod); m q; outputLabel (q, label); m q;
+	     outputInt (q, n); m q; outputId (q, id); r q)
 	  | outputExp (q, FunAppExp (info, id, stamp, args)) =
 	    (f (q, "funAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputStamp (q, stamp); m q;

@@ -98,7 +98,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | RefVal
 	  | TupVal of idDef vector
 	  | ProdVal of (label * idDef) vector
-	  | SelVal of label * int
+	  | SelVal of prod * label * int
 	  | VecVal of idDef vector
 	  | FunVal of stamp * funFlag list
 	  | TagAppVal of label * int * idDef args
@@ -132,7 +132,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (ConAppExp (_, con, args)) =
 	    ConAppVal (con, mapArgs IdDef args)
 	  | expToValue (RefAppExp (_, id)) = RefAppVal (IdDef id)
-	  | expToValue (SelAppExp (_, _, _, _)) = UnknownVal
+	  | expToValue (SelAppExp (_, _, _, _, _)) = UnknownVal
 	  | expToValue (FunAppExp (_, _, _, _)) = UnknownVal
 
 	type isToplevel = bool
@@ -275,7 +275,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				     (label, if idDefEq (idDef, idDef')
 					     then idDef else Wildcard))
 		     (labelIdDefVec, labelIdDefVec'))
-	  | valueMin (value as SelVal (label, _), SelVal (label', _)) =
+	  | valueMin (value as SelVal (_, label, _), SelVal (_, label', _)) =
 	    if label = label' then value else UnknownVal
 	  | valueMin (VecVal idDefs, VecVal idDefs') =
 	    if Vector.length idDefs = Vector.length idDefs' then
@@ -328,17 +328,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    ProdArgs (Vector.map (fn (label, id) => (label, deref (id, env)))
 		      labelIdVec)
 
-	fun doSel (info, label, n, id, env) =
+	fun doSel (info, prod, label, n, id, env) =
 	    case IdMap.lookupExistent (env, id) of
 		(TupVal idDefs, _) =>
 		    (case Vector.sub (idDefs, n) of
 			 IdDef id => VarExp (info, id)
-		       | Wildcard => SelAppExp (info, label, n, id))
+		       | Wildcard => SelAppExp (info, prod, label, n, id))
 	      | (ProdVal labelIdDefVec, _) =>
 		    (case Vector.sub (labelIdDefVec, n) of
 			 (_, IdDef id) => VarExp (info, id)
-		       | (_, Wildcard) => SelAppExp (info, label, n, id))
-	      | (_, _) => SelAppExp (info, label, n, id)
+		       | (_, Wildcard) => SelAppExp (info, prod, label, n, id))
+	      | (_, _) => SelAppExp (info, prod, label, n, id)
 
 	fun arityMatches (OneArg _, SOME Arity.Unary) = true
 	  | arityMatches (TupArgs _, SOME (Arity.Tuple _)) = true
@@ -817,10 +817,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			(case args of
 			     OneArg id => RefAppExp (info, id)
 			   | _ => VarAppExp (info, id, args))   (*--** *)
-		  | (SelVal (label, n), _) =>
+		  | (SelVal (prod, label, n), _) =>
 			(case derefArgs (args, env) of
 			     OneArg id =>
-				 doSel (info, label, n, id, env)
+				 doSel (info, prod, label, n, id, env)
 			   | TupArgs ids =>
 				 VarExp (info, Vector.sub (ids, n))
 			   | ProdArgs labelIdVec =>
@@ -847,8 +847,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    ConAppExp (info, StaticCon stamp, derefArgs (args, env))
 	  | vpExp (RefAppExp (info, id), env, _, _) =
 	    RefAppExp (info, deref (id, env))
-	  | vpExp (SelAppExp (info, label, n, id), env, _, _) =
-	    doSel (info, label, n, deref (id, env), env)
+	  | vpExp (SelAppExp (info, prod, label, n, id), env, _, _) =
+	    doSel (info, prod, label, n, deref (id, env), env)
 	  | vpExp (FunAppExp (info, id, stamp, args), env, _, _) =
 	    FunAppExp (info, id, stamp, derefArgs (args, env))
 	and vpBody (stm::stms, env, isToplevel, shared) =

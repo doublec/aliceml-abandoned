@@ -112,7 +112,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (TagPat (info, Lab (_, label), pat, isNAry),
 			 pos, rest, mapping) =
 	    let
-		val n = labelToIndex (#typ info, label)
+		val (_, n) = labelToIndex (#typ info, label)
 		val conArity = makeConArity (#typ (infoPat pat), isNAry)
 		val (posPatVector, conArgs) =
 		    if isSome conArity then

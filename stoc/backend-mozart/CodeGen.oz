@@ -501,7 +501,7 @@ define
       [] refAppExp(Region Id) then
 	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
 			    {TranslateRegion Region State} VTl)
-      [] selAppExp(Region Label _ Id) then
+      [] selAppExp(Region _ Label _ Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Label Reg false
 			  {TranslateRegion Region State} VTl)
       [] funAppExp(Region Id _ Args) then

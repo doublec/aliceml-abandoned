@@ -624,7 +624,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; emit (Stfld (Alice.Cell, "Value", System.ObjectTy)))
 	  | genExp (RefAppExp (_, id), BOTH) =
 	    (emitId id; emit (Newobj (Alice.Cell, [System.ObjectTy])))
-	  | genExp (SelAppExp (_, _, n, id), BOTH) =
+	  | genExp (SelAppExp (_, _, _, n, id), BOTH) =
 	    (emitId id; emitAwait ();
 	     emit (Castclass (ArrayTy System.ObjectTy));
 	     emit (LdcI4 n); emit LdelemRef)
