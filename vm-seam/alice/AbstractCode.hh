@@ -17,6 +17,8 @@
 #pragma interface "alice/AbstractCode.hh"
 #endif
 
+#include "alice/Data.hh"
+
 // Opcodes
 class AbstractCode {
 public:
