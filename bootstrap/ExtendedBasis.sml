@@ -6,6 +6,8 @@ signature GENERAL =
   sig
     include GENERAL
 
+    exception Unordered
+
     val :=: :		'a ref * 'a ref -> unit
     val id :		'a -> 'a
     val const :		'a -> 'b -> 'a
@@ -20,6 +22,8 @@ structure General : GENERAL =
   struct
     open General
 
+    exception Unordered = IEEEReal.Unordered
+
     fun op :=: (r1 as ref x1, r2 as ref x2)	= (r1 := x2 ; r2 := x1)
     fun id x					= x
     fun const x y				= x
@@ -31,6 +35,14 @@ structure General : GENERAL =
       | inverse GREATER				= LESS
   end
 
+exception Unordered = General.Unordered
+val op :=:	= General.:=:
+val id		= General.id
+val const	= General.const
+val curry	= General.curry
+val uncurry	= General.uncurry
+val flip	= General.flip
+val inverse	= General.inverse
 
 
 (*****************************************************************************
