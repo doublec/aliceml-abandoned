@@ -44,28 +44,27 @@ define
       %% Root is vertex with number 0
       Root = root(daughters: {FS.var.upperBound 1#NumberOfVertices}
 		  scope: {FS.var.upperBound 1#NumberOfDataItems})
-      V = {List.toRecord '#'
-	   0#Root|
-	   {ForThread NumberOfDataItems 1 ~1
-	    fun {$ In I}
-	       I#dataItem(mother: {FD.int 0#NumberOfVertices}
-			  daughters: FS.value.empty
-			  down: FS.value.empty
-			  eqdown: {FS.value.singl I}
-			  scope: {FS.value.singl I}
-			 )|In
-	    end
-	    {ForThread NumberOfElements 1 ~1
-	     fun {$ In I}
-		(NumberOfDataItems + I)#
-		element(mother: {FD.int 0#NumberOfVertices}
-			daughters: {FS.var.upperBound 1#NumberOfVertices}
-			down: {FS.var.upperBound 1#NumberOfVertices}
-			eqdown: {FS.var.upperBound 0#NumberOfVertices}
-			scope: {FS.var.upperBound 1#NumberOfDataItems}
-			tag: {FD.int 0#25}
-		       )|In
-	     end nil}}}
+      DataItems = for I in 1..NumberOfDataItems collect: Collect do
+		     {Collect
+		      dataItem(mother: {FD.int 0#NumberOfVertices}
+			       daughters: FS.value.empty
+			       down: FS.value.empty
+			       eqdown: {FS.value.singl I}
+			       scope: {FS.value.singl I})}
+		  end
+      Elements = for I in 1..NumberOfElements collect: Collect do
+		    {Collect
+		     element(mother: {FD.int 0#NumberOfVertices}
+			     daughters: {FS.var.upperBound 1#NumberOfVertices}
+			     down: {FS.var.upperBound 1#NumberOfVertices}
+			     eqdown: {FS.var.upperBound 0#NumberOfVertices}
+			     scope: {FS.var.upperBound 1#NumberOfDataItems}
+			     tag: {FD.int 0#25})}
+		 end
+
+      V = {AdjoinAt
+	   {List.toTuple vertices {Append DataItems Elements}}
+	   RootI Root}
 
       %% Treeness Constraints
       for I in 1..NumberOfVertices do
