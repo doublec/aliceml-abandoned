@@ -15,7 +15,7 @@
 signature PRETTY_PRINT =
   sig
 
-    type doc
+    eqtype doc
 
     val empty :		doc			(* empty document *)
     val break :		doc			(* space or line break *)
