@@ -26,8 +26,7 @@ structure Socket :> SOCKET =
 	fun server (portOpt, acceptFun) =
 	    let
 		val serverPort = Option.getOpt (portOpt, 0)
-		val (serverSocket, serverHost, serverPort) =
-		    UnsafeSocket.server serverPort
+		val (serverSocket, serverPort) = UnsafeSocket.server serverPort
 		fun acceptLoop () =
 		    let
 			val (clientSocket, clientHost, clientPort) =
@@ -38,13 +37,22 @@ structure Socket :> SOCKET =
 		    end
 	    in
 		spawn acceptLoop ();
-		(serverSocket, serverHost, serverPort)
+		(serverSocket, serverPort)
 	    end
 
 	val client = UnsafeSocket.client
 
 	val input1 = UnsafeSocket.input1
-	val inputN = UnsafeSocket.inputN
+
+	fun inputN (socket, n) = String.concat (inputN' (socket, n))
+	and inputN' (socket, n) =
+	    let
+		val s = UnsafeSocket.inputN (socket, n)
+		val i = String.size s
+	    in
+		if i = 0 orelse i = n then [s]
+		else s::inputN' (socket, n - i)
+	    end
 
 	fun inputLine socket =
 	    case UnsafeSocket.input1 socket of
@@ -56,10 +64,12 @@ structure Socket :> SOCKET =
 	      | SOME c => c::inputLine' socket
 	      | NONE => [#"\n"]
 
-	val output = UnsafeSocket.output
 	val output1 = UnsafeSocket.output1
 
-	fun flushOut _ = ()
+	fun output (socket, s) = output' (socket, s, 0)
+	and output' (socket, s, i, n) =
+	    if i = String.size s then ()
+	    else output' (socket, s, i + UnsafeSocket.output (socket, s, i))
 
 	val close = UnsafeSocket.close
     end
