@@ -85,7 +85,7 @@ structure ListPair =
 structure String =
     struct
 	__primitive val op^ : string * string -> string = "String.^"
-	__primitive val str : string * string -> string = "String.str"
+	__primitive val str : char -> string = "String.str"
     end
 
 val op^ = String.^
