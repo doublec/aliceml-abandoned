@@ -3,47 +3,6 @@ import "Instructions"
 open Ante
 
 val ant =
- label "start" ++
-    sense ahead food onyes (
-	move onno (goto "start") ++
-	pick onno (goto "start") ++
- label "sense" ++
-	sense ahead home onyes (
-	    move onno (goto "sense") ++
-	    drop () ++
-	    goto "start"
-	) onno (
- label "loop1" ++
-	    flip 3 onyes (
-		turn left ++
-		goto "sense"
-	    ) onno (
-		flip 2 onyes (
-		    turn right ++
-		    goto "sense"
-		) onno (
-		    move2 onyes (goto "sense") onno (goto "loop1")
-		)
-	    ) ++
-	    fail ()
-	)
-    ) onno (
- label "loop2" ++
-	flip 3 onyes (
-	    turn left ++
-	    goto "start"
-	) onno (
-	    flip 2 onyes (
-		turn right ++
-		goto "start"
-	    ) onno (
-		move2 onyes (goto "start") onno (goto "loop2")
-	    ) ++
-	    fail ()
-	)
-    )
-
-val ant' =
 
  label "start" ++
     sense ahead food onyes (
@@ -82,4 +41,4 @@ val ant' =
 	]
     )
 
-val _ = Instructions.output ignore (TextIO.stdOut, compile ant')
+val _ = Instructions.output ignore (TextIO.stdOut, compile ant)
