@@ -29,7 +29,7 @@ class ProfileEntry : private Tuple {
 protected:
   enum {
     NAME_POS, NB_CALLS_POS, NB_HEAP_POS, NB_CLOSURES_POS, NB_INSTANCES_POS,
-    SIZE
+    NB_INSTRS_POS, SIZE
   };
 
   void Modify(u_int index, u_int value) {
@@ -51,6 +51,9 @@ public:
   void IncInstances() {
     Modify(NB_INSTANCES_POS, 1);
   }
+  void IncInstrs() {
+    Modify(NB_INSTRS_POS, 1);
+  }
   // ProfileEntry Concstructor
   static ProfileEntry *New(String *name) {
     Tuple *entry = Tuple::New(SIZE);
@@ -59,6 +62,7 @@ public:
     entry->Init(NB_HEAP_POS, Store::IntToWord(0));
     entry->Init(NB_CLOSURES_POS, Store::IntToWord(0));
     entry->Init(NB_INSTANCES_POS, Store::IntToWord(0));
+    entry->Init(NB_INSTRS_POS, Store::IntToWord(0));
     return (ProfileEntry *) entry;
   }
   // ProfileEntry untagging
@@ -161,6 +165,12 @@ void Profiler::IncInstances(TagVal *template_) {
   entry->IncInstances();
 }
 
+void Profiler::IncInstrs(word cCode) {
+  ConcreteCode *concreteCode = ConcreteCode::FromWord(cCode);
+  if (concreteCode != INVALID_POINTER)
+    GetEntry(concreteCode)->IncInstrs();
+}
+
 static FILE *logFile;
 
 static void PrintInfo(word /*key*/, word value) {
@@ -170,10 +180,15 @@ static void PrintInfo(word /*key*/, word value) {
   u_int heap        = Store::DirectWordToInt(entry->Sel(2));
   u_int closures    = Store::DirectWordToInt(entry->Sel(3));
   u_int specialized = Store::DirectWordToInt(entry->Sel(4));
-  std::fprintf(logFile, "%d %d %d %d %.2f   %s\n",
-	       calls, closures, heap, specialized,
+  u_int instrs      = Store::DirectWordToInt(entry->Sel(5));
+
+  char *s = name->ExportC();
+  for (char *t = s; *t; t++)
+    if (*t == ',') *t = ';';
+  std::fprintf(logFile, "%d, %d, %d, %d, %d, %.2f, %s\n",
+	       calls, closures, heap, specialized, instrs,
 	       calls? static_cast<float>(heap) / calls: 0.0,
-	       name->ExportC());
+	       s);
 }
 
 void Profiler::DumpInfo() {
