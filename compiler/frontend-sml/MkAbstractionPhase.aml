@@ -512,8 +512,8 @@ struct
     and unguardedTyVarsMrule E (Mrule(_, pat, exp)) =
 	    unguardedTyVarsPat E pat @ unguardedTyVarsExp E exp
 
-    and unguardedTyVarsDec E (CONSTRUCTORDec(_, dconbind)) =
-	    unguardedTyVarsDconBind E dconbind
+    and unguardedTyVarsDec E (CONSTRUCTORDec(_, econbind)) =
+	    unguardedTyVarsEconBind E econbind
 
       | unguardedTyVarsDec E (STRUCTUREDec(_, strbind)) =
 	    unguardedTyVarsStrBind E strbind
@@ -535,8 +535,8 @@ struct
 	    unguardedTyVarsMatch E match @
 	    ?unguardedTyVarsFvalBind E fvalbind_opt
 
-    and unguardedTyVarsDconBind E (NEWDconBind(_, _, vid, ty_opt, tyvarseq,
-						     longtycon, dconbind_opt)) =
+    and unguardedTyVarsEconBind E (NEWEconBind(_, _, vid, ty_opt, tyvarseq,
+						     longtycon, econbind_opt)) =
 	let
 	    val  _   = insertScope E
 	    val  _   = trTyVarSeq E tyvarseq
@@ -546,12 +546,12 @@ struct
 	    val  _   = deleteScope E
 	    val  _   = union(E,E')
 	in
-	    ids' @ ?unguardedTyVarsDconBind E dconbind_opt
+	    ids' @ ?unguardedTyVarsEconBind E econbind_opt
 	end
 
-      | unguardedTyVarsDconBind E (EQUALDconBind(_, _,vid, _,longvid,
-								dconbind_opt)) =
-	    ?unguardedTyVarsDconBind E dconbind_opt
+      | unguardedTyVarsEconBind E (EQUALEconBind(_, _,vid, _,longvid,
+								econbind_opt)) =
+	    ?unguardedTyVarsEconBind E econbind_opt
 
     and unguardedTyVarsStrBind E (StrBind(_, strid, strexp, strbind_opt)) =
 	    unguardedTyVarsStrExp E strexp @
@@ -1328,10 +1328,19 @@ struct
 		  E'
 	   end
 
-	 | CONSTRUCTORDec(i, dconbind) =>
+	 | EXTTYPEDec(i, extbind) =>
 	   let
 		val E'    = BindEnv.new()
-		val decs' = trDconBindo' (E,E',acc) (SOME dconbind)
+		val decs' = trExtBindo' (E,E',acc) (SOME extbind)
+		val  _    = union(E,E')
+	   in
+		decs'
+	   end
+
+	 | CONSTRUCTORDec(i, econbind) =>
+	   let
+		val E'    = BindEnv.new()
+		val decs' = trEconBindo' (E,E',acc) (SOME econbind)
 		val  _    = union(E,E')
 	   in
 		decs'
@@ -1446,7 +1455,7 @@ struct
 		dec' :: acc
 	   end
 
-	 | PRIMITIVEDATATYPEDec(i, tyvarseq, tycon as TyCon(i',tycon'), s) =>
+	 | PRIMITIVEEXTTYPEDec(i, tyvarseq, tycon as TyCon(i',tycon'), s) =>
 	   let
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
@@ -2042,8 +2051,7 @@ struct
     and trDatBindo_lhs (E,E') =
 	fn NONE => ()
 
-	 | ( SOME(CLOSEDDatBind(i, tyvarseq, tycon, _, datbindo))
-	   | SOME(OPENDatBind(i, tyvarseq, tycon, datbindo)) ) =>
+	 | SOME(DatBind(i, tyvarseq, tycon, _, datbindo)) =>
 	   let
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
@@ -2065,8 +2073,8 @@ struct
     and trDatBindo_rhs'(E,E',acc1,acc2) =
 	fn NONE => (acc1,acc2)
 
-	 | SOME(CLOSEDDatBind(_, tyvarseq, tycon as TyCon(_, tycon'), conbind,
-					   datbindo)) =>
+	 | SOME(DatBind(_, tyvarseq, tycon as TyCon(_, tycon'), conbind,
+								datbindo)) =>
 	   let
 		val  i'           = infoConBind conbind
 		val  i            = Source.over(infoSeq tyvarseq, i')
@@ -2086,21 +2094,6 @@ struct
 	   in
 		trDatBindo_rhs' (E,E', dec'::acc1, decs'@acc2) datbindo
 	   end
-
-	 | SOME(OPENDatBind(_, tyvarseq, tycon, datbindo)) =>
-	   let
-		val  i'          = infoTyCon tycon
-		val  i           = Source.over(infoSeq tyvarseq, i')
-		val (typid',E'') = trTyCon E tycon		(* bound before *)
-		val  _           = insertScope E
-		val  varids'     = trTyVarSeq E tyvarseq
-		val  _           = deleteScope E
-		val  funtyp'     = funtyp(varids', O.AbsTyp(i',true))
-		val  dec'        = O.TypDec(i, typid', funtyp')
-	   in
-		trDatBindo_rhs' (E,E', dec'::acc1, acc2) datbindo
-	   end
-
 
     and trConBindo (E,E',tycon',varids',typ') conbindo =
 	let
@@ -2150,11 +2143,32 @@ struct
 			     vardec(varids2', dec')::acc2) conbindo
 	   end
 
-    and trDconBindo' (E,E',acc) =
+
+    and trExtBindo' (E,E',acc) =
 	fn NONE => acc
 
-	 | SOME(NEWDconBind(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
-								 dconbindo)) =>
+	 | SOME(ExtBind(_, tyvarseq, tycon as TyCon(i',tycon'), extbindo)) =>
+	   let
+		val  i             = Source.over(infoSeq tyvarseq, i')
+		val (typid',stamp) = trTyCon_bind E tycon
+		val  _             = insertScope E
+		val  varids'       = trTyVarSeq E tyvarseq
+		val  _             = deleteScope E
+		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
+		val  dec'          = O.TypDec(i, typid', funtyp')
+		val  _             = insertDisjointTy(E', tycon',
+						     (i', stamp, BindEnv.new()))
+				     handle CollisionTy _ =>
+					error(i', E.ExtBindDuplicate tycon')
+	   in
+		trExtBindo' (E,E', dec'::acc) extbindo
+	   end
+
+    and trEconBindo' (E,E',acc) =
+	fn NONE => acc
+
+	 | SOME(NEWEconBind(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
+								 econbindo)) =>
 	   let
 		val  i               = Source.over(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
@@ -2188,13 +2202,13 @@ struct
 	   in
 		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E', vid',  (i', stamp2, C k))
-		) handle CollisionVal _ => error(i', E.DconBindDuplicate vid');
-		trDconBindo' (E,E',
-			      dec2' :: vardec(varids', dec1') :: acc) dconbindo
+		) handle CollisionVal _ => error(i', E.EconBindDuplicate vid');
+		trEconBindo' (E,E',
+			      dec2' :: vardec(varids', dec1') :: acc) econbindo
 	   end
 
-	 | SOME(EQUALDconBind(_, _, vid as VId(i',vid'), _,
-							longvid, dconbindo)) =>
+	 | SOME(EQUALEconBind(_, _, vid as VId(i',vid'), _,
+							longvid, econbindo)) =>
 	   let
 		val  i               = Source.over(i', infoLong longvid)
 		val (valid1',stamp1) = trConVId_bind' E vid
@@ -2212,16 +2226,16 @@ struct
 		      ( ( insertDisjointVal(E', conVId vid', (i', stamp1, V))
 			; insertDisjointVal(E', vid', (i', stamp2, is))
 			) handle CollisionVal _ =>
-				error(i', E.DconBindDuplicate vid')
-		      ; trDconBindo' (E,E', dec2'::dec1'::acc) dconbindo
+				error(i', E.EconBindDuplicate vid')
+		      ; trEconBindo' (E,E', dec2'::dec1'::acc) econbindo
 		      )
 		   | R =>
 		      ( insertDisjointVal(E', vid', (i', stamp2, is))
 			handle CollisionVal _ =>
-				error(i', E.DconBindDuplicate vid')
-		      ; trDconBindo' (E,E', dec2'::acc) dconbindo
+				error(i', E.EconBindDuplicate vid')
+		      ; trEconBindo' (E,E', dec2'::acc) econbindo
 		      )
-		   | (T _ | V) => error(i, E.DconBindNonCon)
+		   | (T _ | V) => error(i, E.EconBindNonCon)
 	   end
 
 
@@ -2504,8 +2518,11 @@ struct
 		 E'
 	   end
 
-	 | CONSTRUCTORSpec(i, dcondesc) =>
-		trDconDesco' (E,acc) (SOME dcondesc)
+	 | EXTTYPESpec(i, extdesc) =>
+		trExtDesco' (E,acc) (SOME extdesc)
+
+	 | CONSTRUCTORSpec(i, econdesc) =>
+		trEconDesco' (E,acc) (SOME econdesc)
 
 	 | STRUCTURESpec(i, strdesc) =>
 		trStrDesco' (E,acc) (SOME strdesc)
@@ -2729,8 +2746,7 @@ struct
     and trDatDesco_lhs E =
 	fn NONE => ()
 
-	 | ( SOME(CLOSEDDatDesc(i, tyvarseq, tycon, _, datdesco))
-	   | SOME(OPENDatDesc(i, tyvarseq, tycon, datdesco)) ) =>
+	 | SOME(DatDesc(i, tyvarseq, tycon, _, datdesco)) =>
 	   let
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
@@ -2752,8 +2768,8 @@ struct
     and trDatDesco_rhs' (E,acc1,acc2) =
 	fn NONE => (acc1,acc2)
 
-	 | SOME(CLOSEDDatDesc(_, tyvarseq, tycon as TyCon(_, tycon'), condesc,
-					   datdesco)) =>
+	 | SOME(DatDesc(_, tyvarseq, tycon as TyCon(_, tycon'), condesc,
+								datdesco)) =>
 	   let
 		val  i'            = infoConDesc condesc
 		val  i             = Source.over(infoSeq tyvarseq, i')
@@ -2773,20 +2789,6 @@ struct
 					errorVId(E', vid', E.SpecVIdDuplicate)
 	   in
 		trDatDesco_rhs' (E, spec'::acc1, specs'@acc2) datdesco
-	   end
-
-	 | SOME(OPENDatDesc(_, tyvarseq, tycon, datdesco)) =>
-	   let
-		val  i'         = infoTyCon tycon
-		val  i          = Source.over(infoSeq tyvarseq, i')
-		val (typid',E') = trTyCon E tycon
-		val  _          = insertScope E
-		val  varids'    = trTyVarSeq E tyvarseq
-		val  _          = deleteScope E
-		val  funtyp'    = funtyp(varids', O.AbsTyp(i',true))
-		val  spec'      = O.TypSpec(i, typid', funtyp')
-	   in
-		trDatDesco_rhs' (E, spec'::acc1, acc2) datdesco
 	   end
 
 
@@ -2827,11 +2829,31 @@ struct
 	   end
 
 
-    and trDconDesco' (E,acc) =
+    and trExtDesco' (E,acc) =
 	fn NONE => acc
 
-	 | SOME(NEWDconDesc(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
-								 dcondesco)) =>
+	 | SOME(ExtDesc(_, tyvarseq, tycon as TyCon(i',tycon'), extdesco)) =>
+	   let
+		val  i             = Source.over(infoSeq tyvarseq, i')
+		val (typid',stamp) = trTyCon_bind E tycon
+		val  _             = insertScope E
+		val  varids'       = trTyVarSeq E tyvarseq
+		val  _             = deleteScope E
+		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
+		val  spec'         = O.TypSpec(i, typid', funtyp')
+		val  _             = insertDisjointTy(E, tycon',
+						   (i', stamp, BindEnv.new()))
+				     handle CollisionTy _ =>
+					error(i', E.SpecTyConDuplicate tycon')
+	   in
+		trExtDesco' (E, spec'::acc) extdesco
+	   end
+
+    and trEconDesco' (E,acc) =
+	fn NONE => acc
+
+	 | SOME(NEWEconDesc(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
+								 econdesco)) =>
 	   let
 		val  i               = Source.over(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
@@ -2860,11 +2882,11 @@ struct
 		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.SpecVIdDuplicate vid');
-		trDconDesco' (E, spec2'::spec1'::acc) dcondesco
+		trEconDesco' (E, spec2'::spec1'::acc) econdesco
 	   end
 
-	 | SOME(EQUALDconDesc(_, _, vid as VId(i',vid'), _, longvid,
-								dcondesco)) =>
+	 | SOME(EQUALEconDesc(_, _, vid as VId(i',vid'), _, longvid,
+								econdesco)) =>
 	   let
 		val  i               = Source.over(i', infoLong longvid)
 		val (valid1',stamp1) = trConVId_bind' E vid
@@ -2879,12 +2901,12 @@ struct
 		val  spec2'          = O.ValSpec(i, valid2', typ2')
 		val  k               = case is
 					 of C k => k
-					  | _   => error(i, E.DconDescNonCon)
+					  | _   => error(i, E.EconDescNonCon)
 	   in
 		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.SpecVIdDuplicate vid');
-		trDconDesco' (E, spec2'::spec1'::acc) dcondesco
+		trEconDesco' (E, spec2'::spec1'::acc) econdesco
 	   end
 
 
@@ -2993,8 +3015,11 @@ struct
 		cimps' @ O.RecImp(i, timps') :: acc
 	   end
 
-	 | CONSTRUCTORImp(i, dconitem) =>
-		trDconItemo' (E,E',acc) (SOME dconitem)
+	 | EXTTYPEImp(i, extitem) =>
+		trExtItemo' (E,E',acc) (SOME extitem)
+
+	 | CONSTRUCTORImp(i, econitem) =>
+		trEconItemo' (E,E',acc) (SOME econitem)
 
 	 | STRUCTUREImp(i, stritem) =>
 		trStrItemo' (E,E',acc) (SOME stritem)
@@ -3313,10 +3338,49 @@ struct
 	   end
 
 
-    and trDconItemo' (E,E',acc) =
+    and trExtItemo' (E,E',acc) =
 	fn NONE => acc
 
-	 | SOME(PLAINDconItem(_, _, vid as VId(i',vid'), dconitemo)) =>
+	 | SOME(PLAINExtItem(_, tycon as TyCon(i',tycon'), extitemo)) =>
+	   let
+		val (typid',stamp) = trTyCon_bind E tycon
+		val  imp'          = O.TypImp(i', typid', O.NoDesc(i'))
+		val  E''           = case lookupTy(E',tycon')
+				       of SOME(_,_,E'') => E''
+				        | NONE =>
+					  error(i', E.TypItemUnbound tycon')
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
+				     handle CollisionTy _ =>
+					error(i', E.ImpTyConDuplicate tycon')
+	   in
+		trExtItemo' (E,E', imp'::acc) extitemo
+	   end
+
+	 | SOME(DESCExtItem(_, tyvarseq, tycon as TyCon(i',tycon'), extitemo)) =>
+	   let
+		val  i             = Source.over(infoSeq tyvarseq, i')
+		val (typid',stamp) = trTyCon_bind E tycon
+		val  _             = insertScope E
+		val  varids'       = trTyVarSeq E tyvarseq
+		val  _             = deleteScope E
+		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
+		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
+		val  imp'          = O.TypImp(i, typid', desc')
+		val  E''           = case lookupTy(E',tycon')
+				       of SOME(_,_,E'') => E''
+				        | NONE =>
+					  error(i', E.TypItemUnbound tycon')
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
+				     handle CollisionTy _ =>
+					error(i', E.SpecTyConDuplicate tycon')
+	   in
+		trExtItemo' (E,E', imp'::acc) extitemo
+	   end
+
+    and trEconItemo' (E,E',acc) =
+	fn NONE => acc
+
+	 | SOME(PLAINEconItem(_, _, vid as VId(i',vid'), econitemo)) =>
 	   let
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
@@ -3325,18 +3389,18 @@ struct
 		val  k               = case lookupVal(E', vid')
 				       of SOME(_,_,C k) => k
 					| SOME(_,_,_)   =>
-					  error(i', E.DconItemNonCon vid')
+					  error(i', E.EconItemNonCon vid')
 					| NONE =>
-					  error(i', E.DconItemUnbound vid')
+					  error(i', E.EconItemUnbound vid')
 	   in
 		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
-		trDconItemo' (E,E', imp2'::imp1'::acc) dconitemo
+		trEconItemo' (E,E', imp2'::imp1'::acc) econitemo
 	   end
 
-	 | SOME(DESCDconItem(_, _, vid as VId(i',vid'), tyo, tyvarseq,longtycon,
-								 dconitemo)) =>
+	 | SOME(DESCEconItem(_, _, vid as VId(i',vid'), tyo, tyvarseq,longtycon,
+								 econitemo)) =>
 	   let
 		val  i               = Source.over(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
@@ -3358,14 +3422,14 @@ struct
 		val  k               = case lookupVal(E', vid')
 				       of SOME(_,_,C k) => k
 					| SOME(_,_,_)   =>
-					  error(i', E.DconItemNonCon vid')
+					  error(i', E.EconItemNonCon vid')
 					| NONE =>
-					  error(i', E.DconItemUnbound vid')
+					  error(i', E.EconItemUnbound vid')
 	   in
 		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
-		trDconItemo' (E,E', imp2'::imp1'::acc) dconitemo
+		trEconItemo' (E,E', imp2'::imp1'::acc) econitemo
 	   end
 
 

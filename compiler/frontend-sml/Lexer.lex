@@ -21,7 +21,7 @@
  *   - longids have been moved to the context-free grammar,
  *     so the LONGID token is substituted by a DOT token
  *   - #[ keyword for vector expressions
- *   - CONSTRUCTOR keyword for constructor declarations
+ *   - EXTTYPE and CONSTRUCTOR keywords for extensible datatypes
  *   - NON keyword added for negated patterns
  *   - WITHVAL and WITHFUN keywords for bindings inside pattern
  *   - LAZY and SPAWN keywords for futures
@@ -307,6 +307,7 @@
   <INITIAL>"end"	=> ( token(END,       yypos, yytext) );
   <INITIAL>"eqtype"	=> ( token(EQTYPE,    yypos, yytext) );
   <INITIAL>"exception"	=> ( token(EXCEPTION, yypos, yytext) );
+  <INITIAL>"exttype"	=> ( token(EXTTYPE,   yypos, yytext) );
   <INITIAL>"fct"       	=> ( token(FCT,       yypos, yytext) );
   <INITIAL>"fn"		=> ( token(FN,        yypos, yytext) );
   <INITIAL>"from"	=> ( token(FROM,      yypos, yytext) );
