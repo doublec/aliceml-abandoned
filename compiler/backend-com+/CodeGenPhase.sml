@@ -336,7 +336,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			  let
 			      val elseLabel = newLabel ()
 			  in
-			      emit Dup; genTest (test, elseLabel); emit Pop;
+			      genTest (test, elseLabel);
 			      bodyFun (); emit (Label elseLabel)
 			  end) testBodyFunList;
 		emit Dup; emit (Isinst StockWerk.Transient);
