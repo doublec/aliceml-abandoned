@@ -11,8 +11,9 @@
  *   $Revision$
  *)
 
-import structure UnsafeOS from "UnsafeOS"
-import signature OS       from "OS-sig"
+(*import structure UnsafeIODesc from "UnsafeIODesc"*)
+import structure UnsafeOS     from "UnsafeOS"
+import signature OS           from "OS-sig"
 
 structure OS :> OS =
     struct
@@ -38,5 +39,30 @@ structure OS :> OS =
 		eqtype status
 
 		open UnsafeOS.Process
+	    end
+
+	structure IO =
+	    struct
+		eqtype iodesc
+
+		(*val hash = UnsafeIODesc.hash*)
+		(*val compare = UnsafeIODesc.compare*)
+
+		datatype iodesc_kind =
+		    FILE | DIR | SYMLINK | TTY | PIPE | SOCKET
+		  | DEVICE | UNKNOWN | CLOSED
+
+		(*val kind = UnsafeIODesc.kind*)
+
+		structure Kind =
+		    struct
+			val file = FILE
+			val dir = DIR
+			val symlink = SYMLINK
+			val tty = TTY
+			val pipe = PIPE
+			val socket = SOCKET
+			val device = DEVICE
+		    end
 	    end
     end

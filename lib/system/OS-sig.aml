@@ -12,6 +12,7 @@
 
 import signature OS_FILE_SYS from "OS_FILE_SYS-sig"
 import signature OS_PROCESS  from "OS_PROCESS-sig"
+import signature OS_IO       from "OS_IO-sig"
 
 signature OS =
 sig
@@ -24,6 +25,6 @@ sig
 
     structure Process :	OS_PROCESS
     structure FileSys :	OS_FILE_SYS
-(*  structure Path :	OS_PATH
-    structure IO :	OS_IO *)
+(*  structure Path :	OS_PATH *)
+    structure IO :	OS_IO
 end
