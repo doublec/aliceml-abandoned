@@ -35,10 +35,10 @@
 
 // Size of each allocated Memory Chunk
 #define STORE_MEMCHUNK_SIZE      (1024 * 128)
-// Number of Memory Generations (must fit in HEADER_GENERATION_WIDTH starting at 1)
+// Number of Memory Generations (must fit in HEADER_GENERATION_WIDTH starting at 0)
 #define STORE_GENERATION_NUM     3
 // Initial Intgen-Pointer-Set Size
-#define STORE_INITIAL_INTGEN     1024
+#define STORE_INITIAL_INTGEN     4
 
 //
 // Configure Store Performance Settings
@@ -53,7 +53,7 @@
 
 #define STORE_HELPER_LABEL_ARRAY \
   static const char *helper_arr[] = \
-  { "GEN_SET", \
+  { "GENSET", \
     "HASHTABLE", "HASHNODEARRAY", "HASHNODE", \
     "QUEUE", "QUEUEARRAY", \
     "STACK", "STACKARRAY", \

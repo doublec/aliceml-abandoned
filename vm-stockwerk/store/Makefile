@@ -15,6 +15,7 @@ libstore.a: StoreConfig.hh $(OBJS)
 	ranlib libstore.a
 
 test: test.o
+	cd ../adt && make distclean all
 #	$(CXX) $(CXXFLAGS) -I.. -o test.o test.cc
 	$(LD) $(CXXFLAGS) -o $@ $< -L../adt -L../store -lstore -ladt
 

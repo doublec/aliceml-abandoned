@@ -74,16 +74,15 @@ static void CreateLabel(FILE *f, int size) {
   std::fprintf(f, "typedef enum {\n");
 
   std::fprintf(f, "  MIN_DATA_LABEL      = 0x%x,\n", 0);
-  std::fprintf(f, "  MAX_DATA_LABEL      = 0x%x,\n", (size - 7 - arr_size));
-  std::fprintf(f, "  MIN_HELPER_LABEL    = 0x%x,\n\n", (size - 6 - arr_size));
+  std::fprintf(f, "  MAX_DATA_LABEL      = 0x%x,\n", (size - 6 - arr_size));
+  std::fprintf(f, "  MIN_HELPER_LABEL    = 0x%x,\n\n", (size - 5 - arr_size));
 
   for (u_int i = 0; i < arr_size; i++) {
-    std::fprintf(f, "  %s_LABEL = 0x%x,\n", helper_arr[i], (size - 6 - (arr_size  - i)));
+    std::fprintf(f, "  %s_LABEL = 0x%x,\n", helper_arr[i], (size - 5 - (arr_size  - i)));
   }
 
-  std::fprintf(f, "\n  MAX_HELPER_LABEL    = 0x%x,\n", (size - 7));
-  std::fprintf(f, "  MIN_STORE_LABEL     = 0x%x,\n", (size - 6));
-  std::fprintf(f, "  GENSET_LABEL        = 0x%x,\n", (size - 6));
+  std::fprintf(f, "\n  MAX_HELPER_LABEL    = 0x%x,\n", (size - 6));
+  std::fprintf(f, "  MIN_STORE_LABEL     = 0x%x,\n", (size - 5));
   std::fprintf(f, "  CHUNK_LABEL         = 0x%x,\n", (size - 5));
   std::fprintf(f, "  HOLE_LABEL          = 0x%x,\n", (size - 4));
   std::fprintf(f, "  MIN_TRANSIENT_LABEL = 0x%x,\n", (size - 4)); 
@@ -100,10 +99,10 @@ static void CreateLabel(FILE *f, int size) {
 static void CreateGenerationLimits(FILE *f, int pos, int generations) {
   std::fprintf(f, "#define PLACEGENERATIONLIMIT \\\n  static u_int gen_limits[] = {");
 
-  for (int i = 1; i <= generations; i++) {
+  for (int i = 0; i < generations; i++) {
     unsigned int mask = (i << pos);
     
-    for (int k = 0; k < (pos - 2); k++) {
+    for (int k = 0; k < pos; k++) {
       mask += (1 << k);
     }
     
