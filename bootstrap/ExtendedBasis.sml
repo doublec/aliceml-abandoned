@@ -238,6 +238,9 @@ signature LIST =
     val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list
     val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
     val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+
+    val contains :	''a list -> ''a -> bool
+    val notContains :	''a list -> ''a -> bool
   end
 
 
@@ -273,6 +276,12 @@ structure List : LIST =
     fun appri  f xs		= appri'(f,0,xs)
     and appri'(f, i,  nil )	= ()
       | appri'(f, i, x::xs)	= (appri'(f, i+1, xs) ; f(i,x))
+
+    fun contains xs y		= contains'(y, xs)
+    and contains'(y, nil)	= false
+      | contains'(y, x::xs)	= y = x orelse contains'(y,xs)
+
+    fun notContains xs y	= Bool.not(contains'(y,xs))
   end
 
 
@@ -590,6 +599,8 @@ signature VECTOR =
     val all :		('a -> bool) -> 'a vector -> bool
     val exists :	('a -> bool) -> 'a vector -> bool
     val find :		('a -> bool) -> 'a vector -> 'a option
+    val contains :	''a vector -> ''a -> bool
+    val notContains :	''a vector -> ''a -> bool
   end
 
 
@@ -632,6 +643,11 @@ structure Vector : VECTOR =
     fun exists  f v		= exists'(f,v,0)
     and exists'(f,v,i) 		= i <> length v andalso
 				  (f(sub(v,i)) orelse exists'(f,v,i+1))
+
+    fun contains v x		= contains'(v,x,0)
+    and contains'(v,x,i)	= i <> length v andalso
+				  (x = sub(v,i) orelse contains'(v,x,i+1))
+    fun notContains v x		= Bool.not(contains'(v,x,0))
 
     fun find  f v		= find'(f,v,0)
     and find'(f,v,i) 		= if i = length v then NONE else
