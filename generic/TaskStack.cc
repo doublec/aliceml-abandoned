@@ -75,7 +75,7 @@ Interpreter::Result TaskStack::PushCall(word closure) {
     // Found Code Block
     if (transient == INVALID_POINTER) {
       ConcreteCode *cc = ConcreteCode::FromWord(code);
-      cc->GetInterpreter()->PushCall(this, cl->ToWord());
+      cc->GetInterpreter()->PushCall(this, cl);
       return Interpreter::CONTINUE;
     }
     // Code not yet available

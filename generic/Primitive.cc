@@ -55,7 +55,7 @@ public:
   PrimitiveInterpreter(Primitive::function f, u_int n, u_int m):
     function(f), arity(n), frameSize(m + 1) {}
   // Frame Handling
-  virtual void PushCall(TaskStack *taskStack, word closure);
+  virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
@@ -66,9 +66,8 @@ public:
 //
 // PrimitiveInterpreter Functions
 //
-void PrimitiveInterpreter::PushCall(TaskStack *taskStack,  word closure) {
-  Closure *cl = Closure::FromWord(closure);
-  Assert(ConcreteCode::FromWord(cl->GetConcreteCode())->
+void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
+  Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
 	 GetInterpreter() == this);
   taskStack->PushFrame(PrimitiveFrame::New(this)->ToWord());
 }
