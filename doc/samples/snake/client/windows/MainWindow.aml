@@ -17,6 +17,8 @@ import structure TextWindow           from "TextWindow"
 import structure QuestionWindow       from "QuestionWindow"
 
 
+import val log                        from "../../common/Log"
+
 open Ctrl
 
 structure MainWindow =
@@ -150,8 +152,9 @@ struct
 
 	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = 
+                (log ("MainWindow", "startMultiPlayer");
 		ServerSettingsWindow.mkServerSettings ({startServer},
-						       {reset, gameMode})
+						       {reset, gameMode}))
 
 	    (* opens the highscore window *)
 	    fun openHighscore () = 
