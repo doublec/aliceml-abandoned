@@ -23,5 +23,9 @@ rm -f bootstrap/stoc-mozart.$PLATFORM bootstrap/stodep.$PLATFORM
 (cd vm-mozart && make depend) || exit 1
 (cd vm-mozart && make build3-install) || exit 1
 (cd vm-mozart && make PREFIX=$prefix install) || exit 1
-#(cd lib/inspector && make all PREFIX=$prefix install) || exit 1
-#(cd lib/constraints && make all PREFIX=$prefix install) || exit 1
+PATH=$prefix/bin:$PATH
+export PATH
+unset STOCKHOME
+(cd lib/inspector && make all PREFIX=$prefix install) || exit 1
+(cd lib/constraints && make all PREFIX=$prefix install) || exit 1
+(cd lib/gtk && make all PREFIX=$prefix install) || exit 1
