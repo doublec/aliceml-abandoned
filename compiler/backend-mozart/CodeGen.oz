@@ -466,28 +466,30 @@ define
 	 else
 	    vCallConstant(_ Value Regs {TranslateRegion Region State} VTl)
 	 end
-      [] 'VarAppExp'(Region Id 'TupArgs'(Ids)) andthen {Width Ids} > 0 then
+      [] 'VarAppExp'(Region Id1 'OneArg'(Id2)) then
+	 vDeconsCall(_ {GetReg Id1 State} {GetReg Id2 State} Reg
+		     {TranslateRegion Region State} VTl)
+      [] 'VarAppExp'(Region Id 'TupArgs'('#[]')) then ArgReg VInter in
+	 {State.cs newReg(?ArgReg)}
+	 VInter = vCall(_ {GetReg Id State} [ArgReg Reg]
+			{TranslateRegion Region State} VTl)
+	 vEquateConstant(_ unit ArgReg VInter)
+      [] 'VarAppExp'(Region Id 'TupArgs'(Ids)) then
 	 vConsCall(_ {GetReg Id State}
 		   {Record.foldR Ids
 		    fun {$ Id Rest} {GetReg Id State}|Rest end [Reg]}
 		   {TranslateRegion Region State} VTl)
-      [] 'VarAppExp'(Region Id Args) then ArgReg VInter in
-	 VInter = vDeconsCall(_ {GetReg Id State} ArgReg Reg
-			      {TranslateRegion Region State} VTl)
-	 case Args of 'OneArg'(Id) then
-	    ArgReg = {GetReg Id State}
-	    VInter
-	 [] 'TupArgs'('#[]') then
-	    {State.cs newReg(?ArgReg)}
-	    vEquateConstant(_ unit ArgReg VInter)
-	 [] 'ProdArgs'(LabelIdVec) then Rec in
-	    {State.cs newReg(?ArgReg)}
-	    Rec = {List.toRecord '#'
-		   {Record.foldR LabelIdVec
-		    fun {$ Label#Id In} Label#value({GetReg Id State})|In end
-		    nil}}
-	    vEquateRecord(_ '#' {Arity Rec} ArgReg {Record.toList Rec} VInter)
-	 end
+      [] 'VarAppExp'(Region Id 'ProdArgs'(LabelIdVec)) then
+	 Rec ArgReg VInter
+      in
+	 Rec = {List.toRecord '#'
+		{Record.foldR LabelIdVec
+		 fun {$ Label#Id In} Label#value({GetReg Id State})|In end
+		 nil}}
+	 {State.cs newReg(?ArgReg)}
+	 VInter = vCall(_ {GetReg Id State} [ArgReg Reg]
+			{TranslateRegion Region State} VTl)
+	 vEquateRecord(_ '#' {Arity Rec} ArgReg {Record.toList Rec} VInter)
       [] 'TagAppExp'(_ Label _ 'OneArg'(Id)) then
 	 vEquateRecord(_ Label 1 Reg [value({GetReg Id State})] VTl)
       [] 'TagAppExp'(_ Label _ 'TupArgs'('#[]')) then
