@@ -5,29 +5,14 @@
  *
  * Copyright:
  *   Leif Kornstaedt, 2001-2003
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-signature CONFIG =
-sig
-    datatype platform = WIN32 | UNIX
-
-    val platform : platform
-    val vm : string
-
-    val homeDir : unit -> string
-
-    val pathEscape : char option
-    val pathSeparator : char
-
-    val buildDate : Date.date
-end
-
-structure Config : CONFIG =
+structure Config =
 struct
     datatype platform = WIN32 | UNIX
 
@@ -53,5 +38,7 @@ struct
 	    WIN32 => #";"
 	  | UNIX => #":"
 
+    val version = {major=0, minor=0, revision=0}
+    val codename = "'New Jersey Hits The Decks' Bootstrap Mix"
     val buildDate = Date.fromTimeLocal (Time.now ())
 end

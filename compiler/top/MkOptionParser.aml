@@ -17,13 +17,13 @@ import signature OPTION_PARSER from "OPTION_PARSER-sig"
 
 functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
     struct
-	val version = "1.0.1"
-	val banner = "Alice " ^ version ^ " (\"" ^
-		     (case Config.vm of
-			  "mozart" => "Stockhausen Operette 4 Original Mix"
-			| "seam" => "Kraftwerk Album 1"
-			| _ => "Alien Invaders Breakz Mix"
-		     ) ^ "\"), mastered " ^
+	val major = Int.toString (#major Config.version)
+	val minor = Int.toString (#minor Config.version)
+	val revision = Int.toString (#revision Config.version)
+	val version = major ^ "." ^ minor ^
+	              (if revision = "0" then "" else "." ^ revision)
+	val banner = "Alice " ^ version ^ " (\"" ^ Config.codename ^
+		     "\"), mastered " ^
 		     Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
 	val copyright = "Copyright (c) 1999-" ^ Date.fmt "%Y" Config.buildDate
 			^ " Programming Systems Lab, Saarland University,\n"

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,5 +25,7 @@ sig
     val pathEscape : char option
     val pathSeparator : char
 
+    val version : {major : int, minor : int, revision : int}
+    val codename : string
     val buildDate : Date.t
 end

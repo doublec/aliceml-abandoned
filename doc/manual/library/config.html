@@ -26,6 +26,8 @@
     sig
 	datatype <A href="#platform-type">platform</A> = WIN32 | UNIX
 
+	val <A href="#version">version</A> : {major : int, minor : int, revision : int}
+	val <A href="#codename">codename</A> : string
 	val <A href="#buildDate">buildDate</A> : Date.t
 
 	val <A href="#platform">platform</A> : platform
@@ -45,6 +47,22 @@
     </DT>
     <DD>
       <P>The type of supported platforms.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="version">version</A></TT>
+    </DT>
+    <DD>
+      <P>Reflects the version of the current Alice System implementation.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="codename">codename</A></TT>
+    </DT>
+    <DD>
+      <P>The code name of the current Alice version, as displayed in the
+      banner of the <A href="../interactive.html">interactive top-level</A>,
+      for example.</P>
     </DD>
 
     <DT>

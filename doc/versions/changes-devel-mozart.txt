@@ -81,7 +81,7 @@ Library:
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
 * Print: added function register for hooking user-defined printing functions.
-* Config: added buildDate.
+* Config: added buildDate, version, and codename.
 * Http: ignore multiple headers; replace empty reguest URIs with "/".
 * Remote:
   - Added functor Proxy to conveniently wrap a whole module into proxies.
