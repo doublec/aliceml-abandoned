@@ -150,9 +150,9 @@ structure OutputWriters =
                 let
                     val c = Gtk.textIterGetChar iter
                 in
-                    if c <= Char.maxOrd andalso Char.isSpace(chr c)
+                    (*if c <= Char.maxOrd andalso Char.isSpace(chr c)
                     then lastChar' iter
-                    else SOME c
+                    else*) SOME c
                 end
             else NONE
         fun lastChar(buf, off) =
@@ -163,9 +163,8 @@ structure OutputWriters =
                 lastChar' iter
             end
 
-        fun compilerInsert (eval,noedit) (buf, [Gtk.INT off,
-                                            Gtk.STRING txt,
-                                            Gtk.INT size]) =
+        fun compilerInsert (eval, noedit, bold)
+		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
             if String.sub(txt, String.size txt - 1) = #"\n" then
 	       if lastChar(buf, off+size-1) = SOME (ord #";")
         	then
@@ -180,7 +179,8 @@ structure OutputWriters =
                 	val str = Core.utf8ToLatin1 str
                 	val _ = eval str
                     in
-                	Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
+                	Gtk.textBufferApplyTag(buf, noedit, startiter, enditer);
+                	Gtk.textBufferApplyTag(buf, bold, startiter, enditer)
                     end
 		else
 		    Gtk.textBufferInsertAtCursor(buf, "  ", ~1)
@@ -192,11 +192,11 @@ structure OutputWriters =
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
               val {err=pErr,log=pLog,plain=pStd,noedit=pNoEd,...} = makeTags progBuf
-              val {err=cErr,log=cLog,plain=cStd,noedit=cNoEd,...} = makeTags compilerBuf
+              val {err=cErr,log=cLog,plain=cStd,noedit=cNoEd,bold,...} = makeTags compilerBuf
               val pSig = Gtk.signalConnect(progBuf, "insert-text",
                                            progInInsert (stdin, pNoEd))
               val cSig = Gtk.signalConnect(compilerBuf, "insert-text",
-                                           compilerInsert (eval, cNoEd));
+                                           compilerInsert (eval, cNoEd, bold));
 
               fun forward (widget, buf, signal, noed, styles, highlights) =
 		  let

@@ -49,6 +49,7 @@ structure Config =
                    comment : Gtk.object,
                    string : Gtk.object,
                    reserved : Gtk.object,
+		   bold : Gtk.object,
                    noedit : Gtk.object}
 
       fun makeTags buf =
@@ -62,9 +63,8 @@ structure Config =
               val reserved = Gtk.textBufferCreateTag(buf, "reserved", "foreground-gdk", Gtk.OBJECT reservedColor)
 
               val noedit = Gtk.textBufferCreateTag(buf, "noedit", "editable", Gtk.BOOL false)
+              val bold = Gtk.textBufferCreateTag(buf, "bold", "weight", Gtk.INT (PangoEnums.PangoWeightToInt PangoEnums.WEIGHT_BOLD))
           in
-              {err=err,log=log,plain=plain,
-               comment=comment,string=string,reserved=reserved,
-               noedit=noedit} : tags
+              {err, log, plain, comment, string, reserved, bold, noedit} : tags
           end
    end
