@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -108,12 +108,12 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    val implicitImportRef = ref NONE	(* poor man's laziness *)
 	in
 	    fun implicitImport() =
-		case !implicitImportRef
-		  of SOME s => s
-		   | NONE =>
 		case !Switches.Language.implicitImportFile
 		  of NONE => ""
 		   | SOME url =>
+		case !implicitImportRef
+		  of SOME s => s
+		   | NONE =>
 		let
 		    val s = String.map (fn #"\n" => #" " | c => c)
 				       (valOf (readUrl (Url.fromString url)))
