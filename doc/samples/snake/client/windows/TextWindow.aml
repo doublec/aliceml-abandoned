@@ -1,7 +1,21 @@
+(* Alice Snake 2.0 - TextWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
 import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 import structure Gdk       from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+
 import structure Protocol  from "../../common/Protocol"
+
+
 
 structure TextWindow =
 struct
@@ -9,36 +23,31 @@ struct
     fun mkTextWindow (title, mode) = 
 	let
 
-	    val show_text    = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val dialog_vbox1 = Gtk.vboxNew (false, 0)
-	    val adj1	     = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						  1.0, 1.0, 1.0)
-	    val adj2	     = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						  1.0, 1.0, 1.0)
-	    val button1      = Gtk.buttonNewWithLabel "  Close  "
-	    val button_box   = Gtk.hbuttonBoxNew ()
-		
-	    val label         = Gtk.labelNew mode
+	    val textWindow  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val dialogVBox  = Gtk.vboxNew (false, 0)
+	    val closeButton = Gtk.buttonNewWithLabel "  Close  "
+	    val buttonHBox  = Gtk.hbuttonBoxNew ()
+	    val label       = Gtk.labelNew mode
 		    
 	in
 	    
-	    Gtk.windowSetTitle (show_text, title);
-	    Gtk.windowSetModal (show_text, true);
-	    Gtk.windowSetPosition (show_text, Gtk.WIN_POS_CENTER);
-	    Gtk.signalConnect (show_text , "delete-event", 
-			       fn _ => Gtk.widgetDestroy show_text);
-	    Gtk.containerSetBorderWidth (show_text , 20);
-	    Gtk.windowSetDefaultSize(show_text, 200, 150);
-	    Gtk.signalConnect (button1, "clicked", 
-			       fn _ => Gtk.widgetDestroy show_text);
-	    
-	    Gtk.boxPackStart (dialog_vbox1, label, false, false, 10);
-	    Gtk.boxPackStart (dialog_vbox1, button_box, false, false, 15);
-	    
-	    Gtk.containerAdd (button_box, button1);
-	    Gtk.containerAdd (show_text, dialog_vbox1);
-	    
-	    Gtk.widgetShowAll show_text
+	    Gtk.windowSetTitle (textWindow, title);
+	    Gtk.windowSetModal (textWindow, true);
+	    Gtk.windowSetPosition (textWindow, Gtk.WIN_POS_CENTER);
+
+	    Gtk.signalConnect (textWindow , "delete-event", 
+			       fn _ => Gtk.widgetDestroy textWindow);
+	    Gtk.signalConnect (closeButton, "clicked", 
+			       fn _ => Gtk.widgetDestroy textWindow);
+
+	    Gtk.containerSetBorderWidth (textWindow , 20);
+
+	    Gtk.boxPackStart (buttonHBox, closeButton, false, false, 10);
+	    Gtk.boxPackStart (dialogVBox, label, false, false, 10);
+	    Gtk.boxPackStart (dialogVBox, buttonHBox, false, false, 15);
+
+	    Gtk.containerAdd (textWindow, dialogVBox);
+    	    Gtk.widgetShowAll textWindow
 
 	end
 

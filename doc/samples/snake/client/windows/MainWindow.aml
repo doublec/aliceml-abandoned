@@ -9,6 +9,7 @@ import structure Config               from "../../server/Config"
 import structure Protocol             from "../../common/Protocol"
 import structure ArenaWidget          from "ArenaWidget"
 import structure HighscoreIO          from "../../server/HighscoreIO"
+import structure Highscore            from "../../common/Highscore"
 
 import structure ConnectionWindow     from "ConnectionWindow"
 import structure ServerSettingsWindow from "ServerSettingsWindow"
@@ -63,7 +64,19 @@ struct
 		   guiGame) =
 	let
 	    fun gameFinished h = 
-		 reset (SOME ("Highscore", "highscore...!"))
+		let
+		    fun toString' ({name, color, points,
+				    player, level}, str) =
+			("Player: " ^ name ^ "  Color: "
+			 ^ (Color.toString color) ^ "  Points: "
+			 ^ (Int.toString points) ^ "  Player: "
+			 ^ (Int.toString player) ^ "  Level: "
+			 ^ (Int.toString level) ^ "\n" ^ str)
+		    fun toString score = 
+			Highscore.foldl toString' "" score
+		in
+		    reset (SOME ("Highscore", toString h))
+		end
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
 
@@ -144,8 +157,17 @@ struct
 	    fun openHighscore () = 
 		let
 		    val score = HighscoreIO.load ()
+		    fun toString' ({name, color, points,
+				    player, level}, str) =
+			("Player: " ^ name ^ "  Color: "
+			 ^ (Color.toString color) ^ "  Points: "
+			 ^ (Int.toString points) ^ "  Player: "
+			 ^ (Int.toString player) ^ "  Level: "
+			 ^ (Int.toString level) ^ "\n" ^ str)
+		    fun toString () = 
+			Highscore.foldl toString' "" score
 		in
-		    TextWindow.mkTextWindow ("Highscore", "highscore...") 
+		    TextWindow.mkTextWindow ("Highscore", toString ()) 
 		end
 
 	    fun startSinglePlayer () = 

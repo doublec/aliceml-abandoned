@@ -1,60 +1,73 @@
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Gdk from "x-alice:/lib/gtk/Gdk"
+(* Alice Snake 2.0 - QuestionWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk       from "x-alice:/lib/gtk/Gtk"
+import structure Gdk       from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
+
+
 
 structure QuestionWindow =
 struct
 
     datatype answer = YES | NO | CANCEL
 	
+
+
     fun mkQuestionBox (title, quest, answer) =
 	let
 
-	    val sure_window = Gtk.dialogNew ()
-	    val button1	    = Gtk.buttonNewWithLabel "Yes"
-	    val button2	    = Gtk.buttonNewWithLabel "No "
+	    val questionWindow = Gtk.dialogNew ()
+	    val yesButton	    = Gtk.buttonNewWithLabel "Yes"
+	    val noButton	    = Gtk.buttonNewWithLabel "No "
 		
 	    fun question q = 
 		let
-		    val label1 = Gtk.labelNew q
+		    val label = Gtk.labelNew q
 		in
-		    Gtk.boxPackStart (Gtk.dialogGetFieldVbox sure_window,
-				      label1, 
+		    Gtk.boxPackStart (Gtk.dialogGetFieldVbox questionWindow,
+				      label, 
 				      true, 
 				      true, 
 				      10)
 		end
 
-	    fun mainQuit ans = (Promise.fulfill(answer, ans);
-				   Gtk.widgetDestroy sure_window;
-				   Inspector.inspect answer)
+	    fun mainQuit ans = (Promise.fulfill (answer, ans);
+				Gtk.widgetDestroy questionWindow;
+				Inspector.inspect answer)
 
 	in
-
 	    question quest;
-	    Gtk.windowSetModal (Gtk.dialogGetFieldWindow sure_window, true);
-	    Gtk.containerSetBorderWidth (Gtk.dialogGetFieldWindow sure_window,
-					 10);
-	    Gtk.windowSetTitle (Gtk.dialogGetFieldWindow sure_window, title);
-	    Gtk.windowSetPosition (Gtk.dialogGetFieldWindow sure_window,
+	    Gtk.windowSetModal (Gtk.dialogGetFieldWindow questionWindow, true);
+	    Gtk.containerSetBorderWidth 
+	    (Gtk.dialogGetFieldWindow questionWindow, 10);
+	    Gtk.windowSetTitle (Gtk.dialogGetFieldWindow questionWindow, title);
+	    Gtk.windowSetPosition (Gtk.dialogGetFieldWindow questionWindow,
 				   Gtk.WIN_POS_CENTER);
 	    
-	    Gtk.signalConnect (Gtk.dialogGetFieldWindow sure_window, 
+	    Gtk.signalConnect (Gtk.dialogGetFieldWindow questionWindow, 
 			       "delete-event",
-			       fn _ =>mainQuit CANCEL);
-	    Gtk.signalConnect (button1, "clicked", 
+			       fn _ => mainQuit CANCEL);
+	    Gtk.signalConnect (yesButton, "clicked", 
 			       fn _ => mainQuit YES);
-	    Gtk.signalConnect (button2, "clicked", 
+	    Gtk.signalConnect (noButton, "clicked", 
 			       fn _ => mainQuit NO);
 	    
-	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea sure_window,
-			      button1, true, true, 5);
-	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea sure_window,
-			      button2, true, true, 5);
+	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea questionWindow,
+			      yesButton, true, true, 5);
+	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea questionWindow,
+			      noButton, true, true, 5);
 	    
-	    Gtk.widgetShowAll sure_window;
-	    Inspector.inspect 33
+	    Gtk.widgetShowAll questionWindow
 	end
 
 end
