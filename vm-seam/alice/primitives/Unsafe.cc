@@ -47,60 +47,10 @@ DEFINE1(Unsafe_cast) {
   RETURN(x0);
 } END
 
-DEFINE1(Unsafe_getPrimitiveByName) {
-  DECLARE_STRING(name, x0);
-  RETURN(PrimitiveTable::LookupValue(static_cast<Chunk *>(name)));
-} END
-
-DEFINE1(Unsafe_makeConcreteCode) {
-  DECLARE_TAGVAL(abstractCode, x0);
-  RETURN(AliceLanguageLayer::concreteCodeConstructor(abstractCode));
-} END
-
-DEFINE2(Unsafe_makeClosure) {
-  DECLARE_VECTOR(vector, x1);
-  u_int nglobals = vector->GetLength();
-  Closure *closure = Closure::New(x0, nglobals);
-  for (u_int i = nglobals; i--; )
-    closure->Init(i, vector->Sub(i));
-  RETURN(closure->ToWord());
-} END
-
-DEFINE2(Unsafe_makeTaggedValue) {
-  DECLARE_INT(tag, x0);
-  DECLARE_VECTOR(vector, x1);
-  u_int size = vector->GetLength();
-  TagVal *tagVal = TagVal::New(tag, size);
-  for (u_int i = size; i--; )
-    tagVal->Init(i, vector->Sub(i));
-  RETURN(tagVal->ToWord());
-} END
-
-DEFINE1(Unsafe_makeTuple) {
-  DECLARE_VECTOR(vector, x0);
-  u_int size = vector->GetLength();
-  Tuple *tuple = Tuple::New(size);
-  for (u_int i = size; i--; )
-    tuple->Init(i, vector->Sub(i));
-  RETURN(tuple->ToWord());
-} END
-
-DEFINE2(Unsafe_selRecord) {
-  DECLARE_RECORD(record, x0);
-  DECLARE_UNIQUE_STRING(label, x1);
-  RETURN(record->PolySel(label));
-} END
-
 void PrimitiveTable::RegisterUnsafe() {
+  Register("Unsafe.cast", Unsafe_cast, 1);
   Register("Unsafe.Array.sub", Unsafe_Array_sub, 2);
   Register("Unsafe.Array.update", Unsafe_Array_update, 3);
   Register("Unsafe.String.sub", Unsafe_String_sub, 2);
   Register("Unsafe.Vector.sub", Unsafe_Vector_sub, 2);
-  Register("Unsafe.cast", Unsafe_cast, 1);
-  Register("Unsafe.getPrimitiveByName", Unsafe_getPrimitiveByName, 1);
-  Register("Unsafe.makeConcreteCode", Unsafe_makeConcreteCode, 1);
-  Register("Unsafe.makeClosure", Unsafe_makeClosure, 2);
-  Register("Unsafe.makeTaggedValue", Unsafe_makeTaggedValue, 2);
-  Register("Unsafe.makeTuple", Unsafe_makeTuple, 1);
-  Register("Unsafe.selRecord", Unsafe_selRecord, 2);
 }
