@@ -86,10 +86,10 @@ struct
 
     (* the points box items *)
     val separator1  = Gtk.vseparatorNew ()
-    val pointsLabel = ref (Gtk.labelNew "")
+    val pointsLabel = Gtk.labelNew ""
 
     (* the remaining level time and it's box *)
-    val timeLabel = ref (Gtk.labelNew "")
+    val timeLabel = Gtk.labelNew ""
 
     (* the box where time and points are in *)
     val labelVBox      = Gtk.vboxNew (false, 10)
@@ -104,7 +104,6 @@ struct
 	 Gtk.widgetSetSensitive (menuScoreItem, true);
 	 Gtk.widgetHide canvas;
 	 Gtk.widgetHide rightHBox;
-	 pointsLabel := (Gtk.labelNew "");
 	 mode := START)
 
 
@@ -136,7 +135,7 @@ struct
 		let
 		    val timeStr = timeToString remainingTime
 		in
-		    Gtk.labelSetText (!timeLabel, timeStr)
+		    Gtk.labelSetText (timeLabel, timeStr)
 		end
 
 	    fun updatePoints plist = 
@@ -160,7 +159,7 @@ struct
 			 ^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
 		    fun toString () = List.foldl toString' "" plist
 		in
-		    Gtk.labelSetText (!pointsLabel, toString ())
+		    Gtk.labelSetText (pointsLabel, toString ())
 		end
 
 	    fun startLevel levinf = ArenaWidget.initLevel (arena, levinf)
@@ -330,8 +329,8 @@ struct
 	    Gtk.menuBarAppend (menuBar, menuScoreItem);
 	    Gtk.menuBarAppend (menuBar, menuQuitItem);
 	    
-	    Gtk.boxPackStart (labelVBox, !timeLabel, false, false, 5);
-	    Gtk.boxPackStart (labelVBox, !pointsLabel, false, false, 5);
+	    Gtk.boxPackStart (labelVBox, timeLabel, false, false, 5);
+	    Gtk.boxPackStart (labelVBox, pointsLabel, false, false, 5);
 	    
 	    Gtk.boxPackStart (rightHBox, separator1, true, true, 5);
 	    Gtk.boxPackStart (rightHBox, labelVBox, false, false, 5);

@@ -28,12 +28,10 @@ struct
 
     val allColors = List.map Color.toString Color.all
 
-
-
-    val colorCombo  = ref (Gtk.comboNew ())	
+    val colorCombo  = Gtk.comboNew ()
 
     fun insertColors () = 
-	Gtk.comboSetPopdownStrings (!colorCombo, allColors)
+	Gtk.comboSetPopdownStrings (colorCombo, allColors)
 	
 	
     fun mkServerSettings ({startServer}, {reset, gameMode}) = 
@@ -138,8 +136,7 @@ struct
 
 
 	    fun mainQuit () = 
-		(colorCombo := Gtk.comboNew ();
-		 Gtk.widgetDestroy serverSettings;
+		(Gtk.widgetDestroy serverSettings;
 		 reset NONE)
 		
 	    fun changedNameText () = 
@@ -271,7 +268,7 @@ struct
 				val name  = Gtk.entryGetText nameText
 				val color = Color.fromString(
 				    Gtk.entryGetText 
-				    (Gtk.comboGetFieldEntry (!colorCombo)))
+				    (Gtk.comboGetFieldEntry (colorCombo)))
 			    in
 				alreadyConn := [(name, color)];
 				startServer 
@@ -285,7 +282,6 @@ struct
 			    ("ERROR!!", "Please enter a name!")
 		    else
 			(Gtk.widgetDestroy serverSettings;
-			 colorCombo := Gtk.comboNew ();
 			 case return of 
 			     FST (mStart, guiJoin, serverUrl) => 
 				 Wait.mkWaitingWindow 
@@ -350,14 +346,14 @@ struct
 	    insertColors ();
 	    setValues Config.defaultMulti;
 	    
-	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry (!colorCombo),false);
+	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry colorCombo,false);
 	    Gtk.entrySetMaxLength (nameText, 12);
 
 	    Gtk.boxPackStart (nameHBox, nameLabel, false, false, 2);
 	    Gtk.boxPackStart (nameHBox, nameText,  false, false, 2);
 
 	    Gtk.boxPackStart (colorHBox, colorLabel, false, false, 2);
-	    Gtk.boxPackStart (colorHBox, !colorCombo, false, false, 2);
+	    Gtk.boxPackStart (colorHBox, colorCombo, false, false, 2);
 
 	    Gtk.boxPackStart (buttonHBox, okButton, false, false, 5);
 	    Gtk.boxPackStart (buttonHBox, cancelButton, false, false, 5);

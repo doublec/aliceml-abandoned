@@ -104,13 +104,10 @@ struct
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
 
 
-	    fun resetWindowRefs () =
-		(alreadyConn := [])
-
 	    val started = 
 		ref (fn () => 
 		     (Gtk.widgetDestroy playerSettings;
-		      resetWindowRefs ();
+		      alreadyConn := nil;
 		      reset (SOME ("ERROR", 
 				   "Game already started"))))
 
@@ -160,7 +157,7 @@ struct
 
 	    fun mainQuit () = 
 		(disconnect ();
-		 resetWindowRefs ();
+		 alreadyConn := nil;
 		 Gtk.widgetDestroy playerSettings;
 		 reset NONE)
 
@@ -206,7 +203,7 @@ struct
 			    ("ERROR!!", "Please enter a name!")
 		    else
 			(Gtk.widgetDestroy playerSettings;
-			 resetWindowRefs ();
+			 alreadyConn := nil;
 			 case return () of 
 			     FST (mGame, guiGame) => 
 				 Wait.mkWaitingWindow 

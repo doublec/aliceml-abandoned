@@ -20,9 +20,6 @@ import structure PlayerSettings from "PlayerSettings"
 structure Connection = 
 struct
 
-    val clientUrl = ref (Gtk.entryNew ())
-
-
 
     fun mkConnectToServer ({connect}, {reset, gameMode}) =
 	let
@@ -35,11 +32,12 @@ struct
 	    val okButton    	= Gtk.buttonNewWithLabel "  OK  "
 	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
+	    val clientUrl = Gtk.entryNew ()
 
 	    fun mainQuit () = (Gtk.widgetDestroy connectToServer;
 			       reset NONE)
 		
-	    fun readUrl ()  = Gtk.entryGetText (!clientUrl)
+	    fun readUrl ()  = Gtk.entryGetText (clientUrl)
 
 	    fun start ticket =
 		(Gtk.widgetDestroy connectToServer;
@@ -63,12 +61,12 @@ struct
 	    Gtk.signalConnect (cancelButton, "clicked", 
 			       fn _ => mainQuit ());
 
-	    Gtk.entrySetText (!clientUrl, "http://");
-	    Gtk.widgetGrabFocus (!clientUrl);
+	    Gtk.entrySetText (clientUrl, "http://");
+	    Gtk.widgetGrabFocus clientUrl;
 	    Gtk.containerSetBorderWidth (connectToServer, 10);
 
 	    Gtk.boxPackStart (urlHBox, urlLabel, false, false, 0);
-	    Gtk.boxPackStart (urlHBox, !clientUrl, true, true, 0);
+	    Gtk.boxPackStart (urlHBox, clientUrl, true, true, 0);
 
 	    Gtk.boxPackStart (buttonHBox, okButton, true, true, 5);
 	    Gtk.boxPackStart (buttonHBox, cancelButton, true, true, 5);
