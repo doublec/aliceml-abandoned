@@ -75,8 +75,7 @@ structure Backend=
 			 (fn stamp' => StampSet.insert(freeVars, stamp'))
 			 freeVarSet)
 
-		(* get free variable set of an id. If not set previously,
-		 raise exception Mitch. *)
+		(* get free variable set of an id. *)
 		fun getVars stamp' =
 		    case StampHash.lookup (free, stamp') of
 			NONE => let
@@ -274,7 +273,7 @@ structure Backend=
 			   | SOME a =>
 				 (StringListHash.foldi
 				  codeall
-				  [Return]
+				  nil
 				  a))
 		    end
 
@@ -284,9 +283,9 @@ structure Backend=
 			NONE => init
 		      | SOME a =>
 			    StringListHash.fold
-			    (fn (number, fields) =>
+			    (fn (stamp'', fields) =>
 			     Field ([FPublic, FStatic],
-				    fieldname number,
+				    fieldname stamp'',
 				    [Arraysig, Classsig CString])::fields)
 			    init
 			    a

@@ -75,7 +75,7 @@ structure ToJasmin =
 		  | SOME (Jump Ret) => "return"
 		  | SOME (Jump ARet) => "areturn"
 		  | SOME (Jump IRet) => "ireturn"
-		  | SOME _ => raise Mitch
+		  | SOME _ => Crash.crash "ToJasmin: directJump"
 
 	    (* return the toString of the real label for this jump *)
 	    fun condJump lab' =
@@ -344,7 +344,7 @@ structure ToJasmin =
 				val regfrom = lookup (!fromPos, genuineReg)
 				val regto = lookup (!toPos, genuineReg)
 				val t' = case t of
-				    NONE => raise Mitch
+				    NONE => Crash.crash "ToJasmin: addJump"
 				  | SOME v => v
 			    in
 				if f' > regto andalso t' > regfrom andalso t' > regto

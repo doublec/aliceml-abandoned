@@ -247,12 +247,16 @@ structure CodeGen =
 		 val decs = decListCode (program, toplevel, toplevel)
 
 		 val run = Method([MPublic], "run", ([], [Voidsig]),
-				  (Multi decs ::
+				  (Multi (Lambda.generatePickleFn
+					  (Literals.generate,
+					   toplevel,
+					   RecordLabel.generate toplevel)) ::
+				   Multi decs ::
 				   (if !VERBOSE >= 1 then
 					Multi [Getstatic FOut,
 					       Aload (!mainpickle),
 					       Invokevirtual MPrint]
-				      else Nop) ::
+				    else Nop) ::
 					Ldc (JVMString (name^".pickle")) ::
 					Aconst_null ::
 					Aload (!mainpickle) ::
@@ -264,20 +268,20 @@ structure CodeGen =
 		 val clinit = Method([MPublic],
 				     "<clinit>",
 				     ([],[Voidsig]),
-				     Literals.generate (toplevel,
-							RecordLabel.generate toplevel))
+(*				     Literals.makeNullfields
+				     (toplevel, RecordLabel.makeNullfields
+				     (toplevel, nil)))*)
+				     [Return])
 
 		 (* The main class *)
 		 val class = Class([CPublic],
 				   name,
 				   CThread,
 				   nil,
-				   Lambda.makePickleFields
-				   (toplevel, Literals.makefields
-				    (toplevel, RecordLabel.makefields
-				     (toplevel, nil))),
+				   Literals.makefields
+				   (toplevel, RecordLabel.makefields
+				    (toplevel, nil)),
 				   [clinit, main, init, run])
-
 	     in
 		 if !VERBOSE >=2 then print "Generating main class..." else ();
 		 classToJasmin (class);
@@ -533,7 +537,7 @@ structure CodeGen =
 					     number::switchlist,
 					     lab :: labelList,
 					     b', t'', b'')
-					  | _ => raise Mitch
+					  | _ => Crash.crash "CodeGen: generateBody"
 				else
 				    let
 					val behind = Label.new ()
@@ -594,7 +598,7 @@ structure CodeGen =
 				 litTest (CInt, [Intsig])
 			   | LitTest (CharLit startwert) =>
 				 litTest (CChar, [Charsig])
-			   | _ => raise Mitch)
+			   | _ => Crash.crash "CodeGen: GenerateSwitch")
 		    end
 
 		fun tcode (cls, ret, cmpcode) =
@@ -1444,7 +1448,7 @@ structure CodeGen =
 		  | createApplies (nil, a0, a2, a3, a4, ra) =
 		     (print ("Lambda "^Stamp.toString curFun^" in "^Stamp.toString curCls);
 		      (a0, a2, a3, a4, decListCode (ra, curFun, curCls)))
-		  | createApplies (_, _, _, _, _, _) = raise Mitch
+		  | createApplies (_, _, _, _, _, _) = Crash.crash "CodeGen: createApplies"
 
 		val (ap0, ap2, ap3, ap4, ad) =
 		    createApplies (List.rev specialApplies,
@@ -1554,10 +1558,16 @@ structure CodeGen =
 		val clinit = Method([MPublic],
 				    "<clinit>",
 				    ([],[Voidsig]),
-				    Lambda.generatePickleFn
-				    (curCls, (Literals.generate
-					      (curCls,
-					       RecordLabel.generate curCls))))
+				    [Return])
+
+(*		(* prepare for pickling *)
+		val pinit = Method([MPublic, MStatic],
+				   "pinit",
+				   ([],[Voidsig]),
+				   Lambda.generatePickleFn
+				   (curCls, (Literals.generate
+					     (curCls,
+					      RecordLabel.generate curCls))))*)
 
 		(* the whole class *)
 		val class = Class([CPublic],

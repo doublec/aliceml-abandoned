@@ -20,8 +20,6 @@ structure Common=
 
 	open JVMInst
 
-	exception Mitch
-
 	(* Name of the initial class *)
 	structure Class =
 	    struct

@@ -47,25 +47,22 @@ functor MakeLambda(structure StampSet:IMP_SET
 	(* remember which (non-dummy) apply functions are created. *)
 	val normalApplies = StampIntSet.new () (* xxx not in use yet. *)
 
-	(* mark functions for pickling. This is necessary for non-toplevel functions only *)
+	(* remember subfunctions of functions. This information is needed for pickling. *)
 	fun markForPickling (stamp', upperFun) =
-	    if upperFun = toplevel
-		then ()
-	    else
-		let
-		    val p=
-			case StampHash.lookup (pickleFn, upperFun) of
-			    NONE =>
-				let
-				    val p' = StampSet.new ()
-				in
-				    StampHash.insert (pickleFn, upperFun, p');
-				    p'
+	    let
+		val p=
+		    case StampHash.lookup (pickleFn, upperFun) of
+			NONE =>
+			    let
+				val p' = StampSet.new ()
+			    in
+				StampHash.insert (pickleFn, upperFun, p');
+				p'
 				end
-			  | SOME p' => p'
-		in
-		    StampSet.insert (p, stamp')
-		end
+		      | SOME p' => p'
+	    in
+		StampSet.insert (p, stamp')
+	    end
 
 	(* name a function. *)
 	fun setId (lambda, name as Id (_, namestamp, _)) =
@@ -93,18 +90,30 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	(* We need instances of classes to ensure that the class information
 	 is stored in the pickle. Instances of inner functions are created at
-	 runtime, so we have to build dummy instances of inner functions. *)
-	fun generatePickleFn (stamp', init) =
+	 runtime, so we have to recursively build dummy instances of inner functions. *)
+	fun generatePickleFn (genLit, stamp', init) =
 	    let
 		fun codePickle (stamp'',acc) =
-		    Ldc (JVMString (classNameFromStamp stamp''))::
-		    Invokestatic MForName::
-		    Putstatic (fieldname (stamp',stamp''),
-			       [Classsig CClass])::
-		    acc
+		    let
+			val clsname = classNameFromStamp stamp''
+		    in
+			generatePickleFn
+			(genLit,
+			 stamp'',
+			 genLit
+			 (stamp',
+			  if stamp' = toplevel
+			     then acc else
+				 New clsname ::
+				 Dup ::
+				 Invokespecial (clsname, "<init>", ([], [Voidsig])) ::
+				 Putstatic (fieldname (stamp',stamp''),
+					    [Classsig IVal]) ::
+				 acc))
+		    end
 	    in
 		case StampHash.lookup (pickleFn, stamp') of
-		    NONE => init
+		    NONE => genLit(stamp', init)
 		  | SOME p => StampSet.fold codePickle init p
 	    end
 
@@ -114,7 +123,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 		fun pickleFields (stamp'', acc) =
 		    Field ([FPublic, FStatic],
 			   fname stamp'',
-			   [Classsig CClass])::acc
+			   [Classsig IVal])::acc
 	    in
 		case StampHash.lookup (pickleFn, stamp') of
 		    NONE => init
