@@ -439,16 +439,17 @@ Worker::Result PicklingWorker::Run() {
     break;
   case CONCRETE_LABEL:
     {
-      ConcreteRepresentationHandler *handler =
-	static_cast<ConcreteRepresentation *>(v)->GetHandler();
-      Block *block = handler->GetAbstractRepresentation(v);
-      if (block == INVALID_POINTER) {
+      ConcreteRepresentation *concrete =
+	static_cast<ConcreteRepresentation *>(v);
+      Block *abstract =
+	concrete->GetHandler()->GetAbstractRepresentation(concrete);
+      if (abstract == INVALID_POINTER) {
 	Scheduler::currentData      = Pickler::Sited;
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Worker::RAISE;
       } else {
-	Assert(block->GetLabel() == TRANSFORM_LABEL);
-	PicklingWorker::PushFrame(block->ToWord());
+	Assert(abstract->GetLabel() == TRANSFORM_LABEL);
+	PicklingWorker::PushFrame(abstract->ToWord());
 	CONTINUE();
       }
     }

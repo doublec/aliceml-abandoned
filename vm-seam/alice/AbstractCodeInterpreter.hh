@@ -31,7 +31,7 @@ public:
   // AbstractCodeInterpreter Static Constructor
   static void Init();
   // Handler Methods
-  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
+  virtual Block *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling
   virtual void PushCall(Closure *closure);
   // Execution

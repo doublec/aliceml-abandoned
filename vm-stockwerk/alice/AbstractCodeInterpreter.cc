@@ -215,10 +215,8 @@ void AbstractCodeInterpreter::Init() {
 }
 
 Block *
-AbstractCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
-  AliceConcreteCode *concreteCode =
-    static_cast<AliceConcreteCode *>(blockWithHandler);
-  return concreteCode->GetAbstractRepresentation();
+AbstractCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
+  return static_cast<AliceConcreteCode *>(b)->GetAbstractRepresentation();
 }
 
 void AbstractCodeInterpreter::PushCall(Closure *closure) {
