@@ -1,4 +1,8 @@
 import
+    structure Assert
+from "x-alice:/misc/Assert.ozf"
+
+import
     signature URL
 from "x-alice:/misc/URL.ozf"
 
