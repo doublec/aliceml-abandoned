@@ -34,8 +34,8 @@
 #endif
 
 #include "store/Store.hh"
-#include "store/WeakDictionary.hh"
 #include "generic/RootSet.hh"
+#include "generic/FinalizationSet.hh"
 #include "generic/StackFrame.hh"
 #include "generic/Interpreter.hh"
 #include "generic/Scheduler.hh"
@@ -57,46 +57,22 @@ static word ClosedStreamConstructor;
     RAISE(conVal->ToWord());						\
   }
 
-// Finalization of IOStreams
-class IOStreamFinalization: public Finalization {
-private:
-  static const u_int initialSize = 4; //--** to be determined
-
-  u_int keyCounter;
-  word wWeakDictionary;
-public:
-  IOStreamFinalization() {
-    keyCounter = 0;
-    wWeakDictionary = WeakDictionary::New(initialSize, this)->ToWord();
-    RootSet::Add(wWeakDictionary);
-  }
-
-  u_int Register(word value) {
-    WeakDictionary *weakDictionary =
-      WeakDictionary::FromWordDirect(wWeakDictionary);
-    u_int key = keyCounter++;
-    weakDictionary->InsertItem(key, value);
-    return key;
-  }
-  void Unregister(u_int key) {
-    WeakDictionary *weakDictionary =
-      WeakDictionary::FromWordDirect(wWeakDictionary);
-    weakDictionary->DeleteItem(key);
-  }
-  virtual void Finalize(word value);
-};
-
 // IOStream Classes
 enum IOStreamType {
   IO_IN  = MIN_DATA_LABEL,
   IO_OUT = IO_IN + 1
 };
 
+class IOStreamFinalizationSet: public FinalizationSet {
+public:
+  virtual void Finalize(word value);
+};
+
 class IOStream: private Block {
 private:
   enum { STREAM_POS, NAME_POS, FINALIZATION_KEY_POS, SIZE };
 
-  static IOStreamFinalization *handler;
+  static IOStreamFinalizationSet *finalizationSet;
 protected:
   static BlockLabel IOStreamTypeToBlockLabel(IOStreamType type) {
     return static_cast<BlockLabel>(static_cast<int>(type));
@@ -106,19 +82,20 @@ protected:
     Block *p = Store::AllocBlock(IOStreamTypeToBlockLabel(type), SIZE);
     p->InitArg(STREAM_POS, Store::UnmanagedPointerToWord(file));
     p->InitArg(NAME_POS, name->ToWord());
-    p->InitArg(FINALIZATION_KEY_POS, handler->Register(p->ToWord()));
+    p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
     return static_cast<IOStream *>(p);
   }
 public:
   using Block::ToWord;
 
   static void Init() {
-    handler = new IOStreamFinalization();
+    finalizationSet = new IOStreamFinalizationSet();
   }
 
   static IOStream *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
-    Assert(p->GetLabel() == IOStreamTypeToBlockLabel(IO_IN));
+    Assert(p->GetLabel() == IOStreamTypeToBlockLabel(IO_IN) ||
+	   p->GetLabel() == IOStreamTypeToBlockLabel(IO_OUT));
     return static_cast<IOStream *>(p);
   }
 
@@ -134,18 +111,18 @@ public:
     FILE *file = GetFile();
     if (file != NULL) {
       u_int key = Store::DirectWordToInt(GetArg(FINALIZATION_KEY_POS));
-      handler->Unregister(key);
+      finalizationSet->Unregister(key);
       std::fclose(file);
       ReplaceArg(STREAM_POS, Store::UnmanagedPointerToWord(NULL));
     }
   }
 };
 
-void IOStreamFinalization::Finalize(word value) {
+void IOStreamFinalizationSet::Finalize(word value) {
   IOStream::FromWordDirect(value)->Close();
 }
 
-IOStreamFinalization *IOStream::handler;
+IOStreamFinalizationSet *IOStream::finalizationSet;
 
 class Instream: public IOStream {
 public:
