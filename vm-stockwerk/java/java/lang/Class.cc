@@ -417,6 +417,11 @@ DEFINE2(getDeclaredConstructors0) {
   }
 } END
 
+DEFINE1(desiredAssertionStatus0) {
+  x0 = x0; // ignored
+  RETURN_BOOL(false);
+} END
+
 void NativeMethodTable::java_lang_Class(JavaString *className) {
   ReflectConstructorsWorker::Init();
   ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
@@ -462,5 +467,6 @@ void NativeMethodTable::java_lang_Class(JavaString *className) {
 	   "(Z)[Ljava/lang/reflect/Constructor;",
 	   getDeclaredConstructors0, 2, true);
   //--** getDeclaredClasses0
-  //--** desiredAssertionStatus0
+  Register(className, "desiredAssertionStatus0", "(Ljava/lang/Class;)Z",
+	   desiredAssertionStatus0, 1, false);
 }
