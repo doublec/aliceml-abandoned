@@ -131,11 +131,31 @@ void Class::Init() {
   InitializeClassWorker::Init();
 }
 
+word Class::MakeMethodKey(JavaString *name, JavaString *descriptor) {
+  return name->Concat(descriptor)->ToArray()->ToWord();
+}
+
+void Class::FillMethodHashTable(HashTable *methodHashTable) {
+  ClassInfo *classInfo = GetClassInfo();
+  word wSuper = classInfo->GetSuper();
+  if (wSuper != null)
+    Class::FromWord(wSuper)->FillMethodHashTable(methodHashTable);
+  Table *methods = classInfo->GetMethods();
+  HashTable *myMethodHashTable = GetMethodHashTable();
+  for (u_int i = methods->GetCount(); i--; ) {
+    MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
+    if (!methodInfo->IsStatic()) {
+      word key =
+	MakeMethodKey(methodInfo->GetName(), methodInfo->GetDescriptor());
+      methodHashTable->InsertItem(key, myMethodHashTable->GetItem(key));
+    }
+  }
+}
+
 Class *Class::New(ClassInfo *classInfo) {
   // Precondition: parent class has already been created
   word wSuper = classInfo->GetSuper();
-  Class *super = wSuper == Store::IntToWord(0)?
-    INVALID_POINTER: Class::FromWord(wSuper);
+  Class *super = wSuper == null? INVALID_POINTER: Class::FromWord(wSuper);
   // Count number of static and instance fields:
   Table *fields = classInfo->GetFields();
   u_int nSuperInstanceFields = super == INVALID_POINTER? 0:
@@ -149,33 +169,57 @@ Class *Class::New(ClassInfo *classInfo) {
     else
       nInstanceFields++;
   }
-  // Count number of static and virtual methods:
+  // Count number of static methods:
   Table *methods = classInfo->GetMethods();
-  u_int nSuperVirtualMethods = super == INVALID_POINTER? 0:
-    super->GetNumberOfVirtualMethods();
-  u_int nStaticMethods = 0, nVirtualMethods = nSuperVirtualMethods;
-  u_int nMethods = methods->GetCount();
+  u_int nMethods = methods->GetCount(), nStaticMethods = 0;
   for (i = nMethods; i--; ) {
     MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
     if (methodInfo->IsStatic())
       nStaticMethods++;
-    else
-      nVirtualMethods++;
   }
-  // Construct virtual table:
-  Block *virtualTable =
-    Store::AllocBlock(JavaLabel::VirtualTable, nVirtualMethods);
-  Block *superVirtualTable = super == INVALID_POINTER? INVALID_POINTER:
-    super->GetVirtualTable();
-  for (i = nSuperVirtualMethods; i--; )
-    virtualTable->InitArg(i, superVirtualTable->GetArg(i));
-  // Allocate class proper:
+  // Allocate class:
   Block *b = Store::AllocBlock(JavaLabel::Class,
 			       BASE_SIZE + nStaticFields + nStaticMethods);
+  Class *theClass = static_cast<Class *>(b);
+  // Build method hash table:
+  HashTable *methodHashTable =
+    HashTable::New(HashTable::BLOCK_KEY, 16); //--** to be determined
+  if (super != INVALID_POINTER)
+    super->FillMethodHashTable(methodHashTable);
+  u_int nSuperVirtualMethods = methodHashTable->GetSize();
+  u_int nVirtualMethods = nSuperVirtualMethods;
+  for (nStaticMethods = 0, i = 0; i < nMethods; i++) {
+    MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
+    u_int nArgs = methodInfo->GetNumberOfArguments();
+    word wKey =
+      MakeMethodKey(methodInfo->GetName(), methodInfo->GetDescriptor());
+    word wMethodRef;
+    if (methodInfo->IsStatic()) {
+      u_int index = nStaticFields + nStaticMethods;
+      wMethodRef = StaticMethodRef::New(theClass, index, nArgs)->ToWord();
+      nStaticMethods++;
+    } else {
+      u_int index;
+      if (!methodHashTable->IsMember(wKey))
+	index = nVirtualMethods++;
+      else {
+	printf("overriding with %s#%s%s\n",
+	       classInfo->GetName()->ExportC(),
+	       methodInfo->GetName()->ExportC(),
+	       methodInfo->GetDescriptor()->ExportC());
+	VirtualMethodRef *superMethodRef =
+	  VirtualMethodRef::FromWordDirect(methodHashTable->GetItem(wKey));
+	index = superMethodRef->GetIndex();
+      }
+      wMethodRef = VirtualMethodRef::New(theClass, index, nArgs)->ToWord();
+    }
+    methodHashTable->InsertItem(wKey, wMethodRef);
+  }
+  // Initialize class:
   b->InitArg(CLASS_INFO_POS, classInfo->ToWord());
+  b->InitArg(METHOD_HASH_TABLE_POS, methodHashTable->ToWord());
   b->InitArg(NUMBER_OF_VIRTUAL_METHODS_POS, nVirtualMethods);
   b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
-  b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
   b->InitArg(LOCK_POS, Lock::New()->ToWord());
   // Initialize static fields:
   i = 0, nStaticFields = 0;
@@ -212,73 +256,67 @@ Class *Class::New(ClassInfo *classInfo) {
     }
     i++;
   }
-  // Create method closures:
+  // Initialize static methods and construct virtual table:
+  Block *virtualTable =
+    Store::AllocBlock(JavaLabel::VirtualTable, nVirtualMethods);
+  b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
+  Block *superVirtualTable = super == INVALID_POINTER? INVALID_POINTER:
+    super->GetVirtualTable();
+  for (i = nSuperVirtualMethods; i--; )
+    virtualTable->InitArg(i, superVirtualTable->GetArg(i));
   RuntimeConstantPool *runtimeConstantPool =
     classInfo->GetRuntimeConstantPool();
-  i = 0, nStaticMethods = 0, nVirtualMethods = 0;
-  Closure *classInitializer = INVALID_POINTER;
+  word classInitializer = null;
   JavaString *classInitializerName = JavaString::New("<clinit>");
   JavaString *classInitializerDescriptor = JavaString::New("()V");
-  while (i < nMethods) {
+  for (i = 0; i < nMethods; i++) {
     MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
+    JavaString *name = methodInfo->GetName();
+    JavaString *descriptor = methodInfo->GetDescriptor();
     JavaByteCode *byteCode = methodInfo->GetByteCode();
+    word wClosure;
     if (byteCode != INVALID_POINTER) {
       Closure *closure = Closure::New(byteCode->ToWord(), 1);
       closure->Init(0, runtimeConstantPool->ToWord());
-      if (methodInfo->IsStatic()) {
-	b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods,
-		   closure->ToWord());
-	nStaticMethods++;
-	if (methodInfo->IsTheMethod(classInitializerName,
-				    classInitializerDescriptor)) {
-	  Assert(classInitializer == INVALID_POINTER);
-	  classInitializer = closure;
-	}
-      } else {
-	virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods,
-			      closure->ToWord());
-	nVirtualMethods++;
-      }
+      wClosure = closure->ToWord();
     } else if (methodInfo->IsNative()) {
       Closure *closure =
 	NativeMethodTable::Lookup(classInfo->GetName(), methodInfo->GetName(),
 				  methodInfo->GetDescriptor());
       if (closure != INVALID_POINTER) {
-	if (methodInfo->IsStatic()) {
-	  b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods,
-		     closure->ToWord());
-	  nStaticMethods++;
-	  if (methodInfo->IsTheMethod(classInitializerName,
-				      classInitializerDescriptor)) {
-	    Assert(classInitializer == INVALID_POINTER);
-	    classInitializer = closure;
-	  }
-	} else {
-	  virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods,
-				closure->ToWord());
-	  nVirtualMethods++;
-	}
+	wClosure = closure->ToWord();
       } else {
-	word foo = String::New(classInfo->GetName()->Concat("#")->Concat(methodInfo->GetName())->Concat(methodInfo->GetDescriptor())->ExportC())->ToWord();
-	; //--** Error("LinkageError"); //--** throw
-	if (methodInfo->IsStatic()) {
-	  b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods, foo);
-	  nStaticMethods++;
-	} else {
-	  virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods, foo);
-	  nVirtualMethods++;
-	}
+	//--** throw LinkageError
+	wClosure = String::New(classInfo->GetName()->Concat("#")->
+			       Concat(methodInfo->GetName())->
+			       Concat(methodInfo->GetDescriptor())->
+			       ExportC())->ToWord();
       }
-    } else { // is abstract
-      Assert(!methodInfo->IsStatic());
-      nVirtualMethods++;
+    } else {
+      Assert(methodInfo->IsAbstract());
+      wClosure = null;
     }
-    i++;
+    if (methodInfo->IsTheMethod(classInitializerName,
+				classInitializerDescriptor)) {
+      Assert(methodInfo->IsStatic());
+      Assert(classInitializer == null);
+      classInitializer = wClosure;
+    }
+    word wMethodRef =
+      methodHashTable->GetItem(MakeMethodKey(name, descriptor));
+    if (methodInfo->IsStatic()) {
+      StaticMethodRef *methodRef = StaticMethodRef::FromWordDirect(wMethodRef);
+      Assert(methodRef->GetClass() == theClass);
+      b->InitArg(BASE_SIZE + methodRef->GetIndex(), wClosure);
+    } else {
+      VirtualMethodRef *methodRef =
+	VirtualMethodRef::FromWordDirect(wMethodRef);
+      Assert(methodRef->GetClass() == theClass);
+      virtualTable->InitArg(methodRef->GetIndex(), wClosure);
+    }
   }
-  b->InitArg(CLASS_INITIALIZER_POS,
-	     classInitializer == INVALID_POINTER?
-	     null: classInitializer->ToWord());
-  return static_cast<Class *>(b);
+  b->InitArg(CLASS_INITIALIZER_POS, classInitializer);
+  return theClass;
 }
 
 //--** these should be defined in Data.hh

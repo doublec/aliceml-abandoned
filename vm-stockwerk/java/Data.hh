@@ -19,6 +19,7 @@
 #endif
 
 #include <cstring>
+#include "adt/HashTable.hh"
 #include "generic/Closure.hh"
 #include "generic/Transients.hh"
 #include "generic/Worker.hh"
@@ -95,6 +96,7 @@ class DllExport Class: protected Type {
 protected:
   enum {
     CLASS_INFO_POS, // ClassInfo
+    METHOD_HASH_TABLE_POS, // HashTable(name x descriptor -> MethodRef)
     NUMBER_OF_VIRTUAL_METHODS_POS, // int
     NUMBER_OF_INSTANCE_FIELDS_POS, // int
     VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
@@ -121,10 +123,17 @@ public:
     return static_cast<Class *>(b);
   }
 
+  static word MakeMethodKey(class JavaString *name,
+			    class JavaString *descriptor);
+
   class ClassInfo *GetClassInfo();
   bool IsInterface();
   Class *GetSuperClass();
 
+  HashTable *GetMethodHashTable() {
+    return HashTable::FromWordDirect(GetArg(METHOD_HASH_TABLE_POS));
+  }
+  void FillMethodHashTable(HashTable *methodHashTable);
   u_int GetNumberOfInstanceFields() {
     return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
   }
@@ -875,6 +884,11 @@ public:
 	   b->GetLabel() == JavaLabel::StaticMethodRef);
     return static_cast<StaticMethodRef *>(b);
   }
+  static StaticMethodRef *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::StaticMethodRef);
+    return static_cast<StaticMethodRef *>(b);
+  }
 
   Class *GetClass() {
     return Class::FromWordDirect(GetArg(CLASS_POS));
@@ -904,6 +918,11 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == JavaLabel::VirtualMethodRef);
+    return static_cast<VirtualMethodRef *>(b);
+  }
+  static VirtualMethodRef *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::VirtualMethodRef);
     return static_cast<VirtualMethodRef *>(b);
   }
 

@@ -413,49 +413,33 @@ Worker::Result ResolveInterpreter::Run() {
 	Scheduler::currentData = wClass;
 	return REQUEST;
       }
+      ClassInfo *classInfo = theClass->GetClassInfo();
+      if (classInfo->IsInterface()) {
+	ThrowWorker::PushFrame(ThrowWorker::IncompatibleClassChangeError,
+			       classInfo->GetName());
+	Scheduler::nArgs = 0;
+	return CONTINUE;
+      }
       JavaString *name = frame->GetName();
       JavaString *descriptor = frame->GetDescriptor();
       std::fprintf(stderr, "resolving method %s#%s%s\n",
 		   theClass->GetClassInfo()->GetName()->ExportC(),
 		   name->ExportC(), descriptor->ExportC());
-      //--** if the method is defined in one of the superinterfaces,
-      //--** raise IncompatibleClassChangeError
-      ClassInfo *classInfo = theClass->GetClassInfo();
-      Table *methods = classInfo->GetMethods();
-      u_int sIndex = 0, vIndex = 0, nMethods = methods->GetCount();
-      word wSuper = classInfo->GetSuper();
-      if (wSuper != null)
-	vIndex = Class::FromWord(wSuper)->GetNumberOfVirtualMethods();
-      for (u_int i = 0; i < nMethods; i++) {
-	MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
-	if (methodInfo->IsTheMethod(name, descriptor)) {
-	  u_int nArgs = methodInfo->GetNumberOfArguments();
-	  Scheduler::PopFrame();
-	  Scheduler::nArgs = Scheduler::ONE_ARG;
-	  if (methodInfo->IsStatic()) {
-	    // Indices of static methods start after static fields:
-	    Table *fields = classInfo->GetFields();
-	    u_int nStaticFields = 0, nFields = fields->GetCount();
-	    for (u_int i = 0; i < nFields; i++) {
-	      FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
-	      if (fieldInfo->IsStatic()) nStaticFields++;
-	    }
-	    Scheduler::currentArgs[0] =
-	      StaticMethodRef::New(theClass, nStaticFields + sIndex, nArgs)->
-	      ToWord();
-	  } else {
-	    Scheduler::currentArgs[0] =
-	      VirtualMethodRef::New(theClass, vIndex, nArgs)->ToWord();
-	  }
-	  return CONTINUE;
-	} else {
-	  if (methodInfo->IsStatic())
-	    sIndex++;
-	  else
-	    vIndex++;
-	}
+      HashTable *methodHashTable = theClass->GetMethodHashTable();
+      word wKey = Class::MakeMethodKey(name, descriptor);
+      if (methodHashTable->IsMember(wKey)) {
+	word wMethodRef = methodHashTable->GetItem(wKey);
+	//--** is the method is abstract, but C is not abstract,
+	//--** throw AbstractMethodError
+	Scheduler::PopFrame();
+	Scheduler::nArgs = Scheduler::ONE_ARG;
+	Scheduler::currentArgs[0] = wMethodRef;
+	return CONTINUE;
       }
+      word wSuper = classInfo->GetSuper();
       if (wSuper == null) {
+	//--** we must attempt to locate the method in the superinterfaces
+	//--** of the original class
 	ThrowWorker::PushFrame(ThrowWorker::NoSuchMethodError, name);
 	Scheduler::nArgs = 0;
 	return CONTINUE;
