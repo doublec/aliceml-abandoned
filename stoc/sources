@@ -68,6 +68,9 @@ common/PathSet.sml
 common/PathMap.sml
 common/TYPE.sig
 common/Type.sml
+common/PERVASIVE_TYPE.sig
+common/MakePervasiveType.sml
+common/PervasiveType.sml
 common/PP_PATH.sig
 common/PPPath.sml
 common/PP_TYPE.sig
@@ -85,9 +88,6 @@ common/MakePPIntermediateGrammar.sml
 common/IntermediateGrammar.sml
 common/CHECK_INTERMEDIATE.sig
 common/CheckIntermediate.sml
-common/PERVASIVE_TYPE.sig
-common/MakePervasiveType.sml
-common/PervasiveType.sml
 common/LABEL_REFLECTION.sig
 common/LabelReflection.sml
 common/PATH_REFLECTION.sig
