@@ -46,27 +46,13 @@ __primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
 
 __primitive val show: 'a -> unit = "show"
 
-fun take (_, 0) = nil
-  | take (x::xr, i) = x::take (xr, i - 1)
+fun nth (x::_, 0) = x
+  | nth (_::xr, i) = nth (xr, i - 1)
 
-fun app f nil = ()
-  | app f (x::xr) = (f x; app f xr)
-
-fun nth (xs, i) =
-    let
-	fun nth' (y::_, 0) = y
-	  | nth' (y::yr, j) = nth' (yr, j - 1)
-    in
-	nth' (xs, i)
-    end
-
-fun multiples n =
-    let
-	fun gen i =
-	    byNeed (fn () => (n * i)::gen (i + 1))
-    in
-	gen 1
-    end
+fun map f xs =
+    byNeed (fn () =>
+	    case xs of
+		x::xr => f x::map f xr)
 
 fun merge (xs, ys) =
     byNeed (fn () =>
@@ -76,12 +62,14 @@ fun merge (xs, ys) =
 		    else if x < y then x::merge (xr, ys)
 		    else y::merge (xs, yr))
 
-val twos = multiples 2
-val threes = multiples 3
-val fours = multiples 4
+val rest = promise ()
+val hamming = 1::rest
 
-val merged = merge (merge (twos, threes), fours)
+val _ = fulfill (rest, merge (map (fn i => 2 * i) hamming,
+			      merge (map (fn i => 3 * i) hamming,
+				     map (fn i => 5 * i) hamming)))
 
-val _ = take (merged, 20000)
+fun loop 0 = ()
+  | loop n = (nth (hamming, 1500); loop (n - 1))
 
-val _ = show "done"
+val _ = show (loop 500)
