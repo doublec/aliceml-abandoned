@@ -2156,8 +2156,11 @@ and elabRHSRecSpec' bla =
 			    error(i, E.CompUnclosed lnt)
 (*DEBUG*)
 val n = List.foldl (fn(i,n) => if Inf.isInfItem i then n+1 else n) 0 (Inf.items s)
-val _ = if n > 20 then
+val _ = if n > 0 then
+  print "(Component signature not printed)\n"
+(*
   print "(Component signature too large to be printed)\n"
+*)
 else
 ( print "Component signature:\n"
 ; PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
