@@ -2,42 +2,42 @@ Group is
 
     (* Utilities *)
 
-#if (!defined(structure Posix))
-    DummyPosix.sml
-#endif
+    ../../bootstrap/sources.cm
 
-    ExtendedBase.sml
+    ASSERT-sig.aml
+    Assert.aml
+    STAMP-sig.aml
+    MkStamp.aml
+    GLOBAL_STAMP-sig.aml
+    BootstrapGlobalStamp.aml
 
-    Assert.sml
-    STAMP.sig
-    MakeStamp.sml
-    GLOBAL_STAMP.sig
-    GlobalStamp.sml
+    HASH_KEY-sig.aml
+    IMP_SET-sig.aml
+    IMP_MAP-sig.aml
+    SCOPED_IMP_SET-sig.aml
+    SCOPED_IMP_MAP-sig.aml
+    MkHashImpSet.aml
+    MkHashImpMap.aml
+(*  MkOHashImpSet.aml *)
+(*  MkOHashImpMap.aml *)
+    MkScopedImpSet.aml
+    MkScopedImpMap.aml
+    MkHashScopedImpSet.aml
+    MkHashScopedImpMap.aml
+    LargeIntHashKey.aml
+    StringHashKey.aml
+    StringMap.aml
 
-    HASH_KEY.sig
-    IMP_SET.sig
-    IMP_MAP.sig
-    SCOPED_IMP_SET.sig
-    SCOPED_IMP_MAP.sig
-    MakeHashImpSet.sml
-    MakeHashImpMap.sml
-    MakeScopedImpSet.sml
-    MakeScopedImpMap.sml
-    MakeHashScopedImpSet.sml
-    MakeHashScopedImpMap.sml
-    StringHashKey.sml
-    LargeIntHashKey.sml
+    PRETTY_PRINT-sig.aml
+    PrettyPrint.aml
+    PP_MISC-sig.aml
+    PPMisc.aml
 
-    PRETTY_PRINT.sig
-    PrettyPrint.sml
-    PP_MISC.sig
-    PPMisc.sml
+    URL-sig.aml
+    Url.aml
 
-    URL.sig
-    Url.sml
+    LIST_SORT-sig.aml
+    MkListSort.aml
 
-    SORT.sig
-    MakeSort.sml
-
-    DEPTH_FIRST_SEARCH.sig
-    MakeDepthFirstSearch.sml
+    DEPTH_FIRST_SEARCH-sig.aml
+    MkDepthFirstSearch.aml

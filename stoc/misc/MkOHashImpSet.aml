@@ -1,4 +1,20 @@
-functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature HASH_KEY from "HASH_KEY-sig"
+import signature IMP_SET  from "IMP_SET-sig"
+
+
+functor MkOHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
   struct
 
     type item = Item.t

@@ -10,7 +10,11 @@
  *   $Revision$
  *)
 
-functor MakeSort(type 'a t val compare: 'a t * 'a t -> order) :> SORT
+import
+    signature LIST_SORT
+from "LIST_SORT-sig"
+
+functor MkListSort(type 'a t val compare: 'a t * 'a t -> order) :> LIST_SORT
     where type 'a t = 'a t =
     struct
 	type 'a t = 'a t

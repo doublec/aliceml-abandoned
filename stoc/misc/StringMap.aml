@@ -1,1 +1,16 @@
-structure StringMap = MakeHashImpMap(StringHashKey)
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import functor   MkHashImpMap  from "MkHashImpMap"
+import structure StringHashKey from "StringHashKey"
+
+structure StringMap = MkHashImpMap(StringHashKey)
