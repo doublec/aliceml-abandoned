@@ -12,21 +12,49 @@
 
 (*******************************************************************************
 
-On Paths and Instantiation / Alpha Renaming:
+On Names and Binding Structure:
 
-We use `paths' to name types, modules, and interfaces. A path is a unique name
-with additional location information. Location information is not required for
-type checking but is maintained solely for pretty printing purposes and to
-simplify external binding analysis on interfaces (like performed by
-BindEnvFromSig, for example).
+We use a mixture of the type theoretic model of module calculi [e.g. Dreyer,
+Crary, Harper 2003] and the operational model used in the SML Definition.
+
+Functor parameters and structure items are binders for module names. However,
+they also bind all names reachable "bound" in their respective signature, i.e.
+reachable by projection. This is somewhat similar to the Definition's model,
+except that there are no explicit name sets - which names are bound can be
+inferred from a signature's item list.
+
+For example, consider the following interface, where we annotate labels with
+indexes as names:
+
+	sig{
+	    type t[1]
+	    module a[2] : sig{
+		type u[3]
+		module b[4] : sig{type v[5]}
+		module c[6] : fun(d[7] : sig{type v[8]}) -> sig{type w[9]}
+		interface j[10]
+	    }
+	    interface k[11] = sig{type t[12]}
+	}
+
+This signature binds the names {1,...,6,10,11}. The argument of the functor `d'
+binds names 7 and 8.
 
 We conceptually distinguish between _free_ and _instantiated_ signatures. A
 free signature is one bound by an interface declaration, while instantiated ones
 are those assigned to modules. This extends to higher-order interfaces.
 
 To avoid capturing issues, all instantiations of the `same' signature need to
-bind different paths. The instance function must be used in strategic places to
+bind different names. The instance function must be used in strategic places to
 ensure this invariant.
+
+On Paths and Instantiation:
+
+We use `paths' to name types, modules, and interfaces. A path is a name
+with additional location information. Location information is semantically
+irrelevant but is maintained for pretty printing purposes, and to
+simplify external binding analysis on interfaces (like performed by
+BindEnvFromSig, for example).
 
 There are three binders for module paths: signature items, functors, and
 dependent interfaces. Type and interface paths are only bound by interface
@@ -38,7 +66,7 @@ items. The location information of a path p is as follows:
   interface of a functor or interface parameter or an enclosing signature's
   module item, p = p'.x, where p' is the path of the corresponding binder.
 
-As an example, consider the following interface with annotated path locations:
+As an example, consider the above interface with annotated path locations:
 
 	sig{
 	    type t[t]
@@ -70,8 +98,12 @@ using the compress function.
 
 On Singletons:
 
-Since we have no functor paths, we only have few axioms for canonicalising
-singleton interfaces. But we have similar axioms for singleton kinds:
+To increase sharing, interfaces annotated at singletons are not selfified, but
+are just (possibly narrowed versions of) the original interface. This has to be
+taken into account during realisation. Lookup performs selfification
+(strengthening) on the fly.
+
+We have canonicalisation axioms for singleton kinds:
 
 	SING_{SING_k j}(j')  = SING_k j
 	SING_{DEP x:j.k}(j') = DEP x:j.SING_k(j' x)
@@ -88,12 +120,13 @@ order to be able to recognise quickly if a signatures is an ancestor of another
 one with respect to narrowing, every signature actually carries a list of all
 its ancestors (including itself as the list's head). More precisely, this list
 is the path in the ancestor tree of the signature. The ancestor relationship
-can be test quickly by looking up the list head of one signature in the
+can be tested quickly by looking up the list head of one signature in the
 ancestor list of the other. Usually hierarchies are flat, so linear search is
 acceptable (TODO: verify this claim).
 
 TODO:
 
+- Use functional sets and maps.
 - Make signature extension functional (requires functional lookup table?).
 
 *******************************************************************************)
@@ -101,7 +134,6 @@ TODO:
 import structure Cell         from "../utility/Cell"
 import functor   MkHashImpMap from "../data/MkHashImpMap"
 import structure GlobalStamp  from "../data/GlobalStamp"
-import structure Name         from "Name"
 import structure Label        from "Label"
 import structure Path         from "Path"
 import structure PathSet      from "PathSet"
@@ -168,14 +200,17 @@ struct
     and      kind = kind' cell			(* [kappa,k] *)
     and      sign = item list ref *		(* [sigma,s] *)
 		    item Tab.t option ref *
-		    GlobalStamp.t list
+		    GlobalStamp.t list ref
 			(* The list of items in a sig is in reverse order! *)
 
     type t = inf
 
+    type bound_paths = {typ : (path list option * tkind) PathMap.map,
+			mod : (path list option * inf) PathMap.map,
+			inf : (path list option * kind) PathMap.map}
+
     structure Map     = Cell.MkMap(type t = inf')
     structure KindMap = Cell.MkMap(type t = kind')
-
 
   (* Realisations *)
 
@@ -271,6 +306,7 @@ struct
     val matchKindFwd 		= ref(dummy : kind * kind -> unit)
     val maximiseFwd		= ref(dummy : PathSet.t * inf -> inf)
     val maximiseExistFwd	= ref(dummy : PathSet.t * path* inf* inf -> inf)
+    val avoidFwd		= ref(dummy : bound_paths * inf -> inf option)
 
     fun mod(p,j)		= !modFwd(p,j)
     fun apply'(j,m)		= !applyFwd'(j,m)
@@ -283,6 +319,7 @@ struct
     fun matchKind(k1,k2)	= !matchKindFwd(k1,k2)
     fun maximise(u,j)		= !maximiseFwd(u,j)
     fun maximiseExist(u,p,j1,j2) = !maximiseExistFwd(u,p,j1,j2)
+    fun avoid(u,j)		= !avoidFwd(u,j)
 
 
   (* Debugging aids *)
@@ -363,7 +400,7 @@ struct
     exception Hidden
 
     fun items(ref items, _, _)	= items
-    fun stamps (_,_,zs)		= zs
+    fun stamps (_,_,zs)		= !zs
     fun narrows(s1,s2)		= List.contains (stamps s1) (List.hd(stamps s2))
 
     fun itemDom(FIX(l,_))	= (FIX',l)
@@ -399,38 +436,99 @@ struct
 
   (* Calculating free paths *)
 
-    fun paths j = let val u = PathSet.set() in paths'(u,j); u end
-    and paths'(u,j) =
+    fun paths j =
+	let
+	    val f = PathSet.set()
+	    val b = PathSet.set()
+	in
+	    paths'(f,b,j);
+	    f
+	end
+    and paths'(f,b,j) =
 	case content j
 	 of TOP			=> ()
-	  | CON(p,k)		=> (PathSet.insert(u,p); pathsKind'(u,k))
-	  | SIG s		=> pathsSig'(u,s)
-	  | THAT m		=> pathsMod'(u,m)
+	  | CON(p,k)		=> (pathsPath'(f,b,p); pathsKind'(f,b,k))
+	  | SIG s		=> pathsSig'(f,b,s)
+	  | THAT m		=> pathsMod'(f,b,m)
 	  | ( FUN(p,j1,j2)
-	    | EXIST(p,j1,j2)
-	    | LAMBDA(p,j1,j2) )	=> (paths'(u,j2); paths'(u,j1))
-	  | APPLY(j,m)		=> (paths'(u,j); paths'(u,#2 m))
-				   (*EXPERIMENTAL: non-generative arguments *)
-	  | ABBREV(j1,j2)	=> paths'(u,j2)
+	    | LAMBDA(p,j1,j2) )	=> let
+				      val b' = PathSet.clone b
+				   in
+				      paths'(f,b',j1);
+				      PathSet.insert(b',p);
+				      paths'(f,b',j2)
+				   end
+	  | EXIST(p,j1,j2)	=> (paths'(f,b,j1);
+				    PathSet.insert(b,p);
+				    paths'(f,b,j2))
+	  | APPLY(j,m)		=> (paths'(f,b,j); pathsMod'(f,b,m))
+	  | ABBREV(j1,j2)	=> paths'(f,b,j2)
 
-    and pathsMod'(u, (p,j))	= (PathSet.insert(u,p); paths'(u,j))
+    and pathsPath'(f,b,p)	= if PathSet.member(b,p) then () else
+				  PathSet.insert(f,p)
+    and pathsMod'(f,b,(p,j))	= (pathsPath'(f,b,p); paths'(f,b,j))
 
-    and pathsSig'(u,s)		= List.app (pathsItem' u) (items s)
-    and pathsItem' u (FIX _)	= ()
-      | pathsItem' u (VAL(l,t))	= PathMap.appi (fn(p,_) => PathSet.insert(u,p))
-					       (Type.paths t)
-      | pathsItem' u (TYP(p,k))	= PathMap.appi (fn(p,_) => PathSet.insert(u,p))
-					       (Type.pathsKind k)
-      | pathsItem' u (MOD(p,j))	= paths'(u,j)
-      | pathsItem' u (INF(p,k))	= pathsKind'(u,k)
-      | pathsItem' u (HIDDEN i)	= pathsItem' u i
+    and pathsSig'(f,b,s)           = List.appr (pathsItem'(f,b)) (items s)
+    and pathsItem'(f,b) (FIX _)    = ()
+      | pathsItem'(f,b) (VAL(l,t)) = PathMap.appi (fn(p,_) => pathsPath'(f,b,p))
+						  (Type.paths t)
+      | pathsItem'(f,b) (TYP(p,k)) = (PathMap.appi (fn(p,_)=> pathsPath'(f,b,p))
+						   (Type.pathsKind k);
+				      PathSet.insert(b,p))
+      | pathsItem'(f,b) (MOD(p,j)) = (paths'(f,b,j); PathSet.insert(b,p))
+      | pathsItem'(f,b) (INF(p,k)) = (pathsKind'(f, PathSet.clone b, k);
+				      PathSet.insert(b,p))
+      | pathsItem'(f,b) (HIDDEN i) = pathsItem'(f,b) i
 
-    and pathsKind k = let val u = PathSet.set() in pathsKind'(u,k); u end
-    and pathsKind'(u,k) =
+    and pathsKind k =
+	let
+	    val f = PathSet.set()
+	    val b = PathSet.set()
+	in
+	    pathsKind'(f,b,k);
+	    f
+	end
+    and pathsKind'(f,b,k) =
 	case content k
 	 of GROUND		=> ()
-	  | SING j		=> paths'(u,j)
-	  | DEP(p,j,k)		=> (pathsKind'(u,k); paths'(u,j))
+	  | SING j		=> paths'(f,b,j)
+	  | DEP(p,j,k)		=> (paths'(f,b,j);
+				    PathSet.insert(b,p);
+				    pathsKind'(f,b,k))
+
+  (* Calculating bound paths *)
+
+    fun boundPaths j =
+	let
+	    val b = {typ=PathMap.map(), mod=PathMap.map(), inf=PathMap.map()}
+	in
+	    boundPaths'(b, SOME [], j); b
+	end
+    and boundPaths'(b,pso,j) =
+	case content j
+	 of ( TOP
+	    | CON _
+	    | THAT _
+	    | FUN _
+	    | LAMBDA _
+	    | APPLY _ )		=> ()
+	  | SIG s		=> boundPathsSig'(b,pso,s)
+	  | EXIST(p,j1,j2)	=> (PathMap.insert(#mod b, p, (NONE,j1));
+				    boundPaths'(b,NONE,j1);
+				    boundPaths'(b,pso,j2))
+	  | ABBREV(_,j)		=> boundPaths'(b,pso,j)
+
+    and boundPathsSig'(b,pso,s)	= List.app (boundPathsItem'(b,pso)) (items s)
+    and boundPathsItem' (b,pso) (FIX _)    = ()
+      | boundPathsItem' (b,pso) (VAL(l,t)) = ()
+      | boundPathsItem' (b,pso) (TYP(p,k)) = PathMap.insert(#typ b, p, (pso,k))
+      | boundPathsItem' (b,pso) (MOD(p,j)) =
+	(
+	    PathMap.insert(#mod b, p, (pso,j));
+	    boundPaths'(b, Option.map (fn ps => ps@[p]) pso, j)
+	)
+      | boundPathsItem' (b,pso) (INF(p,k)) = PathMap.insert(#inf b, p, (pso,k))
+      | boundPathsItem' (b,pso) (HIDDEN i) = boundPathsItem' (b,NONE) i
 
 
   (* Kinds *)
@@ -732,7 +830,7 @@ struct
 
   (* Signature construction *)
 
-    fun newSig'(is,zs)	= (ref is, ref NONE, GlobalStamp.stamp()::zs)
+    fun newSig'(is,zs)	= (ref is, ref NONE, ref(GlobalStamp.stamp()::zs))
     fun newSig is	= newSig'(is, [])
     fun emptySig()	= newSig []
 
@@ -751,9 +849,10 @@ struct
     fun hideItem(itemsr, item) =
 	itemsr := List.mapPartial (hideItem'(itemDom item)) (!itemsr)
 
-    fun extend(s as (itemsr,_,_), dom, item) =
+    fun extend(s as (itemsr,_,zs), dom, item) =
 	(Tab.insertWithi (extendClash itemsr) (tab s, dom, item);
-	 itemsr := item :: !itemsr)
+	 itemsr := item :: !itemsr;
+	 zs := [List.hd(!zs)])
     and extendClash itemsr (dom,item',item) = (hideItem(itemsr,item'); item)
 
     fun extendFix(s,l,q) = extend(s, (FIX',l), FIX(l,q))
@@ -827,13 +926,16 @@ struct
 
   (* Signature lookup *)
 
+    fun strongTyp(p,k)			= if Type.isSingKind k then k else
+					  Type.singKind(Type.con(p,k))
+    fun strongMod(p,j)			= if isSing j then j else
+					  sing'(mod(p,j))
+    fun strongInf(p,k)			= if isSingKind k then k else
+					  singKind(con'(p,k))
     fun strong(item as (FIX _ | VAL _))	= item
-      | strong(item as TYP(p,k))	= if Type.isSingKind k then item else
-					  TYP(p, Type.singKind(Type.con(p,k)))
-      | strong(item as MOD(p,j))	= if isSing j then item
-					  else MOD(p, sing'(mod(p,j)))
-      | strong(item as INF(p,k))	= if isSingKind k then item
-					  else INF(p, singKind(con'(p,k)))
+      | strong(TYP(p,k))		= TYP(p, strongTyp(p,k))
+      | strong(MOD(p,j))		= MOD(p, strongMod(p,j))
+      | strong(INF(p,k))		= INF(p, strongInf(p,k))
       | strong(HIDDEN _)		= assert false
 
     fun selectFix(FIX(l,q))		= q
@@ -847,33 +949,33 @@ struct
     fun selectInf(INF(p,k))		= k
       | selectInf _			= assert false
 
-    fun selectTyp'(TYP(p,k))		= Type.asSingKind k
+    fun selectTyp'(TYP(p,k))		= Type.asSingKind(strongTyp(p,k))
       | selectTyp' _			= assert false
-    fun selectMod'(MOD(p,j))		= asSing j
+    fun selectMod'(MOD(p,j))		= asSing(strongMod(p,j))
       | selectMod' _			= assert false
-    fun selectInf'(INF(p,k))		= asSingKind k
+    fun selectInf'(INF(p,k))		= asSingKind(strongInf(p,k))
       | selectInf' _			= assert false
 
     exception Lookup of lab
 
-    fun lookup space (s,l) =
+    fun lookup(space,s,l) =
 	case Tab.lookup(tab s, (space,l))
 	 of SOME item => item
 	  | NONE      => raise Lookup l
 
-    val pathTyp		= itemPath o lookup TYP'
-    val pathMod		= itemPath o lookup MOD'
-    val pathInf		= itemPath o lookup INF'
+    fun lookupFix(s,l)	= selectFix(lookup(FIX',s,l))
+    fun lookupVal(s,l)	= selectVal(lookup(VAL',s,l))
+    fun lookupTyp(s,l)	= selectTyp(lookup(TYP',s,l))
+    fun lookupMod(s,l)	= selectMod(lookup(MOD',s,l))
+    fun lookupInf(s,l)	= selectInf(lookup(INF',s,l))
 
-    val lookupFix	= selectFix o lookup FIX'
-    val lookupVal	= selectVal o lookup VAL'
-    val lookupTyp	= selectTyp o lookup TYP'
-    val lookupMod	= selectMod o lookup MOD'
-    val lookupInf	= selectInf o lookup INF'
+    fun lookupTyp'(s,l)	= selectTyp'(lookup(TYP',s,l))
+    fun lookupMod'(s,l)	= selectMod'(lookup(MOD',s,l))
+    fun lookupInf'(s,l)	= selectInf'(lookup(INF',s,l))
 
-    val lookupTyp'	= selectTyp' o strong o lookup TYP'
-    val lookupMod'	= selectMod' o strong o lookup MOD'
-    val lookupInf'	= selectInf' o strong o lookup INF'
+    fun pathTyp(s,l)	= itemPath(lookup(TYP',s,l))
+    fun pathMod(s,l)	= itemPath(lookup(MOD',s,l))
+    fun pathInf(s,l)	= itemPath(lookup(INF',s,l))
 
 
   (* Strip signature lookup tables *)
@@ -980,11 +1082,6 @@ struct
 	  | LAMBDA _ =>
 		raise Kind
 
-    and maximiseExist(u,p,j1,j2) =
-	if PathSet.member(u,p) then exist'(p, j1, replaceNarrowed(p,j1,j2)) else
-	case content j1 of TOP => j2
-			 | _   => exist'(p,j1,j2)
-
     and maximiseSig(u,s) =
 	let
 	    val change = ref false
@@ -1006,7 +1103,7 @@ struct
 	    else (change := true; NONE)
       | maximiseItem (u,change) (item as MOD(p,j)) =
 	    if PathSet.member(u,p)
-	    then (paths'(u,j); SOME item)
+	    then (paths'(u, PathSet.set(), j); SOME item)
 	    else let
 		val j' = maximise(u,j)
 	    in
@@ -1016,10 +1113,27 @@ struct
 	    end
       | maximiseItem (u,change) (item as INF(p,k)) =
 	    if PathSet.member(u,p)
-	    then (pathsKind'(u,k); SOME item)
+	    then (pathsKind'(u, PathSet.set(), k); SOME item)
 	    else (change := true; NONE)
       | maximiseItem (u,change) (item as HIDDEN item') =
 	    Option.map HIDDEN (maximiseItem (u,change) item')
+
+
+    and maximiseExist(u,p,j1,j2) =
+(*
+if PathSet.member(u,p) then exist'(p, j1, replaceNarrowed(p,j1,j2)) else
+case content j1 of TOP => j2 | _   => exist'(p,j1,j2)
+*)
+	if not(isSig j1 orelse PathSet.member(u,p)) then j2 else
+	let
+	    val b = boundPaths j1
+	in
+	    PathMap.insertDisjoint(#mod b, p, (NONE,j1));
+	    case avoid(b,j2)
+	     of SOME j2' => j2'
+	      | NONE => exist'(p, j1, if PathSet.member(u,p)
+				      then replaceNarrowed(p,j1,j2) else j2)
+	end
 
 
   (* Narrowing *)
@@ -1052,8 +1166,11 @@ struct
     fun narrow'(c,j1,j2) =
 	if Cell.equal(j1,j2) then j1 else
 	case (content j1, content j2)
-	 of (_, CON _) => j1
-	  | (_, TOP)   => j2
+	 of (_, TOP)   => j2
+
+	  | ( (_, CON _)
+	    | (_, APPLY _) ) =>
+	    (paths'(#used c, PathSet.set(), j1) ; j1)
 
 	  | (_, ABBREV(_,j22)) => narrow'(c,j1,j22)
 	  | (ABBREV(_,j12), _) =>
@@ -1111,7 +1228,6 @@ struct
 		else arrow'(p1,j11,j12')
 	    end
 
-	  | (APPLY _, APPLY _)	=> (paths'(#used c,j1); j1)
 	  | (LAMBDA _,LAMBDA _)	=> raise Kind
 	  | _			=> raise Mismatch(Incompatible(j1,j2))
 
@@ -1153,7 +1269,7 @@ struct
 			     else (change := true; MOD(p1,j1')))
 		    end
 		  | (INF(p1,k1), SOME(INF _)) =>
-			(pathsKind'(#used c,k1); SOME item1)
+			(pathsKind'(#used c, PathSet.set(), k1); SOME item1)
 		  | (_, NONE) =>
 		    if #extend c
 		    then maximiseItem item1
@@ -1414,6 +1530,15 @@ else ()
 	    (change := true; VAL(l,t'))
 	end
       | buildItem(c, change, item as TYP(p,k)) =
+	(case PathMap.lookup(#typ_rea(#rea c), p)
+	 of SOME t => (* for non-selfified module annotations *)
+	    let
+		val p' = buildPath(c,p)
+		val k' = Type.singKind t
+	    in
+		change := true; TYP(p',k')
+	    end
+	  | NONE =>
 	let
 	    val p' = buildPath(c,p)
 	    val k' = Type.realiseKindCont(#typ c, #typ_rea(#rea c), k)
@@ -1434,8 +1559,17 @@ TextIO.print "\n";
 (*DEBUG*)handle e => raise e;
 		change := true; TYP(p',k')
 	    )
-	end
+	end)
       | buildItem(c, change, item as MOD(p,j)) =
+	(case PathMap.lookup(#mod_rea(#rea c), p)
+	 of SOME m => (* for non-selfified module annotations *)
+	    let
+		val p' = buildPath(c,p)
+		val j' = sing' m
+	    in
+		change := true; MOD(p',j')
+	    end
+	  | NONE =>
 	let
 	    val p' = buildPath(c,p)
 	    val j' = build(instContext(c, InstDot p'), j)
@@ -1455,8 +1589,17 @@ TextIO.print "\n";
 (*DEBUG*)handle e => raise e;
 		change := true; MOD(p',j')
 	    )
-	end
+	end)
       | buildItem(c, change, item as INF(p,k)) =
+	(case PathMap.lookup(#inf_rea(#rea c), p)
+	 of SOME j => (* for non-selfified module annotations *)
+	    let
+		val p' = buildPath(c,p)
+		val k' = singKind j
+	    in
+		change := true; INF(p',k')
+	    end
+	  | NONE =>
 	let
 	    val p' = buildPath(c,p)
 	    val k' = buildKind(c,k)
@@ -1476,7 +1619,7 @@ TextIO.print "\n";
 (*DEBUG*)handle e => raise e;
 		change := true; INF(p',k')
 	    )
-	end
+	end)
       | buildItem(c, change, HIDDEN item') =
 	    HIDDEN(buildItem(c, change, item'))
 
@@ -1533,6 +1676,14 @@ TextIO.print "\n";
 	       rea  = rea,
 	       inst = InstTop}, j)
 
+    and realiseKind(rea, k) =
+	if isEmptyRea rea then k else
+	buildKind({inf  = Map.map(),
+		   kind = KindMap.map(),
+		   typ  = Type.realiseStart(),
+		   rea  = rea,
+		   inst = NoInst LeftSingleton}, k)
+
     and replaceNarrowed(p,j,j') =
 	let
 	    val rea = rea()
@@ -1569,24 +1720,277 @@ TextIO.print "Inf.instance done.\n";
 				   (* should remove p,j refs from u! *)
 
 
+  (* Breaking dependencies on paths b *)
+
+    exception Unavoidable
+
+    fun remainPaths1(m,u) = PathMap.existsi (fn(p,_) => PathSet.member(u,p)) m
+    fun remainPaths2(m,u) = PathMap.existsi (fn(p,_) => PathMap.member(u,p)) m
+    fun remainPaths(b : bound_paths, u) =
+	remainPaths1(#typ b,u) orelse remainPaths1(#mod b,u)
+			       orelse remainPaths1(#inf b,u)
+
+    fun avoid(b,j) = SOME(avoid'(b, rea(), j)) handle Unavoidable => NONE
+    and avoid'(b,rea,j) =
+	case content j
+	 of TOP => j
+
+	  | (CON _ | FUN _ | LAMBDA _ | APPLY _) =>
+	    let
+		val j' = realise(rea,j)
+	    in
+		if remainPaths(b, paths j') then raise Unavoidable else
+		j'
+	    end
+
+	  | ABBREV(_,j2) =>
+	    let
+		val j2' = avoid'(b,rea,j2)
+	    in
+		if Cell.equal(j2,j2')
+		then j
+		else j2'
+	    end
+
+	  | THAT(p,j') =>
+	    if PathMap.member(#mod_rea rea,p) then
+		if PathMap.member(#mod b,p) then raise Unavoidable else
+		realise(rea,j)
+	    else if not(PathMap.member(#mod b,p)) then
+		sing'(p, avoid'(b,rea,j'))
+	    else
+		let
+		    val j'' = avoid'(b,rea,j')
+		    (* luckily, we don't have to "unselfify" j' ;-) *)
+		in
+		    PathMap.insert(#mod_rea rea, p, mod(p,j''));
+		    (* disallow further occurances of p, by keeping it in b! *)
+		    j''
+		end
+
+	  | EXIST(p,j1,j2) =>
+	    let
+		val j1' = avoid'(b,rea,j1)
+		val j2' = avoid'(b,rea,j2)
+	    in
+		if Cell.equal(j1,j1') andalso Cell.equal(j2,j2')
+		then j
+		else exist'(p,j1',j2')
+	    end
+
+	  | SIG s =>
+	    let
+		val s' = avoidSig'(b,rea,s)
+	    in
+		if s = s'
+		then j
+		else sign' s'
+	    end
+
+    and avoidSig'(b,rea,s) =
+	let
+	    val change = ref false
+	    val items' = mapr (avoidItem'(b,rea,change)) (items s)
+	in
+	    if !change
+	    then newSig items'
+	    else s
+	end
+
+    and avoidItem' (b,rea,change) (item as FIX _) =
+	    item
+      | avoidItem' (b,rea,change) (item as VAL(l,t)) =
+	let
+	    val t' = Type.realise(#typ_rea rea, t)
+	in
+	    if remainPaths2(#typ b, Type.paths t') then raise Unavoidable else
+	    if Type.same(t,t')
+	    then item
+	    else (change := true; VAL(l,t'))
+	end
+      | avoidItem' (b,rea,change) (item as TYP(p,k)) =
+	let
+	    val k'    = Type.realiseKind(#typ_rea rea, k)
+	    val item' = if Type.sameKind(k,k')
+			then item
+			else (change := true; TYP(p,k'))
+	in
+	    case Type.inspectKind k'
+	     of Type.SingKind t =>
+		(case Type.inspect t
+		 of Type.Con p' =>
+		    if PathMap.member(#typ b,p') then
+			let
+			    val k'' = Type.kind t
+			in
+			    PathMap.insertDisjoint(#typ_rea rea,p',
+						   Type.con(p,k''));
+			    PathMap.removeExistent(#typ b,p');
+			    change := true; TYP(p,k'')
+			end
+		    else item'
+		  | _ =>
+		    if remainPaths2(#typ b,Type.paths t) then
+		    raise Unavoidable
+		    else item'
+		)
+	      | _ => item' (* normalised kinds contain no paths *)
+	end
+      | avoidItem' (b,rea,change) (item as MOD(p,j)) =
+	(case inspect j
+	 of Sing(p',j') => (*UNFINISHED: where (PathMap.member(#mod b,p') ...) *)
+	    (case PathMap.lookup(#mod b,p')
+	     of SOME(_,jb) =>
+		(* If p' is in both maps then only because we encountered
+		 * some free THAT before that forced us to unshare it.
+		 *)
+		if PathMap.member(#mod_rea rea,p') then raise Unavoidable else
+		let
+		    (* (j'',rea') = instance(p, realise(rea,j')) *)
+		    val j'' = build({inf  = Map.map(),
+				     kind = KindMap.map(),
+				     typ  = Type.realiseStart(),
+				     rea  = rea,
+				     inst = InstDot p}, j')
+		    val b' = boundPaths j'
+		in
+		    (* We support only full bindings (otherwise we had to check
+		     * all remaining singleton occurances). *)
+		    match(j',jb) handle Mismatch _ => raise Unavoidable;
+		    PathMap.difference(#typ b, #typ b');
+		    PathMap.difference(#mod b, #mod b');
+		    PathMap.difference(#inf b, #inf b');
+		    PathMap.insertDisjoint(#mod_rea rea, p', mod(p,j''));
+		    change := true; MOD(p,j'')
+		end
+	      | _ =>
+		let
+		    val j' = avoid'(b,rea,j)
+		in
+		    if remainPaths(b, paths j') then raise Unavoidable else
+		    if Cell.equal(j,j')
+		    then item
+		    else (change := true; MOD(p,j'))
+		end
+	    )
+	  | _ =>
+	    let
+		val j' = avoid'(b,rea,j)
+	    in
+		if remainPaths(b, paths j') then raise Unavoidable else
+		if Cell.equal(j,j')
+		then item
+		else (change := true; MOD(p,j'))
+	    end
+	)
+      | avoidItem' (b,rea,change) (item as INF(p,k)) =
+	let
+	    val k'    = realiseKind(rea,k)
+	    val item' = if Cell.equal(k,k')
+			then item
+			else (change := true; INF(p,k'))
+	in
+	    case inspectKind k'
+	     of SingKind j =>
+		(case inspect j
+		 of Con p' =>
+		    if PathMap.member(#inf b,p') then
+			let
+			    val k'' = kind j
+			in
+			    PathMap.insertDisjoint(#inf_rea rea, p',con(p,k''));
+			    PathMap.removeExistent(#inf b,p');
+			    change := true;
+			    INF(p,k'')
+			end
+		    else item'
+		  | _ =>
+		    if remainPaths(b, pathsKind k')
+		    then raise Unavoidable
+		    else item'
+		)
+	      | _ =>
+		if remainPaths(b, pathsKind k')
+		then raise Unavoidable
+		else item'
+	end
+      | avoidItem' (b,rea,change) (HIDDEN item') =
+	    HIDDEN(avoidItem' (b,rea,change) item')
+
+    (* 
+     * Try to remove hidden fields from a signature.
+     *
+     * This is not the smartest (and neither the most efficient) algorithm,
+     * but enough for our current needs.
+     *)
+
+    fun avoidHidden s =
+	let
+	    val b = {typ=PathMap.map(), mod=PathMap.map(), inf=PathMap.map()}
+	    val change = ref false
+	    val items' = List.foldr (avoidHiddenItem(b,rea(),change)) []
+				    (items s)
+	in
+	    if !change
+	    then newSig items'
+	    else s
+	end
+	handle Unavoidable => s
+
+    and avoidHiddenItem (b,rea,change) (HIDDEN item, items) =
+	    (avoidHiddenItem'(b,rea,change) item; change := true; items)
+(*UNFINISHED: have to think about how to descent efficiently...
+      | avoidHiddenItem (b,rea,change) (item as MOD _, items) =
+	let
+	    val (p,j) = asModItem(avoidItem' (b,rea,change) item)
+	    val    j' = avoidHiddenInf(b,rea,j);
+	in
+	    MOD(p,j)
+	end
+*)
+      | avoidHiddenItem (b,rea,change) (item, items) =
+	    avoidItem' (b,rea,change) item :: items
+    and avoidHiddenItem'(b,rea,change) (FIX _ | VAL _) = ()
+      | avoidHiddenItem'(b,rea,change) (TYP(p,k)) =
+ 	    PathMap.insert(#typ b, p, (NONE,k))
+      | avoidHiddenItem'(b,rea,change) (MOD(p,j)) =
+	    (PathMap.insert(#mod b,p, (NONE,j)); boundPaths'(b,NONE,j))
+      | avoidHiddenItem'(b,rea,change) (INF(p,k)) =
+	    PathMap.insert(#inf b,p, (NONE,k))
+      | avoidHiddenItem'(b,rea,change) (HIDDEN item) =
+	    assert false
+(*
+    and avoidHiddenInf(b,rea,j) =
+	case content j
+	 of ( TOP | CON _ | THAT _ | FUN _ | LAMBDA _ | APPLY _ ) => ()
+	  | SIG s		=> avoidHiddenSig(b,rea,s)
+	  | EXIST(p,j1,j2)	=> (PathMap.insert(#mod b, p, (NONE,j1));
+				    avoidHiddenInf(b,rea,j1);
+				    avoidHiddenInf(b,rea,j2))
+	  | ABBREV(_,j)		=> avoidHiddenInf(b,rea,j)
+*)
+
+
   (* Matching *)
 
     fun match(j1,j2) =
 	let
 	    val rea = rea()
 	in
+	    matchWith(rea,j1,j2);
+	    rea
+	end
+    and matchWith(rea,j1,j2) =
 (*DEBUG
-TextIO.print "Inf.match...\n";
+(TextIO.print "Inf.match...\n";
 TextIO.print("j1 = " ^ infToString j1 ^ "\n");
 TextIO.print("j2 = " ^ infToString j2 ^ "\n");
 *)
-	    match'(Type.matchStart(), rea, j1,j2);
-	    rea
+	    match'(Type.matchStart(), rea, j1,j2)
 (*
 before
-TextIO.print "Inf.match done.\n"
+TextIO.print "Inf.match done.\n")
 *)
-	end
     and match'(mt,rea,j1,j2) =
 	if Cell.equal(j1,j2) then () else
 	case (content j1, content j2)
@@ -1774,6 +2178,9 @@ TextIO.print "\n"
     and equalMod'(mt,rea,m1,m2) =
 	ignore(matchMod(Type.matchBranch mt, cloneRea rea, m2,m1);
 	       matchMod(Type.matchBranch mt, cloneRea rea, m1,m2))
+
+    fun equal(j1,j2) =
+	(match(j1,j2); match(j2,j1); true) handle Mismatch _ => false
 
 
   (* infimum (greatest lower bound) *)
@@ -2170,4 +2577,5 @@ TextIO.print "\n";
     val _ = matchKindFwd       := matchKind
     val _ = maximiseFwd        := maximise
     val _ = maximiseExistFwd   := maximiseExist
+    val _ = avoidFwd           := avoid
 end

@@ -3,14 +3,13 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Name    from "Name"
 import structure Label   from "Label"
 import structure Path    from "Path"
 import structure PathSet from "PathSet"
@@ -39,6 +38,9 @@ sig
     structure Map :	IMP_MAP where type key = inf
     structure KindMap :	IMP_MAP where type key = kind
 
+    type bound_paths = {typ : (path list option * tkind) PathMap.t,
+			mod : (path list option * inf) PathMap.t,
+			inf : (path list option * kind) PathMap.t}
 
   (* Realisations *)
 
@@ -177,14 +179,17 @@ sig
     exception Mismatch of mismatch
     exception KindMismatch of kind_mismatch
 
-    val matchKind :	kind * kind -> unit		(* KindMismatch *)
+    val equal :		inf * inf -> bool
     val match :		inf * inf -> rea		(* Mismatch *)
+    val matchKind :	kind * kind -> unit		(* KindMismatch *)
     val infimum :	inf * inf -> inf		(* Mismatch *)
     val narrow :	inf * inf -> inf		(* Mismatch *)
     val narrowMod :	mod * inf -> mod		(* Mismatch *)
     val narrowSig :	sign * sign -> sign		(* Mismatch *)
     val narrowExt :	inf * inf -> inf		(* Mismatch *)
     val narrowSigExt :	sign * sign -> sign		(* Mismatch *)
+
+    val avoid :		bound_paths * inf -> inf option
 
   (* Signature construction *)
 
@@ -199,6 +204,8 @@ sig
     val extendHiddenTyp : sign * path * tkind -> unit	(* Path.Path *)
     val extendHiddenMod : sign * path * inf -> unit	(* Path.Path *)
     val extendHiddenInf : sign * path * kind -> unit	(* Path.Path *)
+
+    val avoidHidden :	sign -> sign
 
   (* Signature inspection *)
 
@@ -254,4 +261,5 @@ sig
 
     val paths :		inf  -> PathSet.t
     val pathsKind :	kind -> PathSet.t
+    val boundPaths :	inf -> bound_paths
 end
