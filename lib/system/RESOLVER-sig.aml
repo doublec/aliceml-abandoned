@@ -23,6 +23,7 @@ signature RESOLVER =
 	    FILE of string
 	  | STRING of string
 
-	val new: string * Handler.t list -> resolver
+	val new: {name: string, handlers: Handler.t list,
+		  memoize: bool} -> resolver
 	val localize: resolver -> string -> result option
     end

@@ -14,21 +14,14 @@ import structure Assert        from "../utility/Assert"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
 import structure Url           from "Url"
 import structure Config        from "Config"
-import structure BinIO         from "BinIO"
 import structure TextIO        from "TextIO"
-import structure IO            from "IO"
 import structure OS            from "OS"
+import structure UrlMap        from "UrlMap"
 import structure HttpClient    from "HttpClient"
 import signature RESOLVER      from "RESOLVER-sig"
 
 structure Resolver: RESOLVER =
     struct
-	val traceFlag = ref (isSome (OS.Process.getEnv "ALICE_TRACE_RESOLVER"))
-
-	fun trace s =
-	    if !traceFlag then TextIO.output (TextIO.stdErr, s)
-	    else ()
-
 	structure Handler =
 	    struct
 		type handler = string * (string -> Url.t option)
@@ -251,54 +244,79 @@ structure Resolver: RESOLVER =
 		    end
 	    end
 
-	type resolver = string * Handler.t list
-	type t = resolver
-
 	datatype result =
 	    FILE of string
 	  | STRING of string
 
-	fun new (name, handlers) = (name, handlers)
+	type resolver = { name: string,
+			  handlers: Handler.t list,
+			  memoizeMap: result option UrlMap.t option }
+	type t = resolver
 
-	fun existsFile (name, url) =
-	    let
-		val s = Url.toStringRaw url
-	    in
-		BinIO.closeIn (BinIO.openIn s);
-		trace ("[" ^ name ^ "] ...localize succeeded\n");
-		SOME (FILE s)
-	    end handle IO.Io _ => NONE
+	local
+	    val traceFlag =
+		ref (isSome (OS.Process.getEnv "ALICE_TRACE_RESOLVER"))
+	in
+	    fun trace s =
+		if !traceFlag then TextIO.output (TextIO.stdErr, s) else ()
+	end
 
-	fun exists (name, url) =
+	fun new {name, handlers, memoize} =
+	    {name, handlers,
+	     memoizeMap = if memoize then SOME (UrlMap.new #[]) else NONE}
+
+	fun exists (resolver as {memoizeMap = SOME map, ...}: resolver, url) =
+	    (case UrlMap.lookupNew (map, url) of
+		 UrlMap.EXISTING resultOpt => resultOpt
+	       | UrlMap.NEW p =>
+		     let
+			 val resultOpt = exists' (resolver, url)
+		     in
+			 Promise.fulfill (p, resultOpt); resultOpt
+		     end)
+	  | exists (resolver as {memoizeMap = NONE, ...}, url) =
+	    exists' (resolver, url)
+	and exists' (resolver as {name, ...}, url) =
 	    case Url.getScheme url of
-		SOME "x-oz" =>   (*--** hack for Mozart VM *)
+		SOME "x-oz" => (*--** hack for Alice-on-Mozart *)
 		    SOME (FILE (Url.toStringRaw url))
-	      | SOME "file" => existsFile (name, Url.setScheme (url, NONE))
 	      | SOME "http" =>
 		    (let
 			 val response = HttpClient.get url
 		     in
 			 if #statusCode response = 200 then
-			     SOME (STRING (#body response))
+			     (trace ("[" ^ name ^ "] ...localize succeeded (" ^
+				     Url.toString url ^ ")\n");
+			      SOME (STRING (#body response)))
 			 else NONE
 		     end handle _ => NONE)
-	      | _ => existsFile (name, url)
+	      | (SOME "file" | NONE) =>
+		    (let
+			 val s = Url.toStringRaw (Url.setScheme (url, NONE))
+		     in
+			 if OS.FileSys.isDir s then NONE
+			 else
+			     (trace ("[" ^ name ^ "] ...localize succeeded (" ^
+				     s ^ ")\n");
+			      SOME (FILE s))
+		     end handle OS.SysErr _ => NONE)
+	      | _ => NONE
 
-	fun localize (name, handlers) s =
+	fun localize (resolver as {name, handlers, ...}) s =
 	    (trace ("[" ^ name ^ "] localize request: " ^ s ^ "\n");
-	     localize' (name, handlers, s))
-	and localize' (name, (name', f)::handlers, s) =
+	     localize' (resolver, handlers, s))
+	and localize' (resolver as {name, ...}, (name', f)::handlers, s) =
 	    (case f s of
 		 SOME url =>
 		     (trace ("[" ^ name ^ "] ...[" ^ Url.toStringRaw url ^
 			     "] (" ^ name' ^ ")\n");
-		      case exists (name, url) of
-			  SOME localFile => SOME localFile
-			| NONE => localize' (name, handlers, s))
+		      case exists (resolver, url) of
+			  result as SOME _ => result
+			| NONE => localize' (resolver, handlers, s))
 	       | NONE =>
 		     (trace ("[" ^ name ^ "] ...[not applicable] (" ^
 			     name' ^ ")\n");
-		      localize' (name, handlers, s)))
-	  | localize' (name, nil, _) =
+		      localize' (resolver, handlers, s)))
+	  | localize' ({name, ...}, nil, _) =
 	    (trace ("[" ^ name ^ "] ...all handlers failed\n"); NONE)
     end
