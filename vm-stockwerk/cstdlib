@@ -1,0 +1,6 @@
+// -*- c++ -*-
+// Dummy replacement for systems which do not have it.
+namespace std {
+#include <stdlib.h>
+}
+using namespace std;
