@@ -46,15 +46,14 @@ ConstructorHandler::GetAbstractRepresentation(ConcreteRepresentation *b) {
 // Constructor
 //
 
-static word constructorTable;
+static word wConstructorMap;
 
 ConcreteRepresentationHandler *Constructor::handler;
 
 void Constructor::Init() {
   handler = new ConstructorHandler();
-  constructorTable =
-    ChunkMap::New(initialTableSize)->ToWord();
-  RootSet::Add(constructorTable);
+  wConstructorMap = ChunkMap::New(initialTableSize)->ToWord();
+  RootSet::Add(wConstructorMap);
 }
 
 static Transform *MakeConstructorTransform(String *name, word key) {
@@ -68,15 +67,15 @@ static Transform *MakeConstructorTransform(String *name, word key) {
 
 Constructor *Constructor::New(String *name, Block *guid) {
   Assert(guid != INVALID_POINTER);
-  ChunkMap *hashTable = ChunkMap::FromWordDirect(constructorTable);
-  word key = guid->ToWord();
-  if (hashTable->IsMember(key)) {
-    return Constructor::FromWordDirect(hashTable->Get(key));
+  ChunkMap *constructorMap = ChunkMap::FromWordDirect(wConstructorMap);
+  word wKey = guid->ToWord();
+  if (constructorMap->IsMember(wKey)) {
+    return Constructor::FromWordDirect(constructorMap->Get(wKey));
   } else {
     ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
     b->Init(NAME_POS, name->ToWord());
-    b->Init(TRANSFORM_POS, MakeConstructorTransform(name, key)->ToWord());
-    hashTable->Put(key, b->ToWord());
+    b->Init(TRANSFORM_POS, MakeConstructorTransform(name, wKey)->ToWord());
+    constructorMap->Put(wKey, b->ToWord());
     return static_cast<Constructor *>(b);
   }
 }
