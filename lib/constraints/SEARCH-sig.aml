@@ -11,7 +11,7 @@
  *
  *)
 
-import structure Space from "x-alice:/lib/constraints/Space"
+import structure Space from "Space"
 
 signature SEARCH =
     sig
