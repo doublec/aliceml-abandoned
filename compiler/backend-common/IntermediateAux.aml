@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure FromEqHashKey       from "../../lib/utility/HASH_KEY-sig"
 import structure MkHashImpSet        from "../../lib/utility/MkHashImpSet"
 import structure MkHashImpMap        from "../../lib/utility/MkHashImpMap"
 import structure Name                from "../../lib/rtt/Name"
@@ -291,8 +290,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure IdSet =
 	    MkHashImpSet(type t = O.id
 			 fun hash (O.Id (_, stamp, _)) = Stamp.hash stamp
-			 fun equals (O.Id (_, stamp, _),
-				     O.Id (_, stamp', _)) = stamp = stamp')
+			 fun equal (O.Id (_, stamp, _),
+				    O.Id (_, stamp', _)) = stamp = stamp')
 
 	fun usedVarsId (id, set, used) =
 	    if IdSet.member (set, id) then IdSet.insert (used, id) else ()
@@ -410,7 +409,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else NONE
 	  | isTuple (nil, i) = SOME (i - 1)
 
-	structure LabelMap = MkHashImpMap(FromEqHashKey(Label))
+	structure LabelMap = MkHashImpMap(Label)
 
 	val typToArityMap: (Arity.t * int LabelMap.t option) Type.Map.t =
 	    Type.Map.new ()
