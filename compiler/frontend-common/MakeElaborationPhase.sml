@@ -1500,7 +1500,9 @@ val _=print "\n"
       | elabDec(E, s, vars, I.FixDec(i, id, fix)) =
 	let
 	    val  id'     = elabValId_bind'(E, id)
+	    val  p       = Inf.newFix(s, Label.fromName(I.name id))
 	    val (f,fix') = elabFix(E, fix)
+	    val  _       = Inf.extendFix(s, p, f)
 	in
 	    O.FixDec(nonInfo(i), id', fix')
 	end
@@ -1782,7 +1784,9 @@ print "\n\
       | elabSpec(E, s, I.FixSpec(i, id, fix)) =
 	let
 	    val id'      = elabValId_bind'(E, id)
+	    val  p       = Inf.newFix(s, Label.fromName(I.name id))
 	    val (f,fix') = elabFix(E, fix)
+	    val  _       = Inf.extendFix(s, p, f)
 	in
 	    O.FixSpec(nonInfo(i), id', fix')
 	end
