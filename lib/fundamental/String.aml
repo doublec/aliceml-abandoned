@@ -18,7 +18,7 @@
 import structure __pervasive                          from "Pervasive"
 import __primitive type char and string and int
        datatype bool and order and option and list    from "ToplevelTypes"
-import __primitive infix 4 = <> < infixr 5 :: infix 6 + - ^
+import __primitive infix 4 = <> <= infixr 5 :: infix 6 + - ^
        val op = and op <> and op <= and op + and op - from "ToplevelValues"
 import __primitive structure Char                     from "Char"
 import __primitive structure List                     from "List"
