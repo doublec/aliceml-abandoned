@@ -364,8 +364,7 @@ word ApplyTransform(Chunk *f, word x) {
 	     !strncmp(fs, "Alice.function", len)) {
     ConcreteCode *concreteCode =
       ConcreteCode::New(AbstractCodeInterpreter::self, 1);
-    Block *xp = Store::WordToBlock(x);
-    concreteCode->Init(0, xp->GetArg(0));
+    concreteCode->Init(0, x);
     return concreteCode->ToWord();
   }
   Assert(0);
