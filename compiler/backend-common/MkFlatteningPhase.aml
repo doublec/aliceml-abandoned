@@ -10,105 +10,32 @@
  *   $Revision$
  *)
 
-import
-    structure Assert
-from "../../lib/utility/Assert"
+import structure Assert               from "../../lib/utility/Assert"
+import structure GlobalStamp          from "../../lib/utility/GlobalStamp"
+import structure Url                  from "../../lib/utility/Url"
+import structure Name                 from "../../lib/rtt/Name"
+import structure Label                from "../../lib/rtt/Label"
+import structure Type                 from "../../lib/rtt/Type"
+import structure PervasiveType        from "../../lib/rtt/PervasiveType"
+import structure Inf                  from "../../lib/rtt/Inf"
+import structure Crash                from "../infrastructure/Crash"
+import structure Source               from "../infrastructure/Source"
+import structure Error                from "../infrastructure/Error"
+import signature CONTEXT              from "../infrastructure/CONTEXT-sig"
+import structure EmptyContext         from "../infrastructure/EmptyContext"
+import structure Stamp                from "../common/Stamp"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
 
-import
-    structure GlobalStamp
-from "../../lib/utility/GlobalStamp"
-
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure Name
-from "../../lib/rtt/Name"
-
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Type
-from "../../lib/rtt/Type"
-
-import
-    structure PervasiveType
-from "../../lib/rtt/PervasiveType"
-
-import
-    structure Inf
-from "../../lib/rtt/Inf"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure Error
-from "../infrastructure/Error"
-
-import
-    signature CONTEXT
-from "../infrastructure/CONTEXT-sig"
-
-import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    signature INTERMEDIATE_GRAMMAR
-from "../common/INTERMEDIATE_GRAMMAR-sig"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
-
-import
-    structure LabelSort
-from "LabelSort"
-
-import
-    structure Arity
-from "Arity"
-
-import
-    signature FLAT_GRAMMAR
-from "FLAT_GRAMMAR-sig"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    structure IntermediateAux
-from "IntermediateAux"
-
-import
-    structure SimplifyMatch
-from "SimplifyMatch"
-
-import
-    structure SimplifyRec
-from "SimplifyRec"
-
-import
-    signature SWITCHES
-from "../infrastructure/SWITCHES-sig"
-
-import
-    signature FLATTENING_PHASE
-from "FLATTENING_PHASE-sig"
+import structure LabelSort            from "LabelSort"
+import structure Arity                from "Arity"
+import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar          from "FlatGrammar"
+import structure IntermediateAux      from "IntermediateAux"
+import structure SimplifyMatch        from "SimplifyMatch"
+import structure SimplifyRec          from "SimplifyRec"
+import signature SWITCHES             from "../infrastructure/SWITCHES-sig"
+import signature FLATTENING_PHASE     from "FLATTENING_PHASE-sig"
 
 functor MkFlatteningPhase(val loadSign:
 			      Source.desc * Url.t -> FlatGrammar.sign
@@ -623,7 +550,7 @@ functor MkFlatteningPhase(val loadSign:
 		val errStms = raisePrim (region, "General.Match")
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
-		val (body, _) = translateGraph (graph, mapping)
+		val (body, _) = translateGraph (graph, mapping, #region info)
 	    in
 		checkReachability consequents;
 		f (O.FunExp (id_info info, Stamp.new (), nil, args, body))::
@@ -810,7 +737,7 @@ functor MkFlatteningPhase(val loadSign:
 		val rest' = [O.IndirectStm (stm_info region, r')]
 		val (errStms, raiseId) = unfoldTerm (raiseExp, Goto rest')
 		val (graph, consequents) = buildGraph (matches, errStms)
-		val (body, _) = translateGraph (graph, [(nil, id)])
+		val (body, _) = translateGraph (graph, [(nil, id)], region)
 	    in
 		r := SOME body;
 		r' := SOME [O.RaiseStm (stm_info region, raiseId)];
@@ -818,79 +745,84 @@ functor MkFlatteningPhase(val loadSign:
 		stms
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
-				  status as ref (Cooked (_, _))), mapping) =
+				  status as ref (Cooked (_, _))),
+			    mapping, region) =
 	    let
 		val (body, mapping') =
-		    translateNode (pos, test, thenGraph, elseGraph, mapping)
+		    translateNode (pos, test, thenGraph, elseGraph,
+				   mapping, region)
 		val stms = share body
 	    in
 		status := Translated stms; (stms, mapping')
 	    end
 	  | translateGraph (Node (_, _, _, _, ref (Translated stms)),
-			    mapping) =
+			    mapping, _) =
 	    (stms, mapping)
-	  | translateGraph (Leaf (stms, stmsOptRef as ref NONE), mapping) =
+	  | translateGraph (Leaf (stms, stmsOptRef as ref NONE), mapping, _) =
 	    let
 		val stms' = share stms
 	    in
 		stmsOptRef := SOME stms'; (stms', mapping)
 	    end
-	  | translateGraph (Leaf (_, ref (SOME stms)), mapping) =
+	  | translateGraph (Leaf (_, ref (SOME stms)), mapping, _) =
 	    (stms, mapping)
-	  | translateGraph (_, _) =
+	  | translateGraph (_, _, _) =
 	    raise Crash.Crash "MkFlatteningPhase.translateGraph"
-	and translateNode (pos, RefTest, thenGraph, _, mapping) =
+	and translateNode (pos, RefTest, thenGraph, _, mapping, region) =
 	    let
 		val (idDef, mapping') =
 		    adjoin (LABEL (Label.fromString "ref")::pos, mapping)
 		val id = lookup (pos, mapping)
 		val (thenBody, mapping'') =
-		    translateGraph (thenGraph, mapping')
+		    translateGraph (thenGraph, mapping', region)
 	    in
-		(O.RefAppDec (stm_info Source.nowhere, idDef, id)::thenBody,
+		(O.RefAppDec (stm_info region, idDef, id)::thenBody,
 		 mapping'')
 	    end
-	  | translateNode (pos, TupTest n, thenGraph, _, mapping) =
+	  | translateNode (pos, TupTest n, thenGraph, _, mapping, region) =
 	    let
 		val (idDefs, mapping') = translateTupArgs (n, pos, mapping)
 		val id = lookup (pos, mapping)
 		val (thenBody, mapping'') =
-		    translateGraph (thenGraph, mapping')
+		    translateGraph (thenGraph, mapping', region)
 	    in
-		(O.TupDec (stm_info Source.nowhere, idDefs, id)::thenBody,
+		(O.TupDec (stm_info region, idDefs, id)::thenBody,
 		 mapping'')
 	    end
-	  | translateNode (pos, ProdTest labels, thenGraph, _, mapping) =
+	  | translateNode (pos, ProdTest labels, thenGraph, _,
+			   mapping, region) =
 	    let
 		val (labelIdDefList, mapping') =
 		    translateProdArgs (labels, pos, mapping)
 		val id = lookup (pos, mapping)
 		val (thenBody, mapping'') =
-		    translateGraph (thenGraph, mapping')
+		    translateGraph (thenGraph, mapping', region)
 	    in
-		(O.ProdDec (stm_info Source.nowhere, labelIdDefList, id)::
+		(O.ProdDec (stm_info region, labelIdDefList, id)::
 		 thenBody, mapping'')
 	    end
 	  | translateNode (_, GuardTest (mapping0, exp),
-			   thenGraph, elseGraph, mapping) =
+			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val info = infoExp exp
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val subst = mappingsToSubst (mapping0, mapping)
 		val (stms, id) = unfoldTerm (substExp (exp, subst), Goto rest)
-		val (thenStms, mapping') = translateGraph (thenGraph, mapping)
+		val (thenStms, mapping') =
+		    translateGraph (thenGraph, mapping, region)
 		val (elseStms, mapping'') =
-		    translateGraph (elseGraph, mapping')
+		    translateGraph (elseGraph, mapping', region)
 		val errStms = raisePrim (#region info, "General.Match")
 		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
 		r := SOME stms1; (stms, mapping'')
 	    end
 	  | translateNode (_, DecTest (mapping0, decs),
-			   thenGraph, _, mapping) =
+			   thenGraph, _, mapping, region) =
 	    let
-		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
+		val (thenBody, mapping') =
+		    translateGraph (thenGraph, mapping, region)
 		val subst = mappingsToSubst (mapping0, mapping)
 		val cont =
 		    Decs (Vector.foldr (fn (dec, rest) =>
@@ -899,86 +831,91 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		(translateCont cont, mapping')
 	    end
-	  | translateNode (pos, LitTest lit, thenGraph, elseGraph, mapping) =
+	  | translateNode (pos, LitTest lit, thenGraph, elseGraph,
+			   mapping, region) =
 	    let
 		val id = lookup (pos, mapping)
-		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
+		val (thenBody, mapping') =
+		    translateGraph (thenGraph, mapping, region)
 		val tests = O.LitTests #[(lit, thenBody)]
 		val (elseBody, mapping'') =
-		    translateGraph (elseGraph, mapping')
+		    translateGraph (elseGraph, mapping', region)
 	    in
-		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		([O.TestStm (stm_info region, id, tests, elseBody)],
 		 mapping'')
 	    end
 	  | translateNode (pos, TagTest (label, n, NONE, _),
-			   thenGraph, elseGraph, mapping) =
+			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val id = lookup (pos, mapping)
-		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
+		val (thenBody, mapping') =
+		    translateGraph (thenGraph, mapping, region)
 		val tests = O.TagTests #[(label, n, NONE, thenBody)]
 		val (elseBody, mapping'') =
-		    translateGraph (elseGraph, mapping')
+		    translateGraph (elseGraph, mapping', region)
 	    in
-		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		([O.TestStm (stm_info region, id, tests, elseBody)],
 		 mapping'')
 	    end
 	  | translateNode (pos, TagTest (label, n, SOME args, conArity),
-			   thenGraph, elseGraph, mapping) =
+			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val id = lookup (pos, mapping)
 		val (idDefArgs, mapping') =
 		    translateArgs (args, LABEL label::pos, mapping)
 		val (thenBody, mapping'') =
-		    translateGraph (thenGraph, mapping')
+		    translateGraph (thenGraph, mapping', region)
 		val tests =
 		    tagAppTest (label, n, idDefArgs, conArity, thenBody)
 		val (elseBody, mapping''') =
-		    translateGraph (elseGraph, mapping'')
+		    translateGraph (elseGraph, mapping'', region)
 	    in
-		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		([O.TestStm (stm_info region, id, tests, elseBody)],
 		 mapping''')
 	    end
 	  | translateNode (pos, ConTest (longid, NONE, _),
-			   thenGraph, elseGraph, mapping) =
+			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val id = lookup (pos, mapping)
 		val (stms, id', _) = translateLongid longid
-		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
+		val (thenBody, mapping') =
+		    translateGraph (thenGraph, mapping, region)
 		val tests = O.ConTests #[(O.Con id', NONE, thenBody)]
 		val (elseBody, mapping'') =
-		    translateGraph (elseGraph, mapping')
+		    translateGraph (elseGraph, mapping', region)
 	    in
-		(stms @ [O.TestStm (stm_info Source.nowhere, id, tests,
+		(stms @ [O.TestStm (stm_info region, id, tests,
 				    elseBody)], mapping'')
 	    end
 	  | translateNode (pos, ConTest (longid, SOME args, conArity),
-			   thenGraph, elseGraph, mapping) =
+			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val id = lookup (pos, mapping)
 		val (stms, id', _) = translateLongid longid
 		val (idDefArgs, mapping') =
 		    translateArgs (args, longidToSelector longid::pos, mapping)
 		val (thenBody, mapping'') =
-		    translateGraph (thenGraph, mapping')
+		    translateGraph (thenGraph, mapping', region)
 		val tests =
 		    conAppTest (O.Con id', idDefArgs, conArity, thenBody)
 		val (elseBody, mapping''') =
-		    translateGraph (elseGraph, mapping'')
+		    translateGraph (elseGraph, mapping'', region)
 	    in
-		(stms @ [O.TestStm (stm_info Source.nowhere, id, tests,
-				    elseBody)], mapping''')
+		(stms @ [O.TestStm (stm_info region, id, tests, elseBody)],
+		 mapping''')
 	    end
-	  | translateNode (pos, VecTest n, thenGraph, elseGraph, mapping) =
+	  | translateNode (pos, VecTest n, thenGraph, elseGraph,
+			   mapping, region) =
 	    let
 		val id = lookup (pos, mapping)
 		val (idDefs, mapping') = translateTupArgs (n, pos, mapping)
 		val (thenBody, mapping'') =
-		    translateGraph (thenGraph, mapping')
+		    translateGraph (thenGraph, mapping', region)
 		val tests = O.VecTests #[(idDefs, thenBody)]
 		val (elseBody, mapping''') =
-		    translateGraph (elseGraph, mapping'')
+		    translateGraph (elseGraph, mapping'', region)
 	    in
-		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		([O.TestStm (stm_info region, id, tests, elseBody)],
 		 mapping''')
 	    end
 	and translateArgs (O.OneArg _, pos, mapping) =
