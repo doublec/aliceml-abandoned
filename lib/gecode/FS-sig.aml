@@ -11,10 +11,11 @@
  *)
 
 import structure Space from "Space"
-import structure FD from "FD"
 
 signature FS =
 sig
+    type intvar
+    type boolvar
     type setvar
 
     (* Allocation of finite set variables *)
@@ -61,28 +62,28 @@ sig
 
     structure Int :
         sig
-            val incl : Space.space * FD.intvar * setvar -> unit
-            val excl : Space.space * FD.intvar * setvar -> unit
-            val the : Space.space * FD.intvar * setvar -> unit
-	    val min : Space.space * FD.intvar * setvar -> unit
-	    val max : Space.space * FD.intvar * setvar -> unit
-            val card : Space.space * FD.intvar * setvar -> unit
-	    val match : Space.space * setvar * FD.intvar vector -> unit
-(*	    val minN : setvar * FD.intvar vector -> unit *)
-(*	    val maxN : setvar * FD.intvar vector -> unit *)
+            val incl : Space.space * intvar * setvar -> unit
+            val excl : Space.space * intvar * setvar -> unit
+            val the : Space.space * intvar * setvar -> unit
+	    val min : Space.space * intvar * setvar -> unit
+	    val max : Space.space * intvar * setvar -> unit
+            val card : Space.space * intvar * setvar -> unit
+	    val match : Space.space * setvar * intvar vector -> unit
+(*	    val minN : setvar * intvar vector -> unit *)
+(*	    val maxN : setvar * intvar vector -> unit *)
 	end
 
     structure Reified : sig
-	val isIn : Space.space * int * setvar * FD.boolvar -> unit
-	val areIn : Space.space * (FD.boolvar * int) vector * setvar -> unit
-	val incl : Space.space * FD.intvar * setvar * FD.boolvar -> unit
-	val equal : Space.space * setvar * setvar * FD.boolvar -> unit
-        val subset : Space.space * setvar * setvar * FD.boolvar -> unit
+	val isIn : Space.space * int * setvar * boolvar -> unit
+	val areIn : Space.space * (boolvar * int) vector * setvar -> unit
+	val incl : Space.space * intvar * setvar * boolvar -> unit
+	val equal : Space.space * setvar * setvar * boolvar -> unit
+        val subset : Space.space * setvar * setvar * boolvar -> unit
 (*	val partition : setvar list * int list * setvar * bin list -> unit *)
     end
 
     structure Selection : sig
-	val setvar : Space.space * setvar * setvar vector * FD.intvar -> unit
+	val setvar : Space.space * setvar * setvar vector * intvar -> unit
 	val union : Space.space * setvar * setvar vector * setvar -> unit
 	val inter : Space.space * setvar * setvar vector * setvar -> unit
     end

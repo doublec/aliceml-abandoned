@@ -10,11 +10,15 @@
  *   $Revision$
  *)
 
+import structure FD           from "FD"
 import signature FS           from "FS-sig"
 import structure UnsafeGecode from "UnsafeGecode"
 
-structure FS :> FS =
+structure FS : FS =
 struct
+   type intvar  = FD.intvar
+   type boolvar = FD.boolvar
+
    datatype fsb_var_sel =
 	    FSB_MAX_CARD
 	  | FSB_MIN_CARD
