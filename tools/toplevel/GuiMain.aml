@@ -525,7 +525,7 @@ structure GuiMain =
 			NONE => (SOME (Buffer.getBuffer id), id)
 		      | SOME f =>
 	        Buffer.getBufferByName
-		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
+		(Buffer.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
 	    in
 		case buf of
 		    NONE => ()

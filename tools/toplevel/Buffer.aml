@@ -379,6 +379,15 @@ structure Buffer =
       fun getView id =
           #view (BufferMap.lookupExistent(bufferMap, id))
 
+      (* Hack for Windows *)
+      fun unixPath path = String.map (fn #"\\" => #"/" | c => c) path
+      fun mkAbsolute{path,relativeTo} =
+let val s =
+	  String.extract(OS.Path.mkAbsolute{path = unixPath path,
+	  		 relativeTo = "/--" ^ unixPath relativeTo}, 3, NONE)
+in
+print("["^s^"]"); s end
+
       fun buffer {notebook,id,file,loadFile} =
           let
               val fileName = Option.getOpt(file, "New file "^Int.toString id)
@@ -410,8 +419,7 @@ structure Buffer =
               val _ = Gtk.widgetModifyFont(newSource, !stdFont)
 
 	      val file = Option.map
-		  (fn f => OS.Path.mkAbsolute {path=f,
-					       relativeTo=OS.FileSys.getDir()})
+		  (fn f => mkAbsolute {path=f, relativeTo=OS.FileSys.getDir()})
 		  file
 
 	      val highlightActive =
