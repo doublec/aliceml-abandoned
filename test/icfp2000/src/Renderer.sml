@@ -41,7 +41,6 @@ structure Renderer :> RENDERER =
 	  | Intersect'  of object' * object'
 	  | Difference' of object' * object'
 
-	exception Error of string
 	exception Crash
 
 	val epsilon = 1.0E~10
@@ -122,7 +121,7 @@ structure Renderer :> RENDERER =
 		    end
 		val top = plane (topMat, topMat', CylinderTop)
 		val bottom = plane (bottomMat, bottomMat', CylinderBottom)
-		fun normal v =   (*IMPROVE*)
+		fun normal v =
 		    let
 			val (v1, _, v3) = mulMatPoint (w2o, v)
 		    in
@@ -146,7 +145,7 @@ structure Renderer :> RENDERER =
 		    end
 		val top = plane (topMat, topMat', ConeBase)
 		val bottom = plane (bottomMat, bottomMat', ConeSide)
-		fun normal v =   (*IMPROVE*)
+		fun normal v =
 		    let
 			val (v1, _, v3) = mulMatPoint (w2o, v)
 		    in
@@ -170,26 +169,6 @@ structure Renderer :> RENDERER =
 	datatype intersection = Entry | Exit
 	datatype which = A | B
 	datatype wher = Outside | InA | InB | InAB
-
-	fun debug xs = print ("[" ^ debug' xs ^ "]\n")   (*DEBUG*)
-	and debug' ((k, (id, _, _, _), Entry)::rest) =
-	    "Entry " ^ Int.toString id ^ " " ^ Real.toString k ^
-	    (case rest of nil => "" | _::_ => ", " ^ debug' rest)
-	  | debug' ((k, (id, _, _, _), Exit)::rest) =
-	    "Exit " ^ Int.toString id ^ " " ^ Real.toString k ^
-	    (case rest of nil => "" | _::_ => ", " ^ debug' rest)
-	  | debug' nil = ""
-
-	fun debugAB xs = print ("[" ^ debug' xs ^ "]\n")   (*DEBUG*)
-	and debug' (((k, (id, _, _, _), Entry), which)::rest) =
-	    (case which of A => "A" | B => "B") ^
-	    " Entry " ^ Int.toString id ^ " " ^ Real.toString k ^
-	    (case rest of nil => "" | _::_ => ", " ^ debug' rest)
-	  | debug' (((k, (id, _, _, _), Exit), which)::rest) =
-	    (case which of A => "A" | B => "B") ^
-	    " Exit " ^ Int.toString id ^ " " ^ Real.toString k ^
-	    (case rest of nil => "" | _::_ => ", " ^ debug' rest)
-	  | debug' nil = ""
 
 	fun merge (xs as (x as (l1, _, _))::xr, ys as (y as (l2, _, _))::yr) =
 	    (case Real.compare (l1, l2) of
@@ -220,16 +199,6 @@ structure Renderer :> RENDERER =
 
 	fun inter (_, nil) = nil
 	  | inter (xs, ys) = inter' (merge (xs, ys), start (xs, ys))
-(*
-	  | inter (xs, ys) =
-let
-val zs = merge (xs, ys)
-val res =
-inter' (zs, start (xs, ys))
-in
-debugAB zs;
-print "becomes "; debug res; res
-end*)
 	and inter' ((x as (_, _, Entry), A)::xr, Outside) = inter' (xr, InA)
 	  | inter' ((x as (_, _, Entry), B)::xr, Outside) = inter' (xr, InB)
 	  | inter' ((x as (_, _, Exit), A)::xr, InA) = inter' (xr, Outside)
@@ -299,10 +268,6 @@ end*)
 			val k1 = a - b
 			val k2 = a + b
 		    in
-(*print ("a = " ^ Real.toString a ^ "\n");
-print ("b = " ^ Real.toString b^ "\n");
-print ("k1 = " ^ Real.toString k1 ^ "\n");
-print ("k2 = " ^ Real.toString k2 ^ "\n");*)
 			if k2 > ~epsilon then
 			    if k1 > ~epsilon then
 				[(k1, data, Entry), (k2, data, Exit)]
@@ -462,14 +427,10 @@ print ("k2 = " ^ Real.toString k2 ^ "\n");*)
 	    in
 		fn (x, y) =>
 		let
-(*val _ = print "shoot\n"*)
 		    val dir = (left + delta * Real.fromInt x,
 			       top - delta * Real.fromInt y,
 			       1.0)
-		    val c =
-			trace (base, dir, ambient, lights, scene', depth)
-			handle e as Error s =>
-			    (TextIO.print ("Error: " ^ s ^ "\n"); raise e)
+		    val c = trace (base, dir, ambient, lights, scene', depth)
 		in
 		    Color.clamp c
 		end
