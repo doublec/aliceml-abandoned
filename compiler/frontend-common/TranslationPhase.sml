@@ -85,8 +85,8 @@ UNFINISHED: obsolete after bootstrapping:
       | idsDec xs' (I.DatDec(i,x,t))	= idsTyp xs' t
       | idsDec xs' (I.ModDec(i,x,m))	= idsId trId' xs' x
       | idsDec xs' (I.InfDec(i,x,j))	= ()
+      | idsDec xs' (I.VarDec(i,x,d))	= idsDec xs' d
       | idsDec xs' (I.RecDec(i,ds))	= idsDecs xs' ds
-      | idsDec xs' (I.TypvarDec(i,x,ds))= idsDecs xs' ds
       | idsDec xs' (I.LocalDec(i,ds))	= ()
     and idsDecs xs'			= List.app(idsDec xs')
 
@@ -225,7 +225,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trDec(I.ConDec(i,c,t), ds')	= (case t
 					   of I.SingTyp(_,y) =>
 						trEqCon(c,trLongid y,ds')
-					    | _ => trCon(c,ds')
+					    | _ => trNewCon(c,ds')
 					  )
       | trDec(I.TypDec(i,x,t), ds')	= ds'
       | trDec(I.DatDec(i,x,t), ds')	= trTyp(t, ds')
@@ -234,8 +234,8 @@ UNFINISHED: obsolete after bootstrapping:
 							  trMod m) :: ds'
 					  end
       | trDec(I.InfDec(i,x,j), ds')	= ds'
+      | trDec(I.VarDec(i,x,d), ds')	= trDec(d, ds')
       | trDec(I.RecDec(i,ds), ds')	= O.RecDec(i, trDecs ds) :: ds'
-      | trDec(I.TypvarDec(i,x,ds), ds')	= trDecs'(ds, ds')
       | trDec(I.LocalDec(i,ds), ds')	= trDecs'(ds, ds')
 
     and trDecs ds			= trDecs'(ds, [])
@@ -243,9 +243,14 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trEqCon(I.Con(i,x,ts), y', ds')	= O.ValDec(i, O.VarPat(i,trId x),
 						   O.VarExp(i,y')):: ds'
-    and trCon(I.Con(i,x,ts), ds')	= O.ValDec(i, O.VarPat(i,trId x),
-						   O.NewExp(i,
+    and trNewCon(I.Con(i,x,ts), ds')	= O.ValDec(i, O.VarPat(i,trId x),
+						   O.NewExp(i, NONE,
 						      List.length ts > 0)):: ds'
+    and trCon(I.Con(i,x,ts), ds')	= O.ValDec(i,
+						O.VarPat(i,trId x),
+						O.NewExp(i,
+						  SOME(Name.toString(I.name x)),
+						  List.length ts > 0)):: ds'
     and trCons(cs, ds')			= List.foldr trCon ds' cs
 
     and trTyp(I.AbsTyp(i), ds')		= ds'
@@ -298,6 +303,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trSpec y (I.DatSpec(i,x,t),ds')	= trRep(t, y, ds')
       | trSpec y (I.ModSpec(i,x,m),ds')	= idToDec(trId' x, y)::ds'
       | trSpec y (I.InfSpec(i,x,j),ds')	= ds'
+      | trSpec y (I.VarSpec(i,x,s),ds') = trSpec y (s, ds')
       | trSpec y (I.RecSpec(i,ss), ds')	= trSpecs(ss, y, ds')
       | trSpec y (I.LocalSpec(i,ss),ds')= ds'
       | trSpec y (I.ExtSpec(i,j),  ds')	= Crash.crash "Translation: ExtSpec"

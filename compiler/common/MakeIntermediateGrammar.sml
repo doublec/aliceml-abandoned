@@ -33,7 +33,7 @@ UNFINISHED: obsolete after bootstrapping:
     datatype exp =
 	  LitExp    of info * lit
 	| PrimExp   of info * string
-	| NewExp    of info * bool (* has args *)
+	| NewExp    of info * string option * bool (* has args *)
 	| VarExp    of info * longid
 	| ConExp    of info * longid * bool
 	| RefExp    of info
@@ -109,7 +109,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun infoExp(LitExp(i,_))		= i
       | infoExp(PrimExp(i,_))		= i
-      | infoExp(NewExp(i,_))		= i
+      | infoExp(NewExp(i,_,_))		= i
       | infoExp(VarExp(i,_))		= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i))		= i

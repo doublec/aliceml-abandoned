@@ -32,7 +32,7 @@ UNFINISHED: obsolete after bootstrapping:
     datatype exp =
 	  LitExp    of info * lit
 	| PrimExp   of info * string
-	| NewExp    of info * bool (* has args *)
+	| NewExp    of info * string option * bool (* has args *)
 	| VarExp    of info * longid
 	| ConExp    of info * longid * bool
 	| RefExp    of info
