@@ -143,7 +143,7 @@ define
       [] 'ValDec'(_ IdDef Exp)|Body then VInter in
 	 VHd = {TranslateExp Exp {MakeReg IdDef State} VInter State}
 	 VInter = {TranslateBody Body State ReturnReg IsTry}
-      [] 'RecDec'(_ IdDefExpVec)|Body then
+      [] 'RecDec'(_ IdDefExpVec)|Body then VInter in
 	 {Record.forAll IdDefExpVec
 	  proc {$ IdDef#_} _ = {MakeReg IdDef State} end}
 	 {Record.foldL IdDefExpVec
