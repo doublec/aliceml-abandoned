@@ -8,11 +8,10 @@ then
   STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
 fi
 
-PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
-
 : ${OZHOME=/opt/mozart-1.2.0}
 : ${OZ_LOAD=cache=$OZHOME/cache/}
 
+PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
 OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}':$OZ_LOAD
 
 export STOCKHOME PATH OZ_LOAD
