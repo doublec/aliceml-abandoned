@@ -18,7 +18,6 @@
 
 #include <cstdio>
 #include "generic/Backtrace.hh"
-#include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Transients.hh"
 #include "generic/ByneedInterpreter.hh"
@@ -26,8 +25,7 @@
 // ByneedFrame
 class ByneedFrame: private StackFrame {
 private:
-  static const u_int FUTURE_POS = 0;
-  static const u_int SIZE       = 1;
+  enum { FUTURE_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -59,17 +57,17 @@ public:
 //
 ByneedInterpreter *ByneedInterpreter::self;
 
-void ByneedInterpreter::PushFrame(TaskStack *taskStack, Transient *future) {
-  taskStack->PushFrame(ByneedFrame::New(self, future)->ToWord());
+void ByneedInterpreter::PushFrame(Thread *thread, Transient *future) {
+  thread->PushFrame(ByneedFrame::New(self, future)->ToWord());
 }
 
 static inline int IsCyclic(word x, Future *future) {
   return static_cast<Future *>(Store::WordToTransient(x)) == future;
 }
 
-Interpreter::Result ByneedInterpreter::Run(TaskStack *taskStack) {
-  ByneedFrame *frame = ByneedFrame::FromWordDirect(taskStack->GetFrame());
-  taskStack->PopFrame();
+Interpreter::Result ByneedInterpreter::Run() {
+  ByneedFrame *frame =
+    ByneedFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Future *future = frame->GetFuture();
   future->ScheduleWaitingThreads();
   Interpreter::Construct();
@@ -87,10 +85,9 @@ Interpreter::Result ByneedInterpreter::Run(TaskStack *taskStack) {
   }
 }
 
-Interpreter::Result ByneedInterpreter::Handle(TaskStack *taskStack) {
+Interpreter::Result ByneedInterpreter::Handle() {
   Future *future =
-    ByneedFrame::FromWordDirect(taskStack->GetFrame())->GetFuture();
-  taskStack->PopFrame();
+    ByneedFrame::FromWordDirect(Scheduler::GetAndPopFrame())->GetFuture();
   future->ScheduleWaitingThreads();
   future->Become(CANCELLED_LABEL, Scheduler::currentData);
   Scheduler::nArgs = Scheduler::ONE_ARG;
