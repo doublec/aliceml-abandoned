@@ -169,7 +169,7 @@ define
       'General.exnName':
 	 fun {$ N}
 	    case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
-	    of "<N>" then ""
+	    of "<N>" then {ByteString.make "<unknown>"}
 	    elseof &<|&N|&:|& |Rest then
 	       case {Reverse Rest} of &>|Rest then
 		  {ByteString.make {Reverse Rest}}
