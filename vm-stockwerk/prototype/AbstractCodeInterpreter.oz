@@ -11,6 +11,7 @@
 %%%
 
 functor
+import Property(put) System(show)   %--**
 export
    interpreter: Me
 define
@@ -63,21 +64,21 @@ define
 
    fun {LitCase I N X YInstrVec ElseInstr}
       if I > N then ElseInstr
-      elsecase YInstrVec.I of !X#ThenInstr then ThenInstr
+      elsecase YInstrVec.I of tuple(!X ThenInstr) then ThenInstr
       else {LitCase I + 1 N X YInstrVec ElseInstr}
       end
    end
 
    fun {TagCase I N T Cases}
       if I > N then unit
-      elsecase Cases.I of Case=!T#_#_ then Case
+      elsecase Cases.I of Case=tuple(!T _ _) then Case
       else {TagCase I + 1 N T Cases}
       end
    end
 
    fun {NullaryConCase I N C Cases Closure L ElseInstr}
       if I > N then ElseInstr
-      elsecase Cases.I of Con0#ThenInstr then C2 in
+      elsecase Cases.I of tuple(Con0 ThenInstr) then C2 in
 	 C2 = case Con0 of tag(!Con IdRef) then
 		 case IdRef of tag(!Local Id) then L.Id
 		 [] tag(!Global J) then Closure.(J + 1)
@@ -92,7 +93,7 @@ define
 
    fun {NAryConCase I N C Cases Closure L}
       if I > N then unit
-      elsecase Cases.I of Case=Con0#_#_ then C2 in
+      elsecase Cases.I of Case=tuple(Con0 _ _) then C2 in
 	 C2 = case Con0 of tag(!Con IdRef) then
 		 case IdRef of tag(!Local Id) then L.Id
 		 [] tag(!Global J) then Closure.(J + 1)
@@ -108,12 +109,13 @@ define
    fun {VecCase I N J IdDefsInstrVec}
       if I > N then unit
       elsecase IdDefsInstrVec.I
-      of Case=IdDefs#_ andthen {Width IdDefs} == J then Case
+      of Case=tuple(IdDefs _) andthen {Width IdDefs} == J then Case
       else {VecCase I + 1 N J IdDefsInstrVec}
       end
    end
 
    fun {Emulate Instr Closure L TaskStack}
+{System.show emulating(Instr)}
       case Instr of tag(!Kill Ids NextInstr) then
 	 for I in 1..{Width Ids} do
 	    L.(Ids.I) := unit
@@ -196,17 +198,16 @@ define
       [] tag(!AppPrim Op IdRefs IdDefInstrOpt) then N Args in
 	 N = {Width IdRefs}
 	 Args = {MakeTuple args N}
-	 for J in 1..N do X in
-	    X = case IdRefs.J of tag(!Local Id) then L.Id
-		[] tag(!Global K) then Closure.(K + 1)
-		end
-	    Args.J = X
+	 for J in 1..N do
+	    Args.J = case IdRefs.J of tag(!Local Id) then L.Id
+		     [] tag(!Global K) then Closure.(K + 1)
+		     end
 	 end
 	 case IdDefInstrOpt of !NONE then   % tail call
-	    continue(Args Op|TaskStack)
+	    continue(Args {Op.1.1.pushCall Op TaskStack})
 	 [] tag(!SOME tuple(IdDef NextInstr)) then NewFrame in
 	    NewFrame = frame(Me tag(!OneArg IdDef) NextInstr Closure L)
-	    continue(Args Op|NewFrame|TaskStack)
+	    continue(Args {Op.1.1.pushCall Op NewFrame|TaskStack})
 	 end
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op in
 	 Op = case IdRef of tag(!Local Id) then L.Id
@@ -230,10 +231,10 @@ define
 	    end
 	 end
 	 case IdDefArgsInstrOpt of !NONE then   % tail call
-	    continue(Args Op|TaskStack)
+	    continue(Args {Op.1.1.pushCall Op TaskStack})
 	 [] tag(!SOME tuple(IdDefArgs NextInstr)) then NewFrame in
 	    NewFrame = frame(Me IdDefArgs NextInstr Closure L)
-	    continue(Args Op|NewFrame|TaskStack)
+	    continue(Args {Op.1.1.pushCall Op NewFrame|TaskStack})
 	 end
       [] tag(!GetRef Id IdRef NextInstr) then R in
 	 R = case IdRef of tag(!Local Id2) then L.Id2
@@ -313,7 +314,7 @@ define
 			 T NullaryCases ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
 	 elsecase {TagCase 1 {Width NAryCases} T.1 NAryCases}
-	 of _#IdDefs#ThenInstr then N in
+	 of tuple(_ IdDefs ThenInstr) then N in
 	    N = {Width IdDefs}
 	    for J in 1..N do
 	       case IdDefs.J of tag(!IdDef Id) then
@@ -335,7 +336,7 @@ define
 			 C NullaryCases Closure L ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
 	 elsecase {NAryConCase 1 {Width NAryCases} C.1 NAryCases Closure L}
-	 of _#IdDefs#ThenInstr then N in
+	 of tuple(_ IdDefs ThenInstr) then N in
 	    N = {Width IdDefs}
 	    for J in 1..N do
 	       case IdDefs.J of tag(!IdDef Id) then
@@ -352,8 +353,9 @@ define
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 %--** request V if necessary
+{System.show vecTest(V)}
 	 case {VecCase 1 {Width IdDefsInstrVec} {Width V} IdDefsInstrVec}
-	 of IdDefs#ThenInstr then N in
+	 of tuple(IdDefs ThenInstr) then N in
 	    N = {Width IdDefs}
 	    for J in 1..N do
 	       case IdDefs.J of tag(!IdDef Id) then
@@ -388,8 +390,8 @@ define
 
    fun {Run Args TaskStack}
       case TaskStack of frame(_ IdDefArgs Instr Closure L)|Rest then
-	 case IdDefArgs of tag(!OneArg IdDef) then
-	    case IdDef of tag(!IdDef Id) then
+	 case IdDefArgs of tag(!OneArg IdDef0) then
+	    case IdDef0 of tag(!IdDef Id) then
 	       L.Id := case Args of arg(X) then X
 		       [] args(...) then {Adjoin Args tuple}   % construct
 		       end
@@ -436,6 +438,9 @@ define
 	 frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
       end
    end
+
+{Property.put 'print.depth' 10}
+{Property.put 'print.width' 10}
 
    Me = abstractCodeInterpreter(run: Run
 				handle: Handle

@@ -521,24 +521,24 @@ prepare
 				 case {Procedure.arity F} of 1 then
 				    case {F} of exception(Exn) then
 				       exception(nil Exn Rest)
-				    elseof Res then continue(Res Rest)
+				    elseof Res then continue(arg(Res) Rest)
 				    end
 				 [] 2 then
 				    case {F {Construct Args}}
 				    of exception(Exn) then
 				       exception(nil Exn Rest)
-				    elseof Res then continue(Res Rest)
+				    elseof Res then continue(arg(Res) Rest)
 				    end
 				 [] 3 then T = {Deconstruct Args} in
 				    case {F T.1 T.2} of exception(Exn) then
 				       exception(nil Exn Rest)
-				    elseof Res then continue(Res Rest)
+				    elseof Res then continue(arg(Res) Rest)
 				    end
 				 [] 4 then T = {Deconstruct Args} in
 				    case {F T.1 T.2 T.3}
 				    of exception(Exn) then
 				       exception(nil Exn Rest)
-				    elseof Res then continue(Res Rest)
+				    elseof Res then continue(arg(Res) Rest)
 				    end
 				 end
 			      end

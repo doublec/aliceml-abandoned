@@ -28,7 +28,7 @@ functor
 import
    Open(file)
    PrimitiveTable(table)
-   AbstractCodeInterpreter
+   AbstractCodeInterpreter(interpreter)
 export
    Load
    Unpack
@@ -60,7 +60,8 @@ define
 	    end
 	 [] 'Alice.function' then
 	    case X of tag(0 NG NL IdDefArgs Instr)
-	    then function(AbstractCodeInterpreter NG NL IdDefArgs Instr)
+	    then function(AbstractCodeInterpreter.interpreter
+			  NG NL IdDefArgs Instr)
 	    end
 	 end
 %      end

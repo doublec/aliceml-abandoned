@@ -10,7 +10,13 @@
 ###   $Revision$
 ###
 
-SRCS = PrimitiveTable.oz Pickle.oz AbstractCodeInterpreter.oz Scheduler.oz
+SRCS = \
+	PrimitiveTable.oz \
+	Pickle.oz \
+	AbstractCodeInterpreter.oz \
+	Scheduler.oz \
+	Linker.oz \
+	Main.oz
 
 %.ozf: %.oz
 	ozc -c $< -o $@

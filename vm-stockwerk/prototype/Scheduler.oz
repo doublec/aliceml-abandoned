@@ -24,22 +24,22 @@ define
 	 QueueHd <- Empty
 	 QueueTl <- Empty
       end
-      meth newThread(Closure ?Res) TaskStack in
+      meth newThread(Closure Args ?Res) TaskStack in
 	 case Closure of closure(Function ...) then
 	    TaskStack = {Function.1.pushCall Closure nil}
-	    Scheduler, Enqueue('thread'(args: args()
+	    Scheduler, Enqueue('thread'(args: Args
 					stack: TaskStack
 					result: Res))
 	 end
       end
-      meth Enqueue(T) Hd Rest in
-	 Hd = (@QueueHd <- Rest)
-	 Hd = T|Rest
+      meth Enqueue(T) Tl Rest in
+	 Tl = (QueueTl <- Rest)
+	 Tl = T|Rest
       end
       meth run() Hd = @QueueHd in
 	 if {IsFree Hd} then
 	    skip   %--** wait for I/O
-	 elsecase Hd of T='thread'(args: Args stack: TaskStack ...)|Tr then
+	 elsecase Hd of (T='thread'(args: Args stack: TaskStack ...))|Tr then
 	    QueueHd <- Tr
 	    CurrentThread <- T
 	    Scheduler, Run(Args TaskStack)
