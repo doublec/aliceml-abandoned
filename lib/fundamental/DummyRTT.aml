@@ -21,9 +21,9 @@ local
 	__primitive exttype exn      = "exn"
     end
 in
-    structure __pervasive =
+    structure RTT =
     struct
-	structure Inf =		(* Required by Package *)
+	structure Inf =		(* required by Package *)
 	struct
 	    type mismatch
 	    exception Mismatch of mismatch

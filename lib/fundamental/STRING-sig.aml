@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,11 +15,11 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive          from "Pervasive"
+import structure __pervasive and WideString from "Pervasive"
 import type int and bool and char 
-       type order and option and list from "ToplevelTypes"
-import signature CHAR                 from "CHAR-sig"
-import structure StringCvt            from "StringCvt"
+       type order and option and list       from "ToplevelTypes"
+import signature CHAR                       from "CHAR-sig"
+import structure StringCvt                  from "StringCvt"
 
 signature STRING =
 sig
@@ -65,8 +65,8 @@ sig
     val isSuffix :	string -> string -> bool			(**)
     val hash :		string -> int					(**)
 
-    val toWide :	string -> __pervasive.WideString.string		(**)
-    val fromWide :	__pervasive.WideString.string -> string		(**)
+    val toWide :	string -> WideString.string			(**)
+    val fromWide :	WideString.string -> string			(**)
 
     val toString :	string -> string
     val toCString :	string -> string

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,7 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                  from "Pervasive"
+import structure __pervasive and WideChar     from "Pervasive"
 import type int and bool and order and option from "ToplevelTypes"
 import structure StringCvt                    from "StringCvt"
 
@@ -64,8 +64,8 @@ sig
     val isCntrl :	char -> bool
     val isAscii :	char -> bool
 
-    val toWide :	char -> __pervasive.WideChar.char		(**)
-    val fromWide :	__pervasive.WideChar.char -> char		(**)
+    val toWide :	char -> WideChar.char				(**)
+    val fromWide :	WideChar.char -> char				(**)
 
     val toString :	char -> string
     val toCString :	char -> string

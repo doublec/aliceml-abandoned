@@ -11,12 +11,11 @@
  *   $Revision$
  *)
 
-import structure __pervasive from "Pervasive"
-import type int and word     from "ToplevelTypes"
-import structure MkWord      from "MkWord"
+import structure __pervasive and Int and Word from "Pervasive"
+import structure MkWord                       from "MkWord"
 
 local
-    __primitive val wordSize : int = "Word.wordSize"
+    __primitive val wordSize : Int.int = "Word.wordSize"
 in
-    structure Word = MkWord(type word = word val wordSize = wordSize)
+    structure Word = MkWord(type word = Word.word val wordSize = wordSize)
 end

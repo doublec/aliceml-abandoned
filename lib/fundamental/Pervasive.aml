@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,186 +19,68 @@
 	(* to encode datatypes: *)
 	type 'a ref
 	type 'a strict
-	type ('a,'b) conarrow
+	type 'a conarrow
 
 	(* to enable derived forms: *)
 	exttype exn
 	datatype 'a list = nil | :: of 'a * 'a list
-
-	structure Int :		sig eqtype int  end
-	structure LargeInt :	sig eqtype int  end
-	structure Word :	sig eqtype word end
-	structure LargeWord :	sig eqtype word end
-	structure Real :	sig eqtype real end
-	structure LargeReal :	sig eqtype real end
-	structure Char :	sig eqtype char end
-	structure WideChar :	sig eqtype char end
-	structure String :	sig eqtype string end
-	structure WideString :	sig eqtype string end
-	structure Vector :	sig eqtype 'a vector end
-	structure Array :	sig eqtype 'a array  end
-	structure Ref :		sig datatype 'a ref = ref of 'a end
     end
 
-(* With RTT enabled it also needs to have (all exported in *_REFLECTION): *)
+(* With RTT enabled it also needs to have: *)
 
     structure __pervasive :
     sig
 	... as above ...
 
 	(* to encode runtime types: *)
-	structure Label :
-	sig
-	    val fromString :	string -> lab
-	end
-
-	structure Path :
-	sig
-	    val invent :	unit   -> path
-	    val pervasive :	string -> path
-	    val fromLab :	lab    -> path
-	end
-
-	structure Type :
-	sig
-	    val OPEN :		sort
-	    val CLOSED :	sort
-	    val STAR :		kind
-	    val ARROW :		kind * kind -> kind
-
-	    val unknown :	kind       -> typ
-	    val inArrow :	typ * typ  -> typ
-	    val inTuple :	typ vector -> typ
-	    val inProd :	row        -> typ
-	    val inSum :		row        -> typ
-	    val inVar :		var        -> typ
-	    val inCon :		con        -> typ
-	    val inAll :		var * typ  -> typ
-	    val inExist :	var * typ  -> typ
-	    val inLambda :	var * typ  -> typ
-	    val inApply :	typ * typ  -> typ
-	    val inMu :		typ        -> typ
-
-	    val var :		kind -> var
-	    val kind :		typ  -> kind
-
-	    val unknownRow :	unit -> row
-	    val emptyRow :	unit -> row
-	    val extendRow :	lab * typ * row -> row
-
-	    val fill :		typ * typ -> unit
-	    val equal :		typ * typ -> bool
-	end
-
-	structure Fixity :
-	sig
-	    val LEFT :		assoc
-	    val RIGHT :		assoc
-	    val NEITHER :	assoc
-	    val NONFIX :	fix
-	    val PREFIX :	int -> fix
-	    val POSTFIX :	int -> fix
-	    val INFIX :		int * assoc -> fix
-	end
-
-	structure Inf :
-	sig
-	    val empty :		unit -> sign
-	    val newVal :	sign * lab -> path
-	    val newTyp :	sign * lab -> path
-	    val newMod :	sign * lab -> path
-	    val newInf :	sign * lab -> path
-	    val newFix :	sign * lab -> path
-	    val extendVal :	sign * path *  typ  * path option -> unit
-	    val extendTyp :	sign * path * tkind * typ  option -> unit
-	    val extendMod :	sign * path *  inf  * path option -> unit
-	    val extendInf :	sign * path *  kind * inf  option -> unit
-	    val extendFix :	sign * path * fix -> unit
-	    val lookupVal :	sign * lab -> typ
-	    val lookupTyp :	sign * lab -> typ
-	    val lookupMod :	sign * lab -> inf
-	    val lookupInf :	sign * lab -> inf
-	    val lookupFix :	sign * lab -> fix
-
-	    val inTop :		unit		 -> inf
-	    val inCon :		con		 -> inf
-	    val inSig :		sign		 -> inf
-	    val inArrow :	path * inf * inf -> inf
-	    val inLambda :	path * inf * inf -> inf
-	    val inApply :	inf * path * inf -> inf
-	    val asCon :		inf -> con
-	    val asSig :		inf -> sign
-	    val asArrow :	inf -> path * inf * inf
-	    val asLambda :	inf -> path * inf * inf
-	    val asApply :	inf -> inf * path * inf
-	    val inGround :	unit -> kind
-	    val inDependent :	path * inf * kind -> kind
-
-	    exception Mismatch of ...
-	    val instance :	inf -> inf
-	    val kind :		inf -> kind
-	    val match :		inf * inf -> rea		(* Mismatch *)
-	    val intersect :	inf * inf -> inf		(* Mismatch *)
-	end
-
-	structure PervasiveType :
-	sig
-	    val typ_ref :	typ
-	    val lookup :	string -> con
-	end
+	structure Label :	LABEL'
+	structure Path :	PATH'
+	structure Type :	TYPE'
+	structure Fixity :	FIXITY'
+	structure Inf :		INF'
+	structure PervasiveType : PERVASIVE_TYPE'
     end
 
  *)
 
-(* Step 1: Type lib
- *)
-
-import structure __pervasive from "RTT"
-
+import structure RTT from "RTT"
 
 local
+    (* Step 1: Type lib *)
+    structure __pervasive =
+    struct
+	open RTT
+    end
 
-(* Step 2: Extend with primitive types encoding datatypes
- *         (accesses type lib). 
- *)
+    (* Step 2: Extend with primitive types encoding datatypes
+     *         (accesses type lib). *)
+    structure __pervasive =
+    struct
+	open __pervasive
 
-structure __pervasive =
-struct
-    open __pervasive
-
-    __primitive type 'a ref      = "ref"
-    __primitive type 'a strict   = "strict"
-    __primitive type 'a conarrow = "conarrow"
-end
-
-
+	__primitive type 'a ref      = "ref"
+	__primitive type 'a strict   = "strict"
+	__primitive type 'a conarrow = "conarrow"
+    end
 in
+    (* Step 3: Extend with actual content
+     *         (requires type lib and datatype encoding) *)
+    structure __pervasive =
+    struct
+	open __pervasive
 
-(* Step 3: Extend with actual content
- *         (requires type lib and datatype encoding)
- *)
-
-structure __pervasive =
-struct
-    open __pervasive
-
-    __primitive __reftype 'a ref = ref of 'a
-    __primitive exttype exn = "exn"
-    datatype 'a list = nil | op:: of 'a * 'a list
-
-    structure Int	= struct __primitive eqtype int		= "int"     end
-    structure LargeInt	= struct               type int		= Int.int   end
-    structure Word	= struct __primitive eqtype word	= "word"    end
-    structure LargeWord	= struct               type word	= Word.word end
-    structure Real	= struct __primitive eqtype real	= "real"    end
-    structure LargeReal	= struct               type real	= Real.real end
-    structure Char	= struct __primitive eqtype char	= "char"    end
-    structure WideChar	= struct               type char	= Char.char end
-    structure String	= struct __primitive eqtype string	= "string"  end
-    structure WideString = struct              type string	= String.string
-									    end
-    structure Vector	= struct __primitive eqtype 'a vector	= "vector"  end
-    structure Array	= struct __primitive __eqeqtype 'a array = "array"  end
-end
-
+	__primitive exttype exn = "exn"
+	datatype 'a list = nil | op:: of 'a * 'a list
+    end
 end (* local *)
+
+structure Int		= struct __primitive eqtype int	   = "int"    end
+structure Word		= struct __primitive eqtype word   = "word"   end
+structure Real		= struct __primitive eqtype real   = "real"   end
+structure Char		= struct __primitive eqtype char   = "char"   end
+structure String	= struct __primitive eqtype string = "string" end
+structure LargeInt	= Int
+structure LargeWord	= Word
+structure LargeReal	= Real
+structure WideChar	= Char
+structure WideString 	= String

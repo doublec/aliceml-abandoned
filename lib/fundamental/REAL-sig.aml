@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,13 +16,12 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive          from "Pervasive"
+import structure __pervasive and LargeInt and LargeReal from "Pervasive"
 import type int and char and string
-       type bool and order and option from "ToplevelTypes"
-import structure IEEEReal             from "IEEEReal"
-import structure StringCvt            from "StringCvt"
-import signature MATH                 from "MATH-sig"
-
+       type bool and order and option                   from "ToplevelTypes"
+import structure IEEEReal                               from "IEEEReal"
+import structure StringCvt                              from "StringCvt"
+import signature MATH                                   from "MATH-sig"
 
 signature REAL =
 sig
@@ -101,13 +100,11 @@ sig
 *)
 
     val toInt :		IEEEReal.rounding_mode -> real -> int
-    val toLargeInt :	IEEEReal.rounding_mode -> real ->
-			    __pervasive.LargeInt.int
+    val toLargeInt :	IEEEReal.rounding_mode -> real -> LargeInt.int
     val fromInt :	int -> real
-    val fromLargeInt :	__pervasive.LargeInt.int -> real
-    val toLarge :	real -> __pervasive.LargeReal.real
-    val fromLarge :	IEEEReal.rounding_mode ->
-			    __pervasive.LargeReal.real -> real
+    val fromLargeInt :	LargeInt.int -> real
+    val toLarge :	real -> LargeReal.real
+    val fromLarge :	IEEEReal.rounding_mode -> LargeReal.real -> real
 (*TODO
     val toDecimal :	real -> IEEEReal.decimal_approx
     val fromDecimal :	IEEEReal.decimal_approx -> real

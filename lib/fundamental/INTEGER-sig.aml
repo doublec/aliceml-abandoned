@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,10 +15,9 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                              from "Pervasive"
+import structure __pervasive and Int and LargeInt         from "Pervasive"
 import type char and string and bool and order and option from "ToplevelTypes"
 import structure StringCvt                                from "StringCvt"
-
 
 signature INTEGER =
 sig
@@ -27,12 +26,12 @@ sig
 
     val minInt :	int option
     val maxInt :	int option
-    val precision :	__pervasive.Int.int option
+    val precision :	Int.int option
 
-    val toInt :		int -> __pervasive.Int.int
-    val fromInt :	__pervasive.Int.int -> int
-    val toLarge :	int -> __pervasive.LargeInt.int
-    val fromLarge :	__pervasive.LargeInt.int -> int
+    val toInt :		int -> Int.int
+    val fromInt :	Int.int -> int
+    val toLarge :	int -> LargeInt.int
+    val fromLarge :	LargeInt.int -> int
 
     val ~ :		int -> int
     val op + :		int * int -> int
@@ -54,7 +53,7 @@ sig
     val abs :		int -> int
     val min :		int * int -> int
     val max :		int * int -> int
-    val sign :		int -> __pervasive.Int.int
+    val sign :		int -> Int.int
     val sameSign :	int * int -> bool
 
     val toString :	int -> string

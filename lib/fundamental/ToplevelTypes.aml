@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,21 +16,19 @@
 
 import structure __pervasive from "Pervasive"
 
+__primitive eqtype    int	= "int"
+__primitive eqtype    word	= "word"
+__primitive eqtype    real	= "real"
+__primitive eqtype    char	= "char"
+__primitive eqtype    string	= "string"
+__primitive eqtype 'a vector	= "vector"
+__primitive __eqeqtype 'a array	= "array"
+__primitive exttype exn		= "exn"
+__primitive __reftype 'a ref	= ref of 'a
 
-type    unit		= {}
-type    int		= __pervasive.Int.int
-type    word		= __pervasive.Word.word
-type    real		= __pervasive.Real.real
-type    char		= __pervasive.Char.char
-type    string		= __pervasive.String.string
-type 'a vector		= 'a __pervasive.Vector.vector
-type 'a array		= 'a __pervasive.Array.array
-
-datatype exn		= datatype __pervasive.exn
-datatype ref		= datatype __pervasive.ref
-
-datatype bool		= false | true
-datatype order		= LESS | EQUAL | GREATER
-datatype ('a,'b) alt	= FST of 'a | SND of 'b				(**)
-datatype 'a option	= NONE | SOME of 'a
-datatype 'a list	= nil | op:: of 'a * 'a list
+type unit			= {}
+datatype bool			= false | true
+datatype order			= LESS | EQUAL | GREATER
+datatype ('a,'b) alt		= FST of 'a | SND of 'b			(**)
+datatype 'a option		= NONE | SOME of 'a
+datatype 'a list		= nil | op:: of 'a * 'a list
