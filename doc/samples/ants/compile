@@ -3,6 +3,18 @@
 PATH=/opt/alice-devel/bin:$PATH
 
 INFILE=$1
-OUTFILE=`basename $INFILE .ante`.ant
+BASEFILE=`basename $INFILE .ante`
+OUTFILE=$BASEFILE.ant
+AMLFILE=$BASEFILE.aml
 
-ANTINFILE=$INFILE ANTOUTFILE=$OUTFILE alice <CompilerMain.aml >/dev/null
+echo >$AMLFILE
+echo >>$AMLFILE 'import "Ante"'
+echo >>$AMLFILE 'import "Instructions"'
+echo >>$AMLFILE 'open Ante'
+cat $INFILE >>$AMLFILE
+echo >>$AMLFILE ';Instructions.output ignore (TextIO.stdOut, compile ant);'
+echo >>$AMLFILE 'OS.Process.exit OS.Process.success : unit;'
+
+alicec $AMLFILE
+alicerun $BASEFILE >$OUTFILE
+rm $AMLFILE

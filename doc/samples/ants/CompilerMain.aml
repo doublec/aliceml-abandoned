@@ -1,9 +1,0 @@
-import "Ante"
-import "Instructions"
-open Ante;
-
-use (valOf (OS.Process.getEnv "ANTINFILE"));
-
-Instructions.output ignore (TextIO.openOut (valOf (OS.Process.getEnv "ANTOUTFILE")), compile ant);
-
-OS.Process.exit OS.Process.success;
