@@ -100,15 +100,10 @@ void BaseMap<T>::Remove(word key) {
 template <typename T>
 bool BaseMap<T>::IsMember(word key) {
   Assert(PointerOp::Deref(key) == key && !PointerOp::IsTransient(key));
-  u_int tableSize = GetTableSize();
-  if (tableSize == 0)
-    return false;
-  else {
-    u_int hashedKey = T::Hash(key, tableSize);
-    word nodes      = GetEntry(hashedKey);
-    word prev       = Store::IntToWord(0);
-    return (FindKey(key, nodes, prev) != NULL);
-  }
+  u_int hashedKey = T::Hash(key, GetTableSize());
+  word nodes      = GetEntry(hashedKey);
+  word prev       = Store::IntToWord(0);
+  return (FindKey(key, nodes, prev) != NULL);
 }
 
 template <typename T>
@@ -125,16 +120,11 @@ word BaseMap<T>::Get(word key) {
 template <typename T>
 word BaseMap<T>::CondGet(word key, word alternative) {
   Assert(PointerOp::Deref(key) == key && !PointerOp::IsTransient(key));
-  u_int tableSize = GetTableSize();
-  if (tableSize == 0)
-    return alternative;
-  else {
-    u_int hashedKey = T::Hash(key, tableSize);
-    word nodes      = GetEntry(hashedKey);
-    word prev       = Store::IntToWord(0);
-    MapNode *entry  = FindKey(key, nodes, prev);
-    return ((entry == NULL) ? alternative : entry->GetValue());
-  }
+  u_int hashedKey = T::Hash(key, GetTableSize());
+  word nodes      = GetEntry(hashedKey);
+  word prev       = Store::IntToWord(0);
+  MapNode *entry  = FindKey(key, nodes, prev);
+  return ((entry == NULL) ? alternative : entry->GetValue());
 }
 
 template <typename T>
@@ -152,6 +142,7 @@ void BaseMap<T>::Apply(item_apply func) {
 
 template <typename T>
 BaseMap<T> *BaseMap<T>::New(BlockLabel l, u_int size) {
+  size = ((size == 0) ? 1 : size); // Enforce Invariant: size must be >= 1
   Block *map    = Store::AllocBlock(l, SIZE);
   Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
   u_int percent = STATIC_CAST(u_int, size * MAP_FILL_RATIO);
