@@ -376,7 +376,7 @@ Worker::Result EnterWorker::Run(StackFrame *sFrame) {
   word sign = frame->GetSign();
   Scheduler::PopFrame(frame->GetSize());
   Trace("entering", key);
-  Worker::Construct();
+  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
   BootLinker::EnterComponent(key, sign, Scheduler::currentArgs[0]);
   return Worker::CONTINUE;
 }
@@ -411,7 +411,7 @@ Worker::Result LinkWorker::Run(StackFrame *sFrame) {
   String *key = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
   Trace("linking", key);
-  Worker::Construct();
+  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
   TagVal *tagVal = TagVal::FromWord(Scheduler::currentArgs[0]);
   Assert(tagVal != INVALID_POINTER);
   switch (tagVal->GetTag()) {
@@ -487,13 +487,15 @@ Worker::Result LoadWorker::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
-  if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
-    Scheduler::nArgs = 0;
+  Component *component = BootLinker::LookupComponent(key);
+  if (component != INVALID_POINTER) {
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = component->GetStr();
     return Worker::CONTINUE;
   }
-  Trace("loading", key);
   LinkWorker::PushFrame(key);
-  LoadWorker::PushFrame(key); //--** what is this good for?
+  LoadWorker::PushFrame(key); // popped by Unpickler::Load
+  Trace("loading", key);
   return Unpickler::Load(Localize(key));
 }
 
@@ -528,13 +530,10 @@ u_int StartWorker::GetFrameSize(StackFrame *sFrame) {
 Worker::Result StartWorker::Run(StackFrame *sFrame) {
   StartFrame *frame = static_cast<StartFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  String *key = String::New("lib/system/Boot");
   String *arg = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
-  Component *component = BootLinker::LookupComponent(key);
-  Assert(component != INVALID_POINTER);
-  Record *record = Record::FromWord(component->GetStr());
-  Assert(record != INVALID_POINTER);
+  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+  Record *record = Record::FromWordDirect(Scheduler::currentArgs[0]);
   word boot = record->PolySel(UniqueString::New(String::New("boot")));
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = arg->ToWord();
