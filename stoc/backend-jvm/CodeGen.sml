@@ -159,13 +159,7 @@ structure CodeGen =
 	      | freeVarsTest (LabTest(_,id')) = fV.delete id'
 
 	    and freeVarsDecs (decs) =
-		(app freeVarsDec (List.rev decs)
-		 (*;app (fn
-		      (ValDec (_,id',_,_)) => fV.delete id'
-		    | RecDec (_,idexps,_) => app (fn (id',_) => fV.delete id') idexps
-		    | ConDec (_,id',_,_) => fV.delete id'
-		    | _ => ())
-		 decs*))
+		app freeVarsDec (List.rev decs)
 	end
 
 (* Das macht jetzt alles Leif. *)
@@ -387,11 +381,6 @@ structure CodeGen =
 							[Voidsig]))])
 			      | VarExp (_, id') => (idCode id'@
 						    [Astore loc])
-			      (* ConVal *)
-			      (* ConExp _ => [New CConVal,
-				  Dup,
-				  Invokespecial (CConVal,"<init>", ([],Voidsig)),
-				  Astore loc] xxx Varexp *)
 			      (* Record mit Arity *)
 			      | RecExp _ =>
 				    [New CRecord,
@@ -801,7 +790,6 @@ structure CodeGen =
 
 	  | decCode (IndirectStm (_, ref (SOME body'))) = List.concat (map decCode body')
 	  | decCode (IndirectStm (_, ref NONE)) = nil
-	  (*| decCode dings = raise Debug (Dec dings)*)
 	and
 	    idCode (Id(_,stamp',_)) = Comment "Hi87"::stampCode stamp'
 	and
@@ -896,15 +884,6 @@ structure CodeGen =
 				([Arraysig, Classsig CVal], [Voidsig]))]
 	    end
 
-	(*	  | expCode (SeqExp(_, exps)) =
-	    let
-		fun eiter (exp'::nil) = expCode exp'
-		  | eiter (exp'::exps) = expCode exp' @ [Pop] @ eiter exps
-		  | eiter _ = raise Error "eiter"
-	    in
-		eiter exps
-	    end*)
-
 	and
 	    expCode (AppExp(_,id' as Id(_,stamp',_),ida'')) =
 	    let
@@ -939,55 +918,6 @@ structure CodeGen =
 				  Getstatic CUnit])
 		   | _ => nil)
 
-(* Tail-Call-Optimierung: *)
-(* Unterscheidung: Applikation in Tail-Call-Position oder nicht *)
-	    (*  - wann muß kein Tail-Call sein: *)
-	    (*    ^ nicht rekursive Funktion wird appliziert *)
-	    (*    ^ self-tail-call ist anders *)
-	    (*let*)
-		(*val simpleCall = false *)(* keine wilde Wurschtelei nach apply *)
-(*val selfTailCall = Lambda.isSelfCall exp'
- andalso tailPosition *)(* spricht für sich *)
-	  (*val (startlabel,endlabel) = (Label.new(), Label.new())
-		val _ = print ("Toplevel ist "^Int.toString toplevel^", Lambdatop ist "^Int.toString(Lambda.top ())^"\n")
-		val tailCallApp = if tailPosition andalso (Lambda.top ()<>toplevel)
-				      then if Lambda.isSelfCall exp'
-					       then
-						   [Astore 1,
-						    Goto afterInit]
-					   else
-					       [Swap,
-						Invokestatic (CThread, "currentThread", ([],Classsig CThread)),
-						Checkcast CDMLThread,
-						Swap,
-						Putfield (CDMLThread^"/tail",CVal)]
-				  else if simpleCall orelse (Lambda.top ()=toplevel)
-					   then
-					       [Invokeinterface (CVal, "apply", ([Classsig CVal],Classsig CVal))]
-				       else
-					   [Label startlabel,
-					    Invokeinterface (CVal, "apply", ([Classsig CVal],Classsig CVal)),
-					    Invokestatic (CThread, "currentThread", ([],Classsig CThread)),
-					    Checkcast CDMLThread,
-					    Getfield (CDMLThread^"/tail",CVal),
-					    Dup,
-					    Ifnull endlabel,
-					    Swap,
-					    Goto startlabel,
-					    Label endlabel,
-					    Pop]
-
-		val (inl, bef, aft) = inlineExpCode exp'
-		val e2 = expCode exp''
-		val e = if inl then
-		     bef @ e2 @ aft
-			else expCode exp' @ e2 @ tailCallApp
-	    in
-		[Comment "[ apply"]
-		@ e @
-		[Comment "end of apply ]"]
-	    end*)
-
 	  | expCode (FunExp(coord',string', (lambda as (OneArg (id' as Id (_,stamp',_)), _))::rest)) =
 		     (* FunExp of coord * string * (id args * dec) list *)
 		     (* id ist formaler Parameter *)
@@ -997,8 +927,6 @@ structure CodeGen =
 		     let
 			 val className = classNameFromStamp stamp'
 			 val freeVarList = FreeVars.getVars id'
-			 (*			     val _ = (print "FunExpFree: ";printStampList freeVarList)*)
-			 (*		val _ = annotateTailExp exp'*)
 			 (* 1. *)
 			 val object = let
 					  val loc = Local.getLambda stamp'
@@ -1045,9 +973,6 @@ structure CodeGen =
 			      rest of nil => nil
 			    | _ => expCode (FunExp(coord', string', rest)))
 		     end
-
-	  (*	  | expCode (LetExp(_,declist,exp')) =
-	   decListCode declist @ expCode exp'*)
 
 	  | expCode (RecExp(_, nil)) =
 		     [Getstatic (CConstants^"/dmlunit", [Classsig CName])]
