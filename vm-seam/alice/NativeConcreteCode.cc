@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#if LIGHTNING
+
 #if defined(INTERFACE)
 #pragma implementation "alice/NativeConcreteCode.hh"
 #endif
@@ -139,3 +141,5 @@ void NativeConcreteCode::Disassemble(std::FILE *file) {
   TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
   AbstractCode::Disassemble(file, pc);
 }
+
+#endif

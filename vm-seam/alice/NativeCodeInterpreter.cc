@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#if LIGHTNING
+
 #if defined(INTERFACE)
 #pragma implementation "alice/NativeCodeInterpreter.hh"
 #endif
@@ -239,3 +241,5 @@ void DisassembleNative(Closure *closure) {
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
   concreteCode->Disassemble(stdout);
 }
+
+#endif

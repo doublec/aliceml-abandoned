@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#if LIGHTNING
+
 #if defined(INTERFACE)
 #pragma implementation "alice/NativeCodeJitter.hh"
 #pragma implementation "alice/NativeConcreteCode.hh"
@@ -2734,4 +2736,6 @@ void NativeCodeJitter::DumpInstructionCounts() {
 		   (static_cast<AbstractCode::instr>(opcode)),
 		 staticCounts[opcode], dynamicCounts[opcode]);
 }
+#endif
+
 #endif
