@@ -12,7 +12,6 @@
 
 structure StringListHashKey =
   struct
-      open Main
       datatype lab = datatype IntermediateGrammar.lab
 
     type t = string list

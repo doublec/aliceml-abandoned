@@ -16,7 +16,6 @@ structure Common=
 	open IntermediateGrammar
 	open ImperativeGrammar
 	open Prebound
-	open Main
 
 	open JVMInst
 

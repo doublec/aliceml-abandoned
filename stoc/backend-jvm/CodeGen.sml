@@ -185,6 +185,8 @@ structure CodeGen =
 
 	and freeVarsDec (RaiseStm(_,id'), free, curFun) =
 	    markfree (free, id', curFun, "RaiseStm")
+	  | freeVarsDec (ReraiseStm(_,id'), free, curFun) =
+	    markfree (free, id', curFun, "ReraiseStm")
 	  | freeVarsDec (HandleStm(_,body',id',body'', body''', shared), free, curFun) =
 	    if !shared = ~3 then () else
 		(shared :=  ~3;
@@ -285,15 +287,15 @@ structure CodeGen =
 	  | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
 
 	(* entry point *)
-	fun genComponentCode (debug, verbose, optimize, lmaa, lines, wait, name, (components, _, program)) =
+	fun genComponentCode (debug, verbose, optimize, lmaa, lines, wait, name, (components, (program, _))) =
 	    let
-		fun loadComponents ((Id (_, stamp', _), name')::rest, akku) =
+		fun loadComponents ((Id (_, stamp', _), _, url')::rest, akku) =
 		    loadComponents
 		    (rest,
 		     Getstatic BImport ::
 		     New CStr ::
 		     Dup ::
-		     Ldc (JVMString name') ::
+		     Ldc (JVMString (Url.toString url')) ::
 		     Invokespecial (CStr, "<init>", ([Classsig CString], [Voidsig])) ::
 		     Invokeinterface MApply ::
 		     Astore stamp' ::
@@ -327,7 +329,7 @@ structure CodeGen =
 				    destClassDecs program;
 				    app (fn dec' => freeVarsDec (dec', free, toplevel))
 				    program;
-				    app (fn (id',_) =>
+				    app (fn (id',_,_) =>
 					 markfree (free,id', toplevel, "genComponentCode"))
 				    components
 				end
@@ -467,6 +469,15 @@ structure CodeGen =
 	    end
 
 	  | decCode (RaiseStm((((line,_),_),_),id'), curFun, curCls) =
+	    [Line line,
+	     New CExWrap,
+	     Dup,
+	     idCode (id', curFun, curCls),
+	     Invokespecial(CExWrap,"<init>",
+			   ([Classsig IVal],[Voidsig])),
+	     Athrow]
+
+	  | decCode (ReraiseStm((((line,_),_),_),id'), curFun, curCls) =
 	    [Line line,
 	     New CExWrap,
 	     Dup,
@@ -1660,9 +1671,9 @@ structure CodeGen =
 	    end
 	  | expCodeClass _ = raise (Crash.Crash "CodeGen.expCodeClass")
 	and
-	    compile prog = genComponentCode (0,0,2,false,false,false,"Emil", imperatifyString' prog)
+	    compile prog = genComponentCode (0,0,2,false,false,false,"Emil", Main.imperatifyString' prog)
 	and
-	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,false,"Emil", imperatifyFile' f)
+	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,false,"Emil", Main.imperatifyFile' f)
 
 	(* make array of value list *)
 	and

@@ -12,7 +12,6 @@
 
 structure LitHashKey =
   struct
-      open Main
       datatype lit = datatype IntermediateGrammar.lit
 
 		     type t = lit
