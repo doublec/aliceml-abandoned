@@ -448,7 +448,12 @@ structure CodeEmitter :> CODE_EMITTER =
 	(case getProp(prop, "label") of
 	     (SOME l, psr) =>
 	     (case getProp(psr, "use_stock") of
-		  (SOME "True", psr) => ("Gtk."^cvtGtkName(class)^"NewFromStock", SOME ("\""^l^"\",Helpers.accelGroup"), psr)
+		  (SOME "True", psr) =>
+		      (case class of
+			   "GtkButton" =>
+			       ("Gtk."^cvtGtkName(class)^"NewFromStock", SOME ("\""^l^"\""), psr)
+			 | _ =>
+			       ("Gtk."^cvtGtkName(class)^"NewFromStock", SOME ("\""^l^"\",Helpers.accelGroup"), psr))
 		| (_, psr) =>
 		  (case class of
 		       "GtkListItem" =>
