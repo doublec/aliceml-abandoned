@@ -334,7 +334,7 @@ structure Buffer =
               ()
           end
 
-      fun match iter back txt i caseSensitive =
+      fun match (iter, back, txt, i, caseSensitive) =
           if (if caseSensitive then
                   Gtk.textIterGetChar iter = ord (String.sub(txt,i))
               else
@@ -350,16 +350,20 @@ structure Buffer =
                    (Gtk.textIterSetOffset(iter,back);
                     true)
                else if Gtk.textIterForwardChar iter 
-               then match iter back txt (i+1) caseSensitive
+               then match (iter, back, txt, i+1, caseSensitive)
                else (Gtk.textIterSetOffset(iter,back);
                      false)
           else (Gtk.textIterSetOffset(iter,back);
                 false)
 
-      fun find' iter off txt caseSensitive =
-          (match iter off txt 0 caseSensitive orelse
-           (Gtk.textIterForwardChar iter andalso
-            find' iter (off+1) txt caseSensitive))
+      fun find' (iter, off, txt, caseSensitive, wrapAround) =
+          match (iter, off, txt, 0, caseSensitive) orelse
+	   (if Gtk.textIterForwardChar iter then
+                find' (iter, off+1, txt, caseSensitive, wrapAround)
+	    else
+	        not wrapAround andalso
+		(Gtk.textIterSetOffset(iter, 0);
+		 find' (iter, 0, txt, caseSensitive, true)))
 
       fun find id txt caseSensitive =
           let
@@ -370,7 +374,7 @@ structure Buffer =
                         then off + 1
                         else off
           in
-              if find' iter off txt caseSensitive then
+              if find' (iter, off, txt, caseSensitive, false) then
                   let
                       val iter' = Gtk.textIterCopy iter
                   in
