@@ -145,6 +145,10 @@ struct
 
   (* Miscellanous helpers *)
 
+    fun infStatusToFixity(NONE)			= Fixity.NONFIX
+      | infStatusToFixity(SOME(Infix.LEFT, n))	= Fixity.INFIX(n, Fixity.LEFT)
+      | infStatusToFixity(SOME(Infix.RIGHT, n))	= Fixity.INFIX(n, Fixity.RIGHT)
+
     fun conName s  = "'" ^ s
     fun conVId vid = VId.fromString(conName(VId.toString vid))
 
@@ -1457,22 +1461,17 @@ struct
 
 
     and trOpenDec (E,i,modlongido') (E',acc) =
-	(foldiInfs(trOpenDecInf(E,i))
-	(foldiVals(trOpenDecVal(E,i,modlongido'))
-	(foldiTys (trOpenDecTy (E,i,modlongido'))
+	(foldiSigs(trOpenDecSig(E,i,modlongido'))
 	(foldiStrs(trOpenDecStr(E,i,modlongido'))
-	(foldiSigs(trOpenDecSig(E,i,modlongido')) acc E') E') E') E') E')
+	(foldiTys (trOpenDecTy (E,i,modlongido'))
+	(foldiVals(trOpenDecVal(E,i,modlongido'))
+	(foldiInfs(trOpenDecInf(E,i)) acc E') E') E') E') E')
 
     and trOpenDecInf (E,i) (vid', (_,inf), acc) =
 	let
 	    val name    = VId.toString vid'
 	    val vallab' = O.Lab(i, Label.fromString name)
-	    val fix     = case inf of NONE => Fixity.NONFIX
-				    | SOME(Infix.LEFT, n) =>
-					Fixity.INFIX(n, Fixity.LEFT)
-				    | SOME(Infix.RIGHT, n) =>
-					Fixity.INFIX(n, Fixity.RIGHT)
-	    val fix'    = O.Fix(i, fix)
+	    val fix'    = O.Fix(i, infStatusToFixity inf)
 	    val _       = insertInf(E, vid', (i,inf))
 	in
 	    O.FixDec(i, vallab', fix') :: acc
@@ -2926,9 +2925,29 @@ struct
 	   end
 
 
-    and trOpenImpVal (E,i) (vid', (_,stamp,is), acc) =
+    and trOpenImp (E,i) (E',acc) =
+	(foldiSigs(trOpenImpSig(E,i))
+	(foldiStrs(trOpenImpStr(E,i))
+	(foldiTys (trOpenImpTy (E,i))
+	(foldiVals(trOpenImpVal(E,i))
+	(foldiInfs(trOpenImpInf(E,i)) acc E') E') E') E') E')
+
+    and trOpenImpInf (E,i) (vid', (_,inf), acc) =
+	let
+	    val name    = VId.toString vid'
+	    val vallab' = O.Lab(i, Label.fromString name)
+	    val fix'    = O.Fix(i, infStatusToFixity inf)
+	    val _       = insertDisjointInf(E, vid', (i,inf))
+			  handle CollisionInf _ =>
+				error(i, E.ImpFixDuplicate vid')
+	in
+	    O.FixImp(i, vallab', O.NoDesc(i)) :: acc
+	end
+
+    and trOpenImpVal (E,i) (vid', (_,_,is), acc) =
 	let
 	    val name   = VId.toString vid'
+	    val stamp  = Stamp.new()
 	    val valid' = O.Id(i, stamp, Name.ExId name)
 	    val _      = insertDisjointVal(E, vid', (i,stamp,is))
 			 handle CollisionVal _ =>
@@ -2937,6 +2956,41 @@ struct
 	    O.ValImp(i, valid', O.NoDesc(i)) :: acc
 	end
 
+    and trOpenImpTy (E,i) (tycon', (_,_,E'), acc) =
+	let
+	    val name   = TyCon.toString tycon'
+	    val stamp  = Stamp.new()
+	    val typid' = O.Id(i, stamp, Name.ExId name)
+	    val _      = insertDisjointTy(E, tycon', (i,stamp,E'))
+			 handle CollisionTy _ =>
+				error(i, E.ImpTyConDuplicate tycon')
+	in
+	    O.TypImp(i, typid', O.NoDesc(i)) :: acc
+	end
+
+    and trOpenImpStr (E,i) (strid', (_,_,E'), acc) =
+	let
+	    val name   = StrId.toString strid'
+	    val stamp  = Stamp.new()
+	    val modid' = O.Id(i, stamp, Name.ExId name)
+	    val _      = insertDisjointStr(E, strid', (i,stamp,E'))
+			 handle CollisionStr _ =>
+				error(i, E.ImpStrIdDuplicate strid')
+	in
+	    O.ModImp(i, modid', O.NoDesc(i)) :: acc
+	end
+
+    and trOpenImpSig (E,i) (sigid', (_,_,E'), acc) =
+	let
+	    val name   = SigId.toString sigid'
+	    val stamp  = Stamp.new()
+	    val infid' = O.Id(i, stamp, Name.ExId name)
+	    val _      = insertDisjointSig(E, sigid', (i,stamp,E'))
+			 handle CollisionSig _ =>
+				error(i, E.ImpSigIdDuplicate sigid')
+	in
+	    O.InfImp(i, infid', O.NoDesc(i)) :: acc
+	end
 
 
   (* Items *)
@@ -3280,6 +3334,23 @@ struct
 		( O.ImpAnn(i, imps', url) :: acc1, acc2' )
 	   end
 
+	 | IMPORTALLAnn(i, s) =>
+	   let
+		val url   = Url.fromString s
+		val s     = loadSign(desc, url)
+		val E''   = BindEnvFromSig.envFromSig(i, s)
+		val E'''  = BindEnv.new()
+		val imps' = Vector.rev(Vector.fromList
+				(trOpenImp (E''',i) (E'',[])))
+		val _     = union(E,E''')
+		val acc2' = if !Switches.Language.reexportImport then
+				trOpenDec (E',i,NONE) (E''',acc2)
+			    else
+				acc2
+	   in
+		( O.ImpAnn(i, imps', url) :: acc1, acc2' )
+	   end
+
 	 | EMPTYAnn(i) =>
 		(acc1, acc2)
 
@@ -3309,7 +3380,7 @@ struct
 
     fun trComponent (E,desc) (Component(i, ann, programo)) =
 	let
-	    val  E'            = new()
+	    val  E'            = BindEnv.new()
 	    val  _             = insertScope E
 	    val (anns',decs1') = trAnn (E,E',desc) ann
 	    val  _             = insertScope E

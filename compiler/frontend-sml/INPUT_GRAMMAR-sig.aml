@@ -377,9 +377,10 @@ sig
     (* Announcements *)
 
     and Ann =
-	  IMPORTAnn   of Info * Imp * string
-	| EMPTYAnn    of Info
-	| SEQAnn      of Info * Ann * Ann
+	  IMPORTAnn    of Info * Imp * string
+	| IMPORTALLAnn of Info * string
+	| EMPTYAnn     of Info
+	| SEQAnn       of Info * Ann * Ann
 
     (* Programs and components *)
 

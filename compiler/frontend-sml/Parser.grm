@@ -2608,6 +2608,8 @@
 	  IMPORT imp FROM STRING
 	  			( IMPORTAnn(I(IMPORTleft,STRINGright),
 					    imp, STRING) )
+	| IMPORT STRING		( IMPORTALLAnn(I(IMPORTleft,STRINGright),
+					    STRING) )
 	| ann1 ann1 %prec SEMICOLON
 				( SEQAnn(I(ann11left,ann12right),
 					 ann11, ann12) )
