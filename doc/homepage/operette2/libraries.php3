@@ -1,7 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Libraries",
-		"libraries") ?>
+<?php heading("Stockhausen Operette 1 - Libraries", "libraries") ?>
 
 
 
@@ -10,16 +9,16 @@
   <P>
     Stockhausen is equipped with <A href="#basis">parts</A> of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/sml-std-basis.html">Standard
-    ML Basis Library</A>. In addition, we currently provide two structures
-    dealing with
+    ML Basis Library</A>. In addition, we currently provide structures
+    dealing with <A href="futures.php3">futures</A> and
+    <A href="threads.php3">threads</A>:
   </P>
 
   <UL>
-    <LI> <A href="transients.php3">transients</A>
-         (<TT>structure <A href="transients.php3#sig">Transient</A></TT>),
-	 and </LI>
-    <LI> <A href="threads.php3">threads</A>
-         (<TT>structure <A href="threads.php3#sig">Thread</A></TT>). </LI>
+    <LI> <TT>structure <A href="futures.php3#future">Future</A></TT> </LI>
+    <LI> <TT>structure <A href="futures.php3#promise">Promise</A></TT> </LI>
+    <LI> <TT>structure <A href="futures.php3#cell">Cell</A></TT> </LI>
+    <LI> <TT>structure <A href="threads.php3#sig">Thread</A></TT>
   </UL>
 
 
@@ -40,6 +39,11 @@
     available at their default type.
   </P>
 
+  <P>
+    Stockhausen adds the functions <TT>byneed</TT> and <TT>concur</TT> to the
+    top-level, to provide for easy <A href="laziness.php3">laziness</A> and
+    <A href="futures.php3">concurrency with futures</A>.
+  </P>
 
 
 <?php section("basis", "basis library") ?>

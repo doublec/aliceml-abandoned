@@ -1,0 +1,68 @@
+import structure TextIO  from "x-alice:/lib/TextIO.ozf"
+import structure Browser from "x-alice:/lib/Browser.ozf"
+
+open TextIO
+open Browser
+open Promise
+
+
+fun plus xsys =
+    let
+	val p = promise()
+    in
+	concur(fn() => plus'(x,p)) ;
+	future p
+    end
+
+and plus'((x::xs, y::ys), p) =
+    let
+	val p' = promise()
+    in
+	fulfill(p, (x+y)::future p') ;
+	plus'((xs,ys), p')
+    end
+
+  | plus'(_, p) = fulfill(p, nil)
+
+
+
+fun main() =
+    let
+	val p1 = promise()
+	val p2 = promise()
+
+	val stream1 = future prom1
+	val stream2 = future prom2
+	val stream3 = plus(stream1, stream2)
+    in
+	browse (stream1, stream2, stream3) ;
+	loop(p1,p2)
+    end
+
+and loop pp = 
+    ( TextIO.print "Enter \"k n\" to put number n on stream k (k=1,2)\n"
+    ; loop' pp
+    )
+
+and loop' pp =
+    case (print "> "; inputLine stdIn)
+      of ""   => ()
+       | "\n" => loop' pp
+       | s    =>
+    case String.tokens Char.isSpace s
+      of non [_,_] => loop pp
+       | [s1,s2]   =>
+    case (Int.fromString s1, Int.fromString s2
+      of non (SOME(1|2), SOME _) => loop pp
+       | (SOME k, SOME n)        =>
+	 let
+	     val p' = promise()
+	 in
+	     if k = 1 then
+		(fulfill(p1, n::p') ; loop'(p',p2)
+	     else
+		(fulfill(p2, n::p') ; loop'(p1,p')
+	 end
+
+
+val _ = main()

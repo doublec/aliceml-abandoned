@@ -11,7 +11,8 @@
     concurrency model is tightly coupled with
     <A href="futures.php3">futures</A>.
     The library design regarding threads is not finalized in Operette 1.
-    Currently, the basic primitive is:
+    Currently, the basic primitive is available from the structure
+    <A href="futures.php3#future"><TT>Future</TT></A>:
   </P>
 
   <PRE>
@@ -44,7 +45,8 @@
 
 		exception Terminate
 
-		val spawn:       (unit -> 'a) -> 'a
+		val thread:      (unit -> unit) -> thread
+		val spawn:       (unit -> 'a) -> thread * 'a
 
 		val current:     unit -> thread
 		val state:       thread -> state

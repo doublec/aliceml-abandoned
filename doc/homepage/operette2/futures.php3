@@ -12,34 +12,178 @@
     logic programming languages into the typed functional world of ML.
   </P>
 
-  <P><B>Under construction! - Old version below.</B></P>
+
+
+<?php section("future", "futures") ?>
 
   <P>
-    Transients are provided through the library structure 
-    <A href="#sig"><TT>Transient</TT></A>. The structure
-    <TT>Transient</TT> is opened by default, so all operations are available
-    unqualified on the top-level.
-  </P>
-
-  <P>
-    Every transient comes with two variants: its <I>promise</I> and its
-    <I>future</I>.  Programs never refer directly to a transient; rather, they
-    refer to the future and the promise of a transient. When a regular
-    operation accesses a future, it blocks. When a regular operation accesses a
-    promise, it raises 
+    Futures are provided through the library structure <TT>Future</TT>:
   </P>
 
   <PRE>
-	exception Promise 
+	structure Future:
+	    sig
+		exception Future of exn
+
+		val concur:	(unit -> 'a) -> 'a
+		val byneed:	(unit -> 'a) -> 'a
+		val alarm:	Time.time -> unit
+
+		val await:	'a -> 'a
+		val awaitOne:	'a * 'b -> 'a
+<!--
+		val isFuture:	'a -> bool
+		val isFailed:	'a -> bool
+-->	    end
   </PRE>
 
-  <P class=note>
-    Note: In Operette 1, operations block on promises as well, instead of raising
-    <TT>Promise</TT>.
+  <P>
+    This structure provides three basic primitives to create futures. The
+    operation
+  </P>
+
+  <PRE>
+	val concur: (unit -> 'a) -> 'a 
+  </PRE>
+
+  <P>
+    applies the procedure in a new thread. It immediately returns a future
+    associated with that thread. When the procedure terminates with a result
+    that is different from the future, this future is globally replaced with
+    the result. If the application terminates with an exception <I>e</I>, the
+    future is marked as failed and all operations accessing it will
+    raise <TT>Future(</TT><I>e</I><TT>)</TT>.
+  <P>
+
+  <P>
+    The operation
+  </P>
+
+  <PRE>
+	val byneed: (unit -> 'a) -> 'a 
+  </PRE>
+
+  <P>
+    returns a by-need future. As soon as a thread blocks on the future, the
+    argument procedure is applied in a new thread. Evaluation proceeds similar
+    to <TT>concur</TT>. By-need futures can be used for
+    <A href="laziness.php3">lazy evaluation</A>.
+  </P>
+
+  <P>
+    Both these operations are in the top-level environment and can thus be
+    used unqualified.
+  </P>
+
+  <P>
+    Finally, the operation
+  </P>
+
+  <PRE>
+	val alarm: Time.time -> unit
+  </PRE>
+
+  <P>
+    creates a future that will be replaced by the value <TT>()</TT> after the
+    given period of time (see structure
+    <A href="http://www.dina.kvl.dk/~sestoft/sml/time.html"><TT>Time</TT></A>).
+    This is useful for programming timeouts and the like.
   </P>
 
   <P>
     The operation 
+  </P>
+
+  <PRE>
+	val await: 'a -> 'a
+  </PRE>
+
+  <P>
+    is the identity for all non-future arguments. On futures <TT>await</TT>
+    blocks until the future is replaced by a proper value. Similarly,
+  </P>
+
+  <PRE>
+	val awaitOne: 'a * 'b -> 'a
+  </PRE>
+
+  <P>
+    blocks until at least one if its arguments is a proper value. It then
+    returns the first argument.
+  </P>
+
+  <P>
+    Every future is in one of three possible states:
+  </P>
+
+  <UL>
+    <LI> undetermined </LI>
+    <LI> succeded </LI>
+    <LI> failed </LI>
+  </UL>
+
+  <P>
+    A freshly created future is undetermined. When it is replaced by a proper
+    value it becomes succeeded. If the computation associated with a future
+    created by <TT>concur</TT> or <TT>byneed</TT> is terminated with an
+    exception, the future becomes failed.
+  </P>
+
+<!--
+  <P>
+    The operation
+  </P>
+
+  <PRE>
+	val isFuture: 'a -> bool
+  </PRE>
+
+  <P>
+    tests whether its argument is an undetermined future. It does not block.
+    Similarly,
+  </P>
+
+  <PRE>
+	val isFailed: 'a -> bool
+  </PRE>
+
+  <P>
+    tests whether its argument is a failed future.
+  </P>
+-->
+
+  <P class=note>
+    Note: In Operette 1, failed futures are not supported, due to limitations
+    of the Mozart virtual machine. Instead of raising the exception
+    <TT>Future</TT>, all operations accessing a failed future will block.
+  </P>
+
+
+
+
+<?php section("promise", "promises") ?>
+
+  <P>
+    A forth form of future is introduced by the structure <TT>Promise</TT>:
+  </P>
+
+  <PRE>
+	structure Promise:
+	    sig
+		type 'a promise
+
+		exception Promise
+
+		val promise:	unit -> 'a promise
+		val future:	'a promise -> 'a
+
+		val fulfill:	'a promise * 'a  -> unit
+		val fail:	'a promise * exn -> unit
+	    end
+  </PRE>
+
+  <P>
+    A promise is a handle for a future. The operation
   </P>
 
   <PRE>
@@ -47,149 +191,44 @@
   </PRE>
 
   <P>
-    creates a transient and returns its promise. The operation 
+    creates a promise and thereby a fresh future. The operation 
   </P>
 
   <PRE>
-	val future: 'a -> 'a                     (* Future *) 
+	val future: 'a promise -> 'a
   </PRE>
 
   <P>
-    expects a promise and returns its associated future. If the argument is a
-    future, the operation blocks. Otherwise, it raises 
+    returns the future associated with the promise. This future can become
+    succeeded by applying
   </P>
 
   <PRE>
-	exception Future 
+	val fulfill: 'a promise * 'a -> unit
   </PRE>
 
   <P>
-    The operation 
+    to the promise. It globally replaces the future with the right argument,
+    provided the left and right argument are not variants of the same future.
+    If the promise has already been fulfilled (or failed, see below),
+    the exception <TT>Promise</TT> is raised.
+  </P>
+
+  <P>
+    Dually, a promise and its future can be explicitly failed by applying
   </P>
 
   <PRE>
-	val fulfill: 'a * 'a -> unit             (* Fulfill *) 
+	val fail: 'a promise * exn -> unit
   </PRE>
 
   <P>
-    expects a promise as left argument. It globally replaces the promise and
-    its associated future with the right argument, provided the left and right
-    argument are not variants of the same transient. If the left argument is a
-    future, <TT>fulfill</TT> blocks. Otherwise, it raises 
-  </P>
-
-  <PRE>
-	exception Fulfill 
-  </PRE>
-
-  <P>
-    The operation 
-  </P>
-
-  <PRE>
-	val await: 'a -> 'a                      (* Promise *) 
-  </PRE>
-
-  <P>
-    is the identity for all non-transient arguments. On futures <TT>await</TT>
-    blocks and on promises <TT>await</TT> raises <TT>Promise</TT>.
-  </P>
-
-  <P class=note>
-    Note: In Operette 1, <TT>await</TT> blocks on promises instead of raising
+    to the promise. If a promise is failed with exception <I>e</I>, any
+    subsequent attempt to access its future will cause the exception
+    <TT>Future(</TT><I>e</I><TT>)</TT> to be raised. If the promise already
+    had been fulfilled or failed, <TT>fail</TT> will raise the exception
     <TT>Promise</TT>.
   </P>
-
-  <P>
-    The operations 
-  </P>
-
-  <PRE>
-	val isFuture:  'a -> bool 
-	val isPromise: 'a -> bool 
-  </PRE>
-
-  <P>
-    test whether their argument is a future or a promise, respectively. They
-    do not block. 
-  </P>
-
-  <P>
-    Last but not least, we have the operation 
-  </P>
-
-  <PRE>
-	val byNeed: (unit -> 'a) -> 'a 
-  </PRE>
-
-  <P>
-    that returns the future of a new by-need transient. As soon as a thread
-    blocks on the future, the argument procedure is applied in a new thread. 
-    If the application terminates with a result that is different from the
-    future, the future is globally replaced with the result. If the application
-    terminates with an exception <I>e</I>, the by-need transient is marked as
-    failed and all operations accessing its future will raise 
-  </P>
-
-  <PRE>
-	exception ByNeed of exn 
-  </PRE>
-
-  <P>
-    with <I>e</I> as argument.  If the application terminates with the future
-    of the by-need transient as result, the by-need transient is marked as
-    failed and all operations accessing the future will raise the exception
-    <TT>ByNeed(Fulfill)</TT>.
-  </P>
-
-  <P>
-    Hence a by-need transient is in one of four possible states 
-  </P>
-
-  <P>
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    passive &nbsp;&nbsp; -> &nbsp;&nbsp;
-    active &nbsp;&nbsp; -> &nbsp;&nbsp;
-    [succeeded, failed] 
-  </P>
-
-  <P>
-    A freshly created by-need transient is passive.  It becomes active as soon
-    as a thread blocks on it.  If the triggered computation terminates with a
-    result that can replace the future, the by-need transient becomes
-    succeeded.  If the triggered computation terminates but doesn't produce a
-    result that can replace the future, the by-need transient becomes failed. 
-  </P>
-
-  <P class=note>
-    Note: In Operette 1, exception <TT>ByNeed</TT> will not be raised.
-    Instead, all operations accessing a failed by-need future will block.
-  </P>
-
-
-
-<?php section("sig", "signature") ?>
-
-  <PRE>
-	structure Transient:
-	    sig
-		exception Promise
-		exception Future
-		exception Fulfill
-		exception ByNeed of exn
-
-		val promise:   unit -> 'a
-		val fulfill:   'a * 'a -> unit     (* Fulfill *)
-
-		val future:    'a -> 'a            (* Future *)
-		val byNeed:    (unit -> 'a) -> 'a
-
-		val await:     'a -> 'a            (* Promise *)
-
-		val isPromise: 'a -> bool
-		val isFuture:  'a -> bool
-	    end
-  </PRE>
 
 
 <?php footing() ?>
