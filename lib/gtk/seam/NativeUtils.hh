@@ -24,6 +24,10 @@
 #include <gtk/gtk.h>
 #include <libgnomecanvas/libgnomecanvas.h>
 
+#define AWAIT(y,x) \
+	if (Store::WordToTransient(x) != INVALID_POINTER) REQUEST(x); \
+	word y = PointerOp::Deref(x);
+
 enum { gtkBOOL, gtkEVENT, gtkINT, gtkLIST, gtkOBJECT, gtkREAL, gtkSTRING };
 
 /***********************************************************************/

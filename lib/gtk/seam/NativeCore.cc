@@ -455,22 +455,25 @@ static void AddToSignalMap(word connid, word callback, word key) {
 
 DEFINE3(NativeCore_signalMapAdd) {
   // x0 = connid, x1 = callback-fn
+  AWAIT(connid, x0);
   DECLARE_OBJECT(p, x2);
   word key = Store::UnmanagedPointerToWord(p);
-  AddToSignalMap(x0, x1, key);
+  AddToSignalMap(connid, x1, key);
   RETURN_UNIT;
 } END
 
 DEFINE1(NativeCore_signalMapRemove) {
   // x0 = connid to remove 
   //g_message("removing signal #%d", Store::WordToInt(x0));
-  Map::FromWordDirect(signalMap)->Remove(x0);
+  AWAIT(connid, x0);
+  Map::FromWordDirect(signalMap)->Remove(connid);
   RETURN_UNIT;
 } END
 
 DEFINE2(NativeCore_signalMapCondGet) {
   // x0 = connid to get, x1 = alternative
-  RETURN(Map::FromWordDirect(signalMap)->CondGet(x0,x1));
+  AWAIT(connid, x0);
+  RETURN(Map::FromWordDirect(signalMap)->CondGet(connid, x1));
 } END
 
 DEFINE1(NativeCore_signalMapGetConnIds) {
