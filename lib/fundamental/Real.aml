@@ -4,31 +4,31 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-
 (*
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
 import structure __pervasive                              from "Pervasive"
-import type int and real and string
+import __primitive
+       type int and real and string
        datatype bool and order and option                 from "ToplevelTypes"
-import infix 4 = <> > < >= <= infix 6 + - infix 7 * / div mod
+import __primitive
+       infix 4 = <> > < >= <= infix 6 + - infix 7 * / div mod
        val op = and op <> and op div and op mod           from "ToplevelValues"
-import structure IEEEReal                                 from "IEEEReal"
-import structure Bool                                     from "Bool"
-import structure Int                                      from "Int"
-import structure Char                                     from "Char"
-import structure StringCvt                                from "StringCvt"
-import structure Substring                                from "Substring"
-import signature REAL                                     from "REAL-sig"
-
+import __primitive structure IEEEReal                     from "IEEEReal"
+import __primitive structure Bool                         from "Bool"
+import __primitive structure Int                          from "Int"
+import __primitive structure Char                         from "Char"
+import __primitive structure StringCvt                    from "StringCvt"
+import __primitive structure Substring                    from "Substring"
+import __primitive signature REAL                         from "REAL-sig"
 
 structure Real : REAL =
 struct
