@@ -152,7 +152,6 @@ struct
   val vecStyle     = Prefs.vecStyle
   val exnStyle     = Prefs.exnStyle
   val sepStyle     = Prefs.sepStyle
-  val sepColor     = Prefs.sepColor
   val brackStyle   = Prefs.brackStyle
   val structStyle  = Prefs.structStyle
   val fixStyle     = Prefs.fixStyle
