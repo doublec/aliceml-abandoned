@@ -187,8 +187,7 @@ define
       case Exp of 'LitExp'(Info Lit) then litExp({TrInfo Info} {TrLit Lit})
       [] 'PrimExp'(Info String) then
 	 primExp({TrInfo Info} {StringToAtom String})
-      [] 'NewExp'(Info ConArity) then
-	 newExp({TrInfo Info} {TrConArity ConArity})
+      [] 'NewExp'(Info) then newExp({TrInfo Info})
       [] 'VarExp'(Info Id) then varExp({TrInfo Info} {TrId Id})
       [] 'TagExp'(Info Label N ConArity) then
 	 tagExp({TrInfo Info} {TrLabel Label} N {TrConArity ConArity})
