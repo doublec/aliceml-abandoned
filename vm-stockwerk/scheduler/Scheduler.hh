@@ -31,6 +31,7 @@ private:
 
   static void Timer();
 public:
+  static void Init();
   static void Run();
 
   static void AddThread(Thread *thread) {

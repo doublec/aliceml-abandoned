@@ -16,8 +16,17 @@
 #include "scheduler/Interpreter.hh"
 #include "builtins/GlobalPrimitives.hh"
 
+StoreConfig *Scheduler::storeConfig; //--** probably not the correct place
+ThreadPool *Scheduler::threadPool;
+Thread *Scheduler::currentThread;
+bool Scheduler::preempt;
+
 void Scheduler::Timer() {
   preempt = true;
+}
+
+void Scheduler::Init() {
+  threadPool = ThreadPool::New();
 }
 
 void Scheduler::Run() {
