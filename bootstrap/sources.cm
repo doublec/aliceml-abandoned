@@ -1,0 +1,11 @@
+Group is
+
+	ExtendedBase.sml
+
+#if (!defined(structure Posix))
+	DummyPosix.sml
+#endif
+
+#if (!defined(structure Unix))
+	DummyUnix.sml
+#endif

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export AML2SML=`pwd`/aml2sml
+
+cat alice-cm.sml - | sml
