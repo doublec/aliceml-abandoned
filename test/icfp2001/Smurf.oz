@@ -25,49 +25,91 @@ define
 
    AttributeNames = [b ems i tt u size color]
 
-   RootAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
-			       size: 11 color: 9)
+   RootAttrVal = attrVal(b:     1
+			 ems:   1
+			 i:     1
+			 tt:    1
+			 u:     1
+			 size:  11
+			 color: 9)
 
-   fun {MkDataItemAttributes Property IsSpace}
-      attributes(b: if IsSpace then {FD.int 1#2}
-		    elseif Property.b then 2 else 1
-		    end
-		 ems: if IsSpace then {FD.int 1#3}
-		      elseif Property.s then 3
-		      elseif Property.em then 2
-		      else 1
-		      end
-		 i: if IsSpace then {FD.int 1#2}
-		    elseif Property.i then 2
-		    else 1
-		    end
-		 tt: if Property.tt then 2
-		     else 1
-		     end
-		 u: Property.u + 1
-		 size: case Property.size of ~1 then 11 elseof S then S + 1 end
-		 color:
-		    if IsSpace andthen Property.u == 0 then {FD.int 1#9}
-		    elsecase Property.color of 'R' then 1
-		    [] 'G' then 2
-		    [] 'B\'' then 3
-		    [] 'C' then 4
-		    [] 'M' then 5
-		    [] 'Y' then 6
-		    [] 'K' then 7
-		    [] 'W' then 8
-		    [] 'UNKNOWN' then 9
-		    end)
+   RootAttrReq = attrReq(b:     FS.value.empty
+			 ems:   FS.value.empty
+			 i:     FS.value.empty
+			 tt:    FS.value.empty
+			 u:     FS.value.empty
+			 size:  FS.value.empty
+			 color: FS.value.empty)
+
+   fun {MkAttrVal}
+      attrVal(b:     {FD.int 1#2}
+	      ems:   {FD.int 1#3}
+	      i:     {FD.int 1#2}
+	      tt:    {FD.int 1#2}
+	      u:     {FD.int 1#4}
+	      size:  {FD.int 1#11}
+	      color: {FD.int 1#9})
    end
 
-   fun {MkElementAttributes}
-      attributes(b: {FD.int 1#2}
-		 ems: {FD.int 1#3}
-		 i: {FD.int 1#2}
-		 tt: {FD.int 1#2}
-		 u: {FD.int 1#4}
-		 size: {FD.int 1#11}
-		 color: {FD.int 1#9})
+   local
+      fun {MkAttrReq0 MaxVal} X in
+	 X = {FS.var.upperBound 1#MaxVal}
+	 {FS.cardRange 0 1 X}
+	 X
+      end
+   in
+      fun {MkAttrReq}
+	 attrReq(b:     {MkAttrReq0 2}
+		 ems:   {MkAttrReq0 3}
+		 i:     {MkAttrReq0 2}
+		 tt:    {MkAttrReq0 2}
+		 u:     {MkAttrReq0 4}
+		 size:  {MkAttrReq0 11}
+		 color: {MkAttrReq0 9})
+      end
+   end
+
+   local
+      S1 = {FS.value.singl 1}
+      S2 = {FS.value.singl 2}
+      S3 = {FS.value.singl 3}
+   in
+      fun {MkDataItemAttrReq Property IsSpace}
+	 attrReq(b: if IsSpace then FS.value.empty
+		    elseif Property.b then S2 else S1
+		    end
+		 ems: if IsSpace then FS.value.empty
+		      elseif Property.s then S3
+		      elseif Property.em then S2
+		      else S1
+		      end
+		 i: if IsSpace then FS.value.empty
+		    elseif Property.i then S2
+		    else S1
+		    end
+		 tt: if Property.tt then S2
+		     else S1
+		     end
+		 u: {FS.value.singl Property.u + 1}
+		 size:
+		    {FS.value.singl case Property.size of ~1 then 11
+				    elseof S then S + 1
+				    end}
+		 color:
+		    if IsSpace andthen Property.u == 0 then FS.value.empty
+		    else
+		       {FS.value.singl case Property.color of 'R' then 1
+				       [] 'G' then 2
+				       [] 'B\'' then 3
+				       [] 'C' then 4
+				       [] 'M' then 5
+				       [] 'Y' then 6
+				       [] 'K' then 7
+				       [] 'W' then 8
+				       [] 'UNKNOWN' then 9
+				       end}
+		    end)
+      end
    end
 
    fun {MkSizeTag I}
@@ -88,7 +130,11 @@ define
 	     end)
    end
 
+   Epsilon = 1
+   DataItemTag = 2
+
    Tags = tags(tag(p: proc {$ _ In Out} Out = In end)   % epsilon
+	       tag(p: proc {$ _ In Out} Out = In end)   % data item
 	       tag(name: 'PL'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 1
@@ -154,95 +200,90 @@ define
 	       {MkColorTag 'K' 7}
 	       {MkColorTag 'W' 8})
 
-   Epsilon = 1
    MaxTag = {Width Tags}
 
    RootI = 1
 
    fun {Constrain Meaning SourceCost}
-      NumberOfElements = SourceCost div Tag.minCost
-      NumberOfDataItems = {Length Meaning}
+      NumberOfInnerNodes = SourceCost div Tag.minCost
+      NumberOfDataItems  = {Length Meaning}
+      NumberOfExtraNodes = (NumberOfDataItems + 1) div 2
+      NumberOfVertices   = 1 + NumberOfInnerNodes + NumberOfExtraNodes
+
 \ifdef DEBUG
-{System.show numberOf(elements: NumberOfElements dataItems: NumberOfDataItems)}
+      {System.show numberOf(innerNodes: NumberOfInnerNodes
+			    dataItems:  NumberOfDataItems)}
 \endif
 
-      FirstElementI = RootI + 1
-      LastElementI = FirstElementI + NumberOfElements - 1
-      FirstDataItemI = LastElementI + 1
-      LastDataItemI = FirstDataItemI + NumberOfDataItems - 1
+      FirstNonRootI = RootI + 1
+      LastNonRootI  = NumberOfVertices
+      FirstVertexI  = RootI
+      LastVertexI   = LastNonRootI
 
-      FirstNonRootI = FirstElementI
-      LastNonRootI = LastDataItemI
-      FirstNonDataItemI = RootI
-      LastNonDataItemI = LastElementI
-      FirstVertexI = RootI
-      LastVertexI = LastNonRootI
-
-      V = {Tuple.make vertices NumberOfDataItems + NumberOfElements + 1}
+      V = {Tuple.make vertices LastVertexI}
 
       %% Initialize root vertex
-      V.RootI = root(daughters: {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		     daughtersE: {FS.var.upperBound FirstElementI#LastElementI}
-		     down: {FS.value.make FirstNonRootI#LastNonRootI}
-		     downE: {FS.value.make FirstElementI#LastElementI}
-		     eqdown: {FS.value.make FirstVertexI#LastVertexI}
-		     eqdownE:
-			{FS.value.make FirstNonDataItemI#LastNonDataItemI}
-		     scope: {FS.value.make FirstDataItemI#LastDataItemI}
-		     attributes: RootAttributes)
+      V.RootI =
+      root(daughters:        {FS.var.upperBound FirstNonRootI#LastNonRootI}
+	   down:             {FS.value.make FirstNonRootI#LastNonRootI}
+	   eqdown:           {FS.value.make FirstVertexI#LastVertexI}
+	   attrReq:          RootAttrReq
+	   attrVal:          RootAttrVal
+	   sigma:            FS.value.empty
+	   familleNombreuse: {FD.int 0#1})
 
       %% Initialize element vertices
-      for I in FirstElementI..LastElementI do
-	 V.I = element(mother: {FD.int [RootI FirstElementI#LastElementI]}
-		       daughters:
-			  {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		       daughtersE:
-			  {FS.var.upperBound FirstElementI#LastElementI}
-		       down: {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		       downE: {FS.var.upperBound FirstElementI#LastElementI}
-		       eqdown: {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		       eqdownE: {FS.var.upperBound FirstElementI#LastElementI}
-		       isDownEmpty: {FD.int 0#1}
-		       scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
-		       attributes: {MkElementAttributes}
-		       tag: {FD.int 1#MaxTag})
+      for I in FirstNonRootI..LastNonRootI do
+	 Mother           = {FD.int FirstVertexI#(I-1)}
+	 Daughters        = {FS.var.upperBound (I+1)#LastNonRootI}
+	 Down             = {FS.var.upperBound (I+1)#LastNonRootI}
+	 Eqdown           = {FS.var.upperBound I#LastNonRootI}
+	 AttrReq          = {MkAttrReq}
+	 AttrVal          = {MkAttrVal}
+	 Sigma            = {FS.var.upperBound 1#NumberOfDataItems}
+	 FamilleNombreuse = {FD.int 0#1}
+	 IsDataItemTag    = {FD.int 0#1}
+	 Tag              = {FD.int 1#MaxTag}
+      in
+	 {FS.cardRange 0 1 Sigma}
+	 V.I = nonRoot(mother:           Mother
+		       daughters:        Daughters
+		       down:             Down
+		       eqdown:           Eqdown
+		       attrReq:          AttrReq
+		       attrVal:          AttrVal
+		       sigma:            Sigma
+		       familleNombreuse: FamilleNombreuse
+		       isDataItemTag:    IsDataItemTag
+		       tag:              Tag)
       end
-
-      %% Initialize data item vertices
-      {List.forAllInd Meaning
-       proc {$ J Text#IsSpace#Property} I in
-	  I = FirstDataItemI + J - 1
-	  V.I = dataItem(mother: {FD.int [RootI FirstElementI#LastElementI]}
-			 daughters: FS.value.empty
-			 down: FS.value.empty
-			 eqdown: {FS.value.singl I}
-			 scope: {FS.value.singl I}
-			 attributes: {MkDataItemAttributes Property IsSpace}
-			 text: Text)
-       end}
 
       %% Treeness Constraints
-      for I in FirstElementI..LastElementI do
-	 V.I.mother \=: I
-      end
-
       Eqdowns = for I in FirstVertexI..LastVertexI collect: Collect do
 		   {Collect V.I.eqdown}
 		end
 
-      for I in FirstNonDataItemI..LastNonDataItemI do W in
+      for I in FirstVertexI..LastVertexI do W in
 	 W = V.I
-%	 W.down = {Select.union Eqdowns W.daughters}
-	 W.down = {FS.union W.downE W.scope}
-	 W.eqdown = {FS.partition [{FS.value.singl I} W.down]}
+	 W.down = {SeqUnion Eqdowns W.daughters}
+	 W.eqdown = {FS.union {FS.value.singl I} W.down}
+	 {FS.int.convex W.eqdown}
       end
 
-      for I1 in FirstNonDataItemI..LastNonDataItemI do W1 in
+      for I in FirstVertexI..LastVertexI do W in
+	 W = V.I
+	 W.familleNombreuse =: ({FS.card W.daughters} >: 1)
+      end
+
+      for I1 in FirstVertexI..LastVertexI do W1 in
 	 W1 = V.I1
-	 for I2 in FirstNonRootI..LastNonRootI do
-	    if I2 \= I1 then W2 in
+	 for I2 in FirstNonRootI..LastNonRootI do   %--** I1..?
+	    if I2 \= I1 then
 	       W2 = V.I2
-	       (W2.mother =: I1) =: {FS.reified.isIn I2 W1.daughters}
+	       IsMother = (W2.mother =: I1)
+	    in
+	       IsMother =: {FS.reified.isIn I2 W1.daughters}
+%	       {FD.conj IsMother W2.isDataItemTag} =<: W1.familleNombreuse
 	    end
 	 end
       end
@@ -252,132 +293,94 @@ define
 		       {Collect V.I.daughters}
 		    end}
 
-      %% Attribute constraints
-      Attributes = {List.toRecord attributes
-		    for A in AttributeNames collect: Collect do
-		       {Collect
-			A#for I in FirstVertexI..LastVertexI collect: Collect
-			  do {Collect V.I.attributes.A}
-			  end}
-		    end}
-      Ps = for Tag in 1..MaxTag collect: Collect do {Collect Tags.Tag.p} end
+      {FS.value.make 1#NumberOfDataItems} =
+      {Select.seqUnion for I in FirstVertexI..LastVertexI collect: Collect do
+			  {Collect V.I.sigma}
+		       end}
 
-      for I in FirstElementI..LastElementI do W in
-	 W = V.I
-	 for A in AttributeNames do Inherited in
-	     Inherited = {Select.fd Attributes.A W.mother}
-	     W.attributes.A = {Select.fd
-			       {Map Ps fun {$ P} {P A Inherited} end} W.tag}
-	 end
-      end
+      %% Properties of V+ and V-
+      VPlus  = {FS.var.upperBound FirstNonRootI#LastNonRootI}
+      VMinus = {FS.var.upperBound FirstNonRootI#LastNonRootI}
 
-      for I in FirstDataItemI..LastDataItemI do W in
-	 W = V.I
-	 for A in AttributeNames do
-	    W.attributes.A = {Select.fd Attributes.A W.mother}
-	 end
-      end
+      {FS.value.make FirstVertexI#LastVertexI} =
+      {Select.seqUnion [{FS.value.singl RootI} VPlus VMinus]}
 
-      %% Scope constraints
-      Scopes = for I in FirstVertexI..LastVertexI collect: Collect do
-		  {Collect V.I.scope}
-	       end
-
-      V.RootI.scope = {Select.union Scopes V.RootI.daughters}
-      for I in FirstElementI..LastElementI do W in
-	 W = V.I
-	 {FS.int.convex W.scope}
-%--**	 W.scope = {Select.union Scopes W.daughters}
-	 W.scope = {SeqUnion Scopes W.daughters}
-      end
-
-      %% Unused elements are immediate daughters of the root
-      for I in FirstElementI..LastElementI do W IsEpsilon in
-	 W = V.I
-	 IsEpsilon = (W.tag =: Epsilon)
-	 IsEpsilon =: {FS.reified.equal W.scope FS.value.empty}
-	 IsEpsilon =<: (W.mother =: RootI)
-      end
-
-      %% Break symmetries: Sequenced Union Method
       for I in FirstNonRootI..LastNonRootI do
-	 V.I.mother <: I
-      end
-
-      E = {FS.value.make [RootI FirstElementI#LastElementI]}
-      EqdownEs = for I in FirstVertexI..LastVertexI collect: Collect do
-		    {Collect case {CondSelect V.I eqdownE unit} of unit then
-				FS.value.empty
-			     elseof S then S
-			     end}
-		 end
-
-      for I in FirstNonDataItemI..LastNonDataItemI do W in
 	 W = V.I
-	 W.daughtersE = {FS.intersect E W.daughters}
-	 W.downE = {FS.intersect E W.down}
-	 W.eqdownE = {FS.intersect E W.eqdown}
-	 W.downE = {SeqUnion EqdownEs W.daughtersE}
-	 {FS.int.convex W.eqdownE}
-	 if I \= RootI then
-	    W.isDownEmpty = {FS.reified.equal W.down FS.value.empty}
-	 end
+	 IsInVPlus        = {FS.reified.isIn I VPlus}
+	 IsInVMinus       = {FS.reified.isIn I VMinus}
+	 IsDownEmpty      = {FS.reified.equal W.down FS.value.empty}
+	 IsNonDataItem    = {FS.reified.equal W.sigma FS.value.empty}
+	 IsNonDataItemTag = (W.tag \=: DataItemTag)
+      in
+	 W.isDataItemTag \=: IsNonDataItemTag
+	 IsInVMinus =<: (W.mother =: RootI)
+	 IsInVMinus =<: IsDownEmpty
+	 IsInVMinus =<: IsNonDataItem
+	 IsInVMinus =: (W.tag =: Epsilon)
+	 IsInVPlus =: (IsDownEmpty \=: IsNonDataItem)
+	 IsNonDataItemTag =<: IsNonDataItem
       end
 
-%--**
-      for I in FirstElementI..LastElementI - 1 do
-	 V.I.isDownEmpty =<: V.(I + 1).isDownEmpty
+      %% Attribute constraints
+      DataItemAttrReqs = {List.mapInd Meaning
+			  fun {$ I _#IsSpace#Property}
+			     {MkDataItemAttrReq Property IsSpace}
+			  end}
+
+      for A in AttributeNames do
+	 AttrReqSeq = {Map DataItemAttrReqs fun {$ AttrReq} AttrReq.A end}
+	 AttrValSeq = for I in FirstVertexI..LastVertexI collect: Collect do
+			 {Collect V.I.attrVal.A}
+		      end
+      in
+	 for I in FirstVertexI..LastVertexI do W in
+	    W = V.I
+	    W.attrReq.A = {Select.union AttrReqSeq W.sigma}
+	    {FS.subset W.attrReq.A {Select.the $ W.attrVal.A}}
+	    if I \= RootI then Inherited in
+	       Inherited = {Select.fd AttrValSeq W.mother}
+	       W.attrVal.A = {Select.fd
+			      for Tag in 1..MaxTag collect: Collect do
+				 {Collect {Tags.Tag.p A Inherited}}
+			      end
+			      W.tag}
+	    end
+	 end
       end
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
-		    if I \= Epsilon then
-		       {Collect {Tag.cost Tags.I.name}}
-		    else
-		       {Collect 0}
-		    end
+		    {Collect case I of !Epsilon then 0
+			     [] !DataItemTag then 0
+			     else {Tag.cost Tags.I.name}
+			     end}
 		 end
 
       Cost = {FD.int 0#SourceCost}
-      Cost = {FD.sum for I in FirstElementI..LastElementI collect: Collect do
+      Cost = {FD.sum for I in FirstNonRootI..LastNonRootI collect: Collect do
 			{Collect {Select.fd TagCosts V.I.tag}}
 		     end '=:'}
    in
       V#Cost
    end
 
-   fun {Script Meaning SourceCost}
-      proc {$ Res} V
-	 NumberOfElements = SourceCost div Tag.minCost
-	 FirstElementI = RootI + 1
-	 NumberOfActiveElements = {FD.int 0#NumberOfElements}
-      in
-	 Res = {Constrain {Reverse Meaning} SourceCost}
+   fun {Script Meaning0 SourceCost}
+      Meaning = {Reverse Meaning0}
+   in
+      proc {$ Res} V in
+	 Res = {Constrain Meaning SourceCost}
 	 V = Res.1
-
-	 {FD.distribute naive [NumberOfActiveElements]}
-
-	 if NumberOfActiveElements > 0 then
-	    {FS.cardRange 1 FS.sup
-	     V.(FirstElementI+NumberOfActiveElements-1).down}
-	 end
-	 if NumberOfActiveElements < NumberOfElements then
-	    V.(FirstElementI+NumberOfActiveElements).down = FS.value.empty
-	 end
-
 	 {FD.distribute ff
 	  {Append
 	   for I in 1..{Width V} collect: Collect do
-	      case V.I of dataItem(...) then
+	      if I \= RootI then
 		 {Collect V.I.mother}
-	      else skip
 	      end
 	   end
 	   for I in 1..{Width V} collect: Collect do
-	      case V.I of element(...) then
+	      if I \= RootI then
 		 {Collect V.I.tag}
-		 {Collect V.I.mother}
-	      else skip
 	      end
 	   end}}
       end
@@ -396,6 +399,7 @@ define
       end
 
       fun {ToDocSub Daughters V}
+	 %--** do we still need sorting?
 	 {List.foldR {Sort {FS.reflect.lowerBoundList Daughters}
 		      fun {$ I1 I2}
 			 {GetLowestElement V.I1.scope} <
