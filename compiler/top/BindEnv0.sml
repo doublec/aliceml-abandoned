@@ -54,8 +54,9 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertVal(E0, VId.fromString "=",     (i, P.stamp_eq,    V))
     val _ = insertVal(E0, VId.fromString ":=",    (i, P.stamp_assign,V))
 
-    val _ = insertVal(E0, VId.fromString "<", (i, P'.stamp_less,  V))
-    val _ = insertVal(E0, VId.fromString "+", (i, P'.stamp_plus,  V))
-    val _ = insertVal(E0, VId.fromString "*", (i, P'.stamp_times, V))
+    val _ = insertVal(E0, VId.fromString "builtin", (i, P'.stamp_builtin, V))
+    val _ = insertVal(E0, VId.fromString "<",       (i, P'.stamp_less,    V))
+    val _ = insertVal(E0, VId.fromString "+",       (i, P'.stamp_plus,    V))
+    val _ = insertVal(E0, VId.fromString "*",       (i, P'.stamp_times,   V))
 
   end
