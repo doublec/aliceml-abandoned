@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
       Tuple *tuple    = Tuple::FromWord(module);
       tuple->AssertWidth(1);
       Scheduler::NewThread(tuple->Sel(0), // Module Closure
-			   Scheduler::ONE_ARG, urlWord,
+			   Scheduler::ONE_ARG, Properties::rootUrl,
 			   TaskStack::New());
       // Restart Scheduler to execute module
       Scheduler::Run();
