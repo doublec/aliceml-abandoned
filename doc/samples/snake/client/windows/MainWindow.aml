@@ -53,7 +53,7 @@ struct
 		   guiGame) =
 	let
 	    fun gameFinished h = 
-		reset (SOME ("Highscore", "highscore..."))
+		reset (SOME ("Highscore", "highscore...!"))
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
 
