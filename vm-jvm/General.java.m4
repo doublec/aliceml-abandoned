@@ -257,6 +257,57 @@ final public class General {
     }
     _FIELD(General,neq);
 
+    _BUILTIN(Sel) {
+	_APPLY(val) {
+	    _fromTuple(args,val,1,"General.sel");
+	    _REQUESTDEC(DMLValue sel,args[0]);
+	    if (sel instanceof Int) {
+		return new SelFunInt(((Int) sel).value);
+	    } else if (sel instanceof STRING) {
+		return new SelFunString(((STRING) sel).value);
+	    } else {
+		_error("argument not string or int",val);
+	    }
+	}
+	_BUILTIN(SelFunInt) {
+	    int i = -1;
+	    public SelFunInt(int idx) {
+		i = idx;
+	    }
+	    _APPLY(val) {
+		_fromTuple(args,val,1,"General.sel "+i);
+		_REQUESTDEC(DMLValue tup, args[0]);
+		if (tup instanceof DMLTuple) {
+		    switch (i) {
+		    case 1: return ((DMLTuple) tup).get0();
+		    case 2: return ((DMLTuple) tup).get1();
+		    case 3: return ((DMLTuple) tup).get2();
+		    case 4: return ((DMLTuple) tup).get3();
+		    case 5: return ((DMLTuple) tup).get4();
+		    default: return ((DMLTuple) tup).getByIndex(i);
+		    }
+		} else {
+		    _error("argument not tuple",val);
+		}
+	    }
+	}
+	_BUILTIN(SelFunString) {
+	    java.lang.String lab = null;
+	    public SelFunString(java.lang.String str) {
+		lab = str;
+	    }
+	    _APPLY(val) {
+		_fromTuple(args,val,1,"General.sel "+lab);
+		_REQUESTDEC(DMLValue tup, args[0]);
+		if (tup instanceof Record) {
+		    return ((Record) tup).getByLabel(lab);
+		} else {
+		    _error("argument not record",val);
+		}
+	    }
+	}
+    }
+
     _BUILTIN(Print) {
 	_APPLY(val) {
 	    System.out.println(val);

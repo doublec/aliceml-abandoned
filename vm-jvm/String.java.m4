@@ -13,10 +13,10 @@ package de.uni_sb.ps.dml.runtime;
  *  @see DMLValue
  *  @see Word
  */
-final public class String extends SCon {
+final public class String implements DMLValue {
 
     /** java-String Wert */
-    private java.lang.String value=null;
+    protected java.lang.String value=null;
 
     /** Baut einen neuen STRING  mit Inhalt <code>value</code>.
      *  @param value <code>String</code> Wert, der dem STRING  entspricht.
@@ -44,7 +44,8 @@ final public class String extends SCon {
     final public java.lang.String getString() {
 	return value;
     }
-
+    _apply_fails;
+    
     _BUILTIN(Size) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"String.length");

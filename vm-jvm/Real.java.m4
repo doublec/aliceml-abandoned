@@ -13,10 +13,10 @@ package de.uni_sb.ps.dml.runtime;
  *  @see DMLValue
  *  @see Word
  */
-final public class Real extends SCon {
+final public class Real implements DMLValue {
 
     /** java-float Wert */
-    private float value=0.0f;
+    protected float value=0.0f;
 
     /** Baut einen neuen Real mit Inhalt <code>value</code>.
      *  @param value <code>float</code> Wert, der dem Real entspricht.
@@ -43,6 +43,7 @@ final public class Real extends SCon {
     final public float getFloat() {
 	return value;
     }
+    _apply_fails;
     /** <code>structure Math : MATH</code>*/
     /** <code>val radix : int </code>*/
     /** <code>val precision : int </code>*/

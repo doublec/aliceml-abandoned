@@ -6,8 +6,8 @@
 
 package de.uni_sb.ps.dml.runtime;
 
-final public class Char extends SCon {
-    private char ch = '_';
+final public class Char implements DMLValue {
+    protected char ch = '_';
 
     public Char(char c) {
 	ch=c;
@@ -24,6 +24,9 @@ final public class Char extends SCon {
     final public char getChar() {
 	return ch;
     }
+
+    _apply_fails;
+    
     // eqtype string
     /** <code>val minChar : char </code>*/
     /** <code>val maxChar : char </code>*/

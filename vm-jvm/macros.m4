@@ -14,14 +14,8 @@ define(_RAISENAME,`throw new ExceptionWrapper($1)')
 dnl
 dnl Hier machen wir die Macros rein, die quasi überall gebraucht werden
 dnl
-define(_request_id,`    final public DMLValue request() {
-	return this;
-    }
-')
-define(_getValue_id,`    final public DMLValue getValue() {
-	return this;
-    }
-')
+define(_request_id,`')
+define(_getValue_id,`')
 define(_raise,`')
 define(_apply_fails,`    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
 	_RAISE(runtimeError,new STRING`'("cannot apply "+this+" to "+val));

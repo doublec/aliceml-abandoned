@@ -13,14 +13,14 @@ package de.uni_sb.ps.dml.runtime;
  *  @see DMLValue
  *  @see Word
  */
-final public class Int extends SCon {
+final public class Int implements DMLValue {
 
     final public static Int MONE = new Int(-1);
     final public static Int ZERO = new Int(0);
     final public static Int ONE  = new Int(1);
 
     /** java-int Wert */
-    private int value=0;
+    protected int value=0;
 
     /** Baut einen neuen Int mit Wert <code>value</code>.
      *  @param value <code>int</code> Wert, der dem Int entspricht.
@@ -47,6 +47,7 @@ final public class Int extends SCon {
     final public int getInt() {
 	return value;
     }
+    _apply_fails;
 
     _BUILTIN(Uminus) {
 	_APPLY(val) {

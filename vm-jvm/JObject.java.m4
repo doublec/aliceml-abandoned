@@ -92,50 +92,40 @@ final public class JObject implements DMLValue {
 		    args = new java.lang.Object[length];
 		    for(int i=0; i<length; i++) {
 			_REQUESTDEC(DMLValue helper,v.getByIndex(i+2));
-			if (helper instanceof SCon) { // Argument ist STRING , Int, Real oder Word
-			    if (helper instanceof Int) {
-				classes[i] = java.lang.Integer.TYPE;
-				args[i] = new java.lang.Integer(((Int) helper).getInt());
-			    }
-			    else if (helper instanceof Real) {
-				classes[i] = Float.TYPE;
-				args[i] = new Float(((Real) helper).getFloat());
-			    }
-			    else if (helper instanceof STRING) {
-				try{
-				    classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
-				} catch (ClassNotFoundException e) {
+			if (helper instanceof Int) {
+			    classes[i] = java.lang.Integer.TYPE;
+			    args[i] = new java.lang.Integer(((Int) helper).getInt());
+			} else if (helper instanceof Real) {
+			    classes[i] = Float.TYPE;
+			    args[i] = new Float(((Real) helper).getFloat());
+			} else if (helper instanceof STRING) {
+			    try{
+				classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
+			    } catch (ClassNotFoundException e) {
 				// This should NEVER happen
-				    System.err.println("internal runtime error: new_instance");
-				    System.err.println(e.getMessage());
-				    e.printStackTrace();
-				}
-				args[i] = ((STRING) helper).getString();
+				System.err.println("internal runtime error: new_instance");
+				System.err.println(e.getMessage());
+				e.printStackTrace();
 			    }
-			    else if (helper instanceof Word) {
-				classes[i] = Long.TYPE;
-				args[i] = new Long(((Word) helper).getLong());
-			    }
-			}
-			else if (helper instanceof Name) {
+			    args[i] = ((STRING) helper).getString();
+			} else if (helper instanceof Word) {
+			    classes[i] = Long.TYPE;
+			    args[i] = new Long(((Word) helper).getLong());
+			} else if (helper instanceof Name) {
 			    if (helper==Constants.dmltrue) {
 				classes[i] = Boolean.TYPE;
 				args[i] = new Boolean(true);
-			    }
-			    else if (helper==Constants.dmlfalse) {
+			    } else if (helper==Constants.dmlfalse) {
 				classes[i] = Boolean.TYPE;
 				args[i] = new Boolean(false);
-			    }
-			    else {
+			    } else {
 				_RAISE(javaAPIError,new Tuple2(new STRING ("illegal Name-argument "+(i+2)),							       val));
 			    }
-			}
-			else if (helper instanceof JObject) { // Argument ist Instanz einer Java-Klasse
+			} else if (helper instanceof JObject) { // Argument ist Instanz einer Java-Klasse
 			    java.lang.Object o = ((JObject) helper).getObject();
 			    classes[i] = o.getClass();
 			    args[i] = o;
-			}
-			else {
+			} else {
 			    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument "+(i+2)),							   val));
 			}
 		    } // end of for
@@ -349,53 +339,42 @@ final public class JObject implements DMLValue {
 			args = new java.lang.Object[length];
 			for(int i=0; i<length; i++) {
 			    _REQUESTDEC(DMLValue helper,v.getByIndex(i+1));
-			    if (helper instanceof SCon) {
-				// Argument ist STRING , Int, Real oder de.uni_sb.ps.dml.runtime.Word
-				if (helper instanceof Int) {
-				    classes[i] = java.lang.Integer.TYPE;
-				    args[i] = new java.lang.Integer(((Int) helper).getInt());
+			    if (helper instanceof Int) {
+				classes[i] = java.lang.Integer.TYPE;
+				args[i] = new java.lang.Integer(((Int) helper).getInt());
+			    } else if (helper instanceof Real) {
+				classes[i] = Float.TYPE;
+				args[i] = new Float(((Real) helper).getFloat());
+			    } else if (helper instanceof STRING) {
+				try{
+				    classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
+				} catch (ClassNotFoundException e) {
+				    // This should NEVER happen
+				    System.err.println("internal runtime error: new_instance");
+				    System.err.println(e.getMessage());
+				    e.printStackTrace();
 				}
-				else if (helper instanceof Real) {
-				    classes[i] = Float.TYPE;
-				    args[i] = new Float(((Real) helper).getFloat());
-				}
-				else if (helper instanceof STRING) {
-				    try{
-					classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
-				    } catch (ClassNotFoundException e) {
-					// This should NEVER happen
-					System.err.println("internal runtime error: new_instance");
-					System.err.println(e.getMessage());
-					e.printStackTrace();
-				    }
-				    args[i] = ((STRING) helper).getString();
-				}
-				else if (helper instanceof Word) {
-				    classes[i] = Long.TYPE;
-				    args[i] = new Long(((Word) helper).getLong());
-				}
-			    }
-			    else if (helper instanceof Name) {
+				args[i] = ((STRING) helper).getString();
+			    } else if (helper instanceof Word) {
+				classes[i] = Long.TYPE;
+				args[i] = new Long(((Word) helper).getLong());
+			    } else if (helper instanceof Name) {
 				if (helper==Constants.dmltrue) {
 				    classes[i] = Boolean.TYPE;
 				    args[i] = new Boolean(true);
-				}
-				else if (helper==Constants.dmlfalse) {
+				} else if (helper==Constants.dmlfalse) {
 				    classes[i] = Boolean.TYPE;
 				    args[i] = new Boolean(false);
-				}
-				else {
+				} else {
 				    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal Name-argument "+i),
 								   v));
 				}
-			    }
-			    else if (helper instanceof JObject) {
+			    } else if (helper instanceof JObject) {
 				// Argument ist Instanz einer Java-Klasse
 				java.lang.Object o = ((JObject) helper).getObject();
 				classes[i] = o.getClass();
 				args[i] = o;
-			    }
-			    else {
+			    } else {
 				_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument "+i),
 							       v));
 			    }
@@ -620,38 +599,27 @@ _BUILTIN(Putfield) {
 
 	    _REQUEST(c,v.getByIndex(2)); // hier: Wert
 	    java.lang.Object arg = null;
-	    if (c instanceof SCon) {
-		// Argument ist STRING , Int, Real oder de.uni_sb.ps.dml.runtime.Word
-		if (c instanceof Int) {
-		    arg = new Integer(((Int) c).getInt());
-		}
-		else if (c instanceof Real) {
-		    arg = new Float(((Real) c).getFloat());
-		}
-		else if (c instanceof STRING) {
-		    arg = ((STRING) c).getString();
-		}
-		else if (c instanceof Word) {
-		    arg = new Long(((Word) c).getLong());
-		}
-	    }
-	    else if (c instanceof Name) {
+	    if (c instanceof Int) {
+		arg = new Integer(((Int) c).getInt());
+	    } else if (c instanceof Real) {
+		arg = new Float(((Real) c).getFloat());
+	    } else if (c instanceof STRING) {
+		arg = ((STRING) c).getString();
+	    } else if (c instanceof Word) {
+		arg = new Long(((Word) c).getLong());
+	    } else if (c instanceof Name) {
 		if (c==Constants.dmltrue) {
 		    arg = new Boolean(true);
-		}
-		else if (c==Constants.dmlfalse) {
+		} else if (c==Constants.dmlfalse) {
 		    arg = new Boolean(false);
-		}
-		else {
+		} else {
 		    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal Name-argument for putfield"),
 						   val));
 		}
-	    }
-	    else if (c instanceof JObject) {
+	    } else if (c instanceof JObject) {
 		// Argument ist Instanz einer Java-Klasse
 		arg = ((JObject) c).getObject();
-	    }
-	    else {
+	    } else {
 		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument 3 for putfield"),
 					       val));
 	    }

@@ -13,10 +13,10 @@ package de.uni_sb.ps.dml.runtime;
  *  @see STRING 
  *  @see DMLValue
  */
-final public class Word extends SCon {
+final public class Word implements DMLValue {
 
     /** java-long Wert */
-    private long value=0;
+    protected long value=0;
 
     /** Baut ein neues Word mit Wert <code>value</code>.
      *  @param value <code>long</code> Wert, der dem Word entspricht.
@@ -44,6 +44,7 @@ final public class Word extends SCon {
 	return value;
     }
 
+    _apply_fails;
 
     /** <code>val wordSize : int </code>*/
     /** <code>val toLargeWord : word -> LargeWord.word </code>*/
