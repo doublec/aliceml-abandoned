@@ -15,9 +15,9 @@
     leaves the decision of choosing the best constraint to the system.
   </P>
   <P>
-    For example, see the the classic <PRE>SEND + MORE = MONEY</PRE> problem below.
+    For example, see the the classic <TT>SEND + MORE = MONEY</TT> problem below.
     The problem is given as a script (nullary function)
-    which then can be passed to the different search engines.
+    which then can be passed to different search engines.
   </P>
 
   <PRE>
@@ -41,9 +41,6 @@
    (* Show all possible solutions *)
    inspect (Search.searchAll Money);
   </PRE>
-
-
-
 
 <?php section("posting constraints", "posting constraints") ?>
   <P>
@@ -96,7 +93,7 @@
 	 end
   </PRE>
   <P>
-    To start posting constraints, execute <PRE>open Constr</PRE>.
+    To start posting constraints, it is necessary to open the structure <TT>Constr</TT>.
   </P>
 
 <?php section("lowlevel api", "lowlevel api") ?>
