@@ -4,14 +4,16 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import structure IO               from "IO"
 import structure Url              from "Url"
+import structure Reflect          from "Reflect"
 import structure Component        from "Component"
 import structure ComponentManager from "ComponentManager"
 import signature PICKLE           from "PICKLE-sig"
@@ -22,9 +24,8 @@ struct
 
     functor Save(val file : string signature S structure X : S) =
 	let
-	    structure C = Component.Create(signature S = (structure X : S)
-					   structure X = (structure X = X))
-	    val _       = Component.save(file, C.component)
+	    structure C = Component.Create(signature S = S structure X = X)
+	    val _ = Component.save(file, C.component)
 	in
 	    ()
 	end
@@ -33,12 +34,10 @@ struct
 	let
 	    val url       = Url.fromString file
 	    val component = Component.load url
-	    structure M   = ComponentManager.Eval(val url = url
-						  val component = component
-						  signature S =
-						      (structure X : S))
 	in
-	    M.X
+	    ComponentManager.Eval(val url = url
+				  val component = component
+				  signature S = S)
 	end
 
     signature S = sig type t val x : t end
@@ -52,30 +51,38 @@ struct
 	Load(val file = file
 	     signature S = S where type t = t)
 
-    (*TODO: make these proper once components and packages have
-           truly been unified *)
-    signature P = sig val x : package end
-
     fun save(file, package) =
 	let
-	    structure _ = Save(val file = file signature S = P
-					       structure X = (val x = package))
+	    val (m,j) = Reflect.reflectPackage package
+	    val component = Component.create(SOME j, m)
 	in
-	    ()
+	    Component.save(file, component)
 	end
 
     fun load file =
 	let
-	    structure X = Load(val file = file signature S = P)
+	    val url       = Url.fromString file
+	    val component = Component.load url
+	    val j         = case Component.inf component
+			     of SOME j => j
+			      | NONE   => raise IO.Io{name = "Pickle",
+						      function = "load",
+						      cause = Component.Corrupt}
+	    structure S = Reflect.UnreflectSig(val x = j)
+	    structure X = ComponentManager.Eval(val url = url
+						val component = component
+						signature S = S.S)
+	    structure P = Package.Pack(signature S = S.S structure X = X)
 	in
-	    X.x
+	    P.package
 	end
 
+    (*TODO: make these proper once components and packages have
+           truly been unified *)
     fun saveVal(file, package) =
 	let
-	    structure _ =
-		SaveVal(val file = file type t = Package.val_package
-					val x = package)
+	    structure _ = SaveVal(val file = file type t = Package.val_package
+						  val  x = package)
 	in
 	    ()
 	end
