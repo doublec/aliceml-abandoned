@@ -9,8 +9,8 @@ is
 
     ../misc/sources.cm
     ../infrastructure/sources.cm
+    ../common/name.cm
     ../common/id-stamp.cm
-    ../common/prebound.cm
     ../backend-common/flat-grammar.cm
     ../backend-common/engine.cm
 

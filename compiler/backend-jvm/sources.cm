@@ -3,7 +3,6 @@ Group is
     ../misc/sources.cm
     ../infrastructure/sources.cm
     ../common/id-stamp.cm
-    ../common/prebound.cm
     ../backend-common/flat-grammar.cm
 
     Abbrev.sml

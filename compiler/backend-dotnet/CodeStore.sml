@@ -45,29 +45,6 @@ structure CodeStore :> CODE_STORE =
 	val env: (class * IL.id * int * regState * instrsState) list ref =
 	    ref nil
 
-	val preboundScope =
-	    let
-		open Prebound
-		val scope = ScopedMap.new ()
-		fun prebind (stamp, name) =
-		    let
-			val (dottedname, id) = Builtins.lookupField name
-		    in
-			ScopedMap.insertDisjoint
-			(scope, stamp,
-			 Prebound (dottedname, id, System.ObjectTy))
-		    end
-	    in
-		prebind (valstamp_false, "Bool.false");
-		prebind (valstamp_true, "Bool.true");
-		prebind (valstamp_nil, "List.nil");
-		prebind (valstamp_cons, "List.cons");
-		prebind (valstamp_ref, "General.ref");
-		prebind (valstamp_match, "General.Match");
-		prebind (valstamp_bind, "General.Bind");
-		scope
-	    end
-
 	fun className class = !namespace @ ["P" ^ Stamp.toString class]
 	fun sfldName i = "V" ^ Int.toString i
 	fun fldName i = "G" ^ Int.toString i
@@ -76,7 +53,7 @@ structure CodeStore :> CODE_STORE =
 	    (namespace := dottedname;
 	     classes := Map.new ();
 	     env := [(Stamp.new (), "Main", 0,
-		      (ScopedMap.clone preboundScope, ref 0, ref 0,
+		      (ScopedMap.new (), ref 0, ref 0,
 		       ref nil, ref nil), ref nil)])
 
 	fun defineClass (stamp, extends, implements) =
@@ -99,7 +76,7 @@ structure CodeStore :> CODE_STORE =
 		  | NONE =>
 			Map.insertDisjoint (!classes, stamp,
 					    (ref classAttr,
-					     ScopedMap.clone preboundScope,
+					     ScopedMap.new (),
 					     ref [ctor]))
 	    end
 
@@ -111,7 +88,7 @@ structure CodeStore :> CODE_STORE =
 			    (scope, classDeclsRef)
 		      | NONE =>
 			    let
-				val scope = ScopedMap.clone preboundScope
+				val scope = ScopedMap.new ()
 				val classDeclsRef = ref nil
 			    in
 				Map.insertDisjoint

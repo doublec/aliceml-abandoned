@@ -63,7 +63,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | unalias pat = (nil, SOME pat)
 
 	fun mkRefTyp typ =
-	    Type.inArrow (typ, Type.inApply (PreboundType.typ_ref, typ))
+	    Type.inArrow (typ, Type.inApply (PervasiveType.typ_ref, typ))
 
 	fun patToExp (JokPat info) =
 	    let

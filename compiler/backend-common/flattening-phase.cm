@@ -9,7 +9,6 @@ is
     ../common/id-stamp.cm
     ../common/type.cm
     ../common/intermediate-grammar.cm
-    ../common/prebound.cm
 
     flat-grammar.cm
 

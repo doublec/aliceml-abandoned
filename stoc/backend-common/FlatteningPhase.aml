@@ -20,15 +20,24 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	open IntermediateAux
 	open SimplifyMatch
 
+(*--** [Andreas] Prebound is gone, Match and Bind have to be realized via
+	PrimExps. Introduced a hack to compile - Leif, you've to repair it
+	properly.
+*)
 	val id_Match = Id ({region = Source.nowhere},
+			   Stamp.new(),
+			   PervasiveType.name_match)
+(* Old version:
 			   Prebound.valstamp_match,
 			   Prebound.valname_match)
+*)
 	val id_Bind = Id ({region = Source.nowhere},
+			  Stamp.new(),
+			  PervasiveType.name_bind)
+(* Old version:
 			  Prebound.valstamp_bind,
 			  Prebound.valname_bind)
-
-	val label_true = Label.fromString "true"
-	val label_false = Label.fromString "false"
+*)
 
 	fun lookup (pos, (pos', id)::mappingRest) =
 	    if pos = pos' then id
@@ -155,10 +164,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
 	    [O.TestStm (stm_info (#region info), id,
-			[(O.TagTest (label_true, 1), thenStms)],
+			[(O.TagTest (PervasiveType.lab_true, 1), thenStms)],
 			[O.TestStm (stm_info (#region info), id,
-				    [(O.TagTest (label_false, 0), elseStms)],
-				    errStms)])]
+				    [(O.TagTest (PervasiveType.lab_false, 0),
+				      elseStms)], errStms)])]
 
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
@@ -529,14 +538,16 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
 	    let
 		val exp3 =
-		    TagExp (info, Lab (id_info info, label_false), false)
+		    TagExp (info, Lab (id_info info, PervasiveType.lab_false),
+			    false)
 	    in
 		translateExp (IfExp (info, exp1, exp2, exp3), f, cont)
 	    end
 	  | translateExp (OrExp (info, exp1, exp2), f, cont) =
 	    let
 		val exp3 =
-		    TagExp (info, Lab (id_info info, label_true), false)
+		    TagExp (info, Lab (id_info info, PervasiveType.lab_true),
+			    false)
 	    in
 		translateExp (IfExp (info, exp1, exp3, exp2), f, cont)
 	    end
@@ -618,7 +629,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		fun f' exp' = O.ValDec (stm_info (#region info'), id', exp')
 		val tryBody = translateExp (exp, f', cont')
 		val catchInfo = {region = #region info,
-				 typ = PreboundType.typ_exn}
+				 typ = PervasiveType.typ_exn}
 		val catchId = freshId (id_info catchInfo)
 		val catchVarExp =
 		    VarExp (catchInfo,

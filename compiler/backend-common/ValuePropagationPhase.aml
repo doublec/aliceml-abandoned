@@ -707,32 +707,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	       | (_, _) =>
 		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared 2")
 
-	fun newEnv () =
-	    let
-		val env = IdMap.new ()
-		val info = {region = Source.nowhere}
-		fun ins (stamp, name, value) =
-		    IdMap.insertDisjoint
-		    (env, Id ({region = Source.nowhere}, stamp, name), value)
-		fun exp exp = (EXP (exp, Stamp.new ()), true)
-		open Prebound
-	    in
-		ins (valstamp_false, valname_false,
-		     (exp (TagExp (info, Label.fromString "false", 0, NONE))));
-		ins (valstamp_true, valname_true,
-		     (exp (TagExp (info, Label.fromString "true", 1, NONE))));
-		ins (valstamp_nil, valname_nil,
-		     (exp (TagExp (info, Label.fromString "nil", 1, NONE))));
-		ins (valstamp_cons, valname_cons,
-		     (exp (TagExp (info, Label.fromString "::", 0, NONE))));
-		ins (valstamp_ref, valname_ref,
-		     (exp (RefExp info)));
-		(*--** use StaticConExps: *)
-		ins (valstamp_match, valname_match, (UNKNOWN, true));
-		ins (valstamp_bind, valname_bind, (UNKNOWN, true));
-		env
-	    end
-
 	fun debug component =
 	    TextIO.print
 	    ("\n" ^ OutputFlatGrammar.outputComponent component ^ "\n")
@@ -744,7 +718,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun translate () (_, component as (imports, (body, sign))) =
 	    let
-		val env = newEnv ()
+		val env = IdMap.new ()
 		val _ =
 		    List.app (fn (id, _, _) =>
 			      declareId (id, env, true)) imports

@@ -53,6 +53,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| AppTypFunKind		of kind
 	| AppTypArgKind		of kind * kind
 	| RefTypKind		of kind
+	| PervasiveTypUnknown	of string
 	(* Declarations *)
 	| ValDecUnify		of unify_error
 	| ValDecLift		of valid * var
@@ -68,6 +69,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| GroundInfKind		of Inf.kind
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
+	| PervasiveInfUnknown	of string
 	(* Imports *)
 	| ValImpUnbound		of lab
 	| ConImpUnbound		of lab
@@ -353,6 +355,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  textpar["missing","arguments","in","type","expression"]
       | ppError(RefTypKind k) =
 	  textpar["missing","arguments","in","type","expression"]
+      | ppError(PervasiveTypUnknown s) =
+	  textpar["unknown","pervasive","type","name","\""^s^"\""]
       (* Declarations *)
       | ppError(ValDecUnify ue) =
 	ppUnify4(
@@ -388,6 +392,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  textpar["inconsistency","at","signature","specialization:"], im)
       | ppError(SingInfPath) =
 	  textpar["module","expression","is","not","a","path"]
+      | ppError(PervasiveInfUnknown s) =
+	  textpar["unknown","pervasive","signature","name","\""^s^"\""]
       (* Imports *)
       | ppError(ValImpUnbound a) =
 	  textpar["value",ppLab a,"is","not","exported","by","component"]

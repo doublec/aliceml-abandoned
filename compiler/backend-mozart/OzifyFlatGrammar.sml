@@ -48,15 +48,7 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     output (q, String.toCString s);
 	     output1(q, #"'"))
 
-	fun outputStamp (q, stamp) =
-	    if stamp = Prebound.valstamp_false then outputAtom (q, "false")
-	    else if stamp = Prebound.valstamp_true then outputAtom (q, "true")
-	    else if stamp = Prebound.valstamp_nil then outputAtom (q, "nil")
-	    else if stamp = Prebound.valstamp_cons then outputAtom (q, "cons")
-	    else if stamp = Prebound.valstamp_ref then outputAtom (q, "ref")
-	    else if stamp = Prebound.valstamp_match then outputAtom (q, "Match")
-	    else if stamp = Prebound.valstamp_bind then outputAtom (q, "Bind")
-	    else output (q, Stamp.toString stamp)
+	fun outputStamp (q, stamp) = output (q, Stamp.toString stamp)
 
 	fun outputOption _ (q, NONE) =
 	    (f (q, "none"); r q)

@@ -132,8 +132,8 @@ signature ABSTRACT_GRAMMAR =
 	| ExTyp     of typ_info * typid * typ	(* existential quantification *)
 	| PackTyp   of typ_info * inf		(* package type *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
-	| AbsTyp    of typ_info			(* abstract type *)
-	| ExtTyp    of typ_info			(* extensible sum type *)
+	| AbsTyp    of typ_info * string option	(* abstract type *)
+	| ExtTyp    of typ_info * string option	(* extensible sum type *)
 
     (* Modules *)
 
@@ -161,7 +161,7 @@ signature ABSTRACT_GRAMMAR =
 	| ArrInf    of inf_info * modid * inf * inf (* functor interface *)
 	| LetInf    of inf_info * dec list * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
-	| AbsInf    of inf_info			(* abstract interface *)
+	| AbsInf    of inf_info * string option	(* abstract interface *)
 
     (* Declarations *)
 

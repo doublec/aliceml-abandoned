@@ -22,26 +22,6 @@
  * Top-level, part 1
  *****************************************************************************)
 
-(* Hardwired *)
-
-__prebound Prebound
-
-type     unit	= {}
-datatype bool	= datatype Prebound.bool
-type     int	= Prebound.int
-type     word	= Prebound.word
-type     real	= Prebound.real
-type     string	= Prebound.string
-type     char	= Prebound.char
-type  'a vector	= 'a Prebound.vector
-datatype list	= datatype Prebound.list
-datatype ref	= datatype Prebound.ref
-datatype exn	= datatype Prebound.exn
-
-exception Match	= Prebound.Match
-exception Bind	= Prebound.Bind
-
-
 (* Fixity *)
 
 infix  7  * / div mod
@@ -51,6 +31,49 @@ infix  4  = <> > >= < <=
 infix  3  := o
 infix  3  :=:			(**)
 infix  0  before
+
+
+(* Pervasives *)
+
+structure Pervasive =							(**)
+  struct
+    structure Int	= struct __primitive eqtype int		= "int" end
+    structure LargeInt	= struct __primitive eqtype int		= "int" end
+    structure Word	= struct __primitive eqtype word	= "word" end
+    structure LargeWord	= struct __primitive eqtype word	= "word" end
+    structure Real	= struct __primitive eqtype real	= "real" end
+    structure LargeReal	= struct __primitive eqtype real	= "real" end
+    structure Char	= struct __primitive eqtype char	= "char" end
+    structure WideChar	= struct __primitive eqtype char	= "char" end
+    structure String	= struct __primitive eqtype string	= "string" end
+    structure WideString= struct __primitive eqtype string	= "string" end
+    structure Vector	= struct __primitive eqtype 'a vector	= "vector" end
+    structure Array	= struct __primitive __eqeqtype 'a array = "array" end
+    structure Ref	= struct __primitive __reftype 'a ref	= ref of 'a end
+    structure General	= struct __primitive datatype exn	= "exn" end
+    structure Time	= struct __primitive eqtype time	= "time" end
+    structure Promise	= struct __primitive type 'a promise	= "promise" end
+  end
+
+
+type    unit		= {}
+type    int		= Pervasive.Int.int
+type    word		= Pervasive.Word.word
+type    real		= Pervasive.Real.real
+type    char		= Pervasive.Char.char
+type    string		= Pervasive.String.string
+type 'a vector		= 'a Pervasive.Vector.vector
+type 'a array		= 'a Pervasive.Array.array
+
+datatype exn		= datatype Pervasive.General.exn
+datatype ref		= datatype Pervasive.Ref.ref
+
+datatype bool		= false | true
+datatype order		= LESS | EQUAL | GREATER
+datatype ('a,'b) alt	= FST of 'a | SND of 'b				(**)
+datatype 'a option	= NONE | SOME of 'a
+datatype 'a list	= nil | op:: of 'a * 'a list
+
 
 
 (* Generic and overloaded Identifiers (but we don't overload them :-P) *)
@@ -115,21 +138,21 @@ structure General : GENERAL =
     type unit = {}
     type exn  = exn
 
-    exception Bind  = Bind
-    exception Match = Match
-    __primitive constructor Chr : exn		= "General.Chr"
-    __primitive constructor Div : exn		= "General.Div"
-    __primitive constructor Domain : exn	= "General.Domain"
-    __primitive constructor Fail of string: exn	= "General.Fail"
-    __primitive constructor Overflow : exn	= "General.Overflow"
-    __primitive constructor Size : exn		= "General.Size"
-    __primitive constructor Span : exn		= "General.Span"
-    __primitive constructor Subscript : exn	= "General.Subscript"
+    __primitive exception Bind			= "General.Bind"
+    __primitive exception Chr			= "General.Chr"
+    __primitive exception Div			= "General.Div"
+    __primitive exception Domain		= "General.Domain"
+    __primitive exception Fail of string	= "General.Fail"
+    __primitive exception Match			= "General.Match"
+    __primitive exception Overflow		= "General.Overflow"
+    __primitive exception Size			= "General.Size"
+    __primitive exception Span			= "General.Span"
+    __primitive exception Subscript		= "General.Subscript"
 
     __primitive val exnName : exn -> string	= "General.exnName"
     val exnMessage = exnName
 
-    datatype order = LESS | EQUAL | GREATER
+    datatype order = datatype order
 
     __primitive val op := : 'a ref * 'a -> unit	= "General.:="
 
@@ -141,9 +164,6 @@ structure General : GENERAL =
     fun a before b	= a
     fun ignore a	= ()
   end
-
-
-datatype order = datatype General.order
 
 
 
@@ -168,8 +188,8 @@ signature REF =								(**)
 
 structure Ref : REF =							(**)
   struct
-    datatype ref = datatype ref
-    type  'a t   = 'a ref
+    datatype ref			= datatype ref
+    type  'a t				= 'a ref
 
     val new				= ref
     val !				= General.!
@@ -285,8 +305,8 @@ signature ALT =								(**)
 
 structure Alt : ALT =							(**)
   struct
-    datatype ('a,'b) alt = FST of 'a | SND of 'b
-    type     ('a,'b) t   = ('a,'b) alt
+    datatype alt		= datatype alt
+    type ('a,'b) t		= ('a,'b) alt
 
     exception Alt
 
@@ -350,15 +370,15 @@ signature OPTION =
 
 structure Option : OPTION =
   struct
-    datatype 'a option = NONE | SOME of 'a
-    type     'a t      = 'a option				(**)
+    datatype option		= datatype option
+    type  'a t			= 'a option				(**)
 
-    __primitive constructor Option : exn = "Option.Option"
+    __primitive exception Option = "Option.Option"
 
     fun getOpt(SOME x, _)	= x
       | getOpt(NONE,   x)	= x
 
-    fun isNone NONE		= true				(**)
+    fun isNone NONE		= true					(**)
       | isNone(SOME x)		= false
 
     fun isSome(SOME x)		= true
@@ -373,7 +393,7 @@ structure Option : OPTION =
     fun join NONE		= NONE
       | join(SOME x)		= x
 
-    fun app f  NONE		= ()				(**)
+    fun app f  NONE		= ()					(**)
       | app f (SOME x)		= f x
 
     fun map f  NONE		= NONE
@@ -382,7 +402,7 @@ structure Option : OPTION =
     fun mapPartial f  NONE	= NONE
       | mapPartial f (SOME x)	= f x
 
-    fun fold f b  NONE		= b				(**)
+    fun fold f b  NONE		= b					(**)
       | fold f b (SOME a)	= f(a,b)
 
     fun compose (f,g) x		= case g x of NONE   => NONE
@@ -392,8 +412,6 @@ structure Option : OPTION =
 					    | SOME y => f y
   end
 
-datatype option = datatype Option.option
-
 
 
 (*****************************************************************************
@@ -402,7 +420,7 @@ datatype option = datatype Option.option
 
 signature LIST =
   sig
-    datatype 'a list = :: of 'a * 'a list | nil
+    datatype 'a list = nil | op:: of 'a * 'a list
     type     'a t    = 'a list						(**)
 
     exception Empty
@@ -451,7 +469,7 @@ structure List : LIST =
     datatype list		= datatype list
     type  'a t			= 'a list				(**)
 
-    __primitive constructor Empty : exn = "List.Empty"
+    __primitive exception Empty	= "List.Empty"
 
     fun null nil		= true
       | null _			= false
@@ -706,9 +724,61 @@ structure ListPair : LIST_PAIR =
  * Char
  *****************************************************************************)
 
-local
+signature CHAR =
+  sig
+    eqtype char
+    eqtype string
+    type t = char					(**)
 
-structure Char =
+    val minChar :	char
+    val maxChar :	char
+    val maxOrd :	int
+
+    val chr :		int -> char
+    val ord :		char -> int
+
+    val pred :		char -> char
+    val succ :		char -> char
+
+    val op < :		char * char -> bool
+    val op <= :		char * char -> bool
+    val op > :		char * char -> bool
+    val op >= :		char * char -> bool
+    val compare :	char * char -> order
+
+    val contains :	string -> char -> bool
+    val notContains :	string -> char -> bool
+
+    val toLower :	char -> char
+    val toUpper :	char -> char
+
+    val isLower :	char -> bool
+    val isUpper :	char -> bool
+    val isAlpha :	char -> bool
+    val isAlphaNum :	char -> bool
+    val isDigit :	char -> bool
+    val isHexDigit :	char -> bool
+    val isPunct :	char -> bool
+    val isPrint :	char -> bool
+    val isGraph :	char -> bool
+    val isSpace :	char -> bool
+    val isCntrl :	char -> bool
+    val isAscii :	char -> bool
+
+    val toWide :	char -> Pervasive.WideChar.char		(**)
+    val fromWide :	Pervasive.WideChar.char -> char		(**)
+
+    val toString :	char -> string
+    val toCString :	char -> string
+(*MISSING
+    val fromString :	string -> char option
+    val fromCString :	string -> char option
+    val scan :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
+*)
+  end
+
+
+structure Char : CHAR =
   struct
     type char   = char
     type string = string
@@ -811,70 +881,7 @@ structure Char =
   end
 
 
-structure WideChar = Char
-
-
-in (* local *)
-
-
-signature CHAR =
-  sig
-    eqtype char
-    eqtype string
-    type t = char					(**)
-
-    val minChar :	char
-    val maxChar :	char
-    val maxOrd :	int
-
-    val chr :		int -> char
-    val ord :		char -> int
-
-    val pred :		char -> char
-    val succ :		char -> char
-
-    val op < :		char * char -> bool
-    val op <= :		char * char -> bool
-    val op > :		char * char -> bool
-    val op >= :		char * char -> bool
-    val compare :	char * char -> order
-
-    val contains :	string -> char -> bool
-    val notContains :	string -> char -> bool
-
-    val toLower :	char -> char
-    val toUpper :	char -> char
-
-    val isLower :	char -> bool
-    val isUpper :	char -> bool
-    val isAlpha :	char -> bool
-    val isAlphaNum :	char -> bool
-    val isDigit :	char -> bool
-    val isHexDigit :	char -> bool
-    val isPunct :	char -> bool
-    val isPrint :	char -> bool
-    val isGraph :	char -> bool
-    val isSpace :	char -> bool
-    val isCntrl :	char -> bool
-    val isAscii :	char -> bool
-
-    val toWide :	char -> WideChar.char		(**)
-    val fromWide :	WideChar.char -> char		(**)
-
-    val toString :	char -> string
-    val toCString :	char -> string
-(*MISSING
-    val fromString :	string -> char option
-    val fromCString :	string -> char option
-    val scan :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
-*)
-  end
-
-
-structure Char     : CHAR = Char
-structure WideChar : CHAR = WideChar
-
-end (* local *)
+structure WideChar : CHAR = Char
 
 
 
@@ -882,9 +889,60 @@ end (* local *)
  * String
  *****************************************************************************)
 
-local
+signature STRING =
+  sig
+    type string
+    type t = string							(**)
 
-structure String =
+    structure Char :	CHAR
+
+    val maxSize :	int
+    val maxLen :	int						(**)
+
+    val size :		string -> int
+    val length :	string -> int					(**)
+    val str :		Char.char -> string
+    val sub :		string * int -> Char.char
+    val substring :	string * int * int -> string
+    val extract :	string * int * int option -> string
+
+    val op ^ :		string * string -> string
+    val append :	string * string -> string			(**)
+    val concat :	string list -> string
+    val implode :	Char.char list -> string
+    val explode :	string -> Char.char list
+    val fromList :	Char.char list -> string			(**)
+    val toList :	string -> Char.char list			(**)
+    val tabulate :	int * (int -> Char.char) -> string		(**)
+
+    val map :		(Char.char -> Char.char) -> string -> string
+    val translate :	(Char.char -> string) -> string -> string
+    val fields :	(Char.char -> bool) -> string -> string list
+    val tokens :	(Char.char -> bool) -> string -> string list
+
+    val op < :		string * string -> bool
+    val op > :		string * string -> bool
+    val op <= :		string * string -> bool
+    val op >= :		string * string -> bool
+    val compare :	string * string -> order
+    val collate :	(Char.char * Char.char -> order) -> string * string
+							 -> order
+    val isPrefix :	string -> string -> bool
+    val isSuffix :	string -> string -> bool			(**)
+
+    val toWide :	string -> Pervasive.WideString.string		(**)
+    val fromWide :	Pervasive.WideString.string -> string		(**)
+
+    val toString :	string -> string
+    val toCString :	string -> string
+(*MISSING
+    val fromString :	string -> string option
+    val fromCString :	string -> string option
+*)
+  end
+
+
+structure String : STRING =
   struct
     type string	= string
     type t	= string						(**)
@@ -991,69 +1049,7 @@ structure String =
   end
 
 
-structure WideString = String
-
-
-in (* local *)
-
-
-signature STRING =
-  sig
-    type string
-    type t = string							(**)
-
-    structure Char :	CHAR
-
-    val maxSize :	int
-    val maxLen :	int						(**)
-
-    val size :		string -> int
-    val length :	string -> int					(**)
-    val str :		Char.char -> string
-    val sub :		string * int -> Char.char
-    val substring :	string * int * int -> string
-    val extract :	string * int * int option -> string
-
-    val op ^ :		string * string -> string
-    val append :	string * string -> string			(**)
-    val concat :	string list -> string
-    val implode :	Char.char list -> string
-    val explode :	string -> Char.char list
-    val fromList :	Char.char list -> string			(**)
-    val toList :	string -> Char.char list			(**)
-    val tabulate :	int * (int -> Char.char) -> string		(**)
-
-    val map :		(Char.char -> Char.char) -> string -> string
-    val translate :	(Char.char -> string) -> string -> string
-    val fields :	(Char.char -> bool) -> string -> string list
-    val tokens :	(Char.char -> bool) -> string -> string list
-
-    val op < :		string * string -> bool
-    val op > :		string * string -> bool
-    val op <= :		string * string -> bool
-    val op >= :		string * string -> bool
-    val compare :	string * string -> order
-    val collate :	(Char.char * Char.char -> order) -> string * string
-							 -> order
-    val isPrefix :	string -> string -> bool
-    val isSuffix :	string -> string -> bool			(**)
-
-    val toWide :	string -> WideString.string			(**)
-    val fromWide :	WideString.string -> string			(**)
-
-    val toString :	string -> string
-    val toCString :	string -> string
-(*MISSING
-    val fromString :	string -> string option
-    val fromCString :	string -> string option
-*)
-  end
-
-
-structure String     : STRING = String
-structure WideString : STRING = WideString
-
-end (* local *)
+structure WideString : STRING = String
 
 
 
@@ -1184,9 +1180,52 @@ structure StringCvt :> STRING_CVT =
  * Int
  *****************************************************************************)
 
-local
+signature INTEGER =
+  sig
+    eqtype int
+    type t = int							(**)
 
-structure Int =
+    val minInt :	int option
+    val maxInt :	int option
+    val precision :	Pervasive.Int.int option
+
+    val toInt :		int -> Pervasive.Int.int
+    val fromInt :	Pervasive.Int.int -> int
+    val toLarge :	int -> Pervasive.LargeInt.int
+    val fromLarge :	Pervasive.LargeInt.int -> int
+
+    val ~ :		int -> int
+    val op + :		int * int -> int
+    val op - :		int * int -> int
+    val op * :		int * int -> int
+    val op div :	int * int -> int
+    val op mod :	int * int -> int
+    val op quot :	int * int -> int
+    val op rem :	int * int -> int
+
+    val op < :		int * int -> bool
+    val op > :		int * int -> bool
+    val op <= :		int * int -> bool
+    val op >= :		int * int -> bool
+    val compare :	int * int -> order
+
+    val abs :		int -> int
+    val min :		int * int -> int
+    val max :		int * int -> int
+    val sign :		int -> Pervasive.Int.int
+    val sameSign :	int * int -> bool
+
+    val toString :	int -> string
+    val fromString:	string -> int option
+(*MISSING
+    val fmt :		StringCvt.radix -> int -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader -> 'a
+					-> (int * 'a) option
+  end
+
+
+structure Int : INTEGER =
   struct
     type int = int
     type t   = int							(**)
@@ -1297,62 +1336,8 @@ structure Int =
   end
 
 
-structure LargeInt = Int
-
-
-in (* local *)
-
-
-signature INTEGER =
-  sig
-    eqtype int
-    type t = int							(**)
-
-    val minInt :	int option
-    val maxInt :	int option
-    val precision :	Int.int option
-
-    val toInt :		int -> Int.int
-    val fromInt :	Int.int -> int
-    val toLarge :	int -> LargeInt.int
-    val fromLarge :	LargeInt.int -> int
-
-    val ~ :		int -> int
-    val op + :		int * int -> int
-    val op - :		int * int -> int
-    val op * :		int * int -> int
-    val op div :	int * int -> int
-    val op mod :	int * int -> int
-    val op quot :	int * int -> int
-    val op rem :	int * int -> int
-
-    val op < :		int * int -> bool
-    val op > :		int * int -> bool
-    val op <= :		int * int -> bool
-    val op >= :		int * int -> bool
-    val compare :	int * int -> order
-
-    val abs :		int -> int
-    val min :		int * int -> int
-    val max :		int * int -> int
-    val sign :		int -> Int.int
-    val sameSign :	int * int -> bool
-
-    val toString :	int -> string
-    val fromString:	string -> int option
-(*MISSING
-    val fmt :		StringCvt.radix -> int -> string
-*)
-    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader -> 'a
-					-> (int * 'a) option
-  end
-
-
-structure Int      :> (INTEGER where type int = int)		= Int
-structure LargeInt :> (INTEGER where type int = LargeInt.int)	= LargeInt
-structure Position :   INTEGER					= Int
-
-end (* local *)
+structure LargeInt : INTEGER = Int
+structure Position : INTEGER = Int
 
 
 
@@ -1360,9 +1345,61 @@ end (* local *)
  * Word
  *****************************************************************************)
 
-local
+signature WORD =
+  sig
+    eqtype word
+    type t = word							(**)
 
-structure Word =
+    val wordSize :	int
+
+    val toLargeWord :	word -> Pervasive.LargeWord.word
+(*MISSING
+    val toLargeWordX :	word -> Pervasive.LargeWord.word
+*)
+    val fromLargeWord :	Pervasive.LargeWord.word -> word
+    val toLargeInt :	word -> Pervasive.LargeInt.int
+    val toLargeIntX :	word -> Pervasive.LargeInt.int
+    val fromLargeInt :	Pervasive.LargeInt.int -> word
+    val toInt :		word -> Pervasive.Int.int
+    val toIntX :	word -> Pervasive.Int.int
+    val fromInt :	Pervasive.Int.int -> word
+
+    val notb :		word -> word
+    val orb :		word * word -> word
+    val xorb :		word * word -> word
+    val andb :		word * word -> word
+    val << :		word * word -> word
+    val >> :		word * word -> word
+    val ~>> :		word * word -> word
+
+    val + :		word * word -> word
+    val - :		word * word -> word
+    val * :		word * word -> word
+    val div :		word * word -> word
+    val mod :		word * word -> word
+
+(*MISSING
+    val op > :		word * word -> bool
+    val op < :		word * word -> bool
+    val op >= :		word * word -> bool
+    val op <= :		word * word -> bool
+    val compare :	word * word -> order
+
+    val min :		word * word -> word
+    val max :		word * word -> word
+*)
+
+    val toString :	word -> string
+(*MISSING
+    val fromString :	string -> word option
+    val fmt :		StringCvt.radix -> word -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (word,'a) StringCvt.reader
+  end
+
+
+structure Word : WORD =
   struct
     type word = word
     type t    = word							(**)
@@ -1461,70 +1498,7 @@ structure Word =
   end
 
 
-structure LargeWord = Word
-
-
-in (* local *)
-
-
-signature WORD =
-  sig
-    eqtype word
-    type t = word							(**)
-
-    val wordSize :	int
-
-    val toLargeWord :	word -> LargeWord.word
-(*MISSING
-    val toLargeWordX :	word -> LargeWord.word
-*)
-    val fromLargeWord :	LargeWord.word -> word
-    val toLargeInt :	word -> LargeInt.int
-    val toLargeIntX :	word -> LargeInt.int
-    val fromLargeInt :	LargeInt.int -> word
-    val toInt :		word -> Int.int
-    val toIntX :	word -> Int.int
-    val fromInt :	Int.int -> word
-
-    val notb :		word -> word
-    val orb :		word * word -> word
-    val xorb :		word * word -> word
-    val andb :		word * word -> word
-    val << :		word * word -> word
-    val >> :		word * word -> word
-    val ~>> :		word * word -> word
-
-    val + :		word * word -> word
-    val - :		word * word -> word
-    val * :		word * word -> word
-    val div :		word * word -> word
-    val mod :		word * word -> word
-
-(*MISSING
-    val op > :		word * word -> bool
-    val op < :		word * word -> bool
-    val op >= :		word * word -> bool
-    val op <= :		word * word -> bool
-    val compare :	word * word -> order
-
-    val min :		word * word -> word
-    val max :		word * word -> word
-*)
-
-    val toString :	word -> string
-(*MISSING
-    val fromString :	string -> word option
-    val fmt :		StringCvt.radix -> word -> string
-*)
-    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
-					-> (word,'a) StringCvt.reader
-  end
-
-
-structure Word      :> (WORD where type word = Word.word)	= Word
-structure LargeWord :> (WORD where type word = LargeWord.word)	= LargeWord
-
-end (* local *)
+structure LargeWord : WORD = Word
 
 
 
@@ -1654,9 +1628,103 @@ structure Math : MATH =
  * Real
  *****************************************************************************)
 
-local
+signature REAL =
+  sig
+    eqtype real
+    type t = real							(**)
 
-structure Real =
+    structure Math :	MATH where type real = real
+
+(*MISSING
+    val radix :		int
+    val precision :	int
+    val maxFinite :	real
+    val minPos :	real
+    val minNormalPos :	real
+
+    val posInf :	real
+    val negInf :	real
+*)
+
+    val ~ :		real -> real
+    val op + :		real * real -> real
+    val op - :		real * real -> real
+    val op * :		real * real -> real
+    val op / :		real * real -> real
+    val rem :		real * real -> real
+    val *+ :		real * real * real -> real
+    val *- :		real * real * real -> real
+
+    val abs :		real -> real
+    val min :		real * real -> real
+    val max :		real * real -> real
+    val sign :		real -> int
+    val signBit :	real -> bool
+    val sameSign :	real * real -> bool
+    val copySign :	real * real -> real
+
+    val op < :		real * real -> bool
+    val op > :		real * real -> bool
+    val op <= :		real * real -> bool
+    val op >= :		real * real -> bool
+    val compare :	real * real -> order
+    val compareReal :	real * real -> IEEEReal.real_order
+
+    val == :		real * real -> bool
+    val != :		real * real -> bool
+    val ?= :		real * real -> bool
+(*MISSING
+    val unordered :	real * real -> bool
+
+    val isFinite :	real -> bool
+    val isNan :		real -> bool
+    val isNormal :	real -> bool
+    val class :		real -> IEEEReal.float_class
+*)
+
+    val ceil :		real -> Int.int
+    val floor :		real -> Int.int
+    val trunc :		real -> Int.int
+    val round :		real -> Int.int
+    val realFloor :	real -> real
+    val realCeil :	real -> real
+    val realTrunc :	real -> real
+    val realRound :	real -> real					(**)
+
+(*MISSING
+    val nextAfter :	real * real -> real
+    val checkFloat :	real -> real
+*)
+
+(*MISSING
+    val toManExp :	real -> {exp:int, man:real}
+    val fromManExp :	{exp:int, man:real} -> real
+    val split :		real -> {frac:real, whole:real}
+    val realMod :	real -> real
+*)
+
+    val toInt :		IEEEReal.rounding_mode -> real -> int
+    val toLargeInt :	IEEEReal.rounding_mode -> real -> Pervasive.LargeInt.int
+    val fromInt :	int -> real
+    val fromLargeInt :	Pervasive.LargeInt.int -> real
+    val toLarge :	real -> Pervasive.LargeReal.real
+    val fromLarge :	IEEEReal.rounding_mode ->
+			    Pervasive.LargeReal.real -> real
+(*MISSING
+    val toDecimal :	real -> IEEEReal.decimal_approx
+    val fromDecimal :	IEEEReal.decimal_approx -> real
+*)
+
+    val toString :	real -> string
+    val fromString :	string -> real option
+(*MISSING
+    val fmt :		StringCvt.realfmt -> real -> string
+*)
+    val scan :		(char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
+  end
+
+
+structure Real : REAL =
   struct
     type real = real
     type t    = real							(**)
@@ -1828,111 +1896,7 @@ structure Real =
   end
 
 
-structure LargeReal = Real
-
-
-in (* local *)
-
-
-signature REAL =
-  sig
-    eqtype real
-    type t = real							(**)
-
-    structure Math :	MATH where type real = real
-
-(*MISSING
-    val radix :		int
-    val precision :	int
-    val maxFinite :	real
-    val minPos :	real
-    val minNormalPos :	real
-
-    val posInf :	real
-    val negInf :	real
-*)
-
-    val ~ :		real -> real
-    val op + :		real * real -> real
-    val op - :		real * real -> real
-    val op * :		real * real -> real
-    val op / :		real * real -> real
-    val rem :		real * real -> real
-    val *+ :		real * real * real -> real
-    val *- :		real * real * real -> real
-
-    val abs :		real -> real
-    val min :		real * real -> real
-    val max :		real * real -> real
-    val sign :		real -> int
-    val signBit :	real -> bool
-    val sameSign :	real * real -> bool
-    val copySign :	real * real -> real
-
-    val op < :		real * real -> bool
-    val op > :		real * real -> bool
-    val op <= :		real * real -> bool
-    val op >= :		real * real -> bool
-    val compare :	real * real -> order
-    val compareReal :	real * real -> IEEEReal.real_order
-
-    val == :		real * real -> bool
-    val != :		real * real -> bool
-    val ?= :		real * real -> bool
-(*MISSING
-    val unordered :	real * real -> bool
-
-    val isFinite :	real -> bool
-    val isNan :		real -> bool
-    val isNormal :	real -> bool
-    val class :		real -> IEEEReal.float_class
-*)
-
-    val ceil :		real -> Int.int
-    val floor :		real -> Int.int
-    val trunc :		real -> Int.int
-    val round :		real -> Int.int
-    val realFloor :	real -> real
-    val realCeil :	real -> real
-    val realTrunc :	real -> real
-    val realRound :	real -> real					(**)
-
-(*MISSING
-    val nextAfter :	real * real -> real
-    val checkFloat :	real -> real
-*)
-
-(*MISSING
-    val toManExp :	real -> {exp:int, man:real}
-    val fromManExp :	{exp:int, man:real} -> real
-    val split :		real -> {frac:real, whole:real}
-    val realMod :	real -> real
-*)
-
-    val toInt :		IEEEReal.rounding_mode -> real -> int
-    val toLargeInt :	IEEEReal.rounding_mode -> real -> LargeInt.int
-    val fromInt :	int -> real
-    val fromLargeInt :	LargeInt.int -> real
-    val toLarge :	real -> LargeReal.real
-    val fromLarge :	IEEEReal.rounding_mode -> LargeReal.real -> real
-(*MISSING
-    val toDecimal :	real -> IEEEReal.decimal_approx
-    val fromDecimal :	IEEEReal.decimal_approx -> real
-*)
-
-    val toString :	real -> string
-    val fromString :	string -> real option
-(*MISSING
-    val fmt :		StringCvt.realfmt -> real -> string
-*)
-    val scan :		(char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
-  end
-
-
-structure Real      :> (REAL where type real = Real.real)	= Real
-structure LargeReal :> (REAL where type real = LargeReal.real)	= LargeReal
-
-end (* local *)
+structure LargeReal : REAL = Real
 
 
 
@@ -2128,9 +2092,9 @@ signature ARRAY =
 
 structure Array : ARRAY =
   struct
-    __eqtype 'a array
-    type     'a vector = 'a vector
-    type     'a t      = 'a array					(**)
+    type 'a array  = 'a array
+    type 'a vector = 'a vector
+    type 'a t      = 'a array					(**)
 
     __primitive val maxLen :	int			= "Array.maxLen"
 
@@ -2305,7 +2269,7 @@ signature TIME =
   end
 
 
-structure Time :> TIME =
+structure Time :> TIME = (*UNFINISHED: pervasive! *)
   struct
     open LargeInt		(* +, -, <, >, <=, >=, compare *)
 
@@ -2336,14 +2300,14 @@ structure Time :> TIME =
 
 signature CELL =
   sig
-    __eqtype 'a cell
+    __eqeqtype 'a cell
 
     val cell :		'a -> 'a cell
     val exchange :	'a cell * 'a -> 'a
   end
 
 
-structure Cell :> CELL =
+structure Cell : CELL =
   struct
     type 'a cell	= 'a ref
 
@@ -2375,8 +2339,8 @@ signature HOLE =
 
 structure Hole : HOLE =
   struct
-    __primitive constructor Hole : exn			= "Hole.Hole"
-    __primitive constructor Cyclic : exn		= "Hole.Cyclic"
+    __primitive exception Hole 				= "Hole.Hole"
+    __primitive exception Cyclic			= "Hole.Cyclic"
 
     __primitive val hole :	unit -> 'a		= "Hole.hole"
     __primitive val future :	'a -> 'a		= "Hole.future"
@@ -2413,8 +2377,8 @@ signature FUTURE =
 
 structure Future : FUTURE =
   struct
-    __primitive constructor Future of exn : exn		= "Future.Future"
-    constructor Cyclic = Hole.Cyclic
+    __primitive exception Future of exn			= "Future.Future"
+    exception Cyclic = Hole.Cyclic
 
     __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
     __primitive val byneed :	(unit -> 'a) -> 'a	= "Future.byneed"
@@ -2447,7 +2411,7 @@ signature PROMISE =
   end
 
 
-structure Promise :> PROMISE =
+structure Promise :> PROMISE =	(*UNFINISHED: pervasive! *)
   struct
     open Cell
 
@@ -2513,7 +2477,7 @@ structure Thread : THREAD =
     type thread
     datatype state = RUNNABLE | BLOCKED | TERMINATED
 
-    __primitive constructor Terminate : exn		= "Thread.Terminate"
+    __primitive exception Terminate			= "Thread.Terminate"
 
     __primitive val current :	unit -> thread		= "Thread.current"
     __primitive val state :	thread -> state		= "Thread.state"
@@ -2546,14 +2510,11 @@ structure Thread : THREAD =
  * Top-level, part 2
  *****************************************************************************)
 
-type alt		= Alt.alt				(**)
-type array		= Array.array
+open General
 
 exception Alt		= Alt.Alt				(**)
 exception Option	= Option.Option
 exception Empty		= List.Empty
-
-open General
 
 val not			= Bool.not
 
