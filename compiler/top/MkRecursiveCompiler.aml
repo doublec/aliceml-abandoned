@@ -157,7 +157,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	local
 	    fun compileSign' (desc, s) =
 		let
-		    val sigFilename = Url.toString (valOf (Source.url desc))
+		    val sigFilename = Url.toStringRaw (valOf (Source.url desc))
 		    val _ = trace ("reading signature from " ^ sigFilename)
 		    val s' = implicitImport() ^ "\n" ^ s
 		    val (_, target) =
