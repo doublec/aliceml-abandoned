@@ -25,8 +25,6 @@
 #include "store/Memory.hh"
 #include "store/StatusWord.hh"
 
-class Set;
-
 #if defined(STORE_PROFILE)
 struct timeval;
 #endif
@@ -49,8 +47,6 @@ protected:
   static char *chunkMax;
   static u_int hdrGen;
   static u_int dstGen;
-  static Set *intgenSet;
-  static Set *wkDictSet;
   static u_int nbBlkTables;
 #if defined(STORE_PROFILE)
   static struct timeval *sum_t;
