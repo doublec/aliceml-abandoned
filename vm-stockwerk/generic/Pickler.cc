@@ -98,7 +98,7 @@ public:
     return static_cast<FileOutputStream *>(outputStream);
   }
   static FileOutputStream *FromWordDirect(word stream) {
-    Block *p = Store::DirectWordToBlock(stream);
+    ::Block *p = Store::DirectWordToBlock(stream);
     Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM);
     return static_cast<FileOutputStream *>(p);
   }
@@ -232,7 +232,7 @@ void StringOutputStream::PutBytes(Chunk *c) {
 }
 
 word StringOutputStream::Close() {
-  Block *str = static_cast<Block *>(GetString());
+  ::Block *str = static_cast< ::Block *>(GetString());
   HeaderOp::EncodeSize(str, GetPos());
   return str->ToWord();
 }
