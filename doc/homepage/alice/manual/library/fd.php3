@@ -753,35 +753,35 @@
     </DD>
 
     <DT>
-      <TT>disj (<I>x<I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>disj (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the disjunction of <I>x</I> and <I>y</I>.
     </DD>
 
     <DT>
-      <TT>exor (<I>x<I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>exor (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the exclusive disjunction of <I>x</I> and <I>y</I>.
     </DD>
 
     <DT>
-      <TT>nega (<I>x<I>, <I>y</I>)</TT>
+      <TT>nega (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P><I>y</I> is the negation of <I>x</I>.
     </DD>
 
     <DT>
-      <TT>impl (<I>x<I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>impl (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the implication of <I>x</I> by <I>y</I> (x -> y).
     </DD>
 
     <DT>
-      <TT>equi (<I>x<I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>equi (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the equivalence of <I>x</I> by <I>y</I> (x <-> y).
