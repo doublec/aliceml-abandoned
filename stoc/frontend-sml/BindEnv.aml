@@ -280,25 +280,46 @@ struct
 
     (* Instantiation (cloning) *)
 
-    fun instance(EMPTY) = EMPTY
+    exception Instance
 
-      | instance(PLAIN(ENV E)) =
+    fun instance F = instance' (StampMap.new()) F
+
+    and instance' Z (EMPTY) = EMPTY
+
+      | instance' Z (PLAIN(ENV E)) =
 	let
 	    val E' = Map.new()
+	    val z' = Stamp.new()
+	    val z  = Option.valOf(lookupSelf(ENV E))
+		     handle Option.Option => raise Instance
 	in
-	    Map.appi (instanceItem E') E;
+	    StampMap.insert(Z,z,z');
+	    Map.appi (instanceItem(Z,E')) E;
 	    PLAIN(ENV E')
 	end
 
-      | instance(PARAM(z,F)) =
-	    PARAM(z, instance F)
+      | instance' Z (PARAM(z,F)) =
+	let
+	    val z' = Stamp.new()
+	in
+	    StampMap.insert(Z,z,z');
+	    PARAM(z', instance' Z F)
+	end
 
-      | instance(ABSTR(z,strids,sigid,Fs)) =
-	    ABSTR(z, strids, sigid, List.map instance Fs)
+      | instance' Z (ABSTR(z,strids,sigid,Fs)) =
+	let
+	    val z' = Option.getOpt(StampMap.lookup(Z,z), z)
+	in
+	    ABSTR(z', strids, sigid, List.map (instance' Z) Fs)
+	end
 
-    and instanceItem E (strid, STR(I,z,F)) =
-	    Map.insert(E, strid, STR(I, z, instance F))
-      | instanceItem E (id,x) =
+    and instanceItem (Z,E) (SELF, STAMP z) =
+	    Map.insert(E, SELF, STAMP(Option.valOf(StampMap.lookup(Z,z))))
+      | instanceItem (Z,E) (strid, STR(I,z,F)) =
+	    Map.insert(E, strid, STR(I, z, instance' Z F))
+      | instanceItem (Z,E) (strid, SIG(I,z,F)) =
+	    Map.insert(E, strid, SIG(I, z, instance' Z F))
+      | instanceItem (Z,E) (id,x) =
 	    Map.insert(E,id,x)
 
 
@@ -391,53 +412,54 @@ struct
 
     fun strengthen(z,F) =
 	let
-	    (*UNFINISHED: Gosh, is this bad code... *)
 	    val Z = StampMap.new()
+
+	    fun calcSubst(strids, PLAIN E) =
+		(
+		    StampMap.insert(Z, Option.valOf(lookupSelf E), (z,strids))
+		    handle Option.Option => raise Strengthen;
+		    appiStrs (calcSubstItem strids) E
+		)
+	    |   calcSubst _ = ()
+
+	    and calcSubstItem strids (id, (I,z',F)) =
+		(
+		    StampMap.insert(Z, z', (z,strids));
+		    calcSubst(strids@[id], F)
+		)
 	in
-	    strengthen'(z,[], Z, F);
-	    substPath Z F
+	    calcSubst([],F);
+	    strengthen' Z F
 	end
 
-    and strengthen'(z,strids, Z, PLAIN E) =
-	    ( StampMap.insert(Z, Option.valOf(lookupSelf E), (z,strids))
-	      handle Option.Option => raise Strengthen
-	    ; appiStrs (strengthenStrItem(z,strids,Z)) E
-	    )
-      | strengthen' _ = ()
-
-    and strengthenStrItem (z,strids,Z) (id, (I,z',F)) =
-	    ( StampMap.insert(Z, z', (z,strids))
-	    ; strengthen'(z, strids@[id], Z, F)
-	    )
-
-    and substPath Z EMPTY =
+    and strengthen' Z EMPTY =
 	    EMPTY
 
-      | substPath Z (F as PLAIN(ENV E)) =
+      | strengthen' Z (F as PLAIN(ENV E)) =
 	let
-	    val items' = Map.foldi (substPathItem Z) [] E
+	    val items' = Map.foldi (strengthenItem Z) [] E
 	in
 	    List.app (fn(x,y) => Map.insert(E,x,y)) items';
 	    F
 	end
 
-      | substPath Z (F as PARAM(z,F')) =
-	    ( substPath Z F' ; F )
+      | strengthen' Z (F as PARAM(z,F')) =
+	    ( strengthen' Z F' ; F )
 
-      | substPath Z (ABSTR(z,strids,sigid,Fs)) =
+      | strengthen' Z (ABSTR(z,strids,sigid,Fs)) =
 	let
-	    val Fs' = List.map (substPath Z) Fs
+	    val Fs' = List.map (strengthen' Z) Fs
 	in
 	    case StampMap.lookup(Z,z)
 	      of SOME(z',strids') => ABSTR(z',strids'@strids,sigid,Fs')
 	       | NONE             => ABSTR(z,strids,sigid,Fs')
 	end
 
-    and substPathItem Z (STRID id, STR(I,z,F), items) =
-	    (STRID id, STR(I, z, substPath Z F)) :: items
-      | substPathItem Z (SIGID id, SIG(I,z,F), items) =
-	    (SIGID id, SIG(I, z, substPath Z F)) :: items
-      | substPathItem Z (x, y, items) =
+    and strengthenItem Z (STRID id, STR(I,z,F), items) =
+	    (STRID id, STR(I, z, strengthen' Z F)) :: items
+      | strengthenItem Z (SIGID id, SIG(I,z,F), items) =
+	    (SIGID id, SIG(I, z, strengthen' Z F)) :: items
+      | strengthenItem Z (x, y, items) =
 	    items
 
 
