@@ -78,7 +78,7 @@ struct
 							depth = d,
 							rep = str,
 							width = 
-							ref(String.length
+							ref(String.size
 							    (str)), 
 							color = color, 
 							status = ref DAZZLED,
@@ -144,7 +144,7 @@ struct
 		    depth = d,
 		    rep = str, 
 		    relnode = rnode,
-		    width = ref(String.length(str)), 
+		    width = ref(String.size(str)), 
 		    color = REL_COLOR, 
 		    status = ref DAZZLED,  
 		    group = f(p)}
