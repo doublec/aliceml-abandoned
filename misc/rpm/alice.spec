@@ -1,5 +1,3 @@
-%define alicetmppath $(mktemp -d)
-
 Name: alice
 Version: 0.9
 Release: 1
