@@ -56,11 +56,11 @@ public:
     return new GecodeSpace(*this);
   }
 
-  int AddIntVariable(int i, int j);
-  int AddIntVariable(const DomSpec &d);
-  int AddIntVariableR(int i, int j, int boolVar);
-  int AddIntVariableR(DomSpec &d, int boolVar);
-  
+  //  int AddIntVariable(int i, int j);
+  int AddIntVariable(int pairs[][2], int noOfPairs);
+  //  int AddIntVariableR(int i, int j, int boolVar);
+  int AddIntVariableR(int pairs[][2], int noOfPairs, int boolVar);  
+
   int AddBoolVariable();
   
   void TrimVars();
@@ -70,7 +70,8 @@ public:
   int vmax(int var);
 
   // Domain
-  void tdom(int var, int min, int max);
+  void tdom(int var, int pairs[][2], int noOfPairs);
+  void tdom(int var, int pairs[][2], int noOfPairs, int boolvar);
   //  void dom(int var, int min, int max, int boolvar);
 
   // Propagators

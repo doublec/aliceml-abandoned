@@ -1,0 +1,56 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import "SEARCH-sig"
+import "Space"
+import "UnsafeGecode"
+
+structure Search :> SEARCH =
+struct
+    open UnsafeGecode
+
+    datatype 'p searchbestresult =
+	     SB_CONSTRAIN of 'p Space.space * 'p Space.space
+	   | SB_DONE
+	   | SB_SOLUTION of 'p Space.space
+
+    fun searchAll s =
+	let
+	    val se = getSearchEngine s
+	    fun lazy nextSol () = 
+		     let
+			 val n = next se
+		     in
+			 case n of
+			     NONE => nil
+			   | SOME s' => s'::nextSol()
+		     end
+	in
+	    nextSol()
+	end
+
+    val searchOne = next o getSearchEngine
+
+    fun searchBest (s, constrain) =
+	let
+	    val se = getSearchBestEngine s
+	    fun nextSol () =
+		case nextBest se of
+		    SB_DONE => nil
+		  | SB_SOLUTION s' => s'::(lazy nextSol())
+		  | SB_CONSTRAIN(s1, s2) =>
+		    (constrain(s1, s2);
+		     nextSol())
+	in
+	    lazy nextSol()
+	end
+end

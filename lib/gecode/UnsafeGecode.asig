@@ -15,48 +15,51 @@ signature GC_SIG =
        structure UnsafeGecode : sig
 	   val makeSpace : unit -> 'space
 
-	   val intvar : 'space * int * int -> 'intvar
-	   val intvarR : 'space * int * int * 'boolvar -> 'intvar
+	   val fdvar : 'space * (int * int) vector -> 'fdvar
+	   val fdvarR : 'space * (int * int) vector * 'boolvar -> 'fdvar
 	   val boolvar : 'space -> 'boolvar
 
-	   val getMin : 'space * 'intvar -> int
-	   val getMax : 'space * 'intvar -> int
+	   val getMin : 'space * 'fdvar -> int
+	   val getMax : 'space * 'fdvar -> int
 
-	   val distinct : 'space * 'intvar vector * 'conlevel -> unit
-	   val distinctI : 'space * (int * 'intvar) vector * 'conlevel -> unit
+	   val distinct : 'space * 'fdvar vector * 'conlevel -> unit
+	   val distinctI : 'space * (int * 'fdvar) vector * 'conlevel -> unit
 
-	   val countII : 'space * 'intvar vector * 'relation *
+	   val countII : 'space * 'fdvar vector * 'relation *
 			 int * 'relation * int -> unit
-	   val countVI : 'space * 'intvar vector * 'relation *
-			 'intvar * 'relation * int -> unit
-	   val countIV : 'space * 'intvar vector * 'relation *
-			 int * 'relation * 'intvar -> unit
-	   val countVV : 'space * 'intvar vector * 'relation *
-			 'intvar * 'relation * 'intvar -> unit
+	   val countVI : 'space * 'fdvar vector * 'relation *
+			 'fdvar * 'relation * int -> unit
+	   val countIV : 'space * 'fdvar vector * 'relation *
+			 int * 'relation * 'fdvar -> unit
+	   val countVV : 'space * 'fdvar vector * 'relation *
+			 'fdvar * 'relation * 'fdvar -> unit
 
-	   val element : 'space * 'intvar vector * 'intvar * 'intvar -> unit
-	   val elementI : 'space * int vector * 'intvar * 'intvar -> unit
-	   val lex : 'space * 'intvar vector * 'relation *
-		     'intvar vector -> unit
+	   val element : 'space * 'fdvar vector * 'fdvar * 'fdvar -> unit
+	   val elementI : 'space * int vector * 'fdvar * 'fdvar -> unit
+	   val lex : 'space * 'fdvar vector * 'relation *
+		     'fdvar vector -> unit
 
-	   val rel : 'space * 'intvar * 'relation * 'intvar -> unit
-	   val relI : 'space * 'intvar * 'relation * 'int -> unit
-	   val relR : 'space * 'intvar * 'relation * 'intvar * 'boolvar -> unit
-	   val relIR : 'space * 'intvar * 'relation * 'int * 'boolvar -> unit
-	   val eq : 'space * 'intvar * 'intvar * 'conlevel -> unit
-	   val eqV : 'space * 'intvar vector * 'conlevel -> unit
-	   val eqR : 'space * 'intvar * 'intvar * 'boolvar * 'conlevel -> unit
-	   val eqVR : 'space * 'intvar vector * 'boolvar * 'conlevel -> unit
+	   val dom : 'space * 'intvar * (int * int) vector -> unit
+	   val domR : 'space * 'intvar * (int * int) vector * 'boolvar -> unit
 
-	   val linear : 'space * (int * 'intvar) vector * 'relation * 
+	   val rel : 'space * 'fdvar * 'relation * 'fdvar -> unit
+	   val relI : 'space * 'fdvar * 'relation * 'int -> unit
+	   val relR : 'space * 'fdvar * 'relation * 'fdvar * 'boolvar -> unit
+	   val relIR : 'space * 'fdvar * 'relation * 'int * 'boolvar -> unit
+	   val eq : 'space * 'fdvar * 'fdvar * 'conlevel -> unit
+	   val eqV : 'space * 'fdvar vector * 'conlevel -> unit
+	   val eqR : 'space * 'fdvar * 'fdvar * 'boolvar * 'conlevel -> unit
+	   val eqVR : 'space * 'fdvar vector * 'boolvar * 'conlevel -> unit
+
+	   val linear : 'space * (int * 'fdvar) vector * 'relation * 
 			int * 'conlevel -> unit
-	   val linearR : 'space * (int * 'intvar) vector * 'relation * 
+	   val linearR : 'space * (int * 'fdvar) vector * 'relation * 
 			 int * 'boolvar * 'conlevel -> unit
 
-	   val min : 'space * 'intvar vector * 'intvar -> unit
-	   val max : 'space * 'intvar vector * 'intvar -> unit
-	   val abs : 'space * 'intvar * 'intvar * 'conlevel -> unit
-	   val mult: 'space * 'intvar * 'intvar * 'intvar -> unit
+	   val min : 'space * 'fdvar vector * 'fdvar -> unit
+	   val max : 'space * 'fdvar vector * 'fdvar -> unit
+	   val abs : 'space * 'fdvar * 'fdvar * 'conlevel -> unit
+	   val mult: 'space * 'fdvar * 'fdvar * 'fdvar -> unit
 
 	   val bool_not : 'space * 'boolvar * 'boolvar -> unit
 	   val bool_and : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
@@ -67,10 +70,10 @@ signature GC_SIG =
 	   val bool_andV: 'space * 'boolvar vector * 'boolvar -> unit
 	   val bool_orV : 'space * 'boolvar vector * 'boolvar -> unit
 
-	   val branch : 'space * 'intvar vector * 
+	   val branch : 'space * 'fdvar vector * 
 			'b_var_sel * 'b_val_sel -> unit
 
-	   val assign : 'space * 'intvar vector * 'avalsel -> unit
+	   val assign : 'space * 'fdvar vector * 'avalsel -> unit
 
 	   val getSearchEngine : 'space -> 'searchengine
 	   val next : 'searchengine -> 'space option

@@ -1,29 +1,32 @@
-import "Gecode"
-
-open Gecode
+import "MkProblem"
+import "FD"
 
 fun queens n cl =
     let
-	val s = makeSpace()
+	structure S = MkProblem()
+	open S
+	open FD
 
-	val v = Vector.tabulate (n, fn _ => intvar(s,0,n-1))
+	val v = rangeVec(n, (0, n-1))
 	val v1 = Vector.tabulate (n, fn n => (n, Vector.sub(v,n)))
 	val v2 = Vector.tabulate (n, fn n => (~n, Vector.sub(v,n)))
 
-	val _ = distinctI(s, v1, cl)
-	val _ = distinctI(s, v2, cl)
-	val _ = distinct(s, v, cl)
+	val _ = distinctI(space, v1, cl)
+	val _ = distinctI(space, v2, cl)
+	val _ = distinct(space, v, cl)
 
-	val _ = branch(s, v, B_SIZE_MIN, B_MIN)
+	val _ = branch(space, v, B_SIZE_MIN, B_MIN)
     in
-	(v, s)
+	(v, space)
     end
 
 fun money cl = 
     let
-	val space = makeSpace()
+	structure S = MkProblem()
+	open S
+	open FD
 
-	val v = Vector.tabulate (8, fn _ => intvar(space, 0,9))
+	val v = rangeVec(8, (0,9))
 		
 	val s = Vector.sub(v, 0)
 	val e = Vector.sub(v, 1)
@@ -61,23 +64,23 @@ fun money cl =
 
 fun photo () =
     let
-	val space = makeSpace()
+	structure S = MkProblem()
+	open S
+	open FD
 
 	val s_prefs = #[(0,2), (1,4), (2,3), 
 			(2,4), (3,0), (4,3),
 			(4,0), (4,1)]
 	val small = {n_names=5, n_prefs=8, prefs=s_prefs}
 	val spec = small
-	val pos = Vector.tabulate (#n_names spec,
-				   fn n => intvar(space,0,
-						  (#n_names spec)-1))
-	val sat = intvar(space, 0, #n_prefs spec)
-	val ful = Vector.tabulate (#n_prefs spec,
-				   fn n => boolvar space)
+	val pos = rangeVec(#n_names spec,
+			   (0,(#n_names spec)-1))
+	val sat = range(0, #n_prefs spec)
+	val ful = boolvarVec (#n_prefs spec)
+
 	val _ = Vector.appi (fn (i,(pa, pb)) =>
           let
-	      val b = #[boolvar(space),
-			boolvar(space)]
+	      val b = boolvarVec 2
 	  in
 	      linearR(space,
 		      #[(1, Vector.sub(pos, pb)),
@@ -98,7 +101,7 @@ fun photo () =
 	       if n=(#n_prefs spec) then
 		   (~1, sat)
 	       else
-		   (1, boolvar2intvar (Vector.sub(ful, n))))
+		   (1, boolvar2fdvar (Vector.sub(ful, n))))
 	val _ = linear(space, eq, EQ, 0, DEF)
 
 	val _ = distinct(space, pos, DEF)
@@ -120,7 +123,9 @@ fun for f start max = if start>max then ()
 
 fun golomb n cl =
     let
-	val space = makeSpace()
+	structure S = MkProblem()
+	open S
+	open FD
 
 	fun diag(i,j) = (i*(2*n-i-1)) div 2 + j - i - 1
 
@@ -128,8 +133,8 @@ fun golomb n cl =
 	val nn = n*n
 	val dn = (n*n-n) div 2
 
-	val k = Vector.tabulate (n, fn _ => intvar(space, 0, nn))
-	val d = Vector.tabulate (dn, fn _ => intvar(space, 0, nn))
+	val k = rangeVec(n, (0,nn))
+	val d = rangeVec(dn,(0,nn))
 
 	val _ = relI(space, Vector.sub(k, 0), EQ, 0)
 

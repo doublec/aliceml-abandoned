@@ -7,7 +7,15 @@ SOURCES = \
 	GecodeSpace.cc \
 	GecodeBAB.cc
 
-TARGETS = Gecode.stc GECODE-sig.stc
+TARGETS = \
+	FD-sig.stc \
+	FD.stc \
+	PROBLEM-sig.stc \
+	MkProblem.stc \
+	SPACE-sig.stc \
+	Space.stc \
+	SEARCH-sig.stc \
+	Search.stc
 
 EXTRA_LIBS =
 EXTRA_INCLUDES = -I../.. -Dforceinline=inline

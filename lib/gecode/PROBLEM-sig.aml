@@ -1,0 +1,42 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import "Space"
+
+signature PROBLEM =
+sig
+    type problem
+
+    datatype domain_element =
+	     SINGLE of int
+	   | RANGE  of int * int
+		       
+    type domain = domain_element vector
+
+    (* The root space of the problem*)
+    val space : problem Space.space
+
+    (* Allocation of finite domain variables *)
+    val fdvar : domain -> problem Space.fdvar
+    val fdvarVec : int * domain -> problem Space.fdvar vector
+    val range : int * int -> problem Space.fdvar
+    val rangeVec : int * (int * int) -> problem Space.fdvar vector
+
+    (* Allocation of reified finite domain variables *)
+    val fdvarR : domain * problem Space.boolvar -> problem Space.fdvar
+    val fdvarVecR : int * domain * problem Space.boolvar ->
+		    problem Space.fdvar vector
+
+    (* Allocation of boolean (0/1) finite domain variables *)
+    val boolvar : unit -> problem Space.boolvar
+    val boolvarVec : int -> problem Space.boolvar vector
+end

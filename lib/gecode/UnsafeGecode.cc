@@ -140,22 +140,42 @@ DEFINE0(gc_makespace) {
   RETURN(cr->ToWord());
 } END
 
-DEFINE3(gc_intvar) {
+DEFINE2(gc_fdvar) {
   DECLARE_SPACE(s, x0);
-  DECLARE_INT(i, x1);
-  DECLARE_INT(j, x2);
+  DECLARE_VECTOR(v, x1);
 
-  int newVar = s->AddIntVariable(i, j);
+  int noOfPairs = v->GetLength();
+  int pairs[noOfPairs][2];
+
+  for (int i=noOfPairs; i--;) {
+    DECLARE_TUPLE(tmp, v->Sub(i));
+    DECLARE_INT(tmp0, tmp->Sel(0));
+    DECLARE_INT(tmp1, tmp->Sel(1));
+    pairs[i][0] = tmp0;
+    pairs[i][1] = tmp1;
+  }
+  
+  int newVar = s->AddIntVariable(pairs, noOfPairs);
   RETURN_INT(newVar);
 } END
 
-DEFINE4(gc_intvarr) {
+DEFINE3(gc_fdvarr) {
   DECLARE_SPACE(s, x0);
-  DECLARE_INT(i, x1);
-  DECLARE_INT(j, x2);
-  DECLARE_INT(boolVar, x3);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(boolVar, x2);
 
-  int newVar = s->AddIntVariableR(i, j, boolVar);
+  int noOfPairs = v->GetLength();
+  int pairs[noOfPairs][2];
+
+  for (int i=noOfPairs; i--;) {
+    DECLARE_TUPLE(tmp, v->Sub(i));
+    DECLARE_INT(tmp0, tmp->Sel(0));
+    DECLARE_INT(tmp1, tmp->Sel(1));
+    pairs[i][0] = tmp0;
+    pairs[i][1] = tmp1;
+  }
+  
+  int newVar = s->AddIntVariableR(pairs, noOfPairs, boolVar);
   RETURN_INT(newVar);
 } END
 
@@ -176,6 +196,47 @@ DEFINE2(gc_getmax) {
   DECLARE_SPACE(s, x0);
   DECLARE_INT(var, x1);
   RETURN_INT(s->vmax(var));
+} END
+
+DEFINE3(gc_dom) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_INT(i, x1);
+  DECLARE_VECTOR(v, x2);
+
+  int noOfPairs = v->GetLength();
+  int pairs[noOfPairs][2];
+
+  for (int i=noOfPairs; i--;) {
+    DECLARE_TUPLE(tmp, v->Sub(i));
+    DECLARE_INT(tmp0, tmp->Sel(0));
+    DECLARE_INT(tmp1, tmp->Sel(1));
+    pairs[i][0] = tmp0;
+    pairs[i][1] = tmp1;
+  }
+
+  s->tdom(i, pairs, noOfPairs);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_domr) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_INT(i, x1);
+  DECLARE_VECTOR(v, x2);
+  DECLARE_INT(boolvar, x3);
+
+  int noOfPairs = v->GetLength();
+  int pairs[noOfPairs][2];
+
+  for (int i=noOfPairs; i--;) {
+    DECLARE_TUPLE(tmp, v->Sub(i));
+    DECLARE_INT(tmp0, tmp->Sel(0));
+    DECLARE_INT(tmp1, tmp->Sel(1));
+    pairs[i][0] = tmp0;
+    pairs[i][1] = tmp1;
+  }
+
+  s->tdom(i, pairs, noOfPairs, boolvar);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_rel) {
@@ -817,20 +878,24 @@ word InitComponent() {
   UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
   UnsafeGecode::gecodeHandler = new UnsafeGecode::GecodeHandler();
 
-  Record *record = Record::New(49);
+  Record *record = Record::New(51);
 
   INIT_STRUCTURE(record, "UnsafeGecode", "makeSpace",
 		 gc_makespace, 0);
-  INIT_STRUCTURE(record, "UnsafeGecode", "intvar",
-		 gc_intvar, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "intvarR",
-		 gc_intvarr, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode", "fdvar",
+		 gc_fdvar, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode", "fdvarR",
+		 gc_fdvarr, 3);
   INIT_STRUCTURE(record, "UnsafeGecode", "boolvar",
 		 gc_boolvar, 1);
   INIT_STRUCTURE(record, "UnsafeGecode", "getMin",
 		 gc_getmin, 2);
   INIT_STRUCTURE(record, "UnsafeGecode", "getMax",
 		 gc_getmax, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode", "dom",
+		 gc_dom, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode", "domR",
+		 gc_domr, 4);
   INIT_STRUCTURE(record, "UnsafeGecode", "rel",
 		 gc_rel, 4);
   INIT_STRUCTURE(record, "UnsafeGecode", "relI",

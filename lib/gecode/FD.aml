@@ -1,0 +1,69 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import "FD-sig"
+import "UnsafeGecode"
+import "x-alice:/lib/system/UnsafeValue"
+
+structure FD :> FD =
+struct
+    exception NoFD
+    exception NoBool
+
+    datatype relation =
+	     EQ (* Equality         == *)
+	   | NQ (* Disequality      != *)
+	   | LQ (* Less or equal    <= *)
+	   | LE (* Less             <  *)
+	   | GQ (* Greater or equal >= *)
+	   | GR (* Greater          >  *)
+	     
+    datatype conlevel = 
+	     BND | BND_EX | DEF | DOM | DOM_EX | 
+	     OTR | VAL | VAL_EX
+
+    datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
+
+    datatype b_var_sel =
+	     B_MAX_MAX
+	   | B_MAX_MIN
+	   | B_MIN_MAX
+	   | B_MIN_MIN
+	   | B_NONE
+	   | B_SIZE_MAX
+	   | B_SIZE_MIN
+	   | B_WIDTH_MAX
+	   | B_WIDTH_MIN
+	     
+    datatype b_val_sel =
+	     B_MAX
+	   | B_MED
+	   | B_MIN
+	   | B_SPLIT_MAX
+	   | B_SPLIT_MIN
+	   | B_VAL
+
+   open UnsafeGecode
+
+   val boolvar2fdvar = UnsafeValue.cast
+
+   fun getVal (s,v) =
+       let
+	   val min = getMin(s,v)
+       in
+	   if min<>getMax(s,v) then raise NoFD
+	   else min
+       end
+
+   fun getBool v = getVal(boolvar2fdvar v)=1 handle NoFD => raise NoBool
+
+end

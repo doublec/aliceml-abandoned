@@ -13,51 +13,53 @@
 
 #include "GecodeSpace.hh"
 
-int GecodeSpace::AddIntVariable(int i, int j) {
+// int GecodeSpace::AddIntVariable(int i, int j) {
+//   if (noOfIntVars >= intArraySize) {
+//     EnlargeIntVarArray();
+//   }
+  
+//   IntVarArray tmp(1, i, j);
+//   is[noOfIntVars] = tmp[0];
+
+//   noOfIntVars++;
+//   return noOfIntVars-1;
+// }
+
+int GecodeSpace::AddIntVariable(int pairs[][2], int noOfPairs) {
   if (noOfIntVars >= intArraySize) {
     EnlargeIntVarArray();
   }
   
-  IntVarArray tmp(1, i, j);
+  DomSpec ds(pairs, noOfPairs);
+  IntVarArray tmp(1, ds);
   is[noOfIntVars] = tmp[0];
 
   noOfIntVars++;
   return noOfIntVars-1;
 }
 
-int GecodeSpace::AddIntVariable(const DomSpec& d) {
+// int GecodeSpace::AddIntVariableR(int i, int j, int boolVar) {
+//   if (noOfIntVars >= intArraySize) {
+//     EnlargeIntVarArray();
+//   }
+  
+//   IntVarArray tmp(1, i, j);
+//   is[noOfIntVars] = tmp[0];
+//   dom(tmp[0], i, j, static_cast<BoolVar>(is[boolVar].core()));
+
+//   noOfIntVars++;
+//   return noOfIntVars-1;
+// }
+
+int GecodeSpace::AddIntVariableR(int pairs[][2], int noOfPairs, int boolVar) {
   if (noOfIntVars >= intArraySize) {
     EnlargeIntVarArray();
   }
   
-  IntVarArray tmp(1, d);
+  DomSpec ds(pairs, noOfPairs);
+  IntVarArray tmp(1, ds);
   is[noOfIntVars] = tmp[0];
-
-  noOfIntVars++;
-  return noOfIntVars-1;
-}
-
-int GecodeSpace::AddIntVariableR(int i, int j, int boolVar) {
-  if (noOfIntVars >= intArraySize) {
-    EnlargeIntVarArray();
-  }
-  
-  IntVarArray tmp(1, i, j);
-  is[noOfIntVars] = tmp[0];
-  dom(tmp[0], i, j, static_cast<BoolVar>(is[boolVar].core()));
-
-  noOfIntVars++;
-  return noOfIntVars-1;
-}
-
-int GecodeSpace::AddIntVariableR(DomSpec& d, int boolVar) {
-  if (noOfIntVars >= intArraySize) {
-    EnlargeIntVarArray();
-  }
-  
-  IntVarArray tmp(1, d);
-  is[noOfIntVars] = tmp[0];
-  dom(tmp[0], d, static_cast<BoolVar>(is[boolVar].core()));
+  dom(tmp[0], ds, intvar2boolvar(is[boolVar]));
 
   noOfIntVars++;
   return noOfIntVars-1;
@@ -107,12 +109,19 @@ int GecodeSpace::vmax(int var) {
 }
 
 // Domain
-void GecodeSpace::tdom(int var, int min, int max) {
+void GecodeSpace::tdom(int var, int pairs[][2], int noOfPairs) {
   enter();
+  DomSpec ds(pairs, noOfPairs);
   if (!failed())
-    dom(is[var], min, max);
+    dom(is[var], ds);
 }
-//  void dom(int var, int min, int max, int boolvar);
+
+void GecodeSpace::tdom(int var, int pairs[][2], int noOfPairs, int boolvar) {
+  enter();
+  DomSpec ds(pairs, noOfPairs);
+  if (!failed())
+    dom(is[var], ds, intvar2boolvar(is[boolvar]));
+}
 
 // Propagators
 void GecodeSpace::trel(int var1, reltype relation, int var2) {
@@ -128,12 +137,12 @@ void GecodeSpace::treli(int var1, reltype relation, int i) {
 void GecodeSpace::trelR(int var1, reltype relation, int var2, int boolVar) {
   enter();
   if (!failed())
-    rel(is[var1], relation, is[var2], static_cast<BoolVar>(is[boolVar].core()));
+    rel(is[var1], relation, is[var2], intvar2boolvar(is[boolVar]));
 }
 void GecodeSpace::treliR(int var1, reltype relation, int i, int boolVar) {
   enter();
   if (!failed())
-    rel(is[var1], relation, i, static_cast<BoolVar>(is[boolVar].core()));
+    rel(is[var1], relation, i, intvar2boolvar(is[boolVar]));
 }
 void GecodeSpace::teq(int var1, int var2, conlevel cl) {
   enter();
@@ -149,13 +158,13 @@ void GecodeSpace::teq(int vars[], int noOfVars, conlevel cl) {
 void GecodeSpace::teqR(int var1, int var2, int boolVar, conlevel cl) {
   enter();
   if (!failed())
-    eq(is[var1], is[var2], static_cast<BoolVar>(is[boolVar].core()), cl);
+    eq(is[var1], is[var2], intvar2boolvar(is[boolVar]));
 }
 void GecodeSpace::teqR(int vars[], int noOfVars, int boolVar, conlevel cl) {
   makeintvararray(a,vars,noOfVars);
   enter();
   if (!failed())
-    eq(a, static_cast<BoolVar>(is[boolVar].core()), cl);
+    eq(a, intvar2boolvar(is[boolVar]), cl);
 }
 
 // Distinct constraints
@@ -190,7 +199,7 @@ void GecodeSpace::tlinearR(int coefficients[], int vars[], int noOfVars,
   enter();
   if (!failed())
     linear(coefficients, a, rel, constant, 
-	   static_cast<BoolVar>(is[boolVar].core()), cl);
+	   intvar2boolvar(is[boolVar]), cl);
 }
 
 // Counting constraints
