@@ -24,7 +24,7 @@ type     string = Prebound.string
 type     char   = Prebound.char
 datatype list   = datatype Prebound.list
 datatype ref    = datatype Prebound.ref
-type     exn    = Prebound.exn
+datatype exn    = datatype Prebound.exn
 
 exception Match = Prebound.Match
 exception Bind  = Prebound.Bind
@@ -323,7 +323,7 @@ structure Char =
 	__primitive isHexDigit : char -> bool = "Char.isHexDigit"
 	__primitive isSpace :    char -> bool = "Char.isSpace"
 
-	__primitive toCString :  char -> bool = "Char.toCString"
+	__primitive toCString :  char -> string = "Char.toCString"
     end
 
 
@@ -336,12 +336,12 @@ structure String =
 	(*--** Subscript exceptions are not raised *)
 
 	__primitive op^ : string * string -> string = "String.^"
-	__primitive toCString : string * string -> string = "String.toCString"
-	__primitive str : string * string -> string = "String.str"
-	__primitive size : string * string -> string = "String.size"
-	__primitive substring : string * string -> string = "String.substring"
-	__primitive sub : string * string -> string = "String.sub"
-	__primitive explode : string * string -> string = "String.explode"
+	__primitive toCString : string -> string = "String.toCString"
+	__primitive str : char -> string = "String.str"
+	__primitive size : string -> int = "String.size"
+	__primitive substring: string * int * int -> string = "String.substring"
+	__primitive sub : string * int -> char = "String.sub"
+	__primitive explode : string -> char list = "String.explode"
 
 	fun extract (s, i, NONE) = substring (s, i, size s - i)
 	  | extract (s, i, SOME j) = substring (s, i, j)
