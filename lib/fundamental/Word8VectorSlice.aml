@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import structure __pervasive       from "Pervasive"
-import type int and list           from "ToplevelTypes"
-import structure Word8Vector       from "Word8Vector"
-import functor   MkMonoVectorSlice from "MkMonoVectorSlice"
+import structure __pervasive             from "Pervasive"
+import __primitive type int and list     from "ToplevelTypes"
+import __primitive structure Word8Vector from "Word8Vector"
+import functor MkMonoVectorSlice         from "MkMonoVectorSlice"
 
 structure Word8VectorSlice = MkMonoVectorSlice(
     type elem   = Word8Vector.elem
