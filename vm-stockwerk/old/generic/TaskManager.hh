@@ -33,8 +33,12 @@ public:
     Code code;
     int nargs;
 
-    Result(Code c): code(c) {}
-    Result(Code c, int n): code(c), nargs(n) {}
+    Result(Code c): code(c) {
+      Assert(c == RAISE || c == TERMINATE);
+    }
+    Result(Code c, int n): code(c), nargs(n) {
+      Assert(c == CONTINUE || c == PREEMPT || c == REQUEST);
+    }
   };
 
   // Handling code:
