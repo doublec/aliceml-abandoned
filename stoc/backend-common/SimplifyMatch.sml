@@ -347,8 +347,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		else NONE
 	      | findTest (_, _, _) = NONE
 	in
-	    fun mergeIntoTree (nil, thenTree, _) = thenTree
-	      | mergeIntoTree (Test (pos, test)::testSeqRest,
+	    fun mergeIntoTree (Test (pos, test)::testSeqRest,
 			       thenTree, elseTree) =
 		(case findTest (elseTree, pos, test) of
 		     SOME (treeRef as ref tree) =>
@@ -370,14 +369,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		mergeIntoTree (testSeq, elseTree,
 			       mergeIntoTree (testSeqRest, thenTree, elseTree))
 	      | mergeIntoTree (Alt testSeqs::testSeqRest, thenTree, elseTree) =
-		let
-		    val newThenTree =
-			mergeIntoTree (testSeqRest, thenTree, elseTree)
-		in
-		    List.foldr (fn (testSeq, elseTree) =>
-				mergeIntoTree (testSeq, newThenTree, elseTree))
-		    Default testSeqs
-		end
+		(*--** this may create duplicate code in some cases. *)
+		(* This could be removed by reconstructing the whole graph *)
+		(* using hash-consing. *)
+		List.foldr
+		(fn (testSeq, elseTree) =>
+		 mergeIntoTree (testSeq @ testSeqRest, thenTree, elseTree))
+		elseTree testSeqs
+	      | mergeIntoTree (nil, thenTree, _) = thenTree
 	end
 
 	(* Elimination of Backtracking, Producing a Test Graph *)
