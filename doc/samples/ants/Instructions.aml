@@ -35,4 +35,47 @@ structure Instructions =
 
   fun getInstruction(ant, state) = Vector.sub(ant, state)
 
+
+  val int = Int.toString
+
+  fun turn Left			= "left"
+    | turn Right		= "right"
+
+  fun dir Here			= "here"
+    | dir Ahead			= "ahead"
+    | dir LeftAhead		= "leftahead"
+    | dir RightAhead		= "rightahead"
+
+  fun cond Friend		= "friend"
+    | cond Foe			= "foe"
+    | cond FriendWithFood	= "friendwithfood"
+    | cond FoeWithFood		= "foewithfood"
+    | cond Food			= "food"
+    | cond Rock			= "rock"
+    | cond (Marker marker)	= "marker " ^ int marker
+    | cond FoeMarker		= "foemarker"
+    | cond Home			= "home"
+    | cond FoeHome		= "foehome"
+
+  fun outputInstruction outputAnn os (n, i) =
+      let
+	 fun out a ss = (TextIO.output (os, String.concatWith " " ss);
+			 TextIO.output (os, "; [" ^ int n ^ "] ");
+			 outputAnn (os, a);
+			 TextIO.output (os, "\n"))
+      in
+	 case i
+	  of Sense(d,s1,s2,c,a)	=> out a [dir d, int s1, int s2, cond c]
+	   | Mark(m,s,a)	=> out a [int m, int s]
+	   | Unmark(m,s,a)	=> out a [int m, int s]
+	   | PickUp(s1,s2,a)	=> out a [int s1, int s2]
+	   | Drop(s,a)		=> out a [int s]
+	   | Turn(t,s,a)	=> out a [turn t, int s]
+	   | Move(s1,s2,a)	=> out a [int s1, int s2]
+	   | Flip(n,s1,s2,a)	=> out a [int n, int s1, int s2]
+      end
+
+  fun output outputAnn (os, is) =
+	Vector.appi (outputInstruction outputAnn os) is
+
   end
