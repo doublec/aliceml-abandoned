@@ -349,10 +349,6 @@
 			<param name="Local" value="library/time.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="UNIQUE_STRING">
-			<param name="Local" value="library/unique-string.html">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Unix">
 			<param name="Local" value="library/unix.html">
 			</OBJECT>
