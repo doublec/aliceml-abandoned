@@ -30,14 +30,16 @@ STRUCTFILES	= $(STRUCTS:%=%.ozf)
 TOPFILES	= $(TOPS:%=%.ozf)
 FILES		= $(TOPFILES) $(SIGFILES) $(STRUCTFILES)
 
-.PHONY:			all install clean
+.PHONY:			all install clean veryclean
 
 all:			Fundamental.ozf
 
 install:		all
 
 clean:
-			-rm *.ozf
+			-rm *.ozf *.ozp *.ozm RTT.aml
+veryclean:		clean
+			-rm RTT.aml
 
 %.ozf:			%.aml
 			$(STOC) $(STOC_OPTS) -c $*.aml -o $@
