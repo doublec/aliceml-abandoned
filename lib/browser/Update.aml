@@ -1,66 +1,5 @@
 (*
  * Authors:
-import structure UnsafeInspector from "UnsafeInspector";
-import structure Reflect from "x-alice:/lib/system/Reflect";
-
-(* ganz einfache Liste *)
-
-structure SList = Reflect.ReflectType (type t = int list);
-
-UnsafeInspector.inspect ([1,2],SList.x);
-
-(* Tupel mir verschiedenen "einfachen" Werten - zum Testen des Breitenfilters
-   geeignet *)
-
-structure STuple = Reflect.ReflectType 
-    (type t = int * real * string * word * exn * char);
-val s_tuple = STuple.x;
-exception Error;
-
-UnsafeInspector.inspect ((111,5.0,"hi",0w17,Error,#"d"),s_tuple);
-
-(* Record mit Referenz, Vektor und Array - zum Testen des RelModus mit
-   struktureller Gleichheit geeignet *)
-
-structure RVARec = Reflect.ReflectType 
-    (type t = {ref: string ref,vec1: (int * int) vector,
-	       vec2: (int * int) vector, arr: real array});
-val rva_rec = RVARec.x;
-val my_array = let val a = Array.array(2,1.0)
-		   val _ = Array.update(a,0,2.0)
-	       in a end;
-
-UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
-                          vec2 = #[(6,7),(4,5)], arr = my_array},rva_rec); 
-
-(* Datentyp *)
-datatype foo = A 
-             | B of int ref list
-             | C of foo 
-             | D of (string vector vector * int vector vector) list
-
-structure DataType = Reflect.ReflectType (type t = foo);
-val data_type = DataType.x;
-val same = ref 44; (* zum Testen des " Relation Mode - Token Equality" *)
-
-UnsafeInspector.inspect (A,data_type);
-UnsafeInspector.inspect (B [same,same,same],data_type);
-UnsafeInspector.inspect (C (C (B [ref 55,ref 88])),data_type);
-UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
-			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]]}                  ],
-			 data_type);
-
-structure Test = Reflect.ReflectType (type t = int vector list);
-UnsafeInspector.inspect([#[1,2],#[1,1]],Test.x);
-
-
-structure IntList = Reflect.ReflectType (type t = (int * int) list);
-val int_list = IntList.x;
-val rec l = (3,4)::l;
-
-UnsafeInspector.inspect (l,int_list); 
  *   Bernadette Blum <blum@ps.uni-sb.de>
  *   Marvin Schiller <schiller@ps.uni-sb.de>
  *
@@ -182,9 +121,10 @@ struct
 				     getDepth(n))
 		     | I_VALUE(r) => g(va_inf,#typ(r),p,index,
 				       getDepth(n))
-		     | INTERPUNCT => f(va,(UnsafeValue.cast ()),p,index,
-				     getDepth(n))  (* 25.10.2002 *) 
-			   (* was: raise updateError *)
+		     | INTERPUNCT => (*
+			             f(va,(UnsafeValue.cast ()),p,index,
+				     getDepth(n)) *)  (* 25.10.2002 *) 
+			   raise UpdateError
 	       val _ = updateChild(p,index,new)
 	       val node = if getParent(new) = Empty then new else anc
 	       val _ = if isRelRefNode new

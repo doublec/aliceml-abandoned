@@ -182,12 +182,27 @@ struct
 
 (* Bestimmung des Pfades bei Packages und Promises *)
 
-    val sign = Inf.asSig(Option.valOf 
+    val coreSign = Inf.asSig(Option.valOf 
 		(Component.inf(ComponentManager.link 
-		  (Url.fromString "x-alice:/lib/fundamental/Fundamental")))) 
-        
+		  (Url.fromString "x-alice:/lib/fundamental/Core")))) 
+    val packageSign = Inf.asSig(Option.valOf 
+		(Component.inf(ComponentManager.link 
+		  (Url.fromString "x-alice:/lib/fundamental/Package")))) 
+     
+(* adopted from stockhausen/lib/system/PPValue.aml *)
+
+    fun lookupPath(sign, modLab, typLab) =
+	let
+	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
+	    val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
+	    val typ'  = if Type.isApply typ then #1(Type.asApply typ) else typ
+	in
+	    Type.asCon typ'
+	end
+
+   (* old thing *)
     (* lookupPath *)
-    fun lookupPath(modLab,typLab) = 
+   (* fun lookupPath(modLab,typLab) = 
 	let 
             val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
 	    val typ = Inf.lookupTyp'(sign', Label.fromString typLab) 
@@ -196,7 +211,7 @@ struct
 		       else typ 
 	in 
 	    Type.asCon typ' 
-	end 
+	end *)
 
 end (* struct *)
 

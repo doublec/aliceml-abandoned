@@ -35,7 +35,9 @@ struct
     fun isApply t = case t of Type.Apply(_,_) => true
                            | _ => false 
 
-    fun unApply(Type.Apply(t1,t2))
+(* old version *)
+
+  (*  fun unApply(Type.Apply(t1,t2))
        = let val t = ref (Type.inspect(t1)) 
              val l = ref [t2]
          in (while isApply (!t) do
@@ -43,7 +45,16 @@ struct
                Type.Apply(t11,t12) => (t := (Type.inspect(t11)) 
 				       ; l:= [t12]@(!l))
              | _ => () ) ; (!t,!l))
-	 end
+	 end *)
+     
+(* new version from 5. March *)
+
+    fun unApply'(Type.Apply(t1,t2),li) = unApply'(Type.inspect(t1), t2::li)
+      | unApply'(sth,li) = (sth, rev li)
+
+    fun unApply sth = unApply' (sth,nil)
+	
+
 
 (* Rows *)
 
@@ -89,6 +100,12 @@ struct
 		   then a
 	       else iterTake' (str,i+1, a ^ Char.toString(test))
 	    end  
+
+(* alternative Version *)
+(*  fun iterTake' ((#" "::xr),a) = implode (rev(a))
+      | iterTake' ((x::xr),a) = iterTake' (xr,(x::a))
+	
+    fun iterTake str = iterTake' ((explode str),nil)  *)
 
 (* Test, ob bestimmte node-Art vorliegt *)
 

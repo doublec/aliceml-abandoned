@@ -33,11 +33,11 @@ in
 structure Init :> INIT = 
 struct
       
-    val path_promise = lookupPath("Promise","promise")   
+    val path_promise = lookupPath(coreSign,"Promise","promise")   
 
-    val path_package = lookupPath("Package","package") 
+    val path_package = lookupPath(packageSign,"Package","package") 
 
-    val path_val_package = lookupPath("Package","val_package")  
+    val path_val_package = lookupPath(packageSign,"Package","val_package")  
  
     (* init *)
     fun init () = ( registerType(PervasiveType.path_int, createInt)
@@ -74,12 +74,14 @@ struct
 							     createGraphInf))
 		   ; Window.register
 			    ("width",
-			     fn (n,i) => Update.foldWidth(n,i,createGraph,
-							  createGraphInf))
+			     fn (n,i) => (print "starting width !!!!!\n"
+					  ;Update.foldWidth(n,i,createGraph,
+							  createGraphInf)))
                    ; Window.register
 			    ("depth",
-			     fn (n,i) => Update.foldDepth(n,i,createGraph,
-							  createGraphInf))
+			     fn (n,i) => (print "starting depth !!!!\n"
+                                          ;Update.foldDepth(n,i,createGraph,
+							    createGraphInf)))
 
                    ; Window.register
 			    ("shrink",

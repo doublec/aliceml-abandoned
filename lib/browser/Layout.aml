@@ -17,8 +17,8 @@ import structure Types from "Types"
 import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure Dictionaries from "Dictionaries"
-import structure Settings from "Settings"
 (* import structure Window from "Window" *)
+import structure Settings from "Settings"
 import signature LAYOUT from "LAYOUT-sig"
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"

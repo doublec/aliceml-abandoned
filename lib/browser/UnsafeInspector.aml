@@ -25,7 +25,8 @@ import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
 structure UnsafeInspector :> UNSAFE_INSPECTOR = 
 struct
-    	       
+  
+	       
     (* inspect *)
     fun inspect (v,t) = 
 	let 
@@ -42,7 +43,7 @@ struct
 	     ; (!Window.resize())
 	     ; Window.show ()
 	     ; Window.stopButtonSetActive(false))
-	end
+	end  
     
     (* inspectInf *)
     and inspectInf (v,t) = 

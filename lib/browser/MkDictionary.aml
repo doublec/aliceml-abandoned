@@ -32,7 +32,7 @@ struct
 		    (a, fill_count,next_i) 
 		end
 	
-    (* inserts with key given, adjusts size if necessary *)    
+    (* inserts with given key, adjusts size if necessary *)    
     fun insert ((a,fill_count,_) as dict,(key,value)) = 
 	let
 	    val _ = fill_count := !fill_count + 1

@@ -67,7 +67,10 @@ sig
     val inspectList : int * 'a list  -> 'a list_desc 
     val castList : 'a -> 'b list
     
-    val lookupPath: string * string -> Path.path
+    val coreSign: Inf.sign
+    val packageSign: Inf.sign
+
+    val lookupPath: Inf.sign * string * string -> Path.path
 
 end
 

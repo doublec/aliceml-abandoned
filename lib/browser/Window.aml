@@ -356,6 +356,7 @@ struct
 
      fun setStopButtonOnOff(f,n) = (Server.serve(fn() => stopButtonSetActive(true))
 				    ;f n
+				    ; TextIO.print("STOP_BUTTON: f n done\n")
 				    ; Server.serve(fn() => stopButtonSetActive(false)))
 	 
 
@@ -365,7 +366,7 @@ struct
 		else ()
 
      fun handleReinspect node = 
-	 fn _ => setStopButtonOnOff((selectHandler("reinspect")),(node,0))
+	 fn _ => ( setStopButtonOnOff((selectHandler("reinspect")),(node,0)) )
 
      fun handleReinspectSelection _ = setStopButtonOnOff(
        selectHandler("reinspect"), (getSelectionNode(),0))
@@ -438,15 +439,28 @@ struct
 ( MainDictionary.getHighestIndexAssigned(Dictionaries.dict),
  !Settings.fontHeight - old_h,0))
 			      end
+			    (* Debug Aid *)
+			    ;if Gtk.toggleButtonGetActive(relmode_button) = 
+			      true
+			      (* 1 *)
+			      orelse 
+			   Gtk.toggleButtonGetActive(tokenmode_button) = 
+			       true
+			       then print ("Relmode-Button set\n")
+				   else print ("Relmode-Button not set\n")
 			    ;Settings.relmode := (
-			    Gtk.toggleButtonGetActive(relmode_button) = 1
+			    Gtk.toggleButtonGetActive(relmode_button) = true
+						  (* 1 *)
 						  orelse 
-			   Gtk.toggleButtonGetActive(tokenmode_button) = 1)
+			   Gtk.toggleButtonGetActive(tokenmode_button) = true 
+						  (* 1 *) )
 			    ;Settings.tokenmode :=  
-			    Gtk.toggleButtonGetActive(tokenmode_button) = 1
+			    Gtk.toggleButtonGetActive(tokenmode_button) = true
+			    (* 1 *)
 			    ;Gtk.widgetDestroy(w)
 			    ;if 
-			    Gtk.toggleButtonGetActive(treemode_button) = 1
+			    Gtk.toggleButtonGetActive(treemode_button) = true 
+			    (* 1 *)
 				 then (RelManDictionary.dumpAll
 				       (Dictionaries.reldict)
 				       ; Settings.relnumber := 0)
@@ -484,11 +498,13 @@ struct
 	    val relmode_button = Gtk.radioButtonNewWithLabel(group, 
 				"Relational Mode - Structural Equality")
 	    val _ = if !Settings.tokenmode 
-			then Gtk.toggleButtonSetActive(tokenmode_button,1)
+			then Gtk.toggleButtonSetActive(tokenmode_button,true 
+						       (* 1 *) )
 		    else if !Settings.relmode then 
-			Gtk.toggleButtonSetActive(relmode_button,1)
+			Gtk.toggleButtonSetActive(relmode_button,true 
+						  (* 1 *))
 			else
-			Gtk.toggleButtonSetActive(treemode_button,1)
+			Gtk.toggleButtonSetActive(treemode_button,true (* 1 *))
 
 	    val radiobox = createVBoxDefaults[treemode_button,
 					      relmode_button,
@@ -723,9 +739,17 @@ struct
 	      ; Gtk.windowSetDefaultSize(window, 500,400)
 	      ;Gtk.signalConnect (window, "delete-event", Delete)
 	      ;setSelectionMenuSensitive (bar,false)  
-	      ;Gtk.containerAdd(window,createVBox[(bar,0,0,0),
-						  (scrolled,Gtk.EXPAND,Gtk.FILL,0),
-						  (status,0,0,0)])
+	      ;Gtk.containerAdd(window,createVBox[(bar,
+						    false (* 0 *)
+						   ,false (* 0 *),
+						    0),
+						  (scrolled,
+						   (* Gtk.EXPAND *) true,
+						   (* Gtk.FILL *) true,0),
+						  (status,(*  0 *) 
+						   false ,
+						  (*  0 *)
+						  false  ,0)])
 	      ;Gtk.signalConnect(window,"event",handleWindowEvent))
 	
 end

@@ -31,7 +31,9 @@ struct
 	
     fun allocColor (r,g,b) = 
 	let val c =  Gdk.allocColor (r,g,b)
-	    val _ = Gdk.colormapAllocColor (map, c, 0, 1)
+	    val _ = Gdk.colormapAllocColor (map, c, 
+					    false (* 0 *), 
+					    true (* 1 *))
 	in
 	    c
 	end

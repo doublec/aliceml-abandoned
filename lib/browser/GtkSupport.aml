@@ -65,8 +65,8 @@ datatype ButtonObj = BObj of string * Handler list
 
 val uglyNULL = UnsafeValue.cast () : Gtk.object
 
-fun setSensitive (widget,true) = Gtk.widgetSetSensitive(widget,1)
-  | setSensitive (widget,false) = Gtk.widgetSetSensitive(widget,0)
+fun setSensitive (widget,true) = Gtk.widgetSetSensitive(widget,true (* 1 *))
+  | setSensitive (widget,false) = Gtk.widgetSetSensitive(widget,false (* 0 *))
 
 (* createMenu *)
 fun createMenu (BarObj(l)) =let
@@ -143,7 +143,7 @@ fun createNotebookPages n (title,page) =
 fun createNotebook l = 
     let 
 	val n =  Gtk.notebookNew ()
-	val _ =  Gtk.notebookSetShowTabs(n, 1 (* showlabel *))
+	val _ =  Gtk.notebookSetShowTabs(n, true (* 1 *) (* showlabel *))
         val _ = Gtk.notebookSetTabPos(n,Gtk.POS_TOP)
     in
 	(List.app (createNotebookPages n) l;n)
@@ -165,10 +165,12 @@ fun createRadioItem (RBObj(stri,handlerlist),pred) =
 (* creates Radio Buttons from list of RBObj's *)
 fun createRadioButtons li = 
     let
-	val box =  Gtk.vboxNew(0,4)
+	val box =  Gtk.vboxNew((* 0 *) false ,4)
 	val create = fn (x,e) => let
 				     val button = createRadioItem(x,e)
-				     val _ =  Gtk.boxPackStart(box,button,0,1,0)
+				     val _ =  Gtk.boxPackStart(box,button,
+							       false (* 0 *),
+							       true (* 1 *),0)
 				 in
 				     button
 				 end
@@ -213,7 +215,7 @@ fun createButtonBox {buttons = l, borderwidth = b} =
 
 fun createTable {rows = r, cols = c, entries = l}   = 
     let 
-	val table = Gtk.tableNew(r,c,1)
+	val table = Gtk.tableNew(r,c,true (*1*))
 	val attach = (fn (obj,x1,x2,y1,y2) 
 		      => Gtk.tableAttachDefaults(table,
 						 obj,x1,x2,y1,y2))
@@ -235,15 +237,17 @@ fun createSpinButton {init = i, lower = l, upper = u, inc = ic, dec = d}
       end
 
 fun createVBoxDefaults l = let
-		       val vbox = Gtk.vboxNew(0,4)
-		       val p = fn i =>  Gtk.boxPackStart(vbox,i,0,1,0)
+		       val vbox = Gtk.vboxNew(false (* 0 *),4)
+		       val p = fn i =>  Gtk.boxPackStart(vbox,i, (* 0 *)
+							 false ,
+							 true (* 1 *) ,0)
 		   in
 		       (List.app p l
 			; vbox)
 		   end
 
 fun createVBox l = let
-		       val vbox = Gtk.vboxNew(0,4)
+		       val vbox = Gtk.vboxNew(false (* 0 *) ,4)
 		       val p = fn (a,i,j,k) =>  Gtk.boxPackStart(vbox,a,i,j,k)
 		   in
 		       (List.app p l

@@ -23,7 +23,7 @@ local
 
 in
 
-    structure MainDictionary = MkDictionary(type t = node * Gtk.object )
+    structure MainDictionary = MkDictionary(type t = node * Gtk.object)
 
 end
 

@@ -42,6 +42,18 @@ import signature NEW_NODE from "NEW_NODE-sig"
 
 local
     open Types Helper MkPathTable Settings Dictionaries NewNodeHelper
+
+
+(* Hilfsprozedur  (int * 'a -> 'b) * int * 'a list -> unit = _fn *)
+(* berechnet f(0,x_{0}), f(1,x_{1}), ......, f(br,x_{br}) *)
+(* wird benutzt von setItems *)
+
+ fun appi_break' (f,br,l,i) = if i <=br
+	       then (f (i,hd(l));appi_break' (f,br,tl(l),i+1))
+		   else ()
+
+ fun appi_break (f,br,l) = appi_break'(f,br,l,0)
+
 in	
     
 structure NewNode :> NEW_NODE =
@@ -135,7 +147,7 @@ struct
 			     val restlist = #2(part)
 			 in (RelManDictionary.update(reldict,
 						     (ind,
-						    [m]@restlist))
+						    m::restlist))
 			     ; node)
 			 end)
 		 end
@@ -152,10 +164,11 @@ struct
 	    => let val p_path = 
 		   if String.equal(Label.toString(Path.toLab(path)),
 				   "package")
-		       then lookupPath("Package","package")
+		       then lookupPath(packageSign,"Package","package")
 		   else if String.equal(Label.toString(Path.toLab(path)),
 					"val_package")
-			    then lookupPath("Package","val_package")
+			    then lookupPath(packageSign,
+					    "Package","val_package")
 			else path 
 	       in newPath (va,t,p,i,d,p_path)
 	       end
@@ -177,7 +190,7 @@ struct
 		  => let val p_path = 
 		         if String.equal(Label.toString(Path.toLab(path)),
 					 "promise")
-			     then lookupPath("Promise","promise") 
+			     then lookupPath(coreSign,"Promise","promise") 
 			 else path 
 		     in 
 			 newPath (va,t,p,i,d,p_path)
@@ -259,7 +272,33 @@ struct
 		      ; concat )
 		   end
 	   end
-    
+
+(* changed on 5. March *) 
+ and listElemArray(list,length,listtyp,p,d,b) = 
+     let 
+	 val na = Array.array(length,Empty)
+     in
+	 (List.appi (fn (i,item) => 
+		    let  val concat = createConcat(INTERPUNCT,p,i,d,
+					   Array.array(2,Empty),setGroup)
+			val inva = UnsafeValue.cast(item)
+                            : Reflect.value
+			val elem = createGraph(inva,listtyp,concat,0,d+1)
+			val repr = if b orelse !relmode then "::" else ", "
+			val sep = createSimple(INTERPUNCT,
+					       concat,1,d,
+					       repr,SEP_COLOR,
+					       setGroup)
+		    in
+			( Array.update(getKids(concat),0,elem)
+			 ; Array.update(getKids(concat),1,sep)
+			 ; Array.update(na,i,concat))
+		    end) list;na)
+	 end
+
+
+   
+(*
     and listElemArray(list,length,listtyp,p,d,b) = 
 	let val rl = ref 0
 	    val na = Array.array(length,Empty)
@@ -278,7 +317,9 @@ struct
 	     end ; rl := !rl + 1)
 	   ; na )
 	end
-                   
+  
+*)
+                 
 (* spezielle Behandlung von Records,Tupeln und Datentypen *)
                          
     (* treatProd *)
@@ -470,8 +511,75 @@ struct
 	      in  docToNode (doc,p,i,d) 
 	      end )
 
+(* docToNode *) (* changed on 5.March *)
+and docToNode (doc,p,i,d) =
+        (case doc of
+         SIMPLE(r) 
+	   => let val color = 
+	             (case #desc(r) of 
+		      INTERPUNCT => (case #rep(r) of ", " => SEP_COLOR
+		                                   | " = " => EQU_COLOR
+						   | ("{" | "}" | "(" | ")"
+                                                          | "#[" | "]" )  
+						     => BRACK_COLOR
+						   | _ => LABEL_COLOR)
+		    | VALUE(rr) 
+		      => (case Type.inspect(#typ(rr)) of
+			  Type.Con path
+			  => (if Path.equal(path,PervasiveType.path_int)
+				  then INT_COLOR
+			      else
+			       if Path.equal(path,PervasiveType.path_real)
+				   then REAL_COLOR
+			       else 
+			        if Path.equal(path,PervasiveType.path_char)
+				    then CHAR_COLOR
+				else 
+				 if Path.equal(path,PervasiveType.path_string)
+				     then STR_COLOR
+				 else
+	                          if Path.equal(path,PervasiveType.path_word) 
+				      then WORD_COLOR
+				  else 
+				   if Path.equal(path,PervasiveType.path_exn)
+				       then EXN_COLOR
+				   else 
+				    if Path.equal(path,PervasiveType.path_ref)
+					then REF_COLOR
+				    else DEFAULT)
+			| _ => DEFAULT) ) 
+	      in createSimple (#desc(r),p,i,d,#rep(r),color,setGroup) 
+	      end  
+        | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
+						 Empty)
+                            val concat = createConcat(#desc(r),p,i,d,na,
+						      setGroup)
+		       in
+			   (Vector.appi (fn (i,a) => 
+				       Array.update(na,i,
+				       docToNode(a,concat,i,d))) (#kids(r))
+			    ; concat)
+		       end
+    	| CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
+						   Empty)
+			      val container = createContainer(#desc(r),p,i,d,
+							      na,setGroup)
+			  in
+			      (Vector.appi(fn (i,a) => 
+				      Array.update(na,i,
+				 docToNode(a,container,i,d+1))) (#kids(r))
+			       ;container)
+			  end
+	| LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,setGroup) 
+	| EMBEDDED(v,t) => createGraph (v,t,p,i,d)
+	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d) ) 
+
+
     (* docToNode *)
-    and docToNode (doc,p,i,d) =
+  (* old docToNode
+     
+
+and docToNode (doc,p,i,d) =
         (case doc of
          SIMPLE(r) 
 	   => let val color = 
@@ -539,7 +647,8 @@ struct
 			  end
 	| LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,setGroup) 
 	| EMBEDDED(v,t) => createGraph (v,t,p,i,d)
-	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d) )
+	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d) ) 
+*)
 	     
 (* spezielle Behandlung von Futures *)
    
@@ -704,6 +813,23 @@ struct
 	     end   
 
     (* setItems *)
+			
+
+(* changed on 5. March *)
+ and setItems (va,ilist,p,d,length) = 
+     appi_break ((fn (i,item) => let
+		                  val vv = UnsafeValue.cast va
+				  val label = itemToLabel(item) 
+				  val in_vv = UnsafeValue.projPoly(vv,label)
+				  val node = createItemNode(in_vv,item,p,i+1,d)
+			       in
+				  Array.update(getKids(p),i+1,node)
+			       end),
+				  length-1,
+				  ilist) 
+
+ (* old setItems *)
+ (*
     and setItems (va,ilist,p,d,length) = 
 	let val l = ref 1
 	in while !l <= length do
@@ -716,7 +842,7 @@ struct
 	     in Array.update(getKids(p),!l,node)
 	     end
            ; l := !l + 1)
-	end
+	end  *)
 
     (* createItemNode *)
     and createItemNode (vv,item,p,i,d) = 
