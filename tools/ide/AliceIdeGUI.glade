@@ -14,6 +14,7 @@
   <accessibility>
     <atkproperty name="AtkObject::accessible_name" translatable="yes">Alice IDE</atkproperty>
   </accessibility>
+  <signal name="delete_event" handler="on_quit1_activate" last_modification_time="Thu, 03 Mar 2005 12:47:18 GMT"/>
 
   <child>
     <widget class="GtkVBox" id="vbox1">
@@ -302,6 +303,7 @@
 	<widget class="GtkVPaned" id="vpaned1">
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
+	  <property name="position">550</property>
 
 	  <child>
 	    <widget class="GtkVBox" id="vbox3">
@@ -403,6 +405,7 @@
 	    <widget class="GtkVPaned" id="vpaned2">
 	      <property name="visible">True</property>
 	      <property name="can_focus">True</property>
+	      <property name="position">60</property>
 
 	      <child>
 		<widget class="GtkScrolledWindow" id="scrolledwindow3">
@@ -418,10 +421,10 @@
 		      <property name="width_request">0</property>
 		      <property name="height_request">18</property>
 		      <property name="visible">True</property>
-		      <property name="editable">False</property>
+		      <property name="editable">True</property>
 		      <property name="justification">GTK_JUSTIFY_LEFT</property>
 		      <property name="wrap_mode">GTK_WRAP_NONE</property>
-		      <property name="cursor_visible">False</property>
+		      <property name="cursor_visible">True</property>
 		      <property name="pixels_above_lines">0</property>
 		      <property name="pixels_below_lines">0</property>
 		      <property name="pixels_inside_wrap">0</property>
@@ -450,7 +453,7 @@
 		  <child>
 		    <widget class="GtkTextView" id="compilerout">
 		      <property name="width_request">0</property>
-		      <property name="height_request">18</property>
+		      <property name="height_request">130</property>
 		      <property name="visible">True</property>
 		      <property name="editable">False</property>
 		      <property name="justification">GTK_JUSTIFY_LEFT</property>

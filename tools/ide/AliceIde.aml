@@ -7,6 +7,7 @@ import structure OutputWriters from "OutputWriters"
 import structure Evaluator from "Evaluator"
 import structure Buffer from "Buffer"
 import structure FileDialog from "FileDialog"
+import structure Core from "x-alice:/lib/gtk/Core"
 
 structure AliceIde =
     struct
@@ -15,15 +16,15 @@ structure AliceIde =
 	val (stdin, stdInText) = Stream.stream ()
 	val reader = TextPrimIO.openVectorListRd stdInText
 	val progStdIn = TextIO.StreamIO.mkInstream (reader, "")
-(*	val _ = TextIO.setInstream (TextIO.stdIn, progStdIn)*)
+	val _ = TextIO.setInstream (TextIO.stdIn, progStdIn)
 
 	val (stdOutText, writer) = TextPrimIO.openVectorListWr ()
 	val progStdOut = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-(*	val _ = TextIO.setOutstream (TextIO.stdOut, progStdOut)*)
+	val _ = TextIO.setOutstream (TextIO.stdOut, progStdOut)
 
 	val (stdErrText, writer) = TextPrimIO.openVectorListWr ()
 	val progStdErr = TextIO.StreamIO.mkOutstream (writer, IO.NO_BUF)
-(*	val _ = TextIO.setOutstream (TextIO.stdErr, progStdErr)*)
+	val _ = TextIO.setOutstream (TextIO.stdErr, progStdErr)
 
 	val (outText, writer) = TextPrimIO.openVectorListWr ()
 	val compilerOut = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
@@ -69,8 +70,13 @@ structure AliceIde =
 		val dummySignal = Promise.future (Promise.promise ())
 		val text = if String.sub (text, String.size text - 1) = #"\n"
 			   then text else text ^ "\n"
+                fun find(i ,str) =
+                    if i=String.size str then ""
+                    else if Char.isSpace (String.sub(str,i)) then
+                        find(i+1, str)
+                    else String.extract(str, i, NONE)
 	    in
-		TextIO.StreamIO.output (compilerIn, text);
+		TextIO.StreamIO.output (compilerIn, find(0,text));
 		Evaluator.eval (text, dummySignal)
 	    end
 
@@ -82,9 +88,8 @@ structure AliceIde =
                 val enditer = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetEndIter(buf,enditer)
                 val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                val str = Core.utf8ToLatin1 str
             in
-                Gtk.textIterFree startiter;
-                Gtk.textIterFree enditer;
                 eval str
             end
 
@@ -102,10 +107,9 @@ structure AliceIde =
             in
                 if sel
                 then eval (addNewlines(startline,
-                                       Gtk.textBufferGetText(buf, startiter, enditer, false)))
-                else ();
-                Gtk.textIterFree startiter;
-                Gtk.textIterFree enditer
+                                       Core.utf8ToLatin1
+                                           (Gtk.textBufferGetText(buf, startiter, enditer, false))))
+                else ()
             end
                 
         fun feedLine() =
@@ -119,10 +123,9 @@ structure AliceIde =
                 val _ = Gtk.textIterSetLineOffset(startiter, 0)
                 val _ = Gtk.textIterForwardToLineEnd(enditer)
                 val str = addNewlines(startline,
-                                      Gtk.textBufferGetText(buf, startiter, enditer, false))
+                                      Core.utf8ToLatin1
+                                          (Gtk.textBufferGetText(buf, startiter, enditer, false)))
             in
-                Gtk.textIterFree startiter;
-                Gtk.textIterFree enditer;
                 eval str
             end
 
@@ -195,10 +198,9 @@ structure AliceIde =
                 val (startiter, enditer) = paragraphIters(buf)
                 val startline = 1 + Gtk.textIterGetLine startiter
                 val str = addNewlines(startline,
-                                      Gtk.textBufferGetText(buf, startiter, enditer, false))
+                                      Core.utf8ToLatin1
+                                          (Gtk.textBufferGetText(buf, startiter, enditer, false)))
             in
-                Gtk.textIterFree startiter;
-                Gtk.textIterFree enditer;
                 eval (str^"\n")
             end
 
@@ -208,15 +210,14 @@ structure AliceIde =
                 val (startiter, enditer) = paragraphIters(buf)
                 val startline = 1 + Gtk.textIterGetLine startiter
                 val str = addNewlines(startline,
-                                      Gtk.textBufferGetText(buf, startiter, enditer, false))
+                                      Core.utf8ToLatin1
+                                          (Gtk.textBufferGetText(buf, startiter, enditer, false)))
                 val _ = Gtk.textBufferPlaceCursor(buf, enditer)
             in
                 case eolBeforeNonWS 0 enditer Gtk.textIterForwardChar of
                     0 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
                   | 2 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
                   | _ => Gtk.textBufferPlaceCursor(buf, enditer);
-                Gtk.textIterFree startiter;
-                Gtk.textIterFree enditer;
                 eval (str^"\n")
             end
             
@@ -262,32 +263,37 @@ structure AliceIde =
 
         fun new() =
             let
-                val {buf,...} = Buffer.buffer(AliceIdeGUI.notebook1,
+                val {buf,view,...} = Buffer.buffer(AliceIdeGUI.notebook1,
                                            !numberOfPages, NONE)
             in
+                curtextview := view;
+                Gtk.widgetGrabFocus (!curtextview);
                 Gtk.signalConnect(buf, "mark-set", markSet);
+                markSet (buf, nil);
                 addPage(!numberOfPages);
                 numberOfPages := (!numberOfPages) + 1
             end
 
         fun openFile () =
-            FileDialog.openFile("Open file",
-                                fn NONE => ()
-                                 | SOME f =>
-                                   let
-                                       val {buf,...} = Buffer.buffer(AliceIdeGUI.notebook1,
-                                                                  !numberOfPages, SOME f)
-                                   in
-                                       Gtk.signalConnect(buf, "mark-set", markSet);
-                                       addPage(!numberOfPages);
-                                       numberOfPages := (!numberOfPages) + 1
-                                   end)
+            case FileDialog.openFile "Open file" of
+                NONE => ()
+              | SOME f =>
+                let
+                    val {buf,view,...} = Buffer.buffer(AliceIdeGUI.notebook1,
+                                                       !numberOfPages, SOME f)
+                in
+                    curtextview := view;
+                    Gtk.widgetGrabFocus (!curtextview);
+                    Gtk.signalConnect(buf, "mark-set", markSet);
+                    markSet (buf, nil);
+                    addPage(!numberOfPages);
+                    numberOfPages := (!numberOfPages) + 1
+                end
                                   
         fun saveFileAs () =
-            FileDialog.openFile("Save file",
-                                fn NONE => ()
-                                 | SOME f =>
-                                   Buffer.saveAs (getCurrentPage(), f))
+            case FileDialog.openFile "Save file" of
+                NONE => ()
+              | SOME f => Buffer.saveAs (getCurrentPage(), f)
 
         fun saveFile () = if !currentPage = 0 then ()
                           else if Buffer.save (getCurrentPage()) then ()
@@ -367,7 +373,7 @@ structure AliceIde =
                         val _ = findErrorStart iter errorTag
                         val iter2 = Gtk.textIterCopy iter
                         val _ = Gtk.textIterForwardLine iter2
-                        val str = Gtk.textIterGetText(iter, iter2)
+                        val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
                         val coords = parseErrorCoords str
                     in
                         case coords of NONE => Gtk.widgetSetSensitive(showError,
@@ -389,6 +395,7 @@ structure AliceIde =
             let
                 val buf = Gtk.textViewGetBuffer AliceIdeGUI.scratchpad
             in
+                Gtk.widgetGrabFocus (!curtextview);
                 Gtk.signalConnect(buf, "mark-set", markSet);
                 Gtk.signalConnect(AliceIdeGUI.compilerout, "populate-popup", populatePopup);
 	        OutputWriters.makeWriters {inStream = inText,
@@ -397,6 +404,7 @@ structure AliceIde =
 					   traceStream = traceText,
 					   stdOutStream = stdOutText,
 					   stdErrStream = stdErrText,
+                                           stdInStream = stdin,
                                            rowColStream = rowColStream};
                 Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
                                         AliceIdeGUI.Helpers.accelGroup);
