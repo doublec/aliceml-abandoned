@@ -39,8 +39,8 @@ DEFINE2(Word_oparithshr) {
   DECLARE_INT(i, x0);
   DECLARE_INT(j, x1);
   //--** this can be improved on many architectures
-  if (i & (1 << 31)) {
-    RETURN_INT((i >> j) | 1 << 31);
+  if (i < 0) {
+    RETURN_INT((i >> j) | ~(static_cast<unsigned int>(~1) >> j));
   } else {
     RETURN_INT(i >> j);
   }
