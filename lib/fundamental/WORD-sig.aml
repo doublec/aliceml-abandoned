@@ -1,0 +1,74 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive          from "Pervasive"
+import type int and char and string
+       type bool and order and option from "ToplevelTypes"
+import structure StringCvt            from "StringCvt"
+
+
+signature WORD =
+sig
+    eqtype word
+    type t = word							(**)
+
+    val wordSize :	int
+
+    val toLargeWord :	word -> __pervasive.LargeWord.word
+(*MISSING
+    val toLargeWordX :	word -> __pervasive.LargeWord.word
+*)
+    val fromLargeWord :	__pervasive.LargeWord.word -> word
+    val toLargeInt :	word -> __pervasive.LargeInt.int
+    val toLargeIntX :	word -> __pervasive.LargeInt.int
+    val fromLargeInt :	__pervasive.LargeInt.int -> word
+    val toInt :		word -> __pervasive.Int.int
+    val toIntX :	word -> __pervasive.Int.int
+    val fromInt :	__pervasive.Int.int -> word
+
+    val notb :		word -> word
+    val orb :		word * word -> word
+    val xorb :		word * word -> word
+    val andb :		word * word -> word
+    val << :		word * word -> word
+    val >> :		word * word -> word
+    val ~>> :		word * word -> word
+
+    val + :		word * word -> word
+    val - :		word * word -> word
+    val * :		word * word -> word
+    val div :		word * word -> word
+    val mod :		word * word -> word
+
+(*TODO
+    val op > :		word * word -> bool
+    val op < :		word * word -> bool
+    val op >= :		word * word -> bool
+    val op <= :		word * word -> bool
+    val compare :	word * word -> order
+
+    val min :		word * word -> word
+    val max :		word * word -> word
+*)
+
+    val toString :	word -> string
+(*TODO
+    val fromString :	string -> word option
+    val fmt :		StringCvt.radix -> word -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (word,'a) StringCvt.reader
+end
