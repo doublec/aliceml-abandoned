@@ -12,7 +12,7 @@ Dependency graph for the steps outlined below - for Operette 2:
                  / \
                 8   9
 
-Steps to be performed after Operette 2: 10, 11, 12
+Steps to be performed after Operette 2: 10 and higher
 
 Individual steps, each probably resulting in a checkin
 (note - the system is inconsistent only once, namely in-between
@@ -216,6 +216,10 @@ steps 3 and 4):
    Natively implemented components that export types, such
    as TextIO.outstream, are assigned runtime types by wrapping
    them in an Alice component.
+
+==================
+ AFTER OPERETTE 2
+==================
 
 10. Provide fundamental library as building-blocks. (AR/LK)
 
