@@ -8,10 +8,10 @@ Group is
     ../common/interface.cm
     ../backend-common/flat-grammar.cm
 
+    pickle-grammar.cm
+
     PRIM_PICKLE.sig
     PrimPickle.sml
-    PICKLE_GRAMMAR.sig
-    PickleGrammar.sml
     OUTPUT_PICKLE.sig
     OutputPickle.sml
     ENVIRONMENT.sig
