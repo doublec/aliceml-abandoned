@@ -30,10 +30,9 @@ struct
 	   print' (23 - String.size n, n)
         end
 
-    fun fmtFail (out, _) ((n, _), Test.FAIL_ASSERT (str, line), sample) = 
-	TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ str 
-                        ^ " at line: " ^ Int.toString line 
-                        ^ ": assert failed\n\t   " 
+    fun fmtFail (out, _) ((n, _), Test.FAIL_ASSERT _, sample) = 
+	TextIO.output (out, "\t" ^ printSpc (n ^ ":")
+			^ "testcase failed!\n\t   " 
                         ^ printSpc "with argument:"
 			^ sample ^ "\n")
       | fmtFail (out, true) ((n, _), Test.FAIL_EXN name, sample) =

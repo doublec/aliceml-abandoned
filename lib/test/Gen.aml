@@ -60,7 +60,7 @@ struct
 
     fun bool n		= oneOf [const true, const false] n
     fun char n		= Char.chr (Random.int (Char.maxOrd + 1))
-    fun string n	= String.tabulate (n, char) 
+    fun string n	= String.tabulate (Int.abs n, char) 
     fun int n		= if bool 0 then Random.int n else ~ (Random.int n)
     fun largeInt n      = IntInf.* (IntInf.fromInt (int n), 
 				    IntInf.fromInt (int n))
@@ -71,8 +71,8 @@ struct
 
     fun option gen n	= if bool 0 then SOME (gen n) else NONE
     fun alt (ga, gb) n	= if bool 0 then FST (ga n) else SND (gb n)	
-    fun vector gen n	= Vector.tabulate (n, gen)
-    fun array gen n	= Array.tabulate (n, gen)
+    fun vector gen n	= Vector.tabulate (Int.abs n, gen)
+    fun array gen n	= Array.tabulate (Int.abs n, gen)
     fun array2 gen n    = Array2.tabulate Array2.ColMajor 
 			                  (int (Int.abs n), 
 					   int (Int.abs n), 
