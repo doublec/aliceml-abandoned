@@ -66,19 +66,19 @@ DEFINE2(UnsafeRemote_dynamicCall) {
     Scheduler::nArgs = 2;
     Scheduler::currentArgs[0] = x0;
     Scheduler::currentArgs[1] = x1;
-    return taskStack->PushCall(callback);
+    return Scheduler::PushCall(callback);
   }
 } END
 
 DEFINE1(UnsafeRemote_packValue) {
-  taskStack->PushFrame(prim_self);
-  return Pickler::Pack(x0, taskStack);
+  Scheduler::PushFrameNoCheck(prim_self);
+  return Pickler::Pack(x0);
 } END
 
 DEFINE1(UnsafeRemote_unpackValue) {
   DECLARE_STRING(packedValue, x0);
-  taskStack->PushFrame(prim_self);
-  return Unpickler::Unpack(packedValue, taskStack);
+  Scheduler::PushFrameNoCheck(prim_self);
+  return Unpickler::Unpack(packedValue);
 } END
 
 word UnsafeRemote(void) {

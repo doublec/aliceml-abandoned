@@ -40,25 +40,25 @@ DEFINE0(UnsafeComponent_getInitialTable) {
 
 DEFINE2(UnsafeComponent_save) {
   DECLARE_STRING(filename, x0);
-  taskStack->PushFrame(prim_self);
-  return Pickler::Save(filename, x1, taskStack);
+  Scheduler::PushFrameNoCheck(prim_self);
+  return Pickler::Save(filename, x1);
 } END
 
 DEFINE1(UnsafeComponent_load) {
   DECLARE_STRING(filename, x0);
-  taskStack->PushFrame(prim_self);
-  return Unpickler::Load(filename, taskStack);
+  Scheduler::PushFrameNoCheck(prim_self);
+  return Unpickler::Load(filename);
 } END
 
 DEFINE1(UnsafeComponent_pack_) {
-  taskStack->PushFrame(prim_self);
-  return Pickler::Pack(x0, taskStack);
+  Scheduler::PushFrameNoCheck(prim_self);
+  return Pickler::Pack(x0);
 } END
 
 DEFINE1(UnsafeComponent_unpack_) {
   DECLARE_STRING(string, x0);
-  taskStack->PushFrame(prim_self);
-  return Unpickler::Unpack(string, taskStack);
+  Scheduler::PushFrameNoCheck(prim_self);
+  return Unpickler::Unpack(string);
 } END
 
 word UnsafeComponent() {
