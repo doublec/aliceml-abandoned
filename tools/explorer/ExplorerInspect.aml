@@ -86,6 +86,31 @@ structure ExplorerInspect =
 				   color = Inspector.BRACK_COLOR}] }
         end
 
+    fun createBool s (m_width,d,va,t) = 
+        let
+            val descr = Inspector.VALUE{value=va,typ=t}
+            val v = UnsafeValue.cast va : FD.boolvar
+            val rep = (if FD.Reflect.boolVal(s,v) then "true" else "false")
+                handle FD.NotAssigned => "undet"
+                     | Space.InvalidVar => "invalid"
+            val cont =
+            Inspector.CONTAINER{desc = descr,
+               kids= #[Inspector.SIMPLE{desc = descr,
+	                                rep = rep,
+	                                color = Inspector.INT_COLOR}]}
+        in 
+	    Inspector.CONCAT{desc = descr,
+		   kids = #[Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "boolvar{|",
+				   color = Inspector.BRACK_COLOR},
+			    cont,
+			    Inspector.SIMPLE{desc =
+                                   Inspector.INTERPUNCT,
+				   rep = "|}",
+				   color = Inspector.BRACK_COLOR}] }
+        end
+
     fun createFS s (m_width,d,va,t) =
         let
             fun addCommas nil = nil
@@ -145,9 +170,11 @@ structure ExplorerInspect =
     fun inspect t root s =
         let
             val fdPath = lookupPath(fdSig, "FD", "intvar")
+            val boolPath = lookupPath(fdSig, "FD", "boolvar")
             val fsPath = lookupPath(fsSig, "FS", "setvar")
         in
             Inspector.registerType(fdPath, createFD s);
+            Inspector.registerType(boolPath, createBool s);
             Inspector.registerType(fsPath, createFS s);
             Inspector'.inspect' t root
         end
