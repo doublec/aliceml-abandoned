@@ -12,8 +12,13 @@
 //   $Revision$
 //
 
-#include <ctype.h>
+// The PowerPC part of Lightning defines some _X macros that are
+// also defined by ctype.h (which is bad style from both!).
+// Here, we need the ctype.h declarations, and therefore ctype.h
+// has to be loaded after lightning.
+
 #include "alice/Authoring.hh"
+#include <ctype.h>
 
 #define INT_INT_TO_BOOL_OP(name, op)	\
   DEFINE2(name) {			\
