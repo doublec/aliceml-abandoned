@@ -1,5 +1,7 @@
 (* -*- sml -*- *)
 
+(* This file is prepended to every file compiled by stoc. *)
+
 import
 
     type unit
