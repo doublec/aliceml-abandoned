@@ -12,7 +12,7 @@
 
 functor
 import
-   FD(decl distinct sumC reflect)
+   FD(decl int distinct assign)
    Space(new waitStable ask merge)
    Debug(getRaiseOnBlock setRaiseOnBlock) at 'x-oz://boot/Debug'
    Property(get)

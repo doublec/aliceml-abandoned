@@ -80,21 +80,8 @@ local
       proc {Reserve Regs N W K}
 	 if N =< W then Reg in
 	    Reg = Regs.N
-	    if {IsKinded Reg} then
-	       Reg >=: K
-	    end
+	    Reg :: K#N
 	    {Reserve Regs N + 1 W K}
-	 end
-      end
-
-      proc {Enumerate Regs N W}
-	 if N =< W then Reg in
-	    Reg = Regs.N
-	    {Space.waitStable}
-	    if {IsKinded Reg} then
-	       Reg = {FD.reflect.min Reg}
-	    end
-	    {Enumerate Regs N + 1 W}
 	 end
       end
 
@@ -124,14 +111,10 @@ local
 			    [] eq(Y1 Y2)|Mr then
 			       {Dictionary.get D Y1} = {Dictionary.get D Y2}
 			       {Loop Mr}
-			    [] set(Y I)|Mr then
-			       {Dictionary.get D Y} = I
-			       {Loop Mr}
-			    [] optimize()|_ then N in
+			    [] optimize()|_ then
 			       X = {Dictionary.toRecord y D}
-			       N = {Width X}
-			       {Reserve X 1 N NumberReserved}
-			       {Enumerate X 1 N}
+			       {Reserve X 1 {Width X} NumberReserved}
+			       {FD.assign min X}
 			    end
 			 end
 		      in
