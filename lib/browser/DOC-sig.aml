@@ -124,8 +124,6 @@ sig
      val createPromise    : doc_creator 
 
      val createPackage    : doc_creator
-
-     val createValPackage : doc_creator
     
 end 
 

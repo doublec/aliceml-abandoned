@@ -59,9 +59,6 @@ struct
 	
     val path_package = lookupPath(packageSign,
 				  "Package","package") 
-	
-    val path_val_package = lookupPath(packageSign,
-				      "Package","val_package") 
 
     fun init () = ( registerType(path_int, createInt)
 		   ; registerType(path_intInf, createIntInf)
@@ -75,8 +72,7 @@ struct
 		   ; registerType(path_vec, createVector)
 		   ; registerType(path_array, createArray)
 		   ; registerType(path_promise, createPromise)
-		   ; registerType(path_package, createPackage)  
-		   ; registerType(path_val_package, createValPackage) ) 
+		   ; registerType(path_package, createPackage) )  
 	     
     val _ =  init ()
 		    

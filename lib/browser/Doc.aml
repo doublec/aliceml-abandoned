@@ -95,12 +95,12 @@ struct
 
     (* identification of the path of promises and packages *)
 
-    val coreSign = Inf.asSig(Option.valOf 
-	     (Component.inf(ComponentManager.link 
+    val coreSign = Inf.asSig(#2 
+	     (Reflect.reflectPackage(ComponentManager.link 
 	       (Url.fromString "x-alice:/lib/fundamental/Core")))) 
 
-    val packageSign = Inf.asSig(Option.valOf 
-		(Component.inf(ComponentManager.link 
+    val packageSign = Inf.asSig(#2 
+		(Reflect.reflectPackage(ComponentManager.link 
 		  (Url.fromString "x-alice:/lib/fundamental/Package")))) 
 
     (* returns the path (used for promises and packages) *)
@@ -410,17 +410,5 @@ struct
 	    val inner_doc = EMBEDDED_INF(inva,inty)
 	in handlePackages (d,va,t,inner_doc)
 	end 
-
-
-    (* creates a doc tree representing a val_package *)
-
-    fun createValPackage (m_width,d,va,t) = 
-	let 
-	    val (inva,inty) = Reflect.reflectValPackage
-	                     (UnsafeValue.cast va: Package.val_package)
-	    val inner_doc = EMBEDDED(inva,inty)
-	in handlePackages (d,va,t,inner_doc) 
-	end 
-
 end 
 
