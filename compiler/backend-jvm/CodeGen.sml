@@ -632,20 +632,33 @@ structure CodeGen =
 				  | _ => Dup :: b'
 			    end
 			  | bindit (nil,_) = nil
+
+			val lgt = length ids
 		    in
-			stampcode' ::
-			Instanceof CDMLTuple ::
-			Ifeq elselabel ::
-			stampcode' ::
-			Checkcast CDMLTuple ::
-			Invokeinterface (CDMLTuple,"getArity",([],[Intsig])) ::
-			atCodeInt (Int.toLarge (length ids)) ::
-			Ificmpne elselabel ::
-			stampcode' ::
-			Checkcast CDMLTuple ::
-			Invokeinterface (CDMLTuple,"getVals",
-					([],[Arraysig, Classsig CVal])) ::
-			bindit(ids,0)
+			if lgt = 0
+			    then
+				stampcode' ::
+				Getstatic CUnit ::
+				Ifacmpne elselabel ::
+				nil
+			else
+			    stampcode' ::
+			    Instanceof CDMLTuple ::
+			    Ifeq elselabel ::
+			    stampcode' ::
+			    Checkcast CDMLTuple ::
+			    Invokeinterface
+			    (CDMLTuple, "getArity",
+			     ([], [Intsig])) ::
+			    atCodeInt (Int.toLarge lgt) ::
+			    Ificmpne elselabel ::
+			    stampcode' ::
+			    Checkcast CDMLTuple ::
+			    Invokeinterface
+			    (CDMLTuple,"getVals",
+			     ([],[Arraysig,
+				  Classsig CVal])) ::
+			    bindit(ids,0)
 		    end
 
 		  | testCode (LabTest (s', id' as Id (_,stamp'',_))) =
