@@ -1,0 +1,77 @@
+diff -urN automake-1.7.6/Makefile.am automake-seam-1.7.6/Makefile.am
+--- automake-1.7.6/Makefile.am	2003-06-04 21:23:21.000000000 +0200
++++ automake-seam-1.7.6/Makefile.am	2003-07-28 10:05:09.000000000 +0200
+@@ -24,7 +24,7 @@
+ ## tests.
+ SUBDIRS = . m4 lib tests
+ 
+-bin_SCRIPTS = automake aclocal
++bin_SCRIPTS = automake-seam aclocal-seam
+ info_TEXINFOS = automake.texi
+ 
+ CLEANFILES = $(bin_SCRIPTS)
+@@ -71,13 +71,13 @@
+ 	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+ 	    -e 's,[@]SHELL[@],$(SHELL),g'
+ 
+-automake: automake.in Makefile
+-	$(do_subst) < $(srcdir)/automake.in > automake
+-	chmod +x automake
+-
+-aclocal: aclocal.in Makefile
+-	$(do_subst) < $(srcdir)/aclocal.in > aclocal
+-	chmod +x aclocal
++automake-seam: automake.in Makefile
++	$(do_subst) < $(srcdir)/automake.in > automake-seam
++	chmod +x automake-seam
++
++aclocal-seam: aclocal.in Makefile
++	$(do_subst) < $(srcdir)/aclocal.in > aclocal-seam
++	chmod +x aclocal-seam
+ 
+ ## The master location for INSTALL is lib/INSTALL.
+ ## This is where `make fetch' will install new versions.
+diff -urN automake-1.7.6/configure.in automake-seam-1.7.6/configure.in
+--- automake-1.7.6/configure.in	2003-07-10 22:52:06.000000000 +0200
++++ automake-seam-1.7.6/configure.in	2003-07-30 16:15:21.000000000 +0200
+@@ -19,7 +19,7 @@
+ # 02111-1307, USA.
+ 
+ AC_PREREQ(2.54)
+-AC_INIT([GNU Automake], [1.7.6], [bug-automake@gnu.org])
++AC_INIT([GNU Automake-Seam], [1.7.6], [bug-automake@gnu.org])
+ 
+ AC_CONFIG_SRCDIR(automake.in)
+ AC_CONFIG_AUX_DIR(lib)
+@@ -42,13 +42,13 @@
+ AC_SUBST(APIVERSION)
+ 
+ # A versioned directory, defined here for convenience.
+-pkgvdatadir="\${datadir}/automake-${APIVERSION}"
++pkgvdatadir="\${datadir}/automake-seam-${APIVERSION}"
+ AC_SUBST(pkgvdatadir)
+ 
+ # $AUTOMAKE and $ACLOCAL are always run after a `cd $top_srcdir',
+ # hence `.' is really what we want for perllibdir and libdir.
+-ACLOCAL="perllibdir=./lib `pwd`/aclocal --acdir=m4 -I `pwd`/m4"
+-AUTOMAKE="perllibdir=./lib `pwd`/automake --libdir=lib"
++ACLOCAL="perllibdir=./lib `pwd`/aclocal-seam --acdir=m4 -I `pwd`/m4"
++AUTOMAKE="perllibdir=./lib `pwd`/automake-seam --libdir=lib"
+ 
+ AC_PATH_PROG(PERL, perl)
+ if test -z "$PERL"; then
+diff -urN automake-1.7.6/m4/init.m4 automake-seam-1.7.6/m4/init.m4
+--- automake-1.7.6/m4/init.m4	2003-06-04 21:23:27.000000000 +0200
++++ automake-seam-1.7.6/m4/init.m4	2003-07-30 15:39:51.000000000 +0200
+@@ -76,9 +76,9 @@
+ # Some tools Automake needs.
+ AC_REQUIRE([AM_SANITY_CHECK])dnl
+ AC_REQUIRE([AC_ARG_PROGRAM])dnl
+-AM_MISSING_PROG(ACLOCAL, aclocal-${am__api_version})
++AM_MISSING_PROG(ACLOCAL, aclocal-seam-${am__api_version})
+ AM_MISSING_PROG(AUTOCONF, autoconf)
+-AM_MISSING_PROG(AUTOMAKE, automake-${am__api_version})
++AM_MISSING_PROG(AUTOMAKE, automake-seam-${am__api_version})
+ AM_MISSING_PROG(AUTOHEADER, autoheader)
+ AM_MISSING_PROG(MAKEINFO, makeinfo)
+ AM_MISSING_PROG(AMTAR, tar)
