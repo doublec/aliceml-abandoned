@@ -81,7 +81,7 @@
     <LI>Setting up the emacs ml mode
   </UL>
   <P>First make sure that the environment variables <TT>OZHOME</TT> and <TT>STOCKHOME</TT>
-    point to the installation directory of the mozart system and alice system, respectively.</P>
+    point to the installation directory of the mozart system and the alice system, respectively.</P>
 
   <P>Now you have to decide to either use ml mode version 3.3 or ml mode 3.9.3.
     Both of them have their advantages and disadvantages.
@@ -100,7 +100,9 @@
        ;; Enable fontification
        (require 'sml-font)
   </PRE>
-  <P>To use ml mode version 3.9.3, follow the installation instructions given in
+  <P>To use ml mode version 3.9.3, extract this
+     <A HREF="sml-mode-3.93.tgz">archive</A>
+     and follow the installation instructions given in
     <TT>INSTALL</TT>. Then invoke <TT>load-library</TT> with argument <TT>sml-proc</TT>.
     Afterwards, invoke <TT>customize-group</TT> with argument <TT>sml</TT> and adjust the
     settings <TT>sml-program-name</TT> to <TT>alice</TT> and <TT>sml-default-arg</TT> to
