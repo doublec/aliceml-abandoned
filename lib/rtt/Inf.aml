@@ -151,6 +151,19 @@ import structure PPType       from "PPType"
 
 structure Inf :> INF =
 struct
+    (* Don't enforce disjointness when building realisations incrementally.
+     * Is violated by component manager and linker, where multiple imports
+     * with the same interface can appear without renaming.
+     *TODO: This is not nice, but should be unproblematic. We try to find
+     * something better eventually.
+     *)
+    structure PathMap =
+    struct
+	open PathMap
+	val insertDisjoint = insert
+	val unionDisjoint = union
+    end
+
   (* Types *)
 
     open Cell

@@ -55,6 +55,7 @@ sig
 
     val rea :		unit -> rea
     val isEmptyRea :	rea -> bool
+    val cloneRea :	rea -> rea
     val unionRea :	rea * rea -> unit
 
 
@@ -182,6 +183,7 @@ sig
 
     val equal :		inf * inf -> bool
     val match :		inf * inf -> rea		(* Mismatch *)
+    val matchWith :	rea * inf * inf -> unit		(* Mismatch *)
     val matchKind :	kind * kind -> unit		(* KindMismatch *)
     val infimum :	inf * inf -> inf		(* Mismatch *)
     val narrow :	inf * inf -> inf		(* Mismatch *)
