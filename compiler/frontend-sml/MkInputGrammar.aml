@@ -27,7 +27,7 @@
  *   - type wildcards
  *   - abstract type declarations
  *   - extensible datatypes and free construct declarations
- *   - package types and expressions
+ *   - package expressions
  *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
  *   - simplified open and fixity declarations to single id (multi ids made DF)
@@ -146,7 +146,7 @@ struct
 	| IFExp          of Info * Exp * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
-	| PACKExp        of Info * LongStrId
+	| PACKExp        of Info * AtStrExp * AtSigExp
 
     (* Matches *)      
 
@@ -252,7 +252,6 @@ struct
 	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon
 	| ARROWTy        of Info * Ty * Ty
-	| PACKTy         of Info * LongSigId
 	| PARTy          of Info * Ty
 
     and TyRow =
@@ -458,7 +457,7 @@ struct
       | infoExp(IFExp(I,_,_,_))				= I
       | infoExp(CASEExp(I,_,_))				= I
       | infoExp(FNExp(I,_))				= I
-      | infoExp(PACKExp(I,_))				= I
+      | infoExp(PACKExp(I,_,_))				= I
 
     fun infoMatch(Match(I,_,_))				= I
 
@@ -536,7 +535,6 @@ struct
       | infoTy(TUPLETy(I,_))				= I
       | infoTy(TYCONTy(I,_,_))				= I
       | infoTy(ARROWTy(I,_,_))				= I
-      | infoTy(PACKTy(I,_))				= I
       | infoTy(PARTy(I,_))				= I
 
     fun infoTyRow(ROWTyRow(I,_,_,_))			= I

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -503,8 +503,8 @@ struct
       | unguardedTyVarsExp E (FNExp(_, match)) =
 	    unguardedTyVarsMatch E match
 
-      | unguardedTyVarsExp E (PACKExp(_, longstrid)) =
-	    []
+      | unguardedTyVarsExp E (PACKExp(_, atstrexp, _)) =
+	    unguardedTyVarsAtStrExp E atstrexp
 
     and unguardedTyVarsMatch E (Match(_, mrule, match_opt)) =
 	    unguardedTyVarsMrule E mrule @ ?unguardedTyVarsMatch E match_opt
@@ -624,9 +624,6 @@ struct
 
       | unguardedTyVarsTy E (ARROWTy(_, ty, ty')) =
 	    unguardedTyVarsTy E ty @ unguardedTyVarsTy E ty'
-
-      | unguardedTyVarsTy E (PACKTy(_, longsigid)) =
-	    []
 
       | unguardedTyVarsTy E (PARTy(_, ty)) =
 	    unguardedTyVarsTy E ty
@@ -774,12 +771,12 @@ struct
 		O.FunExp(i, mats')
 	   end
 
-	 | PACKExp(i, longstrid) =>
+	 | PACKExp(i, atstrexp, atsigexp) =>
 	   let
-		val (modlongid',E') = trLongStrId E longstrid
-		val  mod'           = O.VarMod(infoLong longstrid, modlongid')
+		val (mod',F1) = trAtStrExp E atstrexp
+		val (inf',F2) = trAtSigExp E atsigexp
 	   in
-		O.PackExp(i, mod')
+		O.PackExp(i, mod', inf')
 	   end
 
 
@@ -1151,14 +1148,6 @@ struct
 
 	 | ARROWTy(i, ty1, ty2) => O.ArrTyp(i, trTy E ty1, trTy E ty2)
 
-	 | PACKTy(i, longsigid) =>
-	   let
-		val (inflongid',F) = trLongSigId E longsigid
-		val  inf'          = O.ConInf(infoLong longsigid, inflongid')
-	   in
-		O.PackTyp(i, inf')
-	   end
-
 	 | PARTy(i, ty) => trTy E ty
 
     and trTys E tys = Vector.map (trTy E) (Vector.fromList tys)
@@ -1238,7 +1227,6 @@ struct
 	 | RECORDTy(i, tyrowo)   => trAllTyRowo E tyrowo
 	 | TUPLETy(i, tys)       => List.concat(List.map (trAllTy E) tys)
 	 | ARROWTy(i, ty1, ty2)  => trAllTy E ty1 @ trAllTy E ty2
-	 | PACKTy(i, longsigid)  => []
 	 | PARTy(i, ty)          => trAllTy E ty
 
     and trAllTyRowo E =
