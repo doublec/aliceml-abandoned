@@ -424,19 +424,24 @@ struct
 	 end
 
      (* handles force evaluation request *)
-     fun handleForce node _ = 
-	 let
-	     val update_force =  fn n 
-			     => let val b_future = case getDesc n of  
-				    VALUE(r) => UnsafeValue.cast (#value(r)) 
-				  | I_VALUE(r) => UnsafeValue.cast (#value(r)) 
-                                  | _ => raise Match 
-				in Future.await(b_future) 
-				end
-	 in
-	     update_force (getSelectionNode())
-	 end
+     fun forceTree ((Container _ | Concat _ ) as n) = 
+	 Array.app forceTree (getKids(n))
+       | forceTree (RelNode _  as n ) = forceTree(getContent(n))
+       | forceTree n = 
+	 if ((Node.isByneed n) handle _ => false)
+	     then
+		 let 
+		     val b_future = 
+			 case getDesc n of  
+			     VALUE(r) => UnsafeValue.cast (#value(r)) 
+			   | I_VALUE(r) => UnsafeValue.cast (#value(r)) 
+			   | _ => raise Match 
+		 in Future.await(b_future) 
+		 end
+	 else ()
 
+     fun handleForce node _ = forceTree (getSelectionNode())
+	
      (***       Node Tree Deletion Mechanism     ***)
 
      
@@ -751,7 +756,8 @@ struct
 					      getSort(n) = Node.WIDTH_LIMIT
 					|  _ => false )	
 		val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT) 
-		val force_active = (Node.isByneed n) handle _ => false
+		val force_active = (*  (Node.isByneed n) handle _ => false *)
+		    true
 		val delete_active = getParent(n) = Empty orelse 
 		    (isRelNode(getParent(n)) 
 		     andalso getParent(getParent(n)) = Empty)
@@ -906,9 +912,15 @@ struct
 				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)
 				    ; case n of
-				     Node.Limit(_) => 
+				     Node.Limit(_)  => 
 					 setExpandSensitive(bar,true)
 				       | _ => setExpandSensitive(bar,false)
+				    ;if getDesc(n) = Node.INTERPUNCT 
+					 orelse Node.isSimple(n) 
+					 orelse Node.isRelRefNode(n) 
+					 orelse Node.isLimit(n)
+					 then setShrinkSensitive(bar,false)
+				     else setShrinkSensitive(bar,true)
 				    ; case b of
 				       1 => ()
 				    |  3 =>( makePopup n; ())

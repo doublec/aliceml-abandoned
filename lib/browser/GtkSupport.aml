@@ -447,17 +447,25 @@ structure GtkSupport :> GTK_SUPPORT  =
 		 ;widgetSetSensitive(submenu,sensitive))
 	    end
 
-	(* switches the expand field of the menu on/off *)
-	fun setExpandSensitive (bar,sensitive)= 
+	(* switches the field of the Selection menu on/off *)
+	fun setFieldSensitive (bar,sensitive,i)= 
 	    let
 		val (menu_heading_selection,submenu) = 
 		    getSelectionMenu bar
 		val children = UnsafeValue.cast 
 		    (Gtk.containerChildren(submenu)) : Gtk.object list
-		val expand = List.nth(children,0)
+		val field = List.nth(children,i)
 	    in
-		widgetSetSensitive(expand,sensitive)
+		widgetSetSensitive(field,sensitive)
 	    end
+
+	(* switches the expand option on/off *)
+	fun setExpandSensitive(bar,sensitive) = 
+	    setFieldSensitive (bar,sensitive,0)
+
+	(* switches the shrink option on/off *)
+	fun setShrinkSensitive(bar,sensitive) = 
+	    setFieldSensitive (bar,sensitive,1)   
      
 	(******************** Canvas Items ***************************)
 

@@ -159,6 +159,8 @@ signature GTK_SUPPORT =
 	(* switches the expand field of the menu on/off *) 
 	val setExpandSensitive: tag * bool -> unit
 
+	(* switches the shrink field of the menu on/off *) 
+	val setShrinkSensitive: tag * bool -> unit
 
 	(** Canvas Items & Handling **)
 	    
