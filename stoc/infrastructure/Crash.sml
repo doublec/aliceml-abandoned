@@ -8,6 +8,9 @@ structure Crash :> CRASH =
 
     exception Crash of string
 
-    fun crash message = raise Crash message
+    fun crash message =
+	( TextIO.output(TextIO.stdOut, message ^ "\n")
+	; raise Crash message
+	)
 
   end
