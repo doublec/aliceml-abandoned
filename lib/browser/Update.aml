@@ -29,9 +29,6 @@ import structure Server from "Server"
 
 import signature UPDATE from "UPDATE-sig"
 
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-import structure TextIO from "x-alice:/lib/system/TextIO"
-
 local
     open Doc Node
 in
