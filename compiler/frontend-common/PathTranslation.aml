@@ -37,4 +37,6 @@ struct
     val _		= Path.pervasive : string -> path	(* verify *)
     val lab_fromLab	= vallab "fromLab"
     val _		= Path.fromLab : Label.t -> path	(* verify *)
+    val lab_fromString	= vallab "fromString"
+    val _		= Path.fromString : string -> path	(* verify *)
 end
