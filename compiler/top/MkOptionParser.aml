@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,8 +38,10 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tWhether to reduce import signatures to the entities used.\n\
 	    \\t--(no-)reexport-import\n\
 	    \\t\tMake imported entities part of the component.\n\
+	    \\t--dependency-file <dependency file>|-\n\
+	    \\t\tSpecify file containing dependencies for missing imports.\n\
 	    \\t--implicit-import-file <import file>|-\n\
-	    \\t\tSpecify file containing implicit import annotations.\n\
+	    \\t\tSpecify file containing implicit import announcements.\n\
 	    \\t--(no-)rtt\n\
 	    \\t\tWhether to generate code for runtime types.\n\
 	    \\t--(no-)silent-fail\n\
@@ -108,6 +110,9 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 
 	fun parse ("--version"::rest) =
 	    (TextIO.output (TextIO.stdOut, version ^ "\n");
+	     parse rest)
+	  | parse ("--dependency-file"::file::rest) =
+	    (Language.dependencyFiles := file::(!Language.dependencyFiles);
 	     parse rest)
 	  | parse ("--implicit-import-file"::file::rest) =
 	    (Language.implicitImportFile :=

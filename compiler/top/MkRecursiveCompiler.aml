@@ -28,6 +28,7 @@ import structure Inf                from "../../lib/rtt/Inf"
 import structure Crash              from "../infrastructure/Crash"
 import structure Source             from "../infrastructure/Source"
 import structure Target             from "../infrastructure/Target"
+import structure Dependency         from "Dependency"
 import signature COMPILER           from "COMPILER-sig"
 import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 
@@ -80,17 +81,28 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		SOME (Resolver.FILE name) =>
 		    let
 			val name' = Url.toStringRaw url
-			val f = TextIO.openIn name handle IO.Io {...} =>
+			val f = TextIO.openIn name handle IO.Io _ =>
 				    error("could not open " ^ name')
-			val s = TextIO.inputAll f handle IO.Io {...} =>
+			val s = TextIO.inputAll f handle IO.Io _ =>
 				    error("error reading " ^ name')
-			val _ = TextIO.closeIn f handle IO.Io {...} =>
+			val _ = TextIO.closeIn f handle IO.Io _ =>
 				    error("error reading " ^ name')
 		    in
 			SOME s
 		    end
 	      | SOME (Resolver.STRING s) => SOME s
 	      | NONE => NONE
+
+	fun loadDependencyFiles () =
+	    List.foldl (fn (filename, dep) =>
+			Dependency.load (dep, filename)
+			handle IO.Io _ =>
+			    error("error reading dependency file " ^ filename)
+			  | Dependency.Format =>
+			    error("syntax error in dependency file " ^ filename)
+		       )
+		       Dependency.empty
+		       (!Switches.Language.dependencyFiles)
 
 	local
 	    val implicitImportRef = ref NONE	(* poor man's laziness *)
@@ -151,11 +163,18 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			     case readUrl url' of
 			         NONE => s
 			       | SOME s' =>
-				 (if String.sub (s', String.size s' - 1) = #"\n"
-				  then s' else s' ^ "\n") ^ s
+				 String.map (fn #"\n" => #" " | c => c) s'
+				 ^ "\n" ^ s
 			 end
+		val d = loadDependencyFiles ()
+		val filename' = OS.Path.joinBaseExt
+				{base = OS.Path.base filename,
+				 ext = SOME Component.extension}
+		val s'' = List.foldr (fn (f, s) =>
+				      "import \"" ^ OS.Path.base f ^ "\" " ^ s)
+				     s' (Dependency.lookup (d, filename'))
 	    in
-		processBasic process (Source.urlDesc url, s')
+		processBasic process (Source.urlDesc url, s'')
 	    end handle (Url.NotLocal | Option) =>
 		    error ("could not locate source file " ^ filename)
 
