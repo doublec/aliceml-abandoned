@@ -104,14 +104,14 @@ int main(int argc, char **argv) {
     std::fprintf(stderr,
 		 "%s: unable to operate: (sizeof(unsigned long) * 8) must fit in %d bits\n",
 		 argv[0], HEADER_FULL_WIDTH);
-    exit(1);
+    std::exit(1);
   }
 
   argc = argc; // Hack to remove unused argc warning
 
   if ((f = std::fopen("StoreConfig.hh", "w")) == NULL) {
     std::fprintf(stderr, "%s: unable to open file StoreConfig.hh\n", argv[0]);
-    exit(1);
+    std::exit(1);
   }
   
   std::fprintf(f, "//\n// This File is generated. Please do not edit.\n//\n");
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
     std::fprintf(stderr,
 		 "%s: STORE_GENERATION_NUM must fit in HEADER_GENERATION_WIDTH starting at 1.\n",
 		 argv[0]);
-    exit(1);
+    std::exit(1);
   }
 
   unsigned int MIN_WIDTH = (HEADER_FULL_WIDTH >> 3);
