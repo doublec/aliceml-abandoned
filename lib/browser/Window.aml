@@ -62,7 +62,7 @@ fun about _ = serve' (fn () =>  () (*
 
 
 
-
+(* Hilfsprozedur fuer setSelectionMenuSensitive *)
 fun getSelectionMenu bar = 
     let
 	val menu_heading_items = UnsafeValue.cast 
@@ -283,7 +283,7 @@ struct
     val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 	
     val alive = ref false
-	
+		
     val act_line = ref 0
 
     fun incr_act_line dy = act_line := !act_line + dy
@@ -354,10 +354,11 @@ struct
 	  ;GtkSupport.setSensitive(stopButton,b )
 	  ; TextIO.print("Stop Button now active: "^Bool.toString(b) ^ "\n")  )
 
-     fun setStopButtonOnOff(f,n) = (Server.serve(fn() => stopButtonSetActive(true))
-				    ;f n
-				    ; TextIO.print("STOP_BUTTON: f n done\n")
-				    ; Server.serve(fn() => stopButtonSetActive(false)))
+     fun setStopButtonOnOff(f,n) = 
+	 (Server.serve(fn() => stopButtonSetActive(true))
+	  ;f n
+	  ; TextIO.print("STOP_BUTTON: f n done\n")
+	  ; Server.serve(fn() => stopButtonSetActive(false)))
 	 
 
      exception stopped
@@ -389,6 +390,7 @@ struct
      fun handleForce node _ = setStopButtonOnOff
 	 (selectHandler("force evaluation"), (getSelectionNode(),0))
 
+(* dient zur Aenderung der font-Groesse *)
      fun updateIterate(i,no,diffh) = 
 	 if (* i > MainDictionary.getHighestIndexAssigned(Dictionaries.dict) *)
 	     i < 0 
@@ -598,6 +600,7 @@ struct
 	val _ = Gtk.menuItemRightJustify(stopButton)
 
  
+(* Sendet Typinformation eines Knotens an den Statusbar *)
      fun postT n = 
 	 let  
 	     val desc = Helper.getDesc(n)
@@ -624,6 +627,7 @@ struct
 		     ;()) handle _ => ()
 	 end
     
+(* Handelt Mouseclick *)
      fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let
 	 val font_width = GtkSupport.fontWidth()
@@ -691,6 +695,7 @@ struct
         | _ => ()
      end)
 
+(* Handlet Tastendruck *)
      fun handleWindowEvent [Gdk.EVENT(event)] = 
 	 serve (fn () => 
 		case event of  
@@ -754,7 +759,7 @@ struct
 	
 end
 
-end (* MkWindow End *)
+end (* Window End *)
 
 
 
