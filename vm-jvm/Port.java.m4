@@ -55,7 +55,8 @@ final public class Port extends UnicastRemoteObject
 		LVar np = new LVar();
 		Future captain = new Future(np);
 		Port p = new Port(np);
-		return new Tuple2(p,captain);
+		//		return new Tuple2(p,captain);
+		return p;
 	    } catch (RemoteException r) {
 		System.err.println(r);
 		return null;

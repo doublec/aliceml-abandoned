@@ -72,14 +72,15 @@ final public class Future extends UnicastRemoteObject
     final public java.lang.String toString() {
 	DMLValue val = null;
 	try {
-	    this.getValue();
+	    val = this.getValue();
 	} catch (RemoteException r) {
 	    System.err.println(r);
 	}
-	if (val instanceof LVar)
+	if (val instanceof LVar) {
 	    return "<unresolved>: future";
-	else
+	} else {
 	    return val.toString();
+	}
     }
 
     final public java.lang.String toString(int level) throws java.rmi.RemoteException {
@@ -88,14 +89,15 @@ final public class Future extends UnicastRemoteObject
 	} else {
 	    DMLValue val = null;
 	    try {
-		this.getValue();
+		val = this.getValue();
 	    } catch (RemoteException r) {
 		System.err.println(r);
 	    }
-	    if (val instanceof LVar)
+	    if (val instanceof LVar) {
 		return "<unresolved>: future";
-	    else
+	    } else {
 		return val.toString(level-1);
+	    }
 	}
     }
 
