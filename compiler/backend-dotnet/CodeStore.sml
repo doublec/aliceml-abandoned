@@ -207,7 +207,7 @@ structure CodeStore :> CODE_STORE =
 		     SOME (Loc i) =>
 			 (emit (Comment ("kill " ^ Stamp.toString stamp));
 			  indicesRef := i::(!indicesRef))
-		    | _ => emit (Comment ("nonlocal" ^ Stamp.toString stamp)))
+		    | _ => emit (Comment ("nonlocal " ^ Stamp.toString stamp)))
 		set
 	    end
 
