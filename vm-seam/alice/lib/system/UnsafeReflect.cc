@@ -34,7 +34,7 @@ DEFINE1(UnsafeReflect_Reflect) {
   RETURN(record->ToWord());
 } END
 
-DEFINE1(UnsafeReflect_Unreflect) {
+DEFINE1(UnsafeReflect_Reify) {
   DECLARE_RECORD(argRecord, x0);
   RETURN(argRecord->PolySel(UniqueString::New(String::New("x"))));
 } END
@@ -46,7 +46,7 @@ DEFINE1(UnsafeReflect_ReflectSig) {
   RETURN(record->ToWord());
 } END
 
-DEFINE1(UnsafeReflect_UnreflectSig) {
+DEFINE1(UnsafeReflect_ReifySig) {
   DECLARE_RECORD(argRecord, x0);
   Record *record = Record::New(1);
   record->Init("$S$", argRecord->PolySel(UniqueString::New(String::New("x"))));
@@ -61,11 +61,11 @@ word UnsafeReflect() {
 		 UnsafeReflect_realToVector, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "Reflect$",
 		 UnsafeReflect_Reflect, 1);
-  INIT_STRUCTURE(record, "UnsafeReflect", "Unreflect$",
-		 UnsafeReflect_Unreflect, 1);
+  INIT_STRUCTURE(record, "UnsafeReflect", "Reify$",
+		 UnsafeReflect_Reify, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "ReflectSig$",
 		 UnsafeReflect_ReflectSig, 1);
-  INIT_STRUCTURE(record, "UnsafeReflect", "UnreflectSig$",
-		 UnsafeReflect_UnreflectSig, 1);
+  INIT_STRUCTURE(record, "UnsafeReflect", "ReifySig$",
+		 UnsafeReflect_ReifySig, 1);
   RETURN_STRUCTURE("UnsafeReflect$", record);
 }
