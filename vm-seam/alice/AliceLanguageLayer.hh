@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -32,11 +32,14 @@ public:
     static word uniqueString;
   };
 
+  static word aliceHome;
+  static word rootUrl;
+  static word commandLineArguments;
   static word remoteCallback;
 
   static concrete_constructor concreteCodeConstructor;
 
-  static void Init();
+  static void Init(const char *home, int argc, char *argv[]);
 };
 
 #endif

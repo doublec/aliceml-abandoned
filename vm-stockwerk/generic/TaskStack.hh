@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2000-2002
+//   Leif Kornstaedt, 2000-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -32,6 +32,8 @@ public:
   using DynamicBlock::GetSize;
   using DynamicBlock::GetArg;
   using DynamicBlock::ReplaceArg;
+
+  static word uncaughtExceptionClosure;
 
   static void Init();
 

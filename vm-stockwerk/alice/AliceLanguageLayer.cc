@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -17,6 +17,7 @@
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/Unpickler.hh"
+#include "alice/Types.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/Guid.hh"
@@ -32,6 +33,9 @@ word AliceLanguageLayer::TransformNames::primitiveValue;
 word AliceLanguageLayer::TransformNames::primitiveFunction;
 word AliceLanguageLayer::TransformNames::function;
 word AliceLanguageLayer::TransformNames::constructor;
+word AliceLanguageLayer::aliceHome;
+word AliceLanguageLayer::rootUrl;
+word AliceLanguageLayer::commandLineArguments;
 word AliceLanguageLayer::remoteCallback;
 
 concrete_constructor AliceLanguageLayer::concreteCodeConstructor;
@@ -58,7 +62,7 @@ static word AliceConstructorHandler(word x) {
   return constructor->ToWord();
 }
 
-void AliceLanguageLayer::Init() {
+void AliceLanguageLayer::Init(const char *home, int argc, char *argv[]) {
   String *alicePrimitiveValue = String::New("Alice.primitive.value");
   TransformNames::primitiveValue = alicePrimitiveValue->ToWord();
   RootSet::Add(TransformNames::primitiveValue);
@@ -80,6 +84,40 @@ void AliceLanguageLayer::Init() {
   RootSet::Add(TransformNames::constructor);
   Unpickler::RegisterHandler(aliceConstructor, AliceConstructorHandler);
 
+  // Initialize aliceHome, making sure it ends in a trailing slash:
+  u_int n = std::strlen(home);
+  if (n != 0 && home[n - 1] == '/') {
+    aliceHome = String::New(home, n)->ToWord();
+  } else {
+    String *homeString = String::New(n + 1);
+    u_char *p = homeString->GetValue();
+    std::memcpy(p, home, n);
+    p[n] = '/';
+    aliceHome = homeString->ToWord();
+  }
+  RootSet::Add(aliceHome);
+
+  // Initialize rootUrl:
+  if (argc < 2) {
+    rootUrl = Store::IntToWord(0);
+  } else {
+    rootUrl = String::New(argv[1])->ToWord();
+    argv++; argc--;
+  }
+  RootSet::Add(rootUrl);
+
+  // Initialize commandLineArguments:
+  commandLineArguments = Store::IntToWord(Types::nil);
+  argv++; argc--;
+  for (u_int i = argc; i--; ) {
+    TagVal *cons = TagVal::New(Types::cons, 2);
+    cons->Init(0, String::New(argv[i])->ToWord());
+    cons->Init(1, commandLineArguments);
+    commandLineArguments = cons->ToWord();
+  }
+  RootSet::Add(commandLineArguments);
+
+  // Initialize remoteCallback:
   remoteCallback = Store::IntToWord(0); //--** needs to be preregistered
   RootSet::Add(remoteCallback);
 

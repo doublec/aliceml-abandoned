@@ -30,7 +30,6 @@
 #include "generic/Primitive.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
-#include "generic/Properties.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/BindFutureWorker.hh"
 #if PROFILE
@@ -85,6 +84,11 @@ static u_int mb(u_int n) {
 }
 
 DllExport int AliceMain(char *home, u_int argc, char *argv[]) {
+  if (argc < 2) {
+    std::fprintf(stderr, "usage: %s <component> <args...>\n", argv[0]);
+    return 2;
+  }
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
   WSADATA wsa_data;
   WORD req_version = MAKEWORD(1, 1);
@@ -101,11 +105,6 @@ DllExport int AliceMain(char *home, u_int argc, char *argv[]) {
   // Set up datastructures:
   RootSet::Init();
   UniqueString::Init();
-  Properties::Init(home, argc, argv);
-  if (Properties::rootUrl == Store::IntToWord(0)) {
-    std::fprintf(stderr, "usage: %s component\n", argv[0]);
-    return 2;
-  }
   TaskStack::Init();
   IOHandler::Init();
   IODesc::Init();
@@ -121,7 +120,7 @@ DllExport int AliceMain(char *home, u_int argc, char *argv[]) {
   Pickler::Init();
   Hole::Init();
   // Set up Alice Language Layer:
-  AliceLanguageLayer::Init();
+  AliceLanguageLayer::Init(home, argc, argv);
   BootLinker::Init(nativeComponents);
   // Link and execute boot component:
   BootLinker::Link(String::New("lib/system/Boot")); //--** to be done

@@ -23,10 +23,10 @@
 #include "generic/StackFrame.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Unpickler.hh"
-#include "generic/Properties.hh"
 #include "alice/BootLinker.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
+#include "alice/AliceLanguageLayer.hh"
 
 // Tracing
 static bool traceFlag;
@@ -74,7 +74,7 @@ static String *Resolve(String *base, String *rel) {
 }
 
 static String *Localize(String *key) {
-  String *aliceHome = String::FromWordDirect(Properties::aliceHome);
+  String *aliceHome = String::FromWordDirect(AliceLanguageLayer::aliceHome);
   u_int hSize       = aliceHome->GetSize();
   u_int kSize       = key->GetSize();
   String *path      = String::New(hSize + kSize + 4);
@@ -532,7 +532,7 @@ Worker::Result BootWorker::Run(StackFrame *sFrame) {
   Assert(record != INVALID_POINTER);
   word boot = record->PolySel(UniqueString::New(String::New("boot")));
   Scheduler::nArgs = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] = Properties::rootUrl;
+  Scheduler::currentArgs[0] = AliceLanguageLayer::rootUrl;
   // t2;
   return Scheduler::PushCall(boot);
 }

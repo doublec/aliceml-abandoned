@@ -12,15 +12,14 @@
 //   $Revision$
 //
 
-#include "generic/Properties.hh"
 #include "alice/Authoring.hh"
 
 DEFINE0(UnsafeCommandLine_name) {
-  RETURN(Properties::rootUrl);
+  RETURN(AliceLanguageLayer::rootUrl);
 } END
 
 DEFINE0(UnsafeCommandLine_arguments) {
-  RETURN(Properties::commandLineArguments);
+  RETURN(AliceLanguageLayer::commandLineArguments);
 } END
 
 word UnsafeCommandLine() {

@@ -33,7 +33,6 @@
 
 #include "generic/RootSet.hh"
 #include "generic/Closure.hh"
-#include "generic/Properties.hh"
 #include "generic/Profiler.hh"
 #if LIGHTNING && defined(INSTRUCTION_COUNTS)
 #include "alice/NativeCodeJitter.hh"
@@ -297,7 +296,7 @@ DEFINE1(UnsafeOS_Process_terminate) {
 DEFINE1(UnsafeOS_Process_atExn) {
   //--** support multiple actions
   DECLARE_CLOSURE(closure, x0);
-  Properties::atExn = closure->ToWord();
+  TaskStack::uncaughtExceptionClosure = closure->ToWord();
   RETURN_UNIT;
 } END
 
