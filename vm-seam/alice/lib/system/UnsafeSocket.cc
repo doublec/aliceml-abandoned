@@ -156,7 +156,7 @@ DEFINE2(UnsafeSocket_client) {
       if (future != INVALID_POINTER) {
 	// Don't use macro REQUEST here, as we wish to drop our frame:
 	Scheduler::currentData = future->ToWord();
-	Scheduler::nArgs = Scheduler::ONE_ARG;
+	Scheduler::nArgs = 1;
 	Scheduler::currentArgs[0] = Store::IntToWord(sock);
 	return Worker::REQUEST;
       }

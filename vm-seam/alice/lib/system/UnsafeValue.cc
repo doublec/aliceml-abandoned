@@ -126,7 +126,7 @@ DEFINE1(UnsafeValue_awaitRequest) {
     word wConcreteCode = closure->GetConcreteCode();
     ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
     Queue *queue;
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     if (concreteCode != INVALID_POINTER &&
 	concreteCode->GetInterpreter() == RequestInterpreter::self) {
       queue = Queue::FromWordDirect(closure->Sub(0));
@@ -294,8 +294,9 @@ DEFINE1(UnsafeValue_inArity) {
   if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int arity = interpreter->GetInArity(concreteCode);
+  // to be done: is it necessary to keep -2, -1 instead of -1 only?
   RETURN_INT(arity == STATIC_CAST(u_int, INVALID_INT)? -2:
-	     arity == Scheduler::ONE_ARG? -1: STATIC_CAST(s_int, arity));
+	     arity == 1? -1: STATIC_CAST(s_int, arity));
 } END
 
 DEFINE1(UnsafeValue_outArity) {

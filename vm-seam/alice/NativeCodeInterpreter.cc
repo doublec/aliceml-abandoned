@@ -150,7 +150,7 @@ u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   Vector *args = Vector::FromWordDirect(abstractCode->Sel(3));
   u_int nArgs = args->GetLength();
-  return ((nArgs == 1) ? Scheduler::ONE_ARG : nArgs);
+  return nArgs;
 }
 
 const char *NativeCodeInterpreter::Identify() {

@@ -72,7 +72,7 @@ Worker::Result LazySelInterpreter::Run(StackFrame *sFrame) {
   if (transient == INVALID_POINTER) { // is determined
     UniqueString *label = frame->GetLabel();
     Scheduler::PopFrame(frame->GetSize());
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = Record::FromWord(wRecord)->PolySel(label);
     return Worker::CONTINUE;
   } else { // need to request

@@ -35,7 +35,7 @@
 static inline u_int GetInArity(Vector *args) {
   Assert(args != INVALID_POINTER);
   u_int nArgs = args->GetLength();
-  return ((nArgs == 1) ? Scheduler::ONE_ARG : nArgs);
+  return nArgs;
 }
 
 // to be used by GetActualIdRefs only
@@ -832,7 +832,7 @@ void NativeCodeJitter::SetRelativePC(word pc) {
 //
 void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
   switch (calleeArity) {
-  case Scheduler::ONE_ARG:
+  case 1:
     {
       JIT_LOG_MESG("Worker::Construct\n");
       JITStore::Prepare(0);
@@ -866,7 +866,7 @@ void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
 
 void NativeCodeJitter::StoreResults(u_int calleeArity, Vector *idDefs) {
   switch (calleeArity) {
-  case Scheduler::ONE_ARG:
+  case 1:
     {
       if (idDefs != INVALID_POINTER) {
 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
@@ -1149,7 +1149,7 @@ void NativeCodeJitter::LoadArguments(Vector *actualIdRefs) {
   switch (nArgs) {
   case 1:
     {
-      jit_movi_ui(JIT_R0, Scheduler::ONE_ARG);
+      jit_movi_ui(JIT_R0, 1);
       Scheduler_PutNArgs(JIT_R0);
       u_int Reg = LoadIdRefKill(JIT_R0, actualIdRefs->Sub(0));
       Scheduler_PutZeroArg(Reg);
@@ -1296,7 +1296,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	    calleeArity        = GetInArity(idDefs);
 	    // to be done: Output CCC
 	    switch (calleeArity) {
-	    case Scheduler::ONE_ARG:
+	    case 1:
 	      {
 		TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
 		if (idDef != INVALID_POINTER) {
@@ -1788,7 +1788,7 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
     // Load Arguments
     Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
     u_int nArgs          = actualIdRefs->GetLength();
-    jit_movi_ui(JIT_R0, ((nArgs == 1) ? Scheduler::ONE_ARG : nArgs));
+    jit_movi_ui(JIT_R0, nArgs);
     Scheduler_PutNArgs(JIT_R0);
     Scheduler_GetCurrentArgs(JIT_V1);
     for (u_int i = nArgs; i--;) {
@@ -1797,8 +1797,8 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
     }
 #if defined(DEBUG_CHECK)
     u_int arity = interpreter->GetInArity(concreteCode);
-    Assert(arity == Scheduler::ONE_ARG && nArgs == 1 ||
-	   arity != Scheduler::ONE_ARG && nArgs == arity); arity = arity;
+    Assert(arity == 1 && nArgs == 1 ||
+	   arity != 1 && nArgs == arity); arity = arity;
 #endif
 #if PROFILE
     ImmediateSel(JIT_V1, JIT_V2, ImmediateEnv::Register(closure->ToWord()));
@@ -2430,7 +2430,7 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
   switch (nArgs) {
   case 1:
     {
-      jit_movi_ui(JIT_R0, Scheduler::ONE_ARG);
+      jit_movi_ui(JIT_R0, 1);
       Scheduler_PutNArgs(JIT_R0);
       u_int Reg = LoadIdRefKill(JIT_R0, returnIdRefs->Sub(0));
       Scheduler_PutZeroArg(Reg);
@@ -2454,7 +2454,7 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
 	  Tuple_Put(JIT_V1, i, Reg);
 	}
 	Scheduler_PutZeroArg(JIT_V1);
-	jit_movi_ui(JIT_R0, Scheduler::ONE_ARG);
+	jit_movi_ui(JIT_R0, 1);
 	Scheduler_PutNArgs(JIT_R0);
       }
     }
