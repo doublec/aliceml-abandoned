@@ -20,12 +20,12 @@
     Communication between sites is performed by <EM>cloning</EM> data
     structures.  Cloning is defined by <A href="pickle.html">pickling</A>.
   </P>
-
+<!--
   <P>
     The current implementation uses HTTP as the transport protocol.
     Accordingly, tickets are URLs using the <TT>http</TT> scheme.
   </P>
-
+-->
   <P>
     See also:
     <A href="component-manager.html"><TT>COMPONENT_MANAGER</TT></A>,
@@ -336,8 +336,10 @@
 	With <TT>run</TT>, the remote process stays alive after the result is
 	returned to the caller,
 	i.e. the process is <I>not</I> terminated automatically. This
-	allows concurrent threads to continue running and enables returning
-	proxy functions to the caller. To terminate the process, an
+	allows concurrent threads to continue running; in particular, it enables
+	the remote process to create proxies and return them to the caller who
+	can therewith call into the remote process later.
+	To terminate the process, an
 	explicit call to <TT><A href="os-process.html">OS.Process.exit</A></TT>
 	on the remote site is required. If evaluation of the component raises
 	an exception, the process is terminated in both cases.</P>
