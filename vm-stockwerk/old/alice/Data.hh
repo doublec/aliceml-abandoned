@@ -14,9 +14,7 @@
 #ifndef __ALICEDATA_HH__
 #define __ALICEDATA_HH__
 
-#if defined(INTERFACE)
 #pragma interface "datalayer/alicedata.hh"
-#endif
 
 #include "scheduler/Interpreter.hh"
 
@@ -354,6 +352,7 @@ public:
 
 class TaskStack;
 
+//--** Closure can be moved to scheduler; merge global env with Closure node
 class Closure: private Block {
 private:
   static const u_int SIZE = 2;
