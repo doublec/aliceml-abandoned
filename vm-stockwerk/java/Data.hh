@@ -116,20 +116,20 @@ public:
     return static_cast<JavaArray *>(b);
   }
 
+  u_int GetLength() {
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
+  }
   void Init(u_int index, word value) {
-    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(index < GetLength());
     InitArg(BASE_SIZE + index, value);
   }
   void Assign(u_int index, word value) {
-    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(index < GetLength());
     ReplaceArg(BASE_SIZE + index, value);
   }
   word Get(u_int index) {
-    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    Assert(index < GetLength());
     return GetArg(BASE_SIZE + index);
-  }
-  u_int GetLength() {
-    return Store::DirectWordToInt(GetArg(SIZE_POS));
   }
 };
 
