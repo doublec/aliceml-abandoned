@@ -15,15 +15,15 @@
 #include "store/StoreConfig.hh"
 
 #define INVALID_POINTER   0
-#define INVALID_INT       (1 << (STORE_WORD_WIDTH - 1))
+#define INVALID_INT       static_cast<s_int>(1 << (STORE_WORD_WIDTH - 1))
 #define INT_PRECISION     (STORE_WORD_WIDTH - 1)
-#define MIN_VALID_INT     (-(1 << (INT_PRECISION - 1)))
-#define MAX_VALID_INT     ((1 << (INT_PRECISION - 1)) - 1)
+#define MIN_VALID_INT     static_cast<s_int>(-(1 << (INT_PRECISION - 1)))
+#define MAX_VALID_INT     static_cast<s_int>((1 << (INT_PRECISION - 1)) - 1)
 #define MIN_BLOCKSIZE 0
 
 // Word Datatype
 typedef struct {
-  unsigned int *dummy_entry;
+  s_int *dummy_entry;
 } word_s;
 typedef word_s * word;
 
