@@ -8,9 +8,9 @@
 
   <P>
     A major feature of Stockhausen is <I>pickling</I>, the ability to
-    make arbitrary user data structures persistent. This includes higher-order
-    data, i.e. functions. But it does not stop there, as Stockhausen
-    even allows pickling of complete modules.
+    make almost arbitrary user data structures persistent. This includes
+    higher-order data, i.e. functions. But it does not stop there, as
+    Stockhausen even allows pickling of complete modules.
   </P>
 
   <P>
@@ -29,16 +29,17 @@
 
   <UL>
     <LI> <I>Functional</I>
-	values do not contain any stateful objects. They can be
-	freely pickled and unpickled. After putting a functional object in
-	a pickle and reextracting it it is indistinguishable from the original
-	object.
+	 values do not contain any stateful objects. They can be
+	 freely pickled and unpickled. After putting a functional object in
+	 a pickle and reextracting it it is indistinguishable from the original
+	 object.
 
     <LI> <I>Stateful</I>
 	 values do contain objects like references or arrays. Stateful
 	 data can also be pickled freely. However, pickling of stateful objects
 	 has a copying semantics: each time such an object is extracted from
-	 a pickle a fresh copy of the object is created.
+	 a pickle a fresh copy of the object is created. Sharing between
+	 stateful object is maintained inside a pickle, though.
 
     <LI> <I>Sited</I>
 	 objects are connected to a parent process. They refer to certain
@@ -51,14 +52,15 @@
 
   <P>
     Note that higher-order values (ie. function closures) may contain
-    stateful or sited data without showing in their type. Special care
+    stateful or sited data without showing in their type. Moreover,
+    functions that create sited objects are also sited. Special care
     has to be taken to avoid runtime errors from attempts of pickling
     such objects. This is particularly true when pickling modules.
   </P>
 
   <P>
     <A href="futures.php3">Futures</A> are never pickled. Instead, the
-    pickling operation will suspend on all unavailable futures that are
+    pickling operation will block on all unavailable futures that are
     contained in the value to be pickled. In the case of by-need futures
     this of course will force evaluation. A failed future will cause an
     exception, respectively.
@@ -76,8 +78,8 @@
   <PRE>
 	structure Pickle :
 	sig
-	    exception Corrupt
 	    exception Sited
+	    exception Corrupt
 
 	    val extension : string
 
@@ -216,8 +218,8 @@
   <P>
     The latter application enforces, that the second pickle
     is compatible to the first. If loading succeeds, it is guaranteed
-    that this is in fact the case, otherwise a <TT>Mismatch</TT> exception
-    will occur. Statically, the types <TT>X1.t</TT> and <TT>X2.t</TT>
+    that this is in fact the case, otherwise a <TT>Package.Mismatch</TT>
+    exception will occur. Statically, the types <TT>X1.t</TT> and <TT>X2.t</TT>
     are the same, which allows us two perform something like
   </P>
 
@@ -290,8 +292,8 @@
 	 exists at compile time, however, which is not the case for
 	 the load mechanism.
     <LI> Linking of imports happens lazily, while the <TT>Load</TT>
-         functor executes the component eagerly. (Lazy execution can
-	 be achieved through the use of the
+         functor executes at least the root component eagerly. (Lazy execution
+	 can be achieved through the use of the
 	 <A href="laziness.php3#modules"><TT>ByNeed</TT></A> functor though.)
     <LI> Components imported via import announcements are only linked
          in once in a given process, regardless how many import announcements
@@ -303,7 +305,8 @@
   </UL>
 
   <P>
-    Is it possible to unify both mechanisms even more?
+    It may be desirable to unify both mechanisms even more. This is likely
+    to be done for some future release.
   </P>
 
 <?php footing() ?>
