@@ -68,7 +68,7 @@ void mymemset(void* dst, int length, char chr)
 
 // Inc
 
-void inc(int* p)
+void inc(int* p,...)
 {
   p[0]++;
 }

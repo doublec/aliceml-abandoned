@@ -1,0 +1,81 @@
+<xml>
+
+<!-- Allgemeine Optionen -->
+
+<options>
+</options>
+
+<!-- Filter die auf alle automatisch generierten Funktionen angewandt werden -->
+
+<filter>
+
+  <accept>pointer</accept>
+  <accept>c_##</accept>
+
+  <accept>new</accept>
+  <accept>delete</accept>
+  <accept>cfun</accept>
+  <accept>pointer#x#</accept>
+  <accept>unref#x#</accept>
+  <accept>sizeof#x#</accept>
+  <accept>cast#x#</accept>
+
+  <accept>va_list</accept>
+
+  <accept>printhello</accept>
+  <accept>add_#x#</accept>
+  <accept>vec##</accept>
+  <accept>inc</accept>
+  <accept>list_#x#</accept>
+  <accept>const_#x#</accept>
+  <accept>dummy</accept>
+  <accept>call_fun</accept>
+  <accept>voidtovoid</accept>
+  <accept>get_printhello</accept>
+
+  <rename>
+    <from>my#x#</from>
+    <to>#x#</to>
+  </rename>
+
+</filter>
+
+
+<filter>
+  <rename><from>_##</from><to>##</to></rename>
+  <rename><from>__##</from><to>##</to></rename>
+  <rename><from>___##</from><to>##</to></rename>
+  <accept>##</accept>
+</filter>
+
+<!-- Benutzerdefinierte Funktionen -->
+
+<fun>
+   <name>mycast</name>
+   <type>'a -> 'b</type>
+   <export>INIT_STRUCTURE(record, "util", "mycast", mycast, 1);</export>
+   <body>
+       DEFINE1(mycast) {
+         RETURN(x0);
+       } END
+   </body>
+</fun>
+
+
+<!-- Spezielle Typbehandlung -->
+
+<type>
+  <ctype>GList*</ctype>
+  <alicetype>'a pointer list</alicetype>
+  <toword>GTK_LIST_TO_WORD</toword>
+  <fromword>DECLARE_GTK_LIST</fromword>
+</type>
+
+<type>
+  <ctype>va_list</ctype>
+  <alicetype>'v</alicetype>
+  <toword>NOT_SUPPORTED</toword>
+  <fromword>DECLARE_VALIST</fromword>
+</type>
+
+</xml>
