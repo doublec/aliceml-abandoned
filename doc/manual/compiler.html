@@ -153,6 +153,27 @@ import "B"
 import "C"
 import "D"</PRE>
 
+<P>Moreover, if both, a requisite and the respective target are relative paths,
+then the requisite's path is rewritten relative to its target. For example,
+assume:</P>
+
+<PRE class=code>
+# project.depend
+sub/A.ozf: B.ozf ../C.ozf sub/D.ozf</PRE>
+
+<P>By invoking</P>
+
+<PRE class=code>
+alicec --dependency-file project.depend sub/A.sml</PRE>
+
+<P><TT>sub/A.sml</TT> will be compiled as if it contained the following import
+announcements:</P>
+
+<PRE class=code>
+import "../B"
+import "../../C"
+import "D"</PRE>
+
 <P>If a target is contained multiple times in a dependency file the
 corresponding prerequisites are accumulated. The compiler may be invoked with
 multiple dependency files, with the effect of invoking it with the
