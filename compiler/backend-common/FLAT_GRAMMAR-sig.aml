@@ -55,21 +55,25 @@ signature IMPERATIVE_GRAMMAR =
 	  | RecArgs of (lab * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
+	structure StampSet: IMP_SET
+
+	type info = coord * StampSet.t option ref
+
 	datatype stm =
-	    ValDec of coord * id * exp * isToplevel
-	  | RecDec of coord * (id * exp) list * isToplevel
+	    ValDec of info * id * exp * isToplevel
+	  | RecDec of info * (id * exp) list * isToplevel
 	    (* all ids distinct *)
-	  | ConDec of coord * id * hasArgs * isToplevel
-	  | EvalStm of coord * exp
-	  | RaiseStm of coord * id
+	  | ConDec of info * id * hasArgs * isToplevel
+	  | EvalStm of info * exp
+	  | RaiseStm of info * id
 	  (* the following must always be last *)
-	  | HandleStm of coord * body * id * body * body * shared
-	  | EndHandleStm of coord * shared
-	  | TestStm of coord * id * test * body * body
-	  | SharedStm of coord * body * shared   (* used at least twice *)
-	  | ReturnStm of coord * exp
-	  | IndirectStm of coord * body option ref
-	  | ExportStm of coord * id list
+	  | HandleStm of info * body * id * body * body * shared
+	  | EndHandleStm of info * shared
+	  | TestStm of info * id * test * body * body
+	  | SharedStm of info * body * shared   (* used at least twice *)
+	  | ReturnStm of info * exp
+	  | IndirectStm of info * body option ref
+	  | ExportStm of info * id list
 	and exp =
 	    LitExp of coord * lit
 	  | PrimExp of coord * string
@@ -92,4 +96,6 @@ signature IMPERATIVE_GRAMMAR =
 	withtype body = stm list
 
 	type program = body
+
+	val infoStm: stm -> info
     end
