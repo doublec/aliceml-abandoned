@@ -207,6 +207,8 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$minus
       newobj instance void StockWerk.Builtins.Int$plus::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$plus
+      newobj instance void StockWerk.Builtins.Int$times::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$times
       newobj instance void StockWerk.Builtins.Int$toString::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$toString
       newobj instance void StockWerk.Builtins.Pickle$load::.ctor()
@@ -1726,7 +1728,7 @@
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
       dup
       brfalse.s raise
-      tail. callvirt class StockWerk.StockWert StockWert.StockWert::Await()
+      tail. callvirt class StockWerk.StockWert StockWerk.StockWert::Await()
       ret
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Promise
@@ -2731,6 +2733,53 @@
       castclass StockWerk.Int
       ldfld int32 StockWerk.Int::Value
       add   //--** test for overflow
+      newobj instance void StockWerk.Int::.ctor(int32)
+      ret
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Int$times extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.Int
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      mul   //--** test for overflow
       newobj instance void StockWerk.Int::.ctor(int32)
       ret
     testTransient2:
