@@ -17,6 +17,7 @@
 #endif
 
 #include <cstdlib>
+#include <cstring>
 #include "emulator/Properties.hh"
 #include "emulator/RootSet.hh"
 
@@ -31,7 +32,7 @@ void Properties::Init() {
 
   char *home = getenv("STOCKHOME");
   if (home == NULL) {
-    Error("could not determine installation directory\n");
+    Error("could not determine installation directory");
   }
   u_int n = strlen(home);
   Chunk *homeChunk = Store::AllocChunk(n + 1);
