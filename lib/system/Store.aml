@@ -29,16 +29,38 @@ structure Store : STORE =
 	    a
         end
 
-        fun op==(a, b) = same(a,b) orelse
-            let
-                val x = (a,b)
-		val y = minimize x
-            in
-                same(#1 y, #2 y)
-            end
+        fun equiv(a, b) = same(a, b) orelse same(minimize(a, b))
 
         val collect = UnsafeStore.collect
-        val size = UnsafeStore.size
-        val sizeQuiet = UnsafeStore.sizeQuiet
 
+        fun size x =
+	    let
+		val {nodes, words, ...} = UnsafeStore.size x
+	    in
+		{nodes, words}
+	    end
+        fun sizeQuiet x =
+	    let
+		val {nodes, words, ...} = UnsafeStore.sizeQuiet x
+	    in
+		{nodes, words}
+	    end
+
+	fun futures x =
+	    let
+		val {byneeds, futures, transients, ...} =
+		    UnsafeStore.sizeQuiet x
+	    in
+		{total = byneeds + futures + transients,
+		 concurrent = futures,
+		 byneed = byneeds}
+	    end
+	fun deepWait x =
+	    let
+		val {byneeds, futures, transients, ...} = UnsafeStore.size x
+	    in
+		{total = byneeds + futures + transients,
+		 concurrent = futures,
+		 byneed = byneeds}
+	    end
     end

@@ -15,12 +15,12 @@
 
 signature STORE =
   sig
-      val op==      : 'a * 'a -> bool
+      val equiv     : 'a * 'a -> bool
       val same      : 'a * 'a -> bool
       val collect   : int -> unit
       val minimize  : 'a -> 'a
-      val size      : 'a -> {nodes : int, words : int,
-                             byneeds : int, futures : int, transients : int}
-      val sizeQuiet : 'a -> {nodes : int, words : int,
-                             byneeds : int, futures : int, transients : int}
+      val size      : 'a -> {nodes : int, words : int}
+      val sizeQuiet : 'a -> {nodes : int, words : int}
+      val futures   : 'a -> {total : int, concurrent : int, byneed : int}
+      val deepWait  : 'a -> {total : int, concurrent : int, byneed : int}
   end

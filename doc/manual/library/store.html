@@ -24,14 +24,17 @@
   <PRE>
 signature STORE =
   sig
-      val op==      : 'a * 'a -> bool
       val same      : 'a * 'a -> bool
-      val collect   : int -> unit
+      val equiv     : 'a * 'a -> bool
       val minimize  : 'a -> 'a
-      val size      : 'a -> {nodes : int, words : int,
-                             byneeds : int, futures : int, transients : int}
-      val sizeQuiet : 'a -> {nodes : int, words : int,
-                             byneeds : int, futures : int, transients : int}
+
+      val futures   : 'a -> {total : int, concurrent : int, byneed : int}
+      val deepWait  : 'a -> {total : int, concurrent : int, byneed : int}
+
+      val size      : 'a -> {nodes : int, words : int}
+      val sizeQuiet : 'a -> {nodes : int, words : int}
+
+      val collect   : int -> unit
   end
   </PRE>
 
@@ -41,40 +44,59 @@ signature STORE =
   <DL>
 
     <DT>
-      <TT>same(<I>x</I>, <I>y</I>)</TT>
+      <TT>same (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
-      <P>Tests whether <I>x</I> and <I>y</I> are physically
-      represented as the same object in the store.
+      <P>Tests whether <TT><I>x</I></TT> and <TT><I>y</I></TT> are physically
+      equal, i.e. represented by the same object in the store.
       </P>
     </DD>
 
     <DT>
-      <TT><I>x</I> == <I>y</I></TT>
+      <TT>equiv (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
-      <P>Tests whether <I>x</I> and <I>y</I> represent the same
+      <P>Tests whether <TT><I>x</I></TT> and <TT><I>y</I></TT> represent equal
       infinite trees, i.e. whether their respective graphs in the
-      store are structurally equivalent. 
+      store are structurally equivalent. For example,
       </P>
-    </DD>
-
-    <DT>
-      <TT>collect <I>gen</I></TT>
-    </DT>
-    <DD>
-      <P>Triggers a garbage collection up to generation <I>gen</I> (if
-      the system features a generational garbage collector).
-      </P>
+      <PRE>
+      equiv (rec x => 1::x, rec x => 1::1::x)          = true
+      equiv (rec x => 1::x, 1::(rec x => 1::x))        = true
+      equiv (rec x => (ref 1)::x, rec x => (ref 1)::x) = false</PRE>
+      let val r = ref 1 in equiv (rec x => r::x, rec x => r::x) end = true</PRE>
     </DD>
 
     <DT>
       <TT>minimize <I>x</I></TT>
     </DT>
     <DD>
-      <P>Minimizes the store representation of <I>x</I> by computing
-      the minimal representation for <I>x</I> that is structurally
+      <P>Minimizes the store representation of <TT><I>x</I></TT> by computing
+      the minimal representation for <TT><I>x</I></TT> that is structurally
       equivalent to the original.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>futures <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Computes the number of futures appearing in the representation
+      of <TT><I>x</I></TT>. For function values, this includes futures appearing
+      in the respective closure, as well as any internal futures used in
+      code representations (to represent not-yet-compiled code fragments,
+      for example).
+      </P>
+    </DD>
+
+    <DT>
+      <TT>deepAwait <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Requests all futures in the representation of <TT><I>x</I></TT> until
+      none remain. Returns the number of futures requested.
+      Note that for function values, this may force compilation of all
+      not-yet-compiled code fragments.
       </P>
     </DD>
 
@@ -83,13 +105,26 @@ signature STORE =
       <TT>sizeQuiet <I>x</I></TT>
     </DT>
     <DD>
-      <P>Computes the number of store nodes <I>x</I> uses, the number
-      of lazy futures, concurrent futures and other futures it
-      consists of, and the number of words <I>x</I> takes up in the
-      store. <TT>size</TT> is strict, i.e. it forces all futures in
-      <I>x</I>. <TT>sizeQuiet</TT> does not force futures but computes
-      the size of e.g. the closure that is used for computing their
-      result.
+      <P>Computes the number and total size of store nodes used to
+      represent <TT><I>x</I></TT>. While <TT>size</TT> is hyper-strict, i.e. it
+      requests all futures in <TT><I>x</I></TT>, <TT>sizeQuiet</TT> does not
+      request any futures but
+      includes the sizes of closures associated with lazy futures. Note that
+      the size of function values includes their respective closure and code
+      representation. Due to just-in-time compilation, the size of the latter
+      can vary over time. Ignoring concurrent interference, the following
+      equivalence holds:
+      </P>
+      <PRE>
+      size <I>x</I> = (deepAwait <I>x</I>; sizeQuiet <I>x</I>)<PRE>
+    </DD>
+
+    <DT>
+      <TT>collect <I>gen</I></TT>
+    </DT>
+    <DD>
+      <P>Triggers a garbage collection up to generation <I>gen</I> (if
+      the system features a generational garbage collector).
       </P>
     </DD>
 
