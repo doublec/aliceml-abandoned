@@ -1,9 +1,10 @@
 (*
- * Author:
+ * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -48,6 +49,10 @@ import
 from "../backend-mozart/MkBackendComPlus"
 
 import
+    structure Inf
+from "../../lib/rtt/Inf"
+
+import
     structure Signature
 from "Signature"
 
@@ -67,21 +72,29 @@ structure SMLToComPlusRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "SMLToComPlusMain.f")
+	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
+	    ref (fn _ => raise Crash.Crash
+				"SMLToComPlusRecursiveCompiler.loadSignRef")
+
+	fun loadSign(desc, url) = !acquireSignRef(desc, url)
+	fun loadPlainSign(desc, url) =
+	    Inf.asSig(#2(loadSign(desc, url)))
+	    handle Inf.Interface =>
+		Error.error(Source.nowhere,
+			    "Pickle "^ Url.toString url ^" is not a component")
 
 	structure ComPlusTarget = MkComPlusTarget(Signature)
 
 	structure FrontendSML =
-	    MkFrontendSML(fun loadSign (desc, url) = #2 (!f (desc, url))
+	    MkFrontendSML(val loadSign = loadPlainSign
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(fun loadSign (desc, url) = #2 (!f (desc, url))
+	    MkFrontendCommon(val loadSign = loadPlainSign
 			     structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(fun loadSign (desc, url) = !f (desc, url)
+	    MkBackendCommon(val loadSign = loadSign
 			    structure Switches = Switches)
 
 	structure BackendComPlus = MkBackendComPlus(ComPlusTarget)
@@ -99,7 +112,7 @@ structure SMLToComPlusRecursiveCompiler =
 				structure Compiler = Compiler
 				val extension = "dll")
 
-	val _ = f := RecursiveCompiler.acquireSign
+	val _ = acquireSignRef := RecursiveCompiler.acquireSign
     in
 	RecursiveCompiler
     end

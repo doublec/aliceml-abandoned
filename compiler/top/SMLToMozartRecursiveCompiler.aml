@@ -4,8 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
- *   Andreas Rossberg, 1999-2000
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -50,6 +49,10 @@ import
 from "../backend-mozart/MkBackendMozart"
 
 import
+    structure Inf
+from "../../lib/rtt/Inf"
+
+import
     structure Signature
 from "Signature"
 
@@ -65,27 +68,39 @@ import
     structure MkRecursiveCompiler
 from "MkRecursiveCompiler"
 
+import
+    structure Error
+from "../infrastructure/Error"
+
 structure SMLToMozartRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "SMLToMozartRecursiveCompiler.f")
+	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
+	    ref (fn _ => raise Crash.Crash
+				"SMLToMozartRecursiveCompiler.loadSignRef")
+
+	fun loadSign(desc, url) = !acquireSignRef(desc, url)
+	fun loadPlainSign(desc, url) =
+	    Inf.asSig(#2(loadSign(desc, url)))
+	    handle Inf.Interface =>
+		Error.error(Source.nowhere,
+			    "Pickle "^ Url.toString url ^" is not a component")
 
 	structure MozartTarget =
 	    MkMozartTarget(structure Switches = Switches
 			   structure Sig = Signature)
 
 	structure FrontendSML =
-	    MkFrontendSML(fun loadSign (desc, url) = #2 (!f (desc, url))
+	    MkFrontendSML(val loadSign = loadPlainSign
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(fun loadSign (desc, url) = #2 (!f (desc, url))
+	    MkFrontendCommon(val loadSign = loadPlainSign
 			     structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(fun loadSign (desc, url) = !f (desc, url)
+	    MkBackendCommon(val loadSign = loadSign
 			    structure Switches = Switches)
 
 	structure BackendMozart =
@@ -105,7 +120,7 @@ structure SMLToMozartRecursiveCompiler =
 				structure Compiler = Compiler
 				val extension = "ozf")
 
-	val _ = f := RecursiveCompiler.acquireSign
+	val _ = acquireSignRef := RecursiveCompiler.acquireSign
     in
 	RecursiveCompiler
     end

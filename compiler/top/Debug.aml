@@ -67,26 +67,31 @@ structure Debug : DEBUG =
 
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "Debug.f")
+	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
+	    ref (fn _ => raise Crash.Crash
+				"SMLToMozartRecursiveCompiler.loadSignRef")
 
-	fun loadSign'(desc, url) = !f(desc, url)
-	val loadSign             = #2 o loadSign'
+	fun loadSign(desc, url) = !acquireSignRef(desc, url)
+	fun loadPlainSign(desc, url) =
+	    Inf.asSig(#2(loadSign(desc, url)))
+	    handle Inf.Interface =>
+		Error.error(Source.nowhere,
+			    "Pickle "^ Url.toString url ^" is not a component")
 
 	structure MozartTarget =
 	    MkMozartTarget(structure Switches = Switches
 			   structure Sig = Signature)
 
 	structure FrontendSML =
-	    MkFrontendSML(val loadSign = loadSign
+	    MkFrontendSML(val loadSign = loadPlainSign
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(val loadSign = loadSign
+	    MkFrontendCommon(val loadSign = loadPlainSign
 			     structure Switches = Switches)
 
-	structure BackendCommon = MkBackendCommon(structure Switches = Switches
-						  val loadSign = loadSign')
+	structure BackendCommon = MkBackendCommon(val loadSign = loadSign
+						  structure Switches = Switches)
 
 	structure BackendMozart =
 	    MkBackendMozart(structure Switches = Switches
@@ -105,7 +110,7 @@ structure Debug : DEBUG =
 				structure Compiler = Compiler
 				val extension = "ozf")
 
-	val _ = f := RecursiveCompiler.acquireSign
+	val _ = acquireSignRef := RecursiveCompiler.acquireSign
 
 	(* Debugging functions *)
 
@@ -122,7 +127,7 @@ structure Debug : DEBUG =
 	structure AbstractionPhase =
 	    MkTracingPhase(
 		  structure Phase    =
-		      MkAbstractionPhase(val loadSign = loadSign
+		      MkAbstractionPhase(val loadSign = loadPlainSign
 					 structure Switches = Switches)
 		  structure Switches = Switches
 		  val name = "Abstraction"
@@ -138,7 +143,7 @@ structure Debug : DEBUG =
 	structure ElaborationPhase =
 	    MkTracingPhase(
 		  structure Phase    =
-		      MkElaborationPhase(val loadSign = loadSign)
+		      MkElaborationPhase(val loadSign = loadPlainSign)
 		  structure Switches = Switches
 		  val name = "Elaboration"
 	    )

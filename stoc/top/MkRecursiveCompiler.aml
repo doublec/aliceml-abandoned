@@ -178,17 +178,21 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s)
 		    val _ = TextIO.print "### done\n"
-		    val (stamp, sign) = Target.sign target
+		    val (stamp, inf) = Target.sign target
 		in
-		    case Inf.items sign of
-			[item] =>
-			    let
-				val inf = valOf (#3 (Inf.asInfItem item))
-			    in
-				Inf.strengthen (Path.invent(), inf);
-				(stamp, Inf.asSig inf)
-			    end
-		      | _ => raise Crash.Crash "MkBatchCompiler.compileSign"
+		    if Inf.isSig inf then
+			case Inf.items(Inf.asSig inf) of
+			    [item] =>
+				let
+				    val inf = valOf (#3 (Inf.asInfItem item))
+				in
+				    Inf.strengthen (Path.invent(), inf);
+				    (stamp, inf)
+				end
+			  | _ => raise Crash.Crash
+				       "MkBatchCompiler.compileSign 1"
+		    else
+			raise Crash.Crash "MkBatchCompiler.compileSign 2"
 		end
 	in
 	    fun compileSign filename = processFile compileSign' filename
@@ -284,7 +288,8 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 		case Composer.sign (urlCeil url) of
 		    SOME sign => sign
 		  | NONE =>
-		case UnsafePickle.loadSign (Url.toString url) of
+		case UnsafePickle.loadSign (Url.toString url)
+		     handle IO.Io _ => NONE of
 		    (* this also looks for url ^ ext *)
 		    SOME sign =>
 			(TextIO.print ("### loaded signature from " ^

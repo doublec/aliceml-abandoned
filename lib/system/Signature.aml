@@ -16,31 +16,9 @@ import structure Inf         from "../../lib/rtt/Inf"
 
 structure Signature : SIGNATURE =
 struct
-    type t = GlobalStamp.t * Inf.sign
+    type t = GlobalStamp.t * Inf.t
 
-(*BUG: if the type annotation is left out, we get the
- * following error message:
-
-### resuming compilation of /home/kornstae/stockhausen/vm-mozart/build1/stoc/top/SMLToMozartRecursiveCompiler.aml
--- Elaboration...
-124.12-126.54: module expression does not match functor parameter signature:
-   structure Compiler
-has incompatible signature, because
-   structure Target
-has incompatible signature, because
-   structure Sig
-has incompatible signature, because
-   val matches : Signature.t * Signature.t -> bool
-does not match
-   val matches : ('a * sign) * ('a * sign) -> bool
-
-*)
-    fun matches((g1,s1):t,(g2,s2)) =
-	g1 = g2 orelse
-	let
-	    val j1 = Inf.inSig s1
-	    val j2 = Inf.instance(Inf.inSig s2)
-	in
-	    ( Inf.match(j1,j2) ; true ) handle Inf.Mismatch _ => false
-	end
+    fun matches((g1,j1), (g2,j2)) =
+	g1 = g2 orelse (Inf.match(j1, Inf.instance j2) ; true)
+	handle Inf.Mismatch _ => false
 end
