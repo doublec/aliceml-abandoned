@@ -29,23 +29,15 @@ DEFINE3(UnsafeValue_proj) {
   RETURN(record->Sel(i));
 } END
 
-DEFINE3(UnsafeValue_projTuple) {
-  DECLARE_TUPLE(tuple, x0);
-  x1 = x1; // ignored
-  DECLARE_INT(i, x2);
-  RETURN(tuple->Sel(i));
-} END
-
 DEFINE2(UnsafeValue_tag) {
   TagVal *tagVal = TagVal::FromWord(x0);
+  x1 = x1; // ignored
   if (tagVal == INVALID_POINTER) {
     s_int i = Store::WordToInt(x0);
     if (i == INVALID_INT) REQUEST(x0);
-    DECLARE_VECTOR(labels, x1);
-    RETURN(labels->Sub(i));
+    RETURN_INT(i);
   } else {
-    DECLARE_VECTOR(labels, x1);
-    RETURN(labels->Sub(tagVal->GetTag()));
+    RETURN_INT(tagVal->GetTag());
   }
 } END
 
@@ -88,14 +80,18 @@ word UnsafeValue() {
   INIT_STRUCTURE(record, "UnsafeValue", "proj",
 		 UnsafeValue_proj, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "projTuple",
-		 UnsafeValue_projTuple, 3, true);
+		 UnsafeValue_proj, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "tag",
 		 UnsafeValue_tag, 2, true);
   INIT_STRUCTURE(record, "UnsafeValue", "projTagged",
 		 UnsafeValue_projTagged, 3, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "projTaggedTuple",
+		 UnsafeValue_projTagged, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "con",
 		 UnsafeValue_con, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "projConstructed",
+		 UnsafeValue_projConstructed, 3, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "projConstructedTuple",
 		 UnsafeValue_projConstructed, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "conName",
 		 UnsafeValue_conName, 1, true);
