@@ -1,3 +1,5 @@
+.PHONY: all clean veryclean distclean
+
 %.o: %.cc
 	$(CXX) -I. -I$(TOPDIR) $(CXXFLAGS) -c $< -o $@
 
