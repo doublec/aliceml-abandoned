@@ -17,6 +17,7 @@ fun proxyClient (c : Protocol.client_interface) : Protocol.client_interface =
         abort               = Remote.proxy $ #abort c,
         countdown           = Remote.proxy $ #countdown c,
         update              = Remote.proxy $ #update c,
+	headPosition        = Remote.proxy $ #headPosition c,
         tick                = Remote.proxy $ #tick c,
         playersDied         = Remote.proxy $ #playersDied c,
         playersFinished     = Remote.proxy $ #playersFinished c,
@@ -62,10 +63,10 @@ fun main () =
             end handle Protocol.Protocol msg =>
                 (* highlevel snake game specific logical error *)
                 SND msg
-            |   Remote.Proxy e =>
+          (*  |   Remote.Proxy e =>
                 (* lowlevel error.
                    TODO: differentiate between different kinds *)
-                SND (exnName e)
+                SND (exnName e)*)
             |   IO.Io { name, function, cause } =>
                 (* lowlevel error at Remote.take *)
                 SND ("IO error " ^ name ^ " at " ^ function ^ " cause: " ^

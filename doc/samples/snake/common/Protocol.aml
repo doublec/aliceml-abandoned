@@ -147,6 +147,7 @@ struct
 	(** [countdown n] is called before a level starts. [n] is the time
 	    till gamestart. n = 0 => levels starts *)
         update :            diff list -> unit,
+	headPosition :      Pos.pos -> unit,
         tick :              Time.time option -> unit,
         (** [tick t] is called to notify the client that a new tick has
 	    started and he has to update the gui. [t] is the time left

@@ -13,6 +13,7 @@ import structure PPValue        from "x-alice:/lib/system/PPValue"
 import structure PrettyPrint    from "x-alice:/lib/utility/PrettyPrint"
 import structure Stream         from "x-alice:/lib/data/Stream"
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
+import structure Inspector      from "x-alice:/lib/tools/Inspector"
 
 open Ctrl
 
@@ -24,7 +25,7 @@ local
 
     fun logger []   = ()
     |   logger (msg :: msgs) =
-        (P.output (TextIO.stdErr, msg, 70); logger msgs)
+        (P.output (TextIO.stdOut, msg, 70); logger msgs)
 
     val _ = ispawn (_file_, _line_) logger messages
 
@@ -35,8 +36,12 @@ in
             val c       = P.^^
             val format  = { depth = 256, width = 512, prec = 4 }
         in
-            Stream.send (stream, c (cb (c (P.text part, P.text ":"),
-                PPValue.ppVal' t format value), P.text "\n"))
+           (*
+	    Inspector.inspect(part, value);
+	    Stream.send (stream, c (cb (c (P.text part, P.text ":"),
+	    PPValue.ppVal' t format value), P.text "\n"))
+	    *)
+	    ()
         end
 end
 

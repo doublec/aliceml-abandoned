@@ -21,18 +21,24 @@ open Ctrl
 structure MainWindow =
 struct
 
+    (* the modes in which the window can exists *)
     datatype mode = START | GAME
 
     val mode = ref START
 
+    (* initialising the canvas widget *)
     val arena = ArenaWidget.initialize ()
     val canvas = ArenaWidget.toObject arena
 
-
+    (* the menu bar items whose sensitivity get 
+     changed some times *)
     val menu_hi_item = Gtk.menuItemNewWithLabel "Highscore"
     val menu_m_item  = Gtk.menuItemNewWithLabel "Menu"
     val menu_gu_item = Gtk.menuItemNewWithLabel "Give Up"
 
+
+	(* one of the main prcedures. resets the window
+	 in START mode and also the sensitivity of menu bar *)
     fun reset' () =
 	(Gtk.widgetSetSensitive (menu_gu_item, false);
 	 Gtk.widgetSetSensitive (menu_m_item, true);
@@ -40,11 +46,14 @@ struct
 	 Gtk.widgetHide canvas;
 	 mode := START)
 
+
+    (* resets window and also shows TextWindow when needed *)
     fun reset NONE = reset' ()
       | reset (SOME (title, msg)) =
 	(TextWindow.mkTextWindow (title, msg); reset' ())
 
 
+    (* initializing of the procedures from model_game *)
     val turn' = ref (fn d => ())
     val changeView' = ref (fn h => ())
     val giveUp' = ref (fn () => ())
@@ -53,23 +62,27 @@ struct
 		   guiGame) =
 	let
 	    fun gameFinished h = 
-		reset (SOME ("Highscore", "highscore...!"))
+		 reset (SOME ("Highscore", "highscore...!"))
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
 
 	    fun updatePoints p = () (* TODO: implementation *)
 
-	    fun startLevel levinf = ArenaWidget.initLevel(arena, levelinf)
+	    fun startLevel levinf = ArenaWidget.initLevel (arena, levinf)
+
+	    fun headPosition p = ArenaWidget.changeView (arena, p)
 
 	in
+	    mode := GAME;
 	    Gtk.widgetSetSensitive (menu_gu_item, true);
 	    Gtk.widgetSetSensitive (menu_m_item, false);
 	    Gtk.widgetSetSensitive (menu_hi_item, false);
 	    Gtk.widgetShow canvas;
-	    mode := GAME;
 	    assert (Future.isFuture $ Promise.future guiGame) 
 	    do Promise.fulfill (guiGame, {startLevel, update, 
-					  updatePoints, gameFinished});
+					  updatePoints, headPosition,
+					  gameFinished});
+	    (* updates procedures *)
 	    turn' := turn;
 	    changeView' := changeView;
 	    giveUp' := giveUp
@@ -82,6 +95,7 @@ struct
 	    val _ = assert (Future.isFuture $ Promise.future gui) 
 		        do Promise.fulfill (gui, {reset})
 
+	    (* the different behaviour by pressing the quit button *)
 	    fun mainQuit () = 
 		case !mode of
 		    START => OS.Process.exit OS.Process.success 
@@ -110,19 +124,23 @@ struct
 	    val menu_q_item	= Gtk.menuItemNewWithLabel "Quit"
 	    val menu_qu_item    = Gtk.menuItemNewWithLabel "Quit"
 
+
+	    (* procedure called by pressing Client - button *)
 	    fun startClient () = 
 		ConnectionWindow.mkConnectToServer ({connect},
 						    {reset, gameMode})
 
+	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = 
 		ServerSettingsWindow.mkServerSettings ({startServer},
 						       {reset, gameMode})
 
+	    (* opens the highscore window *)
 	    fun openHighscore () = 
 		let
 		    val score = HighscoreIO.load ()
 		in
-		    TextWindow.mkTextWindow ("Highscore", "highscore...")
+		    TextWindow.mkTextWindow ("Highscore", "highscore...") 
 		end
 
 	    fun startSinglePlayer () = 
@@ -169,7 +187,7 @@ struct
 	    Gtk.menuAppend (menu_quit, menu_qu_item);
 	    Gtk.widgetHide canvas;
 
-	    Gtk.signalConnect (canvas, "event",
+	    Gtk.signalConnect (main_window, "event",
 			       canvasEvent);
 	    Gtk.signalConnect (main_window, "delete-event", 
 			       fn _ => mainQuit ());
@@ -196,10 +214,10 @@ struct
 	    Gtk.menuBarAppend (menu_bar, menu_q_item);
 	    
 	    Gtk.boxPackStart (dialog_vbox1, menu_bar, false, false, 0);
-	    Gtk.boxPackStart (canvas_vbox2, canvas, false, false, 0);
-	    
+	    Gtk.boxPackStart (dialog_vbox1, canvas, true, true, 0);
+
 	    Gtk.containerAdd (main_window, dialog_vbox1);
-	    Gtk.containerAdd (main_window, canvas_vbox2);
+
 	    Gtk.widgetShowAll main_window
 		
 	end

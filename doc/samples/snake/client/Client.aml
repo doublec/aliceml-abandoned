@@ -1,7 +1,7 @@
 import structure Protocol   from "../common/Protocol"
 import structure Gui        from "Gui"
 import signature CLIENT     from "CLIENT-sig"
-
+import structure Inspector  from "x-alice:/lib/tools/Inspector"
 
 structure Client (* :> CLIENT *) = 
 struct
@@ -27,7 +27,9 @@ struct
 
             fun countdown n = ()
 
-            fun update diffs = #update guiGame diffs 
+            fun update diffs = #update guiGame diffs
+
+	    fun headPosition p = #headPosition guiGame p
 
             fun tick remainingTime = () 
             
@@ -75,6 +77,7 @@ struct
                abort                = Lock.sync lock abort,
                countdown            = Lock.sync lock countdown,
                update               = Lock.sync lock update,
+	       headPosition         = Lock.sync lock headPosition,
                tick                 = Lock.sync lock tick,
                playersDied          = Lock.sync lock playersDied,
                playersFinished      = Lock.sync lock playersFinished,
