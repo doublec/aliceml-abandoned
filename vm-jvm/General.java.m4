@@ -297,12 +297,9 @@ final public class General {
     _FIELD(General,pickle);
 
     _BUILTIN(Unpickle) {
-	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"General.unpickle");
-	}
-	_SAPPLY2(v) {
-	    _REQUESTDEC(DMLValue fst,v1);
+	    _REQUESTDEC(DMLValue fst,val);
 	    if (!(fst instanceof STRING)) {
 		_RAISENAME(General.Match);
 	    }
