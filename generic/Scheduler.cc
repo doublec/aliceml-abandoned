@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,17 +13,16 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Scheduler.hh"
+#pragma implementation "generic/Scheduler.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/RootSet.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Transients.hh"
-#include "emulator/ByneedInterpreter.hh"
-#include "emulator/Guid.hh"
-#include "emulator/IOHandler.hh"
+#include "generic/RootSet.hh"
+#include "generic/Interpreter.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Transients.hh"
+#include "generic/ByneedInterpreter.hh"
+#include "generic/IOHandler.hh"
 
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
