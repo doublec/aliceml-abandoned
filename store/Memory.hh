@@ -26,10 +26,12 @@ class MemChunk {
 protected:
   MemChunk *prev, *next;
   char *block, *top, *max;
+  unsigned int gc_marked;
 public:
   MemChunk(MemChunk *prv, MemChunk *nxt, u_int s) : prev(prv), next(nxt) {
     block = top = (char *) std::malloc(s); Assert(block != NULL);
-    max   = (block + s);
+    max       = (block + s);
+    gc_marked = 0;
   }
   ~MemChunk() {
     Assert(block != NULL); std::free(block);
@@ -46,6 +48,9 @@ public:
   MemChunk *GetPrev()           { return prev; }
   void SetPrev(MemChunk *prv)   { prev = prv; }
   void InitBlock(u_int size)    { std::memset(block, 1, size); }
+  int IsHome(char *p)           { return ((block >= p) && (p < top)); }
+  void SetGCMark()              { gc_marked = 1; }
+  void ClearGCMark()            { gc_marked = 0; }
 };
 
 #endif

@@ -40,6 +40,7 @@ public:
   static unsigned int GC_SHIFT;
   static unsigned int TAG_SHIFT;
   static unsigned int SIZE_SHIFT;
+  static unsigned int MAXOLD_SHIFT;
   static unsigned int GEN_SHIFT;
   static unsigned int MAX_TAGSIZE;
   static unsigned int MAX_HBSIZE;
@@ -48,6 +49,7 @@ public:
   static unsigned int GC_MASK;
   static unsigned int TAG_MASK;
   static unsigned int SIZE_MASK;
+  static unsigned int MAXOLD_MASK;
   static unsigned int GEN_MASK;
 
   static void CreateHeader(int width, int tag, int size, int generations);

@@ -24,7 +24,8 @@ public:
   // Header Creation and Acess
   static void EncodeHeader(Block *t, t_label l, u_int s, u_int g) {
     Assert(t != NULL);
-    ((u_int *) t)[0] =  0x00 | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT) | (g << GEN_SHIFT);
+    ((u_int *) t)[0] =  0x00 | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT)
+      | (g << MAXOLD_SHIFT) | (g << GEN_SHIFT);
   }
   static u_int GetHeader(Block *p) {
     Assert(p != NULL); return *((u_int *) p);
@@ -52,12 +53,20 @@ public:
       *((u_int *) ((char *) p - 4)) = s;
     }
     else {
-      *((u_int *) p) = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
+      ((u_int *) p)[0] = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
     }
   }
   // Generation Access
   static u_int DecodeGeneration(Block *p) {
     Assert(p != NULL); return ((*((u_int *) p)) >> HeaderDef::GEN_SHIFT);
+  }
+  // GC Distance Access
+  static void EncodeMaxOld(Block *p, u_int d) {
+    Assert(p != NULL);
+    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~MAXOLD_MASK) | (d << HeaderDef::MAXOLD_SHIFT));
+  }
+  static u_int DecodeMaxOld(Block *p) {
+    Assert(p != NULL); return ((*((u_int *) p)) >> HeaderDef::MAXOLD_SHIFT);
   }
 };
 
