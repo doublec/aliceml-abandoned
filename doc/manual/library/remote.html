@@ -47,6 +47,7 @@
 	type <A href="#ticket">ticket</A> = string
 
 	exception <A href="#Ticket-exn">Ticket</A>
+	exception <A href="#Sited-exn">Sited</A>
 	exception <A href="#Protocol">Protocol</A> of int * string
 
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
@@ -83,6 +84,15 @@
     </DD>
 
     <DT>
+      <TT>exception <A name="Sited-exn">Sited</A></TT>
+    </DT>
+    <DD>
+      <P>indicates that the argument or result of a call to a proxy contained
+      a sited value. Same as <A
+      href="component.html#Sited"><TT>Component.Sited</TT></A>.</P>
+    </DD>
+
+    <DT>
       <TT>exception <A name="Protocol">Protocol</A></TT>
     </DT>
     <DD>
@@ -97,9 +107,17 @@
 	from&nbsp;<TT><I>f</I></TT> in that:</P>
       <UL>
 	<LI><P>the argument to the proxy is cloned before&nbsp;<TT><I>f</I
-	  ></TT> is applied to it;</P>
+	  ></TT> is applied to it; if it contains a sited value, the
+	  exception <A href="#Sited-exn"><TT>Sited</TT></A> will be raised;
+	  if it contains a failed future, the causing exception will be
+	  raised;</P>
 	<LI><P>the return value from&nbsp;<I>f</I> is cloned before
-	  it is returned from the proxy;</P>
+	  it is returned from the proxy; if it contains a sited value, the
+	  exception <A href="#Sited-exn"><TT>Sited</TT></A> will be raised;
+	  if it contains a failed future, the causing exception will be
+	  raised; if the causing exception itself contains a sited value
+	  or a failed future, the exception <A href="#Sited-exn"><TT>Sited</TT></A>
+	  will be raised instead;</P>
 	<LI><P>when the proxy is cloned, a reference to the running site is
 	  cloned which does not contain a clone of&nbsp;<TT><I>f</I></TT>;</P>
 	<LI><P>when the proxy is applied no matter on which site, this
