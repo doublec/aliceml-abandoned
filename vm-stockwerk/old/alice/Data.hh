@@ -30,21 +30,18 @@ class Alice {
 public:
   enum label {
     MIN_LABEL    = MIN_DATALABELSIZE,
-    MAX_LABEL    = MAX_DATALABELSIZE - 12,
+    MAX_LABEL    = MAX_DATALABELSIZE - 9,
 
-    Array        = MAX_DATALABELSIZE - 11,
-    ArrayZero    = MAX_DATALABELSIZE - 10,
-    Cell         = MAX_DATALABELSIZE - 9,
-    Constructor  = MAX_DATALABELSIZE - 8,
-    ConVal       = MAX_DATALABELSIZE - 7,
-    GlobalStamp  = MAX_DATALABELSIZE - 6,
-    Real         = MAX_DATALABELSIZE - 5,
-    String       = MAX_DATALABELSIZE - 4,
-    Tuple        = MAX_DATALABELSIZE - 3,
-    Vector       = MAX_DATALABELSIZE - 2,
-    VectorZero   = MAX_DATALABELSIZE - 1,
-    WideString   = MAX_DATALABELSIZE,
-    LAST_LABEL   = WideString
+    Array        = MAX_DATALABELSIZE - 8,
+    ArrayZero    = MAX_DATALABELSIZE - 7,
+    Cell         = MAX_DATALABELSIZE - 6,
+    Constructor  = MAX_DATALABELSIZE - 5,
+    ConVal       = MAX_DATALABELSIZE - 4,
+    GlobalStamp  = MAX_DATALABELSIZE - 3,
+    Tuple        = MAX_DATALABELSIZE - 2,
+    Vector       = MAX_DATALABELSIZE - 1,
+    VectorZero   = MAX_DATALABELSIZE,
+    LAST_LABEL   = VectorZero
   };
   
   static BlockLabel MakeLabel(u_int l) {
