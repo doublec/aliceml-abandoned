@@ -42,7 +42,7 @@ final public class Port extends UnicastRemoteObject
     }
 
     final public java.lang.String toString(int level) {
-	return "port"+hashCode();
+	return "port";
     }
 
     _BUILTIN(NewPort) {

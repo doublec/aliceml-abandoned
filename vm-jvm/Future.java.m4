@@ -94,7 +94,7 @@ final public class Future extends UnicastRemoteObject
 		System.err.println(r);
 	    }
 	    if (val instanceof LVar) {
-		return "<unresolved>: future";
+		return "<future>";
 	    } else {
 		return val.toString(level-1);
 	    }

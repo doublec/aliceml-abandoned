@@ -137,7 +137,7 @@ final public class Reference implements DMLConVal {
 		s+=(content==null?"remote":content.toString(level-1))+" : ref";
 		return s;
 	    } else {
-		return content.toString(level-1)+" : ref";
+		return "ref "+content.toString(level-1);
 	    }
 	    //      return (content==null?"remote":content.toString())+" : ref";
 	}

@@ -112,9 +112,9 @@ final public class ByNeedFuture extends UnicastRemoteObject
 		System.out.println(r);
 	    }
 	    if (val == this) {
-		return "<unresolved>: byneed-future";
+		return "<byneed>";
 	    } else {
-		return "[BN"+val.toString(level-1)+"BN]";
+		return val.toString(level-1);
 	    }
 	}
     }

@@ -86,7 +86,7 @@ final public class ConVal2 implements DMLConVal {
 	    return "...";
 	} else {
 	    return constructor.toString(level-1)+"("+fst.toString(level-1)+", "+snd.toString(level-1)+
-		") : constructed value";
+		")";
 	}
     }
     final public void set(DMLValue v0) throws RemoteException {

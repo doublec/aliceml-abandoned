@@ -91,7 +91,7 @@ final public class ConVal implements DMLConVal {
 	if (level<1) {
 	    return "...";
 	} else {
-	    return constructor.toString(level-1)+"("+content.toString(level-1)+")";
+	    return constructor.toString(level-1)+content.toString(level-1);
 	}
     }
 

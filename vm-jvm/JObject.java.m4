@@ -33,7 +33,7 @@ final public class JObject implements DMLValue {
     }
 
     final public java.lang.String toString(int level) {
-	return javaObject.getClass().getName()+": "+javaObject+" : APIObject";
+	return javaObject.getClass().getName()+": "+javaObject;
     }
 
     _apply_fails ;

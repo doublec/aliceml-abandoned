@@ -50,7 +50,7 @@ final public class Word implements DMLValue {
     }
 
     final public java.lang.String toString(int level) {
-	return value + ": word";
+	return java.lang.String.valueOf(value);
     }
 
     _apply_fails;

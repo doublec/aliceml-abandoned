@@ -228,7 +228,7 @@ final public class Array implements DMLValue {
 	    int l=arr.length;
 	    for(int i=1; i<l; i++)
 		s+=", "+arr[i];
-	    return s+"] : Array";
+	    return s+"]";
 	}
     }
 

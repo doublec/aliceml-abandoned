@@ -45,7 +45,7 @@ final public class Cons implements DMLConVal {
 	if (level<1) {
 	    return "...";
 	} else {
-	    return "("+car.toString(level-1)+". "+cdr.toString(level-1)+")";
+	    return "("+car.toString(level-1)+" . "+cdr.toString(level-1)+")";
 	}
     }
 

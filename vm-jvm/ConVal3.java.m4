@@ -94,7 +94,7 @@ final public class ConVal3 implements DMLConVal {
 		"("+fst.toString(level-1)+", "+
 		snd.toString(level-1)+", "+
 		thr.toString(level-1) +
-		") : constructed value";
+		")";
 	}
     }
 

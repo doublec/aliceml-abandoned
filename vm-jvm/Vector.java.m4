@@ -302,11 +302,11 @@ final public class Vector implements DMLValue {
 	if (level<1) {
 	    return "...";
 	} else {
-	    java.lang.String s="["+vec[0];
+	    java.lang.String s="<"+vec[0];
 	    int l = vec.length;
 	    for(int i=1; i<l; i++)
 		s += ", "+vec[i].toString(level-1);
-	    return s+"] : Vector";
+	    return s+">";
 	}
     }
     //'

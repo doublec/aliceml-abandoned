@@ -25,7 +25,7 @@ public class Name implements DMLValue {
     }
 
     public java.lang.String toString(int level) {
-	return "unnamed name";
+	return "UNNAMED";
     }
 
     /** Falls der Name noch keinen GName hat, wird jetzt ein

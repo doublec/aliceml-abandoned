@@ -114,7 +114,7 @@ final public class LVar extends UnicastRemoteObject
 		return null;
 	    }
 	    if (val instanceof LVar) {
-		return "<unresolved>: lvar";
+		return "<lvar>";
 	    } else {
 		return val.toString(level-1);
 	    }

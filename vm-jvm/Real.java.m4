@@ -50,7 +50,7 @@ final public class Real implements DMLValue {
     }
 
     final public java.lang.String toString(int level) {
-	return value+": real";
+	return java.lang.String.valueOf(value);
     }
 
     _apply_fails;

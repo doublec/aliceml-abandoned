@@ -50,7 +50,7 @@ final public class String implements DMLValue {
     }
 
     final public java.lang.String toString(int level) {
-	return "\""+value+"\": string";
+	return value;
     }
 
     _apply_fails;

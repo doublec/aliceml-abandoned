@@ -30,7 +30,7 @@ public class UniqueName extends Name {
     }
 
     public java.lang.String toString(int level) {
-	return name+" : name";
+	return name;
     }
 
     /** Here we use the default mechanism to store the name, since the

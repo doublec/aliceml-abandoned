@@ -35,9 +35,8 @@ final public class NoGood implements DMLValue {
 	    return o;
 	}
     }
+    _apply_fails ;
     public java.lang.String toString(int level) {
 	return "NoGood";
     }
-    _apply_fails ;
 }
-

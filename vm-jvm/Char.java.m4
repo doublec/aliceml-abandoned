@@ -35,7 +35,7 @@ final public class Char implements DMLValue {
     }
 
     final public java.lang.String toString(int level) {
-	return value+" : char";
+	return java.lang.String.valueOf(value);
     }
 
     _apply_fails;

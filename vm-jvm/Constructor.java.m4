@@ -27,7 +27,7 @@ public class Constructor implements DMLValue {
     }
 
     public java.lang.String toString(int level) {
-	return "unnamed constructor";
+	return "UCON";
     }
 
     public DMLValue apply(DMLValue val)

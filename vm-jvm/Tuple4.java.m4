@@ -77,7 +77,7 @@ final public class Tuple4 implements DMLTuple {
 	if (level<1) {
 	    return "...";
 	} else {
-	return "("+fst.toString(level-1)+", "+snd.toString(level-1)+", "+thr.toString(level-1)+", "+fur.toString(level-1)+")/4";
+	return "("+fst.toString(level-1)+", "+snd.toString(level-1)+", "+thr.toString(level-1)+", "+fur.toString(level-1)+")";
     }
     }
 

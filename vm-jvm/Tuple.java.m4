@@ -77,7 +77,7 @@ public class Tuple implements DMLTuple {
 		if (i>0) s+=", ";
 		s+=vals[i].toString(level-1);
 	    }
-	    return s+")/"+getArity();
+	    return s+")";
 	}
     }
 
