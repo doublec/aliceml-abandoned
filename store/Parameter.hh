@@ -58,6 +58,7 @@
     "QUEUE", "QUEUEARRAY", \
     "STACK", "STACKARRAY", \
     "ROOTSETELEMENT", \
+    "UNIQUESTRING", \
     "THREAD", \
     "CLOSURE", \
     "TUPLE", \

@@ -610,8 +610,7 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
   } else {
     InputStream *is = UnpickleArgs::GetInputStream();
     word env        = UnpickleArgs::GetEnv();
-    u_char tag      = is->GetByte();
-    CHECK_EOB();
+    u_char tag      = is->GetByte(); CHECK_EOB();
     switch (static_cast<Pickle::Tag>(tag)) {
     case Pickle::POSINT:
       {
@@ -641,7 +640,42 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	AddToEnv(env, y->ToWord());
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
-	UnpickleArgs::New(is, env);
+	CONTINUE();
+      }
+      break;
+    case Pickle::UNIQUE:
+      {
+	String *s;
+	Chunk *y;
+	u_char tag = is->GetByte(); CHECK_EOB();
+	switch (static_cast<Pickle::Tag>(tag)) {
+	case Pickle::CHUNK:
+	  {
+	    u_int size = is->GetUInt(); CHECK_EOB();
+	    u_char *bytes = is->GetBytes(size); CHECK_EOB();
+	    y = Store::AllocChunk(size);
+	    std::memcpy(y->GetBase(), bytes, size);
+	    s = static_cast<String *>(y);
+	  }
+	  break;
+	case Pickle::REF:
+	  {
+	    u_int index = is->GetUInt(); CHECK_EOB();
+	    s = String::FromWordDirect(SelFromEnv(env, index));
+	    y = INVALID_POINTER;
+	  }
+	  break;
+	default:
+	  Scheduler::currentData = Unpickler::Corrupt;
+	  Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+	  return Interpreter::RAISE;
+	}
+	is->Commit();
+	word wUnique = UniqueString::New(s)->ToWord();
+	Set(x, i, wUnique);
+	AddToEnv(env, wUnique);
+	if (y != INVALID_POINTER) AddToEnv(env, y->ToWord());
+	PushUnpickleFrame(taskStack, x, i + 1, n);
 	CONTINUE();
       }
       break;
@@ -656,7 +690,6 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
-	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -669,7 +702,6 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
-	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -683,7 +715,6 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
-	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -698,7 +729,6 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	TransformInterpreter::PushFrame(taskStack, future, tuple);
 	UnpickleInterpreter::PushFrame(taskStack, tuple->ToWord(), 0, 2);
-	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
