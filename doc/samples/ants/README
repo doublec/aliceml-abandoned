@@ -11,9 +11,9 @@ Andreas Rossberg <rossberg@ps.uni-sb.de>
 Gabor Szokoli <szokoli@ps.uni-sb.de>
 Guido Tack <tack@ps.uni-sb.de>
 
-Our ant always knows the absolute direction it is facing. We use 3 bits of marking to record a suitable home vector on every hex it visits. Using another bit, we create food trails whenever we carry home food. We try to avoid moving into traps set by the opponent.
+The main trick with our ant is that it always knows the absolute direction it is facing. Also, we use 3 bits of marking to record a suitable home vector on every hex it visits. Using another bit, we create food trails whenever we carry home food. We try to avoid moving into traps set by the opponent. The generating program can be found in "tools/anttrax.ante".
 
-The ant is programmed with a combinator library written in Alice ML, a dialect of SML (see www.ps.uni-sb.de/alice). The combinators make up a sequential, block-structured imperative programming language with keyword arguments, as appearent from the generating ML program ("tools/anttrax.ante"). Its most important feature is automatically managing state information about the absolute direction the ant is facing. A switch statement allows decisions dependent on the state. The library also supports symbolic and scoped labels, loops, probabilistic repitition and exchangable branch arms for conditionals and more boring features -- see signature file "tools/ANTE-sig.aml".
+The ant is programmed with a combinator library written in Alice ML, a dialect of SML (see www.ps.uni-sb.de/alice). Appearently, the combinators make up a sequential, block-structured imperative programming language with keyword arguments. Its most important feature is automatically managing state information about the absolute direction the ant is facing. A switch statement allows decisions dependent on that state. The library also supports symbolic and scoped labels, loops, probabilistic repitition and exchangable branch arms for conditionals and more boring features -- see signature file "tools/ANTE-sig.aml".
 
 The combinators generate a graph like structure which is then compiled down to a state machine, by resolving symbolic labels. The direction state is handled by duplicating the whole machine 6 times -- see file "tools/Ante.aml".
 
