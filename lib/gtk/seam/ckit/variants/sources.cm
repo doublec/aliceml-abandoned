@@ -2,7 +2,7 @@ Group is
  
 #if defined(NEW_CM)
         (* standard basis *)
-        basis.cm  
+        $/basis.cm  
 #endif
 
          parse-control-sig.sml

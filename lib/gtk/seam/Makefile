@@ -86,7 +86,14 @@ $(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
 
 $(GENERATOR):
 	rm -f $(GENERATOR)
-	echo 'CM.make(); compile();' | $(SML)
+	case `$(SML) </dev/null | grep "110\.0\.[0-9]"` in \
+	  *Jersey*) \
+	    echo "CM.make'" '"sources.cm"; GtkBinding.compile();' | $(SML) \
+	    ;; \
+          *) \
+	    echo 'CM.make "sources.cm"; GtkBinding.compile();' | $(SML) \
+	    ;; \
+	esac
 	test -e $(GENERATOR) || exit 1
 
 $(INPUTFILE):

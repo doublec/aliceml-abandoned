@@ -2,19 +2,19 @@ Group is
 
 #if defined(NEW_CM)
         (* standard basis *)
-        basis.cm  
+        $/basis.cm
         (* Compiler, up through 110.25 *)
-        host-compiler.cm
+(*        $/host-compiler.cm*)
 #endif
 
 	(* ml-yacc *)
-	ml-yacc-lib.cm
+	$/ml-yacc-lib.cm
 
 	(* standard library *)
-	smlnj-lib.cm
+	$/smlnj-lib.cm
 
 	(* pretty printer library *)
-        pp-lib.cm
+        $/pp-lib.cm
 
         (* configuration *)
         ../variants/sources.cm

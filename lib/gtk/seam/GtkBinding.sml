@@ -67,6 +67,8 @@ local
 
 in
 
+structure GtkBinding =
+  struct
     fun main dir file =
     let
 	val tree = Parser.parse file
@@ -103,4 +105,5 @@ in
       handle _ => OS.Process.exit OS.Process.failure
 
     fun compile() = SMLofNJ.exportFn("GtkBinding", run)
+  end
 end

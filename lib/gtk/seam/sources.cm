@@ -1,5 +1,8 @@
 Group is
-
+#if defined(NEW_CM)
+        (* standard basis *)
+        $/basis.cm
+#endif
 	ckit/sources.cm
 
         UTIL-sig.sml
