@@ -13,8 +13,7 @@
 
 public class Execute {
     public static object Main(object obj) {
-	return new object[2] {
-	    null,               //--** $IO$
+	return new object[1] {
 	    new object[1] {     // IO$
 		"IO.Io"         // IO$.Io
 	    }
