@@ -1952,7 +1952,7 @@ functor MakeAbstractionPhase(
 		val  dec2'           = O.ValDec(i, O.VarPat(i', valid2'), exp2')
 	   in
 		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		; insertDisjointVal(E', vid',  (i', stamp2, T k))
 		) handle CollisionVal _ => error(i', E.ConBindDuplicate vid');
 		trConBindo' (E,E',typids',typ', field'::acc1,
 			     dec2' :: vardec(typids', dec1') :: acc2) conbindo
@@ -2604,7 +2604,7 @@ functor MakeAbstractionPhase(
 		val  spec2'          = O.ValSpec(i, valid2', typ2')
 	   in
 		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		; insertDisjointVal(E', vid',  (i', stamp2, T k))
 		) handle CollisionVal _ => error(i', E.ConDescDuplicate vid');
 		trConDesco' (E,E',typids',typ', field'::acc1,
 			     spec2'::spec1'::acc2) condesco
@@ -3017,7 +3017,7 @@ functor MakeAbstractionPhase(
 		   | SOME(_,_,_)   => error(i', E.ConItemNonCon vid')
 		   | NONE          => error(i', E.ConItemUnbound vid');
 		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E, vid',  (i', stamp2, C k))
+		; insertDisjointVal(E, vid',  (i', stamp2, T k))
 		) handle CollisionVal _ => error(i', E.ConItemDuplicate vid');
 		trConItemo' (E,E',typids',typ', field'::acc1,
 			     imp2'::imp1'::acc2) conitemo
