@@ -18,10 +18,10 @@ int main(int argc, char *argv[]) {
     std::fprintf(stderr, "usage: %s <languagelayer> <args...>\n", argv[0]);
     return 2;
   }
+  InitSeam();
+
   String *languageId = String::New(argv[1]);
   argc--; argv++;
-
-  InitSeam();
   Broker::Start(languageId, argc, argv);
   return Scheduler::Run();
 }
