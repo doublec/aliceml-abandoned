@@ -54,7 +54,7 @@ struct
   val _ = Gtk.widgetSetSensitive(menuItemForceEval, false)
     
   (* MENU : Options *)
-  val menuItemPreferences = Gtk.menuItemNewWithLabel "Preferences"
+  val menuItemPreferences = Gtk.menuItemNewWithLabel "Preferences..."
     
   (* The CANVAS *)
   val canvas = Canvas.new ()

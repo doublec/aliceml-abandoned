@@ -54,7 +54,7 @@ struct
   val incrDepth   = ref 2
   val bigWidth    = ref 100
   val bigDepth    = ref 20
-  val fontname    = ref "Sans 12"
+  val fontname    = ref "Sans 11"
   val labelOrient = ref SonStrict
   val identifiers = ref true
 
