@@ -20,7 +20,8 @@ import type char and string and int
        datatype bool and order and option and list      from "ToplevelTypes"
 import infix 4 = < > <= >= infixr 5 :: infix 6 + - infix 7 * div mod
        val op = and op < and op <= and op >=
-       val op + and op - and op * and op div and op mod from "ToplevelValues"
+       val op + and op - and op * and op div and op mod
+       val abs                                          from "ToplevelValues"
 import structure General                                from "General"
 import structure Bool                                   from "Bool"
 import structure StringCvt                              from "StringCvt"
@@ -50,6 +51,9 @@ struct
     __primitive val String_sub :  string * int -> char   = "String.sub"
     __primitive val String_str :  char -> string         = "String.str"
     __primitive val String_implode : char list -> string = "String.implode"
+
+    val equal            = op =
+    val hash             = ord
 
     fun compare(c1,c2)   = Int_compare(ord c1, ord c2)
 
