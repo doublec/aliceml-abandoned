@@ -5,6 +5,10 @@ final public class DMLRecordArity implements java.io.Serializable {
 
     java.util.Hashtable hashtable=null;
 
+    public DMLRecordArity(DMLLabel[] labels) {
+	this(labels, new DMLValue[labels.length]);
+    }
+
     public DMLRecordArity(DMLLabel[] labels, DMLValue[] vals) {
 	super();
 	int i=0;
@@ -50,15 +54,8 @@ final public class DMLRecordArity implements java.io.Serializable {
 	}
     }
 
-    /** gibt den Index des Labels l im Record zur"uck,
-	RuntimeError falls l nicht vorhanden
-    */
     final public int getByLabel(DMLLabel l) {
-	Object o = l.getName(),idx;
-	if (o instanceof String)
-	    idx=hashtable.get((String) o);
-	else
-	    idx=hashtable.get((Integer) o);
+	Object idx=hashtable.get(l);
 	if (idx==null)
 	    return -1;
 	else

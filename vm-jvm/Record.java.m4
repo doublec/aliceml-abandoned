@@ -46,6 +46,14 @@ final public class DMLRecord implements DMLValue {
 	return s+"): Record";
     }
 
+    final public DMLValue getByLabel(int i) {
+	int index = arity.getByLabel(new DMLLabel(i));
+	if (index > -1)
+	    return vals[index];
+	else
+	    return null;
+    }
+
     final public DMLValue getByLabel(String s) {
 	int index = arity.getByLabel(new DMLLabel(s));
 	if (index > -1)
@@ -53,7 +61,7 @@ final public class DMLRecord implements DMLValue {
 	else
 	    return null;
     }
-    
+
     final public DMLValue getByLabel(DMLLabel label) {
 	int index = arity.getByLabel(label);
 	if (index > -1)

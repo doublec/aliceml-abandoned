@@ -12,4 +12,5 @@ final public class DMLConstants {
     public static final int CONAME  = 0;
     public static final int EXNAME  = 1;
     public static final int BUILTIN = 2;
+    public static final int NOTAPPLICAPLE = -1;
 }
