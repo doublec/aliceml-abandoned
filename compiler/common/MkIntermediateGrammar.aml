@@ -22,8 +22,8 @@ functor MkIntermediateGrammar(type lab_info
 			      type longid_info
 			      type exp_info
 			      type pat_info
-			      type 'a field_info
-			      type match_info
+			      type 'a fld_info
+			      type mat_info
 			      type dec_info
 			      type sign) : INTERMEDIATE_GRAMMAR =
 struct
@@ -35,8 +35,8 @@ struct
     type longid_info	= longid_info
     type exp_info	= exp_info
     type pat_info	= pat_info
-    type 'a field_info	= 'a field_info
-    type match_info	= match_info
+    type 'a fld_info	= 'a fld_info
+    type mat_info	= mat_info
     type dec_info	= dec_info
 
     type sign		= sign
@@ -68,20 +68,20 @@ struct
 	| ConExp    of exp_info * longid * exp		(* constructed value *)
 	| RefExp    of exp_info	* exp			(* reference *)
 	| TupExp    of exp_info * exp vector		(* tuple *)
-	| ProdExp   of exp_info * exp field vector	(* record / module *)
+	| ProdExp   of exp_info * exp fld vector	(* record / module *)
 				(* all labels distinct *)
 	| SelExp    of exp_info * lab * exp		(* field selection *)
 	| VecExp    of exp_info * exp vector		(* vector *)
 	| StrictExp of exp_info * exp			(* strict evaluation *)
-	| FunExp    of exp_info * match vector		(* function / functor *)
+	| FunExp    of exp_info * mat vector		(* function / functor *)
 	| AppExp    of exp_info * exp * exp		(* application *)
 	| AndExp    of exp_info * exp * exp		(* conjunction *)
 	| OrExp     of exp_info * exp * exp		(* disjunction *)
 	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
 	| SeqExp    of exp_info * exp * exp		(* sequential *)
-	| CaseExp   of exp_info * exp * match vector	(* case switch *)
+	| CaseExp   of exp_info * exp * mat vector	(* case switch *)
 	| RaiseExp  of exp_info * exp			(* exception raise *)
-	| HandleExp of exp_info * exp * match vector	(* exception handler *)
+	| HandleExp of exp_info * exp * mat vector	(* exception handler *)
 	| FailExp   of exp_info				(* lazy failure *)
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| SpawnExp  of exp_info * exp			(* concurrent thread *)
@@ -89,11 +89,11 @@ struct
 	| AbsExp    of exp_info * exp			(* type abstraction *)
 	| UnabsExp  of exp_info * exp			(* type realization *)
 
-    and 'a field = Field of 'a field_info * lab * 'a
-
-    and match    = Match of match_info * pat * exp
+    and 'a fld = Fld of 'a fld_info * lab * 'a
 
     (* Patterns (always linear) *)
+
+    and mat = Mat of mat_info * pat * exp
 
     and pat =
 	  JokPat    of pat_info				(* joker (wildcard) *)
@@ -103,7 +103,7 @@ struct
 	| ConPat    of pat_info * longid * pat		(* constructed *)
 	| RefPat    of pat_info * pat			(* reference *)
 	| TupPat    of pat_info * pat vector		(* tuple *)
-	| ProdPat   of pat_info * pat field vector	(* record *)
+	| ProdPat   of pat_info * pat fld vector	(* record *)
 				(* all labels distinct *)
 	| VecPat    of pat_info * pat vector		(* vector *)
 	| StrictPat of pat_info * pat			(* non-future *)
@@ -132,7 +132,7 @@ struct
 
     (* Components *)
 
-    type comp = (id * sign * Url.t) vector * dec vector * id field vector * sign
+    type comp = (id * sign * Url.t) vector * dec vector * id fld vector * sign
     type t = comp
 
 
@@ -175,8 +175,9 @@ struct
       | infoExp(AbsExp(i,_))		= i
       | infoExp(UnabsExp(i,_))		= i
 
-    fun infoField(Field(i,_,_))		= i
-    fun infoMatch(Match(i,_,_))		= i
+    fun infoFld(Fld(i,_,_))		= i
+
+    fun infoMat(Mat(i,_,_))		= i
 
     fun infoPat(JokPat(i))		= i
       | infoPat(VarPat(i,_))		= i

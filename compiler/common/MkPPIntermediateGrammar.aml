@@ -27,9 +27,9 @@ functor MkPPIntermediateGrammar(
 	val ppLongidInfo : IntermediateGrammar.longid_info -> PrettyPrint.doc
 	val ppExpInfo :    IntermediateGrammar.exp_info -> PrettyPrint.doc
 	val ppPatInfo :    IntermediateGrammar.pat_info -> PrettyPrint.doc
-	val ppFieldInfo :  ('a -> PrettyPrint.doc) ->
-			   'a IntermediateGrammar.field_info -> PrettyPrint.doc
-	val ppMatchInfo :  IntermediateGrammar.match_info -> PrettyPrint.doc
+	val ppFldInfo :    ('a -> PrettyPrint.doc) ->
+			   'a IntermediateGrammar.fld_info -> PrettyPrint.doc
+	val ppMatInfo :    IntermediateGrammar.mat_info -> PrettyPrint.doc
 	val ppDecInfo :    IntermediateGrammar.dec_info -> PrettyPrint.doc
 	val ppSig :        IntermediateGrammar.sign -> PrettyPrint.doc
     ) : PP_INTERMEDIATE_GRAMMAR =
@@ -110,8 +110,8 @@ struct
 
   (* Fields *)
 
-    fun ppFields ppX fields		= vec(Vector.map (ppField ppX) fields)
-    and ppField ppX (Field(i, lab, x))	= tree "Field" (ppFieldInfo ppX i) (
+    fun ppFlds ppX flds			= vec(Vector.map (ppFld ppX) flds)
+    and ppFld ppX (Fld(i, lab, x))	= tree "Fld" (ppFldInfo ppX i) (
 					    ppLab lab ^/^
 					    ppX x
 					  )
@@ -148,8 +148,8 @@ struct
       | ppExp(TupExp(i, exps))		= exptree "Tup" i (
 					    ppExps exps
 					  )
-      | ppExp(ProdExp(i, fields))	= exptree "Prod" i (
-					    ppFields ppExp fields
+      | ppExp(ProdExp(i, flds))		= exptree "Prod" i (
+					    ppFlds ppExp flds
 					  )
       | ppExp(SelExp(i, lab, exp))	= exptree "Sel" i (
 					    ppLab lab ^/^
@@ -158,8 +158,8 @@ struct
       | ppExp(VecExp(i, exps))		= exptree "Vec" i (
 					    ppExps exps
 					  )
-      | ppExp(FunExp(i, matchs))	= exptree "Fun" i (
-					    ppMatchs matchs
+      | ppExp(FunExp(i, mats))		= exptree "Fun" i (
+					    ppMats mats
 					  )
       | ppExp(AppExp(i, exp1, exp2))	= exptree "App" i (
 					    ppExp exp1 ^/^
@@ -182,16 +182,16 @@ struct
 					    ppExp exp1 ^/^
 					    ppExp exp2
 					  )
-      | ppExp(CaseExp(i, exp, matchs))	= exptree "Case" i (
+      | ppExp(CaseExp(i, exp, mats))	= exptree "Case" i (
 					    ppExp exp ^/^
-					    ppMatchs matchs
+					    ppMats mats
 					  )
       | ppExp(RaiseExp(i, exp))		= exptree "Raise" i (
 					    ppExp exp
 					  )
-      | ppExp(HandleExp(i, exp,matchs))	= exptree "Handle" i (
+      | ppExp(HandleExp(i, exp, mats))	= exptree "Handle" i (
 					    ppExp exp ^/^
-					    ppMatchs matchs
+					    ppMats mats
 					  )
       | ppExp(FailExp(i))		= exptree "Fail" i empty
       | ppExp(LazyExp(i, exp))		= exptree "Lazy" i (
@@ -211,8 +211,8 @@ struct
 					    ppExp exp
 					  )
 
-    and ppMatchs matchs			= vec(Vector.map ppMatch matchs)
-    and ppMatch(Match(i, pat, exp))	= tree "Match" (ppMatchInfo i) (
+    and ppMats mats			= vec(Vector.map ppMat mats)
+    and ppMat(Mat(i, pat, exp))		= tree "Mat" (ppMatInfo i) (
 					    ppPat pat ^/^
 					    ppExp exp
 					  )
@@ -246,8 +246,8 @@ struct
       | ppPat(TupPat(i, pats))		= pattree "Tup" i (
 					    ppPats pats
 					  )
-      | ppPat(ProdPat(i, fields))	= pattree "Prod" i (
-					    ppFields ppPat fields
+      | ppPat(ProdPat(i, flds))		= pattree "Prod" i (
+					    ppFlds ppPat flds
 					  )
       | ppPat(VecPat(i, pats))		= pattree "Vec" i (
 					    ppPats pats
@@ -287,7 +287,7 @@ struct
 
   (* Components *)
 
-    fun ppComp (_, decs, fields, _)	= ppDecs decs ^/^ ppFields ppId fields
+    fun ppComp (_, decs, flds, _)	= ppDecs decs ^/^ ppFlds ppId flds
 					  ^^ break
 
 end
