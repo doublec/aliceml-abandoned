@@ -11,6 +11,7 @@
  *)
 
 import structure Reflect               from "../../lib/system/Reflect"
+import structure UnsafeValue           from "../../lib/system/UnsafeValue"
 import structure Component             from "../../lib/system/Component"
 import signature COMPONENT_MANAGER
     from "../../lib/system/COMPONENT_MANAGER-sig"
@@ -32,9 +33,6 @@ functor MkBackendStockwerk(structure ComponentManager:
 	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)
 
 	type value = AbstractCodeGrammar.value
-	__primitive val cast: value -> Component.t = "Unsafe.cast"
-	__primitive val selRecord: Reflect.module * UniqueString.t -> value =
-	    "Unsafe.selRecord"
 
 	structure ThePhase =
 	    struct
@@ -46,7 +44,7 @@ functor MkBackendStockwerk(structure ComponentManager:
 		    let
 			val (value, exportDesc) =
 			    CodeGenPhase.translate context x
-			val component = cast value
+			val component: Component.t = UnsafeValue.cast value
 			fun eval url =
 			    let
 				val str =
@@ -54,9 +52,9 @@ functor MkBackendStockwerk(structure ComponentManager:
 			    in
 				Vector.app
 				    (fn (stamp, label) =>
-					StampMap.insert
-					    (context, stamp,
-					     selRecord (str, label)))
+					StampMap.insert (context, stamp,
+							 UnsafeValue.projPoly
+							     (str, label)))
 				    exportDesc;
 				str
 			    end

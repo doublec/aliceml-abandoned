@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Label       from "../../lib/rtt/Label"
 import structure Stamp       from "../common/Stamp"
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 import signature VALUE       from "VALUE-sig"
@@ -86,5 +87,5 @@ signature ABSTRACT_CODE_GRAMMAR =
 			idDef args * instr * liveness
 	withtype value = abstractCode Value.t
 
-	type t = value * (Stamp.t * UniqueString.t) vector
+	type t = value * (Stamp.t * Label.t) vector
     end
