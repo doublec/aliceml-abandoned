@@ -526,7 +526,7 @@ inline void Store::DoGC(word &root, const u_int gen) {
   // Switch to the new Generation
   curChunk = roots[dstGen];
   // Copy Root-, Intgen- and WeakDict-Set to New Memory (if appropriate)
-  Block *root_set = ForwardSet(Store::WordToBlock(root));
+  Block *root_set = ForwardSet(Store::DirectWordToBlock(root));
   intgenSet       = (Set *) ForwardSet((Block *) intgenSet);
   wkDictSet       = (Set *) ForwardSet((Block *) wkDictSet);
   // Obtain scan start
@@ -562,6 +562,8 @@ inline void Store::DoGC(word &root, const u_int gen) {
     MemChunk *tmp = roots[STORE_GENERATION_NUM - 2];
     roots[STORE_GENERATION_NUM - 2] = roots[STORE_GENERATION_NUM - 1];
     roots[STORE_GENERATION_NUM - 1] = tmp;
+    // Cut down shadow region
+    Store::FreeMemChunks(roots[STORE_GENERATION_NUM - 1], STORE_MEMCHUNK_SIZE);
   }
   // Clear GC Flag and Calc Limits for next gen GC
   needGC = 0;
