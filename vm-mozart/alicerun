@@ -4,19 +4,28 @@ howcalled=$0
 
 if test -z "${STOCKHOME}"
 then
-  dir=`dirname "$howcalled"`
-  STOCKHOME=`(cd "$dir"; cd ..; /bin/pwd)`
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
 fi
 
 : ${OZHOME=/opt/mozart-devel}
-: ${OZ_LOAD=cache=$OZHOME/cache/}
+
+case `uname` in
+    CYGWIN*)
+	: ${OZ_LOAD=prefix=/=c:/cygwin/\;cache=$OZHOME/cache/}
+	SEP=\;
+	;;
+    *)
+	: ${OZ_LOAD=cache=$OZHOME/cache/}
+	SEP=:
+	;;
+esac
+
+ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz:'?{x}'${SEP}pattern='?{x}'='?{x}.ozf'${SEP}pattern='?{x}'='?{x}'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'
+
+OZ_LOAD=$ALICE_LOAD${SEP}$OZ_LOAD
 
 PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
-
-ALICE_LOAD=pattern='?{x}'='?{x}':pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'.ozf=$STOCKHOME/'?{x}'.ozf:pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf
-
-OZ_LOAD=$ALICE_LOAD:$OZ_LOAD
-
 export STOCKHOME PATH OZ_LOAD ALICE_LOAD
 
 exec ozengine x-alice:/VMMain "$@"

@@ -11,7 +11,16 @@ fi
 : ${OZHOME=/opt/mozart-devel}
 : ${OZ_LOAD=cache=$OZHOME/cache/}
 
-OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:$OZ_LOAD
+case `uname` in
+    CYGWIN*)
+	SEP=\;
+	;;
+    *)
+	SEP=:
+	;;
+esac
+
+OZ_LOAD=pattern='?{x}'='?{x}.ozf'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}$OZ_LOAD
 
 export STOCKHOME OZ_LOAD
 
