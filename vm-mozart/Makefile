@@ -98,14 +98,14 @@ PREFIX = /opt/stockhausen-devel
 VPATH = $(SRCTOP)
 
 ALICEC0 = $(BOOTSTRAPDIR)/alicec # --profile
-ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec --mozart
-ALICEC2 = STOCKHOME=build1/install build1/install/bin/alicec --mozart
+ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --mozart
+ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --mozart
 
 ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = 
 
-ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
-ALICELINK2 = STOCKHOME=build1/install build1/install/bin/alicelink
+ALICELINK1 = ALICE_HOME=build1/install build1/install/bin/alicelink
+ALICELINK2 = ALICE_HOME=build1/install build1/install/bin/alicelink
 
 ALICELINK_OPTS = -v
 
