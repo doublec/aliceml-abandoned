@@ -3,6 +3,8 @@ structure ToJasmin : ToJasmin =
 
 	open JVMInst
 
+	val intToString = fn i => if i<0 then "-"^Int.toString(~i) else Int.toString i
+	    
 	local
 	    val linecount = ref 0
 	in
@@ -71,7 +73,7 @@ structure ToJasmin : ToJasmin =
 		 | Areturn => "areturn"
 		 | Arraylength => "arraylength"
 		 | Athrow => "athrow"
-		 | Bipush i => "bipush "^Int.toString i
+		 | Bipush i => "bipush "^intToString i
 		 | Catch(cn,from,to,use) => ".catch "^cn^" from "^from^" to "^to^" using "^use
 		 | Checkcast cn => "checkcast "^cn
 		 | Comment c => "\t; "^c
@@ -81,12 +83,14 @@ structure ToJasmin : ToJasmin =
 		 | Getstatic(fieldn, ty) => "getstatic "^fieldn^" L"^ty^";"
 		 | Goto l => "goto "^l
 		 | Iconst i => if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
+		 | Iadd => "iadd"
 		 | Ifacmpeq l => "if_acmpeq "^l
 		 | Ifacmpne l => "if_acmpne "^l
 		 | Ifeq l => "ifeq "^l
 		 | Ificmplt l => "if_icmplt "^l
 		 | Ifneq l => "ifne "^l
 		 | Ifnull l => "ifnull "^l
+		 | Iinc (i,j) => "iinc "^(Int.toString i)^" "^(intToString j)
 		 | Iload i =>let val j=if i<0 then (!perslocals-i) else i
 			     in if j<4 then "iload_"^Int.toString j
 				else "iload "^Int.toString j
@@ -105,13 +109,13 @@ structure ToJasmin : ToJasmin =
 		 | Label l => l^": "
 		 | Ldc(JVMString s) => "ldc \""^s^"\""
 		 | Ldc(JVMFloat r) => "ldc "^Real.toString r
-		 | Ldc(JVMInt i) => "ldc "^Int.toString i
+		 | Ldc(JVMInt i) => "ldc "^intToString i
 		 | New cn => "new "^cn
 		 | Pop => "pop"
 		 | Putfield(cn,f) => "putfield "^cn^" L"^f^";"
 		 | Putstatic(cn,f) => "putstatic "^cn^" L"^f^";"
 		 | Return => "return"
-		 | Sipush i => "sipush "^Int.toString i
+		 | Sipush i => "sipush "^intToString i
 		 | Swap => "swap"
 		 | Tableswitch(low,labellist, label) =>
 			       let
@@ -125,7 +129,8 @@ structure ToJasmin : ToJasmin =
 	in
 	    val rec
 		instructionsToJasmin =
-		fn i::is => ("\t\t.line "^line()^"\n")^(instructionToJasmin i)^"\n"^instructionsToJasmin is
+		fn i::is => ("\t\t.line "^line()^"\n")^
+		(instructionToJasmin i)^"\n"^instructionsToJasmin is
 		 | nil => ""
 	end
 
@@ -156,7 +161,7 @@ structure ToJasmin : ToJasmin =
 		val mcc = mAccessToString access
 	    in
 		perslocals := perslocs;
-		".method "^methodname^(descriptor2string methodsig)^"\n"^
+		".method "^mcc^methodname^(descriptor2string methodsig)^"\n"^
 		".limit locals "^Int.toString(perslocs+reuselocals+1)^"\n"^
 		".limit stack "^Int.toString(stack)^"\n"^
 		instructionsToJasmin(instructions)^"\n"^
@@ -197,3 +202,4 @@ structure ToJasmin : ToJasmin =
 	    end
 
     end
+

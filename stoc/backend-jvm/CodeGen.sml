@@ -107,17 +107,23 @@ structure CodeGen : CodeGen =
 	    (setInitialClass name;
 	     let
 		 val insts = decCode dec
-		 val stack = stackneeddec dec
+		 val stack = 100 (*stackneeddec dec*)
+		 val rec
+		     initializeLocals = fn
+		     0 => nil
+		   | x => [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
+		val iL = initializeLocals (Persistent.maxLocals())
+
 		 val mapply = Method([MPublic],"mapply",([Classsig CVal],Classsig CVal),
 				     Limits(Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
+				     iL @
 				     insts @
 				     [Aload 0,
 				      Aload 1,
 				      Invokevirtual (getInitialClass(), "apply",([Classsig CVal],Classsig CVal)),
-				      Pop,
-				      Return])
+				      Areturn])
 	     in
-		schreibsDran(getInitialClass(),methodToJasmin mapply )
+		 schreibsDran(getInitialClass()^".j",methodToJasmin mapply )
 	     end
 	     )
 	and
@@ -141,12 +147,13 @@ structure CodeGen : CodeGen =
 			expcode@patcode@((Ifeq faillabel)::nil)
 		    end
 		val part1 = flatten (map patExpCode patexplist)
+		(* val _ = print (instructionsToJasmin part1) *)
 		val part2 = [Goto endlabel,
 			     Label faillabel,
 			     New CException0,
 			     Dup,
 			     Getstatic CBind,
-			     Invokespecial (CException0, "<init>",([Classsig "ExName"], Voidsig)),
+			     Invokespecial (CException0, "<init>",([Classsig CExName], Voidsig)),
 			     Athrow,
 			     Label endlabel]
 	    in
@@ -155,7 +162,7 @@ structure CodeGen : CodeGen =
 	     | Andrec patexplist =>
 	    let
 		val initClosure = fn
-		    (Patvid(Shortvid(_, Defining loc)), Fn(JVMString name,_,_)) =>
+		    (Patvid(Shortvid(_, Defining loc)), Fn(Shortvid(name, Bound _),_,_)) =>
 			[New name,
 			 Dup,
 			 Invokespecial (name,"<init>",([],Voidsig)),
@@ -201,9 +208,8 @@ structure CodeGen : CodeGen =
 		val atexp      = expCode(exp2)
 		val h          = Reuse.nextFreeLocal()
 		val i          = Reuse.nextFreeLocal()
-		val insts = exp @ atexp @
-		    [Comment "[ apply",
-		     Astore h,
+		val insts = [Comment "[ apply"] @ exp @ atexp @
+		    [Astore h,
 		     Invokeinterface (CVal, "request", ([],Classsig CVal)),
 		     Dup,
 		     Invokeinterface (CVal, "whatAreYou", (nil, Intsig)),
@@ -268,22 +274,44 @@ structure CodeGen : CodeGen =
 		eiter liste
 	    end
 
-	     | (lambda as Fn (JVMString name,freevars,match)) =>
+	     | (lambda as Fn (Shortvid(name, _),freevars,match)) =>
 	    let
+		val realname = if name="main" then getInitialClass () else name
+		val Load = fn
+		    Shortvid(name, Free) => (
+(*  					     print (name^" : Free\n"); *)
+					     [Aload 0, Getfield(getCurrentClass()^"/"^name,CVal)])
+		  | Shortvid(name, Bound (ref (Shortvid(n, Defining loc)))) =>
+			(
+(*  			 print ("Halligalli"^name^"  : Bound to : "^Int.toString(!loc)^"\n"); *)
+			 [Aload (!loc), Comment ("Load loc. Var")])
+		  | _ => raise Error("cannot load scrap")
+
 		val names = flatten (map Load freevars)
-		val rec vals = fn (fx :: fxs) => (Classsig CVal)::(vals fxs) | nil => nil
-		val i = vals(freevars)
-		val result = [Comment ("{ lambda "^name),
-			      New name,
-			      Dup] @
-		    names @
-		    [Invokespecial (name, "<init>", (i, Voidsig)),
-		     Comment ("end of lambda "^name^"}")]
+		val rec vals = fn _::fxs => (Classsig CVal)::(vals fxs) | nil => nil
+		val i = vals freevars
+		val result = if name="main"
+				 then
+				     [Comment "WILDES THIS",
+				      Aload 0,
+				      Dup] @
+				     names @
+				     [Invokevirtual (realname, "makeClosure", (i, Voidsig)),
+				      Comment "THIS WILDES"]
+			     else
+				 [Comment ("{ lambda "^name),
+				  New realname,
+				  Dup,
+				  Invokespecial (realname, "<init>",([], Voidsig)),
+				  Dup] @
+				 names @
+				 [Invokevirtual (realname, "makeClosure", (i, Voidsig)),
+				  Comment ("end of lambda "^name^"}")]
 	    in
 		pushLabel();
 		Reuse.pushLocals();
 		Persistent.pushLocals();
-		pushClass(name);
+		pushClass(realname);
 		expCodeClass(lambda);
 		Reuse.popLocals();
 		Persistent.popLocals();
@@ -464,14 +492,21 @@ structure CodeGen : CodeGen =
 		 ]
 	    end
 
-	     | VId(Shortvid(vidname, Defining loc)) => (
-							loc  := Persistent.nextFreeLocal();
-							[Comment ("Defining Constant "^vidname^"(no code)")])
+	     | VId(Shortvid(vidname, Defining (loc as ref b))) => (if (!loc)= ~1
+								       then
+									   (loc:=Persistent.nextFreeLocal()
+								   (*  									   ;print (vidname^" now bound to "^Int.toString(b)^"\n") *)
+									    )
+								   else
+(*  								       print (vidname^" already bound to "^Int.toString(b)^"\n") *) () ;
+								       [Comment ("Defining Constant "^vidname^"(no code)")])
 
-	     | VId(Shortvid(_,Bound b)) => (case !b of
-						Shortvid (_,Defining wherever) =>
-						    [Aload (!wherever), Comment "Bound VId"]
-					      | _ => raise Error "invalid vid")
+	     | VId(Shortvid(n,Bound b)) =>(case !b of
+					       Shortvid (_,Defining (ref wherever)) =>(
+(*  										       print (n^" bound to "^Int.toString(wherever)^"\n"); *)
+							    [Aload wherever, Comment "Bound VId"])
+		 | _ => raise Error "invalid vid")
+
 	     | VId(Shortvid(vidname,Free)) =>
 	    let
 		val currentClass = getCurrentClass()
@@ -485,13 +520,18 @@ structure CodeGen : CodeGen =
 		     Getfield (currentClass^"/"^vidname, CVal),
 		     Comment ("Free VId "^vidname)]
 	    end
+
 	     | VId(Primitive(which)) =>
 	    (case which of
 		 "+" => [Getstatic CPlus]
 	       | "=" => [Getstatic CEquals]
 	       | "not" => [Getstatic CNot]
 	       | "!" => [Getstatic CDeref]
+	       | "ref" => [Getstatic CRef]
 	       | ":=" => [Getstatic CAssign]
+	       | "Int.fromString" => [Getstatic CIntFromString]
+	       | "Bool.fromString" => [Getstatic CBoolFromString]
+	       | "Real.fromString" => [Getstatic CRealFromString]
 	       | _ => raise Error "unimplemented primitive")
 
 	     | While(exp1,exp2) =>
@@ -535,8 +575,6 @@ structure CodeGen : CodeGen =
 		     Reuse.dropLocals(2); code
 		 end
 
-	     | _ => raise Error "Fußschuß"
-
 	and
 	    patCode = fn
 	    Patas (vid, pat) => let
@@ -557,7 +595,8 @@ structure CodeGen : CodeGen =
 				    val p = patCode(pat)
 				    val l= case vid of
 					Shortvid(_, Bound (ref to)) => (case to of
-									    Shortvid (_, Defining loc) => [Aload (!loc)]
+									    Shortvid (_, Defining loc) =>
+										[Aload (!loc)]
 									  | _ => raise Error "patcon")
 				      | Shortvid(vidname, Free) => [Aload 0, Getfield (getCurrentClass()^"/"^vidname, CVal)]
 				      | _ => raise Error "vidname not using in patcon"
@@ -716,7 +755,8 @@ structure CodeGen : CodeGen =
 
 	  | Patvid (Shortvid vid) =>
 				(case vid of
-				     (_, Defining loc) => (loc := Persistent.nextFreeLocal();
+				     (n, Defining loc) => (loc := Persistent.nextFreeLocal();
+(*  							   print (n^" patvid def "^(Int.toString(!loc)^"\n")); *)
 							   [Astore (!loc), Iconst 1])
 				   | (_, Bound def) => (case !def of
 							    Shortvid (_,Defining loc) =>
@@ -738,12 +778,15 @@ structure CodeGen : CodeGen =
 				val undef = aNewLabel()
 				val endlabel = aNewLabel()
 				val p = patCode(pat)
-				val l = case lab of RecStringlabel s => s | RecIntlabel k => Int.toString(k)
+				val l = case lab of
+				    RecStringlabel s => [Ldc (JVMString s),
+							 Invokevirtual (CRecord, "getByLabel", ([Classsig CString], Classsig CVal))]
+				  | RecIntlabel k => [atCodeInt(k),
+						      Invokevirtual (CRecord, "getByLabel", ([Intsig], Classsig CVal))]
+
 			    in
-				[Aload i,
-				 Ldc (JVMString l),
-				 Invokevirtual (CRecord, "getByLabel", ([Classsig CString], Classsig CVal)),
-				 Dup,
+				(Aload i):: l @
+				[Dup,
 				 Ifnull undef] @
 				p @
 				[Goto endlabel,
@@ -808,16 +851,12 @@ structure CodeGen : CodeGen =
 	    end
 
 	and
-	    Load = fn (JVMString name) => [Aload 0, Getfield(getCurrentClass()^"/"^name,CVal)]
-	  | (JVMInt i) => [Aload i, Comment ("Load loc. Var")]
-	  | _ => raise Error("cannot load scrap")
-
-	and
 	    expCodeClass =
-	    fn Fn (JVMString name,freevars,match) =>
+	    fn Fn (Shortvid (name, _),freevars,match) =>
 	    let
+		val realname = if name="main" then getInitialClass() else name
 		val rec fields = fn
-		    (JVMString var)::vars =>
+		    (Shortvid(var,_))::vars =>
 			(Field ([FPrivate],var, Classtype CVal))::(fields(vars))
 		  | nil => nil
 		  | _ => raise Error "fields in expcodeclass"
@@ -826,19 +865,19 @@ structure CodeGen : CodeGen =
 		local
 		    val rec closureBody = fn
 			(nil,_) => [Return]
-		      | ((JVMString var)::nil,i) =>
+		      | (Shortvid(var,_)::nil,i) =>
 			    [Aload i,
-			     Putfield (name^"/"^var, CVal),
+			     Putfield (realname^"/"^var, CVal),
 			     Return]
-		      | ((JVMString var)::vars,i) =>
+		      | (Shortvid(var,_)::vars,i) =>
 			    [Dup,
 			     Aload i,
-			     Putfield (name^"/"^var, CVal)]@
+			     Putfield (realname^"/"^var, CVal)]@
 			    closureBody(vars,i+1)
 		      | _ => raise Error "closureBody"
 		    val k = length freevars
 		in
-		    val makeClosure = Method([MPublic],"makeClosure",(args(freevars), Voidsig),Limits (k,0, 3),
+		    val makeClosure = Method([MPublic],"makeClosure",(args(freevars), Voidsig),Limits (k,0, 4),
 					     (if k=0
 						  then [Aload 0]
 					      else [(Aload 0),Dup])@
@@ -850,7 +889,7 @@ structure CodeGen : CodeGen =
 		    0 => nil
 		  | x => [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
 		val iL = initializeLocals (Persistent.maxLocals())
-		val stack = stackneed match + 1
+		val stack = 100 (*stackneed match + 1*)
 		val main = if name="main"
 			       then
 				   let
@@ -859,74 +898,83 @@ structure CodeGen : CodeGen =
 				       val (eins,zwei,drei) = (1,2,3)
 				   in
 				       [Method ([MPublic, MStatic],"main",([Arraysig,Classsig CString], Voidsig),
-					       Limits (4,0,7),
-					       [New (getInitialClass()),
-						Dup,
-						Invokespecial (getInitialClass(), "<init>",([], Voidsig)),
-						Dup,
-						Invokevirtual (getInitialClass(), "makeClosure",(args freevars,Voidsig)),
-						Comment "[String nach DMLRecord",
-						Iconst 0,
-						Istore eins,
-						Aload 0,
-						Arraylength,
-						Anewarray CLabel,
-						Astore zwei,
-						Aload 0,
-						Arraylength,
-						Anewarray CVal,
-						Astore drei,
-						Iconst 0,
-						Istore eins,
-						Goto zweiE,
-						Label dreizehn,
-						Aload zwei,
-						Iload eins,
-						New CLabel,
-						Dup,
-						Iload eins,
-						Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
-						Aastore,
-						Aload drei,
-						Iload eins,
-						New CStr,
-						Dup,
-						Aload 0,
-						Iload eins,
-						Aaload,
-						Invokespecial (CStr,"<init>",([Classsig CString], Voidsig)),
-						Aastore,
-						Iinc (eins,1),
-						Iload eins,
-						Aload 0,
-						Arraylength,
-						Ificmplt dreizehn,
-						New CRecord,
-						Dup,
-						Aload zwei,
-						Aload drei,
-						Invokespecial (CRecord, "<init>", ([Arraysig, Classsig CLabel, Arraysig, Classsig CVal],Voidsig)),
-						Invokevirtual (getInitialClass(), "mapply",([Classsig CVal],Classsig CVal)),
-						Return])]
+						Limits (4,0,7),
+						[New (getInitialClass()),
+						 Dup,
+						 Invokespecial (getInitialClass(), "<init>",([], Voidsig)),
+						 Comment "[String nach DMLRecord",
+						 Iconst 0,
+						 Istore eins,
+						 Aload 0,
+						 Arraylength,
+						 Anewarray CLabel,
+						 Astore zwei,
+						 Aload 0,
+						 Arraylength,
+						 Anewarray CVal,
+						 Astore drei,
+						 Iconst 0,
+						 Istore eins,
+						 Goto zweiE,
+						 Label dreizehn,
+						 Aload zwei,
+						 Iload eins,
+						 New CLabel,
+						 Dup,
+						 Iload eins,
+						 Iconst 1,
+						 Iadd,
+						 Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
+						 Aastore,
+						 Aload drei,
+						 Iload eins,
+						 New CStr,
+						 Dup,
+						 Aload 0,
+						 Iload eins,
+						 Aaload,
+						 Invokespecial (CStr,"<init>",([Classsig CString], Voidsig)),
+						 Aastore,
+						 Iinc (eins,1),
+						 Label zweiE,
+						 Iload eins,
+						 Aload 0,
+						 Arraylength,
+						 Ificmplt dreizehn,
+						 New CRecord,
+						 Dup,
+						 Aload zwei,
+						 Aload drei,
+						 Invokespecial (CRecord, "<init>", ([Arraysig, Classsig CLabel, Arraysig, Classsig CVal],Voidsig)),
+						 Invokevirtual (getInitialClass(), "mapply",([Classsig CVal],Classsig CVal)),
+						 Invokeinterface (CVal,"toString",([],Classsig CString)),
+						 Getstatic ("java/lang/System/out", "java/io/PrintStream"),
+						 Swap,
+						 Invokevirtual ("java.io.PrintStream","println",([Classsig CString],Voidsig)),
+
+						 Return])]
 				   end
 			   else
 			       nil
 		val applY =Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),
 				   Limits (Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
 				   (Aload 1) :: iL @ mcm @ [Areturn])
+		val init = Method ([MPublic],"<init>",([], Voidsig), Limits (1,0,1),
+				   [Aload 0, Invokespecial (CFcnClosure, "<init>",([], Voidsig)),Return])
 	    in
-		schreibs(if name="main" then getInitialClass() else name,
-			     classToJasmin(Class([CPublic],name,CFcnClosure,fieldlist,
-						 [makeClosure,applY]@main)))
+		schreibs(realname^".j",
+			 classToJasmin(Class([CPublic],realname,
+					     CFcnClosure,fieldlist,
+					     [makeClosure,applY, init]@main)))
 	    end
 
 	     | _ => raise Error "expCodeClass"
 
-	and
-	    atCodeInt =
-	    fn i =>
-	    if i >= ~1 andalso i<=5 then Iconst i else
-		if i >= ~128 andalso i <= 127 then Bipush i else
-		    if i >= ~32768 andalso i <= 32767 then Sipush i
-		    else Ldc (JVMInt i)
+and
+    atCodeInt =
+    fn i =>
+    if i >= ~1 andalso i<=5 then Iconst i else
+	if i >= ~128 andalso i <= 127 then Bipush i else
+	    if i >= ~32768 andalso i <= 32767 then Sipush i
+	    else Ldc (JVMInt i)
     end

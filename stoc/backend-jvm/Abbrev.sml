@@ -34,5 +34,9 @@ structure Abbrev : Abbrev  =
 	val CEquals        = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_equals","de/uni_sb/ps/DML/DMLBuiltin/Equals")
 	val CNot           = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_not","de/uni_sb/ps/DML/DMLBuiltin/Not")
 	val CDeref         = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_deref","de/uni_sb/ps/DML/DMLBuiltin/Deref")
+	val CRef         = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_ref","de/uni_sb/ps/DML/DMLBuiltin/Ref")
 	val CAssign        = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_assign","de/uni_sb/ps/DML/DMLBuiltin/Assign")
+	val CIntFromString = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_intfromstring","de/uni_sb/ps/DML/DMLBuiltin/IntFromString")
+	val CBoolFromString = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_boolfromstring","de/uni_sb/ps/DML/DMLBuiltin/BoolFromString")
+	val CRealFromString = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_realfromstring","de/uni_sb/ps/DML/DMLBuiltin/RealFromString")
     end

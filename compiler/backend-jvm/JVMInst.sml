@@ -40,6 +40,7 @@ structure JVMInst : JVMInst =
 	  | Getfield of fieldname * classname
 	  | Getstatic of fieldname * classname
 	  | Goto of label
+	  | Iadd
 	  | Iconst of int
 	  | Ifacmpeq of label
 	  | Ifacmpne of label
