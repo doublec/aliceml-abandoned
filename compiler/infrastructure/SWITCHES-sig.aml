@@ -1,18 +1,23 @@
 signature SWITCHES =
   sig
-    val implicitImport :	bool ref
-    val outputAssembly :	bool ref
+    val implicitImport :			bool ref
+    val outputAssembly :			bool ref
+
+    structure Warn :
+    sig
+	val shadowing :				bool ref
+    end
 
     structure Bootstrap :
-      sig
+    sig
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
 	val implicitImport :			bool ref
 	val rttLevel :				rtt_level ref
-      end
+    end
 
     structure Debug :
-      sig
+    sig
 	val logOut :				TextIO.outstream
 	val logWidth :				int ref
 
@@ -28,5 +33,5 @@ signature SWITCHES =
 	val dumpLivenessAnalysisResult :	bool ref
 	val dumpDeadCodeEliminationResult :	bool ref
 	val dumpTarget :			bool ref
-      end
+    end
   end

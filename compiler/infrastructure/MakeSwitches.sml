@@ -1,6 +1,11 @@
 functor MakeSwitches(val logOut : TextIO.outstream) :> SWITCHES =
 struct
 
+    structure Warn =
+    struct
+	val shadowing				= ref false
+    end
+
     structure Bootstrap =
     struct
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
