@@ -615,7 +615,7 @@ static char *ExportCString(Chunk *s) {
 }
 
 Interpreter::Result Pickler::Pack(word x, TaskStack *taskStack) {
-  StringOutputStream *os = new StringOutputStream();
+  StringOutputStream *os = StringOutputStream::New();
   taskStack->PopFrame();
   PicklePackInterpreter::PushFrame(taskStack);
   PicklingInterpreter::PushFrame(taskStack, x);
