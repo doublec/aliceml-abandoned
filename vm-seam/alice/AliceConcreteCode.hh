@@ -24,9 +24,7 @@
 
 class AliceConcreteCode: private ConcreteCode {
 private:
-  static const u_int ABSTRACT_CODE_POS = 0;
-  static const u_int TRANSFORM_POS = 1;
-  static const u_int SIZE = 2;
+  enum { ABSTRACT_CODE_POS, TRANSFORM_POS, SIZE };
 public:
   using Block::ToWord;
 
