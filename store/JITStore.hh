@@ -73,19 +73,17 @@ typedef void (*value_plotter)(word);
 
 class JITStore {
 public:
-  static void ClearStack(u_int nbArgs) {
+  // Position independent procedure call
+  // Side-Effect: Scratches JIT_R0
+  static void Call(u_int nbArgs, void *proc) {
+    jit_movi_p(JIT_R0, proc);
+    jit_callr(JIT_R0);
+    // Remove arguments from the stack
     if (nbArgs != 0) {
       jit_addi_ui(JIT_SP, JIT_SP, nbArgs * sizeof(word));
     }
   }
-  static void PerformCall(u_int nbArgs) {
-    jit_callr(JIT_R0);
-    ClearStack(nbArgs);
-  }
-  static void Call(u_int nbArgs, void *proc) {
-    jit_movi_p(JIT_R0, proc);
-    PerformCall(nbArgs);
-  }
+  // Save/Restore caller-saved registers
   static void Prepare() {
     jit_pushr_ui(JIT_R1);
     jit_pushr_ui(JIT_R2);
@@ -173,6 +171,7 @@ protected:
       Deref(Ptr);
   }
 public:
+#if defined(JIT_STORE_DEBUG)
   // Logging Support
   static void InitLoggging();
   static void LogMesg(const char *mesg);
@@ -181,6 +180,7 @@ public:
   static void LogRead(u_int Dest, u_int Ptr, u_int Index);
   static void LogWrite(u_int Ptr, u_int index, u_int Value);
   static void LogSetArg(u_int pos, u_int Value);
+#endif
   // Input: word ptr
   // Output: derefed word ptr and jmp to the corresponding path
   // Side-Effect: Scratches JIT_R0
@@ -204,7 +204,7 @@ public:
   }
   // Input: word ptr
   // Output: derefed word ptr and jmp to the corresponding path
-  // Side-Effect: JIT_R0
+  // Side-Effect: Scratches JIT_R0
   static void DerefItem(u_int Ptr, jit_insn *ref[2]) {
     Assert(Ptr != JIT_R0);
     // Main deref loop

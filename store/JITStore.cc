@@ -27,6 +27,7 @@ word JITStore::loadedWord;
 #endif
 
 #if defined(JIT_STORE_DEBUG)
+
 #include <string.h>
 
 static FILE *execLog;
@@ -78,19 +79,15 @@ static void CompileRegister(u_int Reg) {
   jit_pushr_ui(JIT_R0);
   JITStore::Call(2, (void *) ShowRegister);
 }
-#endif
 
 //
-// JITStore Functions
+// JITStore Logging Functions
 //
 void JITStore::InitLoggging() {
-#if defined(JIT_STORE_DEBUG)
   if ((execLog = fopen("execlog.txt", "w")) == NULL)
     Error("unable to open exec log");
-#endif
 }
 
-#if defined(JIT_STORE_DEBUG)
 u_int jitDebug = 0;
 
 #define JIT_BEG_COND() \
@@ -101,37 +98,24 @@ u_int jitDebug = 0;
 #define JIT_END_COND() \
   jit_patch(no_debug); \
   jit_popr_ui(JIT_R0);
-#endif
-  
 
 void JITStore::LogMesg(const char *info) {
-#if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   JITStore::SaveAllRegs();
   CompileMessage(info);
   JITStore::RestoreAllRegs();
   JIT_END_COND();
-#else
-  // Avoid compiler warnings
-  info = info;
-#endif
 }
 
 void JITStore::LogReg(u_int Value) {
-#if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   JITStore::SaveAllRegs();
   CompileRegister(Value);
   JITStore::RestoreAllRegs();
   JIT_END_COND();
-#else
-  // Avoid compiler warnings
-  Value = Value;
-#endif
 }
 
 void JITStore::DumpReg(u_int Value, value_plotter plotter) {
-#if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   JITStore::SaveAllRegs();
   CompileRegister(Value);
@@ -139,15 +123,9 @@ void JITStore::DumpReg(u_int Value, value_plotter plotter) {
   Call(1, (void *) plotter);
   JITStore::RestoreAllRegs();
   JIT_END_COND();
-#else
-  // Avoid compiler warnings
-  Value = Value;
-  plotter = plotter;
-#endif
 }
 
 void JITStore::LogRead(u_int Dest, u_int Ptr, u_int Index) {
-#if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   static char buffer[256];
   JITStore::SaveAllRegs();
@@ -157,16 +135,9 @@ void JITStore::LogRead(u_int Dest, u_int Ptr, u_int Index) {
   CompileMessage(strdup(buffer));
   JITStore::RestoreAllRegs();
   JIT_END_COND();
-#else
-  // Avoid Compiler warnings
-  Dest  = Dest;
-  Ptr   = Ptr;
-  Index = Index;
-#endif
 }
 
 void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
-#if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   static char buffer[256];
   JITStore::SaveAllRegs();
@@ -180,16 +151,9 @@ void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
   CompileMessage(strdup(buffer));
   JITStore::RestoreAllRegs();
   JIT_END_COND();
-#else
-  // Avoid compiler warnings
-  Ptr   = Ptr;
-  index = index;
-  Value = Value;
-#endif
 }
 
 void JITStore::LogSetArg(u_int pos, u_int Value) {
-#if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   static char buffer[256];
   JITStore::SaveAllRegs();
@@ -200,8 +164,6 @@ void JITStore::LogSetArg(u_int pos, u_int Value) {
   CompileMessage(strdup(buffer));
   JITStore::RestoreAllRegs();
   JIT_END_COND();
-#else
-  pos = pos;
-  Value = Value;
-#endif
 }
+
+#endif
