@@ -13,11 +13,14 @@
 functor
 import
    System(printInfo)
-   Open(file)
+   Open(file text)
 export
    '$TextIO': TextIO
    Print
 define
+   class TextFile from Open.file Open.text
+   end
+
    fun {TextIOInputAll F}
       case {F getS($)} of false then ""
       [] S then S#'\n'#{TextIOInputAll F}
@@ -31,22 +34,22 @@ define
    TextIO =
    'TextIO'(
       'stdIn':
-	 {New Open.file init(name: stdin flags: [read])}
+	 {New TextFile init(name: stdin flags: [read])}
       'openIn':
 	 fun {$ S}
-	    {New Open.file init(name: S flags: [read])}
+	    {New TextFile init(name: S flags: [read])}
 	 end
       'inputAll':
 	 fun {$ F} {ByteString.make {TextIOInputAll F}} end
       'closeIn':
 	 fun {$ F} {F close()} '#' end
       'stdOut':
-	 {New Open.file init(name: stdout flags: [write])}
+	 {New TextFile init(name: stdout flags: [write])}
       'stdErr':
-	 {New Open.file init(name: stderr flags: [write])}
+	 {New TextFile init(name: stderr flags: [write])}
       'openOut':
 	 fun {$ S}
-	    {New Open.file init(name: S flags: [write create truncate])}
+	    {New TextFile init(name: S flags: [write create truncate])}
 	 end
       'output':
 	 fun {$ F#S} {F write(vs: S)} '#' end
