@@ -72,17 +72,17 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    StrictExp (info, substExp' (exp, subst))
 	  | substExp' (TupExp (info, exps), subst) =
 	    TupExp (info, Vector.map (fn exp => substExp' (exp, subst)) exps)
-	  | substExp' (ProdExp (info, expFields), subst) =
+	  | substExp' (ProdExp (info, expFlds), subst) =
 	    ProdExp (info,
-		     Vector.map (fn Field (info, lab, exp) =>
-				 Field (info, lab, substExp' (exp, subst)))
-		     expFields)
+		     Vector.map (fn Fld (info, lab, exp) =>
+				 Fld (info, lab, substExp' (exp, subst)))
+		     expFlds)
 	  | substExp' (SelExp (info, lab, exp), subst) =
 	    SelExp (info, lab, substExp' (exp, subst))
 	  | substExp' (VecExp (info, exps), subst) =
 	    VecExp (info, Vector.map (fn exp => substExp' (exp, subst)) exps)
-	  | substExp' (FunExp (info, matches), subst) =
-	    FunExp (info, substMatches' (matches, subst))
+	  | substExp' (FunExp (info, mats), subst) =
+	    FunExp (info, substMats' (mats, subst))
 	  | substExp' (AppExp (info, exp1, exp2), subst) =
 	    AppExp (info, substExp' (exp1, subst), substExp' (exp2, subst))
 	  | substExp' (AndExp (info, exp1, exp2), subst) =
@@ -94,14 +94,14 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		   substExp' (exp2, subst), substExp' (exp3, subst))
 	  | substExp' (SeqExp (info, exp1, exp2), subst) =
 	    SeqExp (info, substExp' (exp1, subst), substExp' (exp2, subst))
-	  | substExp' (CaseExp (info, exp, matches), subst) =
+	  | substExp' (CaseExp (info, exp, mats), subst) =
 	    CaseExp (info, substExp' (exp, subst),
-		     substMatches' (matches, subst))
+		     substMats' (mats, subst))
 	  | substExp' (RaiseExp (info, exp), subst) =
 	    RaiseExp (info, substExp' (exp, subst))
-	  | substExp' (HandleExp (info, exp, matches), subst) =
+	  | substExp' (HandleExp (info, exp, mats), subst) =
 	    HandleExp (info, substExp' (exp, subst),
-		       substMatches' (matches, subst))
+		       substMats' (mats, subst))
 	  | substExp' (exp as FailExp _, _) = exp
 	  | substExp' (LazyExp (info, exp), subst) =
 	    LazyExp (info, substExp' (exp, subst))
@@ -113,10 +113,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    AbsExp (info, substExp' (exp, subst))
 	  | substExp' (UnabsExp (info, exp), subst) =
 	    UnabsExp (info, substExp' (exp, subst))
-	and substMatches' (matches, subst) =
-	    Vector.map (fn Match (info, pat, exp) =>
-			Match (info, substPat' (pat, subst),
-			       substExp' (exp, subst))) matches
+	and substMats' (mats, subst) =
+	    Vector.map (fn Mat (info, pat, exp) =>
+			Mat (info, substPat' (pat, subst),
+			       substExp' (exp, subst))) mats
 	and substPat' (pat as JokPat _, _) = pat
 	  | substPat' (pat as LitPat (_, _), _) = pat
 	  | substPat' (pat as VarPat (_, _), _) = pat
@@ -130,11 +130,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    StrictPat (info, substPat' (pat, subst))
 	  | substPat' (TupPat (info, pats), subst) =
 	    TupPat (info, Vector.map (fn pat => substPat' (pat, subst)) pats)
-	  | substPat' (ProdPat (info, patFields), subst) =
+	  | substPat' (ProdPat (info, patFlds), subst) =
 	    ProdPat (info,
-		     Vector.map (fn Field (info, lab, pat) =>
-				 Field (info, lab, substPat' (pat, subst)))
-		     patFields)
+		     Vector.map (fn Fld (info, lab, pat) =>
+				 Fld (info, lab, substPat' (pat, subst)))
+		     patFlds)
 	  | substPat' (VecPat (info, pats), subst) =
 	    VecPat (info, Vector.map (fn pat => substPat' (pat, subst)) pats)
 	  | substPat' (AsPat (info, pat1, pat2), subst) =
@@ -231,18 +231,18 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(TupPat (info, Vector.fromList pats'), subst')
 	    end
-	  | relax (ProdPat (info, patFields), subst) =
+	  | relax (ProdPat (info, patFlds), subst) =
 	    let
-		val (patFields', subst') =
+		val (patFlds', subst') =
 		    Vector.foldr
-		    (fn (Field (info, lab, pat), (patFields, subst)) =>
+		    (fn (Fld (info, lab, pat), (patFlds, subst)) =>
 		     let
 			 val (pat', subst') = relax (pat, subst)
 		     in
-			 (Field (info, lab, pat')::patFields, subst')
-		     end) (nil, subst) patFields
+			 (Fld (info, lab, pat')::patFlds, subst')
+		     end) (nil, subst) patFlds
 	    in
-		(ProdPat (info, Vector.fromList patFields'), subst')
+		(ProdPat (info, Vector.fromList patFlds'), subst')
 	    end
 	  | relax (VecPat (info, pats), subst) =
 	    let
@@ -396,11 +396,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    end
 
 	fun rowLabels row =
-	    if Type.isEmptyRow row then
-		if Type.isUnknownRow row then
-		    raise Crash.Crash "IntermediateAux.rowLabels"
-		else nil
-	    else (#1 (Type.headRow row))::rowLabels (Type.tailRow row)
+	    if Type.isEmptyRow row then nil
+	    else (#1 (Type.hdRow row))::rowLabels (Type.tlRow row)
 
 	fun isTuple (label::labels, i) =
 	    if label = Label.fromInt i then isTuple (labels, i + 1)
@@ -443,13 +440,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun findLabel (Arity.Unary, _) = NONE
 	  | findLabel (Arity.Tuple n, label) =
-	    (case Label.toLargeInt label of
-		 SOME li =>
-		     let
-			 val i = LargeInt.toInt li
-		     in
-			 if i <= n then SOME (O.Tuple n, i - 1) else NONE
-		     end
+	    (case Label.toInt label of
+		 SOME i => if i <= n then SOME (O.Tuple n, i - 1) else NONE
 	       | NONE => NONE)
 	  | findLabel (Arity.Product labels, label) =
 	    find (labels, label, 0, Vector.length labels)

@@ -315,7 +315,13 @@ functor MkFlatteningPhase(val loadSign:
 		    (fn ((id, exp), decs) =>
 		     translateExp (substExp (exp, subst),
 				   fn exp' =>
-				   O.ValDec (stm_info (#region (infoExp exp)),
+				   O.ValDec (stm_info
+					     (*--** AR: needed to add this
+					      * annotation due to strange
+					      * bug appearing in build 3 :-( *)
+					     (#region ((infoExp:
+							I.exp -> I.exp_info)
+						       exp)),
 					     O.IdDef (translateId id), exp'),
 				   Goto decs)) nil idExpList
 		val idDefExpList' = decsToIdDefExpList (decs', #region info)
@@ -376,17 +382,17 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		(stms, O.TupArgs (Vector.fromList ids))
 	    end
-	  | unfoldArgs (ProdExp (_, expFields), rest) =
+	  | unfoldArgs (ProdExp (_, expFlds), rest) =
 	    let
 		val (stms, labelIdList) =
-		    Vector.foldr (fn (Field (_, Lab (_, label), exp),
+		    Vector.foldr (fn (Fld (_, Lab (_, label), exp),
 				      (stms, labelIdList)) =>
 				  let
 				      val (stms', id) =
 					  unfoldTerm (exp, Goto stms)
 				  in
 				      (stms', (label, id)::labelIdList)
-				  end) (rest, nil) expFields
+				  end) (rest, nil) expFlds
 	    in
 		case LabelSort.sort labelIdList of
 		    (labelIdVec, LabelSort.Tup _) =>
@@ -547,19 +553,19 @@ functor MkFlatteningPhase(val loadSign:
 			   translateCont cont);
 		stms
 	    end
-	  | translateExp (ProdExp (info, expFields), f, cont) =
+	  | translateExp (ProdExp (info, expFlds), f, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, fields) =
-		    Vector.foldr (fn (Field (_, Lab (_, label), exp),
+		    Vector.foldr (fn (Fld (_, Lab (_, label), exp),
 				      (stms, fields)) =>
 				  let
 				      val (stms', id) =
 					  unfoldTerm (exp, Goto stms)
 				  in
 				      (stms', (label, id)::fields)
-				  end) (rest, nil) expFields
+				  end) (rest, nil) expFlds
 		val exp' =
 		    case LabelSort.sort fields of
 			(fields', LabelSort.Tup _) =>
@@ -597,10 +603,10 @@ functor MkFlatteningPhase(val loadSign:
 			   translateCont cont);
 		stms
 	    end
-	  | translateExp (FunExp (info, matches), f, cont) =
+	  | translateExp (FunExp (info, mats), f, cont) =
 	    let
-		val matches' =
-		    Vector.map (fn Match (info, pat, exp) =>
+		val mats' =
+		    Vector.map (fn Mat (info, pat, exp) =>
 				let
 				    val region = #region info
 				    fun return exp' =
@@ -608,11 +614,11 @@ functor MkFlatteningPhase(val loadSign:
 				in
 				    (#region (infoExp exp), pat,
 				     translateExp (exp, return, Goto nil))
-				end) matches
-		val region = #1 (Vector.sub (matches', 0))
+				end) mats
+		val region = #1 (Vector.sub (mats', 0))
 		val errStms = raisePrim (region, "General.Match")
 		val (args, graph, mapping, consequents) =
-		    buildFunArgs (matches', errStms)
+		    buildFunArgs (mats', errStms)
 		val (body, _) = translateGraph (graph, mapping, #region info)
 	    in
 		checkReachability consequents;
@@ -633,8 +639,8 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
 	    let
 		val region = #region info
-		val argTyp = Type.inTuple #[]
-		val strictTyp = Type.inApply (PervasiveType.typ_strict, argTyp)
+		val argTyp = Type.tuple #[]
+		val strictTyp = Type.apply (PervasiveType.typ_strict, argTyp)
 		val exp3 =
 		    TagExp (info, Lab (id_info info, PervasiveType.lab_false),
 			    StrictExp ({region = region, typ = strictTyp},
@@ -646,8 +652,8 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (OrExp (info, exp1, exp2), f, cont) =
 	    let
 		val region = #region info
-		val argTyp = Type.inTuple #[]
-		val strictTyp = Type.inApply (PervasiveType.typ_strict, argTyp)
+		val argTyp = Type.tuple #[]
+		val strictTyp = Type.apply (PervasiveType.typ_strict, argTyp)
 		val exp3 =
 		    TagExp (info, Lab (id_info info, PervasiveType.lab_true),
 			    StrictExp ({region = region, typ = strictTyp},
@@ -673,13 +679,13 @@ functor MkFlatteningPhase(val loadSign:
 					    O.Wildcard, exp'),
 		 Goto stms2)
 	    end
-	  | translateExp (CaseExp (info, exp, matches), f, cont) =
+	  | translateExp (CaseExp (info, exp, mats), f, cont) =
 	    let
 		val cont' = Share (ref NONE, cont)
 		val matches' =
-		    Vector.map (fn Match (_, pat, exp) =>
+		    Vector.map (fn Mat (_, pat, exp) =>
 				(#region (infoExp exp), pat,
-				 translateExp (exp, f, cont'))) matches
+				 translateExp (exp, f, cont'))) mats
 		val info = {region = #region info, typ = PervasiveType.typ_exn}
 	    in
 		simplifyCase (#region info, exp, matches',
@@ -693,7 +699,7 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		r := SOME [O.RaiseStm (stm_info (#region info), id)]; stms
 	    end
-	  | translateExp (HandleExp (info, exp, matches), f, cont) =
+	  | translateExp (HandleExp (info, exp, mats), f, cont) =
 	    let
 		val info' = infoExp exp
 		val id' = freshIntermediateId info'
@@ -712,9 +718,9 @@ functor MkFlatteningPhase(val loadSign:
 		val exnVarExp = VarExp (exnInfo, ShortId (exnInfo, exnId))
 		val handleCont = EndHandle (#region info, Goto contBody)
 		val matches' =
-		    Vector.map (fn Match (_, pat, exp) =>
+		    Vector.map (fn Mat (_, pat, exp) =>
 				(#region (infoExp exp), pat,
-				 translateExp (exp, f', handleCont))) matches
+				 translateExp (exp, f', handleCont))) mats
 		val handleBody =
 		    simplifyCase (#region info, exnVarExp, matches', exnVarExp)
 	    in
@@ -738,10 +744,10 @@ functor MkFlatteningPhase(val loadSign:
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info region, r)]
 		val funInfo = {region = region,
-			       typ = Type.inArrow (Type.inTuple #[], typ)}
-		val pat = JokPat {region = region, typ = Type.inTuple #[]}
+			       typ = Type.arrow (Type.tuple #[], typ)}
+		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
-		    FunExp (funInfo, #[Match (id_info info, pat, exp)])
+		    FunExp (funInfo, #[Mat (id_info info, pat, exp)])
 		val (stms, id) = unfoldTerm (funExp, Goto rest)
 	    in
 		(r := SOME (f (O.PrimAppExp (id_info info, "Future.byneed",
@@ -759,10 +765,10 @@ functor MkFlatteningPhase(val loadSign:
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info region, r)]
 		val funInfo = {region = region,
-			       typ = Type.inArrow (Type.inTuple #[], typ)}
-		val pat = JokPat {region = region, typ = Type.inTuple #[]}
+			       typ = Type.arrow (Type.tuple #[], typ)}
+		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
-		    FunExp (funInfo, #[Match (id_info info, pat, exp)])
+		    FunExp (funInfo, #[Mat (id_info info, pat, exp)])
 		val (stms, id) = unfoldTerm (funExp, Goto rest)
 	    in
 		(r := SOME (f (O.PrimAppExp (id_info info, "Future.concur",
@@ -1022,7 +1028,7 @@ functor MkFlatteningPhase(val loadSign:
 		(Vector.fromList labelIdDefList, mapping)
 	    end
 
-	fun translate () (desc, (imports, decs, idFields, sign)) =
+	fun translate () (desc, (imports, decs, idFlds, sign)) =
 	    let
 		val imports' =
 		    Vector.map (fn (id, sign, url) =>
@@ -1030,8 +1036,8 @@ functor MkFlatteningPhase(val loadSign:
 				 Signature.strip (loadSign (desc, url), sign),
 				 url)) imports
 		val labelIdList =
-		    Vector.foldr (fn (Field (_, Lab (_, label), id), rest) =>
-				  (label, translateId id)::rest) nil idFields
+		    Vector.foldr (fn (Fld (_, Lab (_, label), id), rest) =>
+				  (label, translateId id)::rest) nil idFlds
 		val (exports', arity) = LabelSort.sort labelIdList
 		val exportExp =
 		    case arity of
