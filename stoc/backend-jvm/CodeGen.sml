@@ -1501,7 +1501,7 @@ structure CodeGen =
 			val body' =
 			    if Lambda.isInRecApply (curFun, parms) then
 				(Lambda.addToRecApply
-				 (Label alpha :: insts, curFun, parms);
+				 (insts, curFun, parms);
 				 normalReturn
 				 (Comment "makeApplyMethod:" ::
 				  invokeRecApply (curFun, ta, curFun, true, curFun),

@@ -35,6 +35,13 @@ structure ToJasmin =
 	datatype branchinst = Lab of label * bool | Jump of jump | Non
 	datatype registerOps = Load of (stamp * INSTRUCTION) | Store
 
+	fun labtoString (Lab (label', _)) = Label.toString label'
+	  | labtoString (Jump Got) = "Goto"
+	  | labtoString (Jump Ret) = "Return"
+	  | labtoString (Jump IRet) = "Ireturn"
+	  | labtoString (Jump ARet) = "Areturn"
+	  | labtoString Non = "Non"
+
 	structure LabelMerge =
 	    struct
 		(* maps labels to a branch or return instruction *)
@@ -116,7 +123,9 @@ structure ToJasmin =
 
 	    (* merge two labels *)
 	    fun merge (l', l'') =
-		IntHash.insert (!labelMerge, l', l'')
+		(if !VERBOSE >=2 then print ("Merging "^Label.toString l'^" and "^
+					     labtoString l''^".\n") else ();
+		 IntHash.insert (!labelMerge, l', l''))
 
 	    (* mark a lable as reachable *)
 	    fun setReachable l' =
