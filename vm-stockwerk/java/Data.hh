@@ -171,9 +171,6 @@ public:
     return HashTable::FromWordDirect(GetArg(METHOD_HASH_TABLE_POS));
   }
   void FillMethodHashTable(HashTable *methodHashTable);
-  u_int GetNumberOfInstanceFields() {
-    return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
-  }
   Table *GetVirtualTable() {
     return Table::FromWordDirect(GetArg(VIRTUAL_TABLE_POS));
   }
@@ -181,10 +178,12 @@ public:
     return Closure::FromWordDirect(GetVirtualTable()->Get(index));
   }
   class Lock *GetLock();
-  Closure *GetClassInitializer() {
-    word wClassInitializer = GetArg(CLASS_INITIALIZER_POS);
-    if (wClassInitializer == Store::IntToWord(0)) return INVALID_POINTER;
-    return Closure::FromWordDirect(wClassInitializer);
+  bool IsInitialized() {
+    return GetArg(CLASS_INITIALIZER_POS) == null;
+  }
+  Worker::Result RunInitializer();
+  u_int GetNumberOfInstanceFields() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
   }
   word GetStaticField(u_int index) {
     return GetArg(BASE_SIZE + index);
@@ -195,10 +194,6 @@ public:
   Closure *GetStaticMethod(u_int index) {
     return Closure::FromWordDirect(GetArg(BASE_SIZE + index));
   }
-  bool IsInitialized() {
-    return GetArg(CLASS_INITIALIZER_POS) == null;
-  }
-  Worker::Result RunInitializer();
 };
 
 class DllExport PrimitiveType: protected Type {
