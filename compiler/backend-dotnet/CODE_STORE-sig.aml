@@ -51,7 +51,7 @@ signature CODE_STORE =
 
 	val init: IL.dottedname -> unit
 	val defineClass: class * IL.extends * IL.implements -> unit
-	val defineMethod: class * IL.id * FlatGrammar.idDef list -> unit
+	val defineMethod: class * IL.id * FlatGrammar.idDef vector -> unit
 	val emit: IL.instr -> unit
 	val emitId: FlatGrammar.id -> unit
 	val allocateLocal: IL.ty -> int
