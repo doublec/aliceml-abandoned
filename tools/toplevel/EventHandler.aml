@@ -51,4 +51,6 @@ structure EventHandler : GUISIGNALS_SIG =
 	fun on_switch_to_io_activate _ = GuiMain.switchTo 2
 	fun on_syntax_colouring_activate _ = GuiMain.activateSyntax()
 	fun on_preferences_activate _ = GuiMain.preferences()
+	fun on_previous_file_activate _ = GuiMain.switchFile false
+	fun on_next_file_activate _ = GuiMain.switchFile true
     end

@@ -40,6 +40,8 @@ signature GUISIGNALS_SIG =
     val on_reset_activate : Gtk.callback_function
     val on_back_in_history_activate : Gtk.callback_function
     val on_forward_in_history_activate : Gtk.callback_function
+    val on_previous_file_activate : Gtk.callback_function
+    val on_next_file_activate : Gtk.callback_function
     val on_switch_to_editor_activate : Gtk.callback_function
     val on_switch_to_compiler_activate : Gtk.callback_function
     val on_switch_to_io_activate : Gtk.callback_function
@@ -77,6 +79,8 @@ functor GuiSignals(structure S : GUISIGNALS_SIG) =
     val reset_on_reset_activate = Gtk.signalConnect(Gui.reset, "activate",S.on_reset_activate)
     val back_in_history_on_back_in_history_activate = Gtk.signalConnect(Gui.back_in_history, "activate",S.on_back_in_history_activate)
     val forward_in_history_on_forward_in_history_activate = Gtk.signalConnect(Gui.forward_in_history, "activate",S.on_forward_in_history_activate)
+    val previous_file_on_previous_file_activate = Gtk.signalConnect(Gui.previous_file, "activate",S.on_previous_file_activate)
+    val next_file_on_next_file_activate = Gtk.signalConnect(Gui.next_file, "activate",S.on_next_file_activate)
     val switch_to_editor_on_switch_to_editor_activate = Gtk.signalConnect(Gui.switch_to_editor, "activate",S.on_switch_to_editor_activate)
     val switch_to_compiler_on_switch_to_compiler_activate = Gtk.signalConnect(Gui.switch_to_compiler, "activate",S.on_switch_to_compiler_activate)
     val switch_to_io_on_switch_to_io_activate = Gtk.signalConnect(Gui.switch_to_io, "activate",S.on_switch_to_io_activate)

@@ -325,6 +325,15 @@ structure GuiMain =
 				 Gtk.widgetSetSensitive(Gui.feedregion,true))
 		  | STDSTREAMS => (bufferMenus false;
 				   Gtk.widgetSetSensitive(Gui.feedregion,false))
+		val _ = if !currentPage > 0 then
+		            Gtk.widgetSetSensitive(Gui.previous_file, true)
+			else
+			    Gtk.widgetSetSensitive(Gui.previous_file, false)
+		val _ = if !currentPage <> ~1 andalso
+		            !currentPage < List.length (!pages) - 1 then
+		            Gtk.widgetSetSensitive(Gui.next_file, true)
+			else
+			    Gtk.widgetSetSensitive(Gui.next_file, false)
 	    in ()
 	    end
 
@@ -694,6 +703,18 @@ structure GuiMain =
 	    
 	val forwardHistory = OutputWriters.historyNext
 	val backwardHistory = OutputWriters.historyPrev
+
+	fun switchFile direction =
+	    let
+		val cp = !currentPage
+		val np = if direction then cp+1 else cp-1
+	    in
+		if np<0 orelse np>List.length(!pages) then
+		    ()
+		else
+		    Gtk.notebookSetCurrentPage(Gui.notebook1,
+					       np)
+	    end
 
 	fun switchTo 0 =
 	    (case getCurrentPage() of
