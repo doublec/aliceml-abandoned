@@ -161,11 +161,12 @@ LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
-	HASH_KEY-sig.aml LargeIntHashKey.aml StringHashKey.aml \
+	HASH_KEY-sig.aml IntHashKey.aml LargeIntHashKey.aml StringHashKey.aml \
 	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
 	SIMPLE_IMP_MAP-sig.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
 	MkScopedImpMap.aml LIST_SORT-sig.aml MkListSort.aml \
+	CELL-sig.aml Cell.aml \
 	DEPTH_FIRST_SEARCH-sig.aml MkDepthFirstSearch.aml \
 	PRETTY_PRINT-sig.aml PrettyPrint.aml \
 	RANDOM-sig.aml Random.aml STAT-sig.aml Stat.aml \
