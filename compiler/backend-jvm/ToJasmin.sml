@@ -122,7 +122,7 @@ structure ToJasmin =
 			isSome (StringHash.lookup (!labelMerge, l'))
 			orelse StringSet.member (!reachable, l')
 		    in
-			if !ECHO >= 2 then
+			if !VERBOSE >= 2 then
 			    print ("Label "^l'^" is "^
 				   (if result then "" else "not ")^
 					"reachable.\n")
@@ -176,7 +176,7 @@ structure ToJasmin =
 		    let
 			val lookup = Array.sub (!fusedwith, register)
 		    in
-			if lookup = ~1
+			if lookup = ~1 orelse lookup = register
 			    then register
 			else getOrigin lookup
 		    end
@@ -334,14 +334,14 @@ structure ToJasmin =
 		    end
 		  | deadCode (Lab (lab', dropMode), Goto lab''::rest) =
 		    (LabelMerge.merge (lab', Lab (lab'', false));
-		     if !OPTIMIZE >= 4 andalso dropMode then
+		     if dropMode then
 			 deadCode (Jump Got, rest)
 		     else
 			 Goto lab'' ::
 			 deadCode (Jump Got, rest))
 		  | deadCode (Lab (lab', dropMode), Areturn::rest) =
 		    (LabelMerge.merge (lab', Jump ARet);
-		     if !OPTIMIZE >= 4 andalso dropMode then
+		     if dropMode then
 			 deadCode (Jump ARet, rest)
 		     else
 			 Label lab' ::
@@ -349,7 +349,7 @@ structure ToJasmin =
 			 deadCode (Jump ARet, rest))
 		  | deadCode (Lab (lab', dropMode), Return::rest) =
 		    (LabelMerge.merge (lab', Jump Ret);
-		     if !OPTIMIZE >= 4 andalso dropMode then
+		     if dropMode then
 			 deadCode (Jump Ret, rest)
 		     else
 			 Label lab' ::
@@ -357,7 +357,7 @@ structure ToJasmin =
 			 deadCode (Jump Ret, rest))
 		  | deadCode (Lab (lab', dropMode), Ireturn::rest) =
 		    (LabelMerge.merge (lab', Jump IRet);
-		     if !OPTIMIZE >= 4 andalso dropMode then
+		     if dropMode then
 			 deadCode (Jump IRet, rest)
 		     else
 			 Label lab' ::
@@ -521,15 +521,20 @@ structure ToJasmin =
 	    in
 		if !OPTIMIZE >=1 then
 		    let
+			val _ = if !VERBOSE >= 3 then print "fusing registers..." else ()
 			val d' = fuse (Store, flattened)
+			val _ = if !VERBOSE >= 3 then print "done.\n" else ()
 		    in
 			(* Register 0 ('this'-Pointer) and
 			 register 1 (formal Parameter) are
 			 defined when entering a method *)
 			JVMreg.define(0, 0);
 			JVMreg.define(1, 0);
+			if !VERBOSE >= 3 then print "preparing lifeness... " else ();
 			prepareLifeness (d', 0);
+			if !VERBOSE >= 3 then print "doing lifeness... " else ();
 			lifeness (d', 0);
+			if !VERBOSE >= 3 then print "done.\n" else ();
 			JVMreg.assignAll();
 			if !OPTIMIZE >= 2 then
 			    (LabelMerge.new();

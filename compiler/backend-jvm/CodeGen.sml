@@ -26,7 +26,7 @@ structure CodeGen =
 		    val freeStack:StampSet.t list ref = ref nil
 
 		    fun insert (Id (_,stamp',_)) =
-			(if !ECHO>=2 then
+			(if !VERBOSE>=2 then
 			     print ("Top "^(Stamp.toString (Lambda.top()))^
 				    ". insert free: "^(Stamp.toString stamp')^"\n")
 			 else ();
@@ -37,7 +37,7 @@ structure CodeGen =
 			 else
 			     StampSet.insert (!free, stamp'))
 		    fun delete (Id (_,stamp',_)) =
-			(if !ECHO>=2 then
+			(if !VERBOSE>=2 then
 			     print ("Top "^(Stamp.toString (Lambda.top()))^
 				    " delete free: "^(Stamp.toString stamp')^"\n")
 			 else ();
@@ -47,7 +47,7 @@ structure CodeGen =
 			let
 			    val x = StampSet.fold (fn (x,xs) => x::xs) nil (!free)
 			in
-			    if !ECHO>=2 then
+			    if !VERBOSE>=2 then
 				(print ("Top "^(Stamp.toString (Lambda.top())));
 				 printStampList x)
 			    else ();
@@ -169,15 +169,15 @@ structure CodeGen =
 	end
 
 	(* Einstiegspunkt *)
-	fun genProgramCode (debug, echo, optimize, name, program) =
+	fun genProgramCode (debug, verbose, optimize, name, program) =
 	    (DEBUG := debug;
-	     ECHO := echo;
+	     VERBOSE := verbose;
 	     OPTIMIZE := optimize;
 	     Class.setInitial name;
 	     let
 		 (* freie Variablen berechnen. *)
 		 val _ = app freeVarsDec program
-		 val _ = if !ECHO>=2 then FreeVars.printFun () else ()
+		 val _ = if !VERBOSE>=2 then FreeVars.printFun () else ()
 		 val _ = Lambda.createIdsLambdaTable()
 		 (* val _ = app annotateTailDec program*)
 		 (* Alle Deklarationen übersetzen *)
@@ -216,7 +216,7 @@ structure CodeGen =
 		 val run = Method([MPublic], "run", ([], [Voidsig]),
 				  Locals (Register.max()+1),
 				  Multi decs ::
-				  (if !ECHO >= 1 then
+				  (if !VERBOSE >= 1 then
 				       Multi [Getstatic ("java/lang/System/out",
 							 [Classsig "java/io/PrintStream"]),
 					      Aload (!mainpickle),
@@ -276,10 +276,11 @@ structure CodeGen =
 				       (RecordLabel.makefields ())),
 				      [clinit, litinit])
 	     in
-		 if !ECHO >=2 then print "Generating main and literal class..." else ();
+		 if !VERBOSE >=2 then print "Generating main class..." else ();
 		 classToJasmin (class);
+		 if !VERBOSE >=2 then print "Generating literal class..." else ();
 		 classToJasmin (literale);
-		 if !ECHO >=2 then print "Okay.\n" else ()
+		 if !VERBOSE >=2 then print "Okay.\n" else ()
 	     end
 	 )
 
@@ -490,10 +491,7 @@ structure CodeGen =
 					  r := whichSwitch else ();
 					  ret)
 				 end
-			     else if shared = whichSwitch orelse whichSwitch=0 then
-				 (false, sh, switchNumber test')
-				  else (print ("Let him who has understanding reckon the number of the Leif, for it is a human's number: Its number is "^Int.toString shared^" and not "^Int.toString whichSwitch^".\n");
-					(false, sh, switchNumber test'))
+			     else (false, sh, switchNumber test')
 		       | IndirectStm (_,ref (SOME b''))::_ =>
 				      checkForSwitch (test', b'', whichSwitch)
 		       | (t as TestStm (_, Id (_, stamp'', _),
@@ -1245,7 +1243,7 @@ structure CodeGen =
 	and
     expCodeClass (OneArg id',body') =
 	    let
-		val _ = if !ECHO >=1 then print ("create Class "^(Class.getCurrent())^"\n") else ()
+		val _ = if !VERBOSE >=1 then print ("create Class "^(Class.getCurrent())^"\n") else ()
 		val className = classNameFromId id'
 		val freeVarList = FreeVars.getVars id'
 		(* baut die Felder, d.h. die freien Variablen der Klasse *)
