@@ -54,47 +54,49 @@ struct
 
     val new = channel
 
-    fun add (c, n) =
-	let val p = promise ()
-	    val v = Ref.exchange (c, future p)
-	in
-	    fulfill (p, v+n)
-	end
+    (* Atomically update a reference r with f (!r) *)
+    fun updateRef (r, f) =
+      let
+          val pr = promise ()
+          val old = Ref.exchange (r, future pr)
+      in
+        fulfill (pr, f old)
+      end
 
-    fun incr (chan: 'a channel) = add (#count chan, 1)
-    fun decr (chan: 'a channel) = add (#count chan, ~1)
+    (* Atomically update a reference r with #1 f (!r) and returns #2 f (!r) *)
+    fun updateRefRet (r, f) =
+      let
+          val pr = promise ()
+          val old = Ref.exchange (r, future pr)
+          val (new, ret) = f old
+      in
+        fulfill (pr, new) ;
+        ret
+      end
+
+    fun add (chan: 'a channel, n) = updateRef (#count chan, fn i => i+n)
+    fun incr chan = add (chan, 1)
+    fun decr chan = add (chan, ~1)
 
     fun isClosed (chan:'a channel) = Future.isDetermined (future(#closed chan))
     fun waitClosed (chan:'a channel) = Future.await (future(#closed chan))
 
     fun isEmpty (chan: 'a channel) = !(#count chan) = 0
 
-    fun get (chan: 'a channel) =
-	let val p = promise ()
-	in
-	    case Ref.exchange (#first chan, future p)
-		of x::xs => (decr chan ;
-			     fulfill (p, xs);
-			     x)
-	      | nil   => (fulfill (p, nil); raise Empty)
-	end
+    fun getSome chan =
+      updateRefRet (#first chan,
+                    fn nil   => (nil, NONE)
+                     | x::xs => (decr chan; (xs, SOME x)))
 
-    fun getSome   chan = SOME (get chan) handle Empty => NONE
-
-    fun getSomeNB chan = 
-        let
-          val p = promise ()
-          val l = Ref.exchange (#first chan, future p)
-        in
-          if isEmpty chan then (fulfill (p, l); NONE)
-          else case l of
-                 x::xs => (decr chan ;
-                           fulfill (p, xs);
-                           SOME x)
-               | nil   => (fulfill (p, nil); NONE)
-        end
-    
+    fun get chan = case getSome chan of NONE => raise Empty | SOME x => x
     val pop = get
+
+    fun getSomeNB chan =
+      updateRefRet (#first chan,
+                    fn x => if isEmpty chan then (x, NONE)
+                            else case x of
+                              nil   => assert false
+                            | x::xs => (decr chan; (xs, SOME x)))
 
     fun put (chan,x) =
 	let val p  = promise ()
@@ -155,7 +157,7 @@ struct
 	    val l  = Ref.exchange (#first chan, future p)
 	    val n  = !(#count chan)
 	    (* Remove n elements from the list. *)
-	    val _ = add (#count chan, ~n)
+	    val _ = add (chan, ~n)
 	    val ll = listSkip (n, l)
 	in
 	    fulfill(p,ll)
@@ -192,8 +194,8 @@ struct
                                               | SOME x => x :: loop ch
       in loop end
 
-    fun toList   f = toListG getSome   f
-    fun toListNB f = toListG getSomeNB f
+    fun toList   ch = toListG getSome   ch
+    fun toListNB ch = toListG getSomeNB ch
 
 end
 
@@ -201,7 +203,7 @@ end
  *   Let Prd be the following predicate (its type is channel * 'a list -> bool)
  *  
  *  =====
- *   Prd(ch,l) = either (1) l is a undetermined future of a promise p
+ *   Prd(ch,l) = either (1) l is an undetermined future of a promise p
  *               or     (2) l is nil
  *               or     (3) l is x :: xs
  *
