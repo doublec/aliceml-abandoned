@@ -1,10 +1,9 @@
-## -*- Makefile -*-
 ##
 ## Author:
 ##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ## 
 ## Copyright:
-##   Leif Kornstaedt, 2000
+##   Leif Kornstaedt, 2000-2002
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -16,12 +15,10 @@ TOPDIR = .
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SUBDIRS = store adt generic alice
+SUBDIRS = store adt emulator
 
 SRCS = Base.cc Main.cc
-OBJS = \
-	$(SRCS:%.cc=%.o) \
-	alice/libalice.a generic/libgeneric.a adt/libadt.a store/libstore.a
+OBJS = $(SRCS:%.cc=%.o) adt/libadt.a store/libstore.a emulator/libemulator.a
 
 LIBS = $(EXTRA_LIBS)
 
