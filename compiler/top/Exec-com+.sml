@@ -23,7 +23,7 @@ local
 
     fun defaults () =
 	(SMLToComPlusMain.Switches.printComponentSig := false;
-	 SMLToComPlusMain.Switches.defaultImport := false)
+	 SMLToComPlusMain.Switches.defaultImport := true)
 
     fun stoc nil =   (* for testing bootstrapping *)
 	(defaults ();
