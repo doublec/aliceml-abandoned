@@ -16,7 +16,7 @@
 #pragma interface
 #endif
 
-#include "store.hh"
+#include "store/store.hh"
 
 typedef unsigned short w_char;
 
@@ -53,19 +53,56 @@ public:
   }
 };
 
-class Array; // defined behind Vector
+class Array;
 class Builtin; // defined behind String
 class Cell;
 class Constructor;
 class ConVal;
 class Real;
-class Record;
-class StreamWrapper;
 class String;
 class TagVal;
 class Tuple;
 class Vector;
 class WideString;
+
+class Array : private Block {
+private:
+  void CheckIndex(int i) {
+    if ((u_int) i > GetSize()) {} //to be determined
+  }
+public:
+  using Block::InitArg;
+  using Block::ToWord;
+
+  u_int GetSize() {
+    if (HeaderOp::DecodeLabel(this) == AliceLabel::ToBlockLabel(AliceLabel::ArrayZero)) {
+      return 0;
+    }
+    else {
+      return ((Block *) this)->GetSize();
+    }
+  }
+
+  word GetArg(int i) { CheckIndex(i); return Block::GetArg((u_int) i); }
+  void SetArg(int i, word value) { CheckIndex(i); ReplaceArg((u_int) i, value); }
+
+  static Array *New(u_int s) {
+    if (s == 0) {
+      return (Array *) Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::ArrayZero), 1);
+    }
+    else {
+      return (Array *) Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::Array), s);
+    }
+  }
+  static Array *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert((p == INVALID_POINTER) ||
+	   ((p->GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::Array))
+	    || (p->GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::ArrayZero))));
+    return (Array *) p;
+  }
+};
 
 class Cell : private Block {
 private:
@@ -74,14 +111,13 @@ private:
 public:
   using Block::ToWord;
 
-  word GetValue()           { return GetArg(VAL_POS); }
-  void SetValue(word value) { ReplaceArg(VAL_POS, value); }
+  word Access()             { return GetArg(VAL_POS); }
+  void Assign(word value)   { ReplaceArg(VAL_POS, value); }
   word Exchange(word value) { word val = GetArg(VAL_POS); ReplaceArg(VAL_POS, value); return val; }
 
   static Cell *New() {
     Cell *c = (Cell *) Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::Cell), SIZE);
     
-    c->InitArg(VAL_POS, Store::IntToWord(0));
     return c;
   }
   static Cell *New(word value) {
@@ -101,11 +137,7 @@ public:
 
 class Constructor : private Block {
 public:
-  using Block::GetLabel;
-  using Block::GetSize;
   using Block::ToWord;
-  using Block::GetArg;
-  using Block::InitArg;
 
   static Constructor *New() {
     Block *b = Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::Constructor), 1);
@@ -126,7 +158,6 @@ class ConVal : private Block {
 private:
   static const int CON_POS = 1;
 public:
-  using Block::GetLabel;
   using Block::ToWord;
 
   u_int GetSize() {
@@ -140,10 +171,10 @@ public:
   }
 
   // to be determined
-  static ConVal *New(word cons, u_int n) {
+  static ConVal *New(Constructor *cons, u_int n) {
     Block *b = Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::ConVal), (n + 1));
 
-    b->InitArg(CON_POS, cons);
+    b->InitArg(CON_POS, cons->ToWord());
     return (ConVal *) b;
   }
   static ConVal *FromWord(word x) {
@@ -153,6 +184,13 @@ public:
 	   (p->GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::ConVal)));
     return (ConVal *) p;
   }
+  bool IsConVal() {
+    return GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::ConVal);
+  }
+  Constructor *GetConstructor() {
+    Assert(GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::ConVal));
+    return Constructor::FromWord(GetArg(1));
+  }
 };
 
 class Real : private Block {
@@ -161,6 +199,7 @@ private:
 public:
   using Block::ToWord;
 
+  //--** alignment?
   double GetValue() { return ((double *) (ar + 1))[0]; }
 
   static Real *New(double v) {
@@ -175,26 +214,6 @@ public:
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == CHUNK));
     return (Real *) p;
-  }
-};
-
-class Record : private Block {
-public:
-  using Block::GetLabel;
-  using Block::GetSize;
-  using Block::ToWord;
-  using Block::GetArg;
-  using Block::InitArg;
-
-  static Record *New(u_int s) {
-    return (Record *) Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::Record), s);
-  }
-  static Record *FromWord(word x) {
-    Block *p = Store::WordToBlock(x);
-
-    Assert((p == INVALID_POINTER) ||
-	   (p->GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::Record)));
-    return (Record *) p;
   }
 };
 
@@ -244,9 +263,12 @@ private:
   static const int PROC_POS = 1;
   static const int NAME_POS = 2;
 public:
+  using Block::ToWord;
+
   int GetProc()     { return Store::WordToInt(GetArg(PROC_POS)); }
   String *GetName() { return (String *) Store::WordToBlock(GetArg(NAME_POS)); }
 
+  //--** anderen Typ fuer Funktionspointer
   static Builtin *New(int proc, char *name) {
     Block *b = Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::Builtin), SIZE);
     
@@ -304,9 +326,7 @@ public:
 };
 
 class Vector : private Block {
-protected:
-  using Block::ReplaceArg;
-
+private:
   void CheckIndex(int i) {
     if ((u_int) i > GetSize()) {} //to be determined
   }
@@ -338,51 +358,12 @@ public:
   }
 };
 
-class Array : private Block {
-protected:
-  using Block::ReplaceArg;
-
-  void CheckIndex(int i) {
-    if ((u_int) i > GetSize()) {} //to be determined
-  }
-public:
-  using Block::InitArg;
-  using Block::ToWord;
-
-  u_int GetSize() {
-    if (HeaderOp::DecodeLabel(this) == AliceLabel::ToBlockLabel(AliceLabel::ArrayZero)) {
-      return 0;
-    }
-    else {
-      return ((Block *) this)->GetSize();
-    }
-  }
-
-  word GetArg(int i) { CheckIndex(i); return Block::GetArg((u_int) i); }
-  void SetArg(int i, word value) { CheckIndex(i); ReplaceArg((u_int) i, value); }
-
-  static Array *New(u_int s) {
-    if (s == 0) {
-      return (Array *) Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::ArrayZero), 1);
-    }
-    else {
-      return (Array *) Store::AllocBlock(AliceLabel::ToBlockLabel(AliceLabel::Array), s);
-    }
-  }
-  static Array *FromWord(word x) {
-    Block *p = Store::WordToBlock(x);
-
-    Assert((p == INVALID_POINTER) ||
-	   ((p->GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::Array))
-	    || (p->GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::ArrayZero))));
-    return (Array *) p;
-  }
-};
-
 class WideString : private Block {
 private:
   static const int LEN_POS = 1;
 public:
+  using Block::ToWord;
+
   w_char *GetValue() { return (w_char *) (ar + 2); }
 
   static WideString *New(w_char *str, int len) {
