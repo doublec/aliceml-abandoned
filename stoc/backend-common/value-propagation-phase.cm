@@ -8,6 +8,7 @@ is
     ../infrastructure/phase.cm
     ../misc/sources.cm
     ../common/id-stamp.cm
+    ../common/prebound.cm
     flat-grammar.cm
 
     VALUE_PROPAGATION_PHASE.sig

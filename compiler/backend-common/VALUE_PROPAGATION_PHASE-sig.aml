@@ -16,5 +16,5 @@ signature VALUE_PROPAGATION_PHASE =
 	structure I: FLAT_GRAMMAR = FlatGrammar
 	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	val translate: C.t -> I.t -> O.t
+	val translate: C.t -> Source.desc * I.t -> O.t
     end
