@@ -6,4 +6,8 @@ Makefile
 gtkraw.c gtkheader.c
 UnsafeGDK.oz UnsafeGTK.oz UnsafeGTKCANVAS.oz
 UnsafeGDK.asig UnsafeGTK.asig UnsafeGTKCANVAS.asig
+GDK-sig.aml GDK_INTERFACE.aml
+GTK-sig.aml GTK_INTERFACE.aml
+GTK_CANVAS-sig.aml GTK_CANVAS_INTERFACE.aml
+autom4te-*.cache
 *.ozf
