@@ -137,7 +137,6 @@ struct
     __primitive val use : string -> unit = "use"
     *)
 
-    exception Future	= Future.Future				(**)
     exception Cyclic	= Future.Cyclic				(**)
 
     val byneed		= Future.byneed				(**)
