@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Usage", "usage") ?>
+<?php heading("Stockhausen Operette 2 - Usage", "usage") ?>
 
 <?php section("overview", "overview") ?>
   <P>The interface to the Alice system features:</P>
