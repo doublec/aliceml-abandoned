@@ -326,16 +326,22 @@ fun resizeSepLines (dict,rx) =
 	 resizeSepLinesIterate(dict,x,0,highest_i)
      end
 
+fun canvaswidth (hadj) = let
+			 val page_sh = Gtk.adjustmentGetFieldPageSize(hadj)
+			 val h = if (Real.< (page_sh,(!(Settings.max_x)))) 
+				     then !(Settings.max_x) else page_sh
+		     in
+			 h
+		     end
+
 (* invokes canvas resize *)	
 fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  Server.serve (fn () => let
-	                     val page_sh = Gtk.adjustmentGetFieldPageSize(hadj)
 			     val upperh = Gtk.adjustmentGetFieldUpper(hadj)
 			     val valueh = Gtk.adjustmentGetFieldValue(hadj)
 			     val upperv = Gtk.adjustmentGetFieldUpper(vadj)
 			     val valuev = Gtk.adjustmentGetFieldValue(vadj) 
 			     val page_sv = Gtk.adjustmentGetFieldPageSize(vadj)
-			     val h = if (Real.< (page_sh,(!(Settings.max_x)))) 
-					 then !(Settings.max_x) else page_sh 
+			     val h = canvaswidth(hadj)
 			     val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
 					 then !(Settings.max_y) else page_sv
 			   in
@@ -1056,6 +1062,8 @@ fun setVisible (x,y) = let
 				Real.+(!Settings.max_y,ry))
 		       end
 
+
+
 (********** Inspizieren **********)
     fun inspect(v,t) = 
 	let
@@ -1066,15 +1074,15 @@ fun setVisible (x,y) = let
 			; relnumber := 0
 			;!canvasroot)
 	    val n = NewNode.newNode(v,t,i,root)	
-            val line = createSepLine(root,!act_line)
+            val line = (Layout.layout(n)
+			;setVisible(get_xdim(n),get_ydim(n)+1)
+			;createSepLine(root,!act_line,canvaswidth(hadj)))
 	in
-	    ( Layout.layout(n)
-	    ; DrawNodes.draw(n,0,!act_line,false)
+	    ( DrawNodes.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)
 	    ; TextIO.print ("Widget: changing actline by " 
 			    ^ Int.toString (get_ydim(n)+1)
 			    ^ "\n")
-	    ; setVisible(get_xdim(n),get_ydim(n)+1)
 	    ; (!resize)()
 	    ; show()
 	    ; stopButtonSetActive(false)
@@ -1090,10 +1098,11 @@ fun setVisible (x,y) = let
 			; relnumber := 0
 			;!canvasroot)
 	    val n = NewNode.newNodeInf(v,t,i,root)	
-            val line = createSepLine(root,!act_line)
+            val line =( Layout.layout(n)
+		       ;setVisible(get_xdim(n),get_ydim(n)+1)
+		       ;createSepLine(root,!act_line,canvaswidth(hadj)))
 	in
-	    ( Layout.layout(n)
-	    ; DrawNodes.draw(n,0,!act_line,false)
+	    ( DrawNodes.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)
 	    ; setVisible(get_xdim(n),get_ydim(n)+1)
 	    ; (!resize)()

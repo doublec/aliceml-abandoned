@@ -414,11 +414,11 @@ fun changeFontSize i = let
 		  ^ "\n") *) () )
      end
 
- fun createSepLine (group,actline)= 
+ fun createSepLine (group,actline,x)= 
      if actline > 0 
 	 then
 	     let
-		 val mx = Real.trunc(!Settings.max_x)
+		 val mx = Real.trunc(x)
 		 val linepos = actline * fontHeight()
 		     - (fontHeight() div 2)
 	     in
