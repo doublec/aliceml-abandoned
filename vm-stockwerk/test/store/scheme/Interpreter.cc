@@ -191,6 +191,9 @@ void Interpreter::CreateDefaultEnv() {
   CreateId(GlobalAlloc("exit"), OP_EXIT);
   CreateId(GlobalAlloc("memstat"), OP_MEMSTAT);
   CreateId(GlobalAlloc("skip"), OP_SKIP);
+  CreateId(GlobalAlloc("set_car!"), OP_SETCAR);
+  CreateId(GlobalAlloc("set_cdr!"), OP_SETCDR);
+  CreateId(GlobalAlloc("killtop"), OP_KILLTOP);
 }
 
 inline void Interpreter::InterpretDeclArr(Block *instr) {
@@ -305,6 +308,21 @@ inline void Interpreter::InterpretBegin(Block *instr) {
   }
 }
 
+inline void Interpreter::InterpretSetQ(Block *instr) {
+  SetQNode *node = SetQNode::FromBlock(instr);
+
+  PushTask(AssignNode::New(node->GetId())->ToWord());
+  PushTask(node->GetExpr());
+}
+
+inline void Interpreter::InterpretSetCxr(NodeType type, Block *instr) {
+  SetCxrNode *node = SetCxrNode::FromBlock(instr);
+  
+  PushTask(Store::IntToWord((int) type));
+  PushTask(node->GetCell());
+  PushTask(node->GetExpr());
+}
+
 inline void Interpreter::InterpretRemove() {
   PopFrame();
   PopClosure();
@@ -338,7 +356,7 @@ char *Interpreter::InterpretOp(Block *p) {
       PushValue(IntNode::New(a + b)->ToWord());
     }
     else {
-      fprintf(stderr, "Interpreter::Interpret: evaluation of `+' needs int arguments\n");
+      std::fprintf(stderr, "Interpreter::Interpret: evaluation of `+' needs int arguments\n");
       exit(0);
     }
     break;
@@ -350,7 +368,7 @@ char *Interpreter::InterpretOp(Block *p) {
       PushValue(IntNode::New(a - b)->ToWord());
     }
     else {
-      fprintf(stderr, "Interpret::Interpret: evaluation of `-' needs int arguments\n");
+      std::fprintf(stderr, "Interpret::Interpret: evaluation of `-' needs int arguments\n");
       exit(0);
     }
     break;
@@ -362,7 +380,7 @@ char *Interpreter::InterpretOp(Block *p) {
       PushValue(IntNode::New(a * b)->ToWord());
     }
     else {
-      fprintf(stderr, "Interpret::Interpret: evaluation of `*' needs int arguments\n");
+      std::fprintf(stderr, "Interpret::Interpret: evaluation of `*' needs int arguments\n");
       exit(0);
     }
     break;
@@ -374,7 +392,7 @@ char *Interpreter::InterpretOp(Block *p) {
       PushValue(IntNode::New(a / b)->ToWord());
     }
     else {
-      fprintf(stderr, "Interpret::Interpret: evaluation of `/' needs int arguments\n");
+      std::fprintf(stderr, "Interpret::Interpret: evaluation of `/' needs int arguments\n");
       exit(0);
     }
     break;
@@ -386,7 +404,7 @@ char *Interpreter::InterpretOp(Block *p) {
       PushValue(IntNode::New(a < b)->ToWord());
     }
     else {
-      fprintf(stderr, "Interpret::Interpret: evaluation of `<' needs int arguments\n");
+      std::fprintf(stderr, "Interpret::Interpret: evaluation of `<' needs int arguments\n");
       exit(0);
     }
     break;
@@ -398,7 +416,7 @@ char *Interpreter::InterpretOp(Block *p) {
       PushValue(IntNode::New(a > b)->ToWord());
     }
     else {
-      fprintf(stderr, "Interpret::Interpret: evaluation of `>' needs int arguments\n");
+      std::fprintf(stderr, "Interpret::Interpret: evaluation of `>' needs int arguments\n");
       exit(0);
     }
     break;
@@ -433,7 +451,7 @@ char *Interpreter::InterpretOp(Block *p) {
       return a->GetString();
     }
     else {
-      fprintf(stderr, "Interpret::Interpret: evaluation of `use' needs string argument\n");
+      std::fprintf(stderr, "Interpret::Interpret: evaluation of `use' needs string argument\n");
       exit(0);
     }
     break;
@@ -461,10 +479,10 @@ char *Interpreter::InterpretOp(Block *p) {
     
     switch ((NodeType) p->GetLabel()) {
     case T_INT:
-      printf("%d\n", IntNode::FromBlock(p)->GetInt());
+      std::printf("%d\n", IntNode::FromBlock(p)->GetInt());
       break;
     case T_STRING:
-      printf("%s\n", StringNode::FromBlock(p)->GetString());
+      std::printf("%s\n", StringNode::FromBlock(p)->GetString());
       break;
     default:
       break;
@@ -486,7 +504,6 @@ char *Interpreter::InterpretOp(Block *p) {
     
     gen = ((gen <= (STORE_GENERATION_NUM - 2)) ? gen : (STORE_GENERATION_NUM - 2));
     
-    Store::ForceGCGen(gen);
     Store::DoGC(root);
     Store::MemStat();
     std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
@@ -518,7 +535,7 @@ char *Interpreter::InterpretOp(Block *p) {
   case OP_SHOWLIST: {
     Block *p   = Store::DirectWordToBlock(PopValue());
     u_int ende = 0;
-    
+
     std::printf("(");
     while (!ende) {
       if (p->GetLabel() == (BlockLabel) T_NIL) {
@@ -556,6 +573,21 @@ char *Interpreter::InterpretOp(Block *p) {
     break;
   }
   case OP_SKIP:
+    break;
+  case OP_SETCAR: {
+    ConsCell *cell = ConsCell::FromWord(PopValue());
+    word expr      = PopValue();
+    cell->SetCar(expr);
+    break;
+  }
+  case OP_SETCDR: {
+    ConsCell *cell = ConsCell::FromWord(PopValue());
+    word expr      = PopValue();
+    cell->SetCdr(expr);
+    break;
+  }
+  case OP_KILLTOP:
+    PopValue();
     break;
   default:
     break;
@@ -721,6 +753,12 @@ char *Interpreter::Interpret(word tree) {
 	InterpretApplication(instr); break;
       case T_BEGIN:
 	InterpretBegin(instr); break;
+      case T_SETQ:
+	InterpretSetQ(instr); break;
+      case T_SETCAR:
+	InterpretSetCxr(T_SETCAR, instr); break;
+      case T_SETCDR:
+	InterpretSetCxr(T_SETCDR, instr); break;
       default:
 	break;
       }
