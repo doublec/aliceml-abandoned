@@ -54,7 +54,7 @@
   GecodeSpace *s;                                                           \
   int stamp, pstamp;                                                        \
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); }         \
-  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
+  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
     s = (GecodeSpace *) Store::WordToUnmanagedPointer(cr->Get(0));          \
     stamp = Store::DirectWordToInt(cr->Get(1));                             \
     pstamp = Store::DirectWordToInt(cr->Get(2));                            \
@@ -100,7 +100,7 @@
 #define DECLARE_DESCRIPTION(desc, x) \
  BranchDesc* desc; \
  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
- { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
+ { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
  desc = static_cast<BranchDesc *>(Store::WordToUnmanagedPointer(cr->Get(0))); \
  }
 
@@ -202,7 +202,7 @@ public:
 static GecodeFinalizationSet *gecodeFinalizationSet;
 
 void GecodeFinalizationSet::Finalize(word value) {
-  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(value);
   word ptr = cr->Get(0);
   GecodeSpace *s = (GecodeSpace *)Store::WordToUnmanagedPointer(ptr);
   delete s;
@@ -216,7 +216,7 @@ public:
 static GecodeBranchdescFinalizationSet *gecodeBranchdescFinalizationSet;
 
 void GecodeBranchdescFinalizationSet::Finalize(word value) {
-  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(value);
   word ptr = cr->Get(0);
   BranchDesc *desc =
     static_cast<BranchDesc *>(Store::WordToUnmanagedPointer(ptr));
@@ -328,7 +328,7 @@ DEFINE1(clone) {
   CHECK_SPACE(s);
 
   if (stamp==-1) {
-    ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x0);
+    ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x0);
     cr->Replace(1, Store::IntToWord(UnsafeGecode::SpaceStamp++));
   }
 
@@ -354,7 +354,7 @@ DEFINE1(discard) {
   DBGMSG("discard");
   GecodeSpace *s;
   if (Store::WordToTransient(x0) != INVALID_POINTER) { REQUEST(x0); }
-  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x0);
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x0);
   s = (GecodeSpace *) Store::WordToUnmanagedPointer(cr->Get(0));
   
   delete s;
@@ -366,7 +366,7 @@ DEFINE1(discard) {
 DEFINE1(alive) {
   DBGMSG("alive");
   if (Store::WordToTransient(x0) != INVALID_POINTER) { REQUEST(x0); }
-  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x0);
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x0);
   
   DBGMSG("done");
   RETURN_BOOL(Store::WordToInt(cr->Get(0))!=0);
