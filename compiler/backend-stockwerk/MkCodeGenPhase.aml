@@ -406,7 +406,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val (globals, nlocals) = endFn env
 		val ((i, j), _) = #region info
 		val function =
-		    O.Function ((filename env, i, j),
+		    V.function ((filename env, i, j),
 				Vector.length globals, nlocals,
 				args', bodyInstr)
 	    in
@@ -495,7 +495,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val bodyInstr =
 		    O.VecTest (O.Local formalId, #[(idDefs, instr)], elseInstr)
 		val function =
-		    O.Function ((filename, 0, 0),
+		    V.function ((filename, 0, 0),
 				Vector.length globals, nlocals,
 				O.OneArg (O.IdDef formalId), bodyInstr)
 	    in

@@ -23,7 +23,9 @@ structure Value =
 	    "Unsafe.makeTaggedValue"
 	__primitive val makeTuple: 'a t vector -> 'a t =
 	    "Unsafe.makeTuple"
-	__primitive val makeClosure: 'a * 'a t vector -> 'a t =
+	__primitive val makeFunction: 'a -> 'a t =
+	    "Unsafe.makeFunction"
+	__primitive val makeClosure: 'a t * 'a t vector -> 'a t =
 	    "Unsafe.makeClosure"
 
 	val prim = getPrimitiveByName
@@ -35,5 +37,6 @@ structure Value =
 	val tuple = makeTuple
 	val vector = cast
 	val closure = makeClosure
+	val function = makeFunction
 	val sign = cast
     end

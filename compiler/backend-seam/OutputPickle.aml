@@ -184,14 +184,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.VECTOR, Vector.length values + 1);
 	     outputInt (context, LargeInt.fromInt (Vector.length values));
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, V.Closure (function, values)) =
-	    (outputClosure (context, 1 + Vector.length values);
-	     outputFunction (context, function);
-	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, V.Sign _) =
-	    outputInt (context, 0) (*--** i.e., `NONE' *)
-	and outputFunction (context,
-			    Function (coord, nglobals, nlocals, args, body)) =
+	  | outputValue (context,
+			 V.Function (coord, nglobals, nlocals, args, body)) =
 	    (outputTransform (context, "Alice.function");
 	     outputBlock (context, Label.function, 5);
 	     outputCoord (context, coord);
@@ -199,6 +193,12 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputInt (context, LargeInt.fromInt nlocals);
 	     outputArgs outputIdDef (context, args);
 	     outputInstr (context, body))
+	  | outputValue (context, V.Closure (function, values)) =
+	    (outputClosure (context, 1 + Vector.length values);
+	     outputValue (context, function);
+	     Vector.app (fn value => outputValue (context, value)) values)
+	  | outputValue (context, V.Sign _) =
+	    outputInt (context, 0) (*--** i.e., `NONE' *)
 	and outputInstr (context, Kill (ids, instr)) =
 	    (outputBlock (context, Label.kill, 2);
 	     outputVector outputId (context, ids);
@@ -236,7 +236,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputInstr (context, PutFun (id, idRefs, function, instr)) =
 	    (outputBlock (context, Label.putFun, 4); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
-	     outputFunction (context, function); outputInstr (context, instr))
+	     outputValue (context, function); outputInstr (context, instr))
 	  | outputInstr (context, AppPrim (value, idRefs, idDefInstrOpt)) =
 	    (outputBlock (context, Label.appPrim, 3);
 	     outputValue (context, value);

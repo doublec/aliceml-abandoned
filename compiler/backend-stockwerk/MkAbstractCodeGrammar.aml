@@ -37,8 +37,9 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 
 	type coord = string * int * int
 
-	datatype function = Function of coord * int * int * idDef args * instr
-	and instr =
+	type 'instr function = coord * int * int * idDef args * 'instr
+
+	datatype instr =
 	    Kill of id vector * instr
 	  | PutConst of id * value * instr
 	  | PutVar of id * idRef * instr
@@ -48,7 +49,7 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | PutRef of id * idRef * instr
 	  | PutTup of id * idRef vector * instr
 	  | PutVec of id * idRef vector * instr
-	  | PutFun of id * idRef vector * function * instr
+	  | PutFun of id * idRef vector * value * instr
 	  | AppPrim of value * idRef vector * (idDef * instr) option
 	  | AppVar of idRef * idRef args * (idDef args * instr) option
 	  | AppConst of value * idRef args * (idDef args * instr) option
@@ -73,7 +74,7 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | VecTest of idRef * (idDef vector * instr) vector * instr
 	  | Shared of Stamp.t * instr
 	  | Return of idRef args
-	withtype value = function Value.t
+	withtype value = instr function Value.t
 
 	type t = value
     end
