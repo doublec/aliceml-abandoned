@@ -1,2 +1,3 @@
 @echo off
-sml-cm @SMLload=stoc-com+ "$@"
+
+"%STOCKHOME%\SML\sml.bat" @SMLload="%STOCKHOME%\stoc-com+" %1 %2 %3 %4
