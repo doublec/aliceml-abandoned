@@ -138,7 +138,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
       | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
       | trExp(I.ConExp(i,k,y))		= let val y' = trLongid y in
-					      curryExp(i,k,O.ConExp(i,y',k>0))
+					      curryExp(i,k,O.ConExp(i,y',false))
 					  end
       | trExp(I.RefExp(i))		= O.RefExp(i)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
@@ -175,7 +175,8 @@ UNFINISHED: obsolete after bootstrapping:
     and trPat(I.JokPat(i))		= O.WildPat(i)
       | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(i, trId x)
-      | trPat(I.ConPat(i,y,ps))		= O.ConPat(i, trLongid y, trArgPats ps)
+      | trPat(I.ConPat(i,y,ps))		= O.ConPat(i, trLongid y, trArgPats ps,
+						      false)
       | trPat(I.RefPat(i,p))		= O.RefPat(i, trPat p)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
       | trPat(I.RowPat(i,r))		= let val (fs',b') = trPatRow r in
@@ -247,13 +248,12 @@ UNFINISHED: obsolete after bootstrapping:
     and trEqCon(I.Con(i,x,ts), y', ds')	= O.ValDec(i, O.VarPat(i,trId x),
 						   O.VarExp(i,y')):: ds'
     and trNewCon(I.Con(i,x,ts), ds')	= O.ValDec(i, O.VarPat(i,trId x),
-						   O.NewExp(i, NONE,
-						      List.length ts > 0)):: ds'
+						   O.NewExp(i,NONE,false)):: ds'
     and trCon(I.Con(i,x,ts), ds')	= O.ValDec(i,
 						O.VarPat(i,trId x),
 						O.NewExp(i,
 						  SOME(Name.toString(I.name x)),
-						  List.length ts > 0)):: ds'
+						  false)) :: ds'
     and trCons(cs, ds')			= List.foldr trCon ds' cs
 
     and trTyp(I.AbsTyp(i), ds')		= ds'

@@ -35,9 +35,9 @@ UNFINISHED: obsolete after bootstrapping:
     datatype exp =
 	  LitExp    of info * lit
 	| PrimExp   of info * string
-	| NewExp    of info * string option * bool (* has args *)
+	| NewExp    of info * string option * bool (* is n-ary *)
 	| VarExp    of info * longid
-	| ConExp    of info * longid * bool
+	| ConExp    of info * longid * bool (* is n-ary *)
 	| RefExp    of info
 	| TupExp    of info * exp list
 	| RowExp    of info * exp field list
@@ -67,7 +67,7 @@ UNFINISHED: obsolete after bootstrapping:
 	  WildPat   of info
 	| LitPat    of info * lit
 	| VarPat    of info * id
-	| ConPat    of info * longid * pat option
+	| ConPat    of info * longid * pat option * bool (* is n-ary *)
 			(* pat present iff longid has arguments *)
 	| RefPat    of info * pat
 	| TupPat    of info * pat list
@@ -138,7 +138,7 @@ UNFINISHED: obsolete after bootstrapping:
     fun infoPat(WildPat(i))		= i
       | infoPat(LitPat(i,_))		= i
       | infoPat(VarPat(i,_))		= i
-      | infoPat(ConPat(i,_,_))		= i
+      | infoPat(ConPat(i,_,_,_))	= i
       | infoPat(RefPat(i,_))		= i
       | infoPat(TupPat(i,_))		= i
       | infoPat(RowPat(i,_,_))		= i
