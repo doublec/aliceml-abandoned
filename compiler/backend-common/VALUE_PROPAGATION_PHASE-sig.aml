@@ -12,7 +12,7 @@
 
 signature VALUE_PROPAGATION_PHASE =
     sig
-	structure C: CONTEXT = EmptyContext
+	structure C: CONTEXT
 	structure I: FLAT_GRAMMAR = FlatGrammar
 	structure O: FLAT_GRAMMAR = FlatGrammar
 

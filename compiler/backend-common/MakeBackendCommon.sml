@@ -40,19 +40,13 @@ functor MakeBackendCommon(Switches: SWITCHES) =
 			     val switch =
 				 Switches.Debug.dumpValuePropagationResult)
 	structure BackendCommon =
-	    ComposePhases(structure Phase1 = BackendCommon
-			  structure Phase2 = Phase2'
-			  structure Context = EmptyContext
-			  fun context1 () = ()
-			  fun context2 () = ())
+	    ComposePhases'(structure Phase1 = BackendCommon
+			   structure Phase2 = Phase2')
 
 	structure Phase3 = MakeLivenessAnalysisPhase(Switches)
 	structure BackendCommon =
-	    ComposePhases(structure Phase1 = BackendCommon
-			  structure Phase2 = Phase3
-			  structure Context = EmptyContext
-			  fun context1 () = ()
-			  fun context2 () = ())
+	    ComposePhases'(structure Phase1 = BackendCommon
+			   structure Phase2 = Phase3)
 
 	structure Phase4 =
 	    MakeTracingPhase(structure Phase = DeadCodeEliminationPhase
@@ -68,11 +62,8 @@ functor MakeBackendCommon(Switches: SWITCHES) =
 			     val switch =
 				 Switches.Debug.dumpDeadCodeEliminationResult)
 	structure BackendCommon =
-	    ComposePhases(structure Phase1 = BackendCommon
-			  structure Phase2 = Phase4'
-			  structure Context = EmptyContext
-			  fun context1 () = ()
-			  fun context2 () = ())
+	    ComposePhases'(structure Phase1 = BackendCommon
+			   structure Phase2 = Phase4')
     in
 	BackendCommon
     end

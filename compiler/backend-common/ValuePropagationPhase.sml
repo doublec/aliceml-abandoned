@@ -36,6 +36,7 @@ signature SCOPED_IMP_MAP =
 	exception Lookup of key
 
 	val new: unit -> 'a map
+	val clone: 'a map -> 'a map
 	val cloneTop: 'a map -> 'a map
 	val insertScope: 'a map -> unit
 	val deleteScope: 'a map -> unit
@@ -55,6 +56,9 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
 	exception Lookup = ImpMap.Lookup
 
 	fun new () = ref [ImpMap.new ()]
+
+	fun clone (ref maps) = ref (List.map ImpMap.clone maps)
+
 	fun cloneTop (ref maps) =
 	    ref (ImpMap.clone (List.hd maps)::List.tl maps)
 
@@ -86,7 +90,6 @@ functor MakeHashScopedImpMap(Key: HASH_KEY) =
 
 structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
     struct
-	structure C = EmptyContext
 	structure I = FlatGrammar
 	structure O = FlatGrammar
 
@@ -177,6 +180,14 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	type isToplevel = bool
 	type env = (value * isToplevel) IdMap.t
+
+	structure C: CONTEXT =
+	    struct
+		type t = env
+
+		val new = IdMap.new
+		val clone = IdMap.clone
+	    end
 
 	(*
 	 * Value propagation performed on a given sequence of statements
@@ -527,14 +538,14 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun indirect (_, [stm]) = stm
 	  | indirect (info, body) = IndirectStm (info, ref (SOME body))
 
-	fun vpStm (ValDec (info, idDef, exp), env, isToplevel, shared) =
+	fun vpStm (ValDec (info, idDef, exp), env, isToplevel, shared, _) =
 	    let
 		val exp = vpExp (exp, env, isToplevel, shared)
 	    in
 		declare (env, idDef, (expToValue exp, isToplevel));
 		ValDec (info, idDef, exp)
 	    end
-	  | vpStm (RefAppDec (info, idDef, id), env, isToplevel, _) =
+	  | vpStm (RefAppDec (info, idDef, id), env, isToplevel, _, _) =
 	    let
 		val id = deref (id, env)
 	    in
@@ -542,7 +553,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		declareUnknown (env, idDef, isToplevel);
 		RefAppDec (info, idDef, id)
 	    end
-	  | vpStm (TupDec (info, idDefs, id), env, isToplevel, _) =
+	  | vpStm (TupDec (info, idDefs, id), env, isToplevel, _, _) =
 	    let
 		val id = deref (id, env)
 		val idDefs =
@@ -563,7 +574,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		IdMap.insert (env, id, (TupVal idDefs, isToplevel));
 		TupDec (info, idDefs, id)
 	    end
-	  | vpStm (ProdDec (info, labelIdDefVec, id), env, isToplevel, _) =
+	  | vpStm (ProdDec (info, labelIdDefVec, id), env, isToplevel, _, _) =
 	    let
 		val id = deref (id, env)
 		val labelIdDefVec =
@@ -586,7 +597,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		IdMap.insert (env, id, (ProdVal labelIdDefVec, isToplevel));
 		ProdDec (info, labelIdDefVec, id)
 	    end
-	  | vpStm (stm as RaiseStm (info, id), env, _, _) =
+	  | vpStm (stm as RaiseStm (info, id), env, _, _, _) =
 	    let
 		val id = deref (id, env)
 	    in
@@ -594,39 +605,46 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		   (CaughtExnVal id', _) => ReraiseStm (info, id')
 		 | _ => RaiseStm (info, id)
 	    end
-	  | vpStm (stm as ReraiseStm (info, id), env, _, _) =
+	  | vpStm (stm as ReraiseStm (info, id), env, _, _, _) =
 	    ReraiseStm (info, deref (id, env))
 	  | vpStm (TryStm (info, tryBody, idDef1, idDef2, handleBody),
-		   env, isToplevel, shared) =
+		   env, isToplevel, shared, export) =
 	    let
-		val tryBody = vpBodyScope (tryBody, env, isToplevel, shared)
+		val tryBody =
+		    vpBodyScope (tryBody, env, isToplevel, shared, export)
 		val _ =
 		    declare (env, idDef2,
 			     (case idDef1 of
 				  IdDef id => CaughtExnVal id
 				| _ => UnknownVal, isToplevel))
 		val handleBody =
-		    vpBodyScope (handleBody, env, isToplevel, shared)
+		    vpBodyScope (handleBody, env, isToplevel, shared, export)
 	    in
 		TryStm (info, tryBody, idDef1, idDef2, handleBody)
 	    end
-	  | vpStm (EndTryStm (info, body), env, isToplevel, shared) =
-	    EndTryStm (info, vpBodyScope (body, env, isToplevel, shared))
-	  | vpStm (EndHandleStm (info, body), env, isToplevel, shared) =
-	    EndHandleStm (info, vpBodyScope (body, env, isToplevel, shared))
-	  | vpStm (stm as TestStm (info, id, _, _), env, isToplevel, shared) =
+	  | vpStm (EndTryStm (info, body), env, isToplevel, shared, export) =
+	    EndTryStm (info,
+		       vpBodyScope (body, env, isToplevel, shared, export))
+	  | vpStm (EndHandleStm (info, body),
+		   env, isToplevel, shared, export) =
+	    EndHandleStm (info,
+			  vpBodyScope (body, env, isToplevel, shared, export))
+	  | vpStm (stm as TestStm (info, id, _, _),
+		   env, isToplevel, shared, export) =
 	    let
 		val id = deref (id, env)
 		val (testsOpt, elseBody) =
-		    vpTestStm ([stm], id, env, isToplevel, shared)
+		    vpTestStm ([stm], id, env, isToplevel, shared, export)
 	    in
 		if testsNull testsOpt then indirect (info, elseBody)
 		else TestStm (info, id, valOf testsOpt, elseBody)
 	    end
-	  | vpStm (SharedStm (info, body, stamp), env, isToplevel, shared) =
+	  | vpStm (SharedStm (info, body, stamp),
+		   env, isToplevel, shared, export) =
 	    (case StampMap.lookupExistent (shared, stamp) of
 		 UNIQUE =>
-		     indirect (info, vpBody (body, env, isToplevel, shared))
+		     indirect (info,
+			       vpBody (body, env, isToplevel, shared, export))
 	       | SHARED =>
 		     let
 			 val bodyOptRef = ref (SOME body)
@@ -648,41 +666,56 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			 SharedStm (info, [IndirectStm (info', bodyOptRef)],
 				    stamp)
 		     end)
-	  | vpStm (ReturnStm (info, exp), env, isToplevel, shared) =
+	  | vpStm (ReturnStm (info, exp), env, isToplevel, shared, _) =
 	    ReturnStm (info, vpExp (exp, env, isToplevel, shared))
-	  | vpStm (IndirectStm (info, ref bodyOpt), env, isToplevel, shared) =
-	    indirect (info, vpBody (valOf bodyOpt, env, isToplevel, shared))
-	  | vpStm (ExportStm (info, exp), env, isToplevel, shared) =
-	    ExportStm (info, vpExp (exp, env, isToplevel, shared))
+	  | vpStm (IndirectStm (info, ref bodyOpt),
+		   env, isToplevel, shared, export) =
+	    indirect (info,
+		      vpBody (valOf bodyOpt, env, isToplevel, shared, export))
+	  | vpStm (ExportStm (info, exp),
+		   env, isToplevel, shared, SOME (env', exportDesc)) =
+	    (Vector.app (fn (_, id) =>
+			 IdMap.insert (env', id,
+				       IdMap.lookupExistent (env, id)))
+	     exportDesc;
+	     ExportStm (info, vpExp (exp, env, isToplevel, shared)))
+	  | vpStm (ExportStm (_, _), _, _, _, NONE) =
+	    raise Crash.Crash "ValuePropagationPhase.vpStm"
 	and vpTestStm (topBody as [TestStm (_, id, tests, elseBody)],
-		       id', env, isToplevel, shared) =
+		       id', env, isToplevel, shared, export) =
 	    let
 		val id = deref (id, env)
 	    in
 		if idEq (id, id') then
 		    let
 			val (testsOpt, elseBody) =
-			    vpTestStm (elseBody, id', env, isToplevel, shared)
+			    vpTestStm (elseBody, id',
+				       env, isToplevel, shared, export)
 			val (testsOpt', elseBody) =
 			    vpTests (id, tests, elseBody,
-				     env, isToplevel, shared)
+				     env, isToplevel, shared, export)
 		    in
 			(testsAppend (testsOpt', testsOpt), elseBody)
 		    end
-		else (NONE, vpBodyScope (topBody, env, isToplevel, shared))
+		else
+		    (NONE,
+		     vpBodyScope (topBody, env, isToplevel, shared, export))
 	    end
 	  | vpTestStm (body as [SharedStm (_, body', stamp)],
-		       id, env, isToplevel, shared) =
+		       id, env, isToplevel, shared, export) =
 	    (case StampMap.lookupExistent (shared, stamp) of
-		 UNIQUE => vpTestStm (body', id, env, isToplevel, shared)
-	       | _ => (NONE, vpBodyScope (body, env, isToplevel, shared)))
+		 UNIQUE =>
+		     vpTestStm (body', id, env, isToplevel, shared, export)
+	       | _ =>
+		     (NONE,
+		      vpBodyScope (body, env, isToplevel, shared, export)))
 	  | vpTestStm ([IndirectStm (_, ref bodyOpt)],
-		       id, env, isToplevel, shared) =
-	    vpTestStm (valOf bodyOpt, id, env, isToplevel, shared)
-	  | vpTestStm (body, _, env, isToplevel, shared) =
-	    (NONE, vpBodyScope (body, env, isToplevel, shared))
+		       id, env, isToplevel, shared, export) =
+	    vpTestStm (valOf bodyOpt, id, env, isToplevel, shared, export)
+	  | vpTestStm (body, _, env, isToplevel, shared, export) =
+	    (NONE, vpBodyScope (body, env, isToplevel, shared, export))
 	and vpTests (id, LitTests litBodyVec,
-		     elseBody, env, isToplevel, shared) =
+		     elseBody, env, isToplevel, shared, export) =
 	    let
 		val (litBodyList, elseBody) =
 		    Vector.foldr
@@ -692,7 +725,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			 val entry = IdMap.lookupExistent (env, id)
 			 val entry' = (LitVal lit, isToplevel)
 			 val _ = IdMap.insert (env, id, entry')
-			 val body = vpBody (body, env, isToplevel, shared)
+			 val body =
+			     vpBody (body, env, isToplevel, shared, export)
 		     in
 			 case entry of
 			     (LitVal lit', _) =>
@@ -707,7 +741,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		 elseBody)
 	    end
 	  | vpTests (id, TagTests tagBodyVec,
-		     elseBody, env, isToplevel, shared) =
+		     elseBody, env, isToplevel, shared, export) =
 	    let
 		val (tagBodyList, elseBody) =
 		    Vector.foldr
@@ -727,18 +761,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			     (NONE, (TagVal (_, n', _), _)) =>
 				 if n = n' then
 				     (nil, vpBody (body, env,
-						   isToplevel, shared))
+						   isToplevel, shared, export))
 				 else (nil, elseBody)
 			   | (SOME args, (TagAppVal (_, n', args'), _)) =>
 				 if n = n' then
 				     (aliasArgs (args, args', env, isToplevel);
-				      (nil, vpBody (body, env,
-						    isToplevel, shared)))
+				      (nil, vpBody (body, env, isToplevel,
+						    shared, export)))
 				 else (nil, elseBody)
 			   | (_, _) =>
 				 ((label, n, conArgs,
-				   vpBody (body, env, isToplevel, shared))::
-				  tagBodyList, elseBody)
+				   vpBody (body, env, isToplevel, shared,
+					   export))::tagBodyList, elseBody)
 		     end) (nil, elseBody) tagBodyVec
 	    in
 		(case tagBodyList of
@@ -747,7 +781,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		 elseBody)
 	    end
 	  | vpTests (id, ConTests conBodyVec,
-		     elseBody, env, isToplevel, shared) =
+		     elseBody, env, isToplevel, shared, export) =
 	    let
 		val (conBodyList, elseBody) =
 		    Vector.foldr
@@ -775,18 +809,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			     (NONE, (ConVal (con', _), _)) =>
 				 if conEq (con, con') then
 				     (nil, vpBody (body, env,
-						   isToplevel, shared))
+						   isToplevel, shared, export))
 				 else (nil, elseBody)
 			   | (SOME args, (ConAppVal (con', args'), _)) =>
 				 if conEq (con, con') then
 				     (aliasArgs (args, args', env, isToplevel);
-				      (nil, vpBody (body, env,
-						    isToplevel, shared)))
+				      (nil, vpBody (body, env, isToplevel,
+						    shared, export)))
 				 else (nil, elseBody)
 			   | (_, _) =>
 				 ((con, conArgs,
-				   vpBody (body, env, isToplevel, shared))::
-				  conBodyList, elseBody)
+				   vpBody (body, env, isToplevel, shared,
+					   export))::conBodyList, elseBody)
 		     end) (nil, elseBody) conBodyVec
 	    in
 		(case conBodyList of
@@ -795,7 +829,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		 elseBody)
 	    end
 	  | vpTests (id, VecTests vecBodyVec,
-		     elseBody, env, isToplevel, shared) =
+		     elseBody, env, isToplevel, shared, export) =
 	    let
 		val (vecBodyList, elseBody) =
 		    Vector.foldr
@@ -811,13 +845,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			     (VecVal idDefs', _) =>
 				 if Vector.length idDefs =
 				    Vector.length idDefs'
-				 then (nil, vpBody (body, env,
-						    isToplevel, shared))
+				 then (nil, vpBody (body, env, isToplevel,
+						    shared, export))
 				 else (nil, elseBody)
 			   | (_, _) =>
 				 ((idDefs,
-				   vpBody (body, env, isToplevel, shared))::
-				  vecBodyList, elseBody)
+				   vpBody (body, env, isToplevel, shared,
+					   export))::vecBodyList, elseBody)
 		     end) (nil, elseBody) vecBodyVec
 	    in
 		(case vecBodyList of
@@ -860,7 +894,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    let
 		val _ = IdMap.insertScope env
 		val _ = declareArgs (env, args, false)
-		val body = vpBodyShared (body, stamp, env, false)
+		val body = vpBodyShared (body, stamp, env, false, NONE)
 		val _ = IdMap.deleteScope env
 	    in
 		FunExp (info, stamp, flags, args, body)
@@ -923,17 +957,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    doSel (info, prod, label, n, deref (id, env), env)
 	  | vpExp (FunAppExp (info, id, stamp, args), env, _, _) =
 	    FunAppExp (info, id, stamp, derefArgs (args, env))
-	and vpBody (stm::stms, env, isToplevel, shared) =
-	    vpStm (stm, env, isToplevel, shared)::
-	    vpBody (stms, env, isToplevel, shared)
-	  | vpBody (nil, _, _, _) = nil
-	and vpBodyScope (body, env, isToplevel, shared) =
-	    vpBody (body, IdMap.cloneTop env, isToplevel, shared)
-	and vpBodyShared (body, stamp, env, isToplevel) =
+	and vpBody (stm::stms, env, isToplevel, shared, export) =
+	    vpStm (stm, env, isToplevel, shared, export)::
+	    vpBody (stms, env, isToplevel, shared, export)
+	  | vpBody (nil, _, _, _, _) = nil
+	and vpBodyScope (body, env, isToplevel, shared, export) =
+	    vpBody (body, IdMap.cloneTop env, isToplevel, shared, export)
+	and vpBodyShared (body, stamp, env, isToplevel, export) =
 	    (case sortShared (body, stamp) of
 		 ([stamp']::sorted, shared) =>
 		     (Assert.assert (stamp = stamp');
-		      vpBody (body, env, isToplevel, shared) before
+		      vpBody (body, env, isToplevel, shared, export) before
 		      List.app
 		      (fn stamps =>
 		       let
@@ -951,7 +985,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				   in
 				       bodyOptRef :=
 				       SOME (vpBody (body, env, isToplevel,
-						     shared))
+						     shared, export))
 				   end;
 			   StampMap.deleteExistent (shared, stamp)
 		       end) sorted)
@@ -972,15 +1006,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | idToString (Id (_, stamp, Name.ExId s)) =
 	    s ^ "$" ^ Stamp.toString stamp
 
-	fun translate () (_, component as (imports, body, exports, sign)) =
+	fun translate env (_, component as (imports, body, exportDesc, sign)) =
 	    let
-		val env = IdMap.new ()
+		val env' = IdMap.clone env
 		val _ =
 		    Vector.app (fn (idDef, _, _) =>
-				declareUnknown (env, idDef, true)) imports
+				declareUnknown (env', idDef, true)) imports
 		val topStamp = Stamp.new ()
-		val body' = vpBodyShared (body, topStamp, env, true)
-		val component' = (imports, body', exports, sign)
+		val body' =
+		    vpBodyShared (body, topStamp, env', true,
+				  SOME (env, exportDesc))
+		val component' = (imports, body', exportDesc, sign)
 	    in
 		component'
 	    end

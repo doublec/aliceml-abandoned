@@ -34,7 +34,8 @@
  * kill-set of any statement on a path leading to S.
  *)
 
-structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
+structure LivenessAnalysisPhase1 :>
+    LIVENESS_ANALYSIS_PHASE where type C.t = unit =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar
@@ -101,7 +102,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	    in
 		r := Use set; Orig set
 	    end
-	  | setInfo (_, _) = raise Crash.Crash "LivenessAnalysisPhase.setInfo"
+	  | setInfo (_, _) = raise Crash.Crash "LivenessAnalysisPhase1.setInfo"
 
 	fun scanBody (ValDec (info, idDef, exp)::stms) =
 	    setInfo (info, scanExp (exp, delDef (scanBody stms, idDef)))
@@ -163,7 +164,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	  | scanBody [ExportStm (info, exp)] =
 	    setInfo (info, scanExp (exp, Copy (StampSet.new ())))
 	  | scanBody nil = Copy (StampSet.new ())
-	  | scanBody _ = raise Crash.Crash "LivenessAnalysisPhase.scanStm 2"
+	  | scanBody _ = raise Crash.Crash "LivenessAnalysisPhase1.scanStm"
 	and scanTests (LitTests litBodyVec) =
 	    (*--** this and the following folds can be improved *)
 	    Vector.foldl (fn ((_, body), lset) => union (lset, scanBody body))
@@ -237,7 +238,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 
 structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
     struct
-	structure C = EmptyContext
+	structure C: CONTEXT = StampSet
 	structure I = FlatGrammar
 	structure O = FlatGrammar
 
@@ -326,7 +327,7 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 	and initBody (stm::stms, defSet) =
 	    (case #liveness (infoStm stm) of
 		 ref Unknown =>
-		     raise Crash.Crash "LivenessAnalysisPhase.initBody"
+		     raise Crash.Crash "LivenessAnalysisPhase2.initBody"
 	       | r as ref (Use useSet) =>
 		     let
 			 val killSet = StampSet.new ()
@@ -345,8 +346,11 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 	       | ref (Kill _) => ())
 	  | initBody (nil, _) = ()
 
-	fun translate () (_, component as (_, body, _, _)) =
-	    (initBody (body, StampSet.new ()); component)
+	fun translate defSet (_, component as (_, body, exportDesc, _)) =
+	    (initBody (body, StampSet.clone defSet);
+	     Vector.app (fn (_, Id (_, stamp, _)) =>
+			 StampSet.insert (defSet, stamp)) exportDesc;
+	     component)
     end
 
 functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
@@ -379,9 +383,6 @@ functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
 			     val switch =
 				 Switches.Debug.dumpLivenessAnalysisResult)
     in
-	ComposePhases(structure Phase1 = Phase1'
-		      structure Phase2 = Phase2'
-		      structure Context = EmptyContext
-		      fun context1 () = ()
-		      fun context2 () = ())
+	ComposePhases'(structure Phase1 = Phase1'
+		       structure Phase2 = Phase2')
     end
