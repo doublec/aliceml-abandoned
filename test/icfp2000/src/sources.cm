@@ -8,7 +8,7 @@ Group is
     Machine.sml
     Color.sml
     Geometry.sml
-    RENDERER.sml
+    RENDERER.sig
     Renderer.sml
     PPMFile.sml
     Main.sml
