@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,32 +15,37 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive              from "Pervasive"
-import __primitive type unit datatype ref from "ToplevelTypes"
-import __primitive structure Ref          from "Ref"
-import __primitive structure Promise      from "Promise"
-import __primitive structure Future       from "Future"
-import __primitive signature LOCK         from "LOCK-sig"
+import structure __pervasive                         from "Pervasive"
+import __primitive type unit datatype option and ref from "ToplevelTypes"
+import __primitive infix 4 = infix 3 :=
+		   val op= and op! and op:=          from "ToplevelValues"
+import __primitive structure Ref                     from "Ref"
+import __primitive structure Promise                 from "Promise"
+import __primitive structure Future                  from "Future"
+import __primitive structure Thread                  from "Thread"
+import __primitive signature LOCK                    from "LOCK-sig"
 
 local
     structure Lock : LOCK =					(**)
     struct
-	type lock = unit ref
+	type lock = unit ref * Thread.t option ref
 	type t = lock
 
-	fun lock () = ref ()
+	fun lock () = (ref (), ref NONE)
 
-	fun sync lock f x =
+	fun sync (signal, thread) f x =
 	    let
-		val p = Promise.promise ()
+		val self = SOME (Thread.current ())
 	    in
+		if !thread = self then f x else
 		let
-		    val _ = Future.await (Ref.exchange (lock, Promise.future p))
-		    val y = f x
+		    val p = Promise.promise ()
 		in
-		    Promise.fulfill (p, ()); y
+		    Future.await (Ref.exchange (signal, Promise.future p)); 
+		    thread := self; 
+		    f x
+		    finally (thread := NONE; Promise.fulfill (p, ()))
 		end
-		handle e => (Promise.fulfill (p, ()); raise e)
 	    end
     end
 
