@@ -16,18 +16,22 @@
 // Configure Store Header Fields
 //
 
-// Header Width in bits (32 or 64)
-#define HEADER_FULL_WIDTH        32
+// Header Width in bits (e.g. 32 or 64)
+#define HEADER_FULL_WIDTH          32
 // Space used for Garbage-Collection Flags
-#define HEADER_GC_MARK_WIDTH     1
+#define HEADER_GC_MARK_WIDTH       1
+// Space used for Finalisation-Marking
+#define HEADER_FINALIZE_MARK_WIDTH 1
+// Space used for Handler-Flag
+#define HEADER_HANDLER_MARK_WIDTH  1
 // Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))
-#define HEADER_TAG_WIDTH         12
+#define HEADER_TAG_WIDTH           10
 // Space used for Block Size (MAX_BLOCKSIZE = (2 ^ (HEADER_SIZE_WIDTH) - 1))
-#define HEADER_SIZE_WIDTH        16
+#define HEADER_SIZE_WIDTH          16
 // Space used for Intgen-Marking
-#define HEADER_INTGEN_MARK_WIDTH 1
+#define HEADER_INTGEN_MARK_WIDTH   1
 // Space used for Generation
-#define HEADER_GENERATION_WIDTH  2
+#define HEADER_GENERATION_WIDTH    2
 
 //
 // Configure Store Memory Settings
@@ -39,6 +43,8 @@
 #define STORE_GENERATION_NUM     3
 // Initial Intgen-Pointer-Set Size
 #define STORE_INITIAL_INTGEN     4
+// Initial Weak-Dictionary-Set Size
+#define STORE_INITIAL_WKDICT     4
 
 //
 // Configure Store Performance Settings

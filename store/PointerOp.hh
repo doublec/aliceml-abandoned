@@ -74,13 +74,20 @@ public:
     AssertStore((u_int) v & INTMASK);
     return (void *) ((u_int) v >> 1);
   }
+  static void EncodeHandler(Block *p, Handler *h) {
+    AssertStore(HeaderOp::HasHandlerMark(p));
+    ((word *) p)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
+  }
+  static Handler *DecodeHandler(Block *p) {
+    AssertStore(HeaderOp::HasHandlerMark(p));
+    return (Handler *) PointerOp::DecodeUnmanagedPointer(((word *) p)[1]);
+  }
   // Deref Function
   static word Deref(word v) {
   loop:
     u_int vi = (u_int) v;
 
     if (!((vi ^ TRTAG) & TAGMASK)) {
-      //    if ((vi & TAGMASK) == (u_int) TRTAG) {
       vi ^= (u_int) TRTAG;
       
       if (HeaderOp::DecodeLabel((Block *) vi) == REF_LABEL) {
