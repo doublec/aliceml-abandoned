@@ -4,7 +4,7 @@
 ###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ###
 ### Copyright:
-###   Leif Kornstaedt, 1999-2002
+###   Leif Kornstaedt, 1999-2003
 ###
 ### Last change:
 ###   $Date$ by $Author$
@@ -100,9 +100,9 @@ PREFIX = /opt/stockhausen-devel
 
 VPATH = $(SRCTOP)
 
-ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-stockwerk
-ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --stockwerk
-ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --stockwerk
+ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-seam
+ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --seam
+ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --seam
 
 ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = --no-warn-conventions
@@ -124,9 +124,9 @@ M4 = m4
 ##
 
 ifdef WINDOWS
-STOCKWERKFILES = stow.exe stow.dll
+SEAMFILES = stow.exe stow.dll
 else
-STOCKWERKFILES = stow.exe
+SEAMFILES = stow.exe
 endif
 
 LIBSYSTEMNATIVES0 = \
@@ -300,29 +300,29 @@ COMPILERBACKENDDOTNETSOURCES0 = \
 COMPILERBACKENDDOTNETSOURCES = \
 	$(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
 
-COMPILERBACKENDSTOCKWERKSOURCES0 = \
+COMPILERBACKENDSEAMSOURCES0 = \
 	PRIM_PICKLE-sig.aml PrimPickle.aml VALUE-sig.aml Value.aml \
 	ABSTRACT_CODE_GRAMMAR-sig.aml MkAbstractCodeGrammar.aml \
 	AbstractCodeGrammar.aml OUTPUT_PICKLE-sig.aml OutputPickle.aml \
 	ENVIRONMENT-sig.aml MkEnvironment.aml LIVENESS-sig.aml \
 	MkLiveness.aml MkCodeGenContext.aml CODE_GEN_PHASE-sig.aml \
-	MkCodeGenPhase.aml MkBackendStockwerk.aml
-COMPILERBACKENDSTOCKWERKSOURCES = \
-	$(COMPILERBACKENDSTOCKWERKSOURCES0:%=compiler/backend-stockwerk/%)
+	MkCodeGenPhase.aml MkBackendSeam.aml
+COMPILERBACKENDSEAMSOURCES = \
+	$(COMPILERBACKENDSEAMSOURCES0:%=compiler/backend-seam/%)
 
 COMPILERTOPSOURCES0 = \
 	COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
-	SMLToStockwerkRecursiveCompiler.aml \
+	SMLToSeamRecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
 	SMLToDotNetBatchCompiler.aml \
-	SMLToStockwerkBatchCompiler.aml \
+	SMLToSeamBatchCompiler.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
-	SMLToMozartToplevel.aml SMLToStockwerkToplevel.aml
+	SMLToMozartToplevel.aml SMLToSeamToplevel.aml
 COMPILERTOPSOURCES = $(COMPILERTOPSOURCES0:%=compiler/top/%)
 
 COMPILERSOURCES0 = CompilerMain.aml CompileServerMain.aml ToplevelMain.aml
@@ -330,7 +330,7 @@ COMPILERSOURCES = \
 	$(COMPILERINFRASTRUCTURESOURCES) $(COMPILERCOMMONSOURCES) \
 	$(COMPILERFRONTENDCOMMONSOURCES) $(COMPILERFRONTENDSMLSOURCES) \
 	$(COMPILERBACKENDCOMMONSOURCES) $(COMPILERBACKENDMOZARTSOURCES) \
-	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSTOCKWERKSOURCES) \
+	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSEAMSOURCES) \
 	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
 
 LINKERSOURCES0 = \
@@ -353,14 +353,14 @@ SOURCEDIRS = \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
-	compiler/backend-dotnet compiler/backend-stockwerk linker depend
+	compiler/backend-dotnet compiler/backend-seam linker depend
 
 ##
 ## Include Files for the Foreign Function Interface
 ##
 
 TOPINCLUDES0 = \
-	Base.hh Stockwerk.hh Alice.hh
+	Base.hh Seam.hh Alice.hh
 STOREINCLUDES0 = \
 	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
 	StatusWord.hh Value.hh Map.hh WeakMap.hh Store.hh BaseMap.hh \
@@ -423,7 +423,7 @@ BUILD1SOURCES = \
 
 INSTALL1DIRS = build1/install build1/install/bin \
 	build1/install/compiler build1/install/linker
-INSTALL1TOPFILES = $(STOCKWERKFILES)
+INSTALL1TOPFILES = $(SEAMFILES)
 INSTALL1BINFILES = alicerun alicec alicelink
 INSTALL1COMPILERFILES = CompilerMain.stc
 INSTALL1FILES = \
@@ -519,14 +519,14 @@ build1/compiler/backend-mozart/%.asig: compiler/backend-mozart/%.asig \
 build1/compiler/backend-dotnet/%.aml: compiler/backend-dotnet/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/compiler/backend-stockwerk/%.aml: compiler/backend-stockwerk/%.aml \
+build1/compiler/backend-seam/%.aml: compiler/backend-seam/%.aml \
 	Rel2.import
 	cat Rel2.import $< > $@
 
 build1/compiler/top/%.aml: compiler/top/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/compiler/ToplevelMain.aml: compiler/ToplevelMainStockwerk.aml
+build1/compiler/ToplevelMain.aml: compiler/ToplevelMainSeam.aml
 	cat Rel1.import $< > $@
 
 build1/compiler/%.aml: compiler/%.aml Rel1.import
@@ -579,7 +579,7 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 $(INSTALL1DIRS):
 	mkdir -p $@
 
-$(STOCKWERKFILES:%=build1/install/%): build1/install/%: %
+$(SEAMFILES:%=build1/install/%): build1/install/%: %
 	install -c -m 555 $< $@
 
 build1/install/compiler/CompilerMain.stc:
@@ -675,11 +675,11 @@ INSTALL3LIBFILES = \
 	fundamental/PACKAGE-sig.stc fundamental/Package.stc
 INSTALL3COMPILERFILES = CompilerMain.stc ToplevelMain.stc
 INSTALL3COMPILERTOPFILES = \
-	SMLToStockwerkRecursiveCompiler.stc
+	SMLToSeamRecursiveCompiler.stc
 INSTALL3LINKERFILES = Main.stc
 INSTALL3DEPENDFILES = Main.stc
 INSTALL3FILES = \
-	$(STOCKWERKFILES:%=build3/install/%) \
+	$(SEAMFILES:%=build3/install/%) \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3INCLUDEFILES:%=build3/install/include/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
@@ -709,7 +709,7 @@ build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/lib/system/Boot.stc \
 	build3/compiler/LinkedCompilerMain.stc \
 	build3/compiler/LinkedToplevelMain.stc \
-	build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc
+	build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.stc
 
 build3/lib/fundamental/RTT.stc: build2/lib/rtt/LinkedRTT.stc
 	cp $< $@
@@ -740,7 +740,7 @@ build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompilerMain -o $@
 
@@ -748,15 +748,15 @@ build3/compiler/LinkedToplevelMain.stc: build3/compiler/ToplevelMain.stc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/ToplevelMain -o $@
 
-build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc: \
-	build3/compiler/top/SMLToStockwerkRecursiveCompiler.stc
+build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.stc: \
+	build3/compiler/top/SMLToSeamRecursiveCompiler.stc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3/compiler \
-	build3/compiler/top/SMLToStockwerkRecursiveCompiler -o $@
+	build3/compiler/top/SMLToSeamRecursiveCompiler -o $@
 
 build3/linker/LinkedMain.stc: $(LINKERSOURCES:%.aml=build3/%.stc)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
@@ -777,7 +777,7 @@ build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 $(INSTALL3DIRS):
 	mkdir -p $@
 
-$(STOCKWERKFILES:%=build3/install/%): build3/install/%: build1/install/%
+$(SEAMFILES:%=build3/install/%): build3/install/%: build1/install/%
 	install -c -m 555 $< $@
 
 build3/install/include/%: %
@@ -828,7 +828,7 @@ BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
-	$(ALICEDEP) --stockwerk $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) \
+	$(ALICEDEP) --seam $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) \
 	> Makefile.bootstrap.depend
 
 -include Makefile.bootstrap.depend
@@ -857,7 +857,7 @@ INSTALLDIRS = \
 	$(PREFIX)/linker \
 	$(PREFIX)/depend
 INSTALLFILES = \
-	$(STOCKWERKFILES:%=$(PREFIX)/%) \
+	$(SEAMFILES:%=$(PREFIX)/%) \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3INCLUDEFILES:%=$(PREFIX)/include/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
@@ -872,7 +872,7 @@ install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(STOCKWERKFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
+$(SEAMFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
 	install -c -m 555 $< $@
 
 $(INSTALL3TOPFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%

@@ -1,6 +1,6 @@
 #!/bin/sh
 ###
-### Bootstrap the Alice-to-Stockwerk compiler.
+### Bootstrap the Alice-to-Seam compiler.
 ###
 ### To install globally:
 ###   prefix=/opt/stockhausen-devel
@@ -24,11 +24,11 @@ OPTS3= # '--dump-phases' # --dump-intermediate'
 
 if [ "$1" = "-global" ]
 then
-   prefix=/opt/stockhausen-stockwerk
+   prefix=/opt/stockhausen-seam
 else
    prefix=`pwd`/install
 fi
-echo Trying to install Stockhausen on Stockwerk to $prefix...
+echo Trying to install Stockhausen on Seam to $prefix...
 
 case `uname -s` in
     CYGWIN*)
@@ -75,18 +75,18 @@ then
 fi
 
 ##
-## Build the Stockwerk
+## Build Seam
 ##
 (cd vm-stockwerk && make LIGHTNING=${LIGHTNING}) || exit 1
 
 ##
 ## Compile the Bootstrap Compiler with SML/NJ
 ##
-rm -f bootstrap/alicec-stockwerk.$SMLPLATFORM #bootstrap/alicedep.$SMLPLATFORM
-(cd bootstrap && make alicec-stockwerk.$SMLPLATFORM alicedep.$SMLPLATFORM) || exit 1
+rm -f bootstrap/alicec-seam.$SMLPLATFORM #bootstrap/alicedep.$SMLPLATFORM
+(cd bootstrap && make alicec-seam.$SMLPLATFORM alicedep.$SMLPLATFORM) || exit 1
 
 ##
-## Bootstrap Alice on the Stockwerk
+## Bootstrap Alice on Seam
 ##
 unset ALICE_HOME
 TIMEDIR=`pwd`/time
@@ -103,8 +103,8 @@ export TIMEDIR
 PATH=$prefix/bin:$PATH
 export PATH
 unset ALICE_HOME
-(cd lib/distribution && make TARGET=stockwerk depend) || exit 1
-(cd lib/distribution && make TARGET=stockwerk all PREFIX=$prefix install) || exit 1
+(cd lib/distribution && make TARGET=seam depend) || exit 1
+(cd lib/distribution && make TARGET=seam all PREFIX=$prefix install) || exit 1
 
 ##
 ## Install documentation

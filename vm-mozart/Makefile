@@ -3,7 +3,7 @@
 ###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ###
 ### Copyright:
-###   Leif Kornstaedt, 1999-2002
+###   Leif Kornstaedt, 1999-2003
 ###
 ### Last change:
 ###   $Date$ by $Author$
@@ -297,29 +297,29 @@ COMPILERBACKENDDOTNETSOURCES0 = \
 COMPILERBACKENDDOTNETSOURCES = \
 	$(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
 
-COMPILERBACKENDSTOCKWERKSOURCES0 = \
+COMPILERBACKENDSEAMSOURCES0 = \
 	PRIM_PICKLE-sig.aml PrimPickle.aml VALUE-sig.aml Value.aml \
 	ABSTRACT_CODE_GRAMMAR-sig.aml MkAbstractCodeGrammar.aml \
 	AbstractCodeGrammar.aml OUTPUT_PICKLE-sig.aml OutputPickle.aml \
 	ENVIRONMENT-sig.aml MkEnvironment.aml LIVENESS-sig.aml \
 	MkLiveness.aml MkCodeGenContext.aml CODE_GEN_PHASE-sig.aml \
-	MkCodeGenPhase.aml MkBackendStockwerk.aml
-COMPILERBACKENDSTOCKWERKSOURCES = \
-	$(COMPILERBACKENDSTOCKWERKSOURCES0:%=compiler/backend-stockwerk/%)
+	MkCodeGenPhase.aml MkBackendSeam.aml
+COMPILERBACKENDSEAMSOURCES = \
+	$(COMPILERBACKENDSEAMSOURCES0:%=compiler/backend-seam/%)
 
 COMPILERTOPSOURCES0 = \
 	COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
-	SMLToStockwerkRecursiveCompiler.aml \
+	SMLToSeamRecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
 	SMLToDotNetBatchCompiler.aml \
-	SMLToStockwerkBatchCompiler.aml \
+	SMLToSeamBatchCompiler.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
-	SMLToMozartToplevel.aml SMLToStockwerkToplevel.aml
+	SMLToMozartToplevel.aml SMLToSeamToplevel.aml
 COMPILERTOPSOURCES = $(COMPILERTOPSOURCES0:%=compiler/top/%)
 
 COMPILERSOURCES0 = CompilerMain.aml CompileServerMain.aml ToplevelMain.aml
@@ -327,7 +327,7 @@ COMPILERSOURCES = \
 	$(COMPILERINFRASTRUCTURESOURCES) $(COMPILERCOMMONSOURCES) \
 	$(COMPILERFRONTENDCOMMONSOURCES) $(COMPILERFRONTENDSMLSOURCES) \
 	$(COMPILERBACKENDCOMMONSOURCES) $(COMPILERBACKENDMOZARTSOURCES) \
-	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSTOCKWERKSOURCES) \
+	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSEAMSOURCES) \
 	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
 
 LINKERSOURCES0 = \
@@ -350,7 +350,7 @@ SOURCEDIRS = \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
-	compiler/backend-dotnet compiler/backend-stockwerk linker depend
+	compiler/backend-dotnet compiler/backend-seam linker depend
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -482,7 +482,7 @@ build1/compiler/backend-mozart/%.asig: compiler/backend-mozart/%.asig \
 build1/compiler/backend-dotnet/%.aml: compiler/backend-dotnet/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/compiler/backend-stockwerk/%.aml: compiler/backend-stockwerk/%.aml \
+build1/compiler/backend-seam/%.aml: compiler/backend-seam/%.aml \
 	Rel2.import
 	cat Rel2.import $< > $@
 
@@ -634,7 +634,7 @@ INSTALL3COMPILERFILES = $(INSTALL1COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
 	SMLToMozartRecursiveCompiler.ozf \
 	SMLToDotNetRecursiveCompiler.ozf \
-	SMLToStockwerkRecursiveCompiler.ozf
+	SMLToSeamRecursiveCompiler.ozf
 INSTALL3LINKERFILES = Main.ozf
 INSTALL3DEPENDFILES = Main.ozf
 INSTALL3FILES = \
@@ -700,7 +700,7 @@ build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompilerMain -o $@
 
@@ -709,7 +709,7 @@ build3/compiler/LinkedCompileServerMain.ozf: \
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompileServerMain -o $@
 
@@ -717,7 +717,7 @@ build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/ToplevelMain -o $@
 
@@ -736,11 +736,11 @@ build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
 	--include build3/compiler \
 	build3/compiler/top/SMLToDotNetRecursiveCompiler -o $@
 
-build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.ozf: \
-	build3/compiler/top/SMLToStockwerkRecursiveCompiler.ozf
+build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.ozf: \
+	build3/compiler/top/SMLToSeamRecursiveCompiler.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3/compiler \
-	build3/compiler/top/SMLToStockwerkRecursiveCompiler -o $@
+	build3/compiler/top/SMLToSeamRecursiveCompiler -o $@
 
 build3/linker/LinkedMain.ozf: $(LINKERSOURCES:%.aml=build3/%.ozf)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
