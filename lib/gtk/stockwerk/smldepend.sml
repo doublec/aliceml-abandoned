@@ -1,3 +1,9 @@
+(*
+  smldepend
+  
+  Creates a dependency Makefile from a CM module list.
+*)
+
 fun depend (file, me) =
 let
     fun makeTuple sep e nil     = e

@@ -1,3 +1,12 @@
+#
+# includesig.awk recursively includes a signature into another.
+# To include a signature INCLUDE_THIS-sig.aml, insert the following line:
+#
+# <<< "INCLUDE_THIS-sig.aml" >>>
+#
+# Everything of INCLUDE_THIS-sig.aml between the "sig" and the "end" keywords
+# are included, except for lines beginning with "(**)".
+#
 
 BEGIN { 
   FS = "\""; 
