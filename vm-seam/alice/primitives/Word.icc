@@ -12,13 +12,21 @@
 //   $Revision$
 //
 
-#include <cstdio>
 #include "alice/primitives/Authoring.hh"
 
-#define DECLARE_WORD(w, x)			\
-  DECLARE_INT(w, x);				\
-  w &= static_cast<u_int>(-1) >> 1;
-#define RETURN_WORD(w) RETURN_INT(static_cast<s_int>((w) + (w)) / 2)
+//--** ops implementable more efficiently directly on tagged representation
+
+#define WORD_PRECISION INT_PRECISION
+
+#define NONBITS (STORE_WORD_WIDTH - WORD_PRECISION)
+#define NONBITS_EXP (1 << NONBITS)
+
+#define DECLARE_WORD(w, x)						\
+  u_int w = Store::WordToInt(x);					\
+  if (static_cast<int>(w) == INVALID_INT) { REQUEST(x); } else {}	\
+  w &= static_cast<u_int>(-1) >> NONBITS;
+#define RETURN_WORD(w) \
+  RETURN_INT(static_cast<s_int>((w) * NONBITS_EXP) / NONBITS_EXP)
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
   DEFINE2(name) {				\
@@ -34,30 +42,46 @@
     RETURN_BOOL(i op j);			\
   } END
 
-//--** operations can be implemented more efficiently by not right-shifting!
-//--** else topmost bit has to be truncated (or assertions fail)
-
 WORD_WORD_TO_WORD_OP(Word_opadd, +)
 WORD_WORD_TO_WORD_OP(Word_opsub, -)
 WORD_WORD_TO_WORD_OP(Word_opmul, *)
-WORD_WORD_TO_WORD_OP(Word_opshl, <<)
+
+DEFINE1(Word_opneg) {
+  DECLARE_WORD(i, x0);
+  RETURN_WORD(-i);
+} END
+
 WORD_WORD_TO_BOOL_OP(Word_opless, <)
 WORD_WORD_TO_BOOL_OP(Word_opgreater, >)
 WORD_WORD_TO_BOOL_OP(Word_oplessEq, <=)
 WORD_WORD_TO_BOOL_OP(Word_opgreaterEq, >=)
 
+// In the shifting operations, we need to check whether
+// the shift count exceeds WORD_PRECISION explicitly:
+// gcc on x86 generates code that modulos the shift count by WORD_SIZE.
+// (Although this seems to contradict the ISO standard.)
+
+DEFINE2(Word_opshl) {
+  DECLARE_WORD(i, x0);
+  DECLARE_WORD(j, x1);
+  if (j > WORD_PRECISION) j = WORD_PRECISION; // see above
+  RETURN_WORD(i << j);
+} END
+
 DEFINE2(Word_opshr) {
   DECLARE_WORD(i, x0);
   DECLARE_WORD(j, x1);
+  if (j > WORD_PRECISION) j = WORD_PRECISION; // see above
   RETURN_WORD(i >> j);
 } END
 
 DEFINE2(Word_oparithshr) {
   DECLARE_WORD(i, x0);
   DECLARE_WORD(j, x1);
-  //--** this can be improved on many architectures
-  if (i < 0) {
-    RETURN_WORD((i >> j) | ~(static_cast<u_int>(-1) >> j));
+  if (j > WORD_PRECISION - 1) j = WORD_PRECISION - 1; // see above
+  //--** this implementation can be improved on many architectures
+  if (i & (1 << (WORD_PRECISION - 1))) {
+    RETURN_WORD((i >> j) | ~(static_cast<u_int>(-1) >> (j + NONBITS)));
   } else {
     RETURN_WORD(i >> j);
   }
@@ -99,14 +123,18 @@ WORD_WORD_TO_WORD_OP(Word_orb, |)
 
 DEFINE1(Word_toInt) {
   DECLARE_WORD(i, x0);
-  //--** if (i < 0)
-  //--**  RAISE(PrimitiveTable::General_Overflow);
+  if (i > static_cast<u_int>(MAX_VALID_INT))
+    RAISE(PrimitiveTable::General_Overflow);
   RETURN_WORD(i);
 } END
 
 DEFINE1(Word_toIntX) {
   DECLARE_WORD(i, x0);
-  RETURN_WORD(i);
+  if (i & (1 << (WORD_PRECISION - 1))) {
+    RETURN_WORD(i | ~(static_cast<u_int>(-1) >> NONBITS));
+  } else {
+    RETURN_WORD(i);
+  }
 } END
 
 WORD_WORD_TO_WORD_OP(Word_xorb, ^)
@@ -115,6 +143,7 @@ void PrimitiveTable::RegisterWord() {
   Register("Word.+", Word_opadd, 2);
   Register("Word.-", Word_opsub, 2);
   Register("Word.*", Word_opmul, 2);
+  Register("Word.~", Word_opneg, 1);
   Register("Word.<", Word_opless, 2);
   Register("Word.>", Word_opgreater, 2);
   Register("Word.<=", Word_oplessEq, 2);
@@ -132,6 +161,6 @@ void PrimitiveTable::RegisterWord() {
   Register("Word.orb", Word_orb, 2);
   Register("Word.toInt", Word_toInt, 1);
   Register("Word.toIntX", Word_toIntX, 1);
-  Register("Word.wordSize", Store::IntToWord(31));
+  Register("Word.wordSize", Store::IntToWord(WORD_PRECISION));
   Register("Word.xorb", Word_xorb, 2);
 }

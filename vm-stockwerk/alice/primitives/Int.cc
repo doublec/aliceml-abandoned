@@ -126,10 +126,10 @@ void PrimitiveTable::RegisterInt() {
   Register("Int.abs", Int_abs, 1);
   Register("Int.compare", Int_compare, 2);
   Register("Int.div", Int_div, 2);
-  Register("Int.maxInt", Store::IntToWord(0x3FFFFFFF));
-  Register("Int.minInt", Store::IntToWord(-0x40000000));
+  Register("Int.maxInt", Store::IntToWord(MAX_VALID_INT));
+  Register("Int.minInt", Store::IntToWord(MIN_VALID_INT));
   Register("Int.mod", Int_mod, 2);
-  Register("Int.precision", Store::IntToWord(31));
+  Register("Int.precision", Store::IntToWord(INT_PRECISION));
   Register("Int.quot", Int_quot, 2);
   Register("Int.rem", Int_rem, 2);
 }
