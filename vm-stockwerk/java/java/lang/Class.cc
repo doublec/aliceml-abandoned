@@ -10,9 +10,142 @@
 //   $Revision$
 //
 
+#include "generic/RootSet.hh"
+#include "java/StackFrame.hh"
 #include "java/ClassLoader.hh"
+#include "java/ClassInfo.hh"
 #include "java/Authoring.hh"
 
+//
+// ReflectConstructorsWorker
+//
+static word wConstructorClass;
+static word wConstructorMethodRef;
+
+class ReflectConstructorsWorker: public Worker {
+public:
+  static ReflectConstructorsWorker *self;
+private:
+  ReflectConstructorsWorker() {}
+public:
+  static void Init() {
+    self = new ReflectConstructorsWorker();
+  }
+
+  static void PushFrame(ObjectArray *array, Class *theClass, Type *classType);
+
+  virtual Result Run();
+  virtual const char *Identify();
+  virtual void DumpFrame(word wFrame);
+};
+
+class ReflectConstructorsFrame: private StackFrame {
+protected:
+  enum { ARRAY_POS, INDEX_POS, CLASS_POS, CLASS_TYPE_POS, SIZE };
+public:
+  using Block::ToWord;
+
+  static ReflectConstructorsFrame *New(ObjectArray *array, Class *theClass,
+				       Type *classType) {
+    StackFrame *frame =
+      StackFrame::New(REFLECT_CONSTRUCTORS_FRAME,
+		      ReflectConstructorsWorker::self, SIZE);
+    frame->InitArg(ARRAY_POS, array->ToWord());
+    frame->InitArg(INDEX_POS, 0);
+    frame->InitArg(CLASS_POS, theClass->ToWord());
+    frame->InitArg(CLASS_TYPE_POS, classType->ToWord());
+    return static_cast<ReflectConstructorsFrame *>(frame);
+  }
+  static ReflectConstructorsFrame *FromWordDirect(word x) {
+    StackFrame *frame = StackFrame::FromWordDirect(x);
+    Assert(frame->GetLabel() == REFLECT_CONSTRUCTORS_FRAME);
+    return static_cast<ReflectConstructorsFrame *>(frame);
+  }
+
+  ObjectArray *GetArray() {
+    return ObjectArray::FromWordDirect(GetArg(ARRAY_POS));
+  }
+  u_int GetIndex() {
+    return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
+  void SetIndex(u_int index) {
+    ReplaceArg(INDEX_POS, index);
+  }
+  Class *GetClass() {
+    return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  Type *GetClassType() {
+    return Type::FromWordDirect(GetArg(CLASS_TYPE_POS));
+  }
+};
+
+ReflectConstructorsWorker *ReflectConstructorsWorker::self;
+
+void ReflectConstructorsWorker::PushFrame(ObjectArray *array,
+					  Class *theClass, Type *classType) {
+  ReflectConstructorsFrame *frame =
+    ReflectConstructorsFrame::New(array, theClass, classType);
+  Scheduler::PushFrame(frame->ToWord());
+}
+
+Worker::Result ReflectConstructorsWorker::Run() {
+  ReflectConstructorsFrame *frame =
+    ReflectConstructorsFrame::FromWordDirect(Scheduler::GetFrame());
+  ObjectArray *array = frame->GetArray();
+  Class *theClass = frame->GetClass();
+  u_int index = frame->GetIndex();
+  Assert(Scheduler::nArgs == 0);
+  if (index == array->GetLength()) {
+    Scheduler::PopFrame();
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = array->ToWord();
+    return CONTINUE;
+  }
+  VirtualMethodRef *methodRef =
+    VirtualMethodRef::FromWord(wConstructorMethodRef);
+  if (methodRef == INVALID_POINTER) {
+    Scheduler::currentData = wConstructorMethodRef;
+    return REQUEST;
+  }
+  Object *constructorObject = Object::New(Class::FromWord(wConstructorClass));
+  MethodInfo *methodInfo = MethodInfo::FromWordDirect(array->Load(index));
+  array->Store(index, constructorObject->ToWord());
+  frame->SetIndex(index + 1);
+
+  Type *classType = frame->GetClassType();
+
+  ObjectArray *parameterTypes = ObjectArray::New(classType, 0); //--**
+  ObjectArray *checkedExceptions = ObjectArray::New(classType, 0); //--**
+  u_int slot = 0; //--** lookup in theClass->methodHashTable
+
+  Scheduler::nArgs = 6;
+  Scheduler::currentArgs[0] = constructorObject->ToWord();
+  Scheduler::currentArgs[1] = theClass->GetClassObject()->ToWord();
+  Scheduler::currentArgs[2] = parameterTypes->ToWord();
+  Scheduler::currentArgs[3] = checkedExceptions->ToWord();
+  Scheduler::currentArgs[4] = JavaInt::ToWord(methodInfo->GetAccessFlags());
+  Scheduler::currentArgs[5] = JavaInt::ToWord(slot);
+
+  Closure *closure =
+    methodRef->GetClass()->GetVirtualMethod(methodRef->GetIndex());
+  return Scheduler::PushCall(closure->ToWord());
+}
+
+const char *ReflectConstructorsWorker::Identify() {
+  return "ReflectConstructorsWorker";
+}
+
+void ReflectConstructorsWorker::DumpFrame(word wFrame) {
+  ReflectConstructorsFrame *frame =
+    ReflectConstructorsFrame::FromWordDirect(wFrame);
+  std::fprintf(stderr, "Reflect constructor %d/%d of class %s\n",
+	       frame->GetIndex(), frame->GetArray()->GetLength(),
+	       frame->GetClass()->GetClassInfo()->GetName()->ExportC());
+}
+
+//
+// Native Method Implementations
+//
 DEFINE0(registerNatives) {
   RETURN_VOID;
 } END
@@ -35,6 +168,8 @@ DEFINE3(forName0) {
   Class *theClass = Class::FromWord(wClass);
   if (theClass == INVALID_POINTER) REQUEST(wClass);
   if (!theClass->IsInitialized() && initialize) {
+    Future *future = theClass->GetLock()->Acquire();
+    Assert(future == INVALID_POINTER); future = future;
     Scheduler::PushFrameNoCheck(prim_self);
     return theClass->RunInitializer();
   }
@@ -75,9 +210,102 @@ DEFINE1(isPrimitive) {
   }
 } END
 
+static JavaString *TypeToName(Type *type) {
+  switch (type->GetLabel()) {
+  case JavaLabel::Class:
+    return static_cast<Class *>(type)->GetClassInfo()->GetName();
+  case JavaLabel::PrimitiveType:
+    switch (static_cast<PrimitiveType *>(type)->GetType()) {
+    case PrimitiveType::Boolean:
+      return JavaString::New("boolean");
+    case PrimitiveType::Byte:
+      return JavaString::New("byte");
+    case PrimitiveType::Char:
+      return JavaString::New("char");
+    case PrimitiveType::Double:
+      return JavaString::New("double");
+    case PrimitiveType::Float:
+      return JavaString::New("float");
+    case PrimitiveType::Int:
+      return JavaString::New("int");
+    case PrimitiveType::Long:
+      return JavaString::New("long");
+    case PrimitiveType::Short:
+      return JavaString::New("short");
+    case PrimitiveType::Void:
+      return JavaString::New("void");
+    default:
+      Error("invalid primitive type");
+    }
+  case JavaLabel::ArrayType:
+    return JavaString::New("[")->
+      Concat(TypeToName(static_cast<ArrayType *>(type)->GetElementType()));
+  default:
+    Error("invalid type");
+  }
+}
+
+DEFINE1(getName) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  RETURN(TypeToName(classObject->GetRepresentedType())->ToWord());
+} END
+
 DEFINE1(getClassLoader0) {
   DECLARE_OBJECT(_this, x0);
   RETURN(null); //--**
+} END
+
+DEFINE1(getSuperclass) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  Type *type = classObject->GetRepresentedType();
+  switch (type->GetLabel()) {
+  case JavaLabel::Class:
+    {
+      Class *theClass = static_cast<Class *>(type);
+      if (theClass->IsInterface()) RETURN(null);
+      Class *superClass = theClass->GetSuperClass();
+      if (superClass == INVALID_POINTER) RETURN(null);
+      RETURN(superClass->GetClassObject()->ToWord());
+    }
+  case JavaLabel::PrimitiveType:
+    RETURN(null);
+  case JavaLabel::ArrayType:
+    RETURN(null); //--** return java/lang/Object class
+  default:
+    Error("illegal type");
+  }
+} END
+
+DEFINE1(getInterfaces) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  Type *type = classObject->GetRepresentedType();
+  switch (type->GetLabel()) {
+  case JavaLabel::Class:
+    {
+      Class *theClass = static_cast<Class *>(type);
+      Table *interfaces = theClass->GetClassInfo()->GetInterfaces();
+      u_int nInterfaces = interfaces->GetCount();
+      ObjectArray *array =
+	ObjectArray::New(static_cast<Type *>(_this->GetClass()), nInterfaces);
+      for (u_int i = nInterfaces; i--; ) {
+	Class *interfaceClass = Class::FromWordDirect(interfaces->Get(i));
+	array->Store(i, interfaceClass->GetClassObject()->ToWord());
+      }
+      RETURN(array->ToWord());
+    }
+  case JavaLabel::PrimitiveType:
+  case JavaLabel::ArrayType:
+    {
+      ObjectArray *array =
+	ObjectArray::New(static_cast<Type *>(_this->GetClass()), 0);
+      RETURN(array->ToWord());
+    }
+  default:
+    Error("illegal type");
+  }
 } END
 
 DEFINE1(getComponentType) {
@@ -94,6 +322,36 @@ DEFINE1(getComponentType) {
   default:
     Error("illegal type");
   }
+} END
+
+//--** duplicated in sun/reflect/Reflection.cc, getClassAccessFlags
+static u_int GetTypeAccessFlags(Type *type) {
+  switch (type->GetLabel()) {
+  case JavaLabel::Class:
+    return static_cast<Class *>(type)->GetClassInfo()->GetAccessFlags();
+  case JavaLabel::PrimitiveType:
+    // If this object represents an array class, a
+    // primitive type or void, then its final modifier is always
+    // true and its interface modifier is always false.
+    return ClassInfo::ACC_PUBLIC | ClassInfo::ACC_FINAL;
+  case JavaLabel::ArrayType:
+    {
+      Type *elementType = static_cast<ArrayType *>(type)->GetElementType();
+      u_int accessFlags = GetTypeAccessFlags(elementType);
+      // If the underlying class is an array class, then its
+      // public, private and protected modifiers are the same
+      // as those of its component type.
+      return (accessFlags & ClassInfo::ACC_PUBLIC) | ClassInfo::ACC_FINAL;
+    }
+  default:
+    Error("illegal type");
+  }
+}
+
+DEFINE1(getModifiers) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  RETURN_JINT(GetTypeAccessFlags(classObject->GetRepresentedType()));
 } END
 
 DEFINE1(getPrimitiveClass) {
@@ -121,7 +379,55 @@ DEFINE1(getPrimitiveClass) {
   }
 } END
 
+DEFINE2(getDeclaredConstructors0) {
+  DECLARE_OBJECT(_this, x0);
+  DECLARE_BOOL(publicOnly, x1);
+  Type *constructorType = Type::FromWord(wConstructorClass);
+  if (constructorType == INVALID_POINTER) REQUEST(wConstructorClass);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  Type *type = classObject->GetRepresentedType();
+  switch (type->GetLabel()) {
+  case JavaLabel::Class:
+    {
+      Class *theClass = static_cast<Class *>(type);
+      Table *methods = theClass->GetClassInfo()->GetMethods();
+      u_int nMethods = methods->GetCount();
+      JavaString *constructorName = JavaString::New("<init>");
+      Table *constructors = Table::New(nMethods); // pessimistic assumption
+      u_int nConstructors = 0;
+      for (u_int i = 0; i < nMethods; i++) {
+	MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
+	if ((!publicOnly || methodInfo->IsPublic()) &&
+	    methodInfo->GetName()->Equals(constructorName)) {
+	  constructors->Init(nConstructors++, methodInfo->ToWord());
+	}
+      }
+      ObjectArray *array = ObjectArray::New(constructorType, nConstructors);
+      for (u_int j = nConstructors; j--; )
+	array->Store(j, constructors->Get(j));
+      ReflectConstructorsWorker::PushFrame
+	(array, theClass, static_cast<Type *>(_this->GetClass()));
+      RETURN_VOID;
+    }
+  case JavaLabel::PrimitiveType:
+  case JavaLabel::ArrayType:
+    RETURN(ObjectArray::New(constructorType, 0)->ToWord());
+  default:
+    Error("illegal type");
+  }
+} END
+
 void NativeMethodTable::java_lang_Class(JavaString *className) {
+  ReflectConstructorsWorker::Init();
+  ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
+  wConstructorClass = classLoader->ResolveClass
+    (JavaString::New("java/lang/reflect/Constructor"));
+  RootSet::Add(wConstructorClass);
+  wConstructorMethodRef = classLoader->ResolveMethodRef
+    (wConstructorClass, JavaString::New("<init>"),
+     JavaString::New("(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;"
+		     "II)V"));
+  RootSet::Add(wConstructorMethodRef);
   Register(className, "registerNatives", "()V", registerNatives, 0, false);
   Register(className, "forName0",
 	   "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;",
@@ -131,15 +437,17 @@ void NativeMethodTable::java_lang_Class(JavaString *className) {
   Register(className, "isInterface", "()Z", isInterface, 1, true);
   Register(className, "isArray", "()Z", isArray, 1, true);
   Register(className, "isPrimitive", "()Z", isPrimitive, 1, true);
-  //--** getName
+  Register(className, "getName", "()Ljava/lang/String;", getName, 1, true);
   Register(className, "getClassLoader0", "()Ljava/lang/ClassLoader;",
 	   getClassLoader0, 1, true);
   //--** getClassLoader0
-  //--** getSuperclass
-  //--** getInterfaces
+  Register(className, "getSuperclass", "()Ljava/lang/Class;",
+	   getSuperclass, 1, true);
+  Register(className, "getInterfaces", "()[Ljava/lang/Class;",
+	   getInterfaces, 1, true);
   Register(className, "getComponentType", "()Ljava/lang/Class;",
 	   getComponentType, 1, true);
-  //--** getModifiers
+  Register(className, "getModifiers", "()I", getModifiers, 1, true);
   //--** getSigners
   //--** setSigners
   //--** getDeclaringClass
@@ -150,7 +458,9 @@ void NativeMethodTable::java_lang_Class(JavaString *className) {
 	   getPrimitiveClass, 1, false);
   //--** getDeclaredFields0
   //--** getDeclaredMethods0
-  //--** getDeclaredConstructors0
+  Register(className, "getDeclaredConstructors0",
+	   "(Z)[Ljava/lang/reflect/Constructor;",
+	   getDeclaredConstructors0, 2, true);
   //--** getDeclaredClasses0
   //--** desiredAssertionStatus0
 }
