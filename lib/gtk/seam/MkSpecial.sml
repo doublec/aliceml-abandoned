@@ -39,7 +39,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		 FUNC("gtk_null", POINTER VOID, nil),
 		 FUNC("gtk_gtk_true", NUMERIC(true, false, INT), nil),
 		 FUNC("gtk_gtk_false", NUMERIC(true, false, INT), nil),
-		 FUNC("gtk_tree_iter_new", POINTER VOID, nil)]
+		 FUNC("gtk_tree_iter_new", POINTER VOID, nil),
+		 FUNC("gtk_text_iter_new", POINTER VOID, nil)]
 
 	 | Util.GDK =>
 	       [FUNC("gdk_init", VOID, nil),

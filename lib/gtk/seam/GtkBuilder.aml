@@ -336,33 +336,42 @@ in
 		    (Gtk.notebookSetShowTabs(note, showlabel);
 		     MakeNoteEntries(note, entries); note)
 		end
-(*	    and MakeTreeItems(tree, parent, handler, nil)         = ()
-	      | MakeTreeItems(tree, parent, (TreeItem title)::ir) =
+	    and MakeTreeItems(tree, parent, handler, nil)                  = ()
+	      | MakeTreeItems(tree, parent, handler, (TreeItem title)::ir) =
 		let
-		    val item = Gtk.treeItemNewWithLabel title
+		    val iter = Gtk.treeIterNew()
 		in
-		    (Gtk.treeAppend(tree, item);
-		     Gtk.signalConnect(item, "select",
+		    (Gtk.treeStoreAppend(tree, iter, parent);
+		     Gtk.treeStoreSet(tree, iter, [Gtk.INT 0, Gtk.STRING title,
+						  Gtk.INT ~1]);
+		     MakeTreeItems(tree, parent, handler, ir))
+(*		     Gtk.signalConnect(item, "select",
 				       fn event => handler(title, "select"));
 		     Gtk.signalConnect(item, "deselect",
-				       fn event => handler(title, "deselect"));
-		     MakeTreeItems(tree, handler, ir))
+				       fn event => handler(title, "deselect"));*)
 		end
-	      | MakeTreeItems(tree, handler, (SubTree(title, sub))::ir) =
+	      | MakeTreeItems(tree,parent,handler,(SubTree(title, sub))::ir) =
 		let
-		    val item    = Gtk.treeItemNewWithLabel title
-		    val subtree = MakeTree(sub, handler)
+		    val iter = Gtk.treeIterNew()
 		in
-		    (Gtk.treeAppend(tree, item);
-		     Gtk.treeItemSetSubtree(item, subtree);
-		     Gtk.widgetShowAll subtree;
-		     MakeTreeItems(tree, handler, ir))
-		end*)
+		    (Gtk.treeStoreAppend(tree, iter, parent);
+		     Gtk.treeStoreSet(tree, iter, [Gtk.INT 0, Gtk.STRING title,
+						  Gtk.INT ~1]);
+		     MakeTreeItems(tree, iter, handler, sub);
+		     MakeTreeItems(tree, parent, handler, ir))
+		end
 	    and MakeTree(entries, handler) =
 		let
-		    val tree = Gtk.treeViewNew ()
+		    val tree = Gtk.treeStoreNew (1, [Gtk.INT 64])
+		    val _ = MakeTreeItems(tree, Gtk.NULL, handler, entries)
+		    val treev = Gtk.treeViewNewWithModel tree		    
 		in
-		    ((*MakeTreeItems(tree, handler, entries);*) tree)
+		    (Gtk.treeViewSetHeadersVisible(treev, false);
+		     Gtk.treeViewInsertColumnWithAttributes
+		       (treev, ~1, "", Gtk.cellRendererTextNew(), 
+			[Gtk.STRING "text", Gtk.INT 0]);
+		     Gtk.treeViewExpandAll treev;
+		     treev)
 		end
 	    and MakeButtonBoxEntries (box, nil)      = ()
 	      | MakeButtonBoxEntries (box, desc::br) =
@@ -376,22 +385,22 @@ in
 		     MakeButtonBoxEntries(box, buttons);
 		     box)
 		end
-(*	    and MakeMenuEntries(menu, nil)                           = ()
+	    and MakeMenuEntries(menu, nil)                           = ()
 	      | MakeMenuEntries(menu, MenuItem(title, handlers)::er) =
 		let
 		    val item = Gtk.menuItemNewWithLabel(title)
 		in
 		    (ConnectSignals(item, handlers);
-		     Gtk.menuAppend(menu, item);
+		     Gtk.menuShellAppend(menu, item);
 		     MakeMenuEntries(menu, er))
 		end
 	      | MakeMenuEntries(menu, CheckMenuItem(title, handlers)::er) =
 		let
 		    val item = Gtk.checkMenuItemNewWithLabel(title)
 		in
-		    (Gtk.checkMenuItemSetShowToggle(item, 1);
+		    (Gtk.checkMenuItemSetShowToggle(item, true);
 		     ConnectSignals(item, handlers);
-		     Gtk.menuAppend(menu, item);
+		     Gtk.menuShellAppend(menu, item);
 		     MakeMenuEntries(menu, er))
 		end
 	      | MakeMenuEntries(menu, SubMenu(title, submenu)::er) =
@@ -400,7 +409,7 @@ in
 		    val sub   = Gtk.menuNew ()
 		in
 		    (Gtk.menuItemSetSubmenu(label, sub);
-		     Gtk.menuAppend(menu, label);
+		     Gtk.menuShellAppend(menu, label);
 		     MakeMenuEntries(sub, submenu);
 		     MakeMenuEntries(menu, er))
 		end
@@ -410,16 +419,16 @@ in
 		    val label = Gtk.menuItemNewWithLabel(title)
 		    val menu  = Gtk.menuNew ()
 		in
-		    (Gtk.menuBarAppend(bar, label);
+		    (Gtk.menuShellAppend(bar, label);
 		     Gtk.menuItemSetSubmenu(label, menu);
 		     MakeMenuEntries(menu, items);
 		     MakeMenuBarEntries(bar, er))
-		end*)
+		end
 	    and MakeMenuBar entries =
 		let
 		    val bar = Gtk.menuBarNew ()
 		in
-		    ((*MakeMenuBarEntries(bar, entries);*) bar)
+		    (MakeMenuBarEntries(bar, entries); bar)
 		end
 	    and MakeArrowWidget {artyp=typ, arshadow=shadow} =
 		Gtk.arrowNew(typ, shadow)
