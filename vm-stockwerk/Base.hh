@@ -34,15 +34,15 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 # if defined(SEAM_FOREIGN)
-#  define DllExport __declspec(dllimport)
+#  define SeamDll __declspec(dllimport)
 # else
-#  define DllExport __declspec(dllexport)
+#  define SeamDll __declspec(dllexport)
 # endif
 #else
-# define DllExport
+# define SeamDll
 #endif
 
-DllExport void AssertOutline(const char *file, int line, const char *message);
+SeamDll void AssertOutline(const char *file, int line, const char *message);
 
 #define AssertBase(cond, message)				\
   if (!(cond)) {						\
@@ -59,7 +59,7 @@ DllExport void AssertOutline(const char *file, int line, const char *message);
 #define Assert(cond)
 #endif
 
-DllExport void ErrorOutline(const char *file, int line, const char *message);
+SeamDll void ErrorOutline(const char *file, int line, const char *message);
 
 #define Error(message) {					\
   ErrorOutline(__FILE__, __LINE__, message); exit(1);	\

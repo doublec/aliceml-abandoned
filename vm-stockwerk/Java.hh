@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,11 +13,13 @@
 #ifndef __JAVA_HH__
 #define __JAVA_HH__
 
-#include "Alice.hh"
+#define JAVA_FOREIGN
+
+#include "Seam.hh"
+#include "java/Base.hh"
 #include "java/Data.hh"
 #include "java/ThrowWorker.hh"
 #include "java/NativeMethodTable.hh"
-#include "java/Table.hh"
 #include "java/JavaByteCode.hh"
 #include "java/ClassInfo.hh"
 #include "java/ClassFile.hh"
