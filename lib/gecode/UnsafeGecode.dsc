@@ -33,35 +33,35 @@ class SetVar {
 void dom(IntVar, DomSpec&); int_dom;
 void dom(IntVar, DomSpec&, BoolVar); int_domR;
 // Propagators
-void rel(IntVar, reltype, IntVar); int_rel;
-void rel(IntVar, reltype, int); int_relI;
-void rel(IntVar, reltype, IntVar, BoolVar); int_relR;
-void rel(IntVar, reltype, int, BoolVar); int_relIR;
+void rel(IntVar, RelType, IntVar); int_rel;
+void rel(IntVar, RelType, int); int_relI;
+void rel(IntVar, RelType, IntVar, BoolVar); int_relR;
+void rel(IntVar, RelType, int, BoolVar); int_relIR;
 
-void eq(IntVar, IntVar, conlevel); int_eq;
-void eq(const IntVarArgs&, conlevel); int_eqV;
-void eq(IntVar, IntVar, BoolVar, conlevel); int_eqR;
+void eq(IntVar, IntVar, ConLevel); int_eq;
+void eq(const IntVarArgs&, ConLevel); int_eqV;
+void eq(IntVar, IntVar, BoolVar, ConLevel); int_eqR;
 
 // Distinct constraints
-void distinct(const IntVarArgs&, conlevel); int_distinct;
-void distinct(const IntArgs&, const IntVarArgs&, conlevel); int_distinctI;
+void distinct(const IntVarArgs&, ConLevel); int_distinct;
+void distinct(const IntArgs&, const IntVarArgs&, ConLevel); int_distinctI;
 
 // Linear equations
-void linear(const IntArgs&, const IntVarArgs&, reltype, int, conlevel); int_linear;
-void linear(const IntArgs&, const IntVarArgs&, reltype, int, BoolVar, conlevel); int_linearR;
+void linear(const IntArgs&, const IntVarArgs&, RelType, int, ConLevel); int_linear;
+void linear(const IntArgs&, const IntVarArgs&, RelType, int, BoolVar, ConLevel); int_linearR;
 
 
 // Counting constraints
-void count(const IntVarArgs&, reltype, int, reltype, int); int_countII;
-void count(const IntVarArgs&, reltype, int, reltype, IntVar); int_countIV;
-void count(const IntVarArgs&, reltype, IntVar, reltype, int); int_countVI;
-void count(const IntVarArgs&, reltype, IntVar, reltype, IntVar); int_countVV;
+void count(const IntVarArgs&, RelType, int, RelType, int); int_countII;
+void count(const IntVarArgs&, RelType, int, RelType, IntVar); int_countIV;
+void count(const IntVarArgs&, RelType, IntVar, RelType, int); int_countVI;
+void count(const IntVarArgs&, RelType, IntVar, RelType, IntVar); int_countVV;
 
 // Access constraints
 
 void element(const IntVarArgs&, IntVar, IntVar); int_element;
 void element(const IntArgs&, IntVar, IntVar); int_elementI;
-void lex(const IntVarArgs&, reltype, const IntVarArgs&); int_lex;
+void lex(const IntVarArgs&, RelType, const IntVarArgs&); int_lex;
 
 // Boolean constraints
 void bool_not(BoolVar, BoolVar); int_bool_not;
@@ -78,7 +78,7 @@ void bool_or(const BoolVarArgs&, BoolVar); int_bool_orV;
 
 void min(const IntVarArgs&, IntVar); int_min;
 void max(const IntVarArgs&, IntVar); int_max;
-void abs(IntVar, IntVar, conlevel); int_abs;
+void abs(IntVar, IntVar, ConLevel); int_abs;
 void mult(IntVar, IntVar, IntVar); int_mult;
 //void power(IntVar, IntVar, IntVar); int_power;
 

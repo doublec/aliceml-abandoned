@@ -156,13 +156,13 @@ const BvalSel int2bvalsel[] =
     BVAL_SPLIT_MAX, BVAL_SPLIT_MIN
   };
 
-const reltype int2reltype[] =
+const RelType int2RelType[] =
   {
     REL_EQ, REL_GQ, REL_GR,
     REL_LE, REL_LQ, REL_NQ
   };
 
-const conlevel int2cl[] =
+const ConLevel int2cl[] =
   {
     CL_BND, CL_DEF, CL_DOM,
     CL_VAL
