@@ -61,12 +61,12 @@ protected:
   void RemoveEntry(u_int i, word prev, MapNode *node);
   SeamDll void Resize();
 public:
-  void Put(word key, word value);
-  void Remove(word key);
+  void SeamDll Put(word key, word value);
+  void SeamDll Remove(word key);
 
-  bool IsMember(word key);
-  word Get(word key);
-  word CondGet(word key, word alternative); 
+  bool SeamDll IsMember(word key);
+  word SeamDll Get(word key);
+  word SeamDll CondGet(word key, word alternative); 
 
   u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
@@ -86,7 +86,7 @@ public:
 
   void Apply(item_apply func);
 
-  static BaseMap<T> *New(BlockLabel l, u_int size);
+  static SeamDll BaseMap<T> *New(BlockLabel l, u_int size);
 };
 
 // Hack Alert
