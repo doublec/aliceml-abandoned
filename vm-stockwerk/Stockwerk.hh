@@ -38,6 +38,7 @@
 #include "generic/Properties.hh"
 #include "generic/TaskStack.hh"
 #include "generic/IOHandler.hh"
+#include "generic/IODesc.hh"
 #include "generic/SignalHandler.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Transients.hh"
