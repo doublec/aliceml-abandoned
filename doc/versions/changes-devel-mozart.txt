@@ -52,6 +52,7 @@ Library:
   - logStream reference to configure trace destinations. Preconfigurable
     through value of ALICE_TRACE_COMPONENT.
   - Trace messages are more informative, particularly wrt signature mismatches.
+* Toplevel: Future.await is now available unqualified.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
 * Exn: new structure for dealing with exceptions and backtraces.
 * OS.Process: atExn takes an Exn.packet now.

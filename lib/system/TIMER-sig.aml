@@ -16,6 +16,7 @@
  *)
 signature TIMER =
 sig
+    type cpu_timer
     type real_timer
 
     val startRealTimer :    unit -> real_timer

@@ -159,6 +159,10 @@
 			<param name="Local" value="library/config.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Date">
+			<param name="Local" value="library/date.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Exn">
 			<param name="Local" value="library/exn.html">
 			</OBJECT>
@@ -397,6 +401,10 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Time">
 			<param name="Local" value="library/time.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Timer">
+			<param name="Local" value="library/timer.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Unix">

@@ -64,10 +64,14 @@ Library:
   - logStream reference to configure trace destinations. Preconfigurable
     through value of ALICE_TRACE_COMPONENT.
   - Trace messages are more informative, particularly wrt signature mismatches.
+* Toplevel: Future.await is now available unqualified.
 * Default int type is now 31 bit, infinite precision integers are
   available through the IntInf structure.
 * FixedInt added.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
+* Time: now, fromString, toString, fmt, scan added.
+* Date added.
+* Timer added.
 * Exn: new structure for dealing with exceptions and backtraces.
 * OS.Process: atExn takes an Exn.packet now.
 * Hole: fixed semantics of synchronisation on holes.

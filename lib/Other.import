@@ -6,7 +6,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,6 +15,12 @@
 
 (* This file is prepended to every compiled input. *)
 
+import signature TIME             from "x-alice:/lib/system/TIME-sig"
+import structure Time             from "x-alice:/lib/system/Time"
+import signature DATE             from "x-alice:/lib/system/DATE-sig"
+import structure Date             from "x-alice:/lib/system/Date"
+import signature TIMER            from "x-alice:/lib/system/TIMER-sig"
+import structure Timer            from "x-alice:/lib/system/Timer"
 import signature IO               from "x-alice:/lib/system/IO-sig"
 import structure IO               from "x-alice:/lib/system/IO"
 import signature PRIM_IO          from "x-alice:/lib/system/PRIM_IO-sig"

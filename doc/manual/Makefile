@@ -46,6 +46,7 @@ INSTALLFILES_LIBRARY_0 = \
 	alt.html array.html array2.html array-slice.html atom.html \
 	bin-io.html bool.html byte.html \
 	channel.html char.html command-line.html \
+	date.html \
 	exn.html \
 	future.html \
 	general.html \
@@ -63,7 +64,8 @@ INSTALLFILES_LIBRARY_0 = \
 	real.html ref.html ref-map.html \
 	set.html stack.html stamp.html stream-io.html string.html \
 	string-cvt.html substring.html \
-	text.html text-io.html text-stream-io.html time.html toplevel.html \
+	text.html text-io.html text-stream-io.html time.html timer.html \
+	toplevel.html \
 	unix.html \
 	vector.html vector-pair.html vector-slice.html \
 	word.html \

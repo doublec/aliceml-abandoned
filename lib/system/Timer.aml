@@ -19,13 +19,16 @@ import signature TIMER           from "TIMER-sig"
 import structure Time            from "Time"
 
 
-structure Timer :> TIMER =
+structure Timer : TIMER =
 struct
-    type real_timer = Time.time
+    __primitive type cpu_timer  = "Timer.cpu_timer"
+    __primitive type real_timer = "Timer.real_timer"
 
-    fun startRealTimer () = Time.now ()
+    __primitive val cast : 'a -> 'b = "Unsafe.cast"
 
-    fun totalRealTimer () = Time.zeroTime
+    fun startRealTimer () = cast (Time.now ())
 
-    fun checkRealTimer t  = Time.- (Time.now (), t)
+    fun totalRealTimer () = cast Time.zeroTime
+
+    fun checkRealTimer t  = cast (Time.- (Time.now (), cast t))
 end
