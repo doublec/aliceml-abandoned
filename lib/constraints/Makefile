@@ -27,15 +27,16 @@ VPATH = $(SRCDIR)
 OZC = ozc
 OZCOPTS = -z9
 STOC = alicec
-STOCOPTS = --recursive-compilation
+STOCOPTS = --recursive-compilation --rtt-level=no
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 STOL = alicelink
 STOLOPTS = -v
 
-ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml SPACE-sig.aml Space.aml \
+ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml SCHEDULE-sig.aml Schedule.aml \
+               SPACE-sig.aml Space.aml \
                SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml
 
-NATIVES = FD FS Space Explorer
+NATIVES = FD FS Schedule Space Explorer
 
 OZSOURCES=$(NATIVES:%=Unsafe%.oz)
 
