@@ -80,7 +80,8 @@ define
 	   Attributes.tt    \=: RootAttributes.tt
 	   {FD.minus Attributes.u RootAttributes.u}
 	   Attributes.size  \=: RootAttributes.size
-	   Attributes.color \=: RootAttributes.color] '=:'}
+	   Attributes.color \=: RootAttributes.color
+	   1] '=:'}
       end
    end
 
@@ -335,9 +336,16 @@ define
       end
 
       %% Minimal depth
-
-      %--**
-
+      for I1 in FirstNonDataItemI..LastNonDataItemI do W1 in
+	 W1 = V.I1
+	 for I2 in FirstNonRootI..LastNonRootI do
+	    if I2 \= I1 then W2 in
+	       W2 = V.I2
+	       {FS.reified.isIn I2 W1.daughters} =<:
+	       ({FD.plus W1.depth 1} >=: W2.mindepth)
+	    end
+	 end
+      end
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
