@@ -16,8 +16,6 @@ import
 export
    'GTKCore$' : GTKCore
 define
-   Object
-   VaArg
    Dispatcher
 
    local
@@ -68,6 +66,10 @@ define
    end
    fun {FreeGDKColor Color}
       {Native.freeGdkColor {ObjectToPointer Color}}
+      unit
+   end
+   fun {CanvasInit _}
+      {Native.canvasInit}
       unit
    end
    
@@ -150,8 +152,18 @@ define
       end
       
       %% Create Interface
-      GTKCore = 'GTKCore'('$object'            : Object
-			  '$va_arg'            : VaArg
+      GTKCore = 'GTKCore'('$object'            : _
+			  '$va_arg'            : _
+			  'va_bool'            : fun {$ X} va_bool(X) end
+			  'va_int'             : fun {$ X} va_int(X) end
+			  'va_float'           : fun {$ X} va_float(X) end
+			  'va_string'          : fun {$ X} va_string(X) end
+			  'va_object'          : fun {$ X} va_object(X) end
+			  '\'va_bool'          : va_bool
+			  '\'va_int'           : va_int
+			  '\'va_float'         : va_float
+			  '\'va_string'        : va_string
+			  '\'va_object'        : va_object
 			  pointerToObject      : PointerToObject
 			  objectToPointer      : ObjectToPointer
 			  removeObject         : RemoveObject
@@ -163,10 +175,10 @@ define
 			  signalEmit           : SignalEmit
 			  allocateGDKColor     : AllocateGDKColor
 			  freeGDKColor         : FreeGDKColor
+			  canvasInit           : CanvasInit
 			  exit                 : Exit)
       
       %% Start dispatcher
       Dispatcher = {New DispatcherObject create}
    end
 end
-

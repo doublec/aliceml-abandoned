@@ -14,17 +14,23 @@
 
 # Configuration Section
 
-OZHOME=/opt/mozart-1.1.1
+SRCTOP = ../..
+SRCDIR = $(SRCTOP)/lib/gtk
+BUILDDIR := $(shell pwd)
+BUILDTOP = $(BUILDDIR)/../..
+
 PREFIX=/opt/stockhausen-devel
 
-PLATFORM = x86-linux
+SMLPLATFORM = x86-linux
 
 # End of Configuration Section
 
+OZPLATFORM := $(shell oztool platform)
+VPATH = $(SRCDIR)
+
 SML = sml
 CPP = cpp -undef -D__GNUC__
-CPPFLAGS := $(shell gtk-config --cflags gtk) -I/home/asimon/bin/include
-#--** should be: CPPFLAGS := $(shell gtk-config --cflags gtk)
+CPPFLAGS := $(shell gtk-config --cflags gtk) -I$(SRCDIR)/gtk-canvas
 
 OZC = ozc
 OZCOPTS = -z9
@@ -37,13 +43,22 @@ COMPONENTS = $(OZSOURCES:%.oz=%.ozf)
 INSTALLDIRS = $(PREFIX)/lib/gtk
 INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/gtk/%)
 
-.PHONY: all depend install clean veryclean distclean
+CXXFLAGS = $(CPPFLAGS)
+
+NATIVESOURCES = GtkCanvas.c
+NATIVEOBJS = GtkCanvas.o
+NATIVEFILES = gtkcanvas.so-$(OZPLATFORM)
+NATIVEFLAGS = $(SRCDIR)/build/lib/libgtk-canvas.a \
+              $(SRCDIR)/build/lib/libart_lgpl.a \
+              -lg -lgdk -lgtk
+
+.PHONY: all depend install clean veryclean distclean native
 
 ##
 ## Building
 ##
 
-all: $(COMPONENTS)
+all: $(COMPONENTS) native
 
 depend:
 	touch Makefile.depend
@@ -51,20 +66,20 @@ depend:
 header/gtkraw.c: header/gtk.c
 	$(CPP) $(CPPFLAGS) $< $@
 
-header/gtkheader.c: header/gtkraw.c header/filter.$(PLATFORM)
+header/gtkheader.c: header/gtkraw.c header/filter.$(SMLPLATFORM)
 	sml @SMLload=header/filter $< $@
 
-header/filter.$(PLATFORM): header/filter.sml header/make-filter.sml
+header/filter.$(SMLPLATFORM): header/filter.sml header/make-filter.sml
 	-rm -f $@
 	(cd header && echo 'use "make-filter.sml";' | $(SML))
 	if [ ! -f $@ ]; then exit 1; fi
 
-collect.$(PLATFORM): collect.sml make-collect.sml
+collect.$(SMLPLATFORM): collect.sml make-collect.sml
 	-rm -f $@
 	echo 'use "make-collect.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
-GTKWrapper.oz: collect.$(PLATFORM) header/gtkheader.c
+GTKWrapper.oz: collect.$(SMLPLATFORM) header/gtkheader.c
 	sml @SMLload=collect header/gtkheader.c
 
 GTKExport.oz: GTKWrapper.oz ;
@@ -89,6 +104,21 @@ GDK.ozf: GTKCore.ozf
 UntypedCanvas.ozf: CanvasWrapper.oz CanvasExport.oz
 Canvas.ozf: GTKCore.ozf
 
+native:
+	(cd gtk-canvas && ./configure --prefix=$(BUILDDIR)/build) || exit 1
+	(cd gtk-canvas && $(MAKE) all install) || exit 1
+	oztool c++ $(CXXFLAGS) -c GtkCanvas.c -o GtkCanvas.o || exit 1
+	oztool ld -o gtkcanvas.so-$(OZPLATFORM) GtkCanvas.o $(NATIVEFLAGS)
+
+natshort:
+	oztool c++ $(CXXFLAGS) -c GtkCanvas.c -o GtkCanvas.o || exit 1
+	oztool ld -o gtkcanvas.so-$(OZPLATFORM) GtkCanvas.o $(NATIVEFLAGS)
+	install -c -m 555 $(NATIVEFILES) $(PREFIX)/lib/gtk
+
+mytest:
+	g++ $(CPPFLAGS) -c mytest.c -o mytest.o
+	g++ $(CPPFLAGS) -o mytest mytest.o -lg -lgdk -lgtk -lgtk-canvas -lart_lgpl
+
 -include Makefile.depend
 
 ##
@@ -96,15 +126,13 @@ Canvas.ozf: GTKCore.ozf
 ##
 
 install: $(INSTALLDIRS) $(INSTALLFILES)
+	install -c -m 555 $(NATIVEFILES) $(PREFIX)/lib/gtk
 
 $(INSTALLDIRS):
 	mkdir -p $@
 
 $(PREFIX)/lib/gtk/%: %
 	install -c -m 444 $< $@
-
-#	ln -s $(OZHOME)/share/GTK.so-linux-i486 $(PREFIX)/lib/gtk
-#	ln -s $(OZHOME)/share/GDK.so-linux-i486 $(PREFIX)/lib/gtk
 
 ##
 ## Cleaning Up
@@ -116,9 +144,12 @@ clean:
 	-rm -f GDKWrapper.oz GDKExport.oz GDK.asig
 	-rm -f CanvasWrapper.oz CanvasExport.oz Canvas.asig
 	-rm -f $(COMPONENTS)
+	-rm -f $(NATIVESOURCES) $(NATIVEOBJS) $(NATIVEFILES)
+	-rm -rf build
 
 veryclean: clean
-	-rm -f header/filter.$(PLATFORM) collect.$(PLATFORM)
+	-rm -f header/filter.$(SMLPLATFORM) collect.$(SMLPLATFORM)
 
 distclean: veryclean
+	(cd gtk-canvas && $(MAKE) distclean) || exit 1
 	-rm -f Makefile.depend
