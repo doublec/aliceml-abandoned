@@ -93,9 +93,14 @@ struct
 		 raise Crash.Crash
 		     "MkToplevel.eval: cross-compilation not supported")
 	handle RecursiveCompiler.Error => context
-	     | exn =>
+	     | Component.Failure (_, Component.Eval exn) =>
 		   (TextIO.output (TextIO.stdErr,
 				   "uncaught exception " ^
+				   General.exnName exn ^ "\n");
+		    context)
+	     | exn =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal exception " ^
 				   General.exnName exn ^ "\n");
 		    context)   (*--** is this cool or what? *)
 
