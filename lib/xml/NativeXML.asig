@@ -23,6 +23,7 @@ signature ALICE_XML =
 		val prev : 'xmlNodePtr -> 'xmlNodePtr
 		val properties : 'xmlNodePtr -> 'xmlNodePtr
 		val name : 'xmlNodePtr -> string
+		val getType : 'xmlNodePtr -> 'xmlType
 		val getProp : 'xmlNodePtr * string -> string option
 		val nodeListGetString :
 		    'xmlNodePtr * int -> string option
