@@ -33,7 +33,9 @@ static const FrameLabel JAVA_BYTE_CODE_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 5);
 static const FrameLabel UNLOCK_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 6);
-static const FrameLabel RUN_MAIN_FRAME =
+static const FrameLabel PUT_PROPERTIES_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 7);
+static const FrameLabel RUN_MAIN_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 8);
 
 #endif
