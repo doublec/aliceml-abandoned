@@ -35,14 +35,15 @@ private:
   static u_int needGC;
   static u_int gcGen;
 
-  static MemChunk *Shrink(MemChunk *chain, int threshold);
+  static void Shrink(MemChunk *list, int threshold);
   static Block *CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen);
-  static void ScanChunks(u_int dst_gen, u_int cpy_gen,
-			 u_int match_gen, MemChunk *anchor, char *scan);
+  static word ForwardBlock(word p, u_int dst_gen, u_int cpy_gen, u_int match_gen);
+  static void ScanChunks(u_int dst_gen, u_int cpy_gen, u_int match_gen,
+			 MemChunk *anchor, char *scan);
   static char *GCAlloc(u_int s, u_int gen);
-  static void SwitchToNewChunk(MemChunk *chain);
+  static void SwitchToNewChunk(MemChunk *chunk);
   static void AllocNewMemChunk(u_int size, u_int gen);
-
+  
   static char *FastAlloc(u_int size) {
   retry:
     char *top = storeChunkTop;
@@ -50,14 +51,8 @@ private:
     storeChunkTop += size;
     if (storeChunkTop > storeChunkMax) {
       AllocNewMemChunk(size, 0);
-      needGC = 1;
       goto retry;
     }
-#ifdef DEBUG_CHECK
-    else {
-      StoreTop();
-    }
-#endif
 
     return top;
   }
@@ -118,17 +113,22 @@ public:
     return PointerOp::EncodeUnmanagedPointer(v);
   }
   static void *WordToUnmanagedPointer(word x) {
-    return PointerOp::DecodeUnmanagedPointer(x);
+    return PointerOp::DecodeUnmanagedPointer(PointerOp::Deref(x));
   }
-  static int UnsafeWordToInt(word x) {
+  static int DirectWordToInt(word x) {
+    Assert(((u_int) x & INTTAG) == INTTAG);
     return PointerOp::DecodeInt(x);
   }
-  static Block *UnsafeWordToBlock(word x) {
+  static Block *DirectWordToBlock(word x) {
+    Assert(((u_int) x & TAGMASK) == BLKTAG);
     return PointerOp::DecodeBlock(x);
   }
-#ifdef DEBUG_CHECK
+  static void *DirectWordToUnmanagedPointer(word x) {
+    Assert(((u_int) x & TAGMASK) == BLKTAG);
+    return PointerOp::DecodeUnmanagedPointer(x);
+  }
+#if defined(DEBUG_CHECK)
   static void MemStat();
-  static void StoreTop();
   static void ForceGCGen(u_int gen);
 #endif
 };
