@@ -36,4 +36,6 @@ sig
 
     val isFuture :	'a -> bool
     val isFailed :	'a -> bool
+
+    val innerExn :	exn -> exn
 end
