@@ -90,7 +90,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-PREFIX = /opt/stockhausen-devel
+PREFIX = /opt/alice-devel
 
 # No configuration needed from here
 

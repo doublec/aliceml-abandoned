@@ -4,7 +4,7 @@
 
 PWD := $(shell pwd)
 
-GLOBAL_PREFIX = /opt/stockhausen-devel
+GLOBAL_PREFIX = /opt/alice-devel
 PREFIX = $(PWD)/install
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'

@@ -16,7 +16,7 @@
 
 TARGET = mozart
 
-#PREFIX=/opt/stockhausen-devel
+#PREFIX=/opt/alice-devel
 
 SRCTOP = ../..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap

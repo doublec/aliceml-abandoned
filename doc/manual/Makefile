@@ -8,7 +8,7 @@ INTEROP = interop.html
 PLATFORM = mozart
 endif
 
-PREFIX = /opt/stockhausen-devel/doc
+PREFIX = /opt/alice-devel/doc
 
 DIRS = $(PREFIX) \
 	$(PREFIX)/library \

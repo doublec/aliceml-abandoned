@@ -12,7 +12,6 @@ INSTALLFILES_0 = \
 	contribs.html
 INSTALLFILES_DOWNLOAD_0 = \
 	COPYING CHANGES
-#	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz
 INSTALLFILES_PAPERS_0 = \
 	intermediate.ps NEPBericht2001.pdf NEPAntrag2001.pdf NEPReport2004.pdf
 INSTALLFILES = \
