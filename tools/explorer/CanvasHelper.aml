@@ -11,7 +11,7 @@
  *)
 
 import structure Gtk          from "x-alice:/lib/gtk/Gtk"
-import structure GnomeCanvas  from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas  from "x-alice:/lib/gtk/Canvas"
 
 import structure GtkNode      from "GtkNode"
 import structure Types        from "Types"
@@ -23,8 +23,8 @@ structure CanvasHelper =
 
   fun createCanvas (state, serve, xDim, yDim) =
       let
-	  val canvas = GnomeCanvas.newAa()
-	  val rootGroup = GtkNode.makeGroup (GnomeCanvas.root canvas)
+	  val canvas = Canvas.newAa()
+	  val rootGroup = GtkNode.makeGroup (Canvas.root canvas)
 	  val shadowGroup = GtkNode.makeGroup rootGroup
 	  val actionGroup = GtkNode.makeGroup rootGroup
           val actionHandler =
@@ -32,10 +32,10 @@ structure CanvasHelper =
 			        EventHandler.nodeEvent (state, serve));
       in
 	   Gtk.widgetSetSizeRequest(canvas, xDim, yDim);
-	   GnomeCanvas.setScrollRegion(canvas, 0.0, 0.0,
+	   Canvas.setScrollRegion(canvas, 0.0, 0.0,
 				       Real.fromInt xDim, Real.fromInt yDim);
-	   GnomeCanvas.setPixelsPerUnit(canvas, 1.0);
-	   GnomeCanvas.setBackgroundColor(canvas, GtkNode.white);
+	   Canvas.setPixelsPerUnit(canvas, 1.0);
+	   Canvas.setBackgroundColor(canvas, GtkNode.white);
 	   (canvas, ref rootGroup,ref shadowGroup, ref actionGroup,
             ref actionHandler)
       end
@@ -48,7 +48,7 @@ structure CanvasHelper =
 				 : Types.explorer_state option)))=
       (Gtk.signalDisconnect(!actionGroup, !actionHandler);
        Gtk.objectDestroy (!rootGroup);
-       rootGroup := GtkNode.makeGroup (GnomeCanvas.root canvas);
+       rootGroup := GtkNode.makeGroup (Canvas.root canvas);
        actionGroup := GtkNode.makeGroup (!rootGroup);
        actionHandler := Gtk.signalConnect(!actionGroup, "event",
                                           EventHandler.nodeEvent (s, serve));
@@ -64,7 +64,7 @@ structure CanvasHelper =
 		 let
 		     val x = Gtk.rangeGetValue scaleWidget
 		 in
-		     GnomeCanvas.setPixelsPerUnit(canvas, x);
+		     Canvas.setPixelsPerUnit(canvas, x);
 		     scale := x / Defaults.floatScaleBase
 		 end))
     | scaleCanvasHandler _ _ = ()

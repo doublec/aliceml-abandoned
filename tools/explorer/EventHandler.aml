@@ -12,7 +12,7 @@
 
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
 import structure Gdk            from "x-alice:/lib/gtk/Gdk"
-import structure GnomeCanvas    from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas    from "x-alice:/lib/gtk/Canvas"
 
 import structure Types          from "Types"
 import structure Defaults       from "Defaults"
@@ -125,7 +125,7 @@ structure EventHandler =
 	  val yDim   = Real.round((itr((depth+1)*TreeNode.verSpaceI) *
 				   TreeNode.defScale))
       in
-	  GnomeCanvas.setScrollRegion(canvas, itr xMin, 0.0,
+	  Canvas.setScrollRegion(canvas, itr xMin, 0.0,
 				      itr xMax, Real.fromInt yDim)
       end
     | setBBox _ = ()
@@ -156,7 +156,7 @@ structure EventHandler =
               val scaleTo = Real.max(0.1,scaleTo)
               val scaleTo = Real.min(3.0,scaleTo)
           in
-	      GnomeCanvas.setPixelsPerUnit(canvas, scaleTo);
+	      Canvas.setPixelsPerUnit(canvas, scaleTo);
               Gtk.rangeSetValue(ExplorerGUI.scale,scaleTo);
 	      scale := scaleTo / Defaults.floatScaleBase
           end
@@ -188,7 +188,7 @@ structure EventHandler =
 			      GtkNode.drawShadow (rstate, x, y, cn)
 		          end);
               Gtk.layoutThaw canvas;
-              GnomeCanvas.setPixelsPerUnit(canvas,
+              Canvas.setPixelsPerUnit(canvas,
                                            (!scale)*Defaults.floatScaleBase);
               if Types.getZoomFollows state then
                   zoomToFit state

@@ -13,7 +13,7 @@
 import structure TreeNode    from "TreeNode"
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
 import structure Gdk         from "x-alice:/lib/gtk/Gdk"
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas from "x-alice:/lib/gtk/Canvas"
 
 import structure Types       from "Types"
 
@@ -43,8 +43,8 @@ struct
   val itr = Real.fromInt
 
   fun makeGroup parent =
-      GnomeCanvas.itemCreate(parent,
-			     GnomeCanvas.groupGetType(),
+      Canvas.itemCreate(parent,
+			     Canvas.groupGetType(),
 			     [("x", Gtk.REAL 0.0),
 			      ("y", Gtk.REAL 0.0)])
 
@@ -79,21 +79,21 @@ struct
 	          val y22 = myY + (sVerSpace - 5)
 	          val points2 = [x02,y02,x12,y12,x22,y22,x02,y02]
               in
-	          (GnomeCanvas.itemCreate(item,
-		     GnomeCanvas.polygonGetType(),
+	          (Canvas.itemCreate(item,
+		     Canvas.polygonGetType(),
 		     [("points",
                        Gtk.OBJECT
-		           (GnomeCanvas.makePoints points)),
+		           (Canvas.makePoints points)),
 		      ("fill_color_gdk",Gtk.OBJECT color),
 		      ("outline_color_gdk",
                        Gtk.OBJECT outline)
 		      ]
 		     ));
-	          (GnomeCanvas.itemCreate(item,
-		     GnomeCanvas.polygonGetType(),
+	          (Canvas.itemCreate(item,
+		     Canvas.polygonGetType(),
 		     [("points",
                        Gtk.OBJECT
-			   (GnomeCanvas.makePoints points2)),
+			   (Canvas.makePoints points2)),
 		      ("fill_color_gdk", Gtk.OBJECT lightgray),
 		      ("outline_color_gdk", Gtk.OBJECT black)
 		      ]
@@ -101,11 +101,11 @@ struct
                   item
               end
           else
-	      (GnomeCanvas.itemCreate(group,
-				      GnomeCanvas.polygonGetType(),
+	      (Canvas.itemCreate(group,
+				      Canvas.polygonGetType(),
 				      [("points",
                                         Gtk.OBJECT
-		                            (GnomeCanvas.makePoints points)),
+		                            (Canvas.makePoints points)),
 				       ("fill_color_gdk", Gtk.OBJECT color),
 				       ("outline_color_gdk",
                                         Gtk.OBJECT outline)
@@ -126,11 +126,11 @@ struct
 	  val y2 = myY + width
 	  val points = [x0,y1,x1,y0,x2,y1,x1,y2,x0,y1,x0,y1]
       in
-	  (GnomeCanvas.itemCreate(group,
-				  GnomeCanvas.polygonGetType(),
+	  (Canvas.itemCreate(group,
+				  Canvas.polygonGetType(),
 				  [("points",
                                     Gtk.OBJECT
-                                        (GnomeCanvas.makePoints points)),
+                                        (Canvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT color),
 				   ("outline_color_gdk", Gtk.OBJECT outline)
 				   ]
@@ -147,8 +147,8 @@ struct
 	  val x2 = (itr myX) + width
 	  val y2 = (itr myY) + width
       in
-	  GnomeCanvas.itemCreate(group,
-				 GnomeCanvas.rectGetType(),
+	  Canvas.itemCreate(group,
+				 Canvas.rectGetType(),
 				 [("x1", Gtk.REAL x1),
 				  ("y1", Gtk.REAL y1),
 				  ("x2", Gtk.REAL x2),
@@ -172,20 +172,20 @@ struct
 (*           val points2 = [x2,y1,x1,y2] *)
 (*           val capStyle = Gdk.GdkCapStyleToInt Gdk.CAP_ROUND *)
 (*       in *)
-(*           GnomeCanvas.itemCreate(item, *)
-(*                                  GnomeCanvas.lineGetType(), *)
+(*           Canvas.itemCreate(item, *)
+(*                                  Canvas.lineGetType(), *)
 (*                                  [("points", *)
 (*                                    Gtk.OBJECT *)
-(*                                        (GnomeCanvas.makePoints points1)), *)
+(*                                        (Canvas.makePoints points1)), *)
 (*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
 (*                                   ("width_units", Gtk.REAL 3.0), *)
 (*                                   ("cap_style", Gtk.INT capStyle) *)
 (*                                   ]); *)
-(*           GnomeCanvas.itemCreate(item, *)
-(*                                  GnomeCanvas.lineGetType(), *)
+(*           Canvas.itemCreate(item, *)
+(*                                  Canvas.lineGetType(), *)
 (*                                  [("points", *)
 (*                                    Gtk.OBJECT *)
-(*                                        (GnomeCanvas.makePoints points2)), *)
+(*                                        (Canvas.makePoints points2)), *)
 (*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
 (*                                   ("width_units", Gtk.REAL 3.0), *)
 (*                                   ("cap_style", Gtk.INT capStyle) *)
@@ -204,8 +204,8 @@ struct
 	  val x2 = (itr myX) + scaledCircleWidth
 	  val y2 = (itr myY) + scaledCircleWidth
       in
-	  GnomeCanvas.itemCreate(group,
-				 GnomeCanvas.ellipseGetType(),
+	  Canvas.itemCreate(group,
+				 Canvas.ellipseGetType(),
 				 [("x1", Gtk.REAL x1),
 				  ("y1", Gtk.REAL y1),
 				  ("x2", Gtk.REAL x2),
@@ -230,11 +230,11 @@ struct
 	  val y2 = myY + sVerSpace
 	  val points = [x0,y0,x1,y1,x2,y2,x0,y0]
       in
-	  (GnomeCanvas.itemCreate(group,
-				  GnomeCanvas.polygonGetType(),
+	  (Canvas.itemCreate(group,
+				  Canvas.polygonGetType(),
 				  [("points",
                                     Gtk.OBJECT
-					(GnomeCanvas.makePoints points)),
+					(Canvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT color),
 				   ("outline_color_gdk", Gtk.OBJECT outline)
 				   ]
@@ -267,11 +267,11 @@ struct
 	  val points = [Real.round x1,Real.round y1,
                         Real.round x2,Real.round y2]
       in
-	  (GnomeCanvas.itemCreate(rootGroup,
-				  GnomeCanvas.lineGetType(),
+	  (Canvas.itemCreate(rootGroup,
+				  Canvas.lineGetType(),
 				  [("points",
 				    Gtk.OBJECT
-                                        (GnomeCanvas.makePoints points)),
+                                        (Canvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT black),
 				   ("line_style", Gtk.INT 0),
 				   ("width_pixels", Gtk.INT 1)
@@ -337,10 +337,10 @@ struct
                case !vNode of
                    SOME v =>
                    let
-                       val (x1,y1,x2,y2) = GnomeCanvas.itemGetBounds v
+                       val (x1,y1,x2,y2) = Canvas.itemGetBounds v
                    in
-	               GnomeCanvas.itemCreate(GnomeCanvas.root canvas,
-				              GnomeCanvas.ellipseGetType(),
+	               Canvas.itemCreate(Canvas.root canvas,
+				              Canvas.ellipseGetType(),
 				              [("x1", Gtk.REAL x1),
 				               ("y1", Gtk.REAL y1),
 				               ("x2", Gtk.REAL x2),
@@ -372,7 +372,7 @@ struct
 	      shadowGroup := makeGroup (!rootGroup);
 	      doDraw (!shadowGroup, true, TreeNode.defScale, hidden,
                       0, false, status, myX, myY);
-	      GnomeCanvas.itemLowerToBottom (!shadowGroup)
+	      Canvas.itemLowerToBottom (!shadowGroup)
 	  end
 
   fun undrawSubtree (Types.N({vNode=vNode,connection=connection,...},
@@ -389,7 +389,7 @@ struct
 
   fun moveNode ({gtk={scale=ref scale,...},...}: Types.explorer_state,
 	        v, myByX) =
-	       GnomeCanvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale,
+	       Canvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale,
                                     0.0)
 
   fun moveTree (state: Types.explorer_state)
@@ -404,8 +404,8 @@ struct
 
   fun findByXY(canvas, scale, x, y) =
       let
-	  val (cXI, cYI) = GnomeCanvas.w2c(canvas, x, y)
-	  val (sox1, _, _, _) = GnomeCanvas.getScrollRegion canvas
+	  val (cXI, cYI) = Canvas.w2c(canvas, x, y)
+	  val (sox1, _, _, _) = Canvas.getScrollRegion canvas
 
 	  val cX = (Real.fromInt cXI)/scale
 	  val cY = (Real.fromInt cYI)
