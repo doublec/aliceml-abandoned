@@ -22,15 +22,14 @@
 #include "generic/Interpreter.hh"
 
 class AbstractCodeInterpreter: public Interpreter {
+private:
+  // AbstractCodeInterpreter Constructor
+  AbstractCodeInterpreter() : Interpreter() {}
 public:
   // Exported AbstractCodeInterpreter Instance
   static AbstractCodeInterpreter *self;
-  // AbstractCodeInterpreter Constructor
-  AbstractCodeInterpreter() : Interpreter() {}
   // AbstractCodeInterpreter Static Constructor
-  static void Init() {
-    self = new AbstractCodeInterpreter();
-  }
+  static void Init();
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
