@@ -10,4 +10,4 @@
 //   $Revision$
 //
 
-#include "ThreadPool.hh"
+#include "scheduler/ThreadPool.hh"
