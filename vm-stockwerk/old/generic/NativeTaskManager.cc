@@ -19,9 +19,28 @@
 #include "generic/InternalTasks.hh"
 #include "generic/Tuple.hh"
 
+class NativeConcreteCodeHandler: public Handler {
+public:
+  virtual void PrepareForGC(Block *p);
+  virtual void Finalize(word value);
+  virtual Block *GetAbstractRepresentation();
+};
+
+void NativeConcreteCodeHandler::PrepareForGC(Block *) {}
+
+void NativeConcreteCodeHandler::Finalize(word) {}
+
+Block *NativeConcreteCodeHandler::GetAbstractRepresentation() {
+  return INVALID_POINTER;
+}
+
+NativeTaskManager::NativeTaskManager(NativeTaskManager::function f,
+				     int nargs, u_int nslots):
+  TaskManager(new NativeConcreteCodeHandler()),
+  func(f), arity(nargs == 1? -1: nargs), frameSize(nslots + 1) {}
+
 Closure *NativeTaskManager::ToClosure() {
-  word abstractCode = Store::IntToWord(0); //--** this has to be revisited
-  ConcreteCode *concreteCode = ConcreteCode::New(abstractCode, this, 0);
+  ConcreteCode *concreteCode = ConcreteCode::New(this, 0);
   return Closure::New(concreteCode, 0);
 }
 

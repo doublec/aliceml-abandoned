@@ -17,23 +17,19 @@
 #pragma interface "generic/ConcreteCode.hh"
 #endif
 
-#include "store/Store.hh"
-
-class TaskManager;
+#include "generic/TaskManager.hh"
 
 class ConcreteCode: private Block {
 private:
   static const u_int SIZE = 2;
-  static const u_int ABSTRACT_CODE_POS = 1;
-  static const u_int TASK_POS = 2;
+  static const u_int TASK_MANAGER_POS = 2;
 public:
   using Block::ToWord;
 
-  static ConcreteCode *New(word abstractCode, TaskManager *task, u_int size) {
-    //--** will be a block with handler
-    Block *b = Store::AllocBlock(CONCRETECODE_LABEL, SIZE + size);
-    b->InitArg(ABSTRACT_CODE_POS, abstractCode);
-    b->InitArg(TASK_POS, Store::UnmanagedPointerToWord(task));
+  static ConcreteCode *New(TaskManager *taskManager, u_int size) {
+    Block *b = Store::AllocBlockWithHandler(CONCRETECODE_LABEL, SIZE + size,
+					    taskManager->handler);
+    b->InitArg(TASK_MANAGER_POS, Store::UnmanagedPointerToWord(taskManager));
     return static_cast<ConcreteCode *>(b);
   }
   static ConcreteCode *FromWord(word x) {
@@ -47,12 +43,9 @@ public:
     return static_cast<ConcreteCode *>(b);
   }
 
-  word GetAbstractCode() {
-    return GetArg(ABSTRACT_CODE_POS);
-  }
   TaskManager *GetTaskManager() {
     return static_cast<TaskManager *>
-      (Store::DirectWordToUnmanagedPointer(GetArg(TASK_POS)));
+      (Store::DirectWordToUnmanagedPointer(GetArg(TASK_MANAGER_POS)));
   }
   void Init(u_int index, word value) {
     InitArg(SIZE + index + 1, value);

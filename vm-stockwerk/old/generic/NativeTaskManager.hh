@@ -27,8 +27,7 @@ private:
   int arity;
   u_int frameSize;
 public:
-  NativeTaskManager(function f, int nargs, u_int nslots):
-    func(f), arity(nargs == 1? -1: nargs), frameSize(nslots + 1) {}
+  NativeTaskManager(function f, int nargs, u_int nslots);
 
   Closure *ToClosure();
 

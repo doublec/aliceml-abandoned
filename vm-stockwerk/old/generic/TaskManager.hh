@@ -13,7 +13,7 @@
 #ifndef __GENERIC__TASK_MANAGER_HH__
 #define __GENERIC__TASK_MANAGER_HH__
 
-#include "generic/ConcreteCode.hh"
+#include "store/Store.hh"
 
 class TaskStack;
 class Closure;
@@ -40,6 +40,10 @@ public:
       Assert(c == CONTINUE || c == PREEMPT || c == REQUEST);
     }
   };
+
+  Handler *handler;
+
+  TaskManager(Handler *h): handler(h) {}
 
   // Handling stack frames:
   virtual void PushCall(TaskStack *taskStack, Closure *closure) = 0;
