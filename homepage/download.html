@@ -16,10 +16,19 @@ bugs, they might not even build! You are basically on your own.</P>
 
 <H3>CVS information</H3>
 
+<P>In order to be able to build SEAM, you will need to checkout two modules,
+<TT>seam-support</TT> and <TT>seam</TT>.
+</P>
+
 <PRE class=code>
 CVSROOT:  :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS
+Module:   seam-support
+Password: anoncvs
+
+CVSROOT:  :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS
 Module:   seam
-Password: anoncvs</PRE>
+Password: anoncvs
+</PRE>
 
 
 <H3>Example session</H3>
@@ -31,7 +40,7 @@ Password: anoncvs</PRE>
 % cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS login
 (Logging in to anoncvs@cvs.ps.uni-sb.de)
 CVS password: anoncvs
-% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get seam</PRE>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get seam-support seam</PRE>
 
 <!--
 <P>From the CVS repository you can also access the released version:</P>
@@ -39,5 +48,47 @@ CVS password: anoncvs
 <PRE class=code>
 % cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r release-0-9-3 alice</PRE>
 -->
+
+<H2>Building SEAM</H2>
+
+<P>Building SEAM on Windows currently requires the cygwin environment.
+The resulting binaries, however, do not need the cygwin dll.
+</P>
+<P>Building SEAM requires to first build the <TT>seam-support</TT> module.
+To do so, execute:
+</P>
+<PRE>
+cd seam-support && ./build.sh
+</PRE>
+<P>On Windows, you will need to edit <TT>build.sh</TT> and change the line
+from <TT>BUILD_GMP=0</TT> to <TT>BUILD_GMP=1</TT>
+to have the GNU gmp library built.
+Finally add <TT>seam-support/install/bin</TT> to your path.
+</P>
+<P>Now you can proceed to building SEAM. Executing
+</P>
+<PRE>
+cd seam && make -f Makefile.cvs
+</PRE>
+will setup the Makefiles and configure scripts. Now you can use
+<TT>configure</TT> to perform the platform-specific setup. An example
+invocation on Windows might look like:
+<PRE>
+mkdir build
+cd build
+../seam/configure \
+  CXX='g++ -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
+  CXXFLAGS='-mcpu=pentium3 -march=pentium3' \
+  CC='gcc -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
+  CFLAGS='-mcpu=pentium3 -march=pentium3' \
+  --prefix=../seam-install \
+  --with-warnings=yes \
+  --with-zlib=../seam-support/install
+make install
+</PRE>
+<P>On unix like operating systems,
+the <TT>(g++|gcc) -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR</TT>
+collapses to <TT>(g++|gcc)</TT>.
+</P>
 
 <?php pslab_footer("Webmaster"); ?>
