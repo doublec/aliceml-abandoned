@@ -17,23 +17,34 @@ Robert Grabowski
 
 \section{Einleitung}
 
-In diesem Bericht werden Entwurf und Implementierung der GTK+-
-Schnittstelle f"ur Alice beschrieben. GTK+ ist ein Bibliothekspaket zum
-komfortablen Erstellen von grafischen Benutzeroberfl"achen.
-Durch die Schnittstelle sollen diese in C implementierten Bibliotheken
-auch dem Alice-Programmierer zur Verf"ugung gestellt werden.
+In diesem Bericht werden Entwurf und Implementierung der 
+GTK+-Schnittstelle f"ur Alice beschrieben. Mit GTK+ lassen sich relativ einfach
+grafische Benutzeroberfl"achen in C erstellen. Durch die Schnittstelle soll
+dies auch dem Alice-Programmierer m"oglich sein.
 
 \subsection{Vorgeschichte des Bindings}
 
-(History; Programme, die das Binding benutzen; Ziel des Bindings... 
-(v2.0, Windows, ...))
+Als Grundlage f"ur diese Arbeit dienen zwei bereits existierende
+Schnittstellen f"ur GTK+ 1.2 von Thorsten Brunklaus:
+eine Anbindung an Mozart, und eine an Alice auf der Mozart-VM.
+Die hier besprochene Schnittstelle bindet GTK+ 2.x an Alice auf der SEAM-VM.
+Alle erw"ahnten Schnittstellen sind sowohl unter Windows als auch unter
+Linux lauff"ahig.
+
+Benutzt werden die GTK-Schnittstellen unter anderem von den Inspector-Tools.
 
 \section{GTK+}
 
 \subsection{Einleitung}
 
 GTK+ ist ein Bibliothekspaket zum komfortablen Erstellen von grafischen
-Benutzeroberfl"achen. (History...) 
+Benutzeroberfl"achen. Urspr"unglich im Jahr 1996 nur zur Verwendung im
+Grafikprogramm GIMP geschrieben (Fussnote: GTK=GIMP Toolkit), bildet es
+inzwischen die Grundlage sehr vieler Anwendungen, insbesondere des 
+GNOME-Desktops. GTK+ ist komplett
+in C geschrieben, doch bei der Entwicklung wurde von Anfang an darauf geachtet,
+m"oglichst gute Voraussetzungen f"ur die Anbindung an andere
+Programmiersprachen zu schaffen.
 
 \subsection{Konzept-"Uberblick}
 
@@ -47,7 +58,7 @@ GTK+ in der Version 2.0 besteht aus folgenden Bibliotheken: (Bild???)
 \item GDK -- plattformunabh"angige Abstraktion der grafischen
       Zeichenfunktionen des Betriebssystems
 \item Pango -- abstrahiert Schriftartenfunktionen des Betriebssystems
-\item ATK -- ???
+\item ATK -- stellt Funktionen f"ur Eingabehilfen zur Verf"ugung
 \item GTK -- enth"alt die eigentliche Sammlung von Widgets
 \end{itemize}
 
@@ -60,8 +71,8 @@ Programmieren von GTK-Anwendungen nicht direkt zugegriffen werden.
 Dar"uberhinaus enth"alt das Binding eine Schnittstelle f"ur die GnomeCanvas-
 Bibliothek. Diese enth"alt das GnomeCanvas-Widget, welches eine abstrakte
 grafische Zeichenfl"ache darstellt, auf die man Texte, Bilder und primitive
-Objekte zeichnen kann. 
-(History...)
+Objekte zeichnen kann. Das GnomeCanvas ist nicht Teil von GTK+, sondern
+geh"ort bereits zum Gnome-Projekt.
 
 Die Schnittstelle f"ur das GnomeCanvas ist erforderlich, da diverse Alice-Tools
 wie der Inspector dieses Widget zentral zum Anzeigen von Informationen
@@ -123,10 +134,9 @@ wird in Abschnitt ??? erkl"art.
 Die so generierte Alice-Schnittstelle ist im Wesentlichen eine 1:1-Abbildung
 der C-Bibliothek. Weil die Bibliothek unter Alice also genauso benutzt wird
 wie unter C, sind die entstehenden Alice-Programme reichlich imperativ und auf
-Seiteneffekten beruhend. Diese unter Alice unelegante Programmierweise kann
-nur umgangen werden, indem eine funktionale, abstrahierende Schicht "uber der
-eigentlichen GTK-Schnittstelle entwickelt wird. Dies ist jedoch nicht Teil
-dieses Fopras.
+Seiteneffekten beruhend. W"unschenswert w"are hier eine Abstraktion der
+einzelnen Funktionsaufrufe in einer h"oheren, funktionalen Schicht.
+Dies ist jedoch nicht Teil dieses Fopras.
 
 Es kann jedoch passieren, dass gewisse Teile der Schnittstelle auf jeden Fall
 von Hand geschrieben werden m"ussen, weil eine naive Benutzung der Bibliothek
@@ -280,8 +290,35 @@ w"ahrend ein anderes noch in einer Alice-Callback-Funktion abgearbeitet wird.
 
 \subsection{Garbage-Collection}
 
-(wo ist das Problem?)
-(wie ist es geloest?)
+GTK+ besitzt eine eigene interne Speicherverwaltung, die daf"ur sorgt,
+das GTK-Objekte entfernt werden, sobald sie nicht mehr ben"otigt werden.
+Dies wird "uber einen Z"ahler realisiert, der festh"alt, wieviele
+Referenzen auf das Objekt bestehen. Sobald der Z"ahler auf 0 sinkt,
+entfernt GTK das Objekt aus dem Speicher.
+
+Das Problem dabei ist, das der Z"ahler zun"achst nur bibliotheksintern
+verwaltet wird. Nachdem eine GTK-Funktion eine Referenz
+auf ein Objekt geliefert hat und diese Referenz in Alice sichtbar ist,
+kann es passieren, dass GTK das Objekt intern nicht mehr ben"otigt und
+daher entfernt, weil die Bibliothek keine Kenntnis von der Alice-Referenz
+besitzt. Wird die Alice-Referenz dann weiterhin benutzt, kann das fatale
+Folgen haben.
+
+Die L"osung des Problems besteht darin, den Referenzz"ahler eines Objekts
+solange um eins erh"oht zu halten, wie eine Referenz auf das Objekt in
+Alice sichtbar ist:
+
+\begin{itemize}
+\item Sobald eine GTK-Funktion eine Objekt-Referenz liefert und es noch keine
+      Referenz von Alice auf das Objekt gibt, wird der GTK-Referenzz"ahler
+      um eins erh"oht.
+\item Sobald unter Alice letzte Referenz auf das Objekt verschwindet, wird
+      dessen Z"ahler wieder um eins verringert (Fussnote: ueber AliceFinalis)
+\end{itemize}
+
+Solange eine Referenz auf ein Objekt in Alice also besteht, muss der
+GTK-Referenzz"ahler mindestens 1 sein, was GTK am Entfernen des Objekts
+hindert.
 
 \subsection{Weitere Funktionen}
 
@@ -289,8 +326,45 @@ w"ahrend ein anderes noch in einer Alice-Callback-Funktion abgearbeitet wird.
 
 \section{Ausblick}
 
-(wie Folie)
+Weiterf"uhrende Arbeiten k"onnten sowohl ``in die Tiefe'' gehen und die
+GTK-Schnittstelle ausbauen, als auch ``in die Breite'' und die automatische
+Generierung verallgemeinern.
+
+\subsection{GTK-Schnittstelle}
+
+Die hier vorgestellte Schnitstelle bietet eine Anbindung auf niedriger Ebene.
+Durch die 1:1-Abbildung sieht die GTK-Programmierung unter Alice "ahnlich
+aus wie unter C. Diese unter Alice unelegante Programmierweise kann
+nur mit einer eine funktionale, abstrahierende Schicht "uber der
+eigentlichen GTK-Schnittstelle umgangen werden.
+
+Einen Anfang daf"ur bildet die GtkBuilder-Struktur von Thorsten Brunklaus.
+Das Layout ganzer Fensterinhalte kann als Wert mittels Konstruktoren
+repr"asentiert werden. Darauf hingen"ugt der Aufruf einer einzigen Funktion,
+welche diesen Wert anschlie"ssend in eine Reihe von GTK-Befehlen "ubersetzt.
+
+W"unschenswert w"are es, spezielle Features der Programmiersprache Alice
+gleich zu nutzen. So k"onnten eine Reihe "ahnlicher Mitteilungsfenster
+in einem Funktor zusammengefasst werden, und dieser k"onnte wiederum als
+Package im Netz allen Anwendungen zur Verf"ugung stehen. Desweiteren k"onnte
+der Lazy-Evaluation-Mechanismus vielleicht dazu genutzt werden, Widgets erst
+dann zu zeichnen, wenn sie tats"achlich sichtbar werden.
+
+In jedem Fall ist eine solche funktionale UI-Schnittstelle wahrscheinlich
+nicht mehr automatisch generierbar. (Forschungsstand???)
+
+\subsection{Allgemeines Genererierungstool}
+
+Auch wenn der Generator in der jetzigen Form bereits m"oglichst unabh"angig
+von GTK+ arbeitet, macht er dennoch einige GTK-spezifische Annahmen, die
+eine Anwendung f"ur andere Bibliotheken erschweren.
+
+Daher w"are es n"utzlich, diese Annahmen zu parametrisieren, um einen
+allgemeinen Generator zu erhalten, der f"ur beliebige C-Bibliotheken
+eine Anbindung an Alice generieren kann. (Sven???)
 
 \section{Quellenangaben}
+
+www.gtk.org
 
 \end{document}
