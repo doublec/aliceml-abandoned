@@ -15,10 +15,12 @@ import signature SERVER from "SERVER-sig"
 
 structure Server :> SERVER =
     struct
+	type lock = unit ref
+
 	fun server () =
 	    let
 		val tail   = Promise.promise ()
-		val stream = Cell.cell tail
+		val stream = ref tail
 		    
 		fun process s = (case s of
 				     nil   => ()
@@ -26,7 +28,7 @@ structure Server :> SERVER =
 		fun send p =
 		    let
 			val newtail = Promise.promise ()
-			val tail    = Cell.exchange(stream, newtail)
+			val tail    = Ref.exchange(stream, newtail)
 		    in
 			Promise.fulfill(tail, p::(Promise.future newtail))
 		    end
@@ -34,4 +36,18 @@ structure Server :> SERVER =
 		(Thread.spawn (fn () => process(Promise.future tail));
 		 send)
 	    end
+
+	fun lock () = ref ()
+	
+	fun secure (cell, f) =
+	    (fn x =>
+	     let
+		 val newlock = Promise.promise ()
+		 val lock    = Ref.exchange(cell, Promise.future newlock)
+		 val _       = Future.await lock
+		 val y       = f x
+		 val _       = Promise.fulfill(newlock, ())
+	     in
+		 y
+	     end)
     end

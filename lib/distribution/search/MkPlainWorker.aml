@@ -11,6 +11,7 @@
  *
  *)
 
+import structure OS           from "x-alice:/lib/system/OS"
 import structure FD           from "x-alice:/lib/constraints/FD"
 import structure FS           from "x-alice:/lib/constraints/FS"
 import structure Space        from "x-alice:/lib/constraints/Space"
@@ -69,6 +70,13 @@ functor MkPlainWorker(structure Manager : MANAGER
 	val serve = Server.server ()
 	    
 	(* PlainWorker Methods Implementation *)
+	fun logMesg s =
+	    let
+		val {id=id, ...} = self
+	    in
+		Manager.log(id, Remote.now (), s)
+	    end
+
 	local
 	    fun updateExploreState(wopen, s, sr) =
 		(case TraceSpace.ask s of
@@ -85,21 +93,20 @@ functor MkPlainWorker(structure Manager : MANAGER
 	in
 	    fun exploreMesg () =
 		let
-		    val _ = print "MkPlainWorker::exploreMesg\n"
 		    val {id=id, wopen=wopen, nodes=nodes, ...} = self
 		in
 		    (case !wopen of
-			 nil   => Manager.idle id
-		       | s::sr =>
-			     (nodes := (!nodes + 1);
-			      updateExploreState(wopen, s, sr);
-			      serve (fn () => exploreMesg ())))
+			 nil   => (logMesg "no work left; sending idle";
+				   Manager.idle id)
+		       | s::sr => (logMesg "exploring";
+				   nodes := (!nodes + 1);
+				   updateExploreState(wopen, s, sr);
+				   serve exploreMesg))
 		end
 	end
 
 	fun startMesg(ts, id) =
 	    let
-		val _ = print "MkPlainWorker::startMesg\n"
 		val {root=rootspace, overhead=overhead, wopen=wopen,
 		     nodes=nodes, task_id=task_id, ...} = self
 		val clone = TraceSpace.clone rootspace
@@ -109,14 +116,15 @@ functor MkPlainWorker(structure Manager : MANAGER
 		 wopen := [clone];
 		 nodes := 0;
 		 task_id := id;
-		 serve (fn () => exploreMesg ()))
+		 serve exploreMesg)
 	    end
 	
 	local
 	    fun canSteal ss =
 		(case ss of
-		     nil   => false
-		   | _::sr => sr <> nil)
+		     nil    => false
+		   | _::nil => false
+		   | _::sr  => true)
 		     
 	    fun steal (s1::s1r, p) =
 		(case s1r of
@@ -125,34 +133,37 @@ functor MkPlainWorker(structure Manager : MANAGER
 	in
 	    fun stealMesg v =
 		let
-		    val _ = print "MkPlainWorker::stealMesg\n"
-		    val {wopen=wopen, overhead=overhead,
-			 nodes=nodes, task_id=task_id, ...} = self
+		    val {wopen=wopen, overhead=overhead, nodes=nodes, task_id=task_id, ...} = self
 		in
 		    if canSteal (!wopen) then
 			let
 			    val s = Promise.promise ()
 			in
-			    (wopen := steal(!wopen, s);
+			    (logMesg "sharing work";
+			     wopen := steal(!wopen, s);
 			     Promise.fulfill(v, SOME (TraceSpace.externalize (Promise.future s),
 						      (!task_id),
 						      ((!nodes) + (!overhead)))))
 			end
-		    else Promise.fulfill(v, NONE)
+		    else (logMesg "no work to share";
+			  Promise.fulfill(v, NONE))
 		end
 	end
 
 	fun stopMesg () =
 	    let
-		val _ = print "MkPlainWorker::stopMesg\n"
 		val {wopen=wopen, ...} = self
 	    in
-		wopen := nil
+		(logMesg "stopped";
+		 wopen := nil)
 	    end
 
+	fun shutdownMesg () = OS.Process.exit(OS.Process.success)
+
 	(* PlainWorker Interface Functions *)
-	val start   = Remote.proxy (fn v => serve (fn () => startMesg v))
-	val explore = Remote.proxy (fn () => serve (fn () => exploreMesg ()))
-	val steal   = Remote.proxy (fn v => serve (fn () => stealMesg v))
-	val stop    = Remote.proxy (fn () => serve (fn () => stopMesg ()))
+	val start    = Remote.proxy (fn v => serve (fn () => startMesg v))
+	val explore  = Remote.proxy (fn () => serve exploreMesg)
+	val steal    = Remote.proxy (fn v => serve (fn () => stealMesg v))
+	val stop     = Remote.proxy (fn () => serve stopMesg)
+	val shutdown = Remote.proxy (fn () => serve shutdownMesg)
     end

@@ -22,4 +22,5 @@ signature PLAIN_WORKER =
 	val explore : unit -> unit
 	val steal : (trace list * int * int) option Promise.promise -> unit
 	val stop : unit -> unit
+	val shutdown : unit -> unit
     end

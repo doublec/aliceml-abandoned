@@ -11,29 +11,18 @@
  *
  *)
 
+import structure Unix    from "x-alice:/lib/system/Unix"
 import structure Remote  from "x-alice:/lib/distribution/Remote"
 import signature PROCESS from "PROCESS-sig"
 
 structure Process :> PROCESS =
     struct
-	fun send((_, os), s) = (TextIO.output(os, s); TextIO.output(os, ";\n"))
-	
-	fun initSite site =
-	    let
-		val remoteImport = ["import structure Remote from ",
-				    "\"x-alice:/lib/distribution/Remote.ozf\""]
-		val scriptImport = ["import structure RemoteWorker from ",
-				    "\"x-alice:/lib/distribution/search/RemoteWorker\""]
-	    in
-		(send(site, String.concat remoteImport);
-		 send(site, String.concat scriptImport))
-	    end
-
 	fun workerSite (host, parcel) =
 	    let
-		val site = Remote.remote host
+		val prog = if host = "godzilla" then "aliceprof" else "alicefast"
+		val args = [host, prog,
+			    "x-alice:/lib/distribution/search/RemoteWorker.ozf", parcel]
 	    in
-		(initSite site;
-		 send(site, ("RemoteWorker.worker(\"" ^ parcel ^ "\")\n")))
+		(Unix.execute("ssh", args); ())
 	    end
     end

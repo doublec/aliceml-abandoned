@@ -11,6 +11,7 @@
  *
  *)
 
+import structure OS           from "x-alice:/lib/system/OS"
 import structure FD           from "x-alice:/lib/constraints/FD"
 import structure FS           from "x-alice:/lib/constraints/FS"
 import structure Space        from "x-alice:/lib/constraints/Space"
@@ -75,6 +76,13 @@ functor MkBestWorker(structure Manager : MANAGER
 	val serve = Server.server ()
 
 	(* BestWorker Methods Implementation *)
+	fun logMesg s =
+	    let
+		val {id=id, ...} = self
+	    in
+		Manager.log(id, Remote.now (), s)
+	    end
+
 	local
 	    fun updateExploreState(fore, back, best, s, sr) =
 		(case TraceSpace.ask s of
@@ -104,16 +112,19 @@ functor MkBestWorker(structure Manager : MANAGER
 		    (case !fore of
 			 nil   =>
 			     (case !back of
-				  nil   => Manager.idle id
+				  nil   => (logMesg "no work left; sending idle";
+					    Manager.idle id)
 				| s::sr =>
-				      (back := sr;
+				      (logMesg "exploring";
+				       back := sr;
 				       fore := [s];
 				       TraceSpace.constrain(s, valOf(!best));
-				       serve (fn () => exploreMesg ())))
+				       serve exploreMesg))
 		       | s::sr =>
-				  (nodes := (!nodes + 1);
+				  (logMesg "exploring";
+				   nodes := (!nodes + 1);
 				   updateExploreState(fore, back, best, s, sr);
-				   serve (fn () => exploreMesg ())))
+				   serve exploreMesg))
 		end
 	end
 
@@ -129,14 +140,15 @@ functor MkBestWorker(structure Manager : MANAGER
 		 back := nil;
 		 nodes := 0;
 		 task_id := id;
-		 serve (fn () => exploreMesg ()))
+		 serve exploreMesg)
 	    end
 
 	local
 	    fun canSteal ss =
 		(case ss of
-		     nil   => false
-		   | _::sr => sr <> nil)
+		     nil    => false
+		   | _::nil => false
+		   | _::sr  => true)
 		     
 	    fun canStealBest(fs, bs) =
 		(case bs of
@@ -161,12 +173,14 @@ functor MkBestWorker(structure Manager : MANAGER
 				  nil => fore := steal(!fore, s)
 				| _   => (back := steal(!back, s);
 					  TraceSpace.constrain(Promise.future s, valOf(!best))));
+				  logMesg "sharing work";
 				  Promise.fulfill(v, SOME (TraceSpace.externalize
 							   (Promise.future s),
 							   (!task_id),
 							   ((!nodes) + (!overhead)))))
 			end
-		    else Promise.fulfill(v, NONE)
+		    else (logMesg "no work to share";
+			  Promise.fulfill(v, NONE))
 		end
 	end
 
@@ -195,14 +209,18 @@ functor MkBestWorker(structure Manager : MANAGER
 	    let
 		val {fore=fore, back=back, ...} = self
 	    in
-		(fore := nil;
+		(logMesg "stopped";
+		 fore := nil;
 		 back := nil)
 	    end
 
+	fun shutdownMesg () = OS.Process.exit(OS.Process.success)
+
 	(* BestWorker Interface Functions *)
 	val start     = Remote.proxy (fn v => serve (fn () => startMesg v))
-	val explore   = Remote.proxy (fn () => serve (fn () => exploreMesg ()))
+	val explore   = Remote.proxy (fn () => serve exploreMesg)
 	val steal     = Remote.proxy (fn v => serve (fn () => stealMesg v))
 	val constrain = Remote.proxy (fn v => serve (fn () => constrainMesg v))
-	val stop      = Remote.proxy (fn () => serve (fn () => stopMesg ()))
+	val stop      = Remote.proxy (fn () => serve stopMesg)
+	val shutdown  = Remote.proxy (fn () => serve shutdownMesg)
     end

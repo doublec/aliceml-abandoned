@@ -13,5 +13,5 @@
 
 signature REMOTE_WORKER =
     sig
-	val worker : string -> unit
+	val worker : string list -> unit
     end

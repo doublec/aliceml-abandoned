@@ -13,5 +13,9 @@
 
 signature SERVER =
     sig
+	type lock
+
 	fun server : unit -> (unit -> 'a) -> unit
+	fun lock : unit -> lock
+	fun secure : lock * ('a -> 'b) -> 'a -> 'b
     end

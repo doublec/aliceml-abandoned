@@ -22,7 +22,7 @@ import signature REMOTE_WORKER from "REMOTE_WORKER-sig"
 
 structure RemoteWorker :> REMOTE_WORKER =
     struct
-	fun worker parcel =
+	fun worker [parcel] =
 	    let
 		structure Parcel = Remote.Take(val ticket = parcel
 					       signature S = WORKER_PARCEL)
@@ -47,4 +47,8 @@ structure RemoteWorker :> REMOTE_WORKER =
 			      Parcel.Manager.register(P.package, Parcel.id)
 			  end)
 	    end
+	  | worker _ = raise Subscript
+
+	(* Create the worker *)
+	val _ = worker (CommandLine.arguments ())
     end

@@ -11,6 +11,8 @@
  *
  *)
 
+import structure TextIO        from "x-alice:/lib/system/TextIO"
+import structure Inspector     from "x-alice:/lib/tools/Inspector"
 import structure Packer        from "x-alice:/lib/distribution/Packer"
 import structure Remote        from "x-alice:/lib/distribution/Remote"
 import structure MkManager     from "MkManager"
@@ -35,9 +37,9 @@ structure ParSearch :> PAR_SEARCH =
 
 				structure Parcel =
 				    struct
-					val id = i
-					val mode = mode
-					val script = package
+					val id            = i
+					val mode          = mode
+					val script        = package
 					structure Manager = Manager
 				    end
 			
@@ -60,8 +62,17 @@ structure ParSearch :> PAR_SEARCH =
 
 		fun engine (hosts, mode) =
 		    let
-			structure Manager = MkManager(val mode = (modeToModeInt mode)
-						      structure Script = Script)
+			(* Build tiny Logger *)
+			val os = TextIO.openOut "/home/bruni/worklog.txt"
+			    
+			structure Logger =
+			    struct
+				fun log s = TextIO.output(os, s)
+			    end
+
+			structure Manager = MkManager(structure Logger    = Logger
+						      val mode            = (modeToModeInt mode)
+						      structure Script    = Script)
 			structure Worker  = MkWorker(structure Manager = Manager)
 			structure P       = Packer.Pack(structure X = Script
 							signature S = SCRIPT)
@@ -76,6 +87,7 @@ structure ParSearch :> PAR_SEARCH =
 			 Manager.get sols;
 			 Manager.sync haveSols;
 			 Future.await(Promise.future haveSols);
+			 TextIO.closeOut os;
 			 Promise.future sols)
 		    end
 	    end
