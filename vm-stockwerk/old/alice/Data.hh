@@ -219,7 +219,7 @@ public:
 
   static Real *New(double value) {
     Chunk *chunk = Store::AllocChunk(sizeof(double));
-    memcpy(chunk->GetBase(), &value, sizeof(double));
+    std::memcpy(chunk->GetBase(), &value, sizeof(double));
     return static_cast<Real *>(chunk);
   }
   static Real *FromWord(word x) {
@@ -235,7 +235,7 @@ public:
 
   double GetValue() {
     double result;
-    memcpy(GetBase(), &result, sizeof(double));
+    std::memcpy(GetBase(), &result, sizeof(double));
     return result;
   }
 };
@@ -252,7 +252,7 @@ public:
   }
   static String *New(const char *str, u_int len) {
     Chunk *chunk = Store::AllocChunk(len);
-    memcpy(chunk->GetBase(), str, len);
+    std::memcpy(chunk->GetBase(), str, len);
     return static_cast<String *>(chunk);
   }
   static String *New(const char *str) {
@@ -442,7 +442,7 @@ public:
   static WideString *New(wchar_t *str, u_int len) {
     u_int nchars = len * sizeof(wchar_t);
     Chunk *chunk = Store::AllocChunk(nchars);
-    memcpy(chunk->GetBase(), str, nchars);
+    std::memcpy(chunk->GetBase(), str, nchars);
     return static_cast<WideString *>(chunk);
   }
   static WideString *FromWord(word x) {
