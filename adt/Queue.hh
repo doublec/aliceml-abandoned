@@ -22,10 +22,7 @@
 
 class DllExport Queue: private Block {
 private:
-  static const u_int READ_INDEX_POS = 0;
-  static const u_int WRITE_INDEX_POS = 1;
-  static const u_int ARRAY_POS = 2;
-  static const u_int SIZE = 3;
+  enum { READ_INDEX_POS, WRITE_INDEX_POS, ARRAY_POS, SIZE };
 
   u_int GetWriteIndex() {
     return Store::DirectWordToInt(GetArg(WRITE_INDEX_POS));
