@@ -956,6 +956,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  // to be done: raise NullPointerException
 	  Error("NullPointerException");
 	}
+	pc += 3;
       }
       break;
     case Instr::GETSTATIC:
@@ -966,6 +967,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wFieldRef);
 	Class *classObj = fieldRef->GetClass();
 	frame->Push(classObj->GetStaticField(fieldRef->GetIndex()));
+	pc += 3;
       }
       break;
     case Instr::GOTO:
@@ -981,10 +983,9 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::I2B:
     case Instr::I2C: // to be done
       {
-	int i = Store::DirectWordToInt(frame->Pop());
-	char byte = (char) i;
-	int res = (int) byte;
-	frame->Push(Store::IntToWord(res));
+	int i = JavaInt::FromWord(frame->Pop());
+	frame->Push(Store::IntToWord((int) ((char) i)));
+	pc += 1;
       }
       break;
     case Instr::I2D:
@@ -1325,7 +1326,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Scheduler::nArgs = nArgs + 1;
 	for (u_int i = nArgs + 1; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
-	Object *object   = Object::FromWord(Scheduler::currentArgs[0]);
+	Object *object = Object::FromWord(Scheduler::currentArgs[0]);
+	Assert(object != INVALID_POINTER);
 	Closure *closure = object->GetVirtualMethod(methodRef->GetIndex());
 	return Scheduler::PushCall(closure->ToWord());
       }
@@ -1439,7 +1441,8 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LDC:
       {
-	Error("not implemented");
+	frame->Push(GET_POOL_VALUE(GET_BYTE_INDEX()));
+	pc += 2;
       }
       break;
     case Instr::LDC_W:
