@@ -35,7 +35,7 @@
 ## build1-all:
 ##    A complete source tree is created in subdirectory build1.
 ##    The native components are created using ozc.  The component
-##    stoc/top/StocMain.ozf (and all its imports, transitively)
+##    stoc/StocMain.ozf (and all its imports, transitively)
 ##    are built using the hybrid compiler via recursive invocation.
 ## build1-install:
 ##    A minimal but working system (only consisting of a compiler,
@@ -230,16 +230,17 @@ STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
-	SMLToMozartBatchCompiler.aml StocMain.aml \
+	SMLToMozartBatchCompiler.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkEmacsToplevel.aml \
-	SMLToMozartEmacsToplevel.aml StotMain.aml
+	SMLToMozartEmacsToplevel.aml
 STOCTOPSOURCES = $(STOCTOPSOURCES0:%=stoc/top/%)
 
+STOCSOURCES0 = StocMain.aml StotMain.aml
 STOCSOURCES = \
 	$(STOCINFRASTRUCTURESOURCES) $(STOCCOMMONSOURCES) \
 	$(STOCFRONTENDCOMMONSOURCES) $(STOCFRONTENDSMLSOURCES) \
 	$(STOCBACKENDCOMMONSOURCES) $(STOCBACKENDMOZARTSOURCES) \
-	$(STOCTOPSOURCES)
+	$(STOCTOPSOURCES) $(STOCSOURCES0:%=stoc/%)
 ALLSOURCES = StowMain.oz $(LIBSOURCES) $(STOCSOURCES)
 
 SOURCEDIRS = \
@@ -277,12 +278,14 @@ stoc1-%: build1-install
 BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
 BUILD1SOURCES = build1/lib/fundamental/RTT.aml $(ALLSOURCES:%=build1/%)
 
-INSTALL1DIRS = build1/install build1/install/bin
-INSTALL1TOPFILES = stow.ozf stoc.ozf
+INSTALL1DIRS = build1/install build1/install/bin build1/install/stoc
+INSTALL1TOPFILES = StowMain.ozf
 INSTALL1BINFILES = stow stoc
+INSTALL1STOCFILES = StocMain.ozf
 INSTALL1FILES = \
 	$(INSTALL1TOPFILES:%=build1/install/%) \
-	$(INSTALL1BINFILES:%=build1/install/bin/%)
+	$(INSTALL1BINFILES:%=build1/install/bin/%) \
+	$(INSTALL1STOCFILES:%=build1/install/stoc/%)
 
 ##
 ## Creating the Source Tree for Build 1
@@ -357,6 +360,9 @@ build1/stoc/backend-mozart/%.asig: stoc/backend-mozart/%.asig \
 build1/stoc/top/%.aml: stoc/top/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
+build1/stoc/%.aml: stoc/%.aml Rel1.import
+	cat Rel1.import $< > $@
+
 build1/%: %
 	cp $< $@
 
@@ -364,7 +370,8 @@ build1/%: %
 ## Performing Build 1
 ##
 
-build1-all: $(BUILD1DIRS) build1/stow.ozf build1/stoc.ozf
+build1-all: $(BUILD1DIRS) $(BUILD1SOURCES) \
+	build1/LinkedStowMain.ozf build1/stoc/LinkedStocMain.ozf
 
 build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
@@ -378,13 +385,13 @@ BUILD1OZLINPUTS = \
 	$(NATIVECOMPONENTS:%=build1/lib/system/%.ozf) \
 	$(filter-out build1/stoc/backend-mozart/CodeEmitter.ozf, \
 	  $(BUILD1OZSOURCES:%.oz=%.ozf)) \
-	build1/stoc/top/StocMain.ozf
+	build1/stoc/StocMain.ozf
 
-build1/stow.ozf: build1/StowMain.ozf $(BUILD1OZLINPUTS)
+build1/LinkedStowMain.ozf: build1/StowMain.ozf $(BUILD1OZLINPUTS)
 	$(OZL) --include=.. $< -o $@
 
-build1/stoc.ozf: $(BUILD1OZLINPUTS)
-	$(OZL) --include=.. build1/stoc/top/StocMain.ozf -o $@
+build1/stoc/LinkedStocMain.ozf: $(BUILD1OZLINPUTS)
+	$(OZL) --include=.. build1/stoc/StocMain.ozf -o $@
 
 build1/stoc/backend-mozart/CodeStore.ozf: \
 	build1/stoc/backend-mozart/CodeEmitter.oz
@@ -398,7 +405,10 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 $(INSTALL1DIRS):
 	mkdir -p $@
 
-build1/install/%.ozf: build1/%.ozf
+build1/install/StowMain.ozf: build1/LinkedStowMain.ozf
+	install -c -m 444 $< $@
+
+build1/install/stoc/StocMain.ozf: build1/stoc/LinkedStocMain.ozf
 	install -c -m 444 $< $@
 
 build1/install/bin/%: %
@@ -416,14 +426,16 @@ BUILD2SOURCES = build2/lib/fundamental/RTT.aml $(LIBSOURCES:%=build2/%)
 INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib build2/install/lib/fundamental \
 	build2/install/lib/system build2/install/lib/utility \
-	build2/install/lib/rtt build2/install/lib/ml-yacc
-INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
+	build2/install/lib/rtt build2/install/lib/ml-yacc build2/install/stoc
+INSTALL2TOPFILES = StowMain.ozf Default.import
 INSTALL2BINFILES = stow stoc
 INSTALL2LIBFILES = rtt/RTT.ozf
+INSTALL2STOCFILES = StocMain.ozf
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
-	$(INSTALL2LIBFILES:%=build2/install/lib/%)
+	$(INSTALL2LIBFILES:%=build2/install/lib/%) \
+	$(INSTALL2STOCFILES:%=build2/install/stoc/%)
 
 ##
 ## Creating the Source Tree for Build 2
@@ -435,7 +447,7 @@ $(BUILD2DIRS):
 build2/%.aml: build1/%.aml
 	cp $< $@
 
-build2/stow.ozf build2/stoc.ozf: build2/%: build1/%
+build2/LinkedStowMain.ozf build2/stoc/LinkedStocMain.ozf: build2/%: build1/%
 	cp $< $@
 
 build2/Default.import: lib/fundamental/Fundamental.import lib/Other.import
@@ -449,7 +461,7 @@ $(NATIVECOMPONENTS:%=build2/lib/system/%.asig): build2/%: build1/%
 ##
 
 build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
-	$(INSTALL2LIBFILES:%=build2/lib/%)
+	build2/lib/rtt/LinkedRTT.ozf
 
 build2/%.ozf: build2/%.aml
 	$(STOC1) $(STOC_OPTS) -c $< -o $@
@@ -460,6 +472,9 @@ $(NATIVECOMPONENTS:%=build2/lib/system/%.ozf): build2/%.ozf: \
 
 build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
+build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
+	$(OZL) --include=.. $< -o $@
+
 ##
 ## Installing Build 2
 ##
@@ -469,22 +484,22 @@ build2-install: build2-all $(INSTALL2DIRS) $(INSTALL2FILES)
 $(INSTALL2DIRS):
 	mkdir -p $@
 
+build2/install/StowMain.ozf: build1/install/StowMain.ozf
+	install -c -m 444 $< $@
+
+build2/install/Default.import: build2/Default.import
+	install -c -m 444 $< $@
+
 build2/install/bin/stoc: build1/install/bin/stoc
 	install -c -m 555 $< $@
 
 build2/install/bin/stow: build1/install/bin/stow
 	install -c -m 555 $< $@
 
-build2/install/stoc.ozf: build1/install/stoc.ozf
-	install -c -m 444 $< $@
-
-build2/install/stow.ozf: build1/install/stow.ozf
-	install -c -m 444 $< $@
-
-build2/install/Default.import: build2/Default.import
-	install -c -m 444 $< $@
-
 $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
+	install -c -m 444 $< $@
+
+build2/install/stoc/StocMain.ozf: build1/install/stoc/StocMain.ozf
 	install -c -m 444 $< $@
 
 ########################################################################
@@ -497,17 +512,21 @@ BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
 	build3/install/lib/system build3/install/lib/utility \
-	build3/install/lib/rtt build3/install/lib/ml-yacc
-INSTALL3TOPFILES = $(INSTALL2TOPFILES) stot.ozf
+	build3/install/lib/rtt build3/install/lib/ml-yacc \
+	build/install/stoc build3/install/stoc/top
+INSTALL3TOPFILES = $(INSTALL2TOPFILES)
 INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.ozf) \
 	$(LIBSOURCES0:%.asig=%.ozf) \
 	fundamental/RTT.ozf
+INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf \
+	top/SMLToMozartRecursiveCompiler.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
-	$(INSTALL3LIBFILES:%=build3/install/lib/%)
+	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
+	$(INSTALL3STOCFILES:%=build3/install/stoc/%)
 
 ##
 ## Creating the Source Tree for Build 3
@@ -523,23 +542,27 @@ $(BUILD3SOURCES): build3/%: build1/%
 ## Performing Build 3
 ##
 
-BUILD3OZSOURCES = $(filter %.oz, $(BUILD3SOURCES))
-BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
-
-BUILD3OZLINPUTS = \
-	$(NATIVECOMPONENTS:%=build3/lib/system/%.ozf) \
-	$(filter-out build3/stoc/backend-mozart/CodeEmitter.ozf, \
-	  $(BUILD3OZSOURCES:%.oz=%.ozf)) \
-	$(BUILD3ALICESOURCES:%.aml=%.ozf)
-
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
-	build3/stow.ozf build3/stoc.ozf build3/stot.ozf
+	build3/LinkedStowMain.ozf \
+	build3/stoc/LinkedStocMain.ozf build3/stoc/LinkedStotMain.ozf
 
-build3/lib/fundamental/RTT.ozf: build2/lib/rtt/RTT.ozf
-	$(OZL) --include=.. $< -o $@
+build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
+	cp $< $@
 
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
+
+build3/LinkedStowMain.ozf: build3/StowMain.ozf build3/stoc/top/Composer.ozf
+	$(OZL) --include=.. $< -o $@
+
+build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
+	cat $^ > $@
+
+$(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
+	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
+	$(STOC2) $(STOC_OPTS) --replacesign $< build3/$*.asig $@
+
+build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
 #--** --rtt-level=core is a problem for stoc/frontend-sml/MkParsingPhase.aml
 build3/stoc/%.ozf: build3/stoc/%.aml
@@ -549,23 +572,15 @@ build3/stoc/%.ozf: build3/stoc/%.aml
 build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
-$(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
-	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
-	$(STOC2) $(STOC_OPTS) --replacesign $< build3/$*.asig $@
+build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf \
+	$(filter-out build3/stoc/backend-mozart/CodeEmitter.ozf, \
+	  $(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf))
+	$(OZL) --include=.. $< -o $@
 
-build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
-
-build3/stow.ozf: $(BUILD3OZLINPUTS)
-	$(OZL) --include=.. build3/StowMain.ozf -o $@
-
-build3/stoc.ozf: $(BUILD3OZLINPUTS)
-	$(OZL) --include=.. build3/stoc/top/StocMain.ozf -o $@
-
-build3/stot.ozf: $(BUILD3OZLINPUTS)
-	$(OZL) --include=.. build3/stoc/top/StotMain.ozf -o $@
-
-build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
-	cat $^ > $@
+build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf \
+	$(filter-out build3/stoc/backend-mozart/CodeEmitter.ozf, \
+	  $(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf))
+	$(OZL) --include=.. $< -o $@
 
 ##
 ## Installing Build 3
@@ -585,6 +600,12 @@ $(INSTALL3BINFILES:%=build3/install/bin/%): build3/install/bin/%: %
 $(INSTALL3LIBFILES:%=build3/install/lib/%): build3/install/%: build3/%
 	install -c -m 444 $< $@
 
+build3/install/stoc/%: build3/stoc/Linked%
+	install -c -m 444 $< $@
+
+build3/install/stoc/top/%: build3/stoc/top/Linked%
+	install -c -m 444 $< $@
+
 ########################################################################
 ### THINGS OF A GLOBAL NATURE
 ########################################################################
@@ -594,6 +615,7 @@ $(INSTALL3LIBFILES:%=build3/install/lib/%): build3/install/%: build3/%
 ##
 
 BUILD2ALICESOURCES = $(filter %.aml, $(BUILD2SOURCES))
+BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
@@ -607,7 +629,7 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
 	$(PREFIX)/lib/system $(PREFIX)/lib/utility $(PREFIX)/lib/rtt \
-	$(PREFIX)/lib/ml-yacc
+	$(PREFIX)/lib/ml-yacc $(PREFIX)/stoc $(PREFIX)/stoc/top
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \

@@ -12,15 +12,15 @@
 
 import
     structure OS
-from "../../lib/system/OS"
+from "../lib/system/OS"
 
 import
     structure CommandLine
-from "../../lib/system/CommandLine"
+from "../lib/system/CommandLine"
 
 import
     structure SMLToMozartBatchCompiler
-from "SMLToMozartBatchCompiler"
+from "top/SMLToMozartBatchCompiler"
 
 val _ =
     OS.Process.exit (SMLToMozartBatchCompiler.stoc (CommandLine.arguments ()))

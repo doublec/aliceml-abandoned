@@ -12,15 +12,15 @@
 
 import
     structure OS
-from "../../lib/system/OS"
+from "../lib/system/OS"
 
 import
     structure CommandLine
-from "../../lib/system/CommandLine"
+from "../lib/system/CommandLine"
 
 import
     structure SMLToMozartEmacsToplevel
-from "SMLToMozartEmacsToplevel"
+from "top/SMLToMozartEmacsToplevel"
 
 val _ =
     OS.Process.exit (SMLToMozartEmacsToplevel.stot (CommandLine.arguments ()))
