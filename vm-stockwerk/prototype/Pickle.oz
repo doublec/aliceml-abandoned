@@ -53,21 +53,21 @@ define
    LabelOffset  = 6
 
    fun {ApplyTransform F X}
-%      thread
-	 case F of 'Alice.primitive' then
-	    case X of tag(0 Name) then
-	       PrimitiveTable.table.{VirtualString.toAtom Name}
-	    end
-	 [] 'Alice.function' then
-	    case X of tag(0 NG NL IdDefArgs Instr)
-	    then function(AbstractCodeInterpreter.interpreter
-			  NG NL IdDefArgs Instr)
-	    end
+      %--** implement using byneeds
+      case F of 'Alice.primitive' then
+	 case X of tag(0 Name) then
+	    PrimitiveTable.table.{VirtualString.toAtom Name}
 	 end
-%      end
+      [] 'Alice.function' then
+	 case X of tag(0 NG NL IdDefArgs Instr)
+	 then function(AbstractCodeInterpreter.interpreter
+		       NG NL IdDefArgs Instr)
+	 end
+      end
    end
 
    class PickleParser
+      %--** implement as an interpreter
       attr BS: unit Index: 0 Dict: unit Counter: unit
       meth init(V $)
 	 BS <- {ByteString.make V}
@@ -137,9 +137,10 @@ define
 	    for I in 1..RealSize do
 	       PickleParser, ParsePickle(?T.I)
 	    end
-	    for I in RealSize+1..Size-1 do
-	       PickleParser, ParsePickle(_)
-	    end
+%--** the following fails when debugging:
+%	    for I in RealSize+1..Size-1 do
+%	       PickleParser, ParsePickle(_)
+%	    end
 	 else
 	    T = {MakeTuple tag Size + 1}
 	    T.1 = Label - LabelOffset
