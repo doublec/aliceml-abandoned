@@ -13,9 +13,7 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "alice/Data.hh"
 #pragma implementation "alice/AbstractCode.hh"
 #endif
 
-#include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
