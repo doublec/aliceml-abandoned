@@ -193,6 +193,17 @@ public:
 //
 // Data Layer
 //
+//--** to be done: support boxed 32-bit integers (for compatibility)
+class DllExport JavaInt {
+public:
+  static word ToWord(s_int value) {
+    return Store::IntToWord(value);
+  }
+  static s_int FromWord(word value) {
+    return Store::DirectWordToInt(value);
+  }
+};
+
 class DllExport JavaLong: public Chunk {
 public:
   static JavaLong *New(s_int32 high, s_int32 low) {

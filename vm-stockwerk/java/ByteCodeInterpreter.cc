@@ -421,20 +421,6 @@ public:
   }
 };
 
-//--** to be done: move to Data.hh
-class JavaInt {
-public:
-  static word ToWord(int value) {
-    return Store::IntToWord(value);
-  }
-  static int FromWord(word value) {
-    return Store::DirectWordToInt(value);
-  }
-  static word Zero() {
-    return Store::IntToWord(0);
-  }
-};
-
 // to be done: check compliance of java spec with c spec
 class JavaDouble {
 public:
@@ -1391,7 +1377,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IFEQ:
       {
 	JavaDebug::Print("IFEQ");
-	if (Word::Deref(frame->Pop()) == JavaInt::Zero())
+	if (JavaInt::FromWord(frame->Pop()) == 0)
 	  pc += (short) GET_POOL_INDEX();
 	else
 	  pc += 3;
@@ -1400,7 +1386,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IFNE:
       {
 	JavaDebug::Print("IFNE");
-	if (Word::Deref(frame->Pop()) != JavaInt::Zero())
+	if (JavaInt::FromWord(frame->Pop()) != 0)
 	  pc += (short) GET_POOL_INDEX();
 	else
 	  pc += 3;
