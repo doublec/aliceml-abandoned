@@ -101,8 +101,9 @@ void PrimitiveTable::Register(const char *name,
     Put(String::New(name)->ToWord(), function);
 }
 
-void PrimitiveTable::RegisterUniqueConstructor(const char *name) {
-  Register(name, UniqueConstructor::New(String::New(name))->ToWord());
+void PrimitiveTable::RegisterUniqueConstructor(const char *name,
+					       const char *id) {
+  Register(name, UniqueConstructor::New(name, id)->ToWord());
 }
 
 word PrimitiveTable::Lookup(word table, Chunk *name) {

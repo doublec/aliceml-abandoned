@@ -176,12 +176,14 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == Alice::ConVal ||
+	   b->GetLabel() == UNIQUESTRING_LABEL ||
 	   b->GetLabel() == CONCRETE_LABEL);
     return static_cast<ConVal *>(b);
   }
   static ConVal *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::ConVal ||
+	   b->GetLabel() == UNIQUESTRING_LABEL ||
 	   b->GetLabel() == CONCRETE_LABEL);
     return static_cast<ConVal *>(b);
   }
@@ -240,9 +242,14 @@ public:
 
 class DllExport UniqueConstructor: public Constructor {
 public:
-  static UniqueConstructor *New(String *id) {
+  static UniqueConstructor *New(String *name, String *id) {
     return static_cast<UniqueConstructor *>
-      (Constructor::New(id, static_cast<Block *>(id)));
+      (Constructor::New(name, static_cast<Block *>(id)));
+  }
+  static UniqueConstructor *New(const char *name, const char *id) {
+    return static_cast<UniqueConstructor *>
+      (Constructor::New(String::New(name),
+			static_cast<Block *>(String::New(id))));
   }
   static UniqueConstructor *FromWord(word x) {
     return static_cast<UniqueConstructor *>(Constructor::FromWord(x));
