@@ -664,7 +664,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    genExp (ProdExp (Source.nowhere, labelIdRefVec))
 	and genBody body = List.app genStm body
 
-	fun translate () (desc, component as {imports, body, exports, sign}) =
+	fun translate (desc, _, component as {imports, body, exports, sign}) =
 	    (init #[];
 	     Vector.app (fn (id, _, url, _) =>
 			 (emit (Ldarg 0); emit (Castclass Alice.KomponistTy);
@@ -673,5 +673,5 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				      #[StringTy], ObjectTy));
 			  declareLocal (IdDef id))) imports;
 	     genBody body;
-	     (close(), sign))
+	     ((), (close(), sign)))
     end
