@@ -42,17 +42,16 @@ structure Pickle :> PICKLE =
 	  | TupArgs of 'a vector
 
 	datatype instr =
-	    PutConst of id * value * instr
+	    Kill of id vector * instr
+	  | PutConst of id * value * instr
 	  | PutVar of id * idRef * instr
-	  | PutNew of id * instr (*--** not really needed (builtin) *)
+	  | PutNew of id * instr
 	  | PutTag of id * int * idRef vector * instr
 	  | PutCon of id * con * idRef vector * instr
 	  | PutRef of id * idRef * instr
 	  | PutTup of id * idRef vector * instr
-	  | PutSel of id * int * idRef * instr
 	  | PutVec of id * idRef vector * instr
 	  | PutFun of id * idRef vector * function * instr
-	  | Kill of id vector * instr
 	  | AppPrim of idDef * string * idRef vector * instr option
 	  | AppVar of idDef args * idRef * idRef args * instr option
 	  | GetRef of id * idRef * instr
