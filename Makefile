@@ -13,10 +13,10 @@ LIBS = \
 
 .PHONY: all-subdirs
 
-all: all-subdirs stow
+all: all-subdirs stow.exe
 
-stow: $(OBJS)
-	$(CXX) -o $@ $(OBJS) $(LIBS)
+stow.exe: $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 all-subdirs:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) all) || exit 1; done
@@ -27,8 +27,8 @@ clean:
 
 veryclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
-	rm -f $(OBJS) stow
+	rm -f $(OBJS) stow.exe
 
 distclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
-	rm -f $(OBJS) stow
+	rm -f $(OBJS) stow.exe
