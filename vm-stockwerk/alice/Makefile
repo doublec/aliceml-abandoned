@@ -32,7 +32,7 @@ PRIMITIVE_MODULES = \
 	Vector Word8 Word8Array Word8Vector Word31
 LIB_SYSTEM_MODULES = \
 	Config IODesc OS CommandLine Component Debug Socket Rand Value Reflect
-LIB_UTILITY_MODULES = Cell Addr
+LIB_UTILITY_MODULES = ImpMap Cell Addr
 LIB_DISTRIBUTION_MODULES = Remote
 
 SOURCES = \
