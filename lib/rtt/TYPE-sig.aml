@@ -166,6 +166,7 @@ sig
     val isClosed :	typ -> bool
 
     val paths :		typ -> kind PathMap.t
+    val pathsKind :	kind -> kind PathMap.t
 
   (* Comparison *)
 
