@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -69,7 +69,7 @@ struct
 			      | NONE   => raise IO.Io{name = "Pickle",
 						      function = "load",
 						      cause = Component.Corrupt}
-	    structure S = Reflect.UnreflectSig(val x = j)
+	    structure S = Reflect.ReifySig(val x = j)
 	    structure X = ComponentManager.Eval(val url = url
 						val component = component
 						signature S = S.S)
