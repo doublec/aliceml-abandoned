@@ -15,7 +15,6 @@ import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Open(socket text)
    Property(get)
-   System(show)
 export
    'UnsafeSocket$': Socket
 define
@@ -38,7 +37,7 @@ define
 			   {Socket accept(acceptClass: Open.socket
 					  accepted: ?NewSocket
 					  host: ?Host port: ?Port)}
-			   NewSocket#Host#Port
+			   NewSocket#{ByteString.make Host}#Port
 			end
 		     client:
 			fun {$ Host Port} Socket in
