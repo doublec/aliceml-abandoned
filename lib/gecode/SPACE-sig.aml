@@ -28,9 +28,10 @@ sig
     datatype status = BRANCH of description | FAILED | SOLVED
     val new         : unit -> space
     val status      : space -> status
-    val commit      : space * int -> unit
+    
+    (* Very soon this function will be called 'commit'.
+     * I keep this name for now to avoid confusion with the old one. *)
     val commitDescription : space * int * description -> unit
-    val description : space -> description (* Can probably be removed. *)
     val clone       : space -> space
     val discard     : space -> unit
     val alive       : space -> bool

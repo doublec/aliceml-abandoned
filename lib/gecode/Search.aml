@@ -22,12 +22,12 @@ struct
 		case Space.status s of
 		    Space.FAILED => (Space.discard s; nil)
 		  | Space.SOLVED => [s]
-		  | Space.BRANCH _ =>
+		  | Space.BRANCH descr =>
 		    let
 			val c = Space.clone s
 		    in
-			Space.commit(s, 1);
-			Space.commit(c, 2);
+			Space.commitDescription(s, 1, descr);
+			Space.commitDescription(c, 2, descr);
 			(dfe s)@(dfe c)
 		    end
 	in
@@ -41,12 +41,12 @@ struct
 		case Space.status s of
 		    Space.FAILED => Space.discard s
 		  | Space.SOLVED => raise (Found s)
-		  | Space.BRANCH _ =>
+		  | Space.BRANCH descr =>
 		    let
 			val c = Space.clone s
 		    in
-			Space.commit(s, 1);
-			Space.commit(c, 2);
+			Space.commitDescription(s, 1, descr);
+			Space.commitDescription(c, 2, descr);
 			dfe (depth+1) s;
 			dfe (depth+1) c
 		    end
@@ -67,12 +67,12 @@ struct
 			Space.FAILED => (Space.discard f;
 					 babe fr bs best)
 		      | Space.SOLVED => babe nil (fr@bs) (SOME f)
-		      | Space.BRANCH _ =>
+		      | Space.BRANCH descr =>
 			let
 			    val c = Space.clone f
 			in
-			    Space.commit(f, 1);
-			    Space.commit(c, 2);
+			    Space.commitDescription(f, 1, descr);
+			    Space.commitDescription(c, 2, descr);
 			    babe (f::c::fr) bs best
 			end
 	in
@@ -90,8 +90,6 @@ struct
               c
           end
               
-      fun getDesc s n = (n, Space.description s)
-                          
       fun searchOne (s, m) =
           let
               exception Found of Space.space
@@ -99,26 +97,26 @@ struct
                   case Space.status s of
                       Space.SOLVED => (raise Found s)
                     | Space.FAILED => Space.discard s
-                    | Space.BRANCH _ =>
+                    | Space.BRANCH desc =>
                       if d>=m then
                           let
                               val c = Space.clone s
-                              val desc = getDesc s 1
+                              val intdesc = (1, desc)
                           in
-                              Space.commit(s, 1);
-                              dfre s c [desc] 1;
-                              Space.commit(c, 2);
+                              Space.commitDescription(s, 1, desc);
+                              dfre s c [intdesc] 1;
+                              Space.commitDescription(c, 2, desc);
                               dfre c c nil m
                           end
-                      else let val desc = getDesc s 1 in                
-                               Space.commit(s,1);
-                               dfre s r (desc::is) (d+1);
+                      else let val intdesc = (1, desc) in                
+                               Space.commitDescription(s, 1, desc);
+                               dfre s r (intdesc::is) (d+1);
                                let
                                    val c = recompute r is
-                                   val desc = getDesc c 2
+                                   val intdesc = (2, desc)
                                in
-                                   Space.commit(c, 2);
-                                   dfre c r (desc::is) (d+1)
+                                   Space.commitDescription(c, 2, desc);
+                                   dfre c r (intdesc::is) (d+1)
                                end
                            end
               val s' = Space.clone s
@@ -133,26 +131,26 @@ struct
                   case Space.status s of
                       Space.SOLVED => [s]
                     | Space.FAILED => (Space.discard s; nil)
-                    | Space.BRANCH _ =>
+                    | Space.BRANCH desc =>
                       if d>=m then
                           let
                               val c = Space.clone s
-                              val desc = getDesc s 1
+                              val intdesc = (1, desc)
                           in
-                              (Space.commit(s, 1);
-                               dfre s c [desc] 1)@
-                              (Space.commit(c, 2);
+                              (Space.commitDescription(s, 1, desc);
+                               dfre s c [intdesc] 1)@
+                              (Space.commitDescription(c, 2, desc);
                                dfre c c nil m)
                           end
-                      else let val desc = getDesc s 1 in                
-                               (Space.commit(s,1);
-                                dfre s r (desc::is) (d+1))@
+                      else let val intdesc = (1, desc) in                
+                               (Space.commitDescription(s, 1, desc);
+                                dfre s r (intdesc::is) (d+1))@
                                let
                                    val c = recompute r is
-                                   val desc = getDesc c 2
+                                   val intdesc = (2, desc)
                                in
-                                   Space.commit(c, 2);
-                                   dfre c r (desc::is) (d+1)
+                                   Space.commitDescription(c, 2, desc);
+                                   dfre c r (intdesc::is) (d+1)
                                end
                            end
               val s' = Space.clone s
