@@ -1,15 +1,24 @@
 (*
- * Error handling.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
 
+(* Error handling. *)
+
+import structure Source from "Source"
 
 signature ERROR =
-  sig
-
+sig
     (* Import *)
 
     type region = Source.region
-
 
     (* Export *)
 
@@ -17,5 +26,4 @@ signature ERROR =
 
     val error :	region * string -> 'a
     val warn :	region * string -> unit
-
-  end
+ end

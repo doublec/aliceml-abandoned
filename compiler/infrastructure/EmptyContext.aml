@@ -1,6 +1,20 @@
-structure EmptyContext :> CONTEXT where type t = unit =
-  struct
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature CONTEXT from "CONTEXT-sig"
+
+structure EmptyContext : CONTEXT =
+struct
     type t	= unit
     fun new()	= ()
     fun clone()	= ()
-  end
+end
