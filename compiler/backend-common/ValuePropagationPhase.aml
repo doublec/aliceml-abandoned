@@ -16,7 +16,6 @@ signature SCOPED_IMP_MAP =
 	type 'a map
 	type 'a t = 'a map
 
-	exception Collision of key
 	exception Lookup of key
 
 	val new: unit -> 'a map
@@ -24,7 +23,6 @@ signature SCOPED_IMP_MAP =
 	val insertScope: 'a map -> unit
 	val deleteScope: 'a map -> unit
 	val insert: 'a map * key * 'a -> unit
-	val insertDisjoint: 'a map * key * 'a -> unit   (* Collision *)
 	val lookup: 'a map * key -> 'a option
 	val lookupExistent: 'a map * key -> 'a   (* Lookup *)
 	val appiScope: (key * 'a -> unit) -> 'a map -> unit
@@ -37,7 +35,6 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
 	type 'a map = 'a ImpMap.t list ref
 	type 'a t = 'a map
 
-	exception Collision = ImpMap.Collision
 	exception Lookup = ImpMap.Lookup
 
 	fun new () = ref [ImpMap.new ()]
@@ -49,8 +46,6 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
 
 	fun insert (ref maps, key, entry) =
 	    ImpMap.insert (List.hd maps, key, entry)
-	fun insertDisjoint (ref maps, key, entry) =
-	    ImpMap.insertDisjoint (List.hd maps, key, entry)
 
 	fun lookup' (nil, _) = NONE
 	  | lookup' ([map], key) = ImpMap.lookup (map, key)
@@ -313,7 +308,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			 Assert.assert (isToplevel = isToplevel');
 			 IdMap.insert (env', id, entry')
 		     end
-	       | NONE => IdMap.insertDisjoint (env', id, entry)) env
+	       | NONE => IdMap.insert (env', id, entry)) env
 
 	fun getTerm (info, id, env) =
 	    case IdMap.lookupExistent (env, id) of
@@ -402,13 +397,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | aliasArgs (_, _, _, _) =
 	    raise Crash.Crash "ValuePropagationPhase.aliasArgs"
 
-	fun declare (env, IdDef id, entry) =
-	    IdMap.insertDisjoint (env, id, entry)
+	fun declare (env, IdDef id, entry) = IdMap.insert (env, id, entry)
 	  | declare (_, Wildcard, _) = ()
-
-	fun replace (env, IdDef id, entry) =
-	    IdMap.insert (env, id, entry)
-	  | replace (_, Wildcard, _) = ()
 
 	fun declareUnknown (env, idDef, isToplevel) =
 	    declare (env, idDef, (UnknownVal, isToplevel))
@@ -467,7 +457,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				  val exp =
 				      vpExp (exp, env, isToplevel, shared)
 			      in
-				  replace (env, idDef, (expToValue exp,
+				  declare (env, idDef, (expToValue exp,
 							isToplevel));
 				  (idDef, exp)
 			      end) idDefExpList
@@ -902,9 +892,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			case exn of
 			    IdMap.Lookup id =>
 				TextIO.print ("Lookup " ^ idToString id ^ "\n")
-			  | IdMap.Collision id =>
-				TextIO.print ("Collision " ^
-					      idToString id ^ "\n")
 			  | _ => ();
 			raise exn)
     end
