@@ -1,16 +1,14 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = bin
+SUBDIRS = debian
 EXTRA_SUBDIRS = compiler doc lib tools
 
-man_MANS = man/alice.1 man/alicec.1 \
-	man/alicerun.1 man/alicelink.1 \
-	man/alicedep.1
-
-EXTRA_DIST = VMMain.ozf alice.import alicec.import $(man_MANS)
+EXTRA_DIST = alice.import alicec.import
 
 dist-hook:
-	cp -p -r $(EXTRA_SUBDIRS) $(distdir)
+	$(AMTAR) --exclude '*.dll' -c $(EXTRA_SUBDIRS) | \
+	(cd $(distdir) && $(AMTAR) x)
+#	cp -p -r $(EXTRA_SUBDIRS) $(distdir)
 
 install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/alice

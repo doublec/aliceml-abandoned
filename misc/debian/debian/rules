@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-# Alice/Mozart for Debian/GNU
+# Seam for Debian/GNU
 # Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 
 export DH_COMPAT=3
@@ -21,8 +21,8 @@ endif
 
 # generic Debian directories
 
-package_name = alice-mozart
-package_version = 0.9.3
+package_name = alice-runtime
+package_version = 1.0.1
 
 DEB_BASE_DIR = $(PWD)
 DEB_DEBIAN_DIR = $(DEB_BASE_DIR)/debian
@@ -60,11 +60,11 @@ install-stamp: build-stamp
 		install DESTDIR=$(DEB_INSTALL_DIR)
 	echo > $@
 	mkdir $(DEB_INSTALL_DIR)/usr/share/doc || true
-	mkdir $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart || true
-	mv $(DEB_INSTALL_DIR)/usr/share/alice-mozart/doc/examples \
-	   $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart/examples
-	mv $(DEB_INSTALL_DIR)/usr/share/alice-mozart/doc \
-	   $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart/html
+	mkdir $(DEB_INSTALL_DIR)/usr/share/doc/alice || true
+	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc/examples \
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/examples
+	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc \
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/html
 
 clean:
 	dh_testdir

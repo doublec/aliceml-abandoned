@@ -1,25 +1,13 @@
-Source: alice-mozart
+Source: alice-runtime
 Section: devel
 Priority: optional
 Build-Depends-Indep: debhelper (>= 4.1.6)
-Maintainer: Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
 Standards-Version: 3.6.0
 
-Package: alice-mozart
+Package: alice-runtime
 Architecture: all
-Depends: mozart (>= 1.3.0)
-Recommends: mozart-gtk, www-browser
-Suggests: sml-mode
-Description: The Alice Programming System
- Alice is a functional programming language based on Standard ML, extended with
- support for concurrent, distributed, and constraint programming.
- .
- This package provides an implementation of Alice based on the Mozart virtual
- machine.  It includes an interpreter-like interactive toplevel, a batch
- compiler, a static linker, the Inspector (a tool for dynamically inspecting
- Alice data structures), the Explorer (a tool for interactively investigating
- search problems), a binding for the Gnome toolkit GUI library, and a
- comprehensive library.
- .
- More information on Alice and the Alice Programming System is available at <a
- href="http://www.ps.uni-sb.de/alice/">http://www.ps.uni-sb.de/alice/</a>.
+Depends: alice
+Recommends:
+Suggests:
+Description: The Alice system (Runtime)
