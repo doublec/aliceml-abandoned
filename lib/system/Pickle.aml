@@ -51,4 +51,40 @@ struct
     functor LoadVal(val file : string type t) =
 	Load(val file = file
 	     signature S = S where type t = t)
+
+    (*TODO: make these proper once components and packages have
+           truly been unified *)
+    signature P = sig val x : package end
+
+    fun save(file, package) =
+	let
+	    structure _ =
+		Save(val file = file signature S = P structure X = (val x = p))
+	in
+	    ()
+	end
+
+    fun load file =
+	let
+	    structure X = Load(val file = file signature S = P)
+	in
+	    X.x
+	end
+
+    signature PV = sig val x : Package.val_package end
+
+    fun save(file, package) =
+	let
+	    structure _ =
+		SaveVal(val file = file signature S = PV structure X = (val x = p))
+	in
+	    ()
+	end
+
+    fun load file =
+	let
+	    structure X = LoadVal(val file = file signature S = PV)
+	in
+	    X.x
+	end
 end

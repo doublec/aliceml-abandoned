@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,13 +12,16 @@
 
 signature PICKLE =
 sig
-    val extension: string
+    val extension : string
 
-    functor Save(val file: string signature S structure X: S) : any (* Sited *)
-    functor Load(val file: string signature S) : S
-	    (* Corrupt, Inf.Mismatch *)
+    val save : string * package -> unit				(* Io *)
+    val load : string -> package				(* Io *)
+    val saveVal : string * Package.val_package -> unit		(* Io *)
+    val loadVal : string -> Package.val_package			(* Io *)
 
-    functor SaveVal(val file: string type t val x: t) : any         (* Sited *)
-    functor LoadVal(val file: string type t) : (val x: t)
-	    (* Corrupt, Inf.Mismatch *)
+    functor Save(val file : string signature S structure X : S) : any (* Io *)
+    functor Load(val file : string signature S) : S		(* Io *)
+
+    functor SaveVal(val file : string type t val x : t) : any	(* Io *)
+    functor LoadVal(val file : string type t) : (val x : t)	(* Io *)
 end
