@@ -13,10 +13,7 @@
 //
 
 #include <cstdio>
-#include "generic/Scheduler.hh"
-#include "alice/AliceLanguageLayer.hh"
-#include "alice/BootLinker.hh"
-#include "InitSeam.hh"
+#include "Alice.hh"
 
 extern word UnsafeConfig();
 extern word UnsafeIODesc();
@@ -53,10 +50,15 @@ static NativeComponent nativeComponents[] = {
   {NULL, NULL}
 };
 
-DllExport int AliceMain(char *home, u_int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   if (argc < 2) {
     std::fprintf(stderr, "usage: %s <component> <args...>\n", argv[0]);
     return 2;
+  }
+
+  char *home = std::getenv("ALICE_HOME");
+  if (home == NULL) {
+    Error("could not determine installation directory");
   }
 
   InitSeam();

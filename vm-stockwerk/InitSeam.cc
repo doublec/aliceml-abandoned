@@ -35,7 +35,7 @@ static u_int mb(u_int n) {
 
 extern "C" void InitSeam();
 
-DllExport void InitSeam() {
+SeamDll void InitSeam() {
   // Set up the store:
   u_int memLimits[STORE_GENERATION_NUM];
   memLimits[0] = mb(16);
