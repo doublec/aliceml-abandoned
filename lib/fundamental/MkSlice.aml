@@ -46,7 +46,8 @@ struct
       | subslice(sl, i, SOME n)	= (if i < 0 orelse n < 0 orelse length sl < i+n
 				   then raise General.Subscript
 				   else (#1 sl, #2 sl + i, n)
-				  ) handle Overflow => raise General.Subscript
+				  ) handle General.Overflow =>
+				    raise General.Subscript
     fun full r			= (r,0,rlength r)
     fun slice(r,i,n)		= subslice(full r,i,n)
 
