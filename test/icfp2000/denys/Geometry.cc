@@ -16,7 +16,7 @@ public:
 	 double x21,double x22,double x23,double x24,
 	 double x31,double x32,double x33,double x34)
     :OZ_Extension(),
-     a11(x11),a12(a12),a13(x13),a14(x14),
+     a11(x11),a12(x12),a13(x13),a14(x14),
      a21(x21),a22(x22),a23(x23),a24(x24),
      a31(x31),a32(x32),a33(x33),a34(x34){}
   //
@@ -416,8 +416,8 @@ OZ_BI_end
 OZ_BI_define(matrix_scale,3,1)
 {
   OZ_declareFloat(0,sx);
-  OZ_declareFloat(0,sy);
-  OZ_declareFloat(0,sz);
+  OZ_declareFloat(1,sy);
+  OZ_declareFloat(2,sz);
   Matrix * m = new Matrix( sx, 0.0, 0.0, 0.0,
 			  0.0,  sy, 0.0, 0.0,
 			   0.0, 0.0,  sz, 0.0);
@@ -428,8 +428,8 @@ OZ_BI_end
 OZ_BI_define(matrix_translation,3,1)
 {
   OZ_declareFloat(0,tx);
-  OZ_declareFloat(0,ty);
-  OZ_declareFloat(0,tz);
+  OZ_declareFloat(1,ty);
+  OZ_declareFloat(2,tz);
   Matrix * m = new Matrix(1.0, 0.0, 0.0, tx,
 			  0.0, 1.0, 0.0, ty,
 			  0.0, 0.0, 1.0, tz);
