@@ -64,4 +64,10 @@ structure Common=
 	val _ = Compiler.Control.Print.printLength := 10000;
 	val _ = Compiler.Control.Print.printDepth := 10000;
 	val _ = SMLofNJ.Internals.GC.messages false
+
+(* Den Klassennamen einer Id bestimmen, die üblicherweise die Id eines formalen
+ Funktionsparameters ist. *)
+fun classNameFromStamp stamp' = Class.getInitial()^"class"^(Stamp.toString stamp')
+fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
+
     end

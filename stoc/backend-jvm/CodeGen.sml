@@ -190,11 +190,6 @@ structure CodeGen =
 	    (annotateTailExp exp'; annotateTailDec (RecDec (foo, idsexps)))
 	  | annotateTailDec _ = () *)
 
-	(* Den Klassennamen einer Id bestimmen, die üblicherweise die Id eines formalen
-	 Funktionsparameters ist. *)
-	fun classNameFromStamp stamp' = Class.getInitial()^"class"^(Stamp.toString stamp')
-	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
-
 	(* Einstiegspunkt *)
 	fun genProgramCode (debug, echo, name, program) =
 	    (DEBUG := debug;

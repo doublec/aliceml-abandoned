@@ -102,13 +102,14 @@ functor MakeLambda(structure StampSet:IMP_SET
 		NONE => Stamp.toString stamp'
 	      | SOME name => name^(Stamp.toString stamp')
 
-	fun fieldname stamp'=Class.getLiteralName()^"/f"^(Stamp.toString stamp')
+	fun fname stamp' = "f"^(Stamp.toString stamp')
+	fun fieldname stamp'=Class.getLiteralName()^"/"^(fname stamp')
 
 	fun generatePickleFn startwert =
 	    let
-		fun codePickle (stamp',id',acc) =
+		fun codePickle (stamp',_,acc) =
 		    Aload 0::
-		    Ldc (JVMString (nameFromId id'))::
+		    Ldc (JVMString (classNameFromStamp stamp'))::
 		    Invokestatic MForName::
 		    Putfield (fieldname stamp',
 			       [Classsig CClass])::
@@ -121,7 +122,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	    let
 		fun pickleFields (stamp',_, acc) =
 		    Field ([FPublic, FFinal],
-			   fieldname stamp',
+			   fname stamp',
 			   [Classsig CClass])::acc
 	    in
 		StampHash.foldi pickleFields startwert pickleFn
