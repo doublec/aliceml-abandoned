@@ -13,6 +13,7 @@ import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure Gdk        from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
 import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
+import structure Inspector  from "x-alice:/lib/tools/Inspector"
 
 import structure Color      from "../../common/Color"
 
@@ -202,6 +203,7 @@ struct
 			(* they haven't to be fulfilled because they where
 			 fulfilled in PlayerSettingsWindow *)
 
+		    val _ = Inspector.inspect ("alreadyConnected liste in Waitingwindow: ", alreadyConnected)
 			
 		in
 		    playersJoined alreadyConnected;

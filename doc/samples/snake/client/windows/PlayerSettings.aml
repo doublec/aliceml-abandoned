@@ -12,6 +12,7 @@
 import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure Gdk        from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
+import structure Inspector  from "x-alice:/lib/tools/Inspector"
 
 import structure Color      from "../../common/Color"
 
@@ -56,7 +57,8 @@ struct
 	in
 	    Gtk.textInsert(playerText, font, front, 
 			   white, name ^ "\n", ~1);
-	    alreadyConn := (name, color) :: !alreadyConn
+	    alreadyConn := (name, color) :: !alreadyConn;
+	    Inspector.inspect ("PlayerSettings, added player to alreadyconn list: ", alreadyConn)
 	end
 
     fun removePlayer (name, color) = 
@@ -203,16 +205,16 @@ struct
 			    ("ERROR!!", "Please enter a name!")
 		    else
 			(Gtk.widgetDestroy playerSettings;
-			 alreadyConn := nil;
 			 case return () of 
 			     FST (mGame, guiGame) => 
-				 Wait.mkWaitingWindow 
-				 (SND (!alreadyConn, 
+				 (Wait.mkWaitingWindow 
+				 (SND (rev (!alreadyConn), 
 				       {disconnect},
 				       mGame, 
 				       guiGame,
 				       (joined, disconnected, started),
-				       {reset, gameMode}))
+				       {reset, gameMode}));
+				  alreadyConn := nil)
 			   | SND     errorMsg     => 
 				 reset (SOME ("ERROR!!", errorMsg)))
 		end
