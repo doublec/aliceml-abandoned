@@ -213,6 +213,10 @@ public:
     Assert(GetResolveType() != ResolveInterpreter::RESOLVE_CLASS);
     return GetArg(CLASS_POS);
   }
+  void SetClass(Class *theClass) {
+    Assert(GetResolveType() != ResolveInterpreter::RESOLVE_CLASS);
+    ReplaceArg(CLASS_POS, theClass->ToWord());
+  }
   JavaString *GetName() {
     return JavaString::FromWordDirect(GetArg(NAME_POS));
   }
@@ -239,8 +243,6 @@ Worker::Result ResolveInterpreter::Run() {
       return Worker::CONTINUE;
     }
   case RESOLVE_FIELD:
-  case RESOLVE_METHOD:
-  case RESOLVE_INTERFACE_METHOD:
     {
       word wClass = frame->GetClass();
       Class *theClass = Class::FromWord(wClass);
@@ -250,6 +252,49 @@ Worker::Result ResolveInterpreter::Run() {
       }
     }
     break; //--**
+  case RESOLVE_METHOD:
+    {
+      word wClass = frame->GetClass();
+      Class *theClass = Class::FromWord(wClass);
+      if (theClass == INVALID_POINTER) {
+	Scheduler::currentData = wClass;
+	return Worker::REQUEST;
+      }
+      JavaString *name = frame->GetName();
+      JavaString *descriptor = frame->GetDescriptor();
+      //--** if the method is defined in one of the superinterfaces,
+      //--** raise IncompatibleClassChangeError
+      ClassInfo *classInfo = theClass->GetClassInfo();
+      Table *methods = classInfo->GetMethods();
+      u_int sIndex = 0, vIndex = 0, nMethods = methods->GetCount();
+      for (u_int i = 0; i < nMethods; i++) {
+	MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
+	if (methodInfo->IsTheMethod(name, descriptor)) {
+	  u_int nArgs = methodInfo->GetNumberOfArguments();
+	  word result;
+	  if (methodInfo->IsStatic())
+	    result = StaticMethodRef::New(theClass, sIndex, nArgs)->ToWord();
+	  else
+	    result = VirtualMethodRef::New(theClass, vIndex, nArgs)->ToWord();
+	  Scheduler::PopFrame();
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	  Scheduler::currentArgs[0] = result;
+	  return Worker::CONTINUE;
+	} else {
+	  if (methodInfo->IsStatic())
+	    sIndex++;
+	  else
+	    vIndex++;
+	}
+      }
+      word wSuper = classInfo->GetSuper();
+      if (wSuper == Store::IntToWord(0))
+	Error("NoSuchMethod"); //--** raise
+      frame->SetClass(Class::FromWord(wSuper));
+      return CONTINUE;
+    }
+  case RESOLVE_INTERFACE_METHOD:
+    Error("interface methods not implemented yet"); //--**
   }
 }
 

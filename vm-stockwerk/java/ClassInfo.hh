@@ -152,6 +152,16 @@ public:
   bool IsStatic() {
     return GetAccessFlags() & ACC_STATIC;
   }
+  JavaString *GetName() {
+    return JavaString::FromWordDirect(GetArg(NAME_POS));
+  }
+  JavaString *GetDescriptor() {
+    return JavaString::FromWordDirect(GetArg(DESCRIPTOR_POS));
+  }
+  u_int GetNumberOfArguments();
+  bool IsTheMethod(JavaString *name, JavaString *descriptor) {
+    return name->Equals(GetName()) && descriptor->Equals(GetDescriptor());
+  }
   JavaByteCode *GetByteCode() {
     return JavaByteCode::FromWord(GetArg(BYTE_CODE_POS));
   }

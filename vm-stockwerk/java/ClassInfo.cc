@@ -16,6 +16,13 @@
 
 #include "java/ClassInfo.hh"
 
+u_int MethodInfo::GetNumberOfArguments() {
+  JavaString *descriptor = GetDescriptor();
+  u_wchar *p = descriptor->GetBase();
+  //--**
+  return 0;
+}
+
 bool ClassInfo::Verify() {
   return true; //--** implement verifier
 }
