@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Author:
+#   Andreas Rossberg <rossberg@ps.uni-sb.de>
+#
+# Copyright:
+#   Andreas Rossberg, 2004
+#
+# Last Change:
+#   $Date$
+#   $Revision$
+#
+
+if [ ! -z "$ALICE_REMOTE_PATH" ]
+then
+    PATH="${ALICE_REMOTE_PATH}:${PATH}"
+fi
+
+echo ${PATH}
+
+alicerun "$@"
