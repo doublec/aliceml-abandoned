@@ -81,7 +81,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | SharedStm of info * body * shared   (* used at least twice *)
 	  | ReturnStm of info * exp
 	  | IndirectStm of info * body option ref
-	  | ExportStm of info * id list
+	  | ExportStm of info * exp
 	and exp =
 	    LitExp of coord * lit
 	  | PrimExp of coord * string

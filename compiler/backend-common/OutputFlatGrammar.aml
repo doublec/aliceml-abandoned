@@ -137,8 +137,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "return ", IN, outputExp exp, EX]
 	  | outputStm (IndirectStm (_, ref bodyOpt)) =
 	    outputBody (valOf bodyOpt)
-	  | outputStm (ExportStm (_, ids)) =
-	    SEQ [S "export ", IN, SEP (S ", ", List.map ID ids)]
+	  | outputStm (ExportStm (_, exp)) =
+	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
 	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
 	  | outputExp (NewExp (_, false)) = SEQ [S "con"]

@@ -53,7 +53,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    Decs of dec list * continuation
 	  | Goto of O.body
 	  | Share of O.body option ref * continuation
-	  | Export of id list
+	  | Export of O.exp
 
 	fun translateLongid (ShortId (_, id)) = (nil, id)
 	  | translateLongid (LongId (coord, longid, Lab (_, s))) =
@@ -86,8 +86,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME stms; stms
 	    end
 	  | translateCont (Share (ref (SOME stms), _)) = stms
-	  | translateCont (Export ids) =
-	    [O.ExportStm (info Source.nowhere, ids)]
+	  | translateCont (Export exp) =
+	    [O.ExportStm (info Source.nowhere, exp)]
 	and translateDec (ValDec (coord, VarPat (_, id), exp), cont) =
 	    let
 		fun declare exp' = O.ValDec (info coord, id, exp', false)
@@ -622,23 +622,22 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    Crash.crash "MatchCompilationPhase.translateTest"
 
-	(*--** mapping exports to exports' can be removed when
-	 * the front-end does this *)
+	fun getPrintName (Id (_, _, ExId s)) = s
+	  | getPrintName (Id (_, _, InId)) =
+	    Crash.crash "MatchCompilationPhase.getPrintName"
 
-	fun member (Id (_, _, ExId s')::idr, name as ExId s) =
-	    s = s' orelse member (idr, name)
-	  | member (Id (_, _, _)::_, _) =
-	    Crash.crash "MatchCompilationPhase.member"
-	  | member (nil, _) = false
+	structure IdSort =
+	    MakeLabelSort(type 'a t = id
+			  val get = getPrintName)
 
 	fun translate (imports, exports, decs) =
 	    let
-		val exports' =
-		    List.foldr (fn (id as Id (_, _, name), ids) =>
-				if member (ids, name) then ids
-				else id::ids) nil exports
+		val exportExp =
+		    O.RecExp (Source.nowhere,
+			      List.map (fn id => (getPrintName id, id))
+			      (#1 (IdSort.sort exports)))
 	    in
-		(imports, exports',
-		 translateCont (Decs (decs, Export exports')))
+		(imports, exports,
+		 translateCont (Decs (decs, Export exportExp)))
 	    end
     end

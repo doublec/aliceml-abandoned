@@ -124,7 +124,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanStm (ReturnStm (_, exp), set) = scanExp (exp, set)
 	  | scanStm (IndirectStm (_, ref bodyOpt), set) =
 	    scanBody' (valOf bodyOpt, set)
-	  | scanStm (ExportStm (_, ids), set) = insList (set, ids)
+	  | scanStm (ExportStm (_, exp), set) = scanExp (exp, set)
 	and scanExp (LitExp (_, _), _) = ()
 	  | scanExp (PrimExp (_, _), _) = ()
 	  | scanExp (NewExp (_, _), _) = ()
