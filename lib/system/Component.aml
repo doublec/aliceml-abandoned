@@ -70,7 +70,8 @@ struct
 	    val s = Url.toStringRaw url   (*--** use getLocalPath instead *)
 	in
 	    case localize s of
-		SOME s' => UnsafeComponent.load s'
+		SOME (Resolver.FILE s') => UnsafeComponent.load s'
+	      | SOME (Resolver.STRING s') => UnsafeComponent.unpack_ s'
 	      | NONE =>
 		    raise IO.Io {name = s,
 				 function = "load",
