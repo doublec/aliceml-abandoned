@@ -193,7 +193,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputAtom (q, string); r q)
 	  | outputExp (q, NewExp (coord, stringOpt, hasArgs)) =
 	    (f (q, "newExp"); outputCoord (q, coord); m q;
-	     outputOption outputString (q, stringOpt); m q;
+	     outputOption outputAtom (q, stringOpt); m q;
 	     outputBool (q, hasArgs); r q)
 	  | outputExp (q, VarExp (coord, id)) =
 	    (f (q, "varExp"); outputCoord (q, coord); m q;

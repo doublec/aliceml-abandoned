@@ -211,9 +211,11 @@ define
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
       [] primExp(_ Builtinname) then
 	 VHd = vEquateConstant(_ Prebound.builtinTable.Builtinname Reg VTl)
-      [] newExp(Coord _) then
+      [] newExp(Coord none _) then
 	 VHd = vCallBuiltin(_ 'Name.new' [Reg]
 			    {TranslateCoord Coord State} VTl)
+      [] newExp(_ some(A) _) then
+	 VHd = vEquateConstant(_ A Reg VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] conExp(_ Id false) then
