@@ -13,6 +13,7 @@
  *
  *)
 
+import structure MainDictionary from "MainDictionary"
 import structure Types from "Types"
 
 local
@@ -31,5 +32,9 @@ in
 	    val get_l_xdim : node -> int
 		
 	    val layout : node -> int * int * int
+		
+	    val calcMaxXDim: MainDictionary.dictionary * int 
+		-> int 
+	    val setVisible: int * int -> unit
 	end
 end

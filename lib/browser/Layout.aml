@@ -16,6 +16,10 @@
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"import structure Helper from "Helper"
 import structure RelManDictionary from "RelManDictionary"
+import structure MainDictionary from "MainDictionary"
+import structure Dictionaries from "Dictionaries"
+import structure WindowHelper from "WindowHelper"
+import structure Settings from "Settings"
 import signature LAYOUT from "LAYOUT-sig"
 
 open Types Helper
@@ -136,6 +140,37 @@ struct
 	    else ()
           ; (get_xdim(n),get_ydim(n),0) )
       | Empty => (0,0,0)
+
+   fun calcMaxXDim (dict,i)  = 
+       if i > MainDictionary.getHighestIndexAssigned(dict) 
+	   then 0
+       else
+	   case MainDictionary.lookup(dict,i) of
+	       NONE => calcMaxXDim(dict,i+1)
+	     | SOME node => let
+				val x  =  get_xdim(node)
+				val x' =  calcMaxXDim(dict,i+1)
+			    in
+				if x > x' then x 
+				else x' 
+			    end
+
+    fun setVisible (x,y) = let
+			       val w = WindowHelper.fontWidth
+				   (!Settings.font)
+			       val h = WindowHelper.fontHeight
+				   (!Settings.font)
+			       val rx =  Real.fromInt(w * x)
+			       val ry =  Real.fromInt(h * y)
+			   in
+			       (if Real.> (rx,!(Settings.max_x)) 
+				    then Settings.max_x := rx 
+				else Settings.max_x := 
+				    Real.fromInt(w * 
+				    calcMaxXDim (Dictionaries.dict,0))
+				    ; Settings.max_y 
+				    := Real.+(!Settings.max_y,ry))
+			   end
 
 end
 

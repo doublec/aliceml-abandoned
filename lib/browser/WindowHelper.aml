@@ -252,6 +252,8 @@ fun setVisible (x,y) = let
 				; Settings.max_y := Real.+(!Settings.max_y,ry))
 		       end
 
+
+
 fun copyArray' (a,b,i) = if i < Array.length(b) 
 			     then
 				 (Array.update(b,i,Array.sub(a,i))
