@@ -18,7 +18,7 @@ import
    FloatChunk(toOz fromOz) at 'FloatChunk.so{native}'
    Scheduler(object)
    ByneedInterpreter(interpreter)
-   AbstractCodeInterpreter(interpreter)
+   AbstractCodeInterpreter(makeConcreteCode)
    Guid(vm '<' hash)
 require
    Helper(deref: Deref construct: Construct deconstruct: Deconstruct
@@ -29,7 +29,6 @@ export
    Functions
 define
    AlicePrimitiveFunction = {ByteString.make 'Alice.primitive.function'}
-   AliceFunction = {ByteString.make 'Alice.function'}
 
    NONE = 0
    %SOME = 1
@@ -663,19 +662,12 @@ define
 	      'Unsafe.cast': fun {$ X} X end#i_v
 	      'Unsafe.getPrimitiveByName':
 		 fun {$ Name} Values.{VirtualString.toAtom Name} end#r_v
-	      'Unsafe.makeFunction':
-		 fun {$ X}
-		    case X of tuple(tuple(F L C) NG NL IdDefArgs Instr) then
-		       function(AbstractCodeInterpreter.interpreter
-				{VirtualString.toAtom F}#L#C
-				NG NL IdDefArgs Instr
-				transform(AliceFunction X))
-		    end
-		 end#r_v
+	      'Unsafe.makeConcreteCode':
+		 AbstractCodeInterpreter.makeConcreteCode#r_v
 	      'Unsafe.makeClosure':
-		 fun {$ Function Vs} Closure in
+		 fun {$ ConcreteCode Vs} Closure in
 		    Closure = {MakeTuple closure {Width Vs} + 1}
-		    Closure.1 = Function
+		    Closure.1 = ConcreteCode
 		    for I in 1..{Width Vs} do
 		       Closure.(I + 1) = Vs.I
 		    end

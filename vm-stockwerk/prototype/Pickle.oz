@@ -31,7 +31,7 @@ import
    Open(file)
    System(eq)
    PrimitiveTable(values functions)
-   AbstractCodeInterpreter(interpreter)
+   AbstractCodeInterpreter(makeConcreteCode)
 require
    Helper(deref: Deref)
 export
@@ -69,8 +69,6 @@ define
    %% Unpickling
    %%-------------------------------------------------------------------
 
-   AliceFunction = {ByteString.make 'Alice.function'}
-
    fun {ApplyTransform F X}
       %--** registration of transformers
       %--** implement using byneeds
@@ -83,11 +81,7 @@ define
 	    PrimitiveTable.functions.{VirtualString.toAtom Name}
 	 end
       [] 'Alice.function' then
-	 case X of tag(0 tuple(F L C) NG NL IdDefArgs Instr) then
-	    function(AbstractCodeInterpreter.interpreter
-		     {VirtualString.toAtom F}#L#C NG NL IdDefArgs Instr
-		     transform(AliceFunction X))
-	 end
+	 {AbstractCodeInterpreter.makeConcreteCode X}
       end
    end
 
@@ -563,6 +557,9 @@ define
 			       pickling(PicklingInterpreter Y)|Rest
 			    end Rest})
 	       [] function then
+		  continue(Args
+			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
+	       [] specialized then
 		  continue(Args
 			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
 	       [] primitive then
