@@ -46,6 +46,7 @@ struct
 	fun awaitOne (a, b) =
 	    let
 		val c  = Hole.hole ()
+		val f  = Hole.future c
 		val t1 = Hole.hole ()
 		val t2 = Hole.hole ()
 	    in
@@ -59,7 +60,7 @@ struct
 		       Hole.fill (c, ()) handle Hole.Hole => ();
 		       raiseIn (t1, Terminate)
 			   handle (Hole.Hole|Terminated) => ());
-		await (Hole.future c); a
+		await f; a
 	    end
     end
 
