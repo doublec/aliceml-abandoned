@@ -51,39 +51,38 @@ functor MkFlatteningPhase(val loadSign:
 	open SimplifyMatch
 
 	local
-	    fun lookup' (pos, (pos', id)::mappingRest) =
-		if pos = pos' then SOME id
+	    fun lookup' (pos, (pos', idRef)::mappingRest) =
+		if pos = pos' then SOME idRef
 		else lookup' (pos, mappingRest)
 	      | lookup' (pos, nil) = NONE
 	in
 	    fun lookup (pos, mapping) =
 		case lookup' (pos, mapping) of
-		    SOME id => id
+		    SOME idRef => idRef
 		  | NONE => raise Crash.Crash "MkFlatteningPhase.lookup"
 
 	    fun adjoin (pos, mapping) =
 		case lookup' (pos, mapping) of
-		    SOME id => (O.IdDef id, mapping)
+		    SOME (O.IdRef id | O.LastIdRef id) => (O.IdDef id, mapping)
 		  | NONE =>
 			let
-			    val id = O.freshId {region = Source.nowhere}
+			    val id = O.freshId Source.nowhere
 			in
-			    (O.IdDef id, (pos, id)::mapping)
+			    (O.IdDef id, (pos, O.IdRef id)::mapping)
 			end
 	end
 
+	fun idRefStamp (O.IdRef (O.Id (_, stamp, _))) = stamp
+	  | idRefStamp (O.LastIdRef (O.Id (_, stamp, _))) = stamp
+
 	fun mappingsToSubst (mapping0, mapping) =
 	    List.map (fn (pos, Id (_, stamp1, _)) =>
-		      case lookup (pos, mapping) of
-			  O.Id (_, stamp2, _) => (stamp1, stamp2)) mapping0
-
-	fun stm_info region = {region = region, liveness = ref O.Unknown}
+			 (stamp1, idRefStamp (lookup (pos, mapping)))) mapping0
 
 	fun share nil = nil
 	  | share (stms as [O.SharedStm (_, _, _)]) = stms
 	  | share (stms as stm::_) =
-	    [O.SharedStm (stm_info (#region (O.infoStm stm)), stms,
-			  Stamp.new ())]
+	    [O.SharedStm (O.infoStm stm, stms, Stamp.new ())]
 
 	datatype continuation =
 	    Decs of dec list * continuation
@@ -98,28 +97,28 @@ functor MkFlatteningPhase(val loadSign:
 	    app (args, body)
 	  | testArity (O.OneArg idDef, Arity.Tuple n, app, body) =
 	    let
-		val ids =
-		    Vector.tabulate
-		    (n, fn _ => O.freshId {region = Source.nowhere})
+		val ids = Vector.tabulate (n, fn _ => O.freshId Source.nowhere)
 		val stm =
-		    O.ValDec (stm_info Source.nowhere, idDef,
-			      O.TupExp ({region = Source.nowhere}, ids))
+		    O.ValDec (Source.nowhere, idDef,
+			      O.TupExp (Source.nowhere,
+					Vector.map O.IdRef ids))
 	    in
 		app (O.TupArgs (Vector.map O.IdDef ids), stm::body)
 	    end
 	  | testArity (O.OneArg idDef, Arity.Product labels, app, body) =
 	    let
 		val labelIdVec =
-		    Vector.map (fn label =>
-				(label, O.freshId {region = Source.nowhere}))
-		    labels
-		val stm =
-		    O.ValDec (stm_info Source.nowhere, idDef,
-			      O.ProdExp ({region = Source.nowhere},
-					 labelIdVec))
+		    Vector.map (fn label => (label, O.freshId Source.nowhere))
+			       labels
 		val labelIdDefVec =
 		    Vector.map (fn (label, id) => (label, O.IdDef id))
-		    labelIdVec
+			       labelIdVec
+		val labelIdRefVec =
+		    Vector.map (fn (label, id) => (label, O.IdRef id))
+			       labelIdVec
+		val stm =
+		    O.ValDec (Source.nowhere, idDef,
+			      O.ProdExp (Source.nowhere, labelIdRefVec))
 	    in
 		app (O.ProdArgs labelIdDefVec, stm::body)
 	    end
@@ -135,34 +134,34 @@ functor MkFlatteningPhase(val loadSign:
 		       fn (args, body) => O.TagTests #[(label, n, args, body)],
 		       body)
 
-	fun conTest (id, args, arity, body) =
+	fun conTest (idRef, args, arity, body) =
 	    testArity (args, arity,
-		       fn (args, body) => O.ConTests #[(id, args, body)], body)
+		       fn (args, body) =>
+			  O.ConTests #[(idRef, args, body)], body)
 
-	fun expArity (args as O.OneArg _, Arity.Unary, info, app) =
+	fun expArity (args as O.OneArg _, Arity.Unary, _, app) =
 	    (nil, app args)
-	  | expArity (O.OneArg id, Arity.Tuple n, info: id_info, app) =
+	  | expArity (O.OneArg idRef, Arity.Tuple n, info: id_info, app) =
 	    let
-		val ids =
-		    Vector.tabulate
-		    (n, fn _ => O.freshId {region = Source.nowhere})
-		val idDefs = Vector.map O.IdDef ids
+		val ids = Vector.tabulate (n, fn _ => O.freshId Source.nowhere)
 	    in
-		([O.TupDec (stm_info (#region info), idDefs, id)],
-		 app (O.TupArgs ids))
+		([O.TupDec (#region info, Vector.map O.IdDef ids, idRef)],
+		 app (O.TupArgs (Vector.map O.IdRef ids)))
 	    end
-	  | expArity (O.OneArg id, Arity.Product labels, info, app) =
+	  | expArity (O.OneArg idRef, Arity.Product labels, info, app) =
 	    let
 		val labelIdVec =
-		    Vector.map (fn label =>
-			      (label, O.freshId {region = Source.nowhere}))
-		    labels
+		    Vector.map (fn label => (label, O.freshId Source.nowhere))
+			       labels
 		val labelIdDefVec =
 		    Vector.map (fn (label, id) => (label, O.IdDef id))
-		    labelIdVec
+			       labelIdVec
+		val labelIdRefVec =
+		    Vector.map (fn (label, id) => (label, O.IdRef id))
+			       labelIdVec
 	    in
-		([O.ProdDec (stm_info (#region info), labelIdDefVec, id)],
-		 app (O.ProdArgs labelIdVec))
+		([O.ProdDec (#region info, labelIdDefVec, idRef)],
+		 app (O.ProdArgs labelIdRefVec))
 	    end
 	  | expArity (args as O.TupArgs _, Arity.Tuple _, _, app) =
 	    (nil, app args)
@@ -173,30 +172,29 @@ functor MkFlatteningPhase(val loadSign:
 
 	fun tagExp (info, label, n, args, arity) =
 	    expArity (args, arity, info,
-		      fn args => O.TagExp (id_info info, label, n, args))
+		      fn args => O.TagExp (#region info, label, n, args))
 
 	fun conExp (info, id, args, arity) =
 	    expArity (args, arity, info,
-		      fn args => O.ConExp (id_info info, id, args))
+		      fn args => O.ConExp (#region info, id, args))
 
 	(* Translation *)
 
 	fun translateId (Id (info, stamp, name)) =
-	    O.Id (id_info info, stamp, name)
+	    O.Id (#region info, stamp, name)
 
 	fun translateLongid (ShortId (info, id)) =
-	    (nil, translateId id, #typ info)
+	    (nil, O.IdRef (translateId id), #typ info)
 	  | translateLongid (LongId ({region, typ}, longid, Lab (_, label))) =
 	    let
-		val (stms, id, innerTyp) = translateLongid longid
-		val info = {region = region}
-		val id' = O.Id (info, Stamp.new (), Name.InId)
+		val (stms, idRef, innerTyp) = translateLongid longid
+		val id' = O.Id (region, Stamp.new (), Name.InId)
 		val (prod, n) = labelToIndex (innerTyp, label)
 		val stm =
-		    O.ValDec (stm_info region, O.IdDef id',
-			      O.LazySelAppExp (info, prod, label, n, id))
+		    O.ValDec (region, O.IdDef id',
+			      O.LazySelAppExp (region, prod, label, n, idRef))
 	    in
-		(stms @ [stm], id', typ)
+		(stms @ [stm], O.IdRef id', typ)
 	    end
 
 	fun decsToIdDefExpList (O.ValDec (_, idDef, exp')::rest, region) =
@@ -218,24 +216,24 @@ functor MkFlatteningPhase(val loadSign:
 			       orelse not (IdSet.member (unallocated, id))
 			    then
 				let
-				    val id' = O.freshId {region = region}
+				    val id' = O.freshId region
 				in
-				    [O.ValDec (stm_info region, O.IdDef id',
-					       exp),
-				     O.ValDec (stm_info region, O.Wildcard,
-					       O.PrimAppExp ({region = region},
+				    [O.ValDec (region, O.IdDef id', exp),
+				     O.ValDec (region, O.Wildcard,
+					       O.PrimAppExp (region,
 							     "Hole.fill",
-							     #[id, id']))]
+							     #[O.IdRef id,
+							       O.IdRef id']))]
 				end
 			    else
 				(IdSet.delete (unallocated, id);
-				 [O.ValDec (stm_info region, idDef, exp)])
-		      | O.Wildcard => [O.ValDec (stm_info region, idDef, exp)]
+				 [O.ValDec (region, idDef, exp)])
+		      | O.Wildcard => [O.ValDec (region, idDef, exp)]
 	    in
 		IdSet.fold
 		(fn (id as O.Id (info, _, _), rest) =>
 		 (IdSet.delete (unallocated, id);
-		  O.ValDec (stm_info (#region info), O.IdDef id,
+		  O.ValDec (info, O.IdDef id,
 			    O.PrimAppExp (info, "Hole.hole", #[]))::rest))
 		decs toAllocate
 		::recToHoles (rest, region, unallocated)
@@ -243,8 +241,8 @@ functor MkFlatteningPhase(val loadSign:
 	  | recToHoles (nil, _, unallocated) =
 	    (Assert.assert (IdSet.isEmpty unallocated); nil)
 
-	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
-	    [O.TestStm (stm_info (#region info), id,
+	fun translateIf (info: exp_info, idRef, thenStms, elseStms, errStms) =
+	    [O.TestStm (#region info, idRef,
 			O.TagTests #[(PervasiveType.lab_true, 1,
 				      O.TupArgs #[], thenStms),
 				     (PervasiveType.lab_false, 0,
@@ -252,12 +250,10 @@ functor MkFlatteningPhase(val loadSign:
 
 	fun raisePrim (region, name) =
 	    let
-		val info = {region = region}
-		val id = O.freshId info
+		val id = O.freshId region
 	    in
-		[O.ValDec (stm_info region, O.IdDef id,
-			   O.PrimExp (info, name)),
-		 O.RaiseStm (stm_info region, id)]
+		[O.ValDec (region, O.IdDef id, O.PrimExp (region, name)),
+		 O.RaiseStm (region, O.IdRef id)]
 	    end
 
 	fun translateCont (Decs (dec::decr, cont)) =
@@ -272,40 +268,44 @@ functor MkFlatteningPhase(val loadSign:
 	    end
 	  | translateCont (Share (ref (SOME stms), _)) = stms
 	  | translateCont (EndTry (region, cont)) =
-	    [O.EndTryStm (stm_info region, translateCont cont)]
+	    [O.EndTryStm (region, translateCont cont)]
 	  | translateCont (EndHandle (region, cont)) =
-	    [O.EndHandleStm (stm_info region, translateCont cont)]
+	    [O.EndHandleStm (region, translateCont cont)]
 	and translateDec (ValDec (info, VarPat (_, id as Id (_, _, name)),
 				  NewExp info'), cont) =
-	    O.ValDec (stm_info (#region info),
-		      O.IdDef (translateId id),
-		      O.NewExp (id_info info', name))::translateCont cont
+	    O.ValDec (#region info, O.IdDef (translateId id),
+		      O.NewExp (#region info', name))::translateCont cont
 	  | translateDec (ValDec (info, VarPat (_, id), exp), cont) =
 	    let
 		fun declare exp' =
-		    O.ValDec (stm_info (#region info),
-			      O.IdDef (translateId id), exp')
+		    O.ValDec (#region info, O.IdDef (translateId id), exp')
 	    in
 		translateExp (exp, declare, cont)
 	    end
 	  | translateDec (ValDec (info, pat, exp), cont) =
 	    let
-		val matches = #[(#region info, pat, translateCont cont)]
-		val info = {region = #region info, typ = PervasiveType.typ_exn}
+		val region = #region info
+		val matches = #[(region, pat, translateCont cont)]
+		val info = {region = region, typ = PervasiveType.typ_exn}
 	    in
-		simplifyCase (#region info, exp, matches,
+		simplifyCase (region, exp, matches,
 			      PrimExp (info, "General.Bind"))
 	    end
 	  | translateDec (RecDec (info, decs), cont) =
 	    let
 		val (constraints, idExpList, aliases) =
 		    SimplifyRec.derec (Vector.toList decs)
+		val region = #region info
 		val aliasDecs =
-		    List.map (fn (fromId, toId, info) =>
-			      O.ValDec (stm_info (#region info),
-					O.IdDef (translateId fromId),
-					O.VarExp (id_info info,
-						  translateId toId))) aliases
+		    List.map
+			(fn (fromId, toId, info) =>
+			    let
+				val idDef = O.IdDef (translateId fromId)
+				val idRef = O.IdRef (translateId toId)
+			    in
+				O.ValDec (#region info, idDef,
+					  O.VarExp (#region info, idRef))
+			    end) aliases
 		val subst =
 		    List.map (fn (Id (_, stamp1, _), Id (_, stamp2, _), _) =>
 			      (stamp1, stamp2)) aliases
@@ -314,16 +314,13 @@ functor MkFlatteningPhase(val loadSign:
 		    (fn ((id, exp), decs) =>
 		     translateExp (substExp (exp, subst),
 				   fn exp' =>
-				   O.ValDec (stm_info
-					     (*--** AR: needed to add this
-					      * annotation due to strange
-					      * bug appearing in build 3 :-( *)
-					     (#region ((infoExp:
-							I.exp -> I.exp_info)
-						       exp)),
+				   O.ValDec (
+(*--** AR: needed to add this annotation due to strange
+ * bug appearing in build 3 :-( *)
+#region ((infoExp: I.exp -> I.exp_info) exp),
 					     O.IdDef (translateId id), exp'),
 				   Goto decs)) nil idExpList
-		val idDefExpList' = decsToIdDefExpList (decs', #region info)
+		val idDefExpList' = decsToIdDefExpList (decs', region)
 		val unallocated = IdSet.new ()
 		val _ =
 		    List.app (fn (idDef, _) =>
@@ -331,97 +328,95 @@ functor MkFlatteningPhase(val loadSign:
 				  O.IdDef id => IdSet.insert (unallocated, id)
 				| O.Wildcard => ()) idDefExpList'
 		val rest =
-		    List.concat (recToHoles (idDefExpList', #region info,
-					     unallocated)) @
+		    List.concat
+			(recToHoles (idDefExpList', region, unallocated)) @
 		    aliasDecs @ translateCont cont
-		val errStms = share (raisePrim (#region info, "General.Bind"))
+		val errStms = share (raisePrim (region, "General.Bind"))
 	    in
 		List.foldr
 		(fn ((longid1, longid2), rest) =>
 		 let
-		     val (stms1, id1, _) = translateLongid longid1
-		     val (stms2, id2, _) = translateLongid longid2
-		     val id1' = O.freshId {region = #region info}
+		     val (stms1, idRef1, _) = translateLongid longid1
+		     val (stms2, idRef2, _) = translateLongid longid2
+		     val id1' = O.freshId region
 		 in
 		     stms1 @ stms2 @
-		     O.ValDec (stm_info (#region info), O.IdDef id1',
-			       O.ConExp ({region = #region info}, id1,
-					 O.TupArgs #[]))::
-		     [O.TestStm (stm_info (#region info), id1',
-				 O.ConTests #[(id2, O.TupArgs #[], rest)],
+		     O.ValDec (region, O.IdDef id1',
+			       O.ConExp (region, idRef1, O.TupArgs #[]))::
+		     [O.TestStm (region, O.IdRef id1',
+				 O.ConTests #[(idRef2, O.TupArgs #[], rest)],
 				 errStms)]
 		 end) rest constraints
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
 	    let
-		val (stms, id, _) = translateLongid longid
+		val (stms, idRef, _) = translateLongid longid
 	    in
-		(stms @ translateCont cont, id)
+		(stms @ translateCont cont, idRef)
 	    end
 	  | unfoldTerm (exp, cont) =
 	    let
 		val info = infoExp exp
-		val id' = O.freshId (id_info info)
-		fun declare exp' =
-		    O.ValDec (stm_info (#region info), O.IdDef id', exp')
+		val id' = O.freshId (#region info)
+		fun declare exp' = O.ValDec (#region info, O.IdDef id', exp')
 		val stms = translateExp (exp, declare, cont)
 	    in
-		(stms, id')
+		(stms, O.IdRef id')
 	    end
 	and unfoldArgs (TupExp (_, exps), rest) =
 	    let
-		val (stms, ids) =
-		    Vector.foldr (fn (exp, (stms, ids)) =>
+		val (stms, idRefs) =
+		    Vector.foldr (fn (exp, (stms, idRefs)) =>
 				  let
-				      val (stms', id) =
+				      val (stms', idRef) =
 					  unfoldTerm (exp, Goto stms)
 				  in
-				      (stms', id::ids)
+				      (stms', idRef::idRefs)
 				  end) (rest, nil) exps
 	    in
-		(stms, O.TupArgs (Vector.fromList ids))
+		(stms, O.TupArgs (Vector.fromList idRefs))
 	    end
 	  | unfoldArgs (ProdExp (_, expFlds), rest) =
 	    let
-		val (stms, labelIdList) =
+		val (stms, labelIdRefList) =
 		    Vector.foldr (fn (Fld (_, Lab (_, label), exp),
-				      (stms, labelIdList)) =>
+				      (stms, labelIdRefList)) =>
 				  let
-				      val (stms', id) =
+				      val (stms', idRef) =
 					  unfoldTerm (exp, Goto stms)
 				  in
-				      (stms', (label, id)::labelIdList)
+				      (stms', (label, idRef)::labelIdRefList)
 				  end) (rest, nil) expFlds
 	    in
-		case LabelSort.sort labelIdList of
-		    (labelIdVec, LabelSort.Tup _) =>
-			(stms, O.TupArgs (Vector.map #2 labelIdVec))
-		  | (labelIdVec, LabelSort.Prod) =>
-			(stms, O.ProdArgs labelIdVec)
+		case LabelSort.sort labelIdRefList of
+		    (labelIdRefVec, LabelSort.Tup _) =>
+			(stms, O.TupArgs (Vector.map #2 labelIdRefVec))
+		  | (labelIdRefVec, LabelSort.Prod) =>
+			(stms, O.ProdArgs labelIdRefVec)
 	    end
 	  | unfoldArgs (exp, rest) =
 	    let
-		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 	    in
-		(stms, O.OneArg id)
+		(stms, O.OneArg idRef)
 	    end
 	and unfoldStrict (info, exp, cont) =
 	    let
-		val (stms, id) = unfoldTerm (exp, cont)
+		val (stms, idRef) = unfoldTerm (exp, cont)
 	    in
-		(O.PrimAppExp (id_info info, "Future.await", #[id]), stms)
+		(O.PrimAppExp (#region info, "Future.await", #[idRef]), stms)
 	    end
 	and translateExp (LitExp (info, lit), f, cont) =
-	    f (O.LitExp (id_info info, translateLit lit))::translateCont cont
+	    f (O.LitExp (#region info, translateLit lit))::translateCont cont
 	  | translateExp (PrimExp (info, name), f, cont) =
-	    f (O.PrimExp (id_info info, name))::translateCont cont
+	    f (O.PrimExp (#region info, name))::translateCont cont
 	  | translateExp (NewExp info, f, cont) =
-	    f (O.NewExp (id_info info, Name.InId))::translateCont cont
+	    f (O.NewExp (#region info, Name.InId))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
-		val (stms, id, _) = translateLongid longid
+		val (stms, idRef, _) = translateLongid longid
 	    in
-		stms @ f (O.VarExp (id_info info, id))::translateCont cont
+		stms @ f (O.VarExp (#region info, idRef))::translateCont cont
 	    end
 	  | translateExp (TagExp (info, Lab (_, label),
 				  StrictExp (info', exp)),
@@ -430,17 +425,15 @@ functor MkFlatteningPhase(val loadSign:
 		 Arity.Unary =>   (* explicitly force the argument *)
 		     let
 			 val r = ref NONE
-			 val rest =
-			     [O.IndirectStm (stm_info (#region info), r)]
+			 val rest = [O.IndirectStm (#region info, r)]
 			 val (exp', stms) =
 			     unfoldStrict (info', exp, Goto rest)
-			 val id = O.freshId (id_info info)
-			 val stm =
-			     O.ValDec (stm_info (#region info),
-				       O.IdDef id, exp')
+			 val id = O.freshId (#region info)
+			 val stm = O.ValDec (#region info, O.IdDef id, exp')
 			 val (_, n) = labelToIndex (#typ info, label)
 			 val exp'' =
-			     O.TagExp (id_info info, label, n, O.OneArg id)
+			     O.TagExp (#region info, label, n,
+				       O.OneArg (O.IdRef id))
 		     in
 			 r := SOME (stm::f exp''::translateCont cont);
 			 stms
@@ -448,8 +441,7 @@ functor MkFlatteningPhase(val loadSign:
 	       | arity =>
 		     let
 			 val r = ref NONE
-			 val rest =
-			     [O.IndirectStm (stm_info (#region info), r)]
+			 val rest = [O.IndirectStm (#region info, r)]
 			 val (stms, args) = unfoldArgs (exp, rest)
 			 val (_, n) = labelToIndex (#typ info, label)
 			 val (stms', exp') =
@@ -461,10 +453,10 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (TagExp (info, Lab (_, label), exp), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 		val (_, n) = labelToIndex (#typ info, label)
-		val exp' = O.TagExp (id_info info, label, n, O.OneArg id)
+		val exp' = O.TagExp (#region info, label, n, O.OneArg idRef)
 	    in
 		r := SOME (f exp'::translateCont cont);
 		stms
@@ -475,17 +467,15 @@ functor MkFlatteningPhase(val loadSign:
 		 Arity.Unary =>   (* explicitly force the argument *)
 		     let
 			 val r = ref NONE
-			 val rest =
-			     [O.IndirectStm (stm_info (#region info), r)]
+			 val rest = [O.IndirectStm (#region info, r)]
 			 val (exp', stms2) =
 			     unfoldStrict (info', exp, Goto rest)
-			 val argId = O.freshId (id_info info)
-			 val stm =
-			     O.ValDec (stm_info (#region info),
-				       O.IdDef argId, exp')
-			 val (stms1, conId, _) = translateLongid longid
+			 val argId = O.freshId (#region info)
+			 val stm = O.ValDec (#region info, O.IdDef argId, exp')
+			 val (stms1, conIdRef, _) = translateLongid longid
 			 val exp'' =
-			     O.ConExp (id_info info, conId, O.OneArg argId)
+			     O.ConExp (#region info, conIdRef,
+				       O.OneArg (O.IdRef argId))
 		     in
 			 r := SOME (stm::f exp''::translateCont cont);
 			 stms1 @ stms2
@@ -493,11 +483,10 @@ functor MkFlatteningPhase(val loadSign:
 	       | arity =>
 		     let
 			 val r = ref NONE
-			 val rest =
-			     [O.IndirectStm (stm_info (#region info), r)]
+			 val rest = [O.IndirectStm (#region info, r)]
 			 val (stms2, args) = unfoldArgs (exp, rest)
-			 val (stms1, id1, _) = translateLongid longid
-			 val (stms', exp') = conExp (info, id1, args, arity)
+			 val (stms1, idRef1, _) = translateLongid longid
+			 val (stms', exp') = conExp (info, idRef1, args, arity)
 		     in
 			 r := SOME (stms' @ f exp'::translateCont cont);
 			 stms1 @ stms2
@@ -505,10 +494,10 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (ConExp (info, longid, exp), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms2, argId) = unfoldTerm (exp, Goto rest)
-		val (stms1, conId, _) = translateLongid longid
-		val exp' = O.ConExp (id_info info, conId, O.OneArg argId)
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms2, argIdRef) = unfoldTerm (exp, Goto rest)
+		val (stms1, conIdRef, _) = translateLongid longid
+		val exp' = O.ConExp (#region info, conIdRef, O.OneArg argIdRef)
 	    in
 		r := SOME (f exp'::translateCont cont);
 		stms1 @ stms2
@@ -516,87 +505,89 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (RefExp (info, exp), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms2, id) = unfoldTerm (exp, Goto rest)
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms2, idRef) = unfoldTerm (exp, Goto rest)
 	    in
-		(r := SOME (f (O.RefExp (id_info info, id))::
+		(r := SOME (f (O.RefExp (#region info, idRef))::
 			    translateCont cont);
 		 stms2)
 	    end
 	  | translateExp (StrictExp (info, exp), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 	    in
-		(r := SOME (f (O.PrimAppExp (id_info info, "Future.await",
-					     #[id]))::translateCont cont);
+		(r := SOME (f (O.PrimAppExp (#region info, "Future.await",
+					     #[idRef]))::translateCont cont);
 		 stms)
 	    end
 	  | translateExp (TupExp (info, exps), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms, ids) =
-		    Vector.foldr (fn (exp, (stms, ids)) =>
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms, idRefs) =
+		    Vector.foldr (fn (exp, (stms, idRefs)) =>
 				  let
-				      val (stms', id) =
+				      val (stms', idRef) =
 					  unfoldTerm (exp, Goto stms)
 				  in
-				      (stms', id::ids)
+				      (stms', idRef::idRefs)
 				  end) (rest, nil) exps
 	    in
-		r := SOME (f (O.TupExp (id_info info, Vector.fromList ids))::
+		r := SOME (f (O.TupExp (#region info,
+					Vector.fromList idRefs))::
 			   translateCont cont);
 		stms
 	    end
 	  | translateExp (ProdExp (info, expFlds), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
+		val rest = [O.IndirectStm (#region info, r)]
 		val (stms, fields) =
 		    Vector.foldr (fn (Fld (_, Lab (_, label), exp),
 				      (stms, fields)) =>
 				  let
-				      val (stms', id) =
+				      val (stms', idRef) =
 					  unfoldTerm (exp, Goto stms)
 				  in
-				      (stms', (label, id)::fields)
+				      (stms', (label, idRef)::fields)
 				  end) (rest, nil) expFlds
 		val exp' =
 		    case LabelSort.sort fields of
 			(fields', LabelSort.Tup _) =>
-			    O.TupExp (id_info info, Vector.map #2 fields')
+			    O.TupExp (#region info, Vector.map #2 fields')
 		      | (fields', LabelSort.Prod) =>
-			    O.ProdExp (id_info info, fields')
+			    O.ProdExp (#region info, fields')
 	    in
 		r := SOME (f exp'::translateCont cont); stms
 	    end
 	  | translateExp (SelExp (info, Lab (_, label), exp), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms2, id2) = unfoldTerm (exp, Goto rest)
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms2, idRef2) = unfoldTerm (exp, Goto rest)
 		val (prod, n) = labelToIndex (#typ (infoExp exp), label)
 	    in
-		(r := SOME (f (O.SelAppExp (id_info info, prod, label, n,
-					    id2))::translateCont cont);
+		(r := SOME (f (O.SelAppExp (#region info, prod, label, n,
+					    idRef2))::translateCont cont);
 		 stms2)
 	    end
 	  | translateExp (VecExp (info, exps), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms, ids) =
-		    Vector.foldr (fn (exp, (stms, ids)) =>
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms, idRefs) =
+		    Vector.foldr (fn (exp, (stms, idRefs)) =>
 				  let
-				      val (stms', id) =
+				      val (stms', idRef) =
 					  unfoldTerm (exp, Goto stms)
 				  in
-				      (stms', id::ids)
+				      (stms', idRef::idRefs)
 				  end) (rest, nil) exps
 	    in
-		r := SOME (f (O.VecExp (id_info info, (Vector.fromList ids)))::
+		r := SOME (f (O.VecExp (#region info,
+					Vector.fromList idRefs))::
 			   translateCont cont);
 		stms
 	    end
@@ -604,14 +595,13 @@ functor MkFlatteningPhase(val loadSign:
 	    let
 		val mats' =
 		    Vector.map (fn Mat (info, pat, exp) =>
-				let
-				    val region = #region info
-				    fun return exp' =
-					O.ReturnStm (stm_info region, exp')
-				in
-				    (#region (infoExp exp), pat,
-				     translateExp (exp, return, Goto nil))
-				end) mats
+				   let
+				       fun return exp' =
+					   O.ReturnStm (#region info, exp')
+				   in
+				       (#region (infoExp exp), pat,
+					translateExp (exp, return, Goto nil))
+				   end) mats
 		val region = #1 (Vector.sub (mats', 0))
 		val errStms = raisePrim (region, "General.Match")
 		val (args, graph, mapping, consequents) =
@@ -619,17 +609,17 @@ functor MkFlatteningPhase(val loadSign:
 		val (body, _) = translateGraph (graph, mapping, #region info)
 	    in
 		checkReachability consequents;
-		f (O.FunExp (id_info info, Stamp.new (), nil, args, body))::
+		f (O.FunExp (#region info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
 	  | translateExp (AppExp (info, exp1, exp2), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
+		val rest = [O.IndirectStm (#region info, r)]
 		val (stms2, args) = unfoldArgs (exp2, rest)
-		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
+		val (stms1, idRef1) = unfoldTerm (exp1, Goto stms2)
 	    in
-		r := SOME (f (O.VarAppExp (id_info info, id1, args))::
+		r := SOME (f (O.VarAppExp (#region info, idRef1, args))::
 			   translateCont cont);
 		stms1
 	    end
@@ -670,11 +660,10 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (SeqExp (_, exp1, exp2), f, cont) =
 	    let
 		val stms2 = translateExp (exp2, f, cont)
+		fun eval exp' =
+		    O.ValDec (#region (infoExp exp1), O.Wildcard, exp')
 	    in
-		translateExp
-		(exp1, fn exp' => O.ValDec (stm_info (#region (infoExp exp1)),
-					    O.Wildcard, exp'),
-		 Goto stms2)
+		translateExp (exp1, eval, Goto stms2)
 	    end
 	  | translateExp (CaseExp (info, exp, mats), f, cont) =
 	    let
@@ -683,18 +672,19 @@ functor MkFlatteningPhase(val loadSign:
 		    Vector.map (fn Mat (_, pat, exp) =>
 				(#region (infoExp exp), pat,
 				 translateExp (exp, f, cont'))) mats
-		val info = {region = #region info, typ = PervasiveType.typ_exn}
+		val region = #region info
+		val info = {region = region, typ = PervasiveType.typ_exn}
 	    in
-		simplifyCase (#region info, exp, matches',
+		simplifyCase (region, exp, matches',
 			      PrimExp (info, "General.Match"))
 	    end
 	  | translateExp (RaiseExp (info, exp), _, _) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 	    in
-		r := SOME [O.RaiseStm (stm_info (#region info), id)]; stms
+		r := SOME [O.RaiseStm (#region info, idRef)]; stms
 	    end
 	  | translateExp (HandleExp (info, exp, mats), f, cont) =
 	    let
@@ -704,8 +694,7 @@ functor MkFlatteningPhase(val loadSign:
 		    share (translateExp (VarExp (info', ShortId (info', id')),
 					 f, cont))
 		fun f' exp' =
-		    O.ValDec (stm_info (#region info'),
-			      O.IdDef (translateId id'), exp')
+		    O.ValDec (#region info', O.IdDef (translateId id'), exp')
 		val tryCont = EndTry (#region info, Goto contBody)
 		val tryBody = translateExp (exp, f', tryCont)
 		val exnInfo = {region = #region info,
@@ -721,15 +710,14 @@ functor MkFlatteningPhase(val loadSign:
 		val handleBody =
 		    simplifyCase (#region info, exnVarExp, matches', exnVarExp)
 	    in
-		[O.TryStm (stm_info (#region info), tryBody,
+		[O.TryStm (#region info, tryBody,
 			   O.IdDef (translateId packageId),
 			   O.IdDef (translateId exnId), handleBody)]
 	    end
 	  | translateExp (FailExp info, f, cont) =
 	    if !Switches.Language.silentFailExp then
-		f (O.TupExp ({region = #region info}, #[]))::translateCont cont
-	    else
-		f (O.FailExp {region = #region info})::translateCont cont
+		f (O.TupExp (#region info, #[]))::translateCont cont
+	    else f (O.FailExp (#region info))::translateCont cont
 	  | translateExp (LazyExp (_, exp as VarExp (_, _)), f, cont) =
 	    translateExp (exp, f, cont)
 	  | translateExp (LazyExp (info, AbsExp (_, exp)), f, cont) =
@@ -739,16 +727,16 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (LazyExp (info as {region, typ}, exp), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info region, r)]
+		val rest = [O.IndirectStm (region, r)]
 		val funInfo = {region = region,
 			       typ = Type.arrow (Type.tuple #[], typ)}
 		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
 		    FunExp (funInfo, #[Mat (id_info info, pat, exp)])
-		val (stms, id) = unfoldTerm (funExp, Goto rest)
+		val (stms, idRef) = unfoldTerm (funExp, Goto rest)
 	    in
-		(r := SOME (f (O.PrimAppExp (id_info info, "Future.byneed",
-					     #[id]))::translateCont cont);
+		(r := SOME (f (O.PrimAppExp (#region info, "Future.byneed",
+					     #[idRef]))::translateCont cont);
 		 stms)
 	    end
 	  | translateExp (SpawnExp (_, exp as VarExp (_, _)), f, cont) =
@@ -760,16 +748,16 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (SpawnExp (info as {region, typ}, exp), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info region, r)]
+		val rest = [O.IndirectStm (region, r)]
 		val funInfo = {region = region,
 			       typ = Type.arrow (Type.tuple #[], typ)}
 		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
 		    FunExp (funInfo, #[Mat (id_info info, pat, exp)])
-		val (stms, id) = unfoldTerm (funExp, Goto rest)
+		val (stms, idRef) = unfoldTerm (funExp, Goto rest)
 	    in
-		(r := SOME (f (O.PrimAppExp (id_info info, "Future.concur",
-					     #[id]))::translateCont cont);
+		(r := SOME (f (O.PrimAppExp (#region info, "Future.concur",
+					     #[idRef]))::translateCont cont);
 		 stms)
 	    end
 	  | translateExp (LetExp (_, decs, exp), f, cont) =
@@ -800,10 +788,11 @@ functor MkFlatteningPhase(val loadSign:
 	    let
 		val info = infoExp exp
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
-		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val rest = [O.IndirectStm (#region info, r)]
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 		val errStms = raisePrim (#region info, "General.Match")
-		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
+		val stms1 =
+		    translateIf (info, idRef, thenStms, elseStms, errStms)
 	    in
 		r := SOME stms1; stms
 	    end
@@ -815,16 +804,16 @@ functor MkFlatteningPhase(val loadSign:
 	and simplifyCase (region, exp, matches, raiseExp) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info region, r)]
-		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val rest = [O.IndirectStm (region, r)]
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 		val r' = ref NONE
-		val rest' = [O.IndirectStm (stm_info region, r')]
-		val (errStms, raiseId) = unfoldTerm (raiseExp, Goto rest')
+		val rest' = [O.IndirectStm (region, r')]
+		val (errStms, raiseIdRef) = unfoldTerm (raiseExp, Goto rest')
 		val (graph, consequents) = buildGraph (matches, errStms)
-		val (body, _) = translateGraph (graph, [(nil, id)], region)
+		val (body, _) = translateGraph (graph, [(nil, idRef)], region)
 	    in
 		r := SOME body;
-		r' := SOME [O.RaiseStm (stm_info region, raiseId)];
+		r' := SOME [O.RaiseStm (region, raiseIdRef)];
 		checkReachability consequents;
 		stms
 	    end
@@ -856,48 +845,49 @@ functor MkFlatteningPhase(val loadSign:
 	    let
 		val (idDef, mapping') =
 		    adjoin (LABEL (Label.fromString "ref")::pos, mapping)
-		val id = lookup (pos, mapping)
+		val idRef = lookup (pos, mapping)
 		val (thenBody, mapping'') =
 		    translateGraph (thenGraph, mapping', region)
 	    in
-		(O.RefDec (stm_info region, idDef, id)::thenBody, mapping'')
+		(O.RefDec (region, idDef, idRef)::thenBody, mapping'')
 	    end
 	  | translateNode (pos, TupTest n, thenGraph, _, mapping, region) =
 	    let
 		val (idDefs, mapping') = translateTupArgs (n, pos, mapping)
-		val id = lookup (pos, mapping)
+		val idRef = lookup (pos, mapping)
 		val (thenBody, mapping'') =
 		    translateGraph (thenGraph, mapping', region)
 	    in
-		(O.TupDec (stm_info region, idDefs, id)::thenBody,
-		 mapping'')
+		(O.TupDec (region, idDefs, idRef)::thenBody, mapping'')
 	    end
 	  | translateNode (pos, ProdTest labels, thenGraph, _,
 			   mapping, region) =
 	    let
 		val (labelIdDefList, mapping') =
 		    translateProdArgs (labels, pos, mapping)
-		val id = lookup (pos, mapping)
+		val idRef = lookup (pos, mapping)
 		val (thenBody, mapping'') =
 		    translateGraph (thenGraph, mapping', region)
 	    in
-		(O.ProdDec (stm_info region, labelIdDefList, id)::
-		 thenBody, mapping'')
+		(O.ProdDec (region, labelIdDefList, idRef)::thenBody,
+		 mapping'')
 	    end
 	  | translateNode (_, GuardTest (mapping0, exp),
 			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val info = infoExp exp
 		val r = ref NONE
-		val rest = [O.IndirectStm (stm_info (#region info), r)]
+		val rest = [O.IndirectStm (#region info, r)]
 		val subst = mappingsToSubst (mapping0, mapping)
-		val (stms, id) = unfoldTerm (substExp (exp, subst), Goto rest)
+		val (stms, idRef) =
+		    unfoldTerm (substExp (exp, subst), Goto rest)
 		val (thenStms, mapping') =
 		    translateGraph (thenGraph, mapping, region)
 		val (elseStms, mapping'') =
 		    translateGraph (elseGraph, mapping', region)
 		val errStms = raisePrim (#region info, "General.Match")
-		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
+		val stms1 =
+		    translateIf (info, idRef, thenStms, elseStms, errStms)
 	    in
 		r := SOME stms1; (stms, mapping'')
 	    end
@@ -917,20 +907,19 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateNode (pos, LitTest lit, thenGraph, elseGraph,
 			   mapping, region) =
 	    let
-		val id = lookup (pos, mapping)
+		val idRef = lookup (pos, mapping)
 		val (thenBody, mapping') =
 		    translateGraph (thenGraph, mapping, region)
 		val tests = O.LitTests #[(lit, thenBody)]
 		val (elseBody, mapping'') =
 		    translateGraph (elseGraph, mapping', region)
 	    in
-		([O.TestStm (stm_info region, id, tests, elseBody)],
-		 mapping'')
+		([O.TestStm (region, idRef, tests, elseBody)], mapping'')
 	    end
 	  | translateNode (pos, TagTest (label, n, args, arity),
 			   thenGraph, elseGraph, mapping, region) =
 	    let
-		val id = lookup (pos, mapping)
+		val idRef = lookup (pos, mapping)
 		val (idDefArgs, mapping') =
 		    translateArgs (args, LABEL label::pos, mapping)
 		val (thenBody, mapping'') =
@@ -939,29 +928,28 @@ functor MkFlatteningPhase(val loadSign:
 		val (elseBody, mapping''') =
 		    translateGraph (elseGraph, mapping'', region)
 	    in
-		([O.TestStm (stm_info region, id, tests, elseBody)],
-		 mapping''')
+		([O.TestStm (region, idRef, tests, elseBody)], mapping''')
 	    end
 	  | translateNode (pos, ConTest (longid, args, arity),
 			   thenGraph, elseGraph, mapping, region) =
 	    let
-		val id = lookup (pos, mapping)
-		val (stms, id', _) = translateLongid longid
+		val idRef = lookup (pos, mapping)
+		val (stms, idRef', _) = translateLongid longid
 		val (idDefArgs, mapping') =
 		    translateArgs (args, longidToSelector longid::pos, mapping)
 		val (thenBody, mapping'') =
 		    translateGraph (thenGraph, mapping', region)
-		val tests = conTest (id', idDefArgs, arity, thenBody)
+		val tests = conTest (idRef', idDefArgs, arity, thenBody)
 		val (elseBody, mapping''') =
 		    translateGraph (elseGraph, mapping'', region)
 	    in
-		(stms @ [O.TestStm (stm_info region, id, tests, elseBody)],
+		(stms @ [O.TestStm (region, idRef, tests, elseBody)],
 		 mapping''')
 	    end
 	  | translateNode (pos, VecTest n, thenGraph, elseGraph,
 			   mapping, region) =
 	    let
-		val id = lookup (pos, mapping)
+		val idRef = lookup (pos, mapping)
 		val (idDefs, mapping') = translateTupArgs (n, pos, mapping)
 		val (thenBody, mapping'') =
 		    translateGraph (thenGraph, mapping', region)
@@ -969,8 +957,7 @@ functor MkFlatteningPhase(val loadSign:
 		val (elseBody, mapping''') =
 		    translateGraph (elseGraph, mapping'', region)
 	    in
-		([O.TestStm (stm_info region, id, tests, elseBody)],
-		 mapping''')
+		([O.TestStm (region, idRef, tests, elseBody)], mapping''')
 	    end
 	and translateArgs (O.OneArg _, pos, mapping) =
 	    let
@@ -1029,22 +1016,24 @@ functor MkFlatteningPhase(val loadSign:
 	    let
 		val imports' =
 		    Vector.map (fn (id, sign, url) =>
-				(O.IdDef (translateId id),
+				(translateId id,
 				 Signature.strip (loadSign (desc, url), sign),
 				 url)) imports
 		val labelIdList =
 		    Vector.foldr (fn (Fld (_, Lab (_, label), id), rest) =>
-				  (label, translateId id)::rest) nil idFlds
+				     (label, translateId id)::rest)
+				 nil idFlds
 		val (exports', arity) = LabelSort.sort labelIdList
+		val labelIdRefVec =
+		    Vector.map (fn (label, id) => (label, O.IdRef id)) exports'
 		val exportExp =
 		    case arity of
 			LabelSort.Tup _ =>
-			    O.TupExp ({region = Source.nowhere},
-				      Vector.map #2 exports')
+			    O.TupExp (Source.nowhere,
+				      Vector.map #2 labelIdRefVec)
 		      | LabelSort.Prod =>
-			    O.ProdExp ({region = Source.nowhere}, exports')
-		val cont =
-		    Goto [O.ExportStm (stm_info Source.nowhere, exportExp)]
+			    O.ProdExp (Source.nowhere, labelIdRefVec)
+		val cont = Goto [O.ExportStm (Source.nowhere, exportExp)]
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
 		(imports', body', exports', Signature.fromSig sign)
