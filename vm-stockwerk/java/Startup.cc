@@ -19,6 +19,7 @@
 #include "generic/Properties.hh"
 #include "generic/Scheduler.hh"
 #include "java/StackFrame.hh"
+#include "java/ThrowWorker.hh"
 #include "java/ClassLoader.hh"
 #include "java/Startup.hh"
 
@@ -71,15 +72,22 @@ void RunMainWorker::PushFrame(Thread *thread, word wMethodRef) {
 Worker::Result RunMainWorker::Run() {
   RunMainFrame *frame = RunMainFrame::FromWordDirect(Scheduler::GetFrame());
   word wMethodRef = frame->GetMethodRef();
-  //--** the following may fail an assertion, if the method is not static:
-  StaticMethodRef *methodRef = StaticMethodRef::FromWord(wMethodRef);
+  MethodRef *methodRef = MethodRef::FromWord(wMethodRef);
   if (methodRef == INVALID_POINTER) {
     Scheduler::currentData = wMethodRef;
     return Worker::REQUEST;
   }
+  if (methodRef->GetLabel() != JavaLabel::StaticMethodRef) {
+    ThrowWorker::PushFrame(ThrowWorker::NoSuchMethodError,
+			   JavaString::New("main"));
+    Scheduler::nArgs = 0;
+    return CONTINUE;
+  }
+  StaticMethodRef *staticMethodRef =
+    static_cast<StaticMethodRef *>(methodRef);
   Scheduler::PopFrame();
   Closure *closure =
-    methodRef->GetClass()->GetStaticMethod(methodRef->GetIndex());
+    staticMethodRef->GetClass()->GetStaticMethod(staticMethodRef->GetIndex());
   return Scheduler::PushCall(closure->ToWord());
 }
 
