@@ -14,13 +14,30 @@
 
 // Parser Error Handler
 void yyerror(char *s) {
-  std::fprintf(stderr, "line %d: %s\n", Parser::line, s);
-  std::exit(0);
+  std::fprintf(stderr, "\nline %d: %s\n", Parser::line, s);
+  if (Parser::interactive) {
+    longjmp(Parser::buf, 0);
+  }
+  else {
+    std::exit(0);
+  }
 }
 
+// Flex Error Handler
+void flexerror(char *s) {
+  std::fprintf(stderr, "\nline %d: unknown character: %s; skipping input\n", Parser::line, s);
+  if (Parser::interactive) {
+    longjmp(Parser::buf, 0);
+  }
+  else {
+    std::exit(0);
+  }
+}
 // Public Parser Interface
 word Parser::tree;
 int Parser::line;
+int Parser::interactive;
+jmp_buf Parser::buf;
 
 void Parser::Parse(FILE *file) {
   line = 1;

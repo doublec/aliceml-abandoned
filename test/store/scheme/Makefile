@@ -39,9 +39,9 @@ Parser.cc: Parser.hh
 Decorator.cc: Decorator.hh
 
 store:
-	cd ../../../store && $(MAKE) distclean && $(MAKE)
+	cd ../../../store && $(MAKE) distclean && $(MAKE) all
 adt:
-	cd ../../../adt && $(MAKE) distclean && $(MAKE)
+	cd ../../../adt && $(MAKE) distclean && $(MAKE) all
 
 clean:
 	rm -f scheme scheme.bison.tab.h scheme.bison.tab.c scheme.bison.output lex.yy.c $(OBJS)

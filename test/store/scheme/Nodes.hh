@@ -50,6 +50,9 @@ typedef enum {
   T_PRIMOP,
   T_BEGIN,
   T_TIME,
+  T_SETQ,
+  T_SETCAR,
+  T_SETCDR
 } NodeType;
 
 // Variable Types
@@ -81,7 +84,10 @@ typedef enum {
   OP_SHOWLIST,
   OP_EXIT,
   OP_MEMSTAT,
-  OP_SKIP
+  OP_SKIP,
+  OP_SETCAR,
+  OP_SETCDR,
+  OP_KILLTOP
 } PrimType;
 
 // Global Helper Nodes
@@ -583,6 +589,12 @@ public:
   word Cdr() {
     return GetArg(CDR_POS);
   }
+  void SetCar(word car) {
+    ReplaceArg(CAR_POS, car);
+  }
+  void SetCdr(word cdr) {
+    ReplaceArg(CDR_POS, cdr);
+  }
   static ConsCell *FromBlock(Block *x) {
     return (ConsCell *) x;
   }
@@ -746,6 +758,72 @@ public:
     Block *p = Store::DirectWordToBlock(x);
 
     AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_TIME));
+    return FromBlock(p);
+  }
+};
+
+class SetQNode : private Block {
+private:
+  static const u_int SIZE     = 2;
+  static const u_int ID_POS   = 0;
+  static const u_int EXPR_POS = 1;
+public:
+  using Block::ToWord;
+
+  IdNode *GetId() {
+    return IdNode::FromWord(GetArg(ID_POS));
+  }
+  word GetExpr() {
+    return GetArg(EXPR_POS);
+  }
+
+  static Block *New(word id, word expr) {
+    Block *p = Store::AllocBlock((BlockLabel) T_SETQ, SIZE);
+
+    p->InitArg(ID_POS, id);
+    p->InitArg(EXPR_POS, expr);
+    return p;
+  }
+  static SetQNode *FromBlock(Block *x) {
+    return (SetQNode *) x;
+  }
+  static SetQNode *FromWord(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+
+    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_SETQ));
+    return FromBlock(p);
+  }
+};
+
+class SetCxrNode : private Block {
+private:
+  static const u_int SIZE     = 2;
+  static const u_int CELL_POS = 0;
+  static const u_int EXPR_POS = 1;
+public:
+  using Block::ToWord;
+
+  word GetCell() {
+    return GetArg(CELL_POS);
+  }
+  word GetExpr() {
+    return GetArg(EXPR_POS);
+  }
+
+  static Block *New(NodeType type, word id, word expr) {
+    Block *p = Store::AllocBlock((BlockLabel) type, SIZE);
+
+    p->InitArg(CELL_POS, id);
+    p->InitArg(EXPR_POS, expr);
+    return p;
+  }
+  static SetCxrNode *FromBlock(Block *x) {
+    return (SetCxrNode *) x;
+  }
+  static SetCxrNode *FromWord(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+
+    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_SETCAR));
     return FromBlock(p);
   }
 };

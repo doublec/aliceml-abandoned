@@ -30,6 +30,7 @@ static char *CutQuotes(char *s) {
 <init>"lambda"		{ yylval = NULL; return TK_LAMBDA; }
 <init>"tail"		{ yylval = NULL; return TK_TAIL; }
 <init>"begin"		{ yylval = NULL; return TK_BEGIN; }
+<init>"setq!"		{ yylval = NULL; return TK_SETQ; }
 <init>"if"		{ yylval = NULL; return TK_IF; }
 <init>"("		{ yylval = NULL; return TK_OPARENT; }
 <init>")"		{ yylval = NULL; return TK_CPARENT; }
@@ -45,7 +46,7 @@ static char *CutQuotes(char *s) {
 				yylval = StringNode::New(CutQuotes(yytext))->ToWord();
 				return TK_STRING;
 			}
-<init>([a-zA-Z0-9_?])+	{
+<init>([a-zA-Z0-9_?!])+ {
 				yylval = IdNode::New(yytext)->ToWord();
 				return TK_ID;
 			}
@@ -81,6 +82,6 @@ static char *CutQuotes(char *s) {
 <init>[ \t]+		// Consume whitespaces
 <init>[\n]		{ Parser::line++; }
 <init>";"		{ yyterminate(); }
-<init>.			{ std::printf("flex: unrecognized character `%s'", yytext); std::exit(0); }
+<init>.			{ flexerror(yytext); }
 
 %%
