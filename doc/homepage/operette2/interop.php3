@@ -136,7 +136,7 @@
       <TR><TD><TT>Thread.thread</TT><TD>Thread
       <TR>
 	<TD><TT>TextIO.instream</TT>, <TT>TextIO.outstream</TT>
-	<TD>Instanced of <TT>Open.file</TT>
+	<TD>Instances of <TT>Open.file</TT>
     </TABLE>
   </CENTER>
 
@@ -159,13 +159,19 @@
 	  <TT>constructor C</TT>
 	<TD>Identifier name as atom,<BR>e.g., <TT>'x'</TT>, <TT>'C'</TT>
       <TR>
-	<TD>Structure or functor,<BR>e.g., <TT>structure S</TT>
-	<TD>Dollar-prefixed identifier as atom,<BR>e.g., <TT>'$S'</TT>
+	<TD>Type,<BR>e.g., <TT>datatype t</TT>
+	<TD>Dollar-prefixed identifier as atom,<BR>e.g., <TT>'$t'</TT>
+      <TR>
+	<TD>Structure or functor,<BR>e.g., <TT>structure M</TT>
+	<TD>Dollar-suffixed identifier as atom,<BR>e.g., <TT>'M$'</TT>
+      <TR>
+	<TD>Signature,<BR>e.g., <TT>signature S</TT>
+	<TD>Dollar-pre- and -suffixed identifier as atom,
+	    <BR>e.g., <TT>'$S$'</TT>
     </TABLE>
   </CENTER>
-  <P>Signatures and types are not yet represented at run-time.  Note that
-    signature coercion is not performed operationally, that is, all structure
-    members are visible on the Oz side.</P>
+  <P>When working without RTT, signature and type members are represented
+  by failed futures only.</P>
 
   <H3>Components</H3>
   <P>Alice components are translated into Oz functors:</P>
@@ -219,7 +225,7 @@
   <PRE>        import val show from "F"</PRE>
   <P>Note that the name of the signature is ignored.</P>
   <P>If the signature does not truthfully describe the Oz component,
-    run-time type exceptions will be raised.</P>
+    run-time errors will occur.</P>
 
 <?php section("alicefromoz", "alice from oz") ?>
   <P>Since Oz does not type-check its imports at link-time, Alice components
@@ -238,7 +244,7 @@
         functor
         import
             System(show)
-            ExampleComponent('$Example': Example) at 'Example.ozf'
+            ExampleComponent('Example$': Example) at 'Example.ozf'
         define
             {System.show
              {{Example.count fun {$ X} X == 0 end} [1 0 2 0]}}
