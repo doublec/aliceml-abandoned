@@ -752,17 +752,19 @@ structure CodeGen =
 			fun stringids2strings ((l, _)::stringids',s')=
 			    stringids2strings (stringids', l::s')
 			  | stringids2strings (nil, s') = s'
-			fun bindit ((_,id')::nil,i) =
+			fun bindit ((_,id'')::nil,i) =
 			    let
-				val loc = Local.assign(id',Local.nextFree())
+				val loc = Local.assign(id'',Local.nextFree())
+				val _ = FreeVars.setFun id''
 			    in
 				(atCodeInt i) ::
 				Aaload ::
 				(Astore loc) :: nil
 			    end
-			  | bindit ((_,id')::rest,i) =
+			  | bindit ((_,id'')::rest,i) =
 			    let
-				val loc = Local.assign(id',Local.nextFree())
+				val loc = Local.assign(id'',Local.nextFree())
+				val _ = FreeVars.setFun id''
 			    in
 				Dup ::
 				(atCodeInt i) ::
@@ -794,18 +796,21 @@ structure CodeGen =
 		  | testCode (TupTest ids) =
 		    (* Arity vergleichen (int), dann binden *)
 		    let
-			fun bindit (id'::nil,i) =
+			fun bindit (id''::nil,i) =
 			    let
-				val loc = Local.assign(id',Local.nextFree())
+				val loc = Local.assign(id'',Local.nextFree())
+				val _ = FreeVars.setFun id''
+
 			    in
 				(atCodeInt i) ::
 				Aaload ::
 				(Astore loc) ::
 				nil
 			    end
-			  | bindit (id'::rest,i) =
+			  | bindit (id''::rest,i) =
 			    let
-				val loc = Local.assign(id',Local.nextFree())
+				val loc = Local.assign(id'',Local.nextFree())
+				val _ = FreeVars.setFun id''
 			    in
 				Dup ::
 				(atCodeInt i) ::
@@ -817,12 +822,12 @@ structure CodeGen =
 		    in
 			idCode id'@
 			[Checkcast CDMLTuple,
-			 Invokevirtual (CDMLTuple,"getArity",([],[Intsig])),
+			 Invokeinterface (CDMLTuple,"getArity",([],[Intsig])),
 			 Iconst (length ids),
 			 Ificmpne elselabel] @
 			(idCode id') @
 			[Checkcast CDMLTuple,
-			 Invokevirtual (CDMLTuple,"getValues",
+			 Invokeinterface (CDMLTuple,"getVals",
 					([],[Arraysig, Classsig CVal]))] @
 			(bindit(ids,0))
 		    end
@@ -927,31 +932,39 @@ structure CodeGen =
 	    in
 		if bstamp<>("","",0) then [Getstatic bstamp]
 		else
-		    let
-			val _ = print("("^(Int.toString stamp')^" Stamp in "^
-				      (Int.toString (Local.get stamp'))^")\n")
-			val isFree = not ((FreeVars.getFun stamp') = Lambda.top ())
-		    in
-			if isFree then (* bei Rekursion reicht eigentlich [Aload 0] *)
-			    if stamp'=(stampFromId (LambdaIds.getId (Lambda.top()))) then
-				[Comment "Hi 42",
-				 Aload 0]
-			    else
-				[Comment ("Hi. Stamp="^(Int.toString stamp')^
-					  ". Lambda = "^Int.toString (Lambda.top())^
-					  " in "^Int.toString (Local.get stamp')^
-					  ". Fun = "^(Int.toString
-						      (FreeVars.getFun stamp'))^"\n"),
-				 Aload 0,
-				 Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)]
-			else
+		    if FreeVars.getFun stamp' = Lambda.top ()
+			(* Falls stamp' im aktuellen Lambda gebunden
+			 wurde, kann die Variable direkt aus einem
+			 JVM-Register geladen werden. *)
+			then
 			    if stamp' = Lambda.top() then
+				(* Stamp ist der formale Parameter der
+				 aktuellen Funktion. Dieser liegt
+				 immer in Register 1. *)
 				[Comment "Hi.Parm",
 				 Aload 1]
 			    else
 				[Comment "Hi6",
 				 Aload (Local.get stamp')]
-		    end
+		    else
+			(* Es handelt sich um eine freie Variable, die
+			 beim Abschluss bilden in ein Feld der
+			 aktuellen Klasse kopiert wurde. *)
+			if stamp'=(stampFromId (LambdaIds.getId
+						(Lambda.top())))
+			    then (* Zugriff auf die aktuelle
+				  Funktion. Diese steht in
+				  Register 0. *)
+				[Comment "Hi 42",
+				 Aload 0]
+			else
+			    [Comment ("Hi. Stamp="^(Int.toString stamp')^
+				      ". Lambda = "^Int.toString (Lambda.top())^
+				      " in "^Int.toString (Local.get stamp')^
+				      ". Fun = "^(Int.toString
+						  (FreeVars.getFun stamp'))^"\n"),
+			     Aload 0,
+			     Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)]
 	    end
 	and
 	    idArgCode (OneArg id') = idCode id'
