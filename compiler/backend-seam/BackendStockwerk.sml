@@ -57,8 +57,26 @@ structure BackendStockwerk: PHASE =
 	fun isIdInArgs (O.OneArg idRef, id) = isId (idRef, id)
 	  | isIdInArgs (O.TupArgs idRefs, id) = isIdInVec (idRefs, id)
 
+	(*
+	 * Function `detup' tries to find out whether a given identifier
+	 * can actually be represented `flattened', i.e., it represents
+	 * a tuple which we can store in deconstructed form (component-wise).
+	 *
+	 * This is allowed if, in the instruction stream, we can see
+	 * a deconstruction (GetTup) that will happen in any case and
+	 * before any side-effect - else we might corrupt the order
+	 * of side-effects.  Furthermore, it is checked that the
+	 * (constructed) value is not used again after this point.
+	 *
+	 * (The implementation computes an approximation.)
+	 *)
+
+	(*--** the corresponding GetTup instruction must be removed *)
+
 	datatype detup_result =
 	    USED
+	  | SIDE_EFFECTING
+	  | UNKNOWN
 	  | KILLED
 	  | DECONSTRUCTED of O.idDef vector
 
@@ -71,8 +89,7 @@ structure BackendStockwerk: PHASE =
 	  | detup (O.PutNew (_, instr), id) = detup (instr, id)
 	  | detup (O.PutTag (_, _, idRefs, instr), id) =
 	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
-	  | detup (O.PutCon (_, _, idRefs, instr), id) =
-	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
+	  | detup (O.PutCon (_, _, _, _), _) = SIDE_EFFECTING
 	  | detup (O.PutRef (_, idRef, instr), id) =
 	    if isId (idRef, id) then USED else detup (instr, id)
 	  | detup (O.PutTup (_, idRefs, instr), id) =
@@ -81,37 +98,28 @@ structure BackendStockwerk: PHASE =
 	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
 	  | detup (O.PutFun (_, idRefs, _, instr), id) =
 	    if isIdInVec (idRefs, id) then USED else detup (instr, id)
-	  | detup (O.AppPrim (_, _, idRefs, instrOpt), id) =
-	    if isIdInVec (idRefs, id) then USED
-	    else
-		(case instrOpt of
-		     SOME instr => detup (instr, id)
-		   | NONE => KILLED)
-	  | detup (O.AppVar (_, idRef, idRefArgs, instrOpt), id) =
-	    if isId (idRef, id) orelse isIdInArgs (idRefArgs, id) then USED
-	    else
-		(case instrOpt of
-		     SOME instr => detup (instr, id)
-		   | NONE => KILLED)
-	  | detup (O.GetRef (_, idRef, instr), id) =
-	    if isId (idRef, id) then USED else detup (instr, id)
+	  | detup (O.AppPrim (_, _, _, _), _) = SIDE_EFFECTING
+	  | detup (O.AppVar (_, _, _, _), _) = SIDE_EFFECTING
+	  | detup (O.AppConst (_, _, _, _), _) = SIDE_EFFECTING
+	  | detup (O.GetRef (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetTup (idDefs, idRef, instr), id) =
 	    if isId (idRef, id) then
 		case detup (instr, id) of
-		    (USED | DECONSTRUCTED _) => USED
+		    DECONSTRUCTED _ => USED
 		  | KILLED => DECONSTRUCTED idDefs
+		  | res as (USED | SIDE_EFFECTING | UNKNOWN) => res
 	    else detup (instr, id)
 	  | detup (O.Raise idRef, id) =
 	    if isId (idRef, id) then USED else KILLED
-	  | detup (O.Try (_, _, _), _) = USED
-	  | detup (O.EndTry _, _) = USED
-	  | detup (O.EndHandle _, _) = USED
-	  | detup (O.IntTest (_, _, _), _) = USED
-	  | detup (O.RealTest (_, _, _), _) = USED
-	  | detup (O.StringTest (_, _, _), _) = USED
-	  | detup (O.TagTest (_, _, _, _), _) = USED
-	  | detup (O.ConTest (_, _, _, _), _) = USED
-	  | detup (O.VecTest (_, _, _), _) = USED
+	  | detup (O.Try (_, _, _), _) = UNKNOWN
+	  | detup (O.EndTry _, _) = UNKNOWN
+	  | detup (O.EndHandle _, _) = UNKNOWN
+	  | detup (O.IntTest (_, _, _), _) = UNKNOWN
+	  | detup (O.RealTest (_, _, _), _) = UNKNOWN
+	  | detup (O.StringTest (_, _, _), _) = UNKNOWN
+	  | detup (O.TagTest (_, _, _, _), _) = UNKNOWN
+	  | detup (O.ConTest (_, _, _, _), _) = UNKNOWN
+	  | detup (O.VecTest (_, _, _), _) = UNKNOWN
 	  | detup (O.Return idRefArgs, id) =
 	    if isIdInArgs (idRefArgs, id) then USED else KILLED
 
@@ -181,6 +189,58 @@ structure BackendStockwerk: PHASE =
 	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
 *)
 
+	  | translateStm (TestStm (_, id, LitTests #[], elseBody),
+			  env) =
+	    translateBody (elseBody, env)
+	  | translateStm (TestStm (_, id, LitTests litTests, elseBody),
+			  env) =
+	    (case Vector.sub (litTests, 0) of
+		 (WordLit _, _) =>
+		     O.IntTest (lookup (env, id),
+				Vector.map (fn (lit, body) =>
+					    case lit of
+						WordLit w =>
+						    (LargeWord.toInt w,
+						     translateBody (body, env))
+					      | _ => raise Match) litTests,
+				translateBody (elseBody, env))
+	       | (IntLit _, _) =>
+		     O.IntTest (lookup (env, id),
+				Vector.map (fn (lit, body) =>
+					    case lit of
+						IntLit i =>
+						    (LargeInt.toInt i,
+						     translateBody (body, env))
+					      | _ => raise Match) litTests,
+				translateBody (elseBody, env))
+	       | (CharLit _, _) =>
+		     O.IntTest (lookup (env, id),
+				Vector.map (fn (lit, body) =>
+					    case lit of
+						CharLit c =>
+						    (WideChar.ord c,
+						     translateBody (body, env))
+					      | _ => raise Match) litTests,
+				translateBody (elseBody, env))
+	       | (StringLit _, _) =>
+		     O.StringTest (lookup (env, id),
+				   Vector.map (fn (lit, body) =>
+					       case lit of
+						   StringLit s =>
+						       (s, translateBody (body,
+									  env))
+						 | _ => raise Match) litTests,
+				   translateBody (elseBody, env))
+	       | (RealLit _, _) =>
+		     O.RealTest (lookup (env, id),
+				 Vector.map (fn (lit, body) =>
+					     case lit of
+						 RealLit r =>
+						     (valOf (Real.fromString r),
+						      translateBody (body,
+								     env))
+					       | _ => raise Match) litTests,
+				 translateBody (elseBody, env)))
 	  | translateStm (ReturnStm (_, exp), env) =
 	    let
 		val id = fresh env
@@ -231,7 +291,8 @@ structure BackendStockwerk: PHASE =
 		val returnArgs =
 		    case detup (instr, id') of
 			DECONSTRUCTED idDefs => O.TupArgs idDefs
-		      | USED => O.OneArg (O.IdDef id')
+		      | (USED | SIDE_EFFECTING | UNKNOWN) =>
+			    O.OneArg (O.IdDef id')
 		      | KILLED => O.OneArg O.Wildcard
 	    in
 		O.AppVar (returnArgs, lookup (env, id),
@@ -255,7 +316,7 @@ structure BackendStockwerk: PHASE =
 			  lookup (env, id), instr)
 	    end
 	  | translateExp (FunAppExp (info, id, _, args), id', instr, env) =
-	    (*--** support direct call; multiple return values *)
+	    (*--** translate to AppConst *)
 	    translateExp (VarAppExp (info, id, args), id', instr, env)
 	and translateIgnore (LitExp (_, _), instr, _) = instr
 	  | translateIgnore (PrimExp (_, _), instr, _) = instr
@@ -282,7 +343,7 @@ structure BackendStockwerk: PHASE =
 	    O.AppPrim (O.Wildcard, "Future.await", #[lookup (env, id)],
 		       SOME instr)
 	  | translateIgnore (FunAppExp (info, id, _, args), instr, env) =
-	    (*--** support direct call  *)
+	    (*--** translate to AppConst *)
 	    translateIgnore (VarAppExp (info, id, args), instr, env)
 
 	fun translate () (desc, component) = O.Int 0 (*--** *)
