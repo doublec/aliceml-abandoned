@@ -50,6 +50,13 @@ struct
 	    prompt ()
 	)
 
+    fun reset () =
+	(
+	    TextIO.output (outStream, "\n");
+	    CoreToplevel.init ();
+	    prompt ()
+	)
+
     fun eval s =
 	CoreToplevel.eval s
 	finally	prompt ()

@@ -192,6 +192,7 @@ struct
     (* Initialization *)
 
     val currentEnv = ref Compiler.initialEnv
+    val firstInit  = ref true
 
     val startup = "x-alice:/tools/ToplevelStartup.aml"
 
@@ -203,7 +204,10 @@ struct
 	    await env; (* avoid deadlock *)
 	    case evalFile (false, Compiler.initialEnv, startup, dummySignal)
 	     of NONE =>	raise Compiler.Error
-	      | SOME env' => Promise.fulfill (p, env')
+	      | SOME env' => Promise.fulfill (p, env');
+	    if !firstInit
+	    then firstInit := false
+	    else TextIO.output (outStream, "### reset environment\n")
 	end
 
 

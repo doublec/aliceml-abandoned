@@ -108,23 +108,26 @@ structure OutputWriters =
 
       (* Highlight *)
 
-      val highlight = BufferHighlight.highlight
-
       val stdFont = Gtk.pangoFontDescriptionFromString "Courier"
+
+      fun highlight (buffer, text, startOffset, startiter, enditer) =
+          if Gtk.textIterGetChar startiter = ord #"#"
+          then Gtk.textBufferApplyTagByName(buffer, "comment", startiter, enditer)
+          else BufferHighlight.highlight(buffer, text, startOffset, false, ref false)
 
       fun fillBuf (view, buffer, handler, tags, highlight, text) =
           let
               val iter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetEndIter(buffer,iter)
- 	      val startOffset = Gtk.textIterGetOffset iter
+	      val startOffset = Gtk.textIterGetOffset iter
 	      val start = Gtk.textIterCopy iter
-              val text = Core.latin1ToUtf8 text
+              val textUtf8 = Core.latin1ToUtf8 text
           in
               Core.signalHandlerBlock(buffer, handler);
-	      Gtk.textBufferInsert(buffer, iter, text, size text);
+	      Gtk.textBufferInsert(buffer, iter, textUtf8, size textUtf8);
               Gtk.textBufferGetIterAtOffset (buffer, start, startOffset);
               app (fn t => Gtk.textBufferApplyTag(buffer, t, start, iter)) tags;
-              highlight (buffer, start, iter, false);
+              highlight (buffer, text, startOffset, start, iter);
               Gtk.textBufferPlaceCursor(buffer,iter);
               Gtk.textViewScrollToMark(view,
                                        Gtk.textBufferGetInsert buffer,
@@ -222,14 +225,15 @@ structure OutputWriters =
                 	let
                 	    val startiter = Gtk.textIterCopy enditer
                 	    val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
+                	    val _ = Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
                 	    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
-                	    val _ = highlight(buf, startiter, enditer, false)
                 	    val str = Core.utf8ToLatin1 str
+			    val offset = Gtk.textIterGetOffset startiter
+                	    val _ = highlight(buf, str, offset, startiter, enditer)
                 	    val _ = eval str
                 	in
                 	    extendHistory (String.substring (str, 0, String.size str-1));
-			    Gtk.textBufferApplyTag(buf, bold, startiter, enditer);
-                	    Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
+			    Gtk.textBufferApplyTag(buf, bold, startiter, enditer)
                 	end
 		    else
 			Gtk.textBufferInsertAtCursor(buf, "  ", ~1)

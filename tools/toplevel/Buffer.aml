@@ -16,6 +16,7 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Core from "x-alice:/lib/gtk/Core"
 import structure FileDialog from "FileDialog"
 import structure Config from "Config"
+import structure BufferHighlight from "BufferHighlight"
 
 structure Buffer =
    struct
@@ -37,7 +38,8 @@ structure Buffer =
                      buf: Gtk.object,
                      tags: tags,
                      undo: undo list ref,
-                     lastSearchPos: int ref}
+                     lastSearchPos: int ref,
+		     highlight: int option Promise.promise ref}
 
       val bufferMap : buffer BufferMap.map = BufferMap.map()
 
@@ -49,6 +51,33 @@ structure Buffer =
           in
               String.extract(s,1 + lastSlash ~1 0, NONE)
           end
+
+      (* Concurrent highlighting *)
+
+      val delay = Time.fromMilliseconds(Int.toLarge 400)
+      val never = Promise.future(Promise.promise())
+
+      fun highlightGuard'(buf, plaintag, promRef, signal, offset) =
+	  case Future.awaitEither(Promise.future(!promRef), signal)
+	   of FST NONE => () (* buffer closed *)
+	    | FST(SOME offset') =>  (* wakeup by change before delay is over *)
+	         (promRef := Promise.promise();
+		  highlightGuard'(buf, plaintag, promRef, Future.alarm delay, Int.min(offset,offset')))
+	    | SND _ => (* delay over *)
+	      let
+		  val prom = Promise.promise()
+		  val inter = Promise.future prom
+		  val kill = ref false
+	      in
+                  promRef := prom;
+		  spawn (await inter; kill := true);
+		  BufferHighlight.highlightOffset(buf, offset, plaintag, kill);
+		  if !kill then () else promRef := Promise.promise();
+		  highlightGuard'(buf, plaintag, promRef, never, 0)
+	      end
+
+      fun highlightGuard(buf, plaintag, promRef) =
+          highlightGuard'(buf, plaintag, promRef, never, 0)
 
       (* Cursor *)
       fun getCursorIter buf =
@@ -77,13 +106,14 @@ structure Buffer =
 
       fun deleteText id (buf,[Gtk.INT off, Gtk.INT _, Gtk.STRING txt]) =
           let
-              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {undo,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
           in
               case (!undo) of
                   ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
                   undo := ur
                 | _ =>
-                  undo := DELETE(off, txt) :: (!undo)
+                  undo := DELETE(off, txt) :: (!undo);
+	      Promise.fulfill (!highlight, SOME off) handle Promise.Promise => ()
           end
         | deleteText _ _ = print "Gtk is crazy: delete"
 
@@ -106,13 +136,14 @@ structure Buffer =
 
       fun insertText id (buf,[Gtk.INT off, Gtk.STRING txt, Gtk.INT length]) =
           let
-              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {undo,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
           in
               case (!undo) of
                   ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
                   undo := ur
                 | _ =>
                   undo := INSERT(off, off+length) :: (!undo);
+	      Promise.fulfill (!highlight, SOME off) handle Promise.Promise => ();
 	      if txt <> "\n" orelse off = 0 then () else
 	      let
 		  val startiter = Gtk.textIterNew()
@@ -319,7 +350,8 @@ structure Buffer =
                          view=newSource,buf=buf,
                          tags=makeTags buf,
                          undo=ref nil,
-                         lastSearchPos=ref 0}
+                         lastSearchPos=ref 0,
+			 highlight=ref(Promise.promise())}
           in
               if loadFile then
               case file of NONE => ()
@@ -343,19 +375,21 @@ structure Buffer =
               Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
               Gtk.signalConnect(buf, "end-user-action", userAction(id,false));
               BufferMap.insertDisjoint(bufferMap, id, ret);
+	      spawn highlightGuard (buf, #plain(#tags ret), #highlight ret);
               ret
           end
 
       fun close id =
           let
-              val {file,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {file,buf,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
               val modified = Gtk.textBufferGetModified buf
+	      val prom = Promise.promise()
           in
-              if modified then
-                  false
-              else
-                  (BufferMap.removeExistent(bufferMap, id);
-                   true)
+              modified orelse
+              (BufferMap.removeExistent(bufferMap, id);
+               Promise.fulfill(prom, NONE);
+	       highlight := prom;
+	       true)
           end
 
       fun save id =

@@ -15,6 +15,7 @@ sig
     datatype signal	= INTERRUPT | STOP
 
     val init		: unit -> unit
+    val reset		: unit -> unit
     val eval		: string * signal -> unit
     val compile		: string -> unit
 

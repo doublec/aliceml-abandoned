@@ -44,5 +44,5 @@ structure EventHandler : GUISIGNALS_SIG =
 	fun on_go_to_line_activate _ = GuiMain.gotoLine()
 	fun on_indent_region_activate _ = GuiMain.indentSelection true
 	fun on_outdent_region_activate _ = GuiMain.indentSelection false
-	fun on_reset_activate _ = ()
+	fun on_reset_activate _ = GuiMain.reset()
     end

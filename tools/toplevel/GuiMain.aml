@@ -215,17 +215,6 @@ structure GuiMain =
                 eval true (str^"\n")
             end
             | _ => ()
-
-        fun compile () =
-            case getCurrentPage() of NONE => ()
-                                   | SOME id =>
-            let
-                val file = Buffer.getFileName id
-            in
-                case file of
-                    NONE => ()
-                  | SOME f => Evaluator.compile f
-            end
             
         fun undo() =
             case getCurrentPage() of NONE => ()
@@ -261,16 +250,8 @@ structure GuiMain =
 
         fun syntax() =
             case (!curtextview) of BUFFER view =>
-            let
-                val buf = Gtk.textViewGetBuffer view
-                val startiter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetStartIter(buf,startiter)
-                val enditer = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetEndIter(buf,enditer)
-            in
-                BufferHighlight.highlight(buf, startiter, enditer, true)
-            end
-                                 | _ => ()
+                BufferHighlight.highlightAll(Gtk.textViewGetBuffer view, ref false)
+              | _ => ()
 
         fun search() =
             case getCurrentPage() of NONE => ()
@@ -402,8 +383,8 @@ structure GuiMain =
                     numberOfPages := (!numberOfPages) + 1;
 		    switchPage Gui.notebook1;
 		    changeFocus (BUFFER view) ();
+		    syntax();
                     checkNotebookSize()
-;syntax() (* for now *)
                 end
 
 	fun openFile () =
@@ -437,6 +418,18 @@ structure GuiMain =
                                    | SOME id =>
                                      if Buffer.save id then ()
                                      else saveFileAs()
+
+        fun compile () =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val _ = saveFile ()
+		val file = Buffer.getFileName id
+            in
+                case file of
+                    NONE => ()
+                  | SOME f => Evaluator.compile f
+            end
 
         fun reallyClose p =
             (removePage p;
@@ -596,6 +589,8 @@ structure GuiMain =
 	fun indentSelection indent =
 	    case getCurrentPage() of NONE => ()
 	  | SOME id => Buffer.indentSelection(id, indent)
+
+	fun reset () = Evaluator.reset()
 	    
 	val forwardHistory = OutputWriters.historyNext
 	val backwardHistory = OutputWriters.historyPrev

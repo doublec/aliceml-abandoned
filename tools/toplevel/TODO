@@ -3,21 +3,22 @@ TODO list for the Alice IDE
 
 Bugs:
 
+* undo all marks buffer unchanged
+* jump-to-error with paths
+* uncaught handler exceptions with alice -g *.aml
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
 * cannot make window smaller
 * modified files dialogue is too ugly
 
+* Glade should generate widgetShow calls bottom up
+
 Missing Features:
 
 * shortcuts for switching between editor, compiler, io (Ctrl+1,2,3)
-* comment/uncomment region
-* live highlighting!
+* comment/uncomment region?
 * cumulative undo?
 * redo?
 * incremental search?
-* restart evaluator (with fresh initial environment)
-* restricted search&replace in selected area (like Vi's :%s/foo/bar/g)
-* search & replace with regex (including \N in replacements)
-
-
+* restricted search&replace in selected area (like Vi's :%s/foo/bar/g)?
+* search & replace with regex (including \N in replacements)?

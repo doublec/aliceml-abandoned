@@ -17,7 +17,7 @@ import structure Highlight from "HighlightString"
 
 structure BufferHighlight =
    struct
-      fun colorRegion (buf, offset, removeTags) (style, x, x') =
+      fun colorRegion (buf, offset, removeTags, style, x, x') =
           let
               open Highlight
               val startiter = Gtk.textIterNew()
@@ -38,19 +38,65 @@ structure BufferHighlight =
 	      if removeTags then
 		  Gtk.textBufferRemoveAllTags(buf, startiter, enditer)
 	      else ();
-              Gtk.textBufferApplyTagByName(buf, tag, startiter, enditer)
+              Gtk.textBufferApplyTagByName(buf, tag, startiter, enditer);
+	      true
           end
 
-      fun highlight (buf, startiter, enditer, removeTags) =
-          if Gtk.textIterGetChar startiter = ord #"#" then
-              Gtk.textBufferApplyTagByName(buf, "comment", startiter, enditer)
-          else
-              let
-                  val offset = Gtk.textIterGetOffset startiter
-                  val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
-                  val str = Core.utf8ToLatin1 str
-                  val regions = Highlight.scan str
-              in
-                  app (colorRegion (buf, offset, removeTags)) regions
-              end
+      val colorRegion = Lock.sync Core.lock colorRegion
+
+      fun highlight (buf, str, offset, removeTags, kill) =
+          let
+              val regions = Highlight.scan str
+          in
+              List.all (fn(s,x,y) => !kill orelse
+			colorRegion (buf, offset, removeTags, s, x, y)) regions;
+	      ()
+          end
+
+       fun getAll buf =
+           let
+               val startiter = Gtk.textIterNew()
+               val _ = Gtk.textBufferGetStartIter(buf,startiter)
+               val enditer = Gtk.textIterNew()
+               val _ = Gtk.textBufferGetEndIter(buf,enditer)
+           in
+               Core.utf8ToLatin1 (Gtk.textBufferGetText(buf, startiter, enditer, false))
+	   end
+       val getAll = Lock.sync Core.lock getAll
+
+       fun highlightAll(buf, kill) = highlight(buf, getAll buf, 0, true, kill)
+
+       fun findPlainSpace(iter, plaintag) =
+           if Gtk.textIterGetOffset iter = 0 then ()
+	   else if not(Gtk.textIterHasTag(iter, plaintag)) then
+	       (Gtk.textIterBackwardToTagToggle(iter, plaintag);
+	        findPlainSpace(iter, plaintag))
+	   else if Char.isSpace(Char.chr(Gtk.textIterGetChar iter))
+		   handle Chr => false then
+		()
+	   else
+		(Gtk.textIterBackwardChar iter;
+		 findPlainSpace(iter, plaintag))
+
+       fun getOffset(buf, 0, _) = (getAll buf, 0)
+         | getOffset(buf, offset, plaintag) =
+	   let
+	       val startiter = Gtk.textIterNew()
+	       val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, offset-1)
+	       val enditer = Gtk.textIterNew()
+	       val _ = Gtk.textBufferGetEndIter(buf, enditer)
+	   in
+                findPlainSpace(startiter, plaintag);
+		(Core.utf8ToLatin1
+		(Gtk.textBufferGetText(buf, startiter, enditer, false)),
+		 Gtk.textIterGetOffset startiter)
+	   end
+       val getOffset = Lock.sync Core.lock getOffset
+
+       fun highlightOffset(buf, offset, plaintag, kill) =
+	   let
+	       val (text, offset') = getOffset(buf, offset, plaintag)
+	   in
+               highlight(buf, text, offset', true, kill)
+	   end
    end
