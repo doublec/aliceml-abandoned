@@ -19,7 +19,7 @@ abstract public class DMLFcnClosure implements DMLValue {
   }
 
   /** Gleicheit der FQ-Klassennamen */
-  final public boolean equals(DMLValue val) {
+  final public boolean equals(Object val) {
     return this.getClass().equals(val.getClass());
   }
 

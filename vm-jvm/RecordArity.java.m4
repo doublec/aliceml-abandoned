@@ -4,7 +4,7 @@ final public class DMLRecordArity implements java.io.Serializable {
     DMLLabel[] labels = null;
 
     java.util.Hashtable hashtable=null;
-    static java.util.Hashtable arityHash = new java.util.Hashtable();
+
     public DMLRecordArity(DMLLabel[] ls) {
 	super();
 	int i=0;
@@ -18,13 +18,10 @@ final public class DMLRecordArity implements java.io.Serializable {
 	    else
 		hashtable.put(((Integer) o), new Integer(i));
 	}
-	qsort(labels,0,labels.length);
-
-	arityHash.put(this,this);
+	qsort(labels,0,labels.length-1);
     }
 
     /** sortiert die Labels der Arity */
-
     private static void qsort(DMLLabel[] lab, int p, int r) {
 	int q=0;
 	if (p < r) {
@@ -35,13 +32,13 @@ final public class DMLRecordArity implements java.io.Serializable {
     }
 
     private static int partition(DMLLabel[] lab, int p, int r) {
-	DMLLabel x = lab[r];
+	DMLLabel x = lab[p];
 	DMLLabel dummy = null;
 	int i = p-1;
 	int j = r+1;
 	while (true) {
 	    do j--; while (lab[j].compareTo(x) > 0);
-	    do i++; while (lab[j].compareTo(x) < 0);
+	    do i++; while (lab[i].compareTo(x) < 0);
 	    if (i<j) {
 		dummy = lab[i];
 		lab[i]=lab[j];
@@ -62,7 +59,7 @@ final public class DMLRecordArity implements java.io.Serializable {
 	else
 	    idx=hashtable.get((Integer) o);
 	if (idx==null)
-	    throw new DMLRuntimeError("label "+l+" not in record");
+	    return -1;
 	else
 	    return ((Integer) idx).intValue();
     }
@@ -72,8 +69,11 @@ final public class DMLRecordArity implements java.io.Serializable {
 	return labels[i];
     }
 
-    final public boolean equals(DMLRecordArity other) {
+    final public boolean equals(Object o) {
 	int i=0;
+	if (!(o instanceof DMLRecordArity))
+	    return false;
+	DMLRecordArity other = (DMLRecordArity) o;
 	if (labels.length != other.labels.length)
 	    return false;
 	for(i=0; i<labels.length; i++) {

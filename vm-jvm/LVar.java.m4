@@ -34,8 +34,8 @@ public class DMLLVal implements DMLValue {
   }
 
   /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
-  final public boolean equals(DMLValue val) {
-    return this.request().equals(val.request());
+  final public boolean equals(Object val) {
+    return (val instanceof DMLLVal) && this.request().equals(((DMLLVal) val).request());
   }
 
   protected DMLValue ref=null;

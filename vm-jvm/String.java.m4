@@ -3,7 +3,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
 final public class DMLString extends DMLSCon {
 
   /** Testet Gleichheit der Java-Strings */
-  final public boolean equals(DMLValue val) {
+  final public boolean equals(Object val) {
     return (val instanceof DMLString) &&
       (((DMLString)val).value.equals(this.value));
   }

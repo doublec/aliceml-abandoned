@@ -16,7 +16,7 @@ public interface DMLValue extends java.io.Serializable {
   public DMLValue request();
 
   /* testet auf Gleichheit */
-  public boolean equals(DMLValue val);
+  public boolean equals(Object val);
 
   public DMLValue apply(DMLValue val);
 
