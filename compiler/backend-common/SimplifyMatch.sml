@@ -46,11 +46,34 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Test Sequence Construction *)
 
-	structure LabelSort =
-	    MakeLabelSort(type 'a t = Label.t * 'a
-			  fun get (label, _) = label)
-
 	fun typPat pat = IntermediateInfo.typ (infoPat pat)
+
+	local
+	    fun parseRow row =
+		if Type.isEmptyRow row then (nil, Type.isUnknownRow row)
+		else
+		    let
+			val (rest, hasDots) = parseRow (Type.tailRow row)
+		    in
+			case Type.headRow row of
+			    (label, [typ]) => ((label, typ)::rest, hasDots)
+			  | (_, _) =>
+				raise Crash.Crash "IntermediateAux.parseRow"
+		    end
+	in
+	    fun getRow typ =
+		let
+		    val (labelTypList, hasDots) =
+			if Type.isRow typ then parseRow (Type.asRow typ)
+			else
+			    (Misc.List_mapi (fn (i, typ) =>
+					     (Label.fromInt (i + 1), typ))
+			     (Type.asTuple typ), false)
+		    val (labelTypList', arity) = LabelSort.sort labelTypList
+		in
+		    (labelTypList', arity, hasDots)
+		end
+	end
 
 	(*--** the following is wrong for generative datatypes: *)
 	fun longidToLabel (ShortId (_, Id (_, _, Name.ExId s))) =
@@ -64,94 +87,46 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (ConPat (info, longid, patOpt, isNAry),
+	  | makeTestSeq (ConPat (info, longid, NONE, isNAry),
 			 pos, rest, mapping) =
 	    let
-		val dataTyp = IntermediateInfo.typ info
-		val typ =
-		    case patOpt of
-			SOME pat => Type.inArrow (typPat pat, dataTyp)
-		      | NONE => dataTyp
+		val typ = IntermediateInfo.typ info
 		val info' = (Source.nowhere, SOME typ)
 		val conArity = makeConArity (info', isNAry)
 	    in
-		case patOpt of
-		    SOME pat =>
-			makeTestSeq (pat, longidToLabel longid::pos,
-				     Test (pos,
-					   ConTest (longid, SOME (typPat pat),
-						    conArity))::rest, mapping)
-		  | NONE =>
-			(Test (pos, ConTest (longid, NONE, conArity))::rest,
-			 mapping)
+		(Test (pos, ConTest (longid, NONE, conArity))::rest, mapping)
+	    end
+	  | makeTestSeq (ConPat (info, longid, SOME pat, isNAry),
+			 pos, rest, mapping) =
+	    let
+		val typ = Type.inArrow (typPat pat, IntermediateInfo.typ info)
+		val info' = (Source.nowhere, SOME typ)
+		val conArity = makeConArity (info', isNAry)
+	    in
+		makeTestSeq (pat, longidToLabel longid::pos,
+			     Test (pos, ConTest (longid, SOME (typPat pat),
+						 conArity))::rest, mapping)
 	    end
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, Label.fromString "ref"::pos,
 			 Test (pos, RefTest (typPat pat))::rest, mapping)
-	  | makeTestSeq (TupPat (info, pats), pos, rest, mapping) =
-	    if Type.isTuple (IntermediateInfo.typ info) then
-		Misc.List_foldli
-		(fn (i, pat, (rest, mapping)) =>
-		 makeTestSeq (pat, Label.fromInt (i + 1)::pos, rest, mapping))
-		(Test (pos, TupTest (List.map typPat pats))::rest, mapping)
-		pats
-	    else
-		let
-		    val info' = (Source.nowhere, NONE)
-		    val patFields =
-			Misc.List_mapi
-			(fn (i, pat) =>
-			 Field (info', Lab (info', Label.fromInt (i + 1)),
-				pat))
-			pats
-		in
-		    makeTestSeq (RowPat (info, patFields), pos, rest, mapping)
-		end
+	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
+	    Misc.List_foldli
+	    (fn (i, pat, (rest, mapping)) =>
+	     makeTestSeq (pat, Label.fromInt (i + 1)::pos, rest, mapping))
+	    (Test (pos, TupTest (List.map typPat pats))::rest, mapping) pats
 	  | makeTestSeq (RowPat (info, patFields), pos, rest, mapping) =
-	    let
-		val typ = IntermediateInfo.typ info
-		fun convert row =
-		    if Type.isEmptyRow row then (nil, Type.isUnknownRow row)
-		    else
-			let
-			    val (rest, hasDots) = convert (Type.tailRow row)
-			in
-			    case Type.headRow row of
-				(label, [typ]) => ((label, typ)::rest, hasDots)
-			      | _ =>
-				    raise Crash.Crash
-					"SimplifyMatch.makeTestSeq"
-			end
-		val (labelTypList, hasDots) =
-		    if Type.isRow typ then convert (Type.asRow typ)
-		    else
-			(Misc.List_mapi (fn (i, typ) =>
-					 (Label.fromInt (i + 1), typ))
-			 (Type.asTuple typ), false)
-	    in
-		if hasDots then
-		    List.foldl (fn (Field (_, Lab (_, label), pat),
-				    (rest, mapping)) =>
-				makeTestSeq (pat, label::pos, rest, mapping))
-		    (List.foldl (fn (Field (_, Lab (_, label), pat), rest) =>
-				 Test (pos, LabTest (label, typPat pat))::rest)
-		     rest patFields, mapping) patFields
-		else
-		    let
-			val test =
-			    case LabelSort.sort labelTypList of
-				(labelTypList', LabelSort.Tup _) =>
-				    TupTest (List.map #2 labelTypList')
-			      | (labelTypList', LabelSort.Rec) =>
-				    RecTest labelTypList'
-		    in
-			List.foldl (fn (Field (_, Lab (_, label), pat),
-					(rest, mapping)) =>
-				    makeTestSeq (pat, label::pos, rest,
-						 mapping))
-			(Test (pos, test)::rest, mapping) patFields
-		    end
-	    end
+	    List.foldl (fn (Field (_, Lab (_, label), pat), (rest, mapping)) =>
+			makeTestSeq (pat, label::pos, rest, mapping))
+	    (case getRow (IntermediateInfo.typ info) of
+		 (labelTypList, _, true) =>
+		     List.foldl (fn ((label, typ), rest) =>
+				 Test (pos, LabTest (label, typ))::rest)
+		     rest labelTypList
+	       | (labelTypList, LabelSort.Tup _, false) =>
+		     Test (pos, TupTest (List.map #2 labelTypList))::rest
+	       | (labelTypList, LabelSort.Rec, false) =>
+		     Test (pos, RecTest labelTypList)::rest, mapping) patFields
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
 	    Misc.List_foldli
 	    (fn (i, pat, (rest, mapping)) =>

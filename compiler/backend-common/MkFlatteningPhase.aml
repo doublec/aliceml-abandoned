@@ -33,10 +33,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	val longid_true = ShortId ((Source.nowhere, NONE), id_true)
 	val longid_false = ShortId ((Source.nowhere, NONE), id_false)
 
-	structure LabelSort =
-	    MakeLabelSort(type 'a t = Label.t * 'a
-			  fun get (label, _) = label)
-
 	type mapping = (pos * id) list
 
 	fun lookup (pos, (pos', id)::mappingRest) =

@@ -9,6 +9,7 @@ Group is
 
     LABEL_SORT.sig
     MakeLabelSort.sml
+    LabelSort.sml
     DEBUG.sig
     Debug.sml
     INTERMEDIATE_AUX.sig
