@@ -284,9 +284,35 @@ final public class String implements DMLValue {
     /** <code>val fromString : java.lang.String.string -> string option </code>*/
     /** <code>val toString : string -> java.lang.String.string </code>*/
     /** <code>val fromCString : java.lang.String.string -> string option </code>*/
+
+    _BUILTIN(ToCString) {
+	_APPLY(val) {
+	    return val;
+	}
+    }
     /** <code>val toCString : string -> java.lang.String.string </code>*/
+    _FIELD(String,toCString);
+
     /** <code>val implode : Char.char list -> string </code>*/
+    _BUILTIN(Explode) {
+	_APPLY(val) {
+	    if (val instanceof STRING) {
+		char cl[] = ((STRING) val).value.toCharArray();
+		Cons first = new Cons(new Char(cl[0]),null);
+		Cons next = first;
+		for (int i=1; i<cl.length; i++) {
+		    next.cdr = new Cons(new Char(cl[i]),null);
+		    next = (Cons) next.cdr;
+		}
+		next.cdr = List.nil;
+		return first;
+	    } else {
+		_error("argument not string",val);
+	    }
+	}
+    }
     /** <code>val explode : string -> Char.char list </code>*/
+    _FIELD(String,explode);
     /** <code>val map : (Char.char -> Char.char) -> string -> string </code>*/
     /** <code>val translate : (Char.char -> string) -> string -> string </code>*/
     /** <code>val tokens : (Char.char -> bool) -> string -> string list </code>*/

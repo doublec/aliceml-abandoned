@@ -142,5 +142,11 @@ final public class Char implements DMLValue {
     /** <code>val scan : (Char.char, 'a) java.lang.StringCvt.reader -> 'a -> (char * 'a) option </code>*/
     /** <code>val toString : char -> java.lang.String.string </code>*/
     /** <code>val fromCString : java.lang.String.string -> char option </code>*/
+    _BUILTIN(ToCString) {
+	_APPLY(val) {
+	    return new STRING (java.lang.String.valueOf(((Char) val).value));
+	}
+    }
     /** <code>val toCString : char -> java.lang.String.string </code>*/
+    _FIELD(Char,toCString);
 }
