@@ -30,7 +30,6 @@ private:
   static word root;
   static ThreadQueue *threadQueue;
   static Thread *currentThread;
-  static bool preempt;
 
   static void Timer();
 public:
@@ -42,6 +41,7 @@ public:
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or Exception
   static Backtrace *currentBacktrace; // Backtrace
+  static bool preempt;
   // Scheduler Static Constructor
   static void Init();
 

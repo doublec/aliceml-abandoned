@@ -23,6 +23,12 @@ class TaskStack;
 class Closure;
 class Backtrace;
 
+#if defined(ALICE_PROFILE)
+class StackFrame;
+class ConcreteCode;
+class String;
+#endif
+
 class Interpreter : public ConcreteRepresentationHandler {
 public:
   enum Result {
@@ -38,9 +44,9 @@ public:
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Calling Convention Conversion
   static void Construct();
-  //   Deconstruct returns true iff argument needs to be requested;
-  //   Sets Scheduler::currentData as a side-effect
-  static bool Deconstruct();
+  //   Deconstruct returns 1 iff argument needs to be requested; 0 otherwise
+  //   Sets Scheduler::currentData as a side-effect;
+  static u_int Deconstruct();
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   virtual void PurgeFrame(word frame);
@@ -50,6 +56,13 @@ public:
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(word frame) = 0;
+#if defined(ALICE_PROFILE)
+  // Profiling
+  virtual word GetProfileKey(StackFrame *frame);
+  virtual word GetProfileKey(ConcreteCode *concreteCode);
+  virtual String *GetProfileName(StackFrame *frame);
+  virtual String *GetProfileName(ConcreteCode *concreteCode);
+#endif
 };
 
 #endif

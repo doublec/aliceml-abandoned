@@ -50,12 +50,16 @@ typedef enum {
   VECTOR_TABULATE_FRAME,
   RAISE_FRAME,
   REFMAP_ITERATOR_FRAME,
+  // AliceNativeCode Frames
+  NATIVE_CODE_FRAME,
+  NATIVE_CODE_HANDLER_FRAME,
+  LAZY_COMPILE_FRAME,
   // End of Frames
-  MAX_STACK_FRAME = REFMAP_ITERATOR_FRAME
+  MAX_STACK_FRAME = LAZY_COMPILE_FRAME
 } FrameLabel;
 
 class StackFrame : private Block {
-private:
+protected:
   static const u_int INTERPRETER_POS = 0;
   static const u_int BASE_SIZE       = 1;
 public:

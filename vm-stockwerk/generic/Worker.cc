@@ -21,6 +21,10 @@
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 
+#if defined(ALICE_PROFILE)
+#include "generic/ConcreteCode.hh"
+#endif
+
 // Calling Convention Conversion
 void Interpreter::Construct() {
   u_int nArgs = Scheduler::nArgs;
@@ -42,10 +46,10 @@ void Interpreter::Construct() {
   Scheduler::nArgs = Scheduler::ONE_ARG;
 }
 
-bool Interpreter::Deconstruct() {
+u_int Interpreter::Deconstruct() {
   switch (Scheduler::nArgs) {
   case 0:
-    return false;
+    return 0;
   case Scheduler::ONE_ARG:
     {
       word arg = Scheduler::currentArgs[0];
@@ -57,14 +61,14 @@ bool Interpreter::Deconstruct() {
 	Assert(Scheduler::nArgs <= Scheduler::maxArgs);
 	for (u_int i = Scheduler::nArgs; i--; )
 	  Scheduler::currentArgs[i] = tuple->Sel(i);
-	return false;
+	return 0;
       } else { // need to request
 	Scheduler::currentData = arg;
-	return true;
+	return 1;
       }
     }
   default:
-    return false;
+    return 0;
   }
 }
 
@@ -92,3 +96,23 @@ Interpreter::Handle(word exn, Backtrace *trace, TaskStack *taskStack) {
   Scheduler::currentData      = exn;
   return Interpreter::RAISE;
 }
+
+#if defined(ALICE_PROFILE)
+#include "generic/String.hh"
+
+word Interpreter::GetProfileKey(StackFrame *) {
+  return Store::UnmanagedPointerToWord(this);
+}
+
+word Interpreter::GetProfileKey(ConcreteCode *concreteCode) {
+  return concreteCode->ToWord();
+}
+
+String *Interpreter::GetProfileName(StackFrame *) {
+  return String::New(this->Identify());
+}
+
+String *Interpreter::GetProfileName(ConcreteCode *) {
+  return String::New(this->Identify());
+}
+#endif
