@@ -207,12 +207,12 @@ define
       Colors = colors('NUMBER':           {NewCell Purple}
 		      'FUNCTION':         {NewCell Black}
 		      'STRING':           {NewCell Black}
-		      'HOLE':             {NewCell Brown}
-		      'FUTURE':           {NewCell Brown}
-		      'PROMISE':          {NewCell Red}
-		      'PACKAGE':          {NewCell Red}
+		      'HOLE':             {NewCell Red}
+		      'FUTURE':           {NewCell Red}
+		      'PROMISE':          {NewCell Brown}
+		      'PACKAGE':          {NewCell Brown}
 		      'CONSTRUCTOR':      {NewCell Blue}
-		      'TYPEINDICATOR':    {NewCell Red}
+		      'TYPEINDICATOR':    {NewCell Brown}
 		      'TUPLE':            {NewCell Black}
 		      'RECORD':           {NewCell Black}
 		      'LIST':             {NewCell Black}
