@@ -28,7 +28,7 @@
 functor
 import
    Open(file)
-   System(eq showInfo)
+   System(eq)
    PrimitiveTable(values functions)
    AbstractCodeInterpreter(interpreter)
 export
