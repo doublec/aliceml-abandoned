@@ -35,20 +35,20 @@
 #include "generic/Profiler.hh"
 #endif
 
-extern word UnsafeConfig(void);
-extern word UnsafeIO(void);
-extern word UnsafeOS(void);
-//extern word UnsafeUnix(void); //--** missing
-extern word UnsafeCommandLine(void);
-extern word UnsafeComponent(void);
-extern word UnsafeDebug(void);
-extern word UnsafeSocket(void);
-extern word UnsafeRand(void);
-extern word UnsafeValue(void);
-extern word UnsafeReflect(void);
-extern word UnsafeCell(void);
-extern word UnsafeAddr(void);
-extern word UnsafeRemote(void);
+extern word UnsafeConfig();
+extern word UnsafeIO();
+extern word UnsafeOS();
+//extern word UnsafeUnix(); //--** missing
+extern word UnsafeCommandLine();
+extern word UnsafeComponent();
+extern word UnsafeDebug();
+extern word UnsafeSocket();
+extern word UnsafeRand();
+extern word UnsafeValue();
+extern word UnsafeReflect();
+extern word UnsafeCell();
+extern word UnsafeAddr();
+extern word UnsafeRemote();
 
 static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeConfig",       UnsafeConfig},

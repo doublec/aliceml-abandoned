@@ -81,7 +81,7 @@ DEFINE1(UnsafeRemote_unpackValue) {
   return Unpickler::Unpack(packedValue);
 } END
 
-word UnsafeRemote(void) {
+word UnsafeRemote() {
   RootSet::Add(callback);
   callback = Store::IntToWord(0);
 

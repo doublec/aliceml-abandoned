@@ -27,7 +27,7 @@ class String;
 
 struct DllExport NativeComponent {
   const char *name;
-  word (*init)(void);
+  word (*init)();
 };
 
 // Component
