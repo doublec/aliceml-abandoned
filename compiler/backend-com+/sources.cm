@@ -2,7 +2,12 @@ Group is
 
     ../error/sources.cm
     ../misc/sources.cm
-    ../backend-common/imperative-grammar.cm
+    ../common/id-stamp.cm
+    ../common/prebound.cm
+    ../common/name.cm
+    ../common/type.cm
+    ../backend-common/flat-grammar.cm
+    ../backend-common/liveness.cm
 
     IL.sig
     IL.sml

@@ -31,7 +31,7 @@
 
 signature CODE_STORE =
     sig
-	type class = ImperativeGrammar.stamp
+	type class = FlatGrammar.stamp
 
 	val className: class -> IL.dottedname
 
@@ -39,10 +39,10 @@ signature CODE_STORE =
 
 	val init: IL.dottedname -> unit
 	val defineClass: class * IL.extends * IL.implements -> unit
-	val defineMethod: class * IL.id * ImperativeGrammar.id list -> unit
+	val defineMethod: class * IL.id * FlatGrammar.id list -> unit
 	val emit: IL.instr -> unit
-	val emitId: ImperativeGrammar.id -> unit
-	val declareLocal: ImperativeGrammar.id -> unit
+	val emitId: FlatGrammar.id -> unit
+	val declareLocal: FlatGrammar.id -> unit
 	val kill: StampSet.t -> unit
 	val saveRegState: unit -> savedRegState
 	val restoreRegState: savedRegState -> unit

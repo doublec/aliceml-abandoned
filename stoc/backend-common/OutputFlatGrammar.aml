@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
+structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
     struct
-	structure I = ImperativeGrammar
+	structure I = FlatGrammar
 
 	open I
 

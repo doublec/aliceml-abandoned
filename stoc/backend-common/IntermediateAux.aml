@@ -342,7 +342,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		(WithPat (info, pat', substDecs (decs, subst'')), subst')
 	    end
 
-	structure O = ImperativeGrammar
+	structure O = FlatGrammar
 	open O
 
 	local

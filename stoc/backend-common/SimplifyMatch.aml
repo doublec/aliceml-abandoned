@@ -13,7 +13,7 @@
 structure SimplifyMatch :> SIMPLIFY_MATCH =
     struct
 	structure I = IntermediateGrammar
-	structure O = ImperativeGrammar
+	structure O = FlatGrammar
 
 	open I
 	open IntermediateAux

@@ -24,7 +24,7 @@
 
 structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
     struct
-	structure I = ImperativeGrammar
+	structure I = FlatGrammar
 	open I
 
 	datatype 'a lazyCopy =

@@ -1,0 +1,14 @@
+Group
+
+    signature LIVENESS_ANALYSIS_PHASE
+    structure LivenessAnalysisPhase
+
+is
+
+    ../error/sources.cm
+    ../common/id-stamp.cm
+
+    flat-grammar.cm
+
+    LIVENESS_ANALYSIS_PHASE.sig
+    LivenessAnalysisPhase.sml

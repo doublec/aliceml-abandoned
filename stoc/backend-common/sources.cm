@@ -1,17 +1,23 @@
-Group is
+Group
 
+    structure FlatteningPhase
+    structure OutputFlatGrammar
+
+is
+
+    ../error/sources.cm
     ../common/sources.cm
+    ../common/id-stamp.cm
     ../common/name.cm
     ../common/type.cm
-    ../error/sources.cm
+    ../top/phase.cm
 
-    imperative-grammar.cm
+    flat-grammar.cm
+    liveness.cm
 
     LABEL_SORT.sig
     MakeLabelSort.sml
     LabelSort.sml
-    DEBUG.sig
-    Debug.sml
     INTERMEDIATE_AUX.sig
     IntermediateAux.sml
 
@@ -19,5 +25,9 @@ Group is
     SimplifyMatch.sml
     SIMPLIFY_REC.sig
     SimplifyRec.sml
-    MATCH_COMPILATION_PHASE.sig
-    MatchCompilationPhase.sml
+
+    FLATTENING_PHASE.sig
+    FlatteningPhase.sml
+
+    OUTPUT_FLAT_GRAMMAR.sig
+    OutputFlatGrammar.sml

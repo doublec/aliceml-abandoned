@@ -13,7 +13,7 @@
 signature INTERMEDIATE_AUX =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
-	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
 
 	val id_info: I.exp_info -> I.id_info
 	val exp_info: Source.region * Type.t -> I.exp_info

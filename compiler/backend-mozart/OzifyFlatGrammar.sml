@@ -12,9 +12,9 @@
  *   $Revision$
  *)
 
-structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
+structure OzifyFlatGrammar :> OZIFY_FLAT_GRAMMAR =
     struct
-	structure I = ImperativeGrammar
+	structure I = FlatGrammar
 	open I
 
 	local
@@ -86,7 +86,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 		 output (q, Int.toString rl); output1 (q, #"#");
 		 output (q, Int.toString rc))
 	in
-	    fun outputIdInfo (q, info: IntermediateInfo.id_info) =
+	    fun outputIdInfo (q, info: id_info) =
 		outputRegion (q, #region info)
 
 	    fun outputStmInfo (q, info: stm_info) =

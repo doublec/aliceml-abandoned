@@ -10,10 +10,11 @@
  *   $Revision$
  *)
 
-structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
+structure FlatteningPhase :> FLATTENING_PHASE =
     struct
+	structure C = EmptyContext
 	structure I = IntermediateGrammar
-	structure O = ImperativeGrammar
+	structure O = FlatGrammar
 
 	open I
 	open IntermediateAux
@@ -443,10 +444,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		fun f' exp' =
 		    O.ValDec (stmInfo (#region info'), id', exp', false)
 		val tryBody = translateExp (exp, f', cont')
-		val catchInfo =
-		    exp_info (#region info,
-			      Type.inCon (Type.STAR, Type.OPEN,
-					  Prebound.typpath_exn))
+		val catchInfo = exp_info (#region info, PreboundType.typ_exn)
 		val catchId = freshId catchInfo
 		val catchVarExp =
 		    VarExp (catchInfo, ShortId (id_info catchInfo, catchId))
@@ -645,7 +643,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _)), _, _) =
 	    raise Crash.Crash "MatchCompilationPhase.translateTest"
 
-	fun translate (imports, (exportExp, sign)) =
+	fun translate () (imports, (exportExp, sign)) =
 	    let
 		fun export exp =
 		    O.ExportStm (stmInfo (#region (infoExp exportExp)), exp)

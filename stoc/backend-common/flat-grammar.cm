@@ -1,0 +1,12 @@
+Group
+
+    signature FLAT_GRAMMAR
+    structure FlatGrammar
+
+is
+
+    ../common/sources.cm
+    ../common/id-stamp.cm
+
+    FLAT_GRAMMAR.sig
+    FlatGrammar.sml

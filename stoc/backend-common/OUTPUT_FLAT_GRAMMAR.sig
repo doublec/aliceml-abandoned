@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-signature OUTPUT_IMPERATIVE_GRAMMAR =
+signature OUTPUT_FLAT_GRAMMAR =
     sig
-	structure I: IMPERATIVE_GRAMMAR = ImperativeGrammar
+	structure I: FLAT_GRAMMAR = FlatGrammar
 
 	val outputComponent: I.component -> string
     end

@@ -1,8 +1,15 @@
-Group is
+Group
 
-    ../backend-common/imperative-grammar.cm
+    structure OzifyFlatGrammar
+
+is
+
+    ../misc/sources.cm
+    ../common/name.cm
+    ../common/prebound.cm
+    ../backend-common/flat-grammar.cm
 
     (* Externalisation (into Oz syntax) *)
 
-    OZIFY_IMPERATIVE_GRAMMAR.sig
-    OzifyImperativeGrammar.sml
+    OZIFY_FLAT_GRAMMAR.sig
+    OzifyFlatGrammar.sml

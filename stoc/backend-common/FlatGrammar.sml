@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
-    (*--** the above signature constraint should be opaque *)
+structure FlatGrammar: FLAT_GRAMMAR =
+    (*--** the above signature constraint should be opaque, but SML/NJ bombs *)
     struct
 	(* Literals *)
 
@@ -55,6 +55,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 
+	type id_info = IntermediateInfo.id_info
 	type stm_info = {region: Source.region, liveness: livenessInfo ref}
 	type exp_info = {region: Source.region, typ: Type.t}
 
@@ -106,6 +107,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 
 	type sign = IntermediateGrammar.sign
 	type component = (id * sign * Url.t) list * (body * sign)
+	type t = component
 
 	fun infoStm (ValDec (info, _, _, _)) = info
 	  | infoStm (RecDec (info, _, _)) = info

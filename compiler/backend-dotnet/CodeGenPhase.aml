@@ -63,7 +63,7 @@
 
 structure CodeGenPhase :> CODE_GEN_PHASE =
     struct
-	structure I = ImperativeGrammar
+	structure I = FlatGrammar
 	structure O = IL
 
 	structure System =

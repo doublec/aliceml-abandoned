@@ -3,4 +3,5 @@ Group is
 	../error/sources.cm
 
 	PHASE.sig
+	TARGET.sig
 	EmptyContext.sml

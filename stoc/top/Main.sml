@@ -29,21 +29,21 @@ structure Main :> MAIN =
     fun abstract' x  = AbstractionPhase.translate (BindEnv.clone BindEnv0.E0) x
     fun elab' x      = ElaborationPhase.translate (Env.clone Env0.E0) x
     fun translate' x = TranslationPhase.translate () x
-    fun flatten' x   = MatchCompilationPhase.translate x
-    fun illify' x    = CodeGenPhase.genComponent x
+    fun flatten' x   = FlatteningPhase.translate () x
+    fun ilify' x     = CodeGenPhase.genComponent x
 
     val parse        = parse' o Source.fromString
     val abstract     = abstract' o parse
     val elab         = elab' o abstract
     val translate    = translate' o elab
     val flatten      = flatten' o translate
-    val illify       = illify' o flatten
+    val ilify        = ilify' o flatten
 
     fun ozify outstream s =
 	let
 	    val component = flatten s
 	in
-	    OzifyImperativeGrammar.outputComponent (outstream, component);
+	    OzifyFlatGrammar.outputComponent (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
 	end
 
@@ -51,14 +51,14 @@ structure Main :> MAIN =
 	let
 	    val x = flatten s
 	    val _ = LivenessAnalysisPhase.annotate x
-	    val s' = OutputImperativeGrammar.outputComponent x
+	    val s' = OutputFlatGrammar.outputComponent x
 	in
 	    TextIO.output (outstream, s')
 	end
 
     fun comify outstream s =
 	let
-	    val component = illify s
+	    val component = ilify s
 	in
 	    IL.outputProgram (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
@@ -76,8 +76,8 @@ structure Main :> MAIN =
     val translateString		= processString translate
     val translateFile		= processFile translate
 
-    val imperatifyString	= processString flatten
-    val imperatifyFile		= processFile flatten
+    val flattenString		= processString flatten
+    val flattenFile		= processFile flatten
 
     val ozifyStringToStdOut	= processString (ozify TextIO.stdOut)
     val ozifyFileToStdOut	= processFile (ozify TextIO.stdOut)

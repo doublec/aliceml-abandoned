@@ -12,9 +12,9 @@
  *   $Revision$
  *)
 
-signature OZIFY_IMPERATIVE_GRAMMAR =
+signature OZIFY_FLAT_GRAMMAR =
     sig
-	structure I: IMPERATIVE_GRAMMAR = ImperativeGrammar
+	structure I: FLAT_GRAMMAR = FlatGrammar
 
 	val outputComponent: TextIO.outstream * I.component -> unit
     end

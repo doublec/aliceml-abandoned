@@ -13,7 +13,7 @@
 signature SIMPLIFY_MATCH =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
-	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
 
 	type pos = Label.t list
 	type typ = Type.t

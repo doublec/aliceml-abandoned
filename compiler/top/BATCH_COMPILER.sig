@@ -13,8 +13,8 @@ signature MAIN =
     val translateString :	string -> IntermediateGrammar.t
     val translateFile :		string -> IntermediateGrammar.t
 
-    val imperatifyString :	string -> ImperativeGrammar.component
-    val imperatifyFile :	string -> ImperativeGrammar.component
+    val flattenString :		string -> FlatGrammar.component
+    val flattenFile :		string -> FlatGrammar.component
 
     val ozifyStringToStdOut :	string -> unit
     val ozifyFileToStdOut :	string -> unit

@@ -10,10 +10,11 @@
  *   $Revision$
  *)
 
-signature MATCH_COMPILATION_PHASE =
+signature FLATTENING_PHASE =
     sig
+	structure C: CONTEXT = EmptyContext
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
-	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	val translate: I.component -> O.component
+	val translate: C.t -> I.t -> O.t
     end

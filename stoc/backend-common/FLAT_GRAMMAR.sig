@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-signature IMPERATIVE_GRAMMAR =
+signature FLAT_GRAMMAR =
     sig
 	(* Literals *)
 
@@ -54,6 +54,7 @@ signature IMPERATIVE_GRAMMAR =
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 
+	type id_info = IntermediateInfo.id_info
 	type stm_info = {region: Source.region, liveness: livenessInfo ref}
 	type exp_info = {region: Source.region, typ: Type.t}
 
@@ -105,6 +106,7 @@ signature IMPERATIVE_GRAMMAR =
 
 	type sign = IntermediateGrammar.sign
 	type component = (id * sign * Url.t) list * (body * sign)
+	type t = component
 
 	val infoStm: stm -> stm_info
     end

@@ -16,7 +16,7 @@ structure CodeStore :> CODE_STORE =
 
 	type stamp = Stamp.t
 
-	datatype id = datatype ImperativeGrammar.id
+	datatype id = datatype FlatGrammar.id
 
 	datatype reg =
 	    SFld of index

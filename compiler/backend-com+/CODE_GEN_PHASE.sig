@@ -12,7 +12,7 @@
 
 signature CODE_GEN_PHASE =
     sig
-	structure I: IMPERATIVE_GRAMMAR = ImperativeGrammar
+	structure I: FLAT_GRAMMAR = FlatGrammar
 	structure O: IL = IL
 
 	val genComponent: I.component -> O.program
