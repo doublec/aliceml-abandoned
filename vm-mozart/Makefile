@@ -104,6 +104,7 @@ ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec
 ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec
 
 ALICEC_OPTS = \
+	--check-intermediate \
 	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = --dump-target
 
@@ -127,7 +128,7 @@ LIBSYSTEMNATIVES0 = \
 	Config IO TextIO OS Unix CommandLine Component Debug Socket Rand \
 	Reflect
 LIBUTILITYNATIVES0 = \
-	MkRefMap
+	MkRefMap Addr
 LIBNATIVES = \
 	$(LIBSYSTEMNATIVES0:%=lib/system/Unsafe%.ozf) \
 	$(LIBUTILITYNATIVES0:%=lib/utility/Unsafe%.ozf)
@@ -206,18 +207,20 @@ COMPILERCOMMONSOURCES0 = \
 COMPILERCOMMONSOURCES = $(COMPILERCOMMONSOURCES0:%=compiler/common/%)
 
 COMPILERFRONTENDCOMMONSOURCES0 = \
-	LABEL_REFLECTION-sig.aml LabelReflection.aml \
-	PATH_REFLECTION-sig.aml PathReflection.aml \
-	TYPE_REFLECTION-sig.aml TypeReflection.aml \
-	PERVASIVE_TYPE_REFLECTION-sig.aml PervasiveTypeReflection.aml \
-	FIXITY_REFLECTION-sig.aml FixityReflection.aml \
-	INF_REFLECTION-sig.aml InfReflection.aml \
+	NAME_TRANSLATION-sig.aml NameTranslation.aml \
+	LABEL_TRANSLATION-sig.aml LabelTranslation.aml \
+	PATH_TRANSLATION-sig.aml PathTranslation.aml \
+	TYPE_TRANSLATION-sig.aml TypeTranslation.aml \
+	PERVASIVE_TYPE_TRANSLATION-sig.aml PervasiveTypeTranslation.aml \
+	FIXITY_TRANSLATION-sig.aml FixityTranslation.aml \
+	INF_TRANSLATION-sig.aml InfTranslation.aml \
 	ABSTRACT_GRAMMAR-sig.aml MkAbstractGrammar.aml \
 	PP_ABSTRACT_GRAMMAR-sig.aml MkPPAbstractGrammar.aml \
 	AbstractGrammar.aml TypedGrammar.aml \
 	ENV-sig.aml Env.aml USE_ENV-sig.aml UseEnv.aml \
 	ELABORATION_ERROR-sig.aml ElaborationError.aml \
 	ELABORATION_PHASE-sig.aml MkElaborationPhase.aml \
+	TRANSLATION_ENV-sig.aml TranslationEnv.aml \
 	TRANSLATION_PHASE-sig.aml MkTranslationPhase.aml MkFrontendCommon.aml
 COMPILERFRONTENDCOMMONSOURCES = \
 	$(COMPILERFRONTENDCOMMONSOURCES0:%=compiler/frontend-common/%)
@@ -436,7 +439,7 @@ build1/%.ozf: build1/%.oz
 
 build1/%.ozf: build1/%.aml
 	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
-	--trace-component-access --rtt-level=no -c $< -o $@
+	--trace-component-access --no-rtt -c $< -o $@
 
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
@@ -531,7 +534,7 @@ build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
 	build2/lib/rtt/LinkedRTT.ozf
 
 build2/%.ozf: build2/%.aml
-	$(ALICEC1) $(ALICEC_OPTS) --rtt-level=no -c $< -o $@
+	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
 
 build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
