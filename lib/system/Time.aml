@@ -17,7 +17,7 @@
 
 import signature TIME           from "TIME-sig"
 import structure UnsafeTime     from "UnsafeTime"
-
+import structure TextIO         from "TextIO"
 
 structure Time : TIME =
 struct
@@ -59,6 +59,7 @@ struct
     val minusOne    = LInt.fromInt (~1)
     val one         = LInt.fromInt 1
     val two         = LInt.fromInt 2
+    val ten         = LInt.fromInt 10
     val border      = Vector.sub (borders, 0)
     
     fun isEven i = LInt.rem (i, two) = zero
@@ -93,28 +94,29 @@ struct
                               else (whole + one, zero)
         end
 
-    fun fmt prec t = let
-	val nsec        = Time.toNanoseconds t 
-        val (neg, nsec)    = if LInt.sign nsec < 0 
+    fun fmt prec t = 
+    let
+	    val nsec        = Time.toNanoseconds t 
+        val (neg, nsec) = if LInt.sign nsec < 0 
                             then (true, ~nsec) 
                             else (false, nsec)
-	fun fmtInt i = LInt.fmt StringCvt.DEC i
-	fun fmtSec (neg, i) = fmtInt (if neg then ~i else i)
+	    fun fmtInt i = LInt.fmt StringCvt.DEC i
+	    fun fmtSec (neg, i) = fmtInt (if neg then ~i else i)
     in
-	if prec < 0 then raise General.Size
-	else if prec = 0 then
+        if prec < 0 then raise General.Size
+	    else if prec = 0 then
             let val (sec, _)    = split (nsec, maxPrec)
-	    in
-		fmtSec (neg, sec)
-	    end
-	else if prec >= maxPrec then
-	    let val (sec, nsec) = quotRem (nsec, nanoSec)
-	        val frac        = fmtInt nsec
+	        in
+		        fmtSec (neg, sec)
+	        end
+	    else if prec >= maxPrec then
+	        let val (sec, nsec) = quotRem (nsec, nanoSec)
+	            val frac        = fmtInt nsec
             in
                 concat [fmtSec (neg, sec), ".",
                         StringCvt.padRight #"0" prec frac]
-	    end
-	else
+	        end
+	    else
             let (* remove excess digits *) 
                 val (n, _)      = split (nsec, maxPrec - prec)
                 (* do the raw split *)
@@ -142,54 +144,51 @@ struct
             loop n (LargeInt.fromInt 1)
         end
 
-    fun divPow10 n i =
-        n div (pow10 i)
+    fun d2i d = assert (Char.isDigit d) do Int.toLarge (Char.ord d - Char.ord #"0")
 
-    fun toFrac n =
-        let
-            fun loop (n, i) =
-                if (divPow10 n i) = LargeInt.fromInt 0 then i
-                else loop (n, i + 1)
+    fun ret (t, s) = SOME (Time.fromNanoseconds t, s)
+
+    fun loop' (sign, getc, s, res, n) =
+        case getc s of
+            SOME (d, s') where (Char.isDigit d) =>
+            if n > maxPrec then loop' (sign, getc, s', res, n + 1)
+            else loop' (sign, getc, s', res * ten + d2i d, n + 1)
+          | SOME (_, s') =>
+            if n < maxPrec then ret (sign * res * pow10 (maxPrec - n), s')
+            else if n = 0 then NONE
+            else ret (sign * res, s')
+          | NONE => 
+            if n < maxPrec then ret (sign * res * pow10 (maxPrec - n), s)
+            else if n = 0 then NONE
+            else ret (sign * res, s)
+ 
             
-            val i = loop (n, 1)
-            val f = pow10 (maxPrec - i) 
-        in
-            n * f
-        end
+    fun loop (sign, getc, s, res) =
+        case getc s of
+            SOME (d, s')    where (Char.isDigit d) => 
+            loop (sign, getc, s', res * ten + d2i d)
+          | SOME (#".", s') =>
+            loop' (sign, getc, s', res, 0)
+          | _                                   => NONE
 
-
+    (* scan unsigned time. *)
+    fun scanTime (sign, getc, s) =
+        case getc s of
+            SOME (d, s') where (Char.isDigit d) =>
+            loop (sign, getc, s', d2i d)
+          | SOME (#".", s')                     =>
+            loop' (sign, getc, s', zero, 0)
+          | _                                   =>
+            NONE
+        
     fun scan getc s =
     let
-        (* unsigned number: must start with a digit *)
-        fun cardinal s =
-            case getc s of
-                SOME (d, _) where (Char.isDigit d) =>
-                LargeInt.scan StringCvt.DEC getc s
-              | _       => NONE
-
-        fun fractional (sign, sec, s) =
-            (* fractional part must always start with a '.' *)
-            case getc s of
-                SOME (#".", s') =>
-                (case cardinal s' of
-                    SOME (frac, s'') =>
-                    SOME (Time.fromNanoseconds 
-                            (sign * (sec * nanoSec + toFrac frac)), s'')
-                  | _                => NONE)
-              | _               => 
-                NONE
-               
-        fun time (sign, s) =
-            case cardinal s of
-                NONE            => fractional (sign, zero, s)
-              | SOME (v, s')    => fractional (sign, v, s')
-
         fun sign s =
             case getc s of
-                NONE                    => NONE
-              | SOME (#"+", s')         => time (one, s')
-              | SOME ((#"-" | #"~"), s')  => time (minusOne, s')
-              | _                       => time (one, s)
+                NONE                      => NONE
+              | SOME (#"+", s')           => scanTime (one, getc, s')
+              | SOME ((#"-" | #"~"), s')  => scanTime (minusOne, getc, s')
+              | _                         => scanTime (one, getc, s)
     in
         sign (StringCvt.skipWS getc s)
     end
