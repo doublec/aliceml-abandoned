@@ -8,7 +8,8 @@ OBJS = alicedata.o
 all: libdatalayer.a
 
 libdatalayer.a: $(OBJS)
-	ar rcs $@ $(OBJS)
+	ar rc $@ $(OBJS) || exit 1
+	ranlib $@ 
 
 alicedata.o: alicedata.cc alicedata.hh
 

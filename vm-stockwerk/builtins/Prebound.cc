@@ -9,11 +9,9 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#include "store.hh"
-#include "alicedata.hh"
+#include "store/store.hh"
+#include "datalayer/alicedata.hh"
 #include "Prebound.hh"
-
-typedef void (*FUNPTR)();
 
 namespace Builtins {
   namespace Prebound {

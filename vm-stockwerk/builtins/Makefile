@@ -11,7 +11,8 @@ OBJS = \
 all: libbuiltins.a
 
 libbuiltins.a: $(OBJS)
-	ar rcs $@ $(OBJS)
+	ar rc $@ $(OBJS) || exit 1
+	ranlib $@
 
 clean:
 	rm -rf $(OBJS) libbuiltins.a
