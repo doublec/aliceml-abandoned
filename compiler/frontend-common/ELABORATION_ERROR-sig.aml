@@ -2,6 +2,7 @@ signature ELABORATION_ERROR =
   sig
 
     type typ    = Type.t
+    type var    = Type.var
     type kind   = Type.kind
     type inf	= Inf.t
     type id     = AbstractGrammar.id
@@ -40,15 +41,13 @@ signature ELABORATION_ERROR =
 	| RefTypKind		of kind
 	(* Declarations *)
 	| ValDecUnify		of unify_error
-	| TypDecUnify		of unify_error
-	| DatDecUnify		of unify_error
-	(* Specifications *)
-	| TypSpecUnify		of unify_error
-	| DatSpecUnify		of unify_error
+	| ValDecLift		of id * var
 	(* Long ids *)
 	| ModLongidInf		of longid * inf
 	(* Modules *)
 	| SelModInf		of inf
+	(* Interfaces *)
+	| GroundInfKind		of Inf.kind
 
     datatype warning =
 	  NotGeneralized	of id * typ

@@ -16,6 +16,10 @@ structure Lab :> LAB =
     fun fromName(Name.ExId s)	= ALPHA s
       | fromName(Name.InId)	= ALPHA ""
 
+    fun toName(ALPHA "")	= Name.InId
+      | toName(ALPHA s)		= Name.ExId s
+      | toName(NUM n)		= Name.ExId(Int.toString n)
+
     fun toString(NUM n)		= Int.toString n
       | toString(ALPHA s)	= s
 

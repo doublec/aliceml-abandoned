@@ -256,9 +256,9 @@ structure List =
 	in if i >= 0 then nth(l,i) else raise Subscript end
 
     fun rev l =
-	let fun rev( nil,  ys) = ys
-	      | rev(x::xs, ys) = rev(xs, x::ys)
-	in rev(l,nil) end
+	let fun rev'( nil,  ys) = ys
+	      | rev'(x::xs, ys) = rev'(xs, x::ys)
+	in rev'(l,nil) end
 
     fun take(l,i) =
 	let fun take(x::xs, 0, ys) = rev ys

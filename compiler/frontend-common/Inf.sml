@@ -149,16 +149,34 @@ structure InfPrivate =
     fun path j		= pathCon(asCon j)
 
 
-  (* Kinds *)
-
-    fun inGround ()	= ref GROUND
-    fun inDependent pjk	= ref(DEP pjk)
-
-
   (* Strengthening *)
 
     fun strengthen(p, ref(SIG s)) = Sign.strengthen inCon (p, s)
       | strengthen(p, _)          = ()
+
+
+  (* Kinds *)
+
+    exception Kind
+
+    fun inGround ()		= ref GROUND
+    fun inDependent pjk		= ref(DEP pjk)
+
+    fun isGround(ref GROUND)	= true
+      | isGround _		= false
+
+    fun isDependent k		= not(isGround k)
+    fun asDependent(ref(DEP x))	= x
+      | asDependent _		= raise Kind
+
+    fun kind(ref j')		= kind' j'
+    and kind'( ANY
+	     | SIG _
+	     | ARR _ )		= inGround()
+      | kind'(CON(k,p))		= k
+      | kind'(LAM(p,j1,j2))	= inDependent(p, j1, kind j2)
+      | kind'(APP(j1,p,j2))	= (*UNFINISHED*) inGround()
+      | kind'(LINK j)		= kind j
 
 
   (* Matching *)

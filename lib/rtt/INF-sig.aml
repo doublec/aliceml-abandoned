@@ -37,11 +37,11 @@ signature INF =
 
     exception Interface
 
-    val asCon :		inf -> con		(* Interface *)
-    val asSig :		inf -> sign		(* Interface *)
-    val asArrow :	inf -> path * inf * inf	(* Interface *)
-    val asLambda :	inf -> path * inf * inf	(* Interface *)
-    val asApp :		inf -> inf * path * inf	(* Interface *)
+    val asCon :		inf -> con			(* Interface *)
+    val asSig :		inf -> sign			(* Interface *)
+    val asArrow :	inf -> path * inf * inf		(* Interface *)
+    val asLambda :	inf -> path * inf * inf		(* Interface *)
+    val asApp :		inf -> inf * path * inf		(* Interface *)
 
   (* Cloning etc. *)
 
@@ -51,7 +51,15 @@ signature INF =
 
   (* Kinds *)
 
+    exception Kind
+
     val inGround :	unit -> kind
     val inDependent :	path * inf * kind -> kind
+
+    val isGround :	kind -> bool
+    val isDependent :	kind -> bool
+    val asDependent :	kind -> path * inf * kind	(* Kind *)
+
+    val kind :		inf -> kind
 
   end

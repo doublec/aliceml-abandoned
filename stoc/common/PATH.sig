@@ -16,6 +16,7 @@ signature PATH =
 
     val invent :	unit -> path
     val fromLab :	lab  -> path
+    val toLab :		path -> lab
     val path :		path * lab * int -> path
 
     val compare :	path * path -> order

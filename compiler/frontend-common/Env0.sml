@@ -83,19 +83,19 @@ structure Env0 :> ENV0 =
     val typ_Match = typ_exn
     val typ_Bind  = typ_exn
 
-    fun insertVal'(stamp, typ, s) =
+    fun insertCon'(stamp, typ, s) =
 	let
-	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s), typ )
+	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s), typ, true )
 	in
 	    insertVal(E0, stamp, entry)
 	end
 
-    val _ = insertVal'(P.stamp_false, typ_false, "false")
-    val _ = insertVal'(P.stamp_true,  typ_true,  "true")
-    val _ = insertVal'(P.stamp_nil,   typ_nil,   "nil")
-    val _ = insertVal'(P.stamp_cons,  typ_cons,  "::")
-    val _ = insertVal'(P.stamp_ref,   typ_ref,   "ref")
-    val _ = insertVal'(P.stamp_Match, typ_Match, "Match")
-    val _ = insertVal'(P.stamp_Bind,  typ_Bind,  "Bind")
+    val _ = insertCon'(P.stamp_false, typ_false, "false")
+    val _ = insertCon'(P.stamp_true,  typ_true,  "true")
+    val _ = insertCon'(P.stamp_nil,   typ_nil,   "nil")
+    val _ = insertCon'(P.stamp_cons,  typ_cons,  "::")
+    val _ = insertCon'(P.stamp_ref,   typ_ref,   "ref")
+    val _ = insertCon'(P.stamp_Match, typ_Match, "Match")
+    val _ = insertCon'(P.stamp_Bind,  typ_Bind,  "Bind")
 
   end

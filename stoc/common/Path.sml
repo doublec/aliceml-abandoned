@@ -24,15 +24,16 @@ structure PathPrivate =
     type t = path
 
 
-  (* Creation *)
+  (* Creation and projection *)
 
-    fun invent() = ref(PLAIN(Name.InId))
+    fun invent()	= ref(PLAIN(Name.InId))
+    fun fromLab l	= ref(PLAIN(Lab.toName l))
+    fun path pln	= ref(DOT pln)
 
-    fun fromLab l =
-	ref(PLAIN(case Lab.toString l of "" => Name.InId
-				       | s  => Name.ExId s))
-
-    fun path(pln) = ref(DOT(pln))
+    fun toLab(ref p')	= toLab' p'
+    and toLab'(PLAIN n)	= Lab.fromName n
+      | toLab'(LINK p)	= toLab p
+      | toLab' _	= raise Crash.crash "Path.toLab"
 
 
   (* Ordering and hashing *)

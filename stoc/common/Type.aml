@@ -25,16 +25,16 @@ structure TypePrivate =
 	| SUM  of row		(* sum type (datatype) *)
 	| VAR  of kind * int	(* bound variable or skolem types *)
 	| CON  of con		(* constructor (of arbitrary kind) *)
-	| ALL  of alpha * typ	(* universal quantification *)
-	| EX   of alpha * typ	(* existential quantification *)
-	| LAM  of alpha * typ	(* abstraction (type function) *)
+	| ALL  of var * typ	(* universal quantification *)
+	| EX   of var * typ	(* existential quantification *)
+	| LAM  of var * typ	(* abstraction (type function) *)
 	| APP  of typ * typ	(* application *)
 	| REC  of typ		(* recursive type barrier *)
 
     and row = NIL | RHO | FLD of lab * typ list * row	(* [rho,r] *)
 
     withtype typ = typ' ref				(* [tau,t] *)
-    and    alpha = typ' ref				(* [alpha,a] *)
+    and      var = typ' ref				(* [alpha,a] *)
 
     type t = typ
 
@@ -407,11 +407,27 @@ structure TypePrivate =
 		else f
 
 	      | close(ref(ALL(a,t) | EX(a,t)), f) =
-		( a := MARK(!a) ; f )	(* Hack! *)
+		( a := MARK(!a) ; f )	(* bit of a hack... *)
 
 	      | close(_, f) = f
 	in
 	    foldl close (fn t => t) t t
+	end
+
+
+  (* Lifting a type to the current level *)
+
+    exception Lift of var
+
+    fun lift t =
+	let
+	    fun lift(t as ref(t' as HOLE(k,n))) =
+		    if n > !level then t := HOLE(k,!level) else ()
+	      | lift(t as ref(VAR(k,n))) =
+		    if n > !level then raise Lift t else ()
+	      | lift t = ()
+	in
+	    app lift t
 	end
 
 

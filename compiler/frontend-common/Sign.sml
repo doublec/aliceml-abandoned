@@ -75,6 +75,12 @@ structure SignPrivate =
 
     fun empty() = (ref [], Map.new())
 
+    fun newItem(s, l)		= Path.fromLab l
+    val newVal			= newItem
+    val newTyp			= newItem
+    val newMod			= newItem
+    val newInf			= newItem
+
     fun hideId (p,l,n)		= (p,l,n+1)
     fun hide item		= item := hide'(!item)
     and hide'(VAL(id,t,b,d))	= VAL(hideId id, t, b, d)
@@ -82,9 +88,11 @@ structure SignPrivate =
       | hide'(MOD(id,j,d))	= MOD(hideId id, j, d)
       | hide'(INF(id,k,d))	= INF(hideId id, k, d)
 
-    fun extend((itemsr,map), dom, l, makeItem') =
+    fun extend((itemsr,map), dom, p, makeItem') =
 	let
-	    val p    = Path.fromLab l
+	    val l    = Path.toLab p
+(*DEBUG*)
+val _=print("-- extending signature with `" ^ Lab.toString l ^ "'\n");
 	    val item = ref(makeItem'(p,l,0))
 
 	    val _ = itemsr := item :: !itemsr
@@ -95,10 +103,10 @@ structure SignPrivate =
 	    p
 	end
 
-    fun extendVal(s,l,t,b,d) = extend(s, VAL', l, fn x => VAL(x,t,b,d))
-    fun extendTyp(s,l,k,d)   = extend(s, TYP', l, fn x => TYP(x,k,d))
-    fun extendMod(s,l,j,d)   = extend(s, MOD', l, fn x => MOD(x,j,d))
-    fun extendInf(s,l,k,d)   = extend(s, INF', l, fn x => INF(x,k,d))
+    fun extendVal(s,p,t,b,d)	= extend(s, VAL', p, fn x => VAL(x,t,b,d))
+    fun extendTyp(s,p,k,d)	= extend(s, TYP', p, fn x => TYP(x,k,d))
+    fun extendMod(s,p,j,d)	= extend(s, MOD', p, fn x => MOD(x,j,d))
+    fun extendInf(s,p,k,d)	= extend(s, INF', p, fn x => INF(x,k,d))
 
 
   (* Lookup *)
@@ -119,13 +127,20 @@ structure SignPrivate =
     fun lookup dom ((_,m), l) =
 	case Map.lookup(m, (dom,l))
 	  of SOME(item::items) => !item
-	   | _                 => raise Crash.Crash "Sign.lookup"
-
+	   | _                 =>
+(*DEBUG*)
+(print("Lookup failed for `" ^ Lab.toString l ^ "'\n");
+ raise Crash.Crash "Sign.lookup"
+)
     fun lookup' dom ((_,m), l, n) =
 	case Map.lookup(m, (dom,l))
 	  of SOME(item::items) => !(Option.valOf(
 				   List.find (fn item => index item = n) items))
-	   | _                 => raise Crash.Crash "Sign.lookup'"
+	   | _                 =>
+(*DEBUG*)
+(print("Lookup failed for `" ^ Lab.toString l ^ "'\n");
+ raise Crash.Crash "Sign.lookup'"
+)
 
 
     fun lookupVal args  = (selectVal o lookup VAL') args

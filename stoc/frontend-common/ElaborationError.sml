@@ -10,6 +10,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 
 
     type typ    = Type.t
+    type var    = Type.var
     type kind   = Type.kind
     type inf	= Inf.t
     type id     = AbstractGrammar.id
@@ -48,15 +49,13 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| RefTypKind		of kind
 	(* Declarations *)
 	| ValDecUnify		of unify_error
-	| TypDecUnify		of unify_error
-	| DatDecUnify		of unify_error
-	(* Specifications *)
-	| TypSpecUnify		of unify_error
-	| DatSpecUnify		of unify_error
+	| ValDecLift		of id * var
 	(* Long ids *)
 	| ModLongidInf		of longid * inf
 	(* Modules *)
 	| SelModInf		of inf
+	(* Interfaces *)
+	| GroundInfKind		of Inf.kind
 
     datatype warning =
 	  NotGeneralized	of id * typ
@@ -186,22 +185,16 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["expression","does","not","match","pattern","type:"],
 	  par["does","not","match","type"], ue)
-      | ppError(TypDecUnify ue) =
-	  par["missing","arguments","in","type","expression",
-	      "in","type","declaration"]
-      | ppError(DatDecUnify ue) =
-	  par["missing","arguments","in","type","expression",
-	      "in","datatype","declaration"]
-      | ppError(TypSpecUnify ue) =
-	  par["missing","arguments","in","type","expression",
-	      "in","type","specification"]
-      | ppError(DatSpecUnify ue) =
-	  par["missing","arguments","in","type","expression",
-	      "in","datatype","specification"]
+      | ppError(ValDecLift(x,a)) =
+	  par["could not generalize","type","of",ppId x,
+	      "due","to","value","restriction",
+	      "although","it","contains","explicit","type","variables"]
       | ppError(ModLongidInf(y,j)) =
 	  par["module",ppLongid y,"is","not","a","structure"]
       | ppError(SelModInf j) =
 	  par["module","expression","is","not","a","structure"]
+      | ppError(GroundInfKind k) =
+	  par["missing","arguments","in","signature","expression"]
 
     fun ppWarning(NotGeneralized(x,t)) =
 	vbox(

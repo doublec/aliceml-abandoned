@@ -29,10 +29,16 @@ signature SIGN =
   (* Construction *)
 
     val empty :		unit -> ('a,'b) sign
-    val extendVal :	('a,'b) sign * lab * typ * bool * path option -> path
-    val extendTyp :	('a,'b) sign * lab * kind * typ option -> path
-    val extendMod :	('a,'b) sign * lab * 'a  * path option -> path
-    val extendInf :	('a,'b) sign * lab * 'b  *  'a  option -> path
+
+    val newVal :	('a,'b) sign * lab -> path
+    val newTyp :	('a,'b) sign * lab -> path
+    val newMod :	('a,'b) sign * lab -> path
+    val newInf :	('a,'b) sign * lab -> path
+
+    val extendVal :	('a,'b) sign * path * typ  * bool * path option -> path
+    val extendTyp :	('a,'b) sign * path * kind * typ  option -> path
+    val extendMod :	('a,'b) sign * path *  'a  * path option -> path
+    val extendInf :	('a,'b) sign * path *  'b  *  'a  option -> path
 
   (* Lookup *)
 

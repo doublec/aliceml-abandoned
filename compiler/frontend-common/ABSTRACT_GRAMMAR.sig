@@ -126,8 +126,8 @@ signature ABSTRACT_GRAMMAR =
 	| DatDec    of info * id * typ		(* data type *)
 	| ModDec    of info * id * mod		(* module *)
 	| InfDec    of info * id * inf		(* interface *)
+	| VarDec    of info * id * dec		(* scoped type variable *)
 	| RecDec    of info * dec list		(* recursive declarations *)
-	| TypvarDec of info * id * dec list	(* scoped type variable *)
 	| LocalDec  of info * dec list		(* local declarations *)
 
     (* Specifications *)
@@ -139,6 +139,7 @@ signature ABSTRACT_GRAMMAR =
 	| DatSpec   of info * id * typ		(* data type *)
 	| ModSpec   of info * id * inf		(* module *)
 	| InfSpec   of info * id * inf		(* interface *)
+	| VarSpec   of info * id * spec		(* scoped type variable *)
 	| RecSpec   of info * spec list		(* recursive specifications *)
 	| LocalSpec of info * spec list		(* local specifications *)
 	| ExtSpec   of info * inf		(* extension (include) *)

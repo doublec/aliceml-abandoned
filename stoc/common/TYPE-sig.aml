@@ -12,7 +12,7 @@ signature TYPE =
     type con  = kind * con_sort * path			(* [chi,c] *)
 
     type row						(* [rho,r] *)
-    type alpha						(* [alpha,a] *)
+    type var						(* [alpha,a] *)
     type typ						(* [tau,t] *)
     type t = typ
 
@@ -22,20 +22,20 @@ signature TYPE =
 
   (* Injections *)
 
-    val unknown :	kind        -> typ
-    val inArrow :	typ * typ   -> typ
-    val inTuple :	typ list    -> typ
-    val inRow :		row         -> typ
-    val inSum :		row         -> typ
-    val inVar :		alpha       -> typ
-    val inCon :		con         -> typ
-    val inAll :		alpha * typ -> typ
-    val inExist :	alpha * typ -> typ
-    val inLambda :	alpha * typ -> typ
-    val inApp :		typ * typ   -> typ
-    val inRec :		typ         -> typ
+    val unknown :	kind      -> typ
+    val inArrow :	typ * typ -> typ
+    val inTuple :	typ list  -> typ
+    val inRow :		row       -> typ
+    val inSum :		row       -> typ
+    val inVar :		var       -> typ
+    val inCon :		con       -> typ
+    val inAll :		var * typ -> typ
+    val inExist :	var * typ -> typ
+    val inLambda :	var * typ -> typ
+    val inApp :		typ * typ -> typ
+    val inRec :		typ       -> typ
 
-    val var :		kind -> alpha
+    val var :		kind -> var
 
   (* Inquiries *)
 
@@ -59,17 +59,17 @@ signature TYPE =
     val asTuple :	typ -> typ list		(* Type *)
     val asRow :		typ -> row		(* Type *)
     val asSum :		typ -> row		(* Type *)
-    val asVar :		typ -> alpha		(* Type *)
+    val asVar :		typ -> var		(* Type *)
     val asCon :		typ -> con		(* Type *)
-    val asAll :		typ -> alpha * typ	(* Type *)
-    val asExist :	typ -> alpha * typ	(* Type *)
-    val asLambda :	typ -> alpha * typ	(* Type *)
+    val asAll :		typ -> var * typ	(* Type *)
+    val asExist :	typ -> var * typ	(* Type *)
+    val asLambda :	typ -> var * typ	(* Type *)
     val asApp :		typ -> typ * typ	(* Type *)
 
   (* Complex extractions *)
 
-    val kind :		typ   -> kind
-    val kindVar :	alpha -> kind
+    val kind :		typ -> kind
+    val kindVar :	var -> kind
 
     val path :		typ -> path			(* Type *)
     val pathCon :	con -> path
@@ -104,6 +104,9 @@ signature TYPE =
 
   (* Level management *)
 
+    exception Lift of var
+
+    val lift :		typ  -> unit			(* Lift *)
     val enterLevel :	unit -> unit
     val exitLevel :	unit -> unit
 
