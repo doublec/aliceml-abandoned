@@ -17,25 +17,28 @@ class Interpreter;
 
 // Known StackFrame Types
 typedef enum {
-  MIN_STACK_FRAME       = MIN_DATA_LABEL,
-  CALL_FRAME            = MIN_STACK_FRAME,
-  BYNEED_FRAME          = (CALL_FRAME + 1),
-  LAZY_SELECTION_FRAME  = (BYNEED_FRAME + 1),
-  ABSTRACT_CODE_FRAME   = (LAZY_SELECTION_FRAME + 1),
-  PRIMITIVE_FRAME       = (ABSTRACT_CODE_FRAME + 1),
-  VECTOR_TABULATE_FRAME = (PRIMITIVE_FRAME + 1),
+  MIN_STACK_FRAME             = MIN_DATA_LABEL,
+  CALL_FRAME                  = MIN_STACK_FRAME,
+  BYNEED_FRAME                = (CALL_FRAME + 1),
+  LAZY_SELECTION_FRAME        = (BYNEED_FRAME + 1),
+  // AbstractCode Frames
+  ABSTRACT_CODE_FRAME         = (LAZY_SELECTION_FRAME + 1),
+  ABSTRACT_CODE_HANDLER_FRAME = (ABSTRACT_CODE_FRAME + 1),
+  // Primitive Frames
+  PRIMITIVE_FRAME             = (ABSTRACT_CODE_HANDLER_FRAME + 1),
+  VECTOR_TABULATE_FRAME       = (PRIMITIVE_FRAME + 1),
   // Pickling Frames
-  INPUT_FRAME           = (VECTOR_TABULATE_FRAME + 1),
-  TRANSFORM_FRAME       = (INPUT_FRAME + 1),
-  UNPICKLE_FRAME        = (TRANSFORM_FRAME + 1),
-  PICKLE_UNPACK_FRAME   = (UNPICKLE_FRAME + 1),
-  PICKLE_LOAD_FRAME     = (PICKLE_UNPACK_FRAME + 1),
+  INPUT_FRAME                 = (VECTOR_TABULATE_FRAME + 1),
+  TRANSFORM_FRAME             = (INPUT_FRAME + 1),
+  UNPICKLE_FRAME              = (TRANSFORM_FRAME + 1),
+  PICKLE_UNPACK_FRAME         = (UNPICKLE_FRAME + 1),
+  PICKLE_LOAD_FRAME           = (PICKLE_UNPACK_FRAME + 1),
   // BootLinker Frames
-  APPLY_FRAME           = (PICKLE_LOAD_FRAME + 1),
-  ENTER_FRAME           = (APPLY_FRAME + 1),
-  LINK_FRAME            = (ENTER_FRAME + 1),
-  LOAD_FRAME            = (LINK_FRAME + 1),
-  MAX_STACK_FRAME       = LOAD_FRAME
+  APPLY_FRAME                 = (PICKLE_LOAD_FRAME + 1),
+  ENTER_FRAME                 = (APPLY_FRAME + 1),
+  LINK_FRAME                  = (ENTER_FRAME + 1),
+  LOAD_FRAME                  = (LINK_FRAME + 1),
+  MAX_STACK_FRAME             = LOAD_FRAME
 } FrameLabel;
 
 class StackFrame : private Block {
