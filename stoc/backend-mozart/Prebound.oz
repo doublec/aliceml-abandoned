@@ -198,8 +198,9 @@ define
 	    try
 	       X = {ByNeedFail error(alice(FutureException(E)))}
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'Hole.Hole'} unit
+	       {RaiseAliceException BuiltinTable.'Hole.Hole'}
 	    end
+	    unit
 	 end
       'Hole.fill':
 	 fun {$ X Y}
