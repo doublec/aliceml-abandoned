@@ -15,10 +15,10 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import type int and list     from "ToplevelTypes"
-import functor   MkVector    from "MkVector"
-import signature MONO_VECTOR from "MONO_VECTOR-sig"
+import structure __pervasive             from "Pervasive"
+import __primitive type int and list     from "ToplevelTypes"
+import __primitive functor   MkVector    from "MkVector"
+import __primitive signature MONO_VECTOR from "MONO_VECTOR-sig"
 
 functor MkMonoVector(type elem
 		     type vector
