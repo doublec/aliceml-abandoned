@@ -9,69 +9,60 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __HEADEROP_HH__
-#define __HEADEROP_HH__
+#ifndef __STORE__HEADEROP_HH__
+#define __STORE__HEADEROP_HH__
 
 #if defined(INTERFACE)
-#pragma interface
+#pragma interface "store/HeaderOp.hh"
 #endif
-
-#include "base.hh"
-#include "headerdef.hh"
 
 class HeaderOp {
 public:
   // Header Creation and Access
   static void EncodeHeader(Block *t, BlockLabel l, u_int s) {
-    Assert(t != NULL);
-    ((u_int *) t)[0] =  (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT);
+    Assert(t != INVALID_POINTER);
+    ((u_int *) t)[0] =  (1 << GEN_SHIFT) | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT);
   }
   static u_int GetHeader(Block *p) {
-    Assert(p != NULL); return *((u_int *) p);
+    Assert(p != INVALID_POINTER);
+    return *((u_int *) p);
   }
-  // Label Access
+  // Label Creation and Access
   static void EncodeLabel(Transient *p, BlockLabel l) {
-    Assert(p != NULL);
+    Assert(p != INVALID_POINTER);
     ((u_int *) p)[0] = ((((u_int *) p)[0] & ~TAG_MASK) | (((u_int) l) << TAG_SHIFT));
   }
   static BlockLabel DecodeLabel(Block *p) {
-    Assert(p != NULL);
+    Assert(p != INVALID_POINTER);
     return (BlockLabel) ((((u_int *) p)[0] & TAG_MASK) >> TAG_SHIFT);
   }
-  // Size Access
-  static u_int BlankDecodeSize(Block *p) {
-    Assert (p != NULL);
-    return (u_int) ((((u_int *) p)[0] & SIZE_MASK) >> SIZE_SHIFT);
+  // Size Creation and Access
+  static void EncodeSize(Block *p, u_int s) {
+    Assert(p != INVALID_POINTER);
+    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
   }
   static u_int DecodeSize(Block *p) {
-    u_int s = BlankDecodeSize(p);
-    return (u_int) ((s < MAX_HBSIZE) ? s : (*((u_int *) ((word *) p - 1)) >> 1));
-  }
-  static void EncodeSize(Block *p, u_int s) {
-    if (HeaderOp::BlankDecodeSize(p) == MAX_HBSIZE) {
-      *((u_int *) ((word *) p - 1)) = s;
-    }
-    else {
-      ((u_int *) p)[0] = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
-    }
+    Assert (p != INVALID_POINTER);
+    return (u_int) ((((u_int *) p)[0] & SIZE_MASK) >> SIZE_SHIFT);
   }
   // Generation Access
   static u_int DecodeGeneration(Block *p) {
-    Assert(p != NULL); return ((*((u_int *) p)) >> GEN_SHIFT);
+    Assert(p != INVALID_POINTER);
+    return ((*((u_int *) p)) >> GEN_SHIFT);
   }
   // Intgen Mark Access
   static void SetIntgenMark(Block *p) {
-    Assert(p != NULL);
+    Assert(p != INVALID_POINTER);
     ((u_int *) p)[0] |= (1 << INTGEN_SHIFT);
   }
   static void ClearIntgenMark(Block *p) {
-    Assert(p != NULL);
+    Assert(p != INVALID_POINTER);
     ((u_int *) p)[0] &= ~(1 << INTGEN_SHIFT);
   }
   static u_int HasIntgenMark(Block *p) {
-    Assert(p != NULL);
+    Assert(p != INVALID_POINTER);
     return (((u_int *) p)[0] & INTGEN_MASK);
   }
 };
 
-#endif
+#endif __STORE__HEADEROP_HH__

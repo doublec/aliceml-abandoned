@@ -9,15 +9,17 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __TYPES_HH__
-#define __TYPES_HH__
+#ifndef __STORE__TYPES_HH__
+#define __STORE__TYPES_HH__
 
-#include "headerdef.hh"
+#include "store/StoreConfig.hh"
 
-#define INVALID_POINTER NULL
-#define INVALID_INT     (1 << 31)
-#define INVALID_TSIZE   0
-#define INVALID_FIELD   0
+#define INVALID_POINTER   NULL
+#define INVALID_INT       (1 << (STORE_WORD_WIDTH - 1))
+#define MIN_VALID_INT     (-(1 << (STORE_WORD_WIDTH - 2)))
+#define MAX_VALID_INT     ((1 << (STORE_WORD_WIDTH - 2)) - 1)
+#define INVALID_BLOCKSIZE 0
+#define INVALID_FIELD     0
 
 typedef unsigned int u_int;
 
@@ -32,17 +34,15 @@ typedef enum {
   BLKTAG = 0,
   INTTAG = 1,
   TRTAG  = 2
-} p_tags;
+} PointerTag;
 
 // Pointer Masks
 typedef enum {
   INTMASK = 1,
   TAGMASK = 3
-} p_mask;
+} PointerMask;
 
 class Block;
 class Transient;
-class Stack;
-class Set;
 
-#endif
+#endif __STORE__TYPES_HH__

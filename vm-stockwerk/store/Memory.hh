@@ -9,43 +9,44 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __MEMCHUNK_HH__
-#define __MEMCHUNK_HH__
+#ifndef __STORE__MEMORY_HH__
+#define __STORE__MEMORY_HH__
 
 #if defined(INTERFACE)
-#pragma interface
+#pragma interface "store/Memory.hh"
 #endif
 
 #include <cstdlib>
 #include <cstring>
-#include "base.hh"
-
-#define MEMCHUNK_SIZE (1024 * 128)
 
 class MemChunk {
+private:
+  static u_int counter;
 protected:
   MemChunk *prev, *next;
   char *block, *top, *max;
 public:
+  u_int id;
   MemChunk(MemChunk *prv, MemChunk *nxt, u_int s) : prev(prv), next(nxt) {
     block = top = (char *) std::malloc(s); Assert(block != NULL);
     max = (block + s);
     std::memset(block, 1, s);
+    id = counter++;
   }
   ~MemChunk() {
     Assert(block != NULL); std::free(block);
   }
 
-  int FitsInChunk(u_int s)      { return ((top + s) < max); }
-  void MakeEmpty()              { top = block; }
-  char *AllocChunkItem(u_int s) { char *oldtop = top; top += s; return oldtop; }
-  char *GetTop()                { return (char *) top; }
-  u_int GetSize()               { return (max - block); }
+  void Clear()                  { top = block; std::memset(block, 1, (max - block)); }
+  char *GetTop()                { return top; }
+  void SetTop(char *top)        { MemChunk::top = top; } 
+  char *GetMax()                { return max; }
   char *GetBottom()             { return block; }
+
   MemChunk *GetNext()           { return next; }
   void SetNext(MemChunk *nxt)   { next = nxt; }
   MemChunk *GetPrev()           { return prev; }
   void SetPrev(MemChunk *prv)   { prev = prv; }
 };
 
-#endif
+#endif __STORE__MEMORY_HH__

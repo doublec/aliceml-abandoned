@@ -9,14 +9,12 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __POINTEROP_HH__
-#define __POINTEROP_HH__
+#ifndef __STORE__POINTEROP_HH__
+#define __STORE__POINTEROP_HH__
 
 #if defined(INTERFACE)
-#pragma interface
+#pragma interface "store/PointerOp.hh"
 #endif
-
-#include "base.hh"
 
 class PointerOp {
 public:
@@ -52,8 +50,8 @@ public:
   }
   // int<->Word Conversion
   static word EncodeInt(int v) {
-    Assert(v >= -(1 << 30));
-    Assert(v <= (1 << 30));
+    Assert(v >= MIN_VALID_INT);
+    Assert(v <= MAX_VALID_INT);
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
   static int DecodeInt(word v) {
@@ -61,11 +59,12 @@ public:
       return (int) INVALID_INT;
     }
     else {
-      return (int) (((u_int) v & (1 << 31)) ? ((1 << 31) | ((u_int) v >> 1)) : ((u_int) v >> 1));
+      return (int) (((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) ?
+		    ((1 << (STORE_WORD_WIDTH - 1)) | ((u_int) v >> 1)) : ((u_int) v >> 1));
     }
   }
   static word EncodeUnmanagedPointer(void *v) {
-    Assert(((u_int) v & (1 << 31)) == 0);
+    Assert(((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) == 0);
     return (word) (((u_int) v << 1) | (u_int) INTTAG); 
   }
   static void *DecodeUnmanagedPointer(word v) {
@@ -74,24 +73,21 @@ public:
   }
   // Deref Function
   static word Deref(word v) {
-    while (true) {
-      u_int vi = (u_int) v;
- 
-      Assert(v != NULL);
-      if (vi & INTMASK) {
-	return v;
-      }
-      if ((vi & TAGMASK) == (u_int) TRTAG) {
-	vi -= (u_int) TRTAG;
-      }
-      if (HeaderOp::DecodeLabel((Block *) vi) == REF) {
+  loop:
+    u_int vi = (u_int) v;
+
+    if (!((vi ^ TRTAG) & TAGMASK)) {
+      //    if ((vi & TAGMASK) == (u_int) TRTAG) {
+      vi ^= (u_int) TRTAG;
+      
+      if (HeaderOp::DecodeLabel((Block *) vi) == REF_LABEL) {
 	v = ((word *) vi)[1];
       }
-      else {
-	return v;
-      }
+      goto loop;
     }
+
+    return v;
   }
 };
 
-#endif
+#endif __STORE__POINTEROP_HH__

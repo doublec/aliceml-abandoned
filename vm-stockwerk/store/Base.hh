@@ -9,13 +9,13 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __BASE_HH__
-#define __BASE_HH__
+#ifndef __STORE__BASE_HH__
+#define __STORE__BASE_HH__
 
 #include <cstdio>
 
 #ifdef DEBUG_CHECK
-#define Assert(Cond)                                                                 \
+#define Assert(Cond)                                                                  \
   if (!(Cond)) {                                                                      \
     char *t = NULL;                                                                   \
     std::fprintf(stderr, "%s:%d assertion '%s' failed\n", __FILE__, __LINE__, #Cond); \
@@ -31,6 +31,6 @@
   static_cast<char *>(NULL)[0] = 0;					\
   exit(0);
 
-#include "types.hh"
+#include "store/Types.hh"
 
-#endif
+#endif __STORE__BASE_HH__
