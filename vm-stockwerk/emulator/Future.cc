@@ -17,7 +17,7 @@
 #include "emulator/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {
-  RETURN_UNIT; //--** not implemented
+  Error("Future.alarm not implemented"); //--** to be done
 } END
 
 DEFINE1(Future_await) {
