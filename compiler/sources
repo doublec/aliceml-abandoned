@@ -78,6 +78,8 @@ common/PP_INF.sig
 common/PPInf.sml
 common/INTERMEDIATE_GRAMMAR.sig
 common/MakeIntermediateGrammar.sml
+common/PP_INTERMEDIATE_GRAMMAR.sig
+common/MakePPIntermediateGrammar.sml
 common/IntermediateGrammar.sml
 common/PERVASIVE_TYPE.sig
 common/MakePervasiveType.sml
@@ -88,9 +90,13 @@ common/PATH_REFLECTION.sig
 common/PathReflection.sml
 common/TYPE_REFLECTION.sig
 common/TypeReflection.sml
+common/CHECK_INTERMEDIATE.sig
+common/CheckIntermediate.sml
 frontend-common/StringMap.sml
 frontend-common/ABSTRACT_GRAMMAR.sig
 frontend-common/MakeAbstractGrammar.sml
+frontend-common/PP_ABSTRACT_GRAMMAR.sig
+frontend-common/MakePPAbstractGrammar.sml
 frontend-common/AbstractGrammar.sml
 frontend-common/TypedGrammar.sml
 frontend-common/ENV.sig
