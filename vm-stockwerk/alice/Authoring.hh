@@ -63,6 +63,11 @@
 #define DECLARE_LIST(tagVal, length, x)					\
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
 
+#define DECLARE_UNMANAGED_POINTER(pointer, x)				\
+  void *pointer = NULL;							\
+  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); }	\
+  else { pointer = Store::WordToUnmanagedPointer(x); }     
+
 #define RETURN_UNIT RETURN0
 #define RETURN_BOOL(b) RETURN(BOOL_TO_WORD(b));
 #define RETURN_REAL(r) RETURN(Real::New(r)->ToWord());
