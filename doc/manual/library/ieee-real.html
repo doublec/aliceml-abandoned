@@ -41,6 +41,7 @@
 
 	 val toString :        decimal_approx -> string
 	 val fromString :      string -> decimal_approx option
+	 val scan :            (char, 'a) StringCvt.reader -> (decimal_approx, 'a) StringCvt.reader
   </PRE>
 
 <?php section("description", "description") ?>
@@ -49,15 +50,6 @@
     Like the Standard ML Basis'
     <A href="http://www.standardml.org/Basis/ieee-float.html"><TT>IEEEReal</TT></A> structure.
   </P>
-
-  <P>
-    <I>Limitations:</I> The following standard function is
-    currently missing:
-  </P>
-
-  <UL>
-    <LI><TT>scan</TT></LI>
-  </UL>
 
   <DL>
     <DT>
