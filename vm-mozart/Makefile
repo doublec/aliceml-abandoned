@@ -502,7 +502,8 @@ INSTALL3TOPFILES = $(INSTALL2TOPFILES) stot.ozf
 INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.ozf) \
-	$(LIBSOURCES0:%.asig=%.ozf)
+	$(LIBSOURCES0:%.asig=%.ozf) \
+	fundamental/RTT.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
