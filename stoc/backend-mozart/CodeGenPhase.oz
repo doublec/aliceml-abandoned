@@ -230,8 +230,8 @@ define
 
    fun {TrComponent Import#(Body#Sign)}
       {Map Import
-       fun {$ Id#Sign#U}
-	  {TrId Id}#Sign#{StringToAtom {Url.toString U}}
+       fun {$ IdDef#Sign#U}
+	  {TrIdDef IdDef}#Sign#{StringToAtom {Url.toString U}}
        end}#
       ({TrBody Body $ nil {NewDictionary}}#Sign)
    end
