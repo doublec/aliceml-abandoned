@@ -18,9 +18,16 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
+ifdef LIGHTNING
+EXTRA_SRCS = JITStore.cc
+else
+EXTRA_SRCS =
+endif
+
 SRCS = WeakDictionary.cc \
        Memory.cc \
-       Store.cc
+       Store.cc \
+       $(EXTRA_SRCS)
 OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all clean distclean adt
