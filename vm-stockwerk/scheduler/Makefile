@@ -7,4 +7,7 @@ OBJS = Thread.o ThreadPool.o TaskStack.o Scheduler.o
 
 .PHONY: all header clean distclean
 
-all: $(OBJS)
+all: libscheduler.o
+
+libscheduler.o: $(OBJS)
+	ar rcs $@ $(OBJS)
