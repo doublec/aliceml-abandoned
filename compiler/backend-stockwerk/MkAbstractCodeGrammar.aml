@@ -88,5 +88,5 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 			   liveness
 	withtype value = abstractCode Value.t
 
-	type t = value * Stamp.t vector
+	type t = value * (Stamp.t * UniqueString.t) vector
     end

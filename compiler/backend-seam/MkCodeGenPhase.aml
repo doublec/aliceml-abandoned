@@ -659,7 +659,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 				args, bodyInstr, liveness)
 		val concreteCode = V.concreteCode abstractCode
 		val exportDesc =
-		    Vector.map (fn (_, Id (_, stamp, _)) => stamp) exportDesc
+		    Vector.map (fn (label, Id (_, stamp, _)) =>
+				   (stamp, translateLabel label)) exportDesc
 	    in
 		(* This is an instance of the component type
 		 * defined in lib/system/Component.aml:
