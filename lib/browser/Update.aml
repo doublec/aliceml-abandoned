@@ -1,0 +1,352 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure TextIO from "x-alice:/lib/system/TextIO"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+import structure MkDictionary from "MkDictionary"
+import structure Dictionaries from "Dictionaries"
+
+import structure Node from "Node"
+import structure Layout from "Layout"
+import structure DrawNodes from "DrawNodes"
+import structure Server from "Server"
+import structure GtkSupport from "GtkSupport"
+import structure Settings from "Settings"
+import structure NewNodeHelper from "NewNodeHelper"
+
+import signature UPDATE from "UPDATE-sig"
+
+
+
+local
+    open Node
+in
+
+structure Update :> UPDATE = 
+struct
+    
+    exception UpdateError
+    
+
+    (* momentan in Dictionaries:
+    structure MainDictionary = MkDictionary(type t = node * GtkSupport.tag)
+    val main_dict = MainDictionary.empty *)
+
+    (* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
+       - werden beim Starten des Inspectors "gefuellt" *)
+    val incrActLine = ref (fn _ => ())
+    val resize = ref (fn () => ())
+        
+    (* max *)
+    fun max (xs,f) = foldl(fn (x,e) => Int.max(f(x),e)) 0 xs
+
+    (* array_map *)
+    fun array_map' (funct,a,i) = 
+	if i < Array.length(a) 
+	    then (funct(Array.sub(a,i));array_map' (funct,a,i+1)) 
+	else ()
+
+    fun array_map (funct,a) = array_map' (funct,a,0)
+
+    (* updateChild *)
+    fun updateChild (p,i,n) = case p of
+	Concat(r) => (Array.update(#kids(r),i,n)
+		      ; if not(getParent(n) = Empty)
+			    then updateChild(#parent(r),getIndex(p),p)
+			else () )
+      | Container(r) => (Array.update(#kids(r),i,n)
+			 ; if not(getParent(n) = Empty)
+			       then updateChild(#parent(r),getIndex(p),p)
+			   else () )
+      | RelNode(r) => (#content(r) := n
+		       ; if not(getParent(n) = Empty)
+			     then updateChild(#parent(r),getIndex(p),p) 
+			 else () )
+      | Empty => () 
+      | _ => raise UpdateError
+	    
+    (* setDazzled *)
+    fun setDazzled n = 
+	case n of
+	Simple(r) => ( #status(r) := DAZZLED
+		      ; setDazzled(getParent(n)) )
+      | Concat(r) => ( #status(r) := DAZZLED
+		      ; setDazzled(getParent(n)) )
+      | Container(r) => ( #status(r) := DAZZLED
+			 ; setDazzled(getParent(n)) )
+      | RelNode(r) => ( #status(r) := DAZZLED
+ 		       ; setDazzled(getParent(n)) )
+      | RelRefNode(r) => ( #status(r) := DAZZLED
+			  ; setDazzled(getParent(n)) )
+      | Limit(r) => ( #status(r) := DAZZLED
+		     ; setDazzled(getParent(n)) )
+      | Empty => () 
+	    
+    (* iterMove *)
+    fun iterMove(dy,i) =
+	if i > Dictionaries.Main.getHighestIndexAssigned(Dictionaries.maindict)
+	    then ()
+	else ( case Dictionaries.Main.lookup(Dictionaries.maindict,i) of
+	            NONE => ()
+                  | SOME (node,line) 
+			=> ( GtkSupport.moveGroup(getGroup(node),0,dy)
+			   ; GtkSupport.yPosSepLine(line,getGroup(node)) )
+             ; iterMove(dy,i+1) )
+
+   (* update *)
+    and update (no,va,f,g,root) = 
+	(TextIO.print("started update") 
+	 ; let val  n = if !(Settings.relmode) 
+	                    andalso isRelNode(getParent(no))
+			    then getParent(no)
+			else no
+	       val ind = getAncIndex n 
+	       val (anc,ancline) = valOf(Dictionaries.Main.lookup(Dictionaries.maindict,ind)) 
+               (* Urahne *)
+	       val old_ydim = get_ydim(anc)
+	       val (p,index) = if !(Settings.relmode) 
+				   then (getParent(n),getIndex(n)) 
+			       else getNoRelAnc n	
+	       val new =
+		   case getDesc(n) of
+		       VALUE(r) => f(va,#typ(r),p,index,
+				     getDepth(n),root)
+		     | I_VALUE(r) => let val va_inf =   
+				         UnsafeValue.cast va : Reflect.module
+				     in g(va_inf,#typ(r),p,index,
+					  getDepth(n),root)
+				     end 
+		     | INTERPUNCT => (*
+			             f(va,(UnsafeValue.cast ()),p,index,
+				     getDepth(n)) 
+				      *) 
+			             raise UpdateError
+	       val _ = updateChild(p,index,new)
+	       val node = if getParent(new) = Empty then new else anc
+	       val _ = if isRelRefNode new
+			   then findRelNode(node,va)
+		       else ()
+	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
+	   in ( setDazzled n
+	       ; Gtk.objectDestroy(getGroup(n))
+	       ; if !(Settings.relmode) (* RELATIONSMODUS *)
+		     then ( Dictionaries.RelMan.delete
+			   (Dictionaries.reldict,ind)
+			   ; relnumber := 0 )
+		   (* then let val rn_list = getRelNodeList node
+			  in List.app 
+			      (fn n => let val ri_rel = 
+			                   case ReinspectedRelDict.lookup 
+					       (Dictionaries.ri_reldict,ind)
+					       of SOME x => x 
+					        | NONE => []
+				       in  ReinspectedRelDict.update
+					   (Dictionaries.ri_reldict,
+					    (ind, n::ri_rel))
+				       end) rn_list
+			  end *)
+		 else ()  
+               ; Layout.layout(node)  
+	       ; Dictionaries.Main.update(Dictionaries.maindict,
+					  (ind,(node,ancline)))
+	       ; DrawNodes.draw(node,0,y_pos,true)  
+	       ; let val dy = get_ydim(node) - old_ydim
+		 in ( TextIO.print("\nUPDATE: act_line incremented by "^Int.toString(dy)^"\n")
+		     ; (!incrActLine) dy
+		     ; iterMove (dy,getIndex(anc) + 1) 
+		     ; Layout.setVisible(get_xdim(node), dy) )
+		 end
+	      ; TextIO.print(" Iter move done \n") )
+	   end ) 
+
+    (* findRelNode *)
+    and findRelNode(anc,va) = 
+	let val found = ref false
+	    val va_inf = UnsafeValue.cast va : Reflect.module
+	    val g = fn n => findRelNode(n,va)
+	    val f = fn n => if isRelNode n 
+		            andalso ( case getDesc(n) of
+				      VALUE(r) => va = #value(r)
+				    | I_VALUE(r) => va_inf = #value(r)
+				    | _ => false) (* vorher: raise UpdateError *)
+				then ( found := true
+				      ; setDazzled n)
+			    else ()
+	in ( case anc of
+	     Concat(r) => ( f anc
+			  ; if !found then ()
+			    else array_map (f,getKids(anc))
+			  ; if !found then ()
+			    else array_map (g,getKids(anc)) )
+	   | Container(r) => ( f anc
+			     ; if !found then () 
+			       else array_map (f,getKids(anc))
+			     ; if !found then ()
+			       else array_map (g,getKids(anc)) )
+	   | RelNode(r) => (f anc
+                           ; if !found then ()
+			     else g (!(#content(r))) )
+	   | _ => () )
+	end
+        
+    (* tell *)
+    and tell (va,li,f,g,root) =  
+	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
+							    getAncIndex m)) 
+	                           li
+	in ((* Window.stopButtonSetActive(true) *)
+	     List.map (fn n => update(n,va,f,g,root)) new_li 
+	     ; (!resize)() 
+	    (* ; Window.stopButtonSetActive(false) *) )
+	end   
+
+    (* watcher *)
+    and watcher (future,va,f,g,root) = 
+	Thread.thread 
+	(fn () 
+	 => ( case Dictionaries.Transient.iterLookup 
+	               (Dictionaries.transdict, 
+			fn (_,l) =>
+			List.exists 
+			(fn n
+			 => UnsafeValue.same(getValue(getDesc(n)),
+					     va)) l) of 
+	      NONE => () 
+	    | SOME((vv,ll),i)  
+	      => ( if Future.isLazy  future
+		       then UnsafeValue.awaitRequest(future)
+		   else Future.await(future)
+		  ; let val new_l = #2(valOf(Dictionaries.Transient.lookup
+					     (Dictionaries.transdict,i)))
+		    in Server.serve(fn () => tell(va,new_l,f,g,root))
+		    end ) ))
+	
+    (* reinspect *)
+    and reinspect (n,f,g,root) = 
+        let val va = getReflectValue n
+			           : Reflect.value
+	in  Server.serve(fn () => 
+			 (update(n,va,f,g,root) 
+			 ; (!resize)()
+			 ; TextIO.print("REINSPECT: Window.resize() done :-)\n") ) )
+	end
+         handle General.Match  => raise UpdateError 
+	
+    (* foldDepth *)
+    and foldDepth (n,i,f,g,root) = 
+	Server.serve
+	(fn () => 
+	 let val _ = TextIO.print("FOLD_DEPTH\n")
+	     val old_depth = !(Settings.max_depth)
+	 in 
+	     ( setDazzled n
+	      ; let val new_depth = findHighestDepth n + i 
+		    val va = getReflectValue n
+		in ( Settings.set_depth(if new_depth < 0 then 0 else new_depth)
+		    ; update (n,va,f,g,root)
+		    ; (!resize)()  )
+		end 
+	      ; Settings.set_depth(old_depth) )
+	 end)
+
+    (* foldWidth *)
+    and foldWidth (n,i,f,g,root) = 
+	Server.serve
+	(fn () => 
+	 let val _ = TextIO.print("FOLD_WIDTH\n")
+	     val new_n = if not(getDesc(n) = INTERPUNCT) 
+			     then n
+			 else let val cp = getParent(n)
+			      in case getDesc(cp) of 
+				 INTERPUNCT => getValueAnc(cp)
+			       | _ => cp
+			      end	
+	     val _ = TextIO.print("FOLD_WIDTH: new_n erfolgreich berechnet\n")
+     	     val old_width = !(Settings.max_width)
+	 in 
+	     ( setDazzled new_n
+              ; TextIO.print("FOLD_WIDTH: setDazzled beendet\n")
+	      ; let val sub = let val first = List.nth
+	                                        (Array.toList(getKids(new_n)),
+						 0)
+			      in if isSimple first
+				 andalso String.equal("struct",getRep first) 
+				     then 1 else 0
+			      end 
+		    val new_width = findHighestWidth new_n + i - sub 
+		    val va = getReflectValue new_n
+		    val _ = TextIO.print("FOLD_WIDTH: highestWidth bestimmt\n")
+		in ( Settings.set_width(if new_width < 0 then 0 else new_width)
+		    ; update (new_n,va,f,g,root)
+		    ; (!resize)() )
+		end
+	      ; Settings.set_width(old_width) )
+	 end )
+
+    (* findHighestDepth *)
+    and findHighestDepth n = case n of
+	Concat(r) => max(Array.toList(#kids(r)),
+				fn no => if no = Empty 
+					     then findHighestDepth n
+					 else findHighestDepth no)
+      | Container(r) => max(Array.toList(#kids(r)),
+				   fn no => if no = Empty 
+						then findHighestDepth n
+					    else findHighestDepth no)
+      | RelNode(r) => findHighestDepth (!(#content(r)))
+      | _ => getDepth n
+
+    (* findHighestWidth *)
+    and findHighestWidth n = 
+	let val new_i = ref 0 
+	in ( findHighestWidth' (n,0,new_i)
+            ; TextIO.print("FiHiWi: durchlaufen\n")
+	    ; !new_i )
+	end 
+
+    and findHighestWidth' (n,i,new_i) = case n of
+	Concat(r) => array_map(fn no => findHighestWidth'(no,!new_i,new_i),
+			       #kids(r))
+      | RelNode(r) => findHighestWidth'(!(#content(r)),i,new_i)
+      | Container(r) 
+	    => ( let val li = Array.toList(#kids(r))
+		     val first = List.nth(li,0)
+		     val test_i = List.length(li) - 
+			 (if isLimit(List.last(li)) then 1 else 0) -
+                         (if isSimple(first)
+			      andalso String.equal("struct",getRep first) 
+			      then 2 else 0)
+		 in  new_i := Int.max(i,test_i)
+		 end  
+		; array_map(fn no => findHighestWidth'(no,!new_i,new_i),
+			    getKids(n)) )
+      |  _ => ()
+
+    (* getRelNodeList *)
+    and getRelNodeList n = case n of
+        RelNode(r) => n::getRelNodeList(!(#content(r)))
+      | Concat(r) => Array.foldl (fn (n,l) => l@getRelNodeList(n)) 
+	             [] (getKids(n))
+      | Container(r) => Array.foldl (fn (n,l) => l@getRelNodeList(n)) 
+		        [] (getKids(n))
+      | _ => nil
+   
+end (* struct *)
+
+end
+
