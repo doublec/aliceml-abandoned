@@ -7,8 +7,6 @@
 ## Configuration Section
 ##
 
-: ${SEAM_HOME="$PROGRAMFILES/Seam"}
-
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
 OPTS3= # '--dump-phases' # --dump-intermediate'
@@ -16,15 +14,6 @@ OPTS3= # '--dump-phases' # --dump-intermediate'
 ##
 ## End of Configuration Section
 ##
-
-export SEAM_HOME
-
-if [ "$1" = "-global" ]
-then
-   prefix=/opt/alice-seam
-else
-   prefix=`pwd`/install
-fi
 
 case `uname -s` in
     CYGWIN*)
@@ -42,7 +31,7 @@ echo Trying to install Alice-on-Seam to $prefix...
 ##
 ## Build Seam
 ##
-(cd vm-seam && make WINDOWS=${WINDOWS} SEAMTOOL=${SEAM_HOME}/bin/seamtool) || exit 1
+(cd vm-seam && make WINDOWS=${WINDOWS}) || exit 1
 
 ##
 ## Compile the Bootstrap Compiler with SML/NJ
