@@ -20,11 +20,15 @@ import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 structure UnsafeInspector :> UNSAFE_INSPECTOR = 
 struct
   	       
-    (* inspect *)
+    (* inspection of values *)
+
     fun inspect (v,t) = Widget.inspect(v,t)
     
-    (* inspectInf *)
+    (* inspection of modules *)
+
     and inspectInf (v,t) = Widget.inspectInf(v,t)
+
+   (* initialization *)
 
     val _  = Widget.init ()
 
