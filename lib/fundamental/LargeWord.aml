@@ -12,12 +12,8 @@
  *   $Revision$
  *)
 
-import structure __pervasive and Int and LargeWord from "Pervasive"
-import structure MkWord                            from "MkWord"
+import structure __pervasive from "Pervasive"
+import structure Word31      from "Word31"
+import signature WORD        from "WORD-sig"
 
-local
-    __primitive val wordSize : Int.int = "LargeWord.wordSize"
-in
-    structure LargeWord = MkWord(type word = LargeWord.word
-				 val wordSize = wordSize)
-end
+structure LargeWord : WORD = Word31

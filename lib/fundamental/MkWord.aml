@@ -29,51 +29,47 @@ import structure String                               from "String"
 import structure StringCvt                            from "StringCvt"
 import signature WORD                                 from "WORD-sig"
 
-functor MkWord(type word val wordSize : int) : WORD =
+functor MkWord(structure BaseWord: sig
+    type word
+
+    val wordSize : int
+
+    val fromInt : int  -> word
+    val toInt :   word -> int
+    val toIntX :  word -> int
+
+    val fromLargeWord : LargeWord.word -> word
+    val toLargeWord :   word -> LargeWord.word
+    val toLargeWordX :  word -> LargeWord.word
+
+    val op + :   word * word -> word
+    val op - :   word * word -> word
+    val op * :   word * word -> word
+    val op div : word * word -> word
+    val op mod : word * word -> word
+
+    val notb :   word -> word
+    val orb :    word * word -> word
+    val xorb :   word * word -> word
+    val andb :   word * word -> word
+
+    val op << :  word * Word.word -> word
+    val op >> :  word * Word.word -> word
+    val op ~>> : word * Word.word -> word
+
+    val op < :   word * word -> bool
+    val op > :   word * word -> bool
+    val op <= :  word * word -> bool
+    val op >= :  word * word -> bool
+end) :> WORD where type word = BaseWord.word =
 struct
-    type word = word
-    type t    = word							(**)
+    open BaseWord
 
-    val wordSize = wordSize
+    type t = word							(**)
 
-    __primitive val largeWordSize : int = "LargeWord.wordSize"
-
-    __primitive val fromInt' :   int * int -> word = "Word.fromInt'"
-    __primitive val fromWord' :  int * Word.word -> word = "Word.fromWord'"
-    __primitive val fromWordX' : int * Word.word -> word = "Word.fromWordX'"
-    __primitive val fromWord'' : int * word -> LargeWord.word = "Word.fromWord'"
-    __primitive val fromWordX'': int * word -> LargeWord.word = "Word.fromWordX'"
-
-    __primitive val toInt :       word -> int              = "Word.toInt"
-    __primitive val toIntX :      word -> int              = "Word.toIntX"
-    __primitive val toLargeInt :  word -> LargeInt.int     = "Word.toInt"
-    __primitive val toLargeIntX : word -> LargeInt.int     = "Word.toIntX"
-
-    fun toLargeWord x	= fromWord''(largeWordSize,x)
-    fun toLargeWordX x	= fromWordX''(largeWordSize,x)
-    fun fromWord x	= fromWord'(wordSize,x)
-    fun fromLargeWord x	= fromWord'(wordSize,x)
-    fun fromInt x	= fromInt'(wordSize,x)
-    fun fromLargeInt x	= fromInt'(wordSize,x)
-
-    __primitive val op + :   word * word -> word = "Word.+"
-    __primitive val op - :   word * word -> word = "Word.-"
-    __primitive val op * :   word * word -> word = "Word.*"
-    __primitive val op div : word * word -> word = "Word.div"
-    __primitive val op mod : word * word -> word = "Word.mod"
-
-    __primitive val notb :   word -> word        = "Word.notb"
-    __primitive val orb :    word * word -> word = "Word.orb"
-    __primitive val xorb :   word * word -> word = "Word.xorb"
-    __primitive val andb :   word * word -> word = "Word.andb"
-    __primitive val op << :  word * Word.word -> word = "Word.<<"
-    __primitive val op >> :  word * Word.word -> word = "Word.>>"
-    __primitive val op ~>> : word * Word.word -> word = "Word.~>>"
-
-    __primitive val op < :   word * word -> bool = "Word.<"
-    __primitive val op > :   word * word -> bool = "Word.>"
-    __primitive val op <= :  word * word -> bool = "Word.<="
-    __primitive val op >= :  word * word -> bool = "Word.>="
+    val fromLargeInt = fromInt
+    val toLargeInt   = toInt
+    val toLargeIntX  = toIntX
 
     val equal	= op =
     fun hash w	= abs(toInt w) handle Overflow => 0
@@ -93,16 +89,16 @@ struct
 
     (* fmt and scan both use inverted signs to cope with minInt! *)
 
-    val w0 = fromWord 0w0
-    val w2 = fromWord 0w2
-    val w8 = fromWord 0w8
-    val w10 = fromWord 0w10
-    val w16 = fromWord 0w16
+    val w0 = fromInt 0
+    val w2 = fromInt 2
+    val w8 = fromInt 8
+    val w10 = fromInt 10
+    val w16 = fromInt 16
 
-    fun base BIN	= fromWord 0w2
-      | base OCT	= fromWord 0w8
-      | base DEC	= fromWord 0w10
-      | base HEX	= fromWord 0w16
+    fun base BIN	= w2
+      | base OCT	= w8
+      | base DEC	= w10
+      | base HEX	= w16
 
     fun toIsDigit BIN	= Char.isBinDigit
       | toIsDigit OCT	= Char.isOctDigit
