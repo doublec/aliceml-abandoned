@@ -1,0 +1,26 @@
+Group is
+
+	ckit/sources.cm
+
+        UTIL-sig.sml
+	Util.sml
+
+        TypeTree.sml
+
+	TYPE_MANAGER-sig.sml
+	TypeManager.sml
+
+	SPECIAL-sig.sml
+	MkSpecial.sml
+
+	GENERATOR-sig.sml
+	MkUnsafe.sml
+	MkCore.sml
+        MkEnums.sml
+
+        PARSER-sig.sml
+	Parser.sml
+	
+	GtkBinding.sml
+
+	

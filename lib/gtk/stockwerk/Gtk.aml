@@ -1,0 +1,107 @@
+
+import structure GtkUtils from "GtkUtils"
+import structure UnsafeGtk from "UnsafeGtk"
+import structure GtkCore from "GtkCore"
+import structure GtkEnums from "GtkEnums"
+import signature GTK from "GTK-sig"
+
+structure Gtk :> GTK =
+struct
+    val _ = GtkUtils.init()
+
+    open GtkCore
+    open GtkEnums 
+
+    type callBackFunction = object * object list -> unit
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+
+    val NULL : object = UnsafeGtk.null()
+    val TRUE : int = UnsafeGtk.gtkTrue()
+    val FALSE : int = UnsafeGtk.gtkFalse()
+
+    local
+	val signalTable = ref nil : 
+	    (int * object * int * callBackFunction) list ref
+	val lastNumber = ref 0
+	    
+	fun sc (obj, signame, callback, after) =
+	    let
+		val connid = UnsafeGtk.signalConnect(obj,signame,
+						     !lastNumber,after)
+		val newtab = (!lastNumber,obj,connid,callback)::(!signalTable)
+	    in
+		(signalTable := newtab ;
+		 lastNumber := (!lastNumber) + 1 ;
+		 connid)
+	    end
+
+    in
+	
+	fun signalConnect (obj, signame, callback) = 
+	    sc (obj, signame, callback, false)
+	fun signalConnectAfter(obj, signame, callback) =
+	    sc (obj, signame, callback, true)
+	    
+	fun signalDisconnect (obj, connid) =
+	    ( UnsafeGtk.signalDisconnect(obj,connid) ;
+	      signalTable := List.filter  (fn (_,_,connid',_)=>connid<>connid')
+				          (!signalTable)
+	    )
+
+	fun signalDisconnectByFunc (obj, callback) = 
+	    let
+		fun find (_,obj',connid,callback') =
+		    if (obj = obj') andalso (callback = callback')
+			then ( UnsafeGtk.signalDisconnect(obj,connid) ; false )
+			else true
+	    in
+		signalTable := List.filter find (!signalTable)
+	    end
+
+	fun listener stream =
+	let
+	    val funid = hd (!stream)
+	    val argcount = hd (tl (!stream))
+	    val s = List.drop(!stream,2)
+	in
+	  ( stream := List.drop(!stream, argcount+2) ;
+	    List.app 
+	        (fn (funid',_,_,f)=>if funid=funid' then f(NULL,nil) else ())
+	        (!signalTable) ;
+	    listener stream )
+	end
+    end
+
+    local
+	fun sleep ms =
+	    Future.await (Future.alarm (Time.fromMilliseconds ms))
+
+	val initPoll = 10
+	val maxPoll = 50
+	val pollStep = 5
+
+	fun mainLoop sTime =
+	    let
+		val haveEvents = (eventsPending() = TRUE)
+		val sTimeNew = 
+		    if haveEvents then initPoll
+		        else sTime + (if sTime >= maxPoll then 0 else pollStep)
+	    in
+		(if haveEvents then mainIteration() else false ;
+		 sleep sTime;  
+		 mainLoop sTimeNew)
+	    end
+    val eventStream : int list = Promise.future(Promise.promise())
+    in
+	val _ = UnsafeGtk.setEventStream eventStream
+	val _ = spawn (listener (ref eventStream))
+	val _ = spawn (mainLoop initPoll)
+    end
+end
