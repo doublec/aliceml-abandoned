@@ -15,17 +15,18 @@ structure MozartEngine =
 		val args = ["stoc-mozart.exe"]
 		structure Code = OzifyFlatGrammar)
 
-structure MozartContext :> CONTEXT where type t = MozartEngine.t =
+structure MozartTargetContext :> CONTEXT where type t = MozartEngine.t =
     struct
 	type t = MozartEngine.t
 
 	fun clone engine = engine
     end
 
-structure MozartTarget: TARGET =
-    (*--** :> TARGET where structure C = MozartContext *)
+structure MozartTarget :> TARGET
+    where C = MozartTargetContext
+    where type t = string * FlatGrammar.t =
     struct
-	structure C = MozartContext
+	structure C = MozartTargetContext
 
 	type t = string * FlatGrammar.t
 
@@ -37,11 +38,22 @@ structure MozartTarget: TARGET =
 	    (MozartEngine.buildFunctor engine component)
     end
 
-structure MozartGenerationPhase =
+structure MozartGenerationContext :> CONTEXT where type t = string =
     struct
-	structure C = EmptyContext
+	type t = string
+
+	fun clone s = s
+    end
+
+structure MozartGenerationPhase (*:> PHASE
+    where C = MozartGenerationContext
+    where I = FlatGrammar
+    where O = MozartTarget*) =
+    (*--** if I insert the above, SML/NJ crashes when compiling top/Main.sml *)
+    struct
+	structure C = MozartGenerationContext
 	structure I = FlatGrammar
 	structure O = MozartTarget
 
-	fun translate component = component
+	fun translate inFilename component = (inFilename, component)
     end
