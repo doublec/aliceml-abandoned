@@ -231,6 +231,8 @@ define
 	       @type  = package
 	       @label = {New Helper.ozAtom create('package' self 0 Visual package)}
 	       @brace = {New Helper.empty create(self)}
+	       arity    <- nil
+	       maxWidth <- 0
 	       %% Hack Alert
 	       {Dictionary.put @items 1 {New Helper.empty create(self)}}
 	    else
