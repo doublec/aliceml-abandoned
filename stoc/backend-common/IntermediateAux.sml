@@ -53,6 +53,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	      | patternVariablesOf' (RowPat (_, fieldPats, _), ids) =
 		foldr (fn (Field (_, _, pat), ids) =>
 		       patternVariablesOf' (pat, ids)) ids fieldPats
+	      | patternVariablesOf' (VecPat (_, pats), ids) =
+		foldr patternVariablesOf' ids pats
 	      | patternVariablesOf' (AsPat (_, pat1, pat2), ids) =
 		patternVariablesOf' (pat1, patternVariablesOf' (pat2, ids))
 	      | patternVariablesOf' (AltPat (_, pat::_), ids) =
@@ -241,6 +243,18 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		     end) (nil, subst) patFields
 	    in
 		(RowPat (coord, patFields', hasDots), subst')
+	    end
+	  | relax (VecPat (coord, pats), subst) =
+	    let
+		val (pats', subst') =
+		    List.foldr (fn (pat, (pats, subst)) =>
+				let
+				    val (pat', subst') = relax (pat, subst)
+				in
+				    (pat'::pats, subst')
+				end) (nil, subst) pats
+	    in
+		(VecPat (coord, pats'), subst')
 	    end
 	  | relax (AsPat (coord, pat1, pat2), subst) =
 	    let
