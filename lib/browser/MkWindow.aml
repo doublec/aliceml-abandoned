@@ -247,23 +247,41 @@ fun scrollY (y,scrolled,vadj) =
 						       true),
 				     EntryObj(LABEL("-3"),
 					      [Handler("activate",w(~3))],
-					         true)
-				   (*  EntryObj(LABEL("-2"),[w(~2)],true),
-				     EntryObj(LABEL("-1"),[w(~1)],true),
+					         true),
+				     EntryObj(LABEL("-2"),
+					      [Handler("activate",w(~2))],
+					      true),
+				     EntryObj(LABEL("-1"),
+					      [Handler("activate",w(~1))],
+					      true),
 				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+1"),[w(1)],true),
-				     EntryObj(LABEL("+2"),[w(2)],true),
-				     EntryObj(LABEL("+3"),[w(3)],true),
-				     EntryObj(LABEL("+4"),[w(4)],true),
-				     EntryObj(LABEL("+5"),[w(5)],true),
+				     EntryObj(LABEL("+1"),
+					      [Handler("activate",w(1))],
+					      true),
+				     EntryObj(LABEL("+2"),
+					      [Handler("activate",w(2))],
+					      true),
+				     EntryObj(LABEL("+3"),
+					      [Handler("activate",w(3))],
+					      true),
+				     EntryObj(LABEL("+4"),
+					      [Handler("activate",w(4))],
+						       true),
+				     EntryObj(LABEL("+5"),
+					      [Handler("activate",w(5))]
+					      ,true),
 				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+10"),[w(10)],true) *)
+				     EntryObj(LABEL("+10"),
+					      [Handler("activate",w(10))],
+					      true) 
 				     ],
 				    sensitive = true},
 				   MenuObj
 				   {title = "depth",
 				    items = 
-				    [EntryObj(LABEL("-2"),[],true)],
+				    [EntryObj(LABEL("+1"),
+					      [Handler("activate",d(1))]
+					      ,true)],
 				    sensitive = true}],
 			  sensitive = true},
 		  MenuObj{title = "Filter",
@@ -343,8 +361,17 @@ struct
      fun handleReinspectSelection _ =
 	 (selectHandler("reinspect")) (getSelectionNode(),0)
 
+     fun handleShrinkSelection _  =
+         (selectHandler("shrink")) (getSelectionNode(),0)
+
+     fun handleExpandSelection _  =
+         (selectHandler("expand")) (getSelectionNode(),0)
+
      fun handleWidth node = 
 	 fn i => fn _ => (selectHandler("width")) (node,i)
+
+     fun handleDepth node =
+	 fn i => fn _ => (selectHandler("depth")) (node,i)
 
 	 (* Menu-Bar *)
      val bar = WindowHelper.createMenu
@@ -362,9 +389,12 @@ struct
 		 MenuObj
 		 {title = "Selection",
 		  items = [EntryObj(LABEL "Expand",
-				    [],true),
+				    [Handler("activate",
+					     handleExpandSelection)]
+				    ,true),
 			   EntryObj(LABEL "Shrink",
-				   []
+				   [Handler("activate",
+					    handleShrinkSelection)]
 				    ,true),
 			   EntryObj(SEP, [],true),
 			   EntryObj(LABEL "Reinspect",
@@ -424,7 +454,7 @@ struct
 		     SOME(n) 
 		     =>( makePopup({node = n,
 				    widthhandler = handleWidth(n), 
-				    depthhandler = [], 
+				    depthhandler = handleDepth(n), 
 				    reinspecthandler = handleReinspect(n)})
 				   ; ())
 		   | NONE => ())

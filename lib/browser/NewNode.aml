@@ -814,8 +814,24 @@ struct
     val _ = !WindowManager.register("reinspect",
 				    fn (n,_) => Update.reinspect(n,
 							     createGraph,
-							     createGraphInf)) 
-	
+							     createGraphInf))
+
+    val _ = !WindowManager.register("width",
+			 fn (n,i) => TextIO.print("Changing width by " 
+						  ^ Int.toString(i)
+						  ^ "\n"))
+    val _ = !WindowManager.register("depth",
+		    fn (n,i) => TextIO.print("Changing depth by " 
+					     ^ Int.toString(i)
+					     ^ "\n"))
+
+    val _ = !WindowManager.register("shrink",
+		    fn (n,_) => TextIO.print("Shrinking!\n"))
+
+    val _ = !WindowManager.register("expand",
+				    fn (n,_) => TextIO.print("Expanding!\n"))
+
+
 end (* struct end *)
  
 end (* local end *)
