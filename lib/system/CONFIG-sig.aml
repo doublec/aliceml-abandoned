@@ -1,8 +1,10 @@
 (*
- * Author:
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
+ *   Leif Kornstaedt, 2001
  *   Andreas Rossberg, 2001
  *
  * Last change:
@@ -10,7 +12,10 @@
  *   $Revision$
  *)
 
-signature HOME =
+signature CONFIG =
 sig
-    val homeEnv : string
+    datatype platform = WIN32 | UNIX
+
+    val platform : platform
+    val homeDir : string option
 end

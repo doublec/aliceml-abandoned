@@ -1,8 +1,10 @@
 (*
- * Author:
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
+ *   Leif Kornstaedt, 2001
  *   Andreas Rossberg, 2001
  *
  * Last change:
@@ -10,9 +12,14 @@
  *   $Revision$
  *)
 
-import signature HOME from "HOME-sig"
+import structure OS from "OS"
+import signature CONFIG from "CONFIG-sig"
+import structure NativeConfig from "NativeConfig"
 
-structure Home : HOME =
+structure Config : CONFIG =
 struct
-    val homeEnv = "STOCKHOME"
+    datatype platform = WIN32 | UNIX
+
+    val platform = NativeConfig.platform
+    val homeDir = OS.Process.getEnv "STOCKHOME"
 end

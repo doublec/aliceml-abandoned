@@ -1,0 +1,16 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature NATIVE_CONFIG_COMPONENT =
+sig
+    structure NativeConfig : sig val platform: 'a end
+end
