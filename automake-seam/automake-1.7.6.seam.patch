@@ -146,7 +146,7 @@ diff -rNu automake1.7-1.7.6.orig/lib/am/seamlibrary.am automake1.7-1.7.6/lib/am/
 +
 +%LIBRARY%: $(%XLIBRARY%_OBJECTS) $(%XLIBRARY%_DEPENDENCIES) %DIRSTAMP%
 +	-rm -f %LIBRARY%
-+	$(SEAMTOOL) link -o %LIBRARY% $(%XLIBRARY%_OBJECTS) $(%XLIBRARY%_LIBADD)
++	$(SEAMTOOL) link -o %LIBRARY% $(%XLIBRARY%_OBJECTS) $(%XLIBRARY%_LIBADD) $(LIBS) $(LDFLAGS)
 diff -rNu automake1.7-1.7.6.orig/lib/am/seamlibs.am automake1.7-1.7.6/lib/am/seamlibs.am
 --- automake1.7-1.7.6.orig/lib/am/seamlibs.am	1970-01-01 01:00:00.000000000 +0100
 +++ automake1.7-1.7.6/lib/am/seamlibs.am	2003-07-28 11:35:52.000000000 +0200
