@@ -17,7 +17,7 @@
 #pragma interface "java/Table.hh"
 #endif
 
-#include "store/Store.hh"
+#include "java/Data.hh"
 
 class DllExport Table: private Block {
 protected:
@@ -51,10 +51,6 @@ public:
   void Init(u_int index, word value) {
     Assert(index < GetCount());
     InitArg(BASE_SIZE + index, value);
-  }
-  void Assign(u_int index, word value) {
-    Assert(index < GetCount());
-    ReplaceArg(BASE_SIZE + index, value);
   }
   word Get(u_int index) {
     Assert(index < GetCount());
