@@ -24,7 +24,12 @@ define
    Socket = 'Socket'(server:
 			fun {$ TakePort} Socket Port in
 			   Socket = {New Open.socket init()}
-			   {Socket bind(takePort: TakePort port: ?Port)}
+			   if TakePort \= 0 then
+			      {Socket bind(takePort: TakePort)}
+			      Port = TakePort
+			   else
+			      {Socket bind(port: Port)}
+			   end
 			   {Socket listen()}
 			   Socket#Port
 			end
