@@ -44,4 +44,4 @@ dnl Checks for library functions.
 AC_SUBST(m4)
 AC_SUBST(javac)
 AC_SUBST(sml-cm)
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile tools/Makefile)
