@@ -27,9 +27,12 @@ signature DEBUGGER =
 	datatype step_point_type =
 	    Application of value * Type.t * value vector
 	  | Conditional of value * Type.t
+	  | Constructor of value * Type.t * value vector
 	  | Handler     of exn
 	  | Raise       of exn
+	  | RecordSel   of int * value * Type.t
 	  | Spawn
+	  | Strict      of value * Type.t
 
 	datatype event = 
 	    Entry      of Thread.thread * position * step_point_type
