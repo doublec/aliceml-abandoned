@@ -12,8 +12,6 @@
 
 import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FD        from "x-alice:/lib/gecode/FD"
-import structure FS        from "x-alice:/lib/gecode/FS"
-import structure Space    from "x-alice:/lib/gecode/Space"
 import structure Search    from "x-alice:/lib/gecode/Search"
 import structure Linear    from "x-alice:/lib/gecode/Linear"
 import structure Print     from "x-alice:/lib/system/Print"
@@ -49,12 +47,7 @@ fun money cl =
     end
 
 val (root,space) = money FD.DEF
-val _ = print "Status:\n"
-val _ = Print.printVal (Space.status space)
-val _ = print "\nSearching:\n"
 val (SOME sol) = Search.searchOne space
-val _ = print "Reflecting:\n"
 val s = Vector.map (fn v => FD.Reflect.value(sol,v)) root
-val _ = print "Printing:\n"
 val _ = Print.printVal s
 val _ = OS.Process.exit OS.Process.success
