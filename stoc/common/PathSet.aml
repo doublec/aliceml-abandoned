@@ -1,1 +1,16 @@
-structure PathSet = MakeHashImpSet(Path)
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkHashImpSet from "../utility/MkHashImpSet"
+import structure Path         from "Path"
+
+structure PathSet = MkHashImpSet(Path)

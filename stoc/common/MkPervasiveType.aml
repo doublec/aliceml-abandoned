@@ -1,28 +1,47 @@
-functor MakePervasiveType(val labid_false :	string
-			  val labid_true :	string
-			  val labid_nil :	string
-			  val labid_cons :	string
-			  val typid_zero :	string
-			  val typid_succ :	string
-			  val typid_bool :	string
-			  val typid_list :	string
-			  val typid_int :	string
-			  val typid_word :	string
-			  val typid_real :	string
-			  val typid_char :	string
-			  val typid_string :	string
-			  val typid_vec :	string
-			  val typid_array :	string
-			  val typid_ref :	string
-			  val typid_exn :	string
-			  val typid_conarrow :	string
-			  val typid_time :	string
-			  val typid_prom :	string
-			  val valid_match :	string
-			  val valid_bind :	string
-			  val modid_pervasive :	string
-			 ) :> PERVASIVE_TYPE =
-  struct
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name           from "Name"
+import structure Label          from "Label"
+import structure Path           from "Path"
+import structure Type           from "Type"
+import signature PERVASIVE_TYPE from "PERVASIVE_TYPE-sig"
+
+
+functor MkPervasiveType(val labid_false :	string
+			val labid_true :	string
+			val labid_nil :		string
+			val labid_cons :	string
+			val typid_zero :	string
+			val typid_succ :	string
+			val typid_bool :	string
+			val typid_list :	string
+			val typid_int :		string
+			val typid_word :	string
+			val typid_real :	string
+			val typid_char :	string
+			val typid_string :	string
+			val typid_vec :		string
+			val typid_array :	string
+			val typid_ref :		string
+			val typid_exn :		string
+			val typid_conarrow :	string
+			val typid_time :	string
+			val typid_prom :	string
+			val valid_match :	string
+			val valid_bind :	string
+			val modid_pervasive :	string
+			) :> PERVASIVE_TYPE =
+struct
 
     type lab		= Label.t
     type name		= Name.t
@@ -145,4 +164,4 @@ functor MakePervasiveType(val labid_false :	string
 	else if s = typid_conarrow then con_conarrow
 	else raise Lookup
 
-  end
+end

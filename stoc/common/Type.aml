@@ -1,3 +1,24 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Assert  from "../utility/Assert"
+import structure Name    from "Name"
+import structure Label   from "Label"
+import structure Path    from "Path"
+import structure PathSet from "PathSet"
+import structure PathMap from "PathMap"
+import signature TYPE    from "TYPE-sig"
+
+
 (*******************************************************************************
 On Tuples and Records:
 
@@ -77,7 +98,7 @@ type term as well as to the reduced/substituted one.
 *******************************************************************************)
 
 structure TypePrivate =
-  struct
+struct
 
   (* Types *)
 
@@ -582,8 +603,7 @@ structure TypePrivate =
       | tailRow(RHO(n,r))		= RHO(n, tailRow r)
       | tailRow(NIL)			= raise Row
 
-    fun lookupRow(NIL, a)		= (print(Label.toString a); raise Row)
-(*DEBUG*)
+    fun lookupRow(NIL, a)		= raise Row
       | lookupRow(RHO(_,r), a)		= lookupRow(r,a)
       | lookupRow(FIELD(a',t,r), a)	= case Label.compare(a',a)
 					    of EQUAL   => t
@@ -1251,7 +1271,7 @@ end
     fun intersect(t1,t2) = ()
     (* UNFINISHED *)
 
-  end
+end
 
 
 structure Type : (*DEBUG :>*) TYPE = TypePrivate

@@ -1,0 +1,35 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name		from "Name"
+import structure Label		from "Label"
+import structure Path		from "Path"
+import structure PathSet	from "PathSet"
+import structure PathMap	from "PathMap"
+import structure Fixity		from "Fixity"
+import structure Type		from "Type"
+import structure Inf		from "Inf"
+import structure PervasiveType	from "PervasiveType"
+
+
+structure RTT =
+struct
+    structure Name          = Name
+    structure Label         = Label
+    structure Path          = Path
+    structure PathSet       = PathSet
+    structure PathMap       = PathMap
+    structure Fixity        = Fixity
+    structure Type          = Type
+    structure Inf           = Inf
+    structure PervasiveType = PervasiveType
+end

@@ -1,6 +1,20 @@
-structure Fixity :> FIXITY =
-  struct
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import signature FIXITY from "FIXITY-sig"
+
+
+structure Fixity :> FIXITY =
+struct
     datatype assoc = LEFT | RIGHT | NEITHER	(* [a] *)
 
     datatype fix = NONFIX			(* [q] *)
@@ -9,5 +23,4 @@ structure Fixity :> FIXITY =
 		 | INFIX   of int * assoc
 
     type t = fix
-
-  end
+end
