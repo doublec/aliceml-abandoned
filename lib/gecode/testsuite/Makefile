@@ -2,7 +2,7 @@ SOURCES = GecodeTest.aml TestSuite.aml RunTests.aml
 
 all: $(SOURCES:%.aml=%.alc)
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 
 depend:
