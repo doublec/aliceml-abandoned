@@ -110,7 +110,8 @@ struct
 		   guiGame) =
 	let
 	    fun gameFinished h = 
-		    reset (SOME ("Highscore", highscoreToString h))
+		(Inspector.inspect "highscore window appears";
+		    reset (SOME ("Highscore", "bla"(*highscoreToString h*))))
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
 
@@ -264,7 +265,7 @@ struct
 	    Gtk.menuAppend (menuLeave, menuQuit);
 	    Gtk.widgetHide canvas;
 	    Gtk.widgetHide pointsHBox;
-
+	    
 	    Gtk.signalConnect (mainWindow, "event",
 			       canvasEvent);
 	    Gtk.signalConnect (mainWindow, "delete-event", 
