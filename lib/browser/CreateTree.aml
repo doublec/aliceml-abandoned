@@ -35,6 +35,8 @@ import structure CreateTreeHelper from "CreateTreeHelper"
 
 import signature CREATE_TREE from "CREATE_TREE-sig"
 
+import structure Print from "x-alice:/lib/system/Print"
+
 local
     open Doc Node Settings Dictionaries CreateTreeHelper
 	
@@ -46,6 +48,10 @@ struct
     exception createTree_unknownNode   
 
      (*** creates a new tree ***)
+
+    fun createError (s : string, t : Type.t, it : Type.desc) =
+	(Print.printVal (s, t, it);
+	 raise createTree_unknownNode)
 
      (* checking mode / construction in RELATION MODE *)
 
@@ -136,7 +142,7 @@ struct
 		| Type.Exist(var,typ)  (* existencial quantifier *)
 		  => createUsualTree (NONE,va,typ,p,i,d,canvas)
 		| Type.Lambda(var,typ) (* abstraction *)
-		  => raise  createTree_unknownNode 
+		  =>  createError ("abstraction", t, Type.Lambda(var, typ))
 		| Type.Apply(t1,t2) 
 		  =>  if isListType t (* list *)
 			  then let val new_opt = if isNone opt 
@@ -157,14 +163,16 @@ struct
 			     else path 
 			     in newPath (va,t,p,i,d,p_path,canvas)
 			     end 
-			| _ => raise createTree_unknownNode ) (* unknown *)
+			| _ => createError("apply/list", t, Type.Apply(t1,t2))) (* unknown *)
 		| Type.Prod(row) (* record *)
 		  => treatProd(va,t,p,i,d,row,canvas) 
 		| Type.Mu(sum) (* rekursion *)
 		  => createUsualTree (NONE,va,sum,p,i,d,canvas) (* Rekursion *)
 		| Type.Sum(row) (* datatype *)
 		  => treatSum(va,t,p,i,d,row,canvas) 
-		| _ => raise  createTree_unknownNode (* unknown *) )
+		| _ =>
+		  createSimple (createValue(va,t),p,i,d,"_val",
+				DEFAULT,canvas))
 	     end 
 			 
      (******* special handling of LISTS *******)
