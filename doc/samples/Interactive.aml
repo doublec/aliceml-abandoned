@@ -65,8 +65,8 @@ Hole.fill (hole, 17);
  * Components
  **********************************************************************)
 
-(* stoc -c MY_COMPONENT-sig.aml *)
-(* stoc -c MyComponent.aml *)
+(* alicec -c MY_COMPONENT-sig.aml *)
+(* alicec -c MyComponent.aml *)
 
 import "/home/kornstae/stockhausen/doc/samples/MyComponent"
 

@@ -14,6 +14,7 @@
  *)
 
 import structure TextIO   from "../lib/system/TextIO"
+import structure Home     from "../lib/system/Home"
 import structure Url      from "../lib/utility/Url"
 import signature ANALYZER from "ANALYZER-sig"
 
@@ -27,14 +28,15 @@ functor MkAnalyzer(structure Parser: PARSER
 	local
 	    val homeref: string option ref = ref NONE
 	in
-	    fun stockhome () =
+	    fun home () =
 		case !homeref of
 		    NONE =>
 			let
 			    val home =
-				case OS.Process.getEnv "STOCKHOME" of
+				case OS.Process.getEnv (Home.homeEnv) of
 				    SOME s => s ^ "/"
-				  | NONE => (warn "STOCKHOME not set"; "")
+				  | NONE => (warn (Home.homeEnv ^ " not set");
+					     "")
 			in
 			    homeref := SOME home; home
 			end
@@ -48,7 +50,7 @@ functor MkAnalyzer(structure Parser: PARSER
 	      | (SOME "file", NONE) =>
 		    SOME(Url.toString (Url.setScheme (url, NONE)))
 	      | (SOME "x-alice", NONE) =>
-		    SOME(stockhome () ^
+		    SOME(home () ^
 			 Url.toString (Url.setScheme (Url.makeRelativePath url,
 						      NONE)))
 	      | _ => NONE

@@ -1,5 +1,6 @@
 Group is
 
+	../lib/system/home.cm
 	sml-parser.cm
 
 	ANALYZER-sig.aml
