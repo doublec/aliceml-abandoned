@@ -605,6 +605,20 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		[O.HandleStm (stm_info (#region info), tryBody,
 			      catchId, catchBody, contBody, stamp)]
 	    end
+	  | translateExp (LazyExp (info as {region, typ}, exp), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stm_info region, r)]
+		val funInfo = {region = region,
+			       typ = Type.inArrow (Type.inTuple nil, typ)}
+		val pat = JokPat {region = region, typ = Type.inTuple nil}
+		val funExp = FunExp (funInfo, [Match (id_info info, pat, exp)])
+		val (stms, id) = unfoldTerm (funExp, Goto rest)
+	    in
+		(r := SOME (f (O.PrimAppExp (id_info info, "Future.byNeed",
+					     [id]))::translateCont cont);
+		 stms)
+	    end
 	  | translateExp (LetExp (_, decs, exp), f, cont) =
 	    let
 		val stms = translateExp (exp, f, cont)

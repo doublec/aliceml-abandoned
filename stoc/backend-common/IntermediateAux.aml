@@ -64,6 +64,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | occursInExp (RaiseExp (_, exp), id) = occursInExp (exp, id)
 	  | occursInExp (HandleExp (_, exp, matches), id) =
 	    occursInExp (exp, id) orelse occursInMatches (matches, id)
+	  | occursInExp (LazyExp (_, exp), id) = occursInExp (exp, id)
 	  | occursInExp (LetExp (_, decs, exp), id) =
 	    List.exists (fn dec => occursInDec (dec, id)) decs orelse
 	    occursInExp (exp, id)
@@ -194,6 +195,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substExp (HandleExp (info, exp, matches), subst) =
 	    HandleExp (info, substExp (exp, subst),
 		       substMatches (matches, subst))
+	  | substExp (LazyExp (info, exp), subst) =
+	    LazyExp (info, substExp (exp, subst))
 	  | substExp (LetExp (info, decs, exp), subst) =
 	    LetExp (info, substDecs (decs, subst), substExp (exp, subst))
 	and substMatches (matches, subst) =
