@@ -95,7 +95,9 @@ struct
 		^", p1, p2))\n"
 	    fun cases [] = "(NONE,p1,p2) => Token.TOKEN(LrTable.T "^
 		(Int.toString parsers)
-		^", (SValue.EOP (fn () => ()), p1, p2))\n" 
+		^", (SValue."^
+		(Translate.eop)
+		^" (fn () => ()), p1, p2))\n" 
 	      | cases (t::ts) = (constrCase t)^"\n    | "^(cases ts)
 	in
 	    "\n(* lexer -> (unit -> (SValue.svalue, pos) Token.token),\n "
@@ -220,7 +222,7 @@ struct
 			^"    val saction = J.SAction.actions\n"
 			^"    val void = J.SValue.VOID\n"
 			^"    val error = "^structureName3^".error\n"
-			^"    fun extract (J.SValue."^(NormalForm.start)^" a) =\n"
+			^"    fun extract (J.SValue."^(Translate.start)^" a) =\n"
 			^"        case a () of (J.SValue.S"^(Int.toString n)^" b) => b\n"
 			^"in\n    extract (J.LrParser.parse {arg=arg,\n" 
 			^"                            lexer=lexer2,\n"
