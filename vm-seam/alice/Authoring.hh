@@ -80,4 +80,28 @@
     return structure->ToWord();			\
   }
 
+#define DECLARE_INTINF(b, x)                                          \
+  BigInt *b;                                                          \
+  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); }   \
+  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
+    b = BigInt::FromWordDirect(cr->Get(0));                           \
+  }
+
+#define MK_INTINF(w, i)                                          \
+  word w;                                                        \
+  {                                                              \
+    ConcreteRepresentation *cr =                                 \
+      ConcreteRepresentation::New(PrimitiveTable::gmpHandler,1); \
+    cr->Init(0, i->ToWord());                                    \
+    w = cr->ToWord();                                            \
+    PrimitiveTable::gmpFinalizationSet->Register(w);             \
+  }
+
+#define RETURN_INTINF(i)                                         \
+{ int j = i->toInt();                                            \
+  if (j  != INVALID_INT) { RETURN_INT(j); }      \
+  MK_INTINF(w, i);                                               \
+  RETURN(w);                                                     \
+}
+
 #endif

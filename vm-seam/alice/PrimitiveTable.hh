@@ -39,6 +39,7 @@ private:
   static void RegisterGlobalStamp();
   static void RegisterHole();
   static void RegisterInt();
+  static void RegisterIntInf();
   static void RegisterList();
   static void RegisterMath();
   static void RegisterOption();
@@ -65,6 +66,9 @@ public:
   static word General_Subscript;
   static word Hole_Hole;
   static word Thread_Terminated;
+
+  static ConcreteRepresentationHandler *gmpHandler;
+  static FinalizationSet *gmpFinalizationSet;
 
   static void Init();
   static word LookupValue(Chunk *name);

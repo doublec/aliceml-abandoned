@@ -18,11 +18,10 @@ structure Value (* : VALUE - must be transparent *) =
     struct
 	datatype 'a t =
 	    Prim of string
-	  | Int of LargeInt.int
-	  | String of String.string
-	  | WideString of WideString.string
+	  | Int of FixedInt.int
+	  | String of string
 	  | Real of Real.real
-	  | TaggedValue of int * LargeInt.int * 'a t vector
+	  | TaggedValue of int * int * 'a t vector
 	  | Tuple of 'a t vector
 	  | Vector of 'a t vector
 	  | Closure of 'a * 'a t vector
@@ -31,11 +30,9 @@ structure Value (* : VALUE - must be transparent *) =
 	val prim = Prim
 	val int = Int
 	val string = String
-	val wideString = WideString
 	val real = Real
 	fun taggedValue (labels, i, labelValueVec) =
-	    TaggedValue (Vector.length labels,
-			 LargeInt.fromInt i,
+	    TaggedValue (Vector.length labels, i,
 			 Vector.map (fn (_, value) => value) labelValueVec)
 	val tuple = Tuple
 	val vector = Vector

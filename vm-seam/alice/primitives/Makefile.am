@@ -12,6 +12,7 @@ libprimitives_a_SOURCES = \
 	GlobalStamp.cc \
 	Hole.cc \
 	Int.cc \
+	IntInf.cc \
 	List.cc \
 	Math.cc \
 	Option.cc \

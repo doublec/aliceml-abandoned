@@ -22,6 +22,8 @@
 #include <cstring>
 #include "alice/Base.hh"
 
+#include <gmp.h>
+
 class Transform;
 
 class AliceDll Alice {
@@ -463,6 +465,193 @@ public:
       Assert(i != index);
     }
   }
+};
+
+class BigInt : private Chunk {
+private:
+  static const int SIZE = sizeof(MP_INT);
+public:
+  using Chunk::ToWord;
+  static BigInt *New(void) {
+    Chunk *c = Store::AllocChunk(SIZE);
+    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+    mpz_init(big);
+    return STATIC_CAST(BigInt *, c);
+  }
+  static BigInt *New(BigInt *old) {
+    Chunk *c = Store::AllocChunk(SIZE);
+    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+    mpz_init_set(big, old->big());
+    return STATIC_CAST(BigInt *, c);
+  }
+  static BigInt *New(int i) {
+    Chunk *c = Store::AllocChunk(SIZE);
+    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+    mpz_init_set_si(big, i);
+    return STATIC_CAST(BigInt *, c);
+  }
+  static BigInt *New(unsigned int i) {
+    Chunk *c = Store::AllocChunk(SIZE);
+    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+    mpz_init_set_ui(big, i);
+    return STATIC_CAST(BigInt *, c);
+  }
+  static BigInt *New(double d) {
+    Chunk *c = Store::AllocChunk(SIZE);
+    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+    mpz_init_set_d(big, d);
+    return STATIC_CAST(BigInt *, c);
+  }
+  static BigInt *FromWordDirect(word x) {
+    Chunk *c = Store::DirectWordToChunk(x);
+    Assert(c->GetSize() == SIZE);
+    return STATIC_CAST(BigInt *, c);
+  }
+  MP_INT *big(void) { 
+    return STATIC_CAST(MP_INT*, this->GetBase());
+  }
+  int toInt(void) {
+    MP_INT *b = big();
+    if (mpz_fits_slong_p(b)) {
+      long int i = mpz_get_si(b);
+      if (i>MAX_VALID_INT || i<MIN_VALID_INT) {
+        return INVALID_INT;
+      } else {
+        return i;
+      }
+    } else {
+      return INVALID_INT;
+    }
+  }
+  void destroy(void) {
+    MP_INT *b = big();
+    mpz_clear(b);
+  }
+
+  bool operator==(int i) {
+    return mpz_cmp_si(big(), i)==0;
+  }
+
+#define MKOP1(op, mpop) \
+  BigInt *op(void) { \
+    BigInt *n = BigInt::New(); \
+    mpop(n->big(), big()); \
+    return n; \
+  }
+  MKOP1(negate, mpz_neg);
+  MKOP1(abs, mpz_abs);
+  MKOP1(notb, mpz_com);
+#undef MKOP1
+
+#define MKOP2(op, mpop) \
+  BigInt *op(BigInt *b) { \
+    BigInt *n = BigInt::New(); \
+    mpop(n->big(), big(), b->big()); \
+    return n; \
+  } \
+  BigInt *op(unsigned long int i) { \
+    BigInt *n = BigInt::New(); \
+    mpop ## _ui(n->big(), big(), i); \
+    return n; \
+  }
+  MKOP2(add, mpz_add);
+  MKOP2(sub, mpz_sub);
+#undef MKOP2
+
+  BigInt *mul(BigInt *b) {
+    BigInt *n = BigInt::New();
+    mpz_mul(n->big(), big(), b->big());
+    return n;
+  }
+  BigInt *mul(long int i) {
+    BigInt *n = BigInt::New();
+    mpz_mul_si(n->big(), big(), i);
+    return n;
+  }
+
+#define MKOP2(op, mpop) \
+  BigInt *op(BigInt *b) { \
+    BigInt *n = BigInt::New(); \
+    mpop(n->big(), big(), b->big()); \
+    return n; \
+  } \
+  BigInt *op(MP_INT *b) { \
+    BigInt *n = BigInt::New(); \
+    mpop(n->big(), big(), b); \
+    return n; \
+  }
+  MKOP2(div, mpz_fdiv_q);
+  MKOP2(mod, mpz_fdiv_r);
+  MKOP2(quot, mpz_tdiv_q);
+  MKOP2(rem, mpz_tdiv_r);
+  MKOP2(orb, mpz_ior);
+  MKOP2(xorb, mpz_xor);
+  MKOP2(andb, mpz_and);
+#undef MKOP2
+
+  void divMod(BigInt *b, BigInt *d, BigInt *m) {
+    mpz_fdiv_qr(big(), b->big(), d->big(), m->big());
+  }
+  void quotRem(BigInt *b, BigInt *q, BigInt *r) {
+    mpz_tdiv_qr(big(), b->big(), q->big(), r->big());
+  }
+
+  BigInt *pow(BigInt *exp) {
+    BigInt *n = BigInt::New();
+    mpz_t mod; mpz_init_set_ui(mod, 1);
+    mpz_powm(n->big(), big(), exp->big(), mod);
+    return n;
+  }
+
+  unsigned long int log2(void) {
+    return mpz_sizeinbase(big(), 2)-1;
+  }
+
+  BigInt *shiftr(unsigned long int b) {
+    BigInt *n = BigInt::New();
+    mpz_fdiv_q_2exp(n->big(), big(), b);
+    return n;
+  }
+
+  BigInt *shiftl(unsigned long int b) {
+    BigInt *n = BigInt::New();
+    mpz_mul_2exp(n->big(), big(), b);
+    return n;
+  }
+
+  int compare(BigInt *b) {
+    if (this==b) return 0;
+    return mpz_cmp(big(), b->big());
+  }
+  int compare(int i) {
+    return mpz_cmp_si(big(), i);
+  }
+  bool less(BigInt *b) {
+    return mpz_cmp(big(), b->big()) < 0;
+  }
+  bool lessEq(BigInt *b) {
+    return mpz_cmp(big(), b->big()) <= 0;
+  }
+  bool greater(BigInt *b) {
+    return mpz_cmp(big(), b->big()) > 0;
+  }
+  bool greaterEq(BigInt *b) {
+    return mpz_cmp(big(), b->big()) >= 0;
+  }
+
+  bool less(int i) {
+    return mpz_cmp_si(big(), i) < 0;
+  }
+  bool lessEq(int i) {
+    return mpz_cmp_si(big(), i) <= 0;
+  }
+  bool greater(int i) {
+    return mpz_cmp_si(big(), i) > 0;
+  }
+  bool greaterEq(int i) {
+    return mpz_cmp_si(big(), i) >= 0;
+  }
+
 };
 
 #endif

@@ -26,6 +26,7 @@ import __primitive structure IEEEReal                     from "IEEEReal"
 import __primitive structure General                      from "General"
 import __primitive structure Bool                         from "Bool"
 import __primitive structure Int                          from "Int"
+import __primitive structure LargeInt                     from "LargeInt"
 import __primitive structure Char                         from "Char"
 import __primitive structure StringCvt                    from "StringCvt"
 import __primitive structure Substring                    from "Substring"
@@ -118,8 +119,16 @@ struct
       | toInt IEEEReal.TO_ZERO			= trunc
       | toInt IEEEReal.TO_NEAREST		= round
 
-    val toLargeInt				= toInt
-    val fromLargeInt				= fromInt
+    __primitive val largeCeil  : real -> LargeInt.int	= "Real.largeCeil"
+    __primitive val largeFloor : real -> LargeInt.int	= "Real.largeFloor"
+    __primitive val largeTrunc : real -> LargeInt.int	= "Real.largeTrunc"
+    __primitive val largeRound : real -> LargeInt.int	= "Real.largeRound"
+
+    fun toLargeInt IEEEReal.TO_POSINF		= largeCeil
+      | toLargeInt IEEEReal.TO_NEGINF		= largeFloor
+      | toLargeInt IEEEReal.TO_ZERO		= largeTrunc
+      | toLargeInt IEEEReal.TO_NEAREST		= largeRound
+    __primitive val fromLargeInt : LargeInt.int -> real = "Real.fromLargeInt"
 
     fun toLarge x				= x
     fun fromLarge mode x			= x

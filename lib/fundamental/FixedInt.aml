@@ -1,0 +1,17 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive from "Pervasive"
+import structure Int         from "Int"
+import signature INTEGER     from "INTEGER-sig"
+
+structure FixedInt : INTEGER = Int

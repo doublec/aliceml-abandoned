@@ -1,24 +1,20 @@
 <?php include("macros.php3"); ?>
-<?php heading("The INTEGER signature", "The <TT>INTEGER</TT> signature") ?>
+<?php heading("The IntInf structure", "The <TT>IntInf</TT> structure") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
   <PRE>
-    signature INTEGER
-    structure Int : INTEGER where type int = int
-    structure FixedInt : INTEGER = Int
-    structure LargeInt : INTEGER = IntInf
-    structure Position : INTEGER = Int
+    signature INT_INF
+    structure IntInf : INT_INF
   </PRE>
 
   <P>
     An extended version of the Standard ML Basis'
-    <A href="http://www.standardml.org/Basis/integer.html"><TT>INTEGER</TT></A> signature.
+    <A href="http://www.standardml.org/Basis/int-inf.html"><TT>IntInf</TT></A> structure.
   </P>
 
   <P>See also:
-    <A href="int-inf.html"><TT>IntInf</TT></A>,
-    <A href="word.html"><TT>WORD</TT></A>,
+    <A href="integer.html"><TT>INTEGER</TT></A>,
     <A href="hashable.html"><TT>HASHABLE</TT></A>,
     <A href="ordered.html"><TT>ORDERED</TT></A>
   </P>
@@ -32,7 +28,7 @@
 <?php section("interface", "interface") ?>
 
   <PRE>
-    signature INTEGER =
+    signature INT_INF =
     sig
 	eqtype int
 	type t = int
@@ -63,6 +59,17 @@
 	val compare :    int * int -> order
 	val hash :       int -> int
 
+        val divMod :        int * int -> int * int
+        val quotRem :       int * int -> int * int
+        val pow :           int * Int.int -> int
+        val log2 :          int -> Int.int
+        val orb :           int * int -> int
+        val xorb :          int * int -> int
+        val andb :          int * int -> int
+        val notb :          int -> int
+        val &lt;&lt; :            int * Word.word -> int
+        val ~&gt;&gt; :           int * Word.word -> int
+
 	val abs :        int -> int
 	val min :        int * int -> int
 	val max :        int * int -> int
@@ -80,7 +87,7 @@
 
   <P>
     Items not described here are as in the  Standard ML Basis'
-    <A href="http://www.standardml.org/Basis/integer.html"><TT>INTEGER</TT></A> signature.
+    <A href="http://www.standardml.org/Basis/int-inf.html"><TT>IntInf</TT></A> structure.
   </P>
 
   <DL>

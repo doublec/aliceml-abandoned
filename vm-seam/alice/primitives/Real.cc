@@ -28,6 +28,13 @@
     RETURN_INT(STATIC_CAST(s_int, op(real->GetValue())));	\
   } END
 
+#define REAL_TO_INTINF(name, op)				\
+  DEFINE1(name) {						\
+    DECLARE_REAL(real, x0);					\
+    BigInt *b = BigInt::New(op(real->GetValue()));              \
+    RETURN_INTINF(b);                                           \
+  } END
+
 #define REAL_REAL_TO_REAL_OP(name, op)				\
   DEFINE2(name) {						\
     DECLARE_REAL(real1, x0);					\
@@ -67,6 +74,7 @@ REAL_REAL_TO_BOOL_OP(Real_opgreater, >)
 REAL_REAL_TO_BOOL_OP(Real_oplessEq, <=)
 REAL_REAL_TO_BOOL_OP(Real_opgreaterEq, >=)
 REAL_TO_INT(Real_ceil, std::ceil)
+REAL_TO_INTINF(Real_largeCeil, std::ceil)
 
 DEFINE2(Real_compare) {
   DECLARE_REAL(real1, x0);
@@ -83,10 +91,16 @@ DEFINE2(Real_compare) {
 } END
 
 REAL_TO_INT(Real_floor, std::floor)
+REAL_TO_INTINF(Real_largeFloor, std::floor)
 
 DEFINE1(Real_fromInt) {
   DECLARE_INT(i, x0);
   RETURN_REAL(STATIC_CAST(double, i));
+} END
+
+DEFINE1(Real_fromLargeInt) {
+  DECLARE_INTINF(i, x0);
+  RETURN_REAL(mpz_get_d(i->big()));
 } END
 
 REAL_TO_REAL(Real_realCeil, std::ceil)
@@ -109,6 +123,7 @@ REAL_TO_REAL(Real_realRound, Rint)
 REAL_TO_REAL(Real_realTrunc, Trunc)
 REAL_REAL_TO_INT(Real_rem, std::fmod)
 REAL_TO_INT(Real_round, Rint)
+REAL_TO_INTINF(Real_largeRound, Rint)
 
 DEFINE1(Real_toString) {
   //--** inf, ~inf, nan not formatted correctly
@@ -138,6 +153,7 @@ DEFINE1(Real_toString) {
 } END
 
 REAL_TO_INT(Real_trunc, Trunc)
+REAL_TO_INTINF(Real_largeTrunc, Trunc)
 
 void PrimitiveTable::RegisterReal() {
   Register("Real.~", Real_opnegate, 1);
@@ -150,9 +166,12 @@ void PrimitiveTable::RegisterReal() {
   Register("Real.<=", Real_oplessEq, 2);
   Register("Real.>=", Real_opgreaterEq, 2);
   Register("Real.ceil", Real_ceil, 1);
+  Register("Real.largeCeil", Real_largeCeil, 1);
   Register("Real.compare", Real_compare, 2);
   Register("Real.floor", Real_floor, 1);
+  Register("Real.largeFloor", Real_largeFloor, 1);
   Register("Real.fromInt", Real_fromInt, 1);
+  Register("Real.fromLargeInt", Real_fromLargeInt, 1);
   Register("Real.precision", Store::IntToWord(52));
   Register("Real.realCeil", Real_realCeil, 1);
   Register("Real.realFloor", Real_realFloor, 1);
@@ -160,6 +179,8 @@ void PrimitiveTable::RegisterReal() {
   Register("Real.realTrunc", Real_realTrunc, 1);
   Register("Real.rem", Real_rem, 2);
   Register("Real.round", Real_round, 1);
+  Register("Real.largeRound", Real_largeRound, 1);
   Register("Real.toString", Real_toString, 1);
   Register("Real.trunc", Real_trunc, 1);
+  Register("Real.largeTrunc", Real_largeTrunc, 1);
 }

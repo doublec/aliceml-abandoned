@@ -11,7 +11,7 @@
  *)
 
 import structure __pervasive
-       structure Int and LargeWord and Word from "Pervasive"
+       structure Int and LargeInt and LargeWord and Word from "Pervasive"
 import __primitive type bool                from "ToplevelTypes"
 import functor MkWord                       from "MkWord"
 
@@ -27,6 +27,10 @@ structure Word8 = MkWord(
     __primitive val fromLarge : LargeWord.word -> word = "Word8.fromLarge"
     __primitive val toLarge :   word -> LargeWord.word = "Word8.toLarge"
     __primitive val toLargeX :  word -> LargeWord.word = "Word8.toLargeX"
+
+    __primitive val fromLargeInt : LargeInt.int -> word = "Word8.fromLargeInt"
+    __primitive val toLargeInt :   word -> LargeInt.int = "Word8.toLargeInt"
+    __primitive val toLargeIntX :  word -> LargeInt.int = "Word8.toLargeIntX"
 
     __primitive val op + :   word * word -> word = "Word8.+"
     __primitive val op - :   word * word -> word = "Word8.-"

@@ -547,6 +547,164 @@ prepare
 	       unit
 	    end
 	 end
+
+      'IntInf.fromInt' : fun {$ X} X end
+      'IntInf.toInt' : fun {$ X} X end
+      'IntInf.~': Number.'~'
+      'IntInf.+': Number.'+'
+      'IntInf.-': Number.'-'
+      'IntInf.*': Number.'*'
+      'IntInf.<': Value.'<'
+      'IntInf.>': Value.'>'
+      'IntInf.<=': Value.'=<'
+      'IntInf.>=': Value.'>='
+      'IntInf.abs': Abs
+      'IntInf.compare': NumberCompare
+      'IntInf.div':
+	 fun {$ X1 X2}
+	    try B1 B2 in
+	       B1 = {Int.isNat X1}
+	       B2 = {Int.isNat X2}
+	       if B1 == B2 then
+		  X1 div X2
+	       elseif B2 then
+		  (X1 - X2 + 1) div X2
+	       else
+		  (X1 - X2 - 1) div X2
+	       end
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'IntInf.mod':
+	 fun {$ X1 X2}
+	    try A in
+	       A = X1 mod X2
+	       if A == 0 then A
+	       elseif A < 0 then
+		  if X2 =< 0 then A
+		  else A + X2
+		  end
+	       else   % A > 0
+		  if X2 < 0 then A + X2
+		  else A
+		  end
+	       end
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'IntInf.quot':
+	 fun {$ X1 X2}
+	    try
+	       X1 div X2
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'IntInf.rem':
+	 fun {$ X1 X2}
+	    try
+	       X1 mod X2
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'IntInf.divMod':
+	 fun {$ X1 X2}
+	    try A B1 B2 D M in
+	       B1 = {Int.isNat X1}
+	       B2 = {Int.isNat X2}
+	       if B1 == B2 then
+		  D = X1 div X2
+	       elseif B2 then
+		  D = (X1 - X2 + 1) div X2
+	       else
+		  D = (X1 - X2 - 1) div X2
+	       end
+	       A = X1 mod X2
+	       if A == 0 then M=A
+	       elseif A < 0 then
+		  if X2 =< 0 then M=A
+		  else M=A + X2
+		  end
+	       else   % A > 0
+		  if X2 < 0 then M=A + X2
+		  else M=A
+		  end
+	       end               
+               D#M
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'IntInf.quotRem':
+	 fun {$ X1 X2}
+	    try Q R in
+	       Q = X1 div X2
+               R = X1 mod X2
+               Q#R
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'IntInf.pow': Number.pow
+      'IntInf.log2':
+         fun {$ _ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented: IntInf.log2"}))}
+            unit
+         end
+      'IntInf.orb':
+         fun {$ _ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented: IntInf.orb"}))}
+            unit
+         end
+      'IntInf.xorb':
+         fun {$ _ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented: IntInf.xorb"}))}
+            unit
+         end
+      'IntInf.andb':
+         fun {$ _ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented: IntInf.andb"}))}
+            unit
+         end         
+      'IntInf.notb':
+         fun {$ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented: IntInf.notb"}))}
+            unit
+         end         
+      'IntInf.<<':
+         fun {$ _ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented: IntInf.<<"}))}
+            unit
+         end         
+      'IntInf.~>>':
+         fun {$ _ _}
+            {Exception.raiseError
+             alice(BuiltinTable.'General.Fail'
+                   ({ByteString.make "Not implemented: IntInf.xorb"}))}
+            unit
+         end         
+
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Math.acos': Acos
       'Math.acosh': Float.acosh
@@ -581,12 +739,21 @@ prepare
 	 fun {$ R}
 	    {FloatToInt {Ceil R}}
 	 end
+      'Real.largeCeil':
+	 fun {$ R}
+	    {FloatToInt {Ceil R}}
+	 end
       'Real.compare': NumberCompare
       'Real.floor':
 	 fun {$ R}
 	    {FloatToInt {Floor R}}
 	 end
+      'Real.largeFloor':
+	 fun {$ R}
+	    {FloatToInt {Floor R}}
+	 end
       'Real.fromInt': IntToFloat
+      'Real.fromLargeInt': IntToFloat
       'Real.precision': 52
       'Real.realCeil': Ceil
       'Real.realFloor': Floor
@@ -600,11 +767,19 @@ prepare
 	 fun {$ R}
 	    {FloatToInt {Round R}}
 	 end
+      'Real.largeRound':
+	 fun {$ R}
+	    {FloatToInt {Round R}}
+	 end
       'Real.toString':
 	 fun {$ R}
 	    {ByteString.make {FloatToString R}}
 	 end
       'Real.trunc':
+	 fun {$ R}
+	    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
+	 end
+      'Real.largeTrunc':
 	 fun {$ R}
 	    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
 	 end
@@ -759,6 +934,8 @@ prepare
 	 end
       'Word8.fromInt':
 	 fun {$ I} {BootWord.make 8 I} end
+      'Word8.fromLargeInt':
+	 fun {$ I} {BootWord.make 8 I} end
       'Word8.fromLarge':
 	 fun {$ W} {BootWord.make 8 {BootWord.toInt W}} end
       'Word8.fromLargeX':
@@ -776,6 +953,8 @@ prepare
       'Word8.orb': BootWord.orb
       'Word8.toInt': BootWord.toInt
       'Word8.toIntX': BootWord.toIntX
+      'Word8.toLargeInt': BootWord.toInt
+      'Word8.toLargeIntX': BootWord.toIntX
       'Word8.toLarge':
 	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
       'Word8.toLargeX':
@@ -914,6 +1093,8 @@ prepare
 	 end
       'Word31.fromInt':
 	 fun {$ I} {BootWord.make 31 I} end
+      'Word31.fromLargeInt':
+	 fun {$ I} {BootWord.make 31 I} end
       'Word31.fromLarge':
 	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
       'Word31.fromLargeX':
@@ -931,6 +1112,8 @@ prepare
       'Word31.orb': BootWord.orb
       'Word31.toInt': BootWord.toInt
       'Word31.toIntX': BootWord.toIntX
+      'Word31.toLargeInt': BootWord.toInt
+      'Word31.toLargeIntX': BootWord.toIntX
       'Word31.toLarge':
 	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
       'Word31.toLargeX':

@@ -101,6 +101,8 @@ sig
 
      val createInt        : doc_creator 
 
+     val createIntInf     : doc_creator 
+
      val createString     : doc_creator 
 
      val createChar       : doc_creator 

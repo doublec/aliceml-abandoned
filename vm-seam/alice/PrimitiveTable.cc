@@ -36,10 +36,10 @@ word PrimitiveTable::Thread_Terminated;
 
 void PrimitiveTable::Init() {
   // The following values have been derived from the count of
-  // 190 functions, 217 values (see the fprintf below)
+  // 249 functions, 278 values (see the fprintf below)
   // with a fill ratio of ca. 2/3
-  valueTable    = ChunkMap::New(325)->ToWord();
-  functionTable = ChunkMap::New(285)->ToWord();
+  valueTable    = ChunkMap::New(417)->ToWord();
+  functionTable = ChunkMap::New(373)->ToWord();
   RootSet::Add(valueTable);
   RootSet::Add(functionTable);
   RootSet::Add(PrimitiveTable::Future_Cyclic);
@@ -60,6 +60,7 @@ void PrimitiveTable::Init() {
   RegisterGlobalStamp();
   RegisterHole();
   RegisterInt();
+  RegisterIntInf();
   RegisterList();
   RegisterMath();
   RegisterOption();
@@ -75,9 +76,9 @@ void PrimitiveTable::Init() {
   RegisterWord8Array();
   RegisterWord8Vector();
   RegisterWord31();
-  //  std::fprintf(stderr, "%d functions, %d values\n",
-  //	       ChunkMap::FromWordDirect(functionTable)->GetSize(),
-  //	       ChunkMap::FromWordDirect(valueTable)->GetSize());
+//   std::fprintf(stderr, "%d functions, %d values\n",
+//    	       ChunkMap::FromWordDirect(functionTable)->GetSize(),
+//                ChunkMap::FromWordDirect(valueTable)->GetSize());
 }
 
 void PrimitiveTable::Register(const char *name, word value) {

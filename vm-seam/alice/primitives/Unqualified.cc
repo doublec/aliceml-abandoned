@@ -25,7 +25,17 @@ static int Compare(word x0, word x1) {
     }
     // x0 is int
     if (b != INVALID_POINTER) // x1 is Block
-      return 0;
+      {
+        // test if x1 is a bigInt
+        if (b->GetLabel()==CONCRETE_LABEL) {
+          ConcreteRepresentation *cr =
+            STATIC_CAST(ConcreteRepresentation *, b);
+          if (cr->GetHandler()==PrimitiveTable::gmpHandler) {
+            return BigInt::FromWordDirect(cr->Get(0))->compare(i)==0;
+          }
+        }
+        return 0;
+      }
     // x1 is Transient or int
     s_int j = Store::WordToInt(x1);
     if (j == INVALID_INT) { // x1 is Transient
@@ -39,6 +49,14 @@ static int Compare(word x0, word x1) {
     if (j == INVALID_INT) { // x1 is Transient
       Scheduler::currentData = x1;
       return -1;
+    } // x1 is int
+    // test if x0 is a bigInt
+    if (a->GetLabel()==CONCRETE_LABEL) {
+      ConcreteRepresentation *cr =
+        STATIC_CAST(ConcreteRepresentation *, a);
+      if (cr->GetHandler()==PrimitiveTable::gmpHandler) {
+        return BigInt::FromWordDirect(cr->Get(0))->compare(j)==0;
+      }
     }
     return 0;
   }
@@ -61,6 +79,19 @@ static int Compare(word x0, word x1) {
 	  return result;
       }
       return 1;
+    }
+  case CONCRETE_LABEL:
+    {
+      ConcreteRepresentation *ac = STATIC_CAST(ConcreteRepresentation *, a);
+      ConcreteRepresentation *bc = STATIC_CAST(ConcreteRepresentation *, b);
+      if (ac->GetHandler()==PrimitiveTable::gmpHandler &&
+          ac->GetHandler()==bc->GetHandler()) {
+        BigInt *a = BigInt::FromWordDirect(ac->Get(0));
+        BigInt *b = BigInt::FromWordDirect(bc->Get(0));
+        return (a->compare(b) == 0);
+      } else {
+        return (ac==bc);
+      }
     }
   case CHUNK_LABEL:
     {

@@ -44,7 +44,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	structure Liveness = MkLiveness(AbstractCodeGrammar)
 
 	structure IdSet = MkHashImpSet(Int)
-	structure LargeIntMap = MkHashImpMap(LargeInt)
+	structure IntMap = MkHashImpMap(Int)
 
 	open I
 	open Environment
@@ -53,17 +53,27 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	fun isNAry (TupArgs #[]) = false
 	  | isNAry _ = true
 
-	fun translateLit (IntLit i) = V.int i
-	  | translateLit (WordLit w) = V.int (LargeWord.toLargeInt w)
-	  | translateLit (CharLit c) = V.int (LargeInt.fromInt (Char.ord c))
+	fun translateLit (IntLit i) =
+            (V.int (FixedInt.fromLarge i) (*--** IntInf? *)
+             handle Overflow =>
+                    raise Crash.Crash "CodeGenPhase.translateLit int")
+	  | translateLit (WordLit w) =
+            (V.int (FixedInt.fromLarge (LargeWord.toLargeInt w))
+             handle Overflow =>
+                    raise Crash.Crash "CodeGenPhase.translateLit word")
+	  | translateLit (CharLit c) = V.int (FixedInt.fromInt (Char.ord c))
 	  | translateLit (StringLit s) = V.string s
 	  | translateLit (RealLit r) = V.real r
 
-	fun litToInt (IntLit i) = i
-	  | litToInt (WordLit w) = LargeWord.toLargeInt w
-	  | litToInt (CharLit c) = LargeInt.fromInt (Char.ord c)
+	fun litToInt (IntLit i) =
+            (Int.fromLarge i (*-** IntInf? *)
+             handle Overflow => raise Crash.Crash "CodeGenPhase.litToInt int")
+	  | litToInt (WordLit w) =
+            (LargeWord.toInt w
+             handle Overflow => raise Crash.Crash "CodeGenPhase.litToInt word")
+	  | litToInt (CharLit c) = Char.ord c
 	  | litToInt (StringLit _ | RealLit _) =
-	    raise Crash.Crash "CodeGenPhase.litToInt"
+	    raise Crash.Crash "CodeGenPhase.litToInt string | real"
 
 	fun translateIdRef (idRef as (IdRef _ | LastIdRef _), env) =
 	    lookup (env, idRef)
@@ -520,7 +530,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | translateStm (ReturnStm (_, VarExp (_, idRef)), env) =
 	    O.Return (#[(translateIdRef (idRef, env))])
 	  | translateStm (ReturnStm (_, TagExp (_, _, tag, TupArgs #[])), _) =
-	    O.Return (#[(O.Immediate (V.int (LargeInt.fromInt tag)))])
+	    O.Return (#[(O.Immediate (V.int (FixedInt.fromInt tag)))])
 	  | translateStm (ReturnStm (_, ConExp (_, idRef, TupArgs #[])), env) =
 	    O.Return (#[(translateIdRef (idRef, env))])
 	  | translateStm (ReturnStm (_, TupExp (_, #[idRef])), env) =
@@ -568,7 +578,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | translateExp (VarExp (_, idRef), id, instr, env) =
 	    O.PutVar (id, translateIdRef (idRef, env), instr)
 	  | translateExp (TagExp (_, _, tag, TupArgs #[]), id, instr, _) =
-	    O.PutVar (id, O.Immediate (V.int (LargeInt.fromInt tag)), instr)
+	    O.PutVar (id, O.Immediate (V.int (FixedInt.fromInt tag)), instr)
 	  | translateExp (TagExp (_, labels, tag, args), id, instr, env) =
 	    O.PutTag (id, Vector.length labels, 
 		      tag, translateIdRefs (argsToVector args, env), instr)
@@ -715,7 +725,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	and translateIntTest (idRef, litTests, elseBody, env) =
 	    let
 		val idRef = translateIdRef (idRef, env)
-		val map = LargeIntMap.map ()
+		val map = IntMap.map ()
 		val tests =
 		    Vector.map (fn (lit, body) =>
 				   (litToInt lit, translateBody (body, env)))
@@ -723,19 +733,18 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val (i, _) = Vector.sub (tests, 0)
 		val (min, max) =
 		    Vector.foldl (fn ((i, instr), (min, max)) =>
-				     (LargeIntMap.insert (map, i, instr);
-				      (LargeInt.min (i, min),
-				       LargeInt.max (i, max))))
+				     (IntMap.insert (map, i, instr);
+				      (Int.min (i, min),
+				       Int.max (i, max))))
 				 (i, i) tests
-		val span =
-		    LargeInt.toInt (LargeInt.+ (LargeInt.- (max, min), 1))
+		val span = max - min + 1
 		val elseInstr = translateBody (elseBody, env)
 	    in
 		if span = Vector.length tests then
 		    let
 			fun lookup i =
-			    LargeIntMap.lookupExistent
-				(map, LargeInt.+ (LargeInt.fromInt i, min))
+			    IntMap.lookupExistent
+				(map, i + min)
 		    in
 			O.CompactIntTest (idRef, min,
 					  Vector.tabulate (span, lookup),

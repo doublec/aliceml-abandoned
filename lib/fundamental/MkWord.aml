@@ -15,7 +15,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive and Word and LargeWord   from "Pervasive"
+import structure __pervasive and Word and LargeWord and LargeInt
+                                                      from "Pervasive"
 import __primitive type int and string
        datatype bool and order and option and list    from "ToplevelTypes"
 import __primitive infix 4 = < >
@@ -41,6 +42,10 @@ functor MkWord(BaseWord: sig
     val toLarge :   word -> LargeWord.word
     val toLargeX :  word -> LargeWord.word
 
+    val fromLargeInt : LargeInt.int -> word
+    val toLargeInt : word -> LargeInt.int
+    val toLargeIntX : word -> LargeInt.int
+
     val op + :   word * word -> word
     val op - :   word * word -> word
     val op * :   word * word -> word
@@ -65,10 +70,6 @@ struct
     open BaseWord
 
     type t = word							(**)
-
-    val fromLargeInt = fromInt
-    val toLargeInt   = toInt
-    val toLargeIntX  = toIntX
 
     val equal	= op =
     fun hash w	= abs(toInt w) handle General.Overflow => 0

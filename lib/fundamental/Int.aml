@@ -15,7 +15,7 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                       from "Pervasive"
+import structure __pervasive and LargeInt          from "Pervasive"
 import __primitive
        type int
        datatype bool and order and option and list from "ToplevelTypes"
@@ -46,8 +46,9 @@ struct
 
     fun toInt i		= i
     fun fromInt i	= i
-    fun toLarge i	= i
-    fun fromLarge i	= i
+
+    __primitive val toLarge : int -> LargeInt.int = "IntInf.fromInt"
+    __primitive val fromLarge : LargeInt.int -> int   = "IntInf.toInt"
 
     val ~		= ~
     val op +		= op +

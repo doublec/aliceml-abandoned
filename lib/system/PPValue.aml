@@ -326,6 +326,7 @@ struct
   (* Pervasive types *)
 
     fun ppInt t fm x	= SOME(text(Int.toString x))
+    fun ppIntInf t fm x	= SOME(text(IntInf.toString x))
     fun ppWord t fm x	= SOME(text("0wx" ^ Word.toString x))
     fun ppWord8 t fm x	= SOME(text("0wx" ^ Word8.toString x))
     fun ppReal t fm x	= SOME(text(Real.toString x))
@@ -541,6 +542,7 @@ struct
 	Type.asCon(lookupTyp(sign, modLab, typLab))
 
     val path_word8	   = lookupPath(coreSig,"Word8","word")
+    val path_intInf	   = lookupPath(coreSig,"IntInf","int")
     val path_promise	   = lookupPath(coreSig,"Promise","promise")
     val path_atom          = lookupPath(atomSig,"Atom","atom")
     val path_time	   = lookupPath(coreSig,"Time","time")
@@ -564,6 +566,7 @@ struct
     val typ_char_array    = lookupTyp(coreSig,"CharArray","array")
 
     val _ = registerTyp(path_int,           ppInt)
+    val _ = registerTyp(path_intInf,        ppIntInf)
     val _ = registerTyp(path_word,          ppWord)
     val _ = registerTyp(path_word8,         ppWord8)
     val _ = registerTyp(path_real,          ppReal)

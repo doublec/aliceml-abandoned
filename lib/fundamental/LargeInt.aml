@@ -16,7 +16,7 @@
  *)
 
 import structure __pervasive from "Pervasive"
-import structure Int         from "Int"
+import structure IntInf      from "IntInf"
 import signature INTEGER     from "INTEGER-sig"
 
-structure LargeInt : INTEGER = Int
+structure LargeInt : INTEGER = IntInf

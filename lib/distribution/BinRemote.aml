@@ -156,7 +156,7 @@ struct
 	    SOME q => (TextIO.output (q, s); TextIO.flushOut q)
 	  | NONE => ()
 
-    val idleTime = ref (Time.fromSeconds 30)
+    val idleTime = ref (Time.fromSeconds (Int.toLarge 30))
 
     val myPort: int option ref = ref NONE
 

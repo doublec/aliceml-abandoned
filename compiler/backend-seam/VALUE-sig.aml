@@ -19,9 +19,8 @@ signature VALUE =
 	type 'a t
 
 	val prim: string -> 'a t
-	val int: LargeInt.int -> 'a t
-	val string: String.string -> 'a t
-	val wideString: WideString.string -> 'a t
+	val int: FixedInt.int -> 'a t
+	val string: string -> 'a t
 	val real: Real.real -> 'a t
 	val taggedValue: Label.t vector * int * (Label.t * 'a t) vector -> 'a t
 	val tuple: 'a t vector -> 'a t

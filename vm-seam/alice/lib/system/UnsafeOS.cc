@@ -233,7 +233,6 @@ DEFINE1(UnsafeOS_FileSys_fileSize) {
 
 DEFINE1(UnsafeOS_FileSys_modTime) {
   DECLARE_STRING(name, x0);
-  //--** the result will typically not be representable
 #if defined(__MINGW32__) || defined(_MSC_VER)
   HANDLE hFile =
     CreateFile(name->ExportC(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
@@ -242,15 +241,18 @@ DEFINE1(UnsafeOS_FileSys_modTime) {
   FILETIME fileTime;
   if (GetFileTime(hFile, NULL, NULL, &fileTime) == FALSE) RAISE_SYS_ERR();
   CloseHandle(hFile);
-  long long i = fileTime.dwHighDateTime;
-  i <<= 32;
-  i |= fileTime.dwLowDateTime;
-  RETURN_INT(i / 10);
+  BigInt *b = BigInt::New((unsigned int)fileTime.dwHighDateTime);
+  mpz_mul_2exp(b->big(), b->big(), 32);
+  mpz_add_ui(b->big(), b->big(), fileTime.dwLowDateTime);
+  mpz_fdiv_q_ui(b->big(), b->big(), 10000);
+  RETURN_INTINF(b);
 #else
   struct stat info;
   Interruptible(res, stat(name->ExportC(), &info));
   if (res) RAISE_SYS_ERR();
-  RETURN_INT(info.st_mtime * 1000000);
+  BigInt *b = BigInt::New((unsigned int)info.st_mtime);
+  mpz_mul_ui(b->big(), b->big(), 1000);
+  RETURN_INTINF(b);
 #endif
 } END
 

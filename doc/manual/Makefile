@@ -40,7 +40,7 @@ INSTALLFILES_LIBRARY_0 = \
 	general.html \
 	hashable.html hole.html \
 	ieee-real.html imp-map.html imp-set.html imperative-io.html \
-	integer.html io.html \
+	integer.html int-inf.html io.html \
 	list.html list-pair.html lock.html \
 	map.html math.html mono-array.html mono-array-slice.html \
 	mono-vector.html mono-vector-slice.html \

@@ -495,6 +495,8 @@ structure LargeInt =
                   handle Overflow => 0
   end
 
+structure FixedInt = Int
+
 structure Position =
   struct
     open Position
@@ -711,7 +713,11 @@ structure Vector =
 				  andalso isSorted'(cmp,v,i+1)
   end
 
-
+structure Word8Vector =
+  struct
+    open Word8Vector
+    type t = Word8Vector.vector
+  end
 
 (*****************************************************************************
  * VectorPair

@@ -29,29 +29,29 @@ structure Time :> TIME =
 struct
     open LargeInt		(* +, -, <, >, <=, >=, compare *)
 
-    type time			= LargeInt.int	(* microseconds *)
+    type time			= LargeInt.int	(* milliseconds *)
     type t			= time					(**)
 
     exception Time
 
     val thousand		= Int.toLarge 1_000
     val million			= Int.toLarge 1_000_000
-    val realMillion		= Real.toLarge 1_000_000.0
+    val realThousand		= Real.toLarge 1_000.0
 
     val zeroTime		= Int.toLarge 0
 
     fun fromReal x		= LargeReal.toLargeInt IEEEReal.TO_NEAREST
-						  (LargeReal.*(x,realMillion))
-    fun toReal t		= LargeReal.fromLargeInt t / realMillion
+						  (LargeReal.*(x,realThousand))
+    fun toReal t		= LargeReal.fromLargeInt t / realThousand
 
-    fun toSeconds t		= t div million
-    fun toMilliseconds t	= t div thousand
-    fun toMicroseconds t	= t
-    fun toNanoseconds t		= t * thousand
-    fun fromSeconds n		= n * million
-    fun fromMilliseconds n	= n * thousand
-    fun fromMicroseconds n	= n
-    fun fromNanoseconds n	= n div thousand
+    fun toSeconds t		= t div thousand
+    fun toMilliseconds t	= t
+    fun toMicroseconds t	= t * thousand
+    fun toNanoseconds t		= t * million
+    fun fromSeconds n		= n * thousand
+    fun fromMilliseconds n	= n
+    fun fromMicroseconds n	= n div thousand
+    fun fromNanoseconds n	= n div million
 
     val equal			= op =
     val hash			= LargeInt.hash

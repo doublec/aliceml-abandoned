@@ -25,7 +25,6 @@ import __primitive
 import __primitive infix 4 = val op = from "ToplevelValues"
 import __primitive structure Hole     from "Hole"
 import __primitive structure Int      from "Int"
-import __primitive structure LargeInt from "LargeInt"
 import __primitive structure Time     from "Time"
 import __primitive signature FUTURE   from "FUTURE-sig"
 

@@ -2,9 +2,10 @@
  * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg, Leif Kornstaedt, and Guido Tack, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,12 +16,12 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive and Int and LargeInt         from "Pervasive"
+import structure __pervasive and Int and LargeInt and Word from "Pervasive"
 import __primitive
        type char and string and bool and order and option from "ToplevelTypes"
 import __primitive structure StringCvt                    from "StringCvt"
 
-signature INTEGER =
+signature INT_INF =
 sig
     eqtype int
     type t = int							(**)
@@ -56,6 +57,17 @@ sig
     val max :		int * int -> int
     val sign :		int -> Int.int
     val sameSign :	int * int -> bool
+
+    val divMod :        int * int -> int * int
+    val quotRem :       int * int -> int * int
+    val pow :           int * Int.int -> int
+    val log2 :          int -> Int.int
+    val orb :           int * int -> int
+    val xorb :          int * int -> int
+    val andb :          int * int -> int
+    val notb :          int -> int
+    val << :            int * Word.word -> int
+    val ~>> :           int * Word.word -> int
 
     val toString :	int -> string
     val fromString:	string -> int option

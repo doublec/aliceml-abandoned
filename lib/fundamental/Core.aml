@@ -53,12 +53,16 @@ import __primitive structure WideText		from "WideText"
 import __primitive signature INTEGER		from "INTEGER-sig"
 import __primitive structure Int		from "Int"
 import __primitive structure LargeInt		from "LargeInt"
+import __primitive structure FixedInt		from "FixedInt"
 import __primitive structure Position		from "Position"
 import __primitive signature WORD		from "WORD-sig"
 import __primitive structure Word8		from "Word8"
 import __primitive structure Word31		from "Word31"
 import __primitive structure Word		from "Word"
 import __primitive structure LargeWord		from "LargeWord"
+
+import __primitive signature INT_INF            from "INT_INF-sig"
+import __primitive structure IntInf             from "IntInf"
 
 import __primitive signature REAL		from "REAL-sig"
 import __primitive structure Real		from "Real"
@@ -120,35 +124,37 @@ import __primitive structure Lock		from "Lock"
 
 open Toplevel
 
-__overload (int, word, Word8.t, real) as 'num
-    op ~ : 'num -> 'num = (Int.~, Word.~, Word8.~, Real.~)
-__overload (int, real) as 'realint
-    op abs : 'realint -> 'realint = (Int.abs, Real.abs)
-__overload (int, word, Word8.t, real) as 'num
-    op + : 'num * 'num -> 'num = (Int.+, Word.+, Word8.+, Real.+)
-__overload (int, word, Word8.t, real) as 'num
-    op - : 'num * 'num -> 'num = (Int.-, Word.-, Word8.-, Real.-)
-__overload (int, word, Word8.t, real) as 'num
-    op * : 'num * 'num -> 'num = (Int.*, Word.*, Word8.*, Real.*)
-__overload (int, word, Word8.t) as 'wordint
-    op div : 'wordint * 'wordint -> 'wordint = (Int.div, Word.div, Word8.div)
-__overload (int, word, Word8.t) as 'wordint
-    op mod : 'wordint * 'wordint -> 'wordint = (Int.mod, Word.mod, Word8.mod)
+__overload (int, IntInf.t, word, Word8.t, real) as 'num
+    op ~ : 'num -> 'num = (Int.~, IntInf.~, Word.~, Word8.~, Real.~)
+__overload (int, IntInf.t, real) as 'realint
+    op abs : 'realint -> 'realint = (Int.abs, IntInf.abs, Real.abs)
+__overload (int, IntInf.t, word, Word8.t, real) as 'num
+    op + : 'num * 'num -> 'num = (Int.+, IntInf.+, Word.+, Word8.+, Real.+)
+__overload (int, IntInf.t, word, Word8.t, real) as 'num
+    op - : 'num * 'num -> 'num = (Int.-, IntInf.-, Word.-, Word8.-, Real.-)
+__overload (int, IntInf.t, word, Word8.t, real) as 'num
+    op * : 'num * 'num -> 'num = (Int.*, IntInf.*, Word.*, Word8.*, Real.*)
+__overload (int, IntInf.t, word, Word8.t) as 'wordint
+    op div : 'wordint * 'wordint -> 'wordint =
+    (Int.div, IntInf.div, Word.div, Word8.div)
+__overload (int, IntInf.t, word, Word8.t) as 'wordint
+    op mod : 'wordint * 'wordint -> 'wordint =
+    (Int.mod, IntInf.mod, Word.mod, Word8.mod)
 __overload (real) as 'real
     op / : 'real * 'real -> 'real = (Real./)
 
-__overload (int, word, Word8.t, real, char, string) as 'numtxt
+__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
     op < : 'numtxt * 'numtxt -> bool =
-    (Int.<, Word.<, Word8.<, Real.<, Char.<, String.<)
-__overload (int, word, Word8.t, real, char, string) as 'numtxt
+    (Int.<, IntInf.<, Word.<, Word8.<, Real.<, Char.<, String.<)
+__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
     op > : 'numtxt * 'numtxt -> bool =
-    (Int.>, Word.>, Word8.>, Real.>, Char.>, String.>)
-__overload (int, word, Word8.t, real, char, string) as 'numtxt
+    (Int.>, IntInf.>, Word.>, Word8.>, Real.>, Char.>, String.>)
+__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
     op <= : 'numtxt * 'numtxt -> bool =
-    (Int.<=, Word.<=, Word8.<=, Real.<=, Char.<=, String.<=)
-__overload (int, word, Word8.t, real, char, string) as 'numtxt
+    (Int.<=, IntInf.<=, Word.<=, Word8.<=, Real.<=, Char.<=, String.<=)
+__overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
     op >= : 'numtxt * 'numtxt -> bool =
-    (Int.>=, Word.>=, Word8.>=, Real.>=, Char.>=, String.>=)
+    (Int.>=, IntInf.>=, Word.>=, Word8.>=, Real.>=, Char.>=, String.>=)
 
 signature GENERAL		= GENERAL
 structure General		= General
@@ -186,12 +192,16 @@ structure WideText		= WideText
 signature INTEGER		= INTEGER
 structure Int			= Int
 structure LargeInt		= LargeInt
+structure FixedInt		= FixedInt
 structure Position		= Position
 signature WORD			= WORD
 structure Word8			= Word8
 structure Word31		= Word31
 structure Word			= Word
 structure LargeWord		= LargeWord
+
+signature INT_INF               = INT_INF
+structure IntInf                = IntInf
 
 signature REAL			= REAL
 structure Real			= Real

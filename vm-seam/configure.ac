@@ -28,6 +28,8 @@ AC_PROG_RANLIB
 
 AC_SEAM_CHECK_SOCKET_FLAVOR
 
+AC_CHECK_LIB(gmp, __gmpz_init)
+
 # checks for header files
 
 AC_PATH_SEAM

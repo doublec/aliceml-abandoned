@@ -607,7 +607,11 @@ functor MkValuePropagationPhase(val isCross: bool
 	    if isCross then NONE
 	    else
 		case value of
-		    LitVal (IntLit i) => SOME (UnsafeValue.cast i, true)
+		    LitVal (IntLit i) =>
+                    (SOME (UnsafeValue.cast (FixedInt.fromLarge i), true)
+                     handle Overflow =>
+                            raise Crash.Crash
+                                      "ValuePropagationPhase.valueToRValue")
 		  | LitVal (WordLit w) => SOME (UnsafeValue.cast w, true)
 		  | LitVal (CharLit c) => SOME (UnsafeValue.cast c, true)
 		  | LitVal (StringLit s) => SOME (UnsafeValue.cast s, true)

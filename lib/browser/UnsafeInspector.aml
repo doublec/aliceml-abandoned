@@ -48,6 +48,9 @@ struct
 
     (***  registration of doc creator-functions ***)
 
+    val path_intInf = lookupPath(coreSign,
+				 "IntInf","int")   
+
     val path_promise = lookupPath(coreSign,
 				  "Promise","promise")   
 	
@@ -58,6 +61,7 @@ struct
 				      "Package","val_package") 
 
     fun init () = ( registerType(path_int, createInt)
+		   ; registerType(path_intInf, createIntInf)
 		   ; registerType(path_string, createString)
 		   ; registerType(path_char, createChar)
 		   ; registerType(path_word, createWord)

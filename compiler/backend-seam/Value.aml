@@ -20,7 +20,6 @@ structure Value: VALUE =
 	val prim = UnsafeValue.prim
 	val int = UnsafeValue.cast
 	val string = UnsafeValue.cast
-	val wideString = UnsafeValue.cast
 	val real = UnsafeValue.cast
 	val taggedValue = UnsafeValue.tagged
 	val tuple = UnsafeValue.tuple

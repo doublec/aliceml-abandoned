@@ -124,7 +124,7 @@
 
     and toInt'(s0,s,i) =
 	case String.sub(s,0)
-	  of #"0" => (if String.size s = 1 then 0 else
+	  of #"0" => (if String.size s = 1 then LargeInt.fromInt 0 else
 		      case String.sub(s,1)
 			of #"b" => toInt''(s0^String.extract(s,2,NONE), BIN, i)
 			 | #"x" => toInt''(s0^String.extract(s,2,NONE), HEX, i)

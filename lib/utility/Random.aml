@@ -28,6 +28,6 @@ struct
         if limit = 0.0 then 0.0 
         else Real.fromInt (int bigInt) * limit / (Real.fromInt bigInt)
 
-    val largeInt   = int
+    val largeInt   = Int.toLarge o int o LargeInt.toInt
     val largeReal  = real
 end

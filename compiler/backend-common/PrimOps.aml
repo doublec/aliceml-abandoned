@@ -126,6 +126,34 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Int.precision", NONE);
 		ins ("Int.quot", SOME (Tuple 2));
 		ins ("Int.rem", SOME (Tuple 2));
+
+                ins ("IntInf.fromInt", SOME Unary);
+                ins ("IntInf.toInt", SOME Unary);
+		ins ("IntInf.~", SOME Unary);
+		ins ("IntInf.+", SOME (Tuple 2));
+		ins ("IntInf.-", SOME (Tuple 2));
+		ins ("IntInf.*", SOME (Tuple 2));
+		ins ("IntInf.<", SOME (Tuple 2));
+		ins ("IntInf.>", SOME (Tuple 2));
+		ins ("IntInf.<=", SOME (Tuple 2));
+		ins ("IntInf.>=", SOME (Tuple 2));
+		ins ("IntInf.abs", SOME Unary);
+		ins ("IntInf.compare", SOME (Tuple 2));
+		ins ("IntInf.div", SOME (Tuple 2));
+		ins ("IntInf.mod", SOME (Tuple 2));
+		ins ("IntInf.quot", SOME (Tuple 2));
+		ins ("IntInf.rem", SOME (Tuple 2));
+		ins ("IntInf.divMod", SOME (Tuple 2));
+		ins ("IntInf.quotRem", SOME (Tuple 2));
+		ins ("IntInf.pow", SOME (Tuple 2));
+		ins ("IntInf.log2", SOME Unary);
+		ins ("IntInf.orb", SOME (Tuple 2));
+		ins ("IntInf.xorb", SOME (Tuple 2));
+		ins ("IntInf.andb", SOME (Tuple 2));
+		ins ("IntInf.notb", SOME Unary);
+		ins ("IntInf.<<", SOME (Tuple 2));
+		ins ("IntInf.~>>", SOME (Tuple 2));
+
 		ins ("List.Empty", NONE);
 		ins ("Math.acos", SOME Unary);
 		ins ("Math.acosh", SOME Unary);
@@ -157,9 +185,12 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Real.<=", SOME (Tuple 2));
 		ins ("Real.>=", SOME (Tuple 2));
 		ins ("Real.ceil", SOME Unary);
+		ins ("Real.largeCeil", SOME Unary);
 		ins ("Real.compare", SOME (Tuple 2));
 		ins ("Real.floor", SOME Unary);
+		ins ("Real.largeFloor", SOME Unary);
 		ins ("Real.fromInt", SOME Unary);
+		ins ("Real.fromLargeInt", SOME Unary);
 		ins ("Real.precision", NONE);
 		ins ("Real.realCeil", SOME Unary);
 		ins ("Real.realFloor", SOME Unary);
@@ -167,8 +198,10 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Real.realTrunc", SOME Unary);
 		ins ("Real.rem", SOME (Tuple 2));
 		ins ("Real.round", SOME Unary);
+		ins ("Real.largeRound", SOME Unary);
 		ins ("Real.toString", SOME Unary);
 		ins ("Real.trunc", SOME Unary);
+		ins ("Real.largeTrunc", SOME Unary);
 		ins ("Ref.:=", SOME (Tuple 2));
 		ins ("Ref.exchange", SOME (Tuple 2));
 		ins ("Remote.dynamicCall", SOME (Tuple 2));
@@ -218,6 +251,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word8.andb", SOME (Tuple 2));
 		ins ("Word8.div", SOME (Tuple 2));
 		ins ("Word8.fromInt", SOME Unary);
+		ins ("Word8.fromLargeInt", SOME Unary);
 		ins ("Word8.fromLarge", SOME Unary);
 		ins ("Word8.fromLargeX", SOME Unary);
 		ins ("Word8.mod", SOME (Tuple 2));
@@ -225,6 +259,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word8.orb", SOME (Tuple 2));
 		ins ("Word8.toInt", SOME Unary);
 		ins ("Word8.toIntX", SOME Unary);
+		ins ("Word8.toLargeInt", SOME Unary);
+		ins ("Word8.toLargeIntX", SOME Unary);
 		ins ("Word8.toLarge", SOME Unary);
 		ins ("Word8.toLargeX", SOME Unary);
 		ins ("Word8.wordSize", NONE);
@@ -260,6 +296,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word31.andb", SOME (Tuple 2));
 		ins ("Word31.div", SOME (Tuple 2));
 		ins ("Word31.fromInt", SOME Unary);
+		ins ("Word31.fromLargeInt", SOME Unary);
 		ins ("Word31.fromLarge", SOME Unary);
 		ins ("Word31.fromLargeX", SOME Unary);
 		ins ("Word31.mod", SOME (Tuple 2));
@@ -267,6 +304,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word31.orb", SOME (Tuple 2));
 		ins ("Word31.toInt", SOME Unary);
 		ins ("Word31.toIntX", SOME Unary);
+		ins ("Word31.toLargeInt", SOME Unary);
+		ins ("Word31.toLargeIntX", SOME Unary);
 		ins ("Word31.toLarge", SOME Unary);
 		ins ("Word31.toLargeX", SOME Unary);
 		ins ("Word31.wordSize", NONE);

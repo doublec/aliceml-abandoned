@@ -162,6 +162,13 @@ struct
 		  color = INT_COLOR}
 	end
     
+    fun createIntInf (m_width,d,va,t) = 
+	let val descr = createValue(va,t)
+	in 
+	    SIMPLE{desc = descr,
+		  rep = IntInf.toString(UnsafeValue.cast va : IntInf.int), 
+		  color = INT_COLOR}
+	end
 
     (* creates doc from string *)
 

@@ -146,7 +146,7 @@ define
 		     'modTime':
 			fun {$ Name}
 			   try
-			      {OzOS.stat Name}.mtime * 1000000
+			      {OzOS.stat Name}.mtime * 1000
 			   catch system(os(os ...) ...) then
 			      {Exception.raiseError
 			       alice(SysErr('modTime: cannot get file time'

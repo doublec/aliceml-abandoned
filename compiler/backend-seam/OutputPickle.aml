@@ -37,22 +37,22 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | RECORD
 		  | VECTOR
 		  | BIG_TAG
-		  | TAG of LargeInt.int
+		  | TAG of int
 		  | TUPLE
 		  | CLOSURE
 		  | TRANSFORM
 
-		val false_ = 0: LargeInt.int
-		val true_  = 1: LargeInt.int
+		val false_ = 0
+		val true_  = 1
 
-		val none = 0: LargeInt.int
+		val none = 0
 		val some = TAG 1
 
 		val debug  = TAG 0
 		val simple = TAG 1
 		    
 		val idDef    = TAG 0
-		val wildcard = 1: LargeInt.int
+		val wildcard = 1
 
 		val oneArg  = TAG 0
 		val tupArgs = TAG 1
@@ -108,17 +108,17 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val handleEntry = TAG 3
 		val raiseEntry  = TAG 4
 		val selEntry    = TAG 5
-		val spawnEntry  = 6: LargeInt.int
+		val spawnEntry  = 6
 		val strictEntry = TAG 7
 
-		val appExit    = 0: LargeInt.int
-		val conExit    = 1: LargeInt.int
+		val appExit    = 0
+		val conExit    = 1
 		val condExit   = TAG 2
 		val handleExit = TAG 3
 		val raiseExit  = TAG 4
 		val selExit    = TAG 5
 		val spawnExit  = TAG 6
-		val strictExit = 7: LargeInt.int
+		val strictExit = 7
 
 		fun toInt ARRAY   = 0
 		  | toInt CELL    = 1
@@ -142,6 +142,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 
 	fun nextRegister ({outstream, ...}: context) =
 	    PrimPickle.nextRegister outstream
+	fun outputFixedInt ({outstream, ...}: context, i) =
+	    PrimPickle.outputFixedInt (outstream, i)
 	fun outputInt ({outstream, ...}: context, i) =
 	    PrimPickle.outputInt (outstream, i)
 	fun outputChunk ({outstream, ...}: context, words) =
@@ -173,16 +175,16 @@ structure OutputPickle :> OUTPUT_PICKLE =
 
 	fun outputVector output (context, xs) =
  	    (Vector.app (fn x => output (context, x)) (Vector.rev xs);
-	     outputInt (context, LargeInt.fromInt (Vector.length xs));
+	     outputInt (context, Vector.length xs);
 	     outputBlock (context, Label.VECTOR, Vector.length xs + 1))
 	     
 	fun outputStamp (context, stamp) =
-	    outputInt (context, LargeInt.fromInt (Stamp.hash stamp))
+	    outputInt (context, Stamp.hash stamp)
 
 	fun outputArity (context, arity) =
-	    outputInt (context, LargeInt.fromInt arity)
+	    outputInt (context, arity)
 
-	fun outputId (context, id) = outputInt (context, LargeInt.fromInt id)
+	fun outputId (context, id) = outputInt (context, id)
 
 	fun outputIdDef (context, IdDef id) =
 	    (outputId (context, id);
@@ -191,26 +193,14 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    outputInt (context, Label.wildcard)
 
 	fun outputCoord (context, (string, line, column)) =
-	    (outputInt (context, LargeInt.fromInt column);
-	     outputInt (context, LargeInt.fromInt line);
+	    (outputInt (context, column);
+	     outputInt (context, line);
 	     outputString (context, string);
 	     outputTuple (context, 3))
 
 	fun outputLiveness (context, is) =
-	    outputVector (fn (context, i) =>
-			     outputInt (context, LargeInt.fromInt i))
+	    outputVector (fn (context, i) => outputInt (context, i))
 			 (context, is)
-
-	fun outputWideString (context, s) =
-	    outputChunk (context,
-			 Vector.fromList
-			 (List.foldr (fn (c, cs) =>
-				      let
-					  val i = Char.ord c
-				      in
-					  Word8.fromInt (i div 0x100)::
-					  Word8.fromInt (i mod 0x100)::cs
-				      end) nil (String.explode s)))
 
 	fun outputTyp (context, typ) = outputInt (context, 0) (*--** wrong *)
 
@@ -226,7 +216,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
             outputOption (outputPair (outputName, outputTyp)) x	
 
 	fun outputAnnotation (context, Simple nLocals) =
-	    (outputInt (context, LargeInt.fromInt nLocals);
+	    (outputInt (context, nLocals);
 	     outputBlock (context, Label.simple, 1))
 	  | outputAnnotation (context, Debug (localNames, typ)) =
 	    (outputTyp (context, typ);
@@ -237,9 +227,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    let
 		val vec = Reflect.realToVector r
 	    in
-		outputChunk (context,
-			     Vector.tabulate
- 				 (8, fn i => Word8Vector.sub (vec, i)))
+		outputChunk (context, vec)
   	    end
   
   	fun outputLabel (context, label) =
@@ -256,8 +244,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	    outputInt (context, i)
   	  | outputValue (context, V.String s) =
  	    outputString (context, s)
-  	  | outputValue (context, V.WideString s) =
- 	    outputWideString (context, s)
  	  | outputValue (context, V.Real r) =
  	    outputReal (context, r)
   	  | outputValue (context, V.TaggedValue (nLabels, i, values)) =
@@ -276,7 +262,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
   	  | outputValue (context, V.Vector values) =
  	    (Vector.app (fn value => outputValue (context, value))
  	     (Vector.rev values);
-  	     outputInt (context, LargeInt.fromInt (Vector.length values));
+  	     outputInt (context, FixedInt.fromInt (Vector.length values));
  	     outputBlock (context, Label.VECTOR, Vector.length values + 1))
   	  | outputValue (context, V.Closure (abstractCode, values)) = 
  	    (Vector.app (fn value => outputValue (context, value))
@@ -316,8 +302,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
   	  | outputInstr (context, PutTag (id, nLabels, tag, idRefs, instr)) =
  	    (outputInstr (context, instr);
   	     outputVector outputIdRef (context, idRefs);
- 	     outputInt (context, LargeInt.fromInt tag);
-	     outputInt (context, LargeInt.fromInt nLabels);
+ 	     outputInt (context, FixedInt.fromInt tag);
+	     outputInt (context, FixedInt.fromInt nLabels);
  	     outputId (context, id);
  	     outputBlock (context, Label.putTag, 5))
   	  | outputInstr (context, PutCon (id, idRef, idRefs, instr)) =
@@ -391,7 +377,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputBlock (context, Label.getTup, 3))
   	  | outputInstr (context, Sel (id, idRef, i, instr)) =
  	    (outputInstr (context, instr);
-  	     outputInt (context, LargeInt.fromInt i);
+  	     outputInt (context, FixedInt.fromInt i);
   	     outputIdRef (context, idRef);
  	     outputId (context, id); 
  	     outputBlock (context, Label.sel, 4))
@@ -456,15 +442,15 @@ structure OutputPickle :> OUTPUT_PICKLE =
   	     outputVector (fn (context, (tag, idDefs, instr)) =>
  			   (outputInstr (context, instr);
  			    outputVector outputIdDef (context, idDefs);
- 			    outputInt (context, LargeInt.fromInt tag);
+ 			    outputInt (context, FixedInt.fromInt tag);
  			    outputTuple (context, 3)))
  	     (context, tests2);
  	     outputVector (fn (context, (tag, instr)) =>
  			   (outputInstr (context, instr);
- 			    outputInt (context, LargeInt.fromInt tag);
+ 			    outputInt (context, FixedInt.fromInt tag);
  			    outputTuple (context, 2)))
  	     (context, tests1);
-	     outputInt (context, LargeInt.fromInt nLabels);
+	     outputInt (context, FixedInt.fromInt nLabels);
   	     outputIdRef (context, idRef);
  	     outputBlock (context, Label.tagTest, 5))
  	  | outputInstr (context,
@@ -478,7 +464,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
  			     outputIdDef (context, idDefs))
  			    (context, idDefsOpt);
  			    outputTuple (context, 2))) (context, tests);
-	     outputInt (context, LargeInt.fromInt nLabels);
+	     outputInt (context, FixedInt.fromInt nLabels);
   	     outputIdRef (context, idRef);
  	     outputBlock (context, Label.compactTagTest, 4))
  	  | outputInstr (context, ConTest (idRef, tests1, tests2, instr)) =
@@ -539,7 +525,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputOption outputArity (context, outArityOpt);
  	     outputVector outputIdDef (context, args);
 	     outputAnnotation(context, localNamesTypOpt);
- 	     outputInt (context, LargeInt.fromInt ntoplevels);
+ 	     outputInt (context, FixedInt.fromInt ntoplevels);
   	     outputCoord (context, coord);
  	     outputBlock (context, Label.template, 7))	     
  	and outputAbstractCode (context, Function (coord, globals, 
@@ -563,7 +549,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputEntryPoint (context, SelEntry (i, typ, idRef)) =
 	    (outputIdRef (context, idRef);
 	     outputTyp (context, typ); 
-	     outputInt (context, LargeInt.fromInt i);
+	     outputInt (context, FixedInt.fromInt i);
 	     outputBlock (context, Label.selEntry, 3))
 	  | outputEntryPoint (context, StrictEntry (typ, idRef)) =
 	    (outputIdRef (context, idRef);

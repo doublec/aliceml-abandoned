@@ -192,7 +192,7 @@ struct
 
     (* main loop *)
     local
-	fun sleep ms = Future.await(Future.alarm(Time.fromMilliseconds ms))
+	fun sleep ms = Thread.sleep (Time.fromMilliseconds (Int.toLarge ms))
     in
 	val initPoll = 10
 	val maxPoll = 50

@@ -59,7 +59,8 @@ local
 
     fun move(x,y,xdelta,ydelta) = fn () =>
         let
-	    fun sleep ms = Future.await(Future.alarm(Time.fromMilliseconds ms))
+	    fun sleep ms =
+                Thread.sleep (Time.fromMilliseconds (Int.toLarge ms))
 	    val xdnew = if x+xdelta>0 andalso x+xdelta<(xcanvassize-ximagesize)
 			    then xdelta 
 			    else ~xdelta

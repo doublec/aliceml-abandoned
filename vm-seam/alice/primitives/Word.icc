@@ -131,6 +131,11 @@ DEFINE1(Word_fromInt) {
   RETURN_WORD(i);
 } END
 
+DEFINE1(Word_fromLargeInt) {
+  DECLARE_INTINF(i, x0);
+  RETURN_WORD(mpz_get_si(i->big()));
+} END
+
 DEFINE1(Word_fromLarge) {
   DECLARE_LARGE_WORD(w, x0);
   RETURN_WORD(w);
@@ -159,6 +164,23 @@ DEFINE1(Word_toIntX) {
   } else {
     RETURN_INT(i);
   }
+} END
+
+DEFINE1(Word_toLargeInt) {
+  DECLARE_WORD(i, x0);
+  BigInt *b = BigInt::New(i);
+  RETURN_INTINF(b);
+} END
+
+DEFINE1(Word_toLargeIntX) {
+  DECLARE_WORD(i, x0);
+  BigInt *b;
+  if (i & (1 << (WORD_PRECISION - 1))) {
+    b = BigInt::New(i | ~(STATIC_CAST(u_int, -1) >> NONBITS));
+  } else {
+    b = BigInt::New(i);
+  }
+  RETURN_INTINF(b);
 } END
 
 DEFINE1(Word_toLarge) {
@@ -192,12 +214,15 @@ void PrimitiveTable::XCONCAT(Register,WordN)() {
   Register(XSTRINGIFY(WordN)".andb", Word_andb, 2);
   Register(XSTRINGIFY(WordN)".div", Word_div, 2);
   Register(XSTRINGIFY(WordN)".fromInt", Word_fromInt, 1);
+  Register(XSTRINGIFY(WordN)".fromLargeInt", Word_fromLargeInt, 1);
   Register(XSTRINGIFY(WordN)".fromLarge", Word_fromLarge, 1);
   Register(XSTRINGIFY(WordN)".mod", Word_mod, 2);
   Register(XSTRINGIFY(WordN)".notb", Word_notb, 1);
   Register(XSTRINGIFY(WordN)".orb", Word_orb, 2);
   Register(XSTRINGIFY(WordN)".toInt", Word_toInt, 1);
   Register(XSTRINGIFY(WordN)".toIntX", Word_toIntX, 1);
+  Register(XSTRINGIFY(WordN)".toLargeInt", Word_toLargeInt, 1);
+  Register(XSTRINGIFY(WordN)".toLargeIntX", Word_toLargeIntX, 1);
   Register(XSTRINGIFY(WordN)".toLarge", Word_toLarge, 1);
   Register(XSTRINGIFY(WordN)".toLargeX", Word_toLargeX, 1);
   Register(XSTRINGIFY(WordN)".xorb", Word_xorb, 2);
