@@ -263,6 +263,7 @@ DEFINE4(gc_rel) {
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
   s->trel(i, UnsafeGecode::int2reltype[rel], j);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_reli) {
@@ -272,6 +273,7 @@ DEFINE4(gc_reli) {
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
   s->treli(i, UnsafeGecode::int2reltype[rel], j);
+  RETURN_UNIT;
 } END
 
 DEFINE5(gc_relr) {
@@ -282,6 +284,7 @@ DEFINE5(gc_relr) {
   DECLARE_INT(j, x3);
   DECLARE_INT(boolVar, x4);
   s->trelR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
+  RETURN_UNIT;
 } END
 
 DEFINE5(gc_relir) {
@@ -292,6 +295,7 @@ DEFINE5(gc_relir) {
   DECLARE_INT(j, x3);
   DECLARE_INT(boolVar, x4);
   s->treliR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_eq) {
@@ -301,6 +305,7 @@ DEFINE4(gc_eq) {
   DECLARE_INT(j, x2);
   DECLARE_INT(cl, x3);
   s->teq(i, j, UnsafeGecode::int2cl[cl]);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_eqv) {
@@ -316,6 +321,7 @@ DEFINE4(gc_eqv) {
     vars[i] = tmp;
   }
   s->teq(vars, UnsafeGecode::int2cl[cl]);
+  RETURN_UNIT;
 } END
 
 DEFINE5(gc_eqr) {
@@ -326,6 +332,7 @@ DEFINE5(gc_eqr) {
   DECLARE_INT(cl, x3);
   DECLARE_INT(boolVar, x4);
   s->teqR(i, j, boolVar, UnsafeGecode::int2cl[cl]);
+  RETURN_UNIT;
 } END
 
 DEFINE5(gc_eqvr) {
@@ -343,6 +350,7 @@ DEFINE5(gc_eqvr) {
   }
 
   s->teqR(vars, boolVar, UnsafeGecode::int2cl[cl]);
+  RETURN_UNIT;
 } END
 
 DEFINE3(gc_distinct) {
@@ -402,6 +410,7 @@ DEFINE5(gc_linear) {
   }
   s->tlinear(offsets, vars, UnsafeGecode::int2reltype[rel], c,
 	     UnsafeGecode::int2cl[cl]);
+  RETURN_UNIT;
 } END
 
 DEFINE6(gc_linearr) {
@@ -425,6 +434,7 @@ DEFINE6(gc_linearr) {
   }
   s->tlinearR(offsets, vars, UnsafeGecode::int2reltype[rel], c,
 	      boolVar, UnsafeGecode::int2cl[cl]);
+  RETURN_UNIT;
 } END
     
 DEFINE3(gc_bool_not) {
@@ -433,6 +443,7 @@ DEFINE3(gc_bool_not) {
   DECLARE_INT(a, x1);
   DECLARE_INT(b, x2);
   s->tbool_not(a, b);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_and) {
@@ -442,6 +453,7 @@ DEFINE4(gc_bool_and) {
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
   s->tbool_and(a, b, c);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_or) {
@@ -451,6 +463,7 @@ DEFINE4(gc_bool_or) {
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
   s->tbool_or(a, b, c);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_imp) {
@@ -460,6 +473,7 @@ DEFINE4(gc_bool_imp) {
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
   s->tbool_imp(a, b, c);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_eq) {
@@ -469,6 +483,7 @@ DEFINE4(gc_bool_eq) {
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
   s->tbool_eq(a, b, c);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_xor) {
@@ -478,6 +493,7 @@ DEFINE4(gc_bool_xor) {
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
   s->tbool_xor(a, b, c);
+  RETURN_UNIT;
 } END
 
 DEFINE3(gc_bool_andv) {
@@ -494,6 +510,7 @@ DEFINE3(gc_bool_andv) {
     vars[i] = tmp1;
   }
   s->tbool_and(vars, b);
+  RETURN_UNIT;
 } END
 
 DEFINE3(gc_bool_orv) {
@@ -509,6 +526,7 @@ DEFINE3(gc_bool_orv) {
     vars[i] = tmp1;
   }
   s->tbool_or(vars, b);
+  RETURN_UNIT;
 } END
 
 DEFINE4(gc_branch) {
