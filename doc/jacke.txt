@@ -103,7 +103,7 @@ Here is a sample parser evaluating a simple expression syntax with let:
 
 In rule `exp' note how the NUM subexpression has no result transformation, as
 it already returns the desired value. Also note, how the identifiers `ID' and
-`oper' appear on the right hand side as if they have been bound via `as'. The
+`oper' appear on the right hand side as if they had been bound via `as'. The
 example also shows how the environment is inherited and extended during
 parsing. The above specification will generate the following SML objects:
 
