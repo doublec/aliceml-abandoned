@@ -10,15 +10,15 @@
 //   $Revision$
 //
 
-#ifndef __ALICE__PRIMITIVES__PRIMITIVE_TABLE_HH__
-#define __ALICE__PRIMITIVES__PRIMITIVE_TABLE_HH__
+#ifndef __ALICE__PRIMITIVE_TABLE_HH__
+#define __ALICE__PRIMITIVE_TABLE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/PrimitiveTable.hh"
+#pragma interface "alice/PrimitiveTable.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
-#include "emulator/Primitive.hh"
+#include "generic/Interpreter.hh"
+#include "generic/Primitive.hh"
 
 class PrimitiveTable {
 private:
