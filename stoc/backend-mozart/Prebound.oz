@@ -40,12 +40,12 @@ define
       C mod 8 + &0
    end
 
-   fun {ToCString C Rest}
+   fun {ToCString C}
       case {CondSelect CStringTab C unit} of unit then
-	 if {Char.isPrint C} then C|Rest
-	 else &\\|{ToOct C div 64}|{ToOct C div 8}|{ToOct C}|Rest
+	 if {Char.isPrint C} then [C]
+	 else [&\\ {ToOct C div 64} {ToOct C div 8} {ToOct C}]
 	 end
-      elseof S then {Append S Rest}
+      elseof S then S
       end
    end
 
@@ -139,7 +139,7 @@ define
       'Char.isHexDigit': Char.isXDigit
       'Char.isSpace': Char.isSpace
       'Char.toCString':
-	 fun {$ C} {ByteString.make {ToCString C nil}} end
+	 fun {$ C} {ByteString.make {ToCString C}} end
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}
@@ -163,10 +163,6 @@ define
       'Option.Option': {NewUniqueName 'Option.Option'}
       'String.^':
 	 fun {$ S1#S2} {ByteString.append S1 S2} end
-      'String.toCString':
-	 fun {$ X}
-	    {ByteString.make {FoldR {ByteString.toString X} ToCString nil}}
-	 end
       'String.str':
 	 fun {$ C} {ByteString.make [C]} end
       'String.size':
