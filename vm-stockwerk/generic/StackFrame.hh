@@ -45,7 +45,8 @@ enum FrameLabel {
   LOAD_FRAME,
   BOOT_FRAME,
   // Lanugage specific Frames
-  MIN_LANGUAGE_LAYER_FRAME = BOOT_FRAME + 1
+  MIN_LANGUAGE_LAYER_FRAME = BOOT_FRAME + 1,
+  MAX_STACK_FRAME = MAX_DATA_LABEL
 };
 
 class DllExport StackFrame: private Block {
