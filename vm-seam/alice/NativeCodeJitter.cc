@@ -631,8 +631,6 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       NativeCodeFrame_PutImmediateArgs(JIT_V2, JIT_R0);
       NativeConcreteCode_GetNativeCode(JIT_R0, JIT_V1);
       NativeCodeFrame_PutCode(JIT_V2, JIT_R0);
-      jit_movi_p(JIT_R0, Store::IntToWord(1));
-      NativeCodeFrame_PutContinuation(JIT_V2, JIT_R0);
       jit_movi_p(JIT_R0, Store::IntToWord(0));
       for (u_int i = info->nLocals; i--;)
   	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
@@ -652,8 +650,6 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       NativeCodeFrame_PutClosure(JIT_V1, JIT_R0);
       NativeCodeFrame_GetImmediateArgs(JIT_R0, JIT_V2);
       NativeCodeFrame_PutImmediateArgs(JIT_V1, JIT_R0);
-      jit_movi_p(JIT_R0, Store::IntToWord(1));
-      NativeCodeFrame_PutContinuation(JIT_V1, JIT_R0);
       NativeCodeFrame_GetCode(JIT_R0, JIT_V2);
       NativeCodeFrame_PutCode(JIT_V1, JIT_R0);
       jit_movr_p(JIT_V2, JIT_V1); // Move to new frame
@@ -702,8 +698,6 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
       if (currentNLocals == nLocals)
 	goto reuse;
       jit_pushr_ui(JIT_R0);
-      NativeCodeFrame_GetContinuation(JIT_R0, JIT_V2); // Reuse continuation
-      jit_pushr_ui(JIT_R0);
       if (nLocals < currentNLocals) {
 	// Invariant: Enough space on the stack and all slots are valid
 	NativeCodeFrame_NewPopAndPush(JIT_V2, nLocals, currentNLocals);
@@ -720,8 +714,6 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
       for (u_int i = info->nLocals; i--;)
   	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
     no_init:
-      jit_popr_ui(JIT_R0);
-      NativeCodeFrame_PutContinuation(JIT_V2, JIT_R0);
       jit_popr_ui(JIT_R0);
     reuse:
       NativeCodeFrame_PutClosure(JIT_V2, JIT_R0);
@@ -2325,17 +2317,17 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
     }
     break;
   }
-  NativeCodeFrame_GetContinuation(JIT_R0, JIT_V2);
   u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
   Scheduler_PopAndPushFrame(JIT_V2, size, 0);
-  jit_insn *no_cont = jit_beqi_ui(jit_forward(), JIT_R0, Store::IntToWord(0));
+  StackFrame_GetWorkerW(JIT_R0, JIT_V2);
+  Worker *nativeWorker = NativeCodeInterpreter::self;
+  word wNativeWorker = Store::UnmanagedPointerToWord(nativeWorker);
+  jit_insn *no_cont = jit_bnei_p(jit_forward(), JIT_R0, wNativeWorker);
   RestoreRegister();
   NativeCodeFrame_GetPC(JIT_R0, JIT_V2);
   BranchToOffset(JIT_R0);
   jit_patch(no_cont);
-  Assert((Worker::CONTINUE == 0) && (Worker::PREEMPT == 1));
-  JITStore::LoadStatus(JIT_R0);
-  jit_nei_i(JIT_R0, JIT_R0, 0);
+  jit_movi_ui(JIT_R0, Worker::CONTINUE);
   RETURN();
   return INVALID_POINTER;
 }

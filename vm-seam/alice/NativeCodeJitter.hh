@@ -76,7 +76,6 @@ protected:
     NATIVECODEFRAME_CODE_POS,
     NATIVECODEFRAME_CLOSURE_POS,
     NATIVECODEFRAME_IMMEDIATE_ARGS_POS,
-    NATIVECODEFRAME_CONTINUATION_POS,
     NATIVECODEFRAME_BASE_SIZE
   };
   // Side-Effect: Scratches JIT_R0, JIT_FP
@@ -127,12 +126,6 @@ protected:
   }
   void NativeCodeFrame_PutImmediateArgs(u_int This, u_int Value) {
     StackFrame_Put(This, NATIVECODEFRAME_IMMEDIATE_ARGS_POS, Value);
-  }
-  void NativeCodeFrame_GetContinuation(u_int Dest, u_int This) {
-    StackFrame_Sel(Dest, This, NATIVECODEFRAME_CONTINUATION_POS);
-  }
-  void NativeCodeFrame_PutContinuation(u_int This, u_int Value) {
-    StackFrame_Put(This, NATIVECODEFRAME_CONTINUATION_POS, Value);
   }
   void NativeCodeFrame_ReplaceClosure(u_int This, u_int Closure) {
     StackFrame_Replace(This, NATIVECODEFRAME_CLOSURE_POS, Closure);
