@@ -232,7 +232,9 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Unsafe.cast", SOME Unary);
 		ins ("UnsafeMap.IllegalKey", NONE);
 		ins ("UnsafeMap.condGet", SOME (Tuple 3));
+		ins ("UnsafeMap.clear", SOME Unary);
 		ins ("UnsafeMap.get", SOME (Tuple 2));
+		ins ("UnsafeMap.getSize", SOME Unary);
 		ins ("UnsafeMap.isMember", SOME (Tuple 2));
 		ins ("UnsafeMap.new", SOME Unary);
 		ins ("UnsafeMap.put", SOME (Tuple 3));

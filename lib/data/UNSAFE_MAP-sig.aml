@@ -16,12 +16,12 @@ signature UNSAFE_MAP =
 	type 'key map
 	exception IllegalKey
 
-	val condGet : 'key map * 'key * 'value -> 'value (* IllegalKey *)
+	val condGet : 'key map * 'key * 'value -> 'value
 	val get : 'key map * 'key -> 'value (* IllegalKey *)
-	val isMember : 'key map * 'key -> bool (* IllegalKey *)
+	val isMember : 'key map * 'key -> bool
 	val new : int -> 'key map
-	val put : 'key map * 'key * 'value -> unit (* IllegalKey *)
-	val remove : 'key map * 'key -> unit (* IllegalKey *)
+	val put : 'key map * 'key * 'value -> unit
+	val remove : 'key map * 'key -> unit
 	val toList : 'key map -> ('key * 'value) list
 	val toVector : 'key map -> ('key * 'value) vector
     end

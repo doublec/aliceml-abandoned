@@ -14,10 +14,10 @@
 #include "store/Map.hh"
 
 // TODO: This needs a design
-#define DECLARE_UNSAFE_MAP_KEY(value, x)		\
-  word value = PointerOp::Deref(x);			\
-  if (PointerOp::IsTransient(value)) {			\
-    RAISE(PrimitiveTable::UnsafeMap_IllegalKey);	\
+#define DECLARE_UNSAFE_MAP_KEY(value, x)	\
+  word value = PointerOp::Deref(x);		\
+  if (PointerOp::IsTransient(value)) {		\
+    REQUEST(value);				\
   }
 
 //
@@ -57,6 +57,7 @@ public:
   word GetNoCheck(word key)        { return GetMap()->Get(key); }
   word CondGet(word key, word alt) { return GetMap()->CondGet(key, alt); }
   u_int GetMapSize()               { return GetMap()->GetSize(); }
+  void Clear()                     { GetMap()->Clear(); }
   void Apply(item_apply func)      { GetMap()->Apply(func); }
 
   static UnsafeMap *FromWord(word x) {
@@ -104,7 +105,16 @@ DEFINE2(UnsafeMap_isMember) {
 DEFINE2(UnsafeMap_get) {
   DECLARE_UNSAFE_MAP(map, x0);
   DECLARE_UNSAFE_MAP_KEY(key, x1);
-  RETURN(map->GetNoCheck(key));
+  if (map->IsMember(key)) {
+    RETURN(map->GetNoCheck(key));
+  } else {
+    RAISE(PrimitiveTable::UnsafeMap_IllegalKey);
+  }
+} END
+
+DEFINE1(UnsafeMap_getSize) {
+  DECLARE_UNSAFE_MAP(map, x0);
+  RETURN_INT(map->GetMapSize());
 } END
 
 DEFINE3(UnsafeMap_condGet) {
@@ -112,6 +122,12 @@ DEFINE3(UnsafeMap_condGet) {
   DECLARE_UNSAFE_MAP_KEY(key, x1);
   word alternative = x2;
   RETURN(map->CondGet(key, alternative));
+} END
+
+DEFINE1(UnsafeMap_clear) {
+  DECLARE_UNSAFE_MAP(map, x0);
+  map->Clear();
+  RETURN_UNIT;
 } END
 
 static word itemList;
@@ -187,7 +203,9 @@ void PrimitiveTable::RegisterUnsafeMap() {
     UniqueConstructor::New("IllegalKey", "UnsafeMap.IllegalKey")->ToWord();
   Register("UnsafeMap.IllegalKey", PrimitiveTable::UnsafeMap_IllegalKey);
   Register("UnsafeMap.condGet", UnsafeMap_condGet, 3);
+  Register("UnsafeMap.clear", UnsafeMap_clear, 1);
   Register("UnsafeMap.get", UnsafeMap_get, 2);
+  Register("UnsafeMap.getSize", UnsafeMap_getSize, 1);
   Register("UnsafeMap.isMember", UnsafeMap_isMember, 2);
   Register("UnsafeMap.new", UnsafeMap_new, 1);
   Register("UnsafeMap.put", UnsafeMap_put, 3);
