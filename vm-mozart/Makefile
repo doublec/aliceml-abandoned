@@ -179,7 +179,7 @@ LIBSYSTEMSOURCES0 = \
 	IMPERATIVE_IO-sig.aml ImperativeIO.aml BIN_IO-sig.aml BinIO.aml \
 	TEXT_TRANSLATOR-sig.aml MkTextTranslator.aml TEXT_STREAM_IO-sig.aml \
 	TEXT_IO-sig.aml TextIO.aml IO_DESC-sig.aml OS_FILE_SYS-sig.aml \
-	OS_PROCESS-sig.aml OS_IO-sig.aml OS-sig.aml UNIX-sig.aml \
+	OS_IO-sig.aml OS_PATH-sig.aml OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml \
 	COMMAND_LINE-sig.aml COMPONENT-sig.aml DEBUG-sig.aml SOCKET-sig.aml \
 	RAND-sig.aml REFLECT-sig.aml FOREIGN-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
@@ -309,6 +309,7 @@ COMPILERBACKENDSEAMSOURCES = \
 
 COMPILERTOPSOURCES0 = \
 	COMPILER-sig.aml MkCompiler.aml \
+	DEPENDENCY-sig.aml Dependency.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
