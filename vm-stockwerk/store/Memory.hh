@@ -1,3 +1,14 @@
+//
+// Author:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus, 2000
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
 #ifndef __MEMCHUNK_HH__
 #define __MEMCHUNK_HH__
 

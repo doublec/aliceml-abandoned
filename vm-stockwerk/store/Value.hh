@@ -1,3 +1,14 @@
+//
+// Author:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus, 2000
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
 #ifndef __VALUE_HH__
 #define __VALUE_HH__
 
@@ -5,7 +16,7 @@
 #pragma interface
 #endif
 
-#include <string.h>
+#include <cstring>
 #include "base.hh"
 #include "headerop.hh"
 #include "pointerop.hh"
@@ -47,8 +58,8 @@ public:
     u_int newsize = ((size * 3) >> 1);
     Block *b   = Store::AllocBlock(GetLabel(), newsize);
 
-    memcpy(b + 1, ar + 1, size * sizeof(word));
-    memset(b + (size + 1), 1, (newsize - size) * sizeof(word));
+    std::memcpy(b + 1, ar + 1, size * sizeof(word));
+    std::memset(b + (size + 1), 1, (newsize - size) * sizeof(word));
 
     return b;
   }
@@ -101,8 +112,8 @@ protected:
     u_int size = Block::GetSize();
     Stack *s   = (Stack *) Store::AllocBlock(BlockLabel::STACK, (size << 1));
     
-    memcpy(s + 1, ar + 1, size * sizeof(word));
-    memset(s + (size + 1), 1, size * sizeof(word));
+    std::memcpy(s + 1, ar + 1, size * sizeof(word));
+    std::memset(s + (size + 1), 1, size * sizeof(word));
 
     return s;
   }
@@ -117,7 +128,7 @@ public:
     u_int size = Block::GetSize();
 
     InitArg(1, Store::IntToWord(2));
-    memset(ar + 2, 1,(size - 2) * sizeof(word));
+    std::memset(ar + 2, 1,(size - 2) * sizeof(word));
   }
   Stack *AllocArgFrame(u_int fsize) {
     int top   = Store::WordToInt(GetArg(1));
@@ -203,7 +214,7 @@ public:
    int top = Store::WordToInt(GetArg(1));
 
     InitArg(1, Store::IntToWord(2));
-    memset(ar + 2, 1, (top - 2) * sizeof(word));
+    std::memset(ar + 2, 1, (top - 2) * sizeof(word));
   }
 
   static Stack *New(u_int s) {
