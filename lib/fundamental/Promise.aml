@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -39,7 +39,8 @@ struct
 	in
 	    if exchange(r, Hole.future b)
 	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fill(h,x); Hole.fill(b,true))
+	    else (Hole.fill(h,x) handle e => (Hole.fill(b,false); raise e);
+		  Hole.fill(b,true))
 	end
 
     fun fail((r,h), e) =
@@ -48,7 +49,8 @@ struct
 	in
 	    if exchange(r, Hole.future b)
 	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fail(h,e); Hole.fill(b,true))
+	    else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
+		  Hole.fill(b,true))
 	end
 end
 *)
@@ -71,7 +73,8 @@ struct
 	in
 	    if exchange(r, Hole.future b)
 	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fill(h,x); Hole.fill(b,true))
+	    else (Hole.fill(h,x) handle e => (Hole.fill(b,false); raise e);
+		  Hole.fill(b,true))
 	end
 
     fun fail(Promise__(r,h), e) =
@@ -80,6 +83,7 @@ struct
 	in
 	    if exchange(r, Hole.future b)
 	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fail(h,e); Hole.fill(b,true))
+	    else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
+		  Hole.fill(b,true))
 	end
 end
