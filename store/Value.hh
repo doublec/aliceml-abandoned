@@ -24,7 +24,7 @@
 #define MAX(a, b) (((a) < (b)) ? (b) : (a))
 
 class Block {
-protected:
+private:
   word ar[2];
 public:
   word *GetBase() {
@@ -75,42 +75,37 @@ public:
 };
 
 class Transient : private Block {
-protected:
-  void PerformBind(word v, BlockLabel l) {
-    BlockLabel label = GetLabel();
-
-    if ((label == PROMISE) || (label == FUTURE)) {
-      ReplaceArg(1, v);
-      HeaderOp::EncodeLabel(this, REF);
-    }
-    else {
-      Assert(0);
-    }
-  }
 public:
   using Block::GetLabel;
-  using Block::GetSize;
-  using Block::GetArg;
-  using Block::InitArg;
 
   word ToWord() {
     return PointerOp::EncodeTransient(this);
   }
-  void Bind(word v) {
-    PerformBind(v, REF);
+  word GetArg() {
+    return Block::GetArg(1);
   }
-  void Cancel(word ex) {
-    PerformBind(ex, CANCELLED);
+  void InitArg(word w) {
+    Block::InitArg(1, w);
+  }
+  void ReplaceArg(word w) {
+    Block::ReplaceArg(1, w);
+  }
+  void Become(BlockLabel l, word w) {
+    Assert(GetLabel() >= MIN_TRANSIENT && GetLabel() <= MAX_TRANSIENT &&
+	   GetLabel() != REF);
+    Assert(l >= MIN_TRANSIENT && l <= MAX_TRANSIENT);
+    HeaderOp::EncodeLabel(this, l);
+    Block::ReplaceArg(1, w);
   }
 };
 
 class Stack : private Block {
-protected:
+private:
   Stack *Enlarge() {
     u_int size = Block::GetSize();
     Stack *s   = (Stack *) Store::AllocBlock(STACK, (size << 1));
     
-    std::memcpy(s + 1, ar + 1, size * sizeof(word));
+    std::memcpy(s + 1, GetBase(), size * sizeof(word));
     std::memset(s + (size + 1), 1, size * sizeof(word));
 
     return s;
@@ -128,7 +123,7 @@ public:
     u_int size = GetSize();
 
     InitArg(1, Store::IntToWord(2));
-    std::memset(ar + 2, 1,(size - 2) * sizeof(word));
+    std::memset(GetBase() + 1, 1,(size - 2) * sizeof(word));
   }
   void AllocArgFrame(u_int fsize) {
     u_int top = (u_int) Store::WordToInt(GetArg(1));
@@ -201,7 +196,7 @@ public:
    int top = Store::WordToInt(GetArg(1));
 
     InitArg(1, Store::IntToWord(2));
-    std::memset(ar + 2, 1, (top - 2) * sizeof(word));
+    std::memset(GetBase() + 1, 1, (top - 2) * sizeof(word));
   }
   int IsEmpty() {
     return (Store::WordToInt(GetArg(1)) == 2);
