@@ -93,6 +93,7 @@ AC_CONFIG_FILES([
    alice/primitives/Makefile
    bin/alicerun
    bin/alicetool
+   bin/alice-config
    Makefile.bootstrap
 ])
 

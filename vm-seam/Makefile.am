@@ -20,7 +20,8 @@ bin_SCRIPTS = \
 	bin/alicedep \
 	bin/alicelink \
 	bin/alicerun \
-	bin/alicetool
+	bin/alicetool \
+	bin/alice-config
 
 include_HEADERS = \
 	Alice.hh
