@@ -1,5 +1,8 @@
+BOOTSTRAPDIR= ../../../bootstrap
+
 STOC     = stoc
 STOCOPTS =
+STODEP   = sml @SMLload=$(BOOTSTRAPDIR)/stodep
 
 SRCS = hello.aml          \
        packbox.aml        \
@@ -20,5 +23,13 @@ OBJS = hello.ozf          \
 
 all: $(OBJS)
 
+depend:
+	$(STODEP) $(SRCS) > Makefile.depend
+
 clean:
 	rm -f *.oz*
+
+distclean: clean
+	rm -f Makefile.depend
+
+-include Makefile.depend
