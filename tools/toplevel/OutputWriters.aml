@@ -104,13 +104,13 @@ structure OutputWriters =
 
       val rowColId = Gtk.statusbarGetContextId(Gui.statusbar1, "rowcol")
       val _ = Gtk.statusbarPush(Gui.statusbar1,rowColId,
-                                "L 0, C 0");
+                                "L 0  C 0");
 
       fun setRowCol (row, col) =
           let
               val r = Int.toString row
               val c = Int.toString col
-              val msg = "L "^r^", C "^c
+              val msg = "L "^r^"  C "^c
           in
               (Gtk.statusbarPop(Gui.statusbar1, rowColId);
                Gtk.statusbarPush(Gui.statusbar1, rowColId, msg);

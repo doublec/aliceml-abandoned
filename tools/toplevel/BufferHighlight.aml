@@ -42,7 +42,8 @@ structure BufferHighlight =
           end
 
       fun highlight (buf, startiter, enditer, removeTags) =
-          if Gtk.textIterGetChar startiter = ord #"#" then ()
+          if Gtk.textIterGetChar startiter = ord #"#" then
+              Gtk.textBufferApplyTagByName(buf, "comment", startiter, enditer)
           else
               let
                   val offset = Gtk.textIterGetOffset startiter
