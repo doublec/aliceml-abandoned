@@ -3,7 +3,7 @@
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus, 2000
+ *   Thorsten Brunklaus, 2000-2001
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -24,18 +24,17 @@ local
     fun newServer () =
 	let
 	    val tail   = Promise.promise ()
-	    val stream = ref tail
+	    val stream = Cell.cell tail
 
 	    fun process s = (case s of
 				 nil   => ()
 			       | p::pr => (p (); process pr))
 	    fun send p =
 		let
-		    val tail    = !stream
 		    val newtail = Promise.promise ()
+		    val tail    = Cell.exchange(stream, newtail)
 		in
-		    (stream := newtail;
-		     Promise.fulfill(tail, p::(Promise.future newtail)))
+		    Promise.fulfill(tail, p::(Promise.future newtail))
 		end
 	in
 	    (Thread.spawn (fn () => process(Promise.future tail));
@@ -55,7 +54,7 @@ local
 		"of", "op", "open", "orelse", "raise", "rec", "then",
 		"type", "val", "with", "withtype", "while",
 		"eqtype", "functor", "include", "sharing",
-		"sig", "signature", "structure", "where",
+		"sig", "signature", "structure", "struct", "where",
                 "any", "constructor", "fct", "from", "import", "non",
                 "pack", "unpack", "when", "withfun", "withval"
 	       ]
@@ -161,8 +160,7 @@ local
 	fun okHandler _ = serve
 	    (fn () =>
 	     let
-		 val name   = Gtk.fileSelectionGetFilename fileSel
-		 val window = fileToWindow name
+		 val name = Gtk.fileSelectionGetFilename fileSel
 	     in
 		 (curfile := name;
 		  Gtk.widgetUnmap fileSel;
