@@ -17,7 +17,7 @@
 #include "alice/primitives/Authoring.hh"
 
 // Vector.tabulate Frame
-class VectorTabulateFrame : private StackFrame {
+class VectorTabulateFrame: private StackFrame {
 private:
   static const u_int VECTOR_POS  = 0;
   static const u_int CLOSURE_POS = 1;
@@ -63,21 +63,20 @@ public:
 };
 
 // Vector.tabulate Interpreter
-class VectorTabulateInterpreter : public Interpreter {
+class VectorTabulateInterpreter: public Interpreter {
 private:
   static VectorTabulateInterpreter *self;
   // VectorTabulateInterpreter Constructor
-  VectorTabulateInterpreter() : Interpreter() {}
+  VectorTabulateInterpreter(): Interpreter() {}
 public:
   // VectorTabulateInterpreter Static Constructor
   static void Init() {
     self = new VectorTabulateInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack,
-			Vector *vector, word closure, int i, int n);
+  static void PushFrame(Vector *vector, word closure, int i, int n);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -88,18 +87,16 @@ public:
 //
 VectorTabulateInterpreter *VectorTabulateInterpreter::self;
 
-void VectorTabulateInterpreter::PushFrame(TaskStack *taskStack,
-					  Vector *vector,
+void VectorTabulateInterpreter::PushFrame(Vector *vector,
 					  word closure, int i, int n) {
   VectorTabulateFrame *frame =
     VectorTabulateFrame::New(self, vector, closure, i, n);
-  taskStack->PushFrame(frame->ToWord());
+  Scheduler::PushFrame(frame->ToWord());
 }
 
-Interpreter::Result
-VectorTabulateInterpreter::Run(TaskStack *taskStack) {
+Interpreter::Result VectorTabulateInterpreter::Run() {
   VectorTabulateFrame *frame =
-    VectorTabulateFrame::FromWordDirect(taskStack->GetFrame());
+    VectorTabulateFrame::FromWordDirect(Scheduler::GetFrame());
   Vector *vector = frame->GetVector();
   word closure   = frame->GetClosure();
   int i          = frame->GetIndex();
@@ -107,7 +104,7 @@ VectorTabulateInterpreter::Run(TaskStack *taskStack) {
   Construct();
   vector->LateInit(i, Scheduler::currentArgs[0]);
   if (++i == n) {
-    taskStack->PopFrame();
+    Scheduler::PopFrame();
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = vector->ToWord();
     return Interpreter::CONTINUE;
@@ -115,7 +112,7 @@ VectorTabulateInterpreter::Run(TaskStack *taskStack) {
     frame->UpdateIndex(i);
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = Store::IntToWord(i);
-    return taskStack->PushCall(closure);
+    return Scheduler::PushCall(closure);
   }
 }
 
@@ -162,17 +159,15 @@ DEFINE2(Vector_tabulate) {
   DECLARE_CLOSURE(closure, x1);
   if (length == 0) {
     RETURN(Vector::New(0)->ToWord());
-  }
-  else if ((length < 0) || ((u_int) length > Vector::maxLen)) {
+  } else if ((length < 0) || ((u_int) length > Vector::maxLen)) {
     RAISE(PrimitiveTable::General_Size);
-  }
-  else {
-    word cl = closure->ToWord();
+  } else {
+    word wClosure = closure->ToWord();
     Vector *vector = Vector::New(length);
-    VectorTabulateInterpreter::PushFrame(taskStack, vector, cl, 0, length);
+    VectorTabulateInterpreter::PushFrame(vector, wClosure, 0, length);
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = Store::IntToWord(0);
-    return taskStack->PushCall(cl);
+    return Scheduler::PushCall(wClosure);
   }
 } END
 
