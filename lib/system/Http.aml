@@ -80,7 +80,7 @@ structure Http :> HTTP =
 		    end
 
 	fun readBody (socket, headers) =
-	    case StringMap.lookup (headers, "contentLength") of
+	    case StringMap.lookup (headers, "content-length") of
 		SOME s =>
 		    ((case Int.fromString s of
 			  SOME n =>
