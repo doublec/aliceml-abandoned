@@ -292,7 +292,8 @@ struct
 	      | EUnion    => error "union in arglist or retval"
 	end		    
 (* Hack Alert - the following line prevents cygwin ld crashing *)
-(*    | checkItem (STRUCT _) = false *)
+      | checkItem (STRUCT ("_GtkFileSelection",_)) = true
+      | checkItem (s as (STRUCT _)) = not (isItemOfSpace Util.GTK s)
       | checkItem _ = true
 
     (* Removes struct/enum members for which no binding can be generated *)

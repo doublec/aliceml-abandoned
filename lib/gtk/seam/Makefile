@@ -49,7 +49,9 @@ GENERATOR = GtkBinding.x86-linux
 CC_OPTS =
 endif
 
-PACKAGES = gtk+-2.0 libgnomecanvas-2.0
+ifndef PC_OPTS
+PC_OPTS = gtk+-2.0 libgnomecanvas-2.0
+endif
 
 SML = sml
 ALICEC = alicec 
@@ -84,7 +86,7 @@ $(GENERATOR):
 	test -e $(GENERATOR) || exit 1
 
 $(INPUTFILE):
-	( cd prepare && $(MAKE) WINDOWS=$(WINDOWS) )
+	( cd prepare && $(MAKE) )
 
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
 	gawk -f includesig.awk $< > $@
@@ -96,11 +98,11 @@ compile: $(OBJECTS)
 
 %.dll: %.o
 	$(ALICETOOL) -v ld -Wl,-S $< -o $@ \
-	 $(CC_OPTS) `pkg-config --libs $(PACKAGES)`
+	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
 
 %.o: %.cc
 	$(ALICETOOL) -v cc -c $< -o $@ \
-	 $(CC_OPTS) `pkg-config --cflags $(PACKAGES)`
+	 $(CC_OPTS) `pkg-config --cflags $(PC_OPTS)`
 
 %.stc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) $< -o $@
@@ -109,7 +111,7 @@ compile: $(OBJECTS)
 ### DEPENDENCIES ################################
 
 depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
-	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(PACKAGES)` \
+	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(PC_OPTS)` \
 	    $(CPPSOURCES) > Makefile.depend
 	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
                                                                    | $(SML)
