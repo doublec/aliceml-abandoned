@@ -129,6 +129,7 @@ void IOHandler::Poll() {
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
     int ret = select(max + 1, &readFDs, &writeFDs, NULL, &timeout);
+    //--** EINTR
     if (ret < 0) {
       Error("IOHandler::Poll");
     } else if (ret > 0) {
@@ -155,7 +156,7 @@ void IOHandler::Block() {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   // Windows sockets no longer support WSACancelBlockingCall
   // Pending Events therefore require polling after some time
-  // to be done: better solution?
+  // to be done: better solution? notify via a socket?
   struct timeval timeout;
   timeout.tv_sec  = 0;
   timeout.tv_usec = 10;
@@ -167,11 +168,9 @@ void IOHandler::Block() {
       ReadableSet->Schedule(&readFDs);
       WritableSet->Schedule(&writeFDs);
       return;
-    }
-    else if (ret == 0) {
+    } else if (ret == 0) {
       return;
-    }
-    else {
+    } else {
       switch (GetLastError()) {
       case EINTR:
 	return;
@@ -196,7 +195,7 @@ Future *IOHandler::CheckReadable(int fd) {
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
 
-  int ret = select(fd + 1, &readFDs, NULL, NULL, &timeout);
+  int ret = select(fd + 1, &readFDs, NULL, NULL, &timeout); //--** EINTR
   if (ret < 0) {
     Error("IOHandler::CheckReadable");
   } else if (ret == 0) {
@@ -218,8 +217,8 @@ Future *IOHandler::CheckWritable(int fd) {
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
 
-  int ret = select(fd + 1, NULL, &writeFDs, NULL, &timeout);
-  if (ret < 1) {
+  int ret = select(fd + 1, NULL, &writeFDs, NULL, &timeout); //--** EINTR
+  if (ret < 0) {
     Error("IOHandler::CheckWritable");
   } else if (ret == 0) {
     Future *future = Future::New();
