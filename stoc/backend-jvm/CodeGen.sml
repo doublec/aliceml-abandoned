@@ -162,28 +162,6 @@ structure CodeGen =
 		app freeVarsDec (List.rev decs)
 	end
 
-(* Das macht jetzt alles Leif. *)
-	  (*	fun annotateTailExp (AppExp (_,_,_,tailPos)) = tailPos:=true
-	  | annotateTailExp (FunExp (foo, bar, (ids, exp')::idsexps)) =
-	    (annotateTailExp exp';
-	     annotateTailExp (FunExp(foo, bar, idsexps)))
-	  | annotateTailExp (AdjExp _) = raise Error "seltsame Operation AdjExp"
-(*	  | annotateTailExp (SeqExp (_, exp'::nil)) = annotateTailExp exp'
-	  | annotateTailExp (SeqExp (foo, exp::exps)) = annotateTailExp (SeqExp(foo,exps)) *)
-	(* Der Ausdruck, in dem die Exception gehandlet wird, steht eigentlich auch in Tailposition.
-	 Allerdings bilden wir bei der Codeerzeugung Handles direkt auf den Java Handle-Mechanismus ab,
-	 der nur innerhalb einer Methode arbeitet. Bei unserer Behandlung von Tailrekursion wird aber
-	 die Methode verlassen, so daß wir den Handle-Ausdruck duplizieren müßten, also lassen wir es
-	 ganz. *)
-	  | annotateTailExp (HandleStm (_, _, _, exp')) = annotateTailExp exp'
-(*	  | annotateTailExp (LetExp (_, decs, exp')) = (app annotateTailDec decs; annotateTailExp exp') *)
-	  | annotateTailExp _ = ()
-	and annotateTailDec (ValDec (_,_,exp')) = annotateTailExp exp'
-(*	  | annotateTailDec (Waldeck (_,_,exp')) = annotateTailExp exp' *)
-	  | annotateTailDec (RecDec (foo,(_,exp')::idsexps)) =
-	    (annotateTailExp exp'; annotateTailDec (RecDec (foo, idsexps)))
-	  | annotateTailDec _ = () *)
-
 	(* Einstiegspunkt *)
 	fun genProgramCode (debug, echo, name, program) =
 	    (DEBUG := debug;
@@ -654,7 +632,6 @@ structure CodeGen =
 		      | testCode test' = raise Debug (Test test')
 
 	    in
-		(*zuerst @ *)
 		(testCode test') @
 		List.concat (map decCode body') @
 		[Goto danach,
@@ -684,30 +661,6 @@ structure CodeGen =
 		else
 		    (expCode ap) @
 		    [Areturn]
-    (*else
-     [Invokestatic (CThread, "currentThread", ([],Classsig CThread)),
-     Checkcast CDMLThread] @
-     (idCode(id')) @
-     ((Putfield (CDMLThread^"/tail",CVal))::
-     (idCode(id'')))@
-     [Areturn]
-			else
-			    let
-				val (startlabel, endlabel) = (Label.new(), Label.new())
-			    in
-				[Label startlabel,
-				Invokeinterface (CVal, "apply", ([Classsig CVal],Classsig CVal)),
-				Invokestatic (CThread, "currentThread", ([],Classsig CThread)),
-				Checkcast CDMLThread,
-				Getfield (CDMLThread^"/tail",CVal),
-				Dup,
-				Ifnull endlabel,
-				Swap,
-				Goto startlabel,
-				Label endlabel,
-				Pop,
-				Areturn]
-    end*)
 	  | decCode (ReturnStm (_, exp')) =
 	(* sonstiges Return *)
 		    (expCode exp')@
@@ -1019,26 +972,6 @@ structure CodeGen =
 
 	  | expCode (LitExp(_,lit')) =
 		     let
-			(* val jValue = case lit' of
-			     CharLit c => atCodeInt(ord c)
-			   | IntLit i  => atCodeInt (LargeInt.toInt i)
-			   | RealLit r =>
-				 let
-				     val SOME r = Real.fromString r
-				 in
-				     if (Real.sign (r-0.0)=0)
-					 orelse (Real.sign(r-1.0)=0)
-					 orelse (Real.sign (r-2.0)=0) then Fconst (trunc r)
-				     else Ldc (JVMFloat r)
-				 end
-			   | StringLit s => Ldc (JVMString s)
-			   | WordLit w   => atCodeInt (LargeInt.toInt (LargeWord.toLargeInt w))
-			 val jType = case lit' of
-			     CharLit _   => ([Intsig],[Voidsig])
-			   | IntLit _    => ([Intsig],[Voidsig])
-			   | RealLit _   => ([Floatsig],[Voidsig])
-			   | StringLit _ => ([Classsig CString], [Voidsig])
-			   | WordLit _   => ([Intsig],[Voidsig])*)
 			 val scon = case lit' of
 			     CharLit _   => CChar
 			   | IntLit _    => CInt
@@ -1047,12 +980,6 @@ structure CodeGen =
 			   | WordLit _   => CInt
 		     in
 			 [Getstatic (Literals.insert lit', [Classsig scon])]
-(*				 [Comment "constant(",
-				  New scon,
-				  Dup,
-				  jValue,
-				  Invokespecial (scon,"<init>",jType),
-				  Comment "end of constant)"] *)
 		     end
 
 	  | expCode (TupExp(_,longids)) =
