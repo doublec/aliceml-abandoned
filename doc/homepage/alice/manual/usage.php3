@@ -3,13 +3,14 @@
 <?php heading("Usage", "usage") ?>
 
 <?php section("overview", "overview") ?>
-  <P>The interface to the Alice system features:</P>
+  <P>The interface to the Alice system tools:</P>
   <UL>
     <LI><A href="#interactive">the interactive toplevel</A>
     <LI><A href="#emacs">the interactive toplevel within Emacs</A>
     <LI><A href="#compiler">the batch compiler</A>
     <LI><A href="#vm">the virtual machine</A>
     <LI><A href="#linker">the static linker</A>
+    <LI><A href="#depend">the dependency analyzer</A>
   </UL>
 
 <?php section("interactive", "interactive") ?>
@@ -219,5 +220,24 @@
     In particular, one has to make sure that the root component is
     included.
   </P>
+
+
+<?php section("depend", "dependency") ?>
+
+  <P>The dependency analysis tool takes a list of Alice source files and
+    generates output suitable for inclusion in a <TT>Makefile</TT>.</P>
+
+  <P>Synopsis:</P>
+  <DL>
+    <DT><TT>alicedep</TT> <I>&lt;file&gt;</I> ... <TT>&gt;Makefile.depend</TT></DT>
+  </DL>
+
+  <P>For each given source file the tool generates a <TT>make</TT>-style rule.
+   The rule's target is the path of the file relative to the current working
+   directory, with an appropriate extension. To determine the rule's
+   prerequisites the tool scans all import announcements in the source file.
+   Imports from non-file URIs are ignored. For each file URI an appropriate
+   prerequisite is generated. Relative paths are resolved with respect to the
+   location of the source file.</P>
 
 <?php footing() ?>

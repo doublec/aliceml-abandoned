@@ -60,7 +60,7 @@
 
 
 
-<?php section("exttype", "extensible datatypes") ?>
+<?php section("exttype", "exttypes") ?>
 
   <P>
     Extensible datatypes are a generalization of SML's exception type. In
@@ -338,7 +338,7 @@
   </PRE>
 
   <P>
-    Or rational trees:
+    Or regular trees:
   </P>
 
   <PRE>
