@@ -149,13 +149,13 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 				       end) tests)
 		      | ConTests tests =>
 			    ConTests (Vector.map
-				      (fn (con, args, body) =>
+				      (fn (id, args, body) =>
 				       let
 					   val body = liveBody (body, shared)
 					   val set = killSet body
 					   val args = killArgs (args, set)
 				       in
-					   (con, args, body)
+					   (id, args, body)
 				       end) tests)
 		      | VecTests tests =>
 			    VecTests (Vector.map
