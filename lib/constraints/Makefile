@@ -39,12 +39,15 @@ ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml \
 
 TOOLSOURCES = EXPLORER-sig.aml Explorer.aml
 
-NATIVES = FD FS Space Search Explorer
+NATIVES = FD FS Space Search
+TOOLNATIVES = Explorer
 
-OZSOURCES=$(NATIVES:%=Unsafe%.oz)
+OZSOURCES=$(NATIVES:%=Unsafe%.oz) \
+	$(TOOLNATIVES:%=Unsafe%.oz)
 
 COMPONENTS = \
 	$(NATIVES:%=Linked%.ozf) \
+	$(TOOLNATIVES:%=Linked%.ozf) \
 	$(ALICESOURCES:%.aml=%.ozf) \
 	$(TOOLSOURCES:%.aml=%.ozf) \
 
@@ -88,6 +91,10 @@ $(NATIVES:%=$(PREFIX)/lib/constraints/%.ozf): \
 	$(PREFIX)/lib/constraints/%.ozf: Linked%.ozf
 	install -c -m 444 $< $@
 
+$(TOOLNATIVES:%=$(PREFIX)/lib/tools/%.ozf): \
+	$(PREFIX)/lib/tools/%.ozf: Linked%.ozf
+	install -c -m 444 $< $@
+
 $(PREFIX)/lib/constraints/%.ozf: %.ozf
 	install -c -m 444 $< $@
 
@@ -99,7 +106,8 @@ $(PREFIX)/lib/tools/%.ozf: %.ozf
 ##
 
 clean:
-	-rm -f $(NATIVES:%=Unsafe%.ozf) $(COMPONENTS) *.ozm
+	-rm -f $(NATIVES:%=Unsafe%.ozf) \
+	$(TOOLNATIVES:%=Unsafe%.ozf) $(COMPONENTS) *.ozm
 
 veryclean: clean
 
