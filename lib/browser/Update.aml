@@ -22,7 +22,10 @@ import structure MainDictionary from "MainDictionary"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
+import structure DrawNodes from "DrawNodes"
 import structure Server from "Server"
+import structure Services from "Services"
+import structure Settings from "Settings"
 import signature UPDATE from "UPDATE-sig"
 
 import structure TextIO from "x-alice:/lib/system/TextIO"
@@ -41,9 +44,19 @@ structure Update :> UPDATE =
 
 	(* updateChild *)
 	fun updateChild (p,i,n) = case p of
-	    Concat(r) => Array.update(getKids(p),i,n)
-          | Container(r) => Array.update(getKids(p),i,n)
-          | RelNode(r) => #content(r) := n
+	    Concat(r) => (Array.update(getKids(p),i,n)
+                         ; if not(getParent(n) = Empty)
+			       then updateChild(getParent(p),getIndex(p),p)
+			   else () )
+          | Container(r) => (Array.update(getKids(p),i,n)
+			    ; if not(getParent(n) = Empty)
+			       then updateChild(getParent(p),getIndex(p),p)
+			   else () )
+          | RelNode(r) => (#content(r) := n
+			  ; if not(getParent(n) = Empty)
+			       then updateChild(getParent(p),getIndex(p),p) 
+			    else () )
+          | Empty => () 
           | _ => raise UpdateError
 
         (* setDazzled *)
@@ -64,7 +77,7 @@ structure Update :> UPDATE =
 
         (* tell *)
 	and tell (va,li,f) =  
-	    (TextIO.print "\nmethod tell: starting update !!!\n\n" 
+	    (TextIO.print "\nmethod tell: starting update ...\n\n" 
             ;
 	    let val new_li = List.sort 
 		(fn (n,m) => Int.compare(getAncIndex n, 
@@ -84,15 +97,20 @@ structure Update :> UPDATE =
 					 getDepth(n)) 
 			 in ( minCounter := getAncIndex(hd(new_li)) 
 			    ; Gtk.objectDestroy(getGroup(n)) 
-			    ; MainDictionary.update(Dictionaries.dict, 
-						    (ind,anc)) 
                             ; updateChild(getParent(n),getIndex(n),new) 
-			    ; Layout.layout(n)  
-                            ; TextIO.print " UPDATED !!! \n")  
-			 (* neu zeichnen / verschieben *)
-			 end ) 
+			    ; MainDictionary.update(Dictionaries.dict, 
+			         		     (ind,anc)) 
+			    ; Layout.layout(anc) 
+                            ; let val (x,y) = Services.getPosition
+			                       (getGroup(anc),!(Settings.font))
+			      in (TextIO.print ("("^Int.toString(x)^" / "
+						^Int.toString(y)^")\n")
+				  ; DrawNodes.draw(anc,0,0,DrawNodes.DRAW)) 
+			      end ) 
+			 end )
+		val _ = TextIO.print "...update-Funktion computed \n\n" 
 		val mapped_li = List.map update new_li 
-	    in () 
+	    in () (* alle darunterliegenden Wurzelknoten verschieben *)
 	    end    )
 	    (* nach oben durchgehen, flags auf DAZZLED setzen, 
 	     minCounter setzen und createGraph aufrufen *)
