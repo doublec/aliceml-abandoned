@@ -32,6 +32,8 @@ datatype RadioButtonObj = RBObj of string * Handler list
 
 datatype ButtonObj = BObj of string * Handler list
 
+val uglyNULL : Gtk.object
+
 val setSensitive: Gtk.object * bool -> unit
 
 val createMenu:  MenuConstructObj -> Gtk.object

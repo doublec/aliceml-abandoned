@@ -15,6 +15,7 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure MkColorTable from "MkColorTable"
+import structure Settings from "Settings"
 import signature DRAWING_AREA from "DRAWING_AREA-sig"
 
 functor MkDrawingArea (val xsize : real val ysize: real) : DRAWING_AREA
@@ -41,10 +42,20 @@ struct
 
     val root = GtkCanvas.root(canvas)
   
-    fun resize (x,y) = (GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
-	               ;GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
-	               ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))
-	
+    fun resize (x,y,scrolled,valueh,valuev  ) =  
+	let 
+	   val adj1 = Gtk.adjustmentNew(valueh,0.0,!Settings.max_x ,
+					 20.0,50.0,!Settings.max_x )
+	    val adj2 = Gtk.adjustmentNew(valuev,0.0,!Settings.max_y ,
+					 20.0,50.0,!Settings.max_y ) 
+	in
+	( Gtk.widgetSetScrollAdjustments(scrolled,adj1,adj2) 
+  (*  (Gtk.scrolledWindowSetHadjustment(scrolled,adj1)
+	     ;Gtk.scrolledWindowSetVadjustment(scrolled,adj1) *)
+	     ;GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
+	     ;GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
+	     ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))
+	end
 end
 
 
