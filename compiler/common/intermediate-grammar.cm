@@ -1,8 +1,5 @@
 Group
 
-	signature INTERMEDIATE_GRAMMAR
-	structure IntermediateGrammar
-
 is
 
 	../misc/sources.cm

@@ -1,12 +1,5 @@
 Group
 
-	signature STAMP
-	structure Stamp
-	signature INTERMEDIATE_GRAMMAR
-	structure IntermediateGrammar
-	signature PREBOUND
-	structure Prebound
-
 is
 
 	../misc/sources.cm
