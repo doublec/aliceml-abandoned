@@ -10,22 +10,25 @@
  *   $Revision$
  *)
 
-import structure Assert              from "../../lib/utility/Assert"
-import structure Url                 from "../../lib/utility/Url"
-import structure Crash               from "../infrastructure/Crash"
-import structure EmptyContext        from "../infrastructure/EmptyContext"
-import structure Source              from "../infrastructure/Source"
-import structure StampSet            from "../common/StampSet"
-import structure FlatGrammar         from "../backend-common/FlatGrammar"
-import structure AbstractCodeGrammar from "AbstractCodeGrammar"
-import structure Environment         from "Environment"
-import signature CODE_GEN_PHASE      from "CODE_GEN_PHASE-sig"
+import structure Assert                from "../../lib/utility/Assert"
+import structure Url                   from "../../lib/utility/Url"
+import structure Crash                 from "../infrastructure/Crash"
+import structure EmptyContext          from "../infrastructure/EmptyContext"
+import structure Source                from "../infrastructure/Source"
+import structure StampSet              from "../common/StampSet"
+import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+import structure MkEnvironment         from "MkEnvironment"
+import signature CODE_GEN_PHASE        from "CODE_GEN_PHASE-sig"
 
-structure CodeGenPhase: CODE_GEN_PHASE =
+functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
+    CODE_GEN_PHASE =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar
 	structure O = AbstractCodeGrammar
+
+	structure Environment = MkEnvironment(AbstractCodeGrammar)
 
 	open I
 	open Environment

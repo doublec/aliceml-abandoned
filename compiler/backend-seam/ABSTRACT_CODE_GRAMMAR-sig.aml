@@ -37,8 +37,6 @@ signature ABSTRACT_CODE_GRAMMAR =
 
 	type coord = string * int * int
 
-	type value
-
 	datatype function = Function of coord * int * int * idDef args * instr
 	and instr =
 	    Kill of id vector * instr
@@ -75,6 +73,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | VecTest of idRef * (idDef vector * instr) vector * instr
 	  | Shared of Stamp.t * instr
 	  | Return of idRef args
+	withtype value = function Value.t
 
 	type t = value
     end

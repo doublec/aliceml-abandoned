@@ -287,8 +287,8 @@ COMPILERBACKENDSTOCKWERKSOURCES0 = \
 	PRIM_PICKLE-sig.aml PrimPickle.aml VALUE-sig.aml Value.aml \
 	ABSTRACT_CODE_GRAMMAR-sig.aml MkAbstractCodeGrammar.aml \
 	AbstractCodeGrammar.aml OUTPUT_PICKLE-sig.aml OutputPickle.aml \
-	ENVIRONMENT-sig.aml Environment.aml CODE_GEN_PHASE-sig.aml \
-	CodeGenPhase.aml MkBackendStockwerk.aml
+	ENVIRONMENT-sig.aml MkEnvironment.aml CODE_GEN_PHASE-sig.aml \
+	MkCodeGenPhase.aml MkBackendStockwerk.aml
 COMPILERBACKENDSTOCKWERKSOURCES = \
 	$(COMPILERBACKENDSTOCKWERKSOURCES0:%=compiler/backend-stockwerk/%)
 

@@ -10,15 +10,18 @@
  *   $Revision$
  *)
 
-import structure Crash               from "../infrastructure/Crash"
-import structure Stamp               from "../common/Stamp"
-import structure StampMap            from "../common/StampMap"
-import structure FlatGrammar         from "../backend-common/FlatGrammar"
-import structure AbstractCodeGrammar from "AbstractCodeGrammar"
-import signature ENVIRONMENT         from "ENVIRONMENT-sig"
+import structure Crash                 from "../infrastructure/Crash"
+import structure Stamp                 from "../common/Stamp"
+import structure StampMap              from "../common/StampMap"
+import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+import signature ENVIRONMENT           from "ENVIRONMENT-sig"
 
-structure Environment :> ENVIRONMENT =
+functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
+    ENVIRONMENT =
     struct
+	structure AbstractCodeGrammar = AbstractCodeGrammar
+
 	type scope = AbstractCodeGrammar.idRef StampMap.t
 	type globals = FlatGrammar.id list
 	type index = int

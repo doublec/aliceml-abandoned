@@ -10,12 +10,14 @@
  *   $Revision$
  *)
 
-import structure Stamp               from "../common/Stamp"
-import structure FlatGrammar         from "../backend-common/FlatGrammar"
-import structure AbstractCodeGrammar from "AbstractCodeGrammar"
+import structure Stamp                 from "../common/Stamp"
+import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
 
 signature ENVIRONMENT =
     sig
+	structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
+
 	type t
 
 	val new: string -> t
