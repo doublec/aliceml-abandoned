@@ -361,6 +361,10 @@ structure IL :> IL =
 	     outputLabels (q, labelr))
 	  | outputLabels (q, nil) = ()
 
+	fun intToString i =
+	    if i < 0 then "-" ^ Int.toString (~i)
+	    else Int.toString i
+
 	fun outputInstr (q, Add) = output (q, "add")
 	  | outputInstr (q, AddOvf) = output (q, "add.ovf")
 	  | outputInstr (q, And) = output (q, "and")
@@ -430,9 +434,8 @@ structure IL :> IL =
 		 (output1 (q, #"."); output (q, Int.toString i))
 	     else if i = ~1 then output (q, ".M1")
 	     else if i >= ~128 andalso i <= 127 then
-		 (*--** how are negative numbers represented here and below? *)
-		 (output (q, ".s "); output (q, Int.toString i))
-	     else (output1 (q, #" "); output (q, Int.toString i)))
+		 (output (q, ".s "); output (q, intToString i))
+	     else (output1 (q, #" "); output (q, intToString i)))
 	  | outputInstr (q, LdcR4 r) =
 	    (output (q, "ldc.r4 "); output (q, r))
 	  | outputInstr (q, LdelemRef) = output (q, "ldelem.ref")
@@ -511,15 +514,19 @@ structure IL :> IL =
 	     output (q, " to "); outputLabel (q, label4))
 	  | outputInstr (q, Xor) = output (q, "xor")
 
-	fun outputInstrs (q, instr::instrr) =
+	fun outputInstrs (q, (instr as Try (_, _, _, _, _))::instrr, trys) =
+	    outputInstrs (q, instrr, trys @ [instr])
+	  | outputInstrs (q, instr::instrr, trys) =
 	    (output (q, "  "); outputInstr (q, instr); output1 (q, #"\n");
-	     outputInstrs (q, instrr))
-	  | outputInstrs (_, nil) = ()
+	     outputInstrs (q, instrr, trys))
+	  | outputInstrs (q, nil, instr::instrr) =
+	    (output (q, "  "); outputInstr (q, instr); output1 (q, #"\n");
+	     outputInstrs (q, nil, instrr))
+	  | outputInstrs (_, nil, nil) = ()
 
 	local
 	    fun outputLocals' (q, ty::tyr) =
-		(output (q, ", "); outputTy (q, ty);
-		 outputLocals' (q, tyr))
+		(output (q, ", "); outputTy (q, ty); outputLocals' (q, tyr))
 	      | outputLocals' (q, nil) = ()
 	in
 	    fun outputLocals (q, (ty1::tyr, zeroinit)) =
@@ -538,7 +545,7 @@ structure IL :> IL =
 	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
 	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
 	     outputMaxStack (q, instrs, ty);
-	     outputLocals (q, locals); outputInstrs (q, instrs);
+	     outputLocals (q, locals); outputInstrs (q, instrs, nil);
 	     output (q, "}\n"))
 
 	fun outputClassDecls (q, decl::declr) =
@@ -594,7 +601,7 @@ structure IL :> IL =
 	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
 	     if isEntrypoint then output (q, ".entrypoint\n") else ();
 	     outputMaxStack (q, instrs, ty);
-	     outputLocals (q, locals); outputInstrs (q, instrs);
+	     outputLocals (q, locals); outputInstrs (q, instrs, nil);
 	     output (q, "}\n"))
 
 	fun outputProgram (q, [decl]) = outputDecl (q, decl)
