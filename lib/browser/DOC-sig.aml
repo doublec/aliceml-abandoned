@@ -19,16 +19,37 @@ import structure Path from "x-alice:/lib/rtt/Path"
 import structure PathMap from "x-alice:/lib/rtt/PathMap"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 
-import structure Node from "Node"
-
-local open Node
-
-in
-
 signature DOC =
 sig
 
+    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+
+    datatype color_class = INT_COLOR 
+                         | REAL_COLOR
+                         | CHAR_COLOR
+                         | STR_COLOR
+                         | WORD_COLOR
+                         | EXN_COLOR
+                         | REF_COLOR
+                         | LABEL_COLOR
+                         | SEP_COLOR
+                         | EQU_COLOR
+                         | LIMIT_COLOR
+                         | BRACK_COLOR
+                         | REL_COLOR
+                         | DEFAULT
+
+    (* datatype for storage of value and type information in nodes *)
+	
+    datatype desc = 
+	INTERPUNCT
+      | VALUE of {value : Reflect.value,
+		  typ : Type.typ}
+      | I_VALUE of {value : Reflect.module,
+		    typ : Inf.t} 
+
     (* datatype for path types representing the datastructure hierarchy *)
+
     datatype doc = 
 	
 	SIMPLE of {desc : desc, 
@@ -52,13 +73,29 @@ sig
     (* function type for functions creating instances of doc *)  
 	
     type doc_creator = int * int * Reflect.value * Type.t -> doc  
-	
+
 
     (* storage (& registration) for doc creator functions *)
 
      val pathTable: (int * int * Reflect.value * Type.t -> doc) PathMap.map
 
+     val coreSign: Inf.sign
+     val packageSign: Inf.sign
+
+     val lookupPath: Inf.sign * string * string -> Path.path
+
      val registerType : Path.path * doc_creator -> unit
+
+     (* operations on desc *)
+	 
+     val createValue  :  Reflect.value * Type.t -> desc
+     val createIValue :  Reflect.module * Inf.t -> desc
+	
+     val getValue : desc -> Reflect.value
+     val getInfValue : desc -> Reflect.module
+	 
+     val getTyp : desc -> Type.typ
+     val getInf : desc -> Inf.t
 
      (* doc creator functions *)
 
@@ -86,6 +123,5 @@ sig
 
      val createValPackage : doc_creator
     
-end (* signature *)
+end 
 
-end
