@@ -85,7 +85,7 @@ examples/interpreter.tar: \
 $(DIRS):
 	mkdir -p $@
 
-$(PREFIX)/%.html: %.html
+$(PREFIX)/%.html: %.html macros.php3
 	(echo '<?php $$platform = "$(PLATFORM)"; ?>'; cat $<) | \
 	php -q > $<.static
 	install -c -m 444 $<.static $@
