@@ -15,7 +15,8 @@
  *)
 
 import structure __pervasive                     from "Pervasive"
-import type char and string and order and option from "ToplevelTypes"
+import __primitive
+       type char and string and order and option from "ToplevelTypes"
 
 local
 structure StringCvt = struct type ('a,'b) reader = 'b -> ('a * 'b) option end
