@@ -68,4 +68,11 @@ struct
 	Vector.tabulate ((List.length(ll)), 
 			 (fn i =>(#1( List.nth(ll,i))) ) )  
 
+    fun array_map' (funct,a,i) = 
+	if i < Array.length(a) 
+	    then (funct(Array.sub(a,i));array_map' (funct,a,i+1)) 
+	else ()
+
+    fun array_map (funct,a) = array_map' (funct,a,0)
+    
 end;

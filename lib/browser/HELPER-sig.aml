@@ -39,4 +39,8 @@ sig
     val row2list : Type.row -> (Label.lab * Type.typ) list
     val labelvector : (Label.lab * Type.typ) list -> Label.lab Vector.vector
 
+    (* map fuer Arrays *)
+    val array_map' : ('a -> 'b) * 'a Array.array * int -> unit
+    val array_map : ('a -> 'b) * 'a Array.array -> unit
+
 end;
