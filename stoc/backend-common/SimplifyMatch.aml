@@ -124,7 +124,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (TagPat (info, Lab (_, label), _),
 			 pos, rest, mapping) =
 	    let
-		val n = labelToIndex (#typ info, label)
+		val n = tagIndex (#typ info, label)
 	    in
 		(Test (pos, TagTest (label, n))::rest, mapping)
 	    end
@@ -134,7 +134,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		val (posPatList, args) =
 		    makeAppArgs (pat, isNAry, LABEL label::pos)
 		val typ = #typ info
-		val n = labelToIndex (typ, label)
+		val n = tagIndex (typ, label)
 		val conArity = makeConArity (typ, isNAry)
 	    in
 		List.foldl (fn ((pos, pat), (rest, mapping)) =>
@@ -173,7 +173,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		 (labelTypList, _, true) =>
 		     List.foldl (fn ((label, typ), rest) =>
 				 let
-				     val n = labelToIndex (#typ info, label)
+				     val n = selIndex (#typ info, label)
 				 in
 				     Test (pos, LabTest (label, n, typ))::rest
 				 end)
