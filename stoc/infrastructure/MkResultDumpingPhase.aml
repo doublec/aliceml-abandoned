@@ -32,7 +32,9 @@ struct
 	in
 	    if not(!switch) then () else
 	    (
-		TextIO.output(Switches.Debug.logOut, "-- " ^ header ^ ":\n");
+	        (*TODO: Gert Hack...*)
+		if header = "" then () else
+		    TextIO.output(Switches.Debug.logOut, "-- " ^ header ^ ":\n");
 		PrettyPrint.output(Switches.Debug.logOut, pp rep',
 				   !Switches.Debug.logWidth);
 		TextIO.output(Switches.Debug.logOut, "\n");

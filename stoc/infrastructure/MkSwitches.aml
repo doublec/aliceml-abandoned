@@ -27,7 +27,7 @@ struct
     struct
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
-	val rttLevel				= ref NO_RTT
+	val rttLevel				= ref FULL_RTT
 	val silentFailExp			= ref true
 	val reexportImport			= ref false
 	val implicitImport			= ref true
