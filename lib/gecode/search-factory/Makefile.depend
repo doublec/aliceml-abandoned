@@ -8,6 +8,13 @@ MkSpaceNode.stc: \
 	MKSPACENODE-sig.stc \
 	MKSPACENODE-sig.stc \
 
+SPACENODE-sig.stc: \
+
+SpaceNode.stc: \
+	Debug.stc \
+	SPACENODE-sig.stc \
+	MkSpaceNode.stc
+
 MKTREENODE-sig.stc: \
 	MKSPACENODE-sig.stc
 
@@ -16,7 +23,14 @@ MkTreeNode.stc: \
 	MKTREENODE-sig.stc \
 	MkSpaceNode.stc
 
+TREENODE-sig.stc: \
+
+TreeNode.stc: \
+	TREENODE-sig.stc \
+	SpaceNode.stc
+
 Test.stc: \
 	Debug.stc \
 	MkTreeNode.stc \
+	TreeNode.stc
 

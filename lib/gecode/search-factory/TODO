@@ -1,10 +1,2 @@
-- Which exception is raised when "commit" is applied on a non-branching space ?
-         => Patch TREENODE-sig and SPACENODE-sig
-
-- Print each time a space is CLONED (and print the path).
-- Use DEBUG !
-
-- Implement a wrapper around "MkSpaceNode" or "MkTreeNode" that allows to use them with a simpler interface (when not BaBing).
-
-
+- Find a generic way to specify various copying strategies, e.g. adaptative.
 

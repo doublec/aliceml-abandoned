@@ -1,10 +1,11 @@
 import structure Debug      from "Debug"
-import structure MkTreeNode from "MkTreeNode"
 import structure Space      from "x-alice:/lib/gecode/Space"
 import structure FD         from "x-alice:/lib/gecode/FD"
 
-import structure Explorer   from "x-alice:/tools/Explorer"
+(* import structure Explorer   from "x-alice:/tools/Explorer" *)
 
+import structure MkTreeNode from "MkTreeNode"
+import structure TreeNode from "TreeNode"
 
 open Debug
 
@@ -27,7 +28,6 @@ val cn = FD.BND
 fun fromInt sp n = FD.intvar (sp,#[(n,n)])
 fun toInt   sp v = FD.Reflect.value (sp,v)
   
-
 fun script space =  
   let
     (* Some variables. *)
@@ -81,27 +81,10 @@ fun queens space n cl =
 	distinctOffset(space, v2, cl);
 	distinct(space, v, cl);
 	branch(space, v, B_SIZE_MIN, B_MIN);
-	(getSolution, v)
+	(getSolution, fn (_,_) => (), v)
     end
 
 fun queensScript space = queens space 6 cn
-
-(*  
-fun iOrder (sp, sol) =
-  let val lsum = Vector.foldl (fn (e,s) => e+s) 0 sol
-    val vsum = fromInt sp lsum
-  in
-    FD.rel (sp, sum, FD.LE, vsum)
-  end
-
-fun xOrder (a,b) =
-  let
-    val sum1 = Vector.foldl (fn (e,s) => e+s) 0 a
-    val sum2 = Vector.foldl (fn (e,s) => e+s) 0 a
-  in
-    sum1 < sum2
-  end
-*)
   
 fun printSol v =
     Vector.foldl (fn (a, s) => s ^ " ; " ^ itos a) "" v
@@ -112,10 +95,12 @@ val rdist = 3
 
 (* The initial root space. *)
 val root = Space.new () 
+
 val (getSolution, bound, _) = script root
 
 val mask = dbAll
 
+(*
 structure TreeNode = MkTreeNode (val root = root
                                  fun copyq d = d mod rdist = 0
                                  type sol = int Vector.t
@@ -123,7 +108,9 @@ structure TreeNode = MkTreeNode (val root = root
                                  val getSolution = getSolution
                                  val mask = mask)
 val rootnode = TreeNode.root
+*)
 
+val rootnode = TreeNode.root (root, rdist)
 fun printd arg = Debug.dbPrint (mask, dbSearch, arg)
 
 fun print_path node =
@@ -150,12 +137,11 @@ fun search node =
      search (TreeNode.getLeft node) ;
      search (TreeNode.getRight node) )
   
-
-val explorer = Explorer.exploreAllScript script
-
 val _ =
   (search rootnode ;
    print "I found " ; print (Int.toString (!nbsol)) ;
    print " solutions.\n" ;
    (* OS.Process.exit OS.Process.success ; *)
    () )
+
+

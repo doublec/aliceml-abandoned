@@ -1,28 +1,23 @@
-import signature POLICY      from "MKTREENODE-sig"
-import signature MKTREENODE  from "MKTREENODE-sig"
-import functor   MkSpaceNode from "MkSpaceNode"
+import signature TREENODE   from "TREENODE-sig"
+import structure SpaceNode from "SpaceNode"
 
-structure MkTreeNode :> MKTREENODE = fct (Policy:POLICY) =>
+structure TreeNode :> TREENODE =
 struct
 
-  structure SpaceNode = MkSpaceNode Policy
+  exception Child = SpaceNode.Child
 
-  exception Child  = SpaceNode.Child
-
-  type path = int list
   datatype tree_node = Node of node_rep
   withtype node_rep = {spacenode : SpaceNode.t ,
                        left      : tree_node ,
                        right     : tree_node}
   type t = tree_node
 
-  (* Given a space node, creates a new tree node. *)
   fun fromSpaceNode spaceNode = 
     Node {spacenode = spaceNode ,
           left  = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 1)) ,
           right = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 2)) }
 
-  val root = fromSpaceNode SpaceNode.root
+  fun root (sp, rdist) = fromSpaceNode (SpaceNode.root (sp, rdist))
 
   fun getLeft  (Node node) = #left node
   fun getRight (Node node) = #right node
@@ -30,7 +25,5 @@ struct
   fun getSpace (Node node) = SpaceNode.getSpace (#spacenode node)
   fun getPath  (Node node) = SpaceNode.getPath  (#spacenode node)
   fun status   (Node node) = SpaceNode.status   (#spacenode node)
-
-  val setBest = SpaceNode.setBest
 
 end

@@ -5,13 +5,17 @@ signature POLICY = POLICY
 
 signature MKTREENODE = fct (Policy:POLICY) ->
 sig
+  exception Child
+
+  type path = int list
   type tree_node
   type t = tree_node
 
   (* Returns a tree_node corresponding to the root space Policy.root. *)
+(*  val fromPath : path -> tree_node*)
   val root : tree_node
 
-  (* Returns the left (right) child, raise ???Exception if no child. *)
+  (* Returns the left (right) child, raise Child if no child. *)
   val getLeft  : tree_node -> tree_node
   val getRight : tree_node -> tree_node
 
@@ -23,7 +27,7 @@ sig
   val status : tree_node -> Space.status
 
   (* Returns the path corresponding to this node. *)
-  val getPath : tree_node -> int list
+  val getPath : tree_node -> path
 
   (* Sets the current best solution (used by distributed search) *)
   val setBest : Policy.sol -> unit

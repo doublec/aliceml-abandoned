@@ -1,0 +1,29 @@
+import structure Space  from "x-alice:/lib/gecode/Space"
+
+(* Simplified signature, for everyday use. *)
+signature TREENODE =
+sig
+
+  exception Child
+
+  type tree_node
+  type t = tree_node
+
+  (* Create a root node, gives the recomputation distance. *)
+  val root : (Space.space * int) -> tree_node
+
+  (* Returns the left (right) child, raise ???Exception if no child. *)
+  val getLeft  : tree_node -> tree_node
+  val getRight : tree_node -> tree_node
+
+  (* getSpace node
+   * returns the computation space associated with this node. *)
+  val getSpace : tree_node -> Space.space
+
+  (* Like Space.status *)
+  val status : tree_node -> Space.status
+
+  (* Returns the path corresponding to this node. *)
+  val getPath : tree_node -> int list
+
+end

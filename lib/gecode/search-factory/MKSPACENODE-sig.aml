@@ -20,11 +20,13 @@ signature MKSPACENODE = fct (Policy:POLICY) ->
 sig
   type space_node
   type t = space_node
+  type path = int list
 
   exception Child
 
   (* Returns a space_node corresponding to the root space Policy.root. *)
   val root : space_node
+(*  val fromPath : path -> space_node *)
 
   (* newChild (mom, i)
    * Creates a new space_node as child of node mom with alternative number i.
@@ -40,7 +42,8 @@ sig
   (* Returns the path corresponding to this node. *)
   val getPath : space_node -> int list
 
-  (* Sets the current best solution. *)
+  (* B&B : Sets the current best solution. *)
   val setBest : Policy.sol -> unit
 
 end
+

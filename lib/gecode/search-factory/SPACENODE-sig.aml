@@ -1,0 +1,19 @@
+import structure Space from "x-alice:/lib/gecode/Space"
+
+(* Simplified signature, for everyday use. *)
+signature SPACENODE =
+sig
+  type space_node
+  type t = space_node
+
+  exception Child
+
+  (* Create a root node, gives the recomputation distance. *)
+  (* This function can only be called ONCE. *)
+  val root : (Space.space * int) -> space_node
+
+  val newChild : space_node * int -> space_node
+  val getSpace : space_node -> Space.space
+  val status : space_node -> Space.status
+  val getPath : space_node -> int list
+end

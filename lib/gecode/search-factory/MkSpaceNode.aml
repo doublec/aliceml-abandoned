@@ -10,16 +10,16 @@ struct
 
   exception Child
 
+  type path = int list
   datatype space_node = Node of node_rep
-
   withtype node_rep =
     {mom    : space_node ,  (* Ancestor *)
      altNum : int ,         (* Which alternative, 0 means root node *)
      space  : Space.space option ref , (* Working space *)
      copy   : Space.space option ref ,
      status : Space.status ,
-     bestId : int ,  (* Id of the best solution known at this node. *)
-     best   : Policy.sol option , (* Solution applied precisely at this node. *)
+     bestId : int ,  (* ID number of the best solution known at this node. *)
+     best   : Policy.sol option , (* Solution applied to this node. *)
      depth  : int }
 
   type t = space_node
@@ -28,34 +28,39 @@ struct
 
   val undefined = lazy assert false
 
+  val best = ref undefined
+  val bestId = ref 0  (* ID Number of the current best solution *)
+
   val root =
+    let 
+      val status = Space.status Policy.root
+      val spaceref = ref (SOME (Space.clone Policy.root))
+      val copyref = ref (SOME Policy.root)
+    in
     Node {mom    = undefined ,
           altNum = 0 ,
-          space  = ref (SOME (Space.clone Policy.root)) ,
-          copy   = ref (SOME Policy.root)  ,
-          status = Space.status Policy.root ,
-          bestId = 0 ,
+          space  = spaceref ,
+          copy   = copyref ,
+          status = status ,
+          bestId = !bestId ,
           best   = NONE ,
           depth  = 0 }
+    end
 
-  fun depth (Node node) = #depth node
+  fun status    (Node node) = #status node
+  fun depth     (Node node) = #depth  node
+  fun getBestId (Node node) = #bestId node
 
-  (* Branch and bound. *)
+  (* Branch and Bound: are we in B&B (bab); bound is the bounding function *)
   val (bab, bound) =
     case Policy.bound of
       NONE => (false, undefined)
     | SOME b => (true, b)
         
-  val best = ref undefined
-  val bestId = ref 0
-
   fun setBest sol =
     (best := sol ;
      bestId := !bestId + 1 ;
-     dbPrint (dbBaB, "Updated best solution.\n")
-     )
-
-  fun getBestId (Node node) = #bestId node
+     dbPrint (dbBaB, "Updated best solution.\n"))
     
   (* Tail-recursive getPath *)
   fun getTailPath (Node node, tail) =
@@ -72,9 +77,7 @@ struct
     (fn (i,s) => s ^ (Int.toString i) ^ ", ")
     ""
     (getPath (Node node))
-    
-  fun status (Node node) = #status node
-
+   
   (* Recomputes the space of this node. *)
   fun recompute node =
     let
@@ -121,6 +124,7 @@ struct
 
   fun getSpace (Node node) = 
     let
+      val _ = #status node (* Avoid recomputation if this node is new *)
       val rcopy  = #copy node
       val rspace = #space node
       val readOnlySpace =
@@ -133,20 +137,20 @@ struct
       Space.clone readOnlySpace
     end
 
+  (* Create a new child, not Branch & Bound mode. *)
   fun newChildNormal (node, i) =
     let
       val spaceRef = ref NONE        
+      val descr =
+        case status node of
+          Space.BRANCH descr => descr
+        | _ => raise Child
+        
       val status = lazy
-        let
-          val space = updateRef (spaceRef, getWorkingSpace node)
-          val status =
-            case status node (* cached *) of
-              Space.BRANCH descr =>
-                (Space.commit (space, i, descr) ;
-                 Space.status space)
-            | _ => raise Child
+        let val space = updateRef (spaceRef, getWorkingSpace node)
         in
-          status
+          Space.commit (space, i, descr) ;
+          Space.status space
         end
     in
       Node {mom    = node ,
@@ -159,44 +163,46 @@ struct
             depth  = depth node + 1 }
     end
 
+  (* Create a new child in Branch and Bound mode *)
   fun newChildBaB (node, i) =
     let
       val spaceRef = ref NONE
       val promiseId  = Promise.promise ()
       val promiseSol = Promise.promise ()
       val momBestId = getBestId node
-        
+
+      val descr =
+        case status node of
+          Space.BRANCH descr => descr
+        | _ => raise Child
+
       val status = lazy
         let
           val space = updateRef (spaceRef, getWorkingSpace node)
-          val status =
-            case status node (* cached *) of
-              Space.BRANCH descr =>
-                (Space.commit (space, i, descr) ;
 
-                 (* Is there a best solution to apply? *)
-                 let
-                   val currentBestId = !bestId
-                   val currentBest = !best (* Harmless race condition *)
-                 in
-                   assert currentBestId >= momBestId ;
-                   if currentBestId > momBestId
-                     then
-                       (Promise.fulfill (promiseId, currentBestId) ;
-                        Promise.fulfill (promiseSol, SOME currentBest) ;
-                        bound (space, currentBest))
-                     else
-                       (Promise.fulfill (promiseId, momBestId) ;
-                        Promise.fulfill (promiseSol, NONE)) ;
-                     
-                   Space.status space
-                 end)
-            | _ => raise Child
+          (* Is there a best solution to apply? *)
+          val currentBestId = !bestId
+          val currentBest = !best (* Harmless race condition *)
+
+          val _ = Space.commit (space, i, descr)
+          val _ = assert currentBestId >= momBestId
+          val _ = if currentBestId > momBestId
+                    then
+                      (Promise.fulfill (promiseId, currentBestId) ;
+                       Promise.fulfill (promiseSol, SOME currentBest) ;
+                       bound (space, currentBest))
+                    else
+                      (Promise.fulfill (promiseId, momBestId) ;
+                       Promise.fulfill (promiseSol, NONE))
+
+          val status = Space.status space
+
+          (* When a solution is found, BOUND *)
+          val _ = if status = Space.SOLVED andalso bab
+                    then setBest (Policy.getSolution space)
+                    else ()
         in
-          if status = Space.SOLVED andalso bab
-            then setBest (Policy.getSolution space)
-            else () ;
-          status
+          status  
         end
     in
       Node {mom    = node ,
@@ -210,5 +216,5 @@ struct
     end
 
   val newChild = if bab then newChildBaB else newChildNormal
-    
+
 end

@@ -5,7 +5,9 @@ ALICEC_OPTS =
 
 SOURCES = Debug.aml \
           MKSPACENODE-sig.aml MkSpaceNode.aml \
+          SPACENODE-sig.aml SpaceNode.aml \
           MKTREENODE-sig.aml MkTreeNode.aml \
+          TREENODE-sig.aml TreeNode.aml \
           Test.aml
 
 COMPONENTS = $(SOURCES:%.aml=%.stc)
