@@ -27,7 +27,7 @@ DEFINE1(fillInStackTrace) {
     if (frame->GetWorker() == ByteCodeInterpreter::self)
       backtrace->Enqueue(frame->ToWord());
   }
-  _this->PutInstanceField(0, backtrace->ToWord());
+  _this->PutInstanceField(Throwable::BACKTRACE_INDEX, backtrace->ToWord());
   RETURN(_this->ToWord());
 } END
 
