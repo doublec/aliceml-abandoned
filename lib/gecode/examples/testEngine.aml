@@ -102,6 +102,19 @@ import structure Print     from "x-alice:/lib/system/Print"
 	
 	fun vEquals1 (root2 as #[a,b]) = (a=b)
 	
+	
+	fun vConvex #[a] space = 
+	let
+		ad = FS.Reflect.lowerBound (space,a)
+	in
+		Vector.length ad = 1
+	end
+	
+	fun vConvexHull #[a,b] space =
+		(vConvex #[a] space) andthen
+		( (vBool SubSet1) #[b,a] space )
+	
+	
 	val (root, space)= unionTest ()
 	val _ = testVerifySimple space (vUnion root)
 	val _ = print "done.\n";
