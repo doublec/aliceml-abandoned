@@ -15,10 +15,12 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
+JAVA_LANG_SOURCES = Object.cc
 SOURCES = \
 	Outline.cc Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
 	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
-	Startup.cc JavaLanguageLayer.cc
+	Startup.cc JavaLanguageLayer.cc \
+	$(JAVA_LANG_SOURCES:%=lang/%)
 
 OBJS = $(SOURCES:%.cc=%.o)
 

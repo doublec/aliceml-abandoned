@@ -26,6 +26,8 @@ class DllExport NativeMethodTable {
 private:
   static const u_int initialSize = 19;
   static word wTable;
+
+  void java_lang_Object();
 public:
   static void Init() {
     wTable = HashTable::New(HashTable::BLOCK_KEY, initialSize)->ToWord();
