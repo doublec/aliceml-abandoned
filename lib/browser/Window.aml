@@ -40,10 +40,8 @@ import signature WINDOW from "WINDOW-sig"
 local 
 open GtkSupport
 
-val serve' = Server.newServer () 
-
 (* "About..."-WindowHandler *)
-fun about _ = serve' (fn () =>  () (*
+fun about _ = Server.serve (fn () =>  () (*
      let
 	 val dialog = Gtk.dialogNew()
 	 val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
@@ -109,7 +107,7 @@ fun getSelectionNode() = case !selection of
   | SOME(n,_,_) => n  
 
 (* invokes canvas resize *)	
-fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  serve' (fn () => let
+fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  Server.serve (fn () => let
 	                     val page_sh = Gtk.adjustmentGetFieldPageSize(hadj)
 			     val upperh = Gtk.adjustmentGetFieldUpper(hadj)
 			     val valueh = Gtk.adjustmentGetFieldValue(hadj)
@@ -233,7 +231,7 @@ fun scrollY (y,scrolled,vadj) =
 	Types.RelNode _ => ()
       | Types.RelRefNode _ => ()
       | _ =>
-	serve' (fn () => 
+	Server.serve (fn () => 
 	       (createMenu
 		(PopupObj
 		 [MenuObj{title = "Explore Tree",
@@ -275,8 +273,6 @@ in
 
 structure Window :> WINDOW =
 struct
-
-    val serve =  serve'
 
     type tag = Gtk.object
 
@@ -469,7 +465,7 @@ struct
 			     else ()))
 
      (* Preferences Window Handler *)
-     fun Preferences _ = serve' (fn () =>
+     fun Preferences _ = Server.serve (fn () =>
        	   let	
            (* Width & Depth Settings *)
 	   val width_lab = Gtk.labelNew("Set Width Limit to...")	       
@@ -628,7 +624,7 @@ struct
 	 end
     
 (* Handelt Mouseclick *)
-     fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
+     fun handleEvent [Gdk.EVENT(event)] = Server.serve (fn () =>
      let
 	 val font_width = GtkSupport.fontWidth()
 	 val font_height = GtkSupport.fontHeight()  
@@ -697,7 +693,7 @@ struct
 
 (* Handlet Tastendruck *)
      fun handleWindowEvent [Gdk.EVENT(event)] = 
-	 serve (fn () => 
+	 Server.serve (fn () => 
 		case event of  
 		    Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => 
 			scrollX(~10.0,scrolled,hadj) 

@@ -25,7 +25,6 @@ sig
     val window: tag
     val handlers :  (Types.node * int -> unit) Array.array
     val register: string * (Types.node * int -> unit) -> unit
-    val serve: (unit -> unit) -> unit
     val canvas: tag ref
     val canvasroot: tag ref
     val resize: (unit -> unit) ref 
