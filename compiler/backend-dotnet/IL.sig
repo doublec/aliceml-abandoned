@@ -66,8 +66,7 @@ signature IL =
 	  | VoidTy
 	  | BoolTy
 	  | Int32Ty
-	  | Float32Ty
-	  | UnsignedInt32Ty
+	  | Float64Ty
 
 	(* Instructions *)
 
@@ -111,7 +110,7 @@ signature IL =
 	  | Label of label
 	  | Ldarg of int
 	  | LdcI4 of int
-	  | LdcR4 of string
+	  | LdcR8 of string
 	  | LdelemRef
 	  | Ldfld of dottedname * id * ty
 	  | Ldlen

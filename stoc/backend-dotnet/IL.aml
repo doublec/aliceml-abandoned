@@ -66,8 +66,7 @@ structure IL :> IL =
 	  | VoidTy
 	  | BoolTy
 	  | Int32Ty
-	  | Float32Ty
-	  | UnsignedInt32Ty
+	  | Float64Ty
 
 	(* Instructions *)
 
@@ -111,7 +110,7 @@ structure IL :> IL =
 	  | Label of label
 	  | Ldarg of int
 	  | LdcI4 of int
-	  | LdcR4 of string
+	  | LdcR8 of string
 	  | LdelemRef
 	  | Ldfld of dottedname * id * ty
 	  | Ldlen
@@ -257,7 +256,7 @@ structure IL :> IL =
 	  | eval (Label label) = branch label
 	  | eval (Ldarg _) = push 1
 	  | eval (LdcI4 _) = push 1
-	  | eval (LdcR4 _) = push 1
+	  | eval (LdcR8 _) = push 1
 	  | eval LdelemRef = (pop 2; push 1)
 	  | eval (Ldfld (_, _, _)) = (pop 1; push 1)
 	  | eval Ldlen = (pop 1; push 1)
@@ -348,8 +347,7 @@ structure IL :> IL =
 	  | outputTy (q, VoidTy) = output (q, "void")
 	  | outputTy (q, BoolTy) = output (q, "bool")
 	  | outputTy (q, Int32Ty) = output (q, "int32")
-	  | outputTy (q, Float32Ty) = output (q, "float32")
-	  | outputTy (q, UnsignedInt32Ty) = output (q, "unsigned int32")
+	  | outputTy (q, Float64Ty) = output (q, "float64")
 
 	fun outputTys (q, [ty]) = outputTy (q, ty)
 	  | outputTys (q, ty::tyr) =
@@ -464,8 +462,8 @@ structure IL :> IL =
 	     else if i >= ~128 andalso i <= 127 then
 		 (output (q, ".s "); output (q, intToString i))
 	     else (output1 (q, #" "); output (q, intToString i)))
-	  | outputInstr (q, LdcR4 r) =
-	    (output (q, "ldc.r4 "); output (q, r))
+	  | outputInstr (q, LdcR8 r) =
+	    (output (q, "ldc.r8 "); output (q, r))
 	  | outputInstr (q, LdelemRef) = output (q, "ldelem.ref")
 	  | outputInstr (q, Ldfld (dottedname, id, ty)) =
 	    (output (q, "ldfld "); outputTy (q, ty); output1 (q, #" ");
