@@ -24,7 +24,7 @@ signature HTTP_CLIENT_MAIN =
 
 structure HttpClientMain :> HTTP_CLIENT_MAIN =
     struct
-	fun usage s =
+	fun usage () =
 	    (TextIO.output
 	     (TextIO.stdErr,
 	      "Usage: " ^ CommandLine.name () ^ " <url>\n");

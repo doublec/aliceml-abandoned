@@ -62,7 +62,7 @@ structure HttpServerMain :> HTTP_SERVER_MAIN =
 		Future.await blackHole
 	    end
 
-	fun usage s =
+	fun usage () =
 	    (TextIO.output
 	     (TextIO.stdErr,
 	      "Usage: " ^ CommandLine.name () ^ " <port>\n");
