@@ -22,20 +22,6 @@ if test $HASM4 = "no"
   else
 	m4="m4"
 fi
-AC_CHECK_PROG(HASSML,sml,yes,no,$PATH)
-if test $HASSML = "no";
-  then
-	AC_MSG_ERROR("No sml found.");
-  else
-	smlcm="sml"
-fi
-AC_CHECK_PROG(HASSML,sml-cm,yes,no,$PATH)
-if test $HASSML = "no";
-  then
-	AC_MSG_RESULT("No sml-cm. Cross fingers and hope it works with sml.");
-  else
-	smlcm="sml-cm"
-fi
 AC_CHECK_PROG(HASJAVA,java,yes,no,$PATH)
 if test $HASJAVA = "no"
   then
@@ -72,14 +58,6 @@ if test $JASMIN = "no" ;
   else
 	jasmin="jasmin"
 fi
-AC_CHECK_PROG(HASMLJ,mlj,yes,no,$PATH)
-if test $HASMLJ = "no" ;
-  then
-	mlj="echo"; \
-	AC_MSG_RESULT("No mlj found.")
-  else
-	mlj="mlj"
-fi
 
 dnl Check system type
 UNAME=`uname`
@@ -103,7 +81,6 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 
 dnl Checks for library functions.
 
-AC_SUBST(mlj)
 AC_SUBST(platform)
 AC_SUBST(m4)
 AC_SUBST(java)
@@ -111,24 +88,18 @@ AC_SUBST(javac)
 AC_SUBST(jar)
 AC_SUBST(javadoc)
 AC_SUBST(jasmin)
-AC_SUBST(smlcm)
 AC_SUBST(rt)
 
 runtime="$PWD/runtime.jar"
 AC_SUBST(runtime)
 patch="$PWD/patch.jar"
 AC_SUBST(patch)
-dmllib="$PWD/Compiler/Backend"
+dmllib="$PWD/../stoc/backend-jvm"
 AC_SUBST(dmllib)
-policy="$PWD/bin/policy"
+policy="$PWD/policy"
 AC_SUBST(policy)
 
-AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile Compiler/Makefile Compiler/Backend/Makefile bin/dmlc bin/dml bin/policy benchmarks/bench)
-
-echo "Now making scripts executable..."
-(cd bin; chmod +x dmlc dml)
-(cd benchmarks; chmod +x bench)
-echo "Done."
+AC_OUTPUT(Makefile)
 
 echo "Creating classes subdirectory."
 test -e java/classes || mkdir java/classes
