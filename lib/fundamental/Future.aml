@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -35,6 +35,7 @@ struct
 
     __primitive val await :	'a -> 'a		= "Future.await"
 
+(* The below implementation of awaitEither has a race condition under Mozart
     local
 	type thread
 	__primitive val currentThread: unit -> thread = "Thread.current"
@@ -60,6 +61,10 @@ struct
 		await (Hole.future c)
 	    end
     end
+* hence we make it primitive for now... *)
+    __primitive val awaitEither' : 'a * 'b -> bool = "Future.awaitEither'"
+    fun awaitEither (a, b) =
+	if awaitEither' (a, b) then SND b else FST a
 
     __primitive val status : 'a -> status	= "Future.status"
     __primitive val isLazy : 'a -> bool		= "Future.isByneed"

@@ -304,6 +304,8 @@ prepare
 	 fun {$ X} !!{Alarm (X + 500) div 1000} end
       'Future.await':
 	 fun {$ X} {Wait X} X end
+      'Future.awaitEither\'':
+	 fun {$ X Y} {WaitOr X Y} {Not {IsDet X}} end
       'Future.byneed':
 	 fun lazy {$ P}
 	    try
