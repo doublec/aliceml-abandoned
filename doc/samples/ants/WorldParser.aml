@@ -56,7 +56,8 @@ struct
 
     and parseLine' (line, sep, y, x, xSize, world, id) =
         if x = xSize then 
-            if String.sub (line, x) = #"\n" then () (* line parsed *)
+            if String.sub (line, x) = #"\n" orelse 
+               (String.sub (line, x) = #" " andalso String.sub (line, x+1) = #"\n") then () (* line parsed *)
             else error (y+2, x, "invalid world (expected end of line)")
         else if sep then
             if String.sub (line, x) = #" " then 
@@ -82,7 +83,7 @@ struct
                             { emptyCell where food = ord d - ord #"0" }
                         else error (y+2, x, "invalid character in world")
             in
-                World.setCellAt (world, (x div 2, y), cell);
+                World.initCellAt (world, (x div 2, y), cell);
                 parseLine' (line, true, y, x+1, xSize, world, id)
             end
 

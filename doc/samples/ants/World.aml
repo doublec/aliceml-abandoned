@@ -48,15 +48,12 @@ structure World =
       Array.sub(cells, xs*y+x)
   fun setCellAt((xs, cells,antMap):world, (x,y), cell) =
       (Array.update(cells, xs*y+x, cell);
+       (*Option.app (fn a => AntMap.insert(antMap,#id a, (x,y))) (#ant cell);*)
+       ())
+  fun initCellAt((xs, cells,antMap):world, (x,y), cell) =
+      (Array.update(cells, xs*y+x, cell);
        Option.app (fn a => AntMap.insert(antMap,#id a, (x,y))) (#ant cell);
        ())
-  fun existsCell((_, cells,_):world, f) =
-      Array.exists f cells
-  fun findCell((_, cells,_):world, f) =
-      Array.find f cells
-  fun findCoords((xs, cells,_):world, f) =
-      let val (i,_) = valOf (Array.findi (fn (_,x) => f x) cells)
-      in indexToCoords(xs,i) end
 
   fun changeAntAt(world,pos,f)=
       let
@@ -110,17 +107,21 @@ structure World =
 
   fun someAntIsAt(world, pos) = #ant (getCellAt(world, pos)) <> NONE
   fun antAt(world, pos) = valOf (#ant (getCellAt(world, pos)))
-  fun setAntAt(world, pos, a : Ant.ant) =
-      changeAntAt(world, pos, fn _ => SOME a)
+  fun setAntAt(world as (_,_,antMap), pos as (x,y), a : Ant.ant) =
+      (AntMap.insert(antMap,#id a, (x,y));
+       changeAntAt(world, pos, fn _ => SOME a))
   fun clearAntAt(world, pos) =
       changeAntAt(world, pos, fn _ => NONE)
 
-  fun antIsAlive(world, id) = existsCell(world,
-                                         fn c => case #ant c of
-                                                     NONE   => false
-                                                   | SOME a => #id a = id)
   fun findAnt((_,_,antMap):world, id) =
       AntMap.lookupExistent(antMap, id)
+
+  fun antIsAlive(world, id) = 
+      let
+          val p = findAnt(world,id)
+      in
+          someAntIsAt(world, p) andalso #id(antAt(world, p))=id
+      end
 
   val killAntAt = clearAntAt
 

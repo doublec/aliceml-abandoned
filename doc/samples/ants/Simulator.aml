@@ -105,14 +105,14 @@ structure Simulator :
             | loop'(size, n, f) = (f (size-n); loop'(size,n-1,f))
           fun loop n f = loop'(n,n,f)
       in
-          print "Staring with\n";
+          print ("Staring with "^Int.toString noOfAnts^" ants\n");
           print ("\t red player: "^redAnt^"\n");
           print ("\t black player: "^blackAnt^"\n");
           print ("random seed: "^(Int.toString(Word.toInt defSeed))^"\n");
           loop 10001
           (fn r => ((*print ("\nAfter round "^Int.toString r^"...\n");
                      drawWorld world;*)
-                    if r mod 500 = 0 then print ("round "^Int.toString r^"\n") else ();
+                    if r mod 1000 = 0 then print ("round "^Int.toString r^"\n") else ();
                     loop noOfAnts
                          (fn i => step(world, redBrain, blackBrain, i))));
           printWorld world;
