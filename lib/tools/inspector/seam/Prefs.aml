@@ -93,7 +93,7 @@ struct
 
   val defaultWidth  = 600
   val defaultHeight = 400
-  val windowTitle   = "Alice New Inspector"
+  val windowTitle   = "Alice Inspector"
   val ready         = "Ready"
   val sepsep        = 4 (* Separation between text and separator, in pixels. *)
   val margin        = 4 (* Top and left margins *)
