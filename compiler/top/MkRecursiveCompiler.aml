@@ -284,7 +284,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		  | NONE =>
 		    let
 			val inf = valOf (loadSig url')
-			    handle exn as Component.Failure (_, _) =>
+			    handle exn as (Component.Failure (_, _) |
+					   Option.Option) =>
 				acquireFromSigFile (url', exn)
 			val _ = trace ("loaded signature from " ^
 				       Url.toString url')
@@ -308,10 +309,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    acquireFromSource targetFilename
 		else
 		    error ((case exn of
-(*--** NotFound *)
-			      IO.Io {...} => "could not locate component "
-			    | Option.Option => "no signature found in "
-			    | _ => "unknown error while accessing ") ^
+				Component.Failure (_, IO.Io {...}) =>
+				    "could not locate component "
+			      | Option.Option => "no signature found in "
+			      | _ => "unknown error while accessing ") ^
 			   parseUrl url)
 	    end
 	and acquireFromSource targetFilename =
