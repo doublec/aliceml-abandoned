@@ -37,15 +37,18 @@ struct
 
     infix 6 ^
     __primitive val ^ :              string * string -> string = "String.^"
-    __primitive val String_size :    string -> int        = "String.size"
+    __primitive val String_size :    string -> int        = "CharVector.length"
     __primitive val String_sub :     string * int -> char = "Unsafe.String.sub"
-    __primitive val String_implode : char list -> string  = "String.implode"
+    __primitive val String_implode : char list -> string
+						= "CharVector.fromList"
+    __primitive val String_tabulate : int * (int -> char) -> string
+						= "CharVector.tabulate"
     __primitive val Char_isSpace :   char -> bool         = "Char.isSpace"
 
     fun padLeft c i s		= if i <= 0 then s else
-				  String_implode(List.tabulate(i, fn _=> c)) ^ s
+				  String_tabulate(i, fn _=> c) ^ s
     fun padRight c i s		= if i <= 0 then s else
-				  s ^ String_implode(List.tabulate(i, fn _=> c))
+				  s ^ String_tabulate(i, fn _=> c)
 
     fun splitl p f src		= splitl'(p, f, src, nil)
     and splitl'(p, f, src, cs)	= case f src
