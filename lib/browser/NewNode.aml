@@ -55,41 +55,39 @@ struct
   
     (* createGraph *)
     and createGraph (va,t,p,i,d) = 
-	if !relmode  
-	    then if Type.isCon t 
-		 orelse (Type.isApply t
-                         andalso Type.isCon(#1(Type.asApply(t)))
-		         andalso not(Type.equal(compList,
-						#1(Type.asApply(t))) ) )
-		     then createUsualGraph (va,t,p,i,d)
-		 else
-		 let val ind = if p = Empty then i else getAncIndex p
+	if !relmode 
+	    then let val ind = if p = Empty then i else getAncIndex p
                      val relman = RelManDictionary.return(ind,reldict)
                      val str = "Ref"^Int.toString(!relnumber)
+                     val f = if !tokenmode
+				 then fn x   
+				      => if getDesc(x) = INTERPUNCT  
+					     then false  
+					 else UnsafeValue.same
+					     (getValue(getDesc(x)),va)   
+			     else fn x   
+				  => if getDesc(x) = INTERPUNCT  
+					 then false  
+				     else getValue(getDesc(x)) = va 
 		 in 
-		     (case List.find (fn x   
-				     => if getDesc(x) = INTERPUNCT  
-					    then false  
-					else getValue(getDesc(x)) = va)  
-			            relman of   
+		     (case List.find f relman of   
 		      NONE 
 		      => let val desc = createValue(va,t,NO_ACTIONS)   
-			     val node =     
-				 createRelNode (desc,Empty,p,i,str^" as ",
-						relman,setGroup) 
-			     val _ = relnumber := (!relnumber) + 1 
+			     val node = createRelNode (desc,Empty,p,i,
+						       str^" as ",
+						       relman,setGroup)
 			     val c = createUsualGraph (va,t,node,0,d) 
-			     val actrelman = RelManDictionary.return(ind,
-								     reldict)
-			 in ( case c of    
-			          Simple(_) => c
-                                | Empty => c    
-                                | _ => ( setContent (node,c)   
-					; RelManDictionary.update(ind,
-								  reldict, 
-					        List.append([node],actrelman))
-					; node ) )
-			 end      
+			     val actrelman = RelManDictionary.return(ind, 
+								     reldict) 
+			 in ( case c of     
+			      Simple(_) => c
+			    | Empty => c    
+                            | _ => ( setContent (node,c)   
+				    ; RelManDictionary.update(ind,
+							      reldict, 
+					    List.append([node],actrelman))
+				    ; node ) )
+			 end     
 		    | SOME n => let val rep = ( case n of 
 					        RelNode(rr) => #rep(rr)
 					      | _ => "")
@@ -102,7 +100,7 @@ struct
 					RelManDictionary.return(ind,reldict)
 				    val part = List.partition (fn x => x = n)
 					                      actrelman
-				    val restlist = #1(part)
+				    val restlist = #2(part)
 				in (RelManDictionary.update(ind,
 							    reldict,
 					         List.append([m],restlist))
@@ -124,7 +122,7 @@ struct
 	 | Type.Exist(var,typ) 
 	   => createGraph (va,typ,p,i,d)
          | Type.Lambda(var,typ) 
-	   => raise createGraph_unknownNode
+	   => raise  createGraph_unknownNode 
          | Type.Apply(t1,t2)
            => (case unApply (Type.inspect(t)) of 
                (Type.Con path, ts) => newPath (va,t,p,i,d,path)
@@ -136,11 +134,11 @@ struct
 						listdescToNode)
 				end
 		       else raise createGraph_unknownNode
-		    end)   
+		    end)  
          | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd)
 	 | Type.Mu(sum) => createGraph (va,sum,p,i,d)
          | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum) 
-         | _ => raise  createGraph_unknownNode) 
+         | _ => raise  createGraph_unknownNode )
 
     (* listdescToNode *)
     and listdescToNode (va,t,p,i,d,ld) = 
@@ -259,6 +257,7 @@ struct
 					   0,label,LABEL_COLOR,setGroup)
 	    val typ = #2(List.nth(lt_list,index))
 	    val intyp = if Type.isApply(typ) 
+                        andalso Type.isCon(#1(Type.asApply(typ))) 
 		        andalso Path.equal(Type.asCon(#1(Type.asApply(typ))),
 					   PervasiveType.path_strict)
 			    then  #2(Type.asApply(typ))
@@ -284,7 +283,7 @@ struct
 					  UnsafeValue.projTagged)
 	      | _ => let
 			 val inva = UnsafeValue.projTaggedTuple(va,1,0)
-			 val node = createGraph (inva,intyp,upperConcat,0,d+1)
+			 val node = createGraph (inva,intyp,upperConcat,0,d+1) 
 		     in 
 			 node 
 		     end
@@ -386,56 +385,7 @@ struct
 		   else createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
          | SOME create 
 	   => let val doc = create (!max_width,d,v,t)
-	      in if !relmode
-		     then let val ind = if p = Empty then i else getAncIndex p
-			      val relman = RelManDictionary.return(ind,reldict)
-			      val str = "Ref"^Int.toString(!relnumber)
-			  in 
-			      (case List.find 
-				   (fn x => if getDesc(x) = INTERPUNCT  
-						then false  
-					    else getValue(getDesc(x)) = v)  
-				   relman of   
-			       NONE 
-			       => let val desc = createValue(v,t,NO_ACTIONS)
-				      val node =     
-				      createRelNode (desc,Empty,p,i,str^" as ",
-						     relman,setGroup) 
-				      val _ = relnumber := (!relnumber) + 1 
-				      val c = docToNode(doc,node,0,d)
-				      val actrelman = 
-					  RelManDictionary.return(ind,reldict)
-				  in ( case c of    
-				      Simple(_) => c
-				    | Empty => c    
-				    | _ => ( setContent (node,c)   
-					    ; RelManDictionary.update(ind,
-								      reldict, 
-						    List.append([node],
-								actrelman))
-					    ; node ) )
-				  end      
-			     | SOME n 
-			       => let val rep = (case n of 
-						 RelNode(rr) => #rep(rr)
-					       | _ => "")
-				      val str = iterTake rep	
-				      val m = incrCounter n
-				      val node = 
-					  createRelRefNode (INTERPUNCT,p,i,
-							    str,m,setGroup)
-				      val actrelman = 
-					  RelManDictionary.return(ind,reldict)
-				      val part = List.partition (fn x => x = n)
-					                        actrelman
-				      val restlist = #1(part)
-				  in (RelManDictionary.update(ind,
-							      reldict,
-					           List.append([m],restlist))
-				      ; node)
-				  end)
-			  end   
-		 else docToNode (doc,p,i,d) 
+	      in  docToNode (doc,p,i,d) 
 	      end )
 
     (* docToNode *)
@@ -553,18 +503,21 @@ struct
 
     (* createRelNode *)
     and createRelNode (desc,c,p,i,str,rman,f) = 
-	RelNode {desc = desc, 
-                 content = ref c,
-		 parent = p,  
-		 index = i, 
-		 counter = ref 1, 
-		 rep = str, 
-		 relman = ref rman, 
-		 width = ref ~1,
-		 height = ref ~1,
-		 color = REL_COLOR  , 
-		 status = ref DAZZLED, 
-		 group = f(p)}
+	let val node = RelNode {desc = desc, 
+				content = ref c,
+				parent = p,  
+				index = i, 
+				counter = ref 1, 
+				rep = str, 
+				relman = ref rman, 
+				width = ref ~1,
+				height = ref ~1,
+				color = REL_COLOR  , 
+				status = ref DAZZLED, 
+				group = f(p)}
+	    val _ = relnumber := (!relnumber) + 1
+	in node
+	end
 
     (* createRelRefNode *)
     and createRelRefNode (desc,p,i,str,rnode,f) = 

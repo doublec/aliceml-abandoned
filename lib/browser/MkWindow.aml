@@ -35,12 +35,14 @@ struct
     val uglyNULL = UnsafeValue.cast () : Gtk.object
 	
     val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+
     val _  = (Gtk.windowSetTitle (window, "Alice Browser V 0.2")
-	      ; Gtk.widgetSetUsize (window, 200, 100)      )
+	      ; Gtk.widgetSetUsize (window, 400, 300)      )
   
     val alive = ref true
 
     fun Delete _ = (Gtk.widgetDestroy(window);alive:= false)
+
     val _  = Gtk.signalConnect (window, "delete-event", Delete)
 
     val vbox = Gtk.vboxNew( 0 ,4)
