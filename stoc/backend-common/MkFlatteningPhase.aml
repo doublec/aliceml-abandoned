@@ -286,7 +286,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		else ()
 	    end
 	  | countShared (Leaf (_, count, _)) = count := !count + 1
-	  | countShared _ = Crash.crash "MatchCompilationPhase.countShared"
+	  | countShared Default =
+	    Crash.crash "MatchCompilationPhase.countShared"
 
 	fun buildGraph (matches, elseExp) =
 	    let
@@ -341,8 +342,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 
 	fun share exp =
 	    (*--** replace Source.nowhere by O.infoExp exp *)
-	    O.SharedExp (Source.nowhere, exp,
-			 ref SimplifiedGrammar.backendInfoDummy)
+	    O.SharedExp (Source.nowhere, exp, ref O.backendInfoDummy)
 
 	fun makeShared (exp, ref 0) =
 	    Crash.crash "MatchCompilationPhase.makeShared"
@@ -421,7 +421,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val (fieldPats1', _) = PatFieldSort.sort fieldPats1
 		val (fieldPats2', _) = PatFieldSort.sort fieldPats2
 	    in
-		Crash.crash "MatchCompilationPhase.unify: not yet implemented 2"
+		Crash.crash
+		"MatchCompilationPhase.unify: not yet implemented 2"
 	    end
 	  | unify (RecPat (coord, fieldPats1, true),
 		   RecPat (_, fieldPats2, false)) =
@@ -536,8 +537,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				     SOME i => i >= 1 andalso i <= n
 				   | NONE => false) patFields'
 		    then
-			Crash.crash
-			"MatchCompilationPhase.derec: not implemented 1" (*--** *)
+			Crash.crash   (*--** *)
+			"MatchCompilationPhase.derec: not implemented 1"
 		    else Error.error (coord, "pattern never matches")
 		else
 		    case arity of
@@ -558,8 +559,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		if hasDots then
 		    if isSubarity (patFields', expFields') then
-			Crash.crash
-			"MatchCompilationPhase.derec: not implemented 2"   (*--** *)
+			Crash.crash   (*--** *)
+			"MatchCompilationPhase.derec: not implemented 2"
 		    else Error.error (coord, "pattern never matches")
 		else
 		    if ListPair.all (fn (Field (_, Lab (_, s), _),
@@ -695,13 +696,23 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    nil => exp'
 		  | _::_ => O.LetExp (coord, decs', exp')
 	    end
-	  | simplifyExp (SelExp (coord, lab, _)) =  (*--**)
-	    O.SelExp (coord, lab)
+	  | simplifyExp (SelExp (coord, lab, NONE)) =
+	    O.SelExp (coord, lab, NONE)
+	  | simplifyExp (SelExp (coord, lab, SOME exp)) =
+	    O.SelExp (coord, lab, SOME (simplifyExp exp))
 	  | simplifyExp (FunExp (coord, id, exp)) =
 	    (*--** name propagation, multiple argument optimization *)
 	    O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)])
 	  | simplifyExp (AppExp (coord, exp1, exp2)) =
-	    O.AppExp (coord, simplifyExp exp1, simplifyExp exp2, ref false)
+	    let
+		val (decOpt, longid) = simplifyTerm exp1
+		val exp' =
+		    O.AppExp (coord, longid, simplifyExp exp2, ref false)
+	    in
+		case decOpt of
+		    NONE => exp'
+		  | SOME dec' => O.LetExp (infoExp exp1, [dec'], exp')
+	    end
 	  | simplifyExp (AdjExp (coord, exp1, exp2)) =
 	    O.AdjExp (coord, simplifyExp exp1, simplifyExp exp2)
 	  | simplifyExp (AndExp (coord, exp1, exp2)) =

@@ -14,3 +14,6 @@ Group is
 
     MATCH_COMPILATION_PHASE.sig
     MatchCompilationPhase.sml
+
+    PARTIAL_EVALUATION_PHASE.sig
+    PartialEvaluationPhase.sml

@@ -135,18 +135,18 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	    (f (q, "recExp"); outputCoord (q, coord); m q;
 	     outputList (outputPair (outputLab, outputLongid))
 	     (q, labLongidList); r q)
-	  | outputExp (q, SelExp (coord, lab)) =
+	  | outputExp (q, SelExp (coord, lab, expOpt)) =
 	    (f (q, "selExp"); outputCoord (q, coord); m q;
-	     outputLab (q, lab); r q)
+	     outputLab (q, lab); m q; outputOption outputExp (q, expOpt); r q)
 	  | outputExp (q, FunExp (coord, string, argsExpList)) =
 	    (f (q, "funExp"); outputCoord (q, coord); m q;
 	     outputAtom (q, string); m q;
 	     outputList (outputPair (outputArgs outputId, outputExp))
 	     (q, argsExpList); r q)
-	  | outputExp (q, AppExp (coord, exp1, exp2, ref isTail)) =
+	  | outputExp (q, AppExp (coord, longid, exp, ref isTail)) =
 	    (f (q, "appExp"); outputCoord (q, coord); m q;
-	     outputExp (q, exp1); m q; outputExp (q, exp2);
-	     m q; outputBool (q, isTail); r q)
+	     outputLongid (q, longid); m q; outputExp (q, exp); m q;
+	     outputBool (q, isTail); r q)
 	  | outputExp (q, AdjExp (coord, exp1, exp2)) =
 	    (f (q, "adjExp"); outputCoord (q, coord); m q;
 	     outputExp (q, exp1); m q; outputExp (q, exp2); r q)

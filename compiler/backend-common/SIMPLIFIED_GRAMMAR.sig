@@ -47,10 +47,10 @@ signature SIMPLIFIED_GRAMMAR =
 	  | TupExp of coord * longid list
 	  | RecExp of coord * (lab * longid) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | SelExp of coord * lab
+	  | SelExp of coord * lab * exp option
 	  | FunExp of coord * string * (id args * exp) list
 	    (* all arities distinct; always contains a single OneArg *)
-	  | AppExp of coord * exp * exp * bool ref   (* is tail *)
+	  | AppExp of coord * longid * exp * bool ref   (* is tail *)
 	  | AdjExp of coord * exp * exp
 	  | WhileExp of coord * exp * exp
 	  | SeqExp of coord * exp list
