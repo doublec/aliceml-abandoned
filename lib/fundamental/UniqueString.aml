@@ -10,11 +10,11 @@
  *   $Revision$
  *)
 
-import structure __pervasive              from "Pervasive"
-import type int and string datatype order from "ToplevelTypes"
-import infix 4 = val op =                 from "ToplevelValues"
-import structure String                   from "String"
-import signature UNIQUE_STRING            from "UNIQUE_STRING-sig"
+import structure __pervasive                          from "Pervasive"
+import __primitive type int and string datatype order from "ToplevelTypes"
+import __primitive infix 4 = val op =                 from "ToplevelValues"
+import __primitive structure String                   from "String"
+import __primitive signature UNIQUE_STRING            from "UNIQUE_STRING-sig"
 
 structure UniqueString :> UNIQUE_STRING where type string = string =	(**)
 struct

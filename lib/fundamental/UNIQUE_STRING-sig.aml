@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure __pervasive       from "Pervasive"
-import type int and bool and order from "ToplevelTypes"
+import structure __pervasive                   from "Pervasive"
+import __primitive type int and bool and order from "ToplevelTypes"
 
 signature UNIQUE_STRING =					(**)
 sig

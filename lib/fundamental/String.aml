@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,16 +16,16 @@
  *)
 
 import structure __pervasive                         from "Pervasive"
-import type char and string and int
+import __primitive type char and string and int
        datatype bool and order and option and list   from "ToplevelTypes"
-import infix 4 = <> < infixr 5 :: infix 6 + - ^
+import __primitive infix 4 = <> < infixr 5 :: infix 6 + - ^
        val op = and op <> and op < and op + and op - from "ToplevelValues"
-import structure Char                                from "Char"
-import structure Bool                                from "Bool"
-import structure List                                from "List"
-import structure StringCvt                           from "StringCvt"
-import structure CharVector                          from "CharVector"
-import signature STRING                              from "STRING-sig"
+import __primitive structure Char                    from "Char"
+import __primitive structure Bool                    from "Bool"
+import __primitive structure List                    from "List"
+import __primitive structure StringCvt               from "StringCvt"
+import __primitive structure CharVector              from "CharVector"
+import __primitive signature STRING                  from "STRING-sig"
 
 structure String : STRING =
 struct

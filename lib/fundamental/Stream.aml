@@ -14,12 +14,12 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import datatype ref and list from "ToplevelTypes"
-import infixr 5 ::           from "ToplevelValues"
-import structure Ref         from "Ref"
-import structure Promise     from "Promise"
-import signature STREAM      from "STREAM-sig"
+import structure __pervasive             from "Pervasive"
+import __primitive datatype ref and list from "ToplevelTypes"
+import __primitive infixr 5 ::           from "ToplevelValues"
+import __primitive structure Ref         from "Ref"
+import __primitive structure Promise     from "Promise"
+import __primitive signature STREAM      from "STREAM-sig"
 
 structure Stream :> STREAM =
     struct

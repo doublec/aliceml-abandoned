@@ -15,7 +15,7 @@
  *)
 
 import structure __pervasive                   from "Pervasive"
-import type unit and int
+import __primitive type unit and int
        type bool and order and option and list from "ToplevelTypes"
 
 signature SUBSTRING =
