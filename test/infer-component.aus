@@ -1,3 +1,5 @@
+__prebound Prebound
+
 import
 structure TextIO:
     sig
@@ -11,8 +13,6 @@ infixr 5  :: @
 infix  4  = <> > >= < <=
 infix  3  := o
 infix  0  before
-
-__prebound Prebound
 
 type     unit   = {}
 datatype bool   = datatype Prebound.bool
