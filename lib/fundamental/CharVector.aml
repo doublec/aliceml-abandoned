@@ -12,19 +12,20 @@
  *   $Revision$
  *)
 
-import structure __pervasive  from "Pervasive"
-import type int and list      from "ToplevelTypes"
-import structure Char         from "Char"
-import structure MkMonoVector from "MkMonoVector"
+import structure __pervasive                 from "Pervasive"
+import type string and char and int and list from "ToplevelTypes"
+import structure Char                        from "Char"
+import structure MkMonoVector                from "MkMonoVector"
 
 structure CharVector = MkMonoVector(
-    type vector
-    type elem = Char.char
+    type vector = string
+    type elem = char
 
     __primitive val maxLen: int = "CharVector.maxLen"
     __primitive val fromList: elem list -> vector = "CharVector.fromList"
     __primitive val length: vector -> int = "CharVector.length"
     __primitive val sub: vector * int -> elem = "CharVector.sub"
+    __primitive val concat: vector list -> vector = "CharVector.concat"
     __primitive val tabulate: int * (int -> elem) -> vector =
 		    "CharVector.tabulate"
 )
