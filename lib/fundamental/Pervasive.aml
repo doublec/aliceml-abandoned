@@ -10,6 +10,146 @@
  *   $Revision$
  *)
 
+
+(* For the compiler to work properly, __pervasive must contain at least
+ * the following: (**)
+
+    structure __pervasive :
+    sig
+	(* to encode datatypes: *)
+	type zero
+	type 'a succ
+	type ('a,'b) conarrow
+
+	(* to enable derived forms: *)
+	datatype exn
+	datatype 'a list = nil | :: of 'a * 'a list
+
+	structure Int :		sig eqtype int  end
+	structure LargeInt :	sig eqtype int  end
+	structure Word :	sig eqtype word end
+	structure LargeWord :	sig eqtype word end
+	structure Real :	sig eqtype real end
+	structure LargeReal :	sig eqtype real end
+	structure Char :	sig eqtype char end
+	structure WideChar :	sig eqtype char end
+	structure String :	sig eqtype string end
+	structure WideString :	sig eqtype string end
+	structure Vector :	sig eqtype 'a vector end
+	structure Array :	sig eqtype 'a array  end
+	structure Ref :		sig datatype 'a ref = ref of 'a end
+    end
+
+(* With RTT enabled it also needs to have (all exported in *_REFLECTION): *)
+
+    structure __pervasive :
+    sig
+	... as above ...
+
+	(* to encode runtime types: *)
+	structure Label :
+	sig
+	    val fromString :	string -> lab
+	end
+
+	structure Path :
+	sig
+	    val invent :	unit   -> path
+	    val pervasive :	string -> path
+	    val fromLab :	lab    -> path
+	end
+
+	structure Type :
+	sig
+	    val OPEN :		sort
+	    val CLOSED :	sort
+	    val STAR :		kind
+	    val ARROW :		kind * kind -> kind
+
+	    val unknown :	kind       -> typ
+	    val inArrow :	typ * typ  -> typ
+	    val inTuple :	typ vector -> typ
+	    val inProd :	row        -> typ
+	    val inSum :		row        -> typ
+	    val inVar :		var        -> typ
+	    val inCon :		con        -> typ
+	    val inAll :		var * typ  -> typ
+	    val inExist :	var * typ  -> typ
+	    val inLambda :	var * typ  -> typ
+	    val inApply :	typ * typ  -> typ
+	    val inMu :		typ        -> typ
+
+	    val var :		kind -> var
+	    val kind :		typ  -> kind
+
+	    val unknownRow :	unit -> row
+	    val emptyRow :	unit -> row
+	    val extendRow :	lab * typ * row -> row
+
+	    val fill :		typ * typ -> unit
+	    val equals :	typ * typ -> bool
+	end
+
+	structure Fixity :
+	sig
+	    val LEFT :		assoc
+	    val RIGHT :		assoc
+	    val NEITHER :	assoc
+	    val NONFIX :	fix
+	    val PREFIX :	int -> fix
+	    val POSTFIX :	int -> fix
+	    val INFIX :		int * assoc -> fix
+	end
+
+	structure Inf :
+	sig
+	    val empty :		unit -> sign
+	    val newVal :	sign * lab -> path
+	    val newTyp :	sign * lab -> path
+	    val newMod :	sign * lab -> path
+	    val newInf :	sign * lab -> path
+	    val newFix :	sign * lab -> path
+	    val extendVal :	sign * path *  typ  * path option -> unit
+	    val extendTyp :	sign * path * tkind * typ  option -> unit
+	    val extendMod :	sign * path *  inf  * path option -> unit
+	    val extendInf :	sign * path *  kind * inf  option -> unit
+	    val extendFix :	sign * path * fix -> unit
+	    val lookupVal :	sign * lab -> typ
+	    val lookupTyp :	sign * lab -> typ
+	    val lookupMod :	sign * lab -> inf
+	    val lookupInf :	sign * lab -> inf
+	    val lookupFix :	sign * lab -> fix
+
+	    val inTop :		unit		 -> inf
+	    val inCon :		con		 -> inf
+	    val inSig :		sign		 -> inf
+	    val inArrow :	path * inf * inf -> inf
+	    val inLambda :	path * inf * inf -> inf
+	    val inApply :	inf * path * inf -> inf
+	    val asCon :		inf -> con
+	    val asSig :		inf -> sign
+	    val asArrow :	inf -> path * inf * inf
+	    val asLambda :	inf -> path * inf * inf
+	    val asApply :	inf -> inf * path * inf
+	    val inGround :	unit -> kind
+	    val inDependent :	path * inf * kind -> kind
+
+	    exception Mismatch of ...
+	    val instance :	inf -> inf
+	    val kind :		inf -> kind
+	    val match :		inf * inf -> rea		(* Mismatch *)
+	    val intersect :	inf * inf -> inf		(* Mismatch *)
+	end
+
+	structure PervasiveType :
+	sig
+	    val typ_ref :	typ
+	    val lookup :	string -> con
+	end
+    end
+
+ *)
+
 import structure RTT from "RTT"
 
 
@@ -61,5 +201,4 @@ struct
     structure Vector	= struct __primitive eqtype 'a vector	= "vector"  end
     structure Array	= struct __primitive __eqeqtype 'a array= "array"   end
     structure Ref	= struct __primitive __reftype 'a ref	= ref of 'a end
-    structure General	= struct __primitive datatype exn	= "exn"     end
 end
