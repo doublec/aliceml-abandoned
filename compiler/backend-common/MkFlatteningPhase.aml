@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -1036,6 +1036,7 @@ functor MkFlatteningPhase(val loadSign:
 		val cont = Goto [O.ExportStm (Source.nowhere, exportExp)]
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
+		IntermediateAux.reset ();
 		(imports', body', exports', Signature.fromSig sign)
 	    end
     end

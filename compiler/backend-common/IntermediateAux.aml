@@ -10,7 +10,9 @@
  *   $Revision$
  *)
 
+import structure FromEqHashKey       from "../../lib/utility/HASH_KEY-sig"
 import structure MkHashImpSet        from "../../lib/utility/MkHashImpSet"
+import structure MkHashImpMap        from "../../lib/utility/MkHashImpMap"
 import structure Name                from "../../lib/rtt/Name"
 import structure Label               from "../../lib/rtt/Label"
 import structure Type                from "../../lib/rtt/Type"
@@ -408,52 +410,98 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else NONE
 	  | isTuple (nil, i) = SOME (i - 1)
 
-	fun rowToArity row =
+	structure LabelMap = MkHashImpMap(FromEqHashKey(Label))
+
+	val typToArityMap: (Arity.t * int LabelMap.t option) Type.Map.t =
+	    Type.Map.new ()
+
+	fun rowToArity (asX, typ, makeMap) =
 	    let
-		val labels = rowLabels row
+		val typ = Type.canonical typ
 	    in
-		case isTuple (labels, 1) of
-		    SOME n => Arity.Tuple n
-		  | NONE => Arity.Product (Vector.fromList labels)
+		case Type.Map.lookup (typToArityMap, typ) of
+		    SOME entry => entry
+		  | NONE =>
+			let
+			    val row = asX (Type.fromCanonical typ)
+			    val labels = rowLabels row
+			    val (arity, makeMap) =
+				case isTuple (labels, 1) of
+				    SOME n => (Arity.Tuple n, false)
+				  | NONE =>
+					(Arity.Product
+					     (Vector.fromList labels), makeMap)
+			    val mapOpt =
+				if makeMap then
+				    let
+					val map = LabelMap.new ()
+				    in
+					List.appi
+					    (fn (i, label) =>
+						LabelMap.insert
+						    (map, label, i)) labels;
+					SOME map
+				    end
+				else NONE
+			    val entry = (arity, mapOpt)
+			in
+			    Type.Map.insert (typToArityMap, typ, entry); entry
+			end
 	    end
 
-	fun typToArity typ =
+	fun typToArity' (typ, makeMap) =
 	    if Type.isAll typ then
-		typToArity (#2 (Type.asAll typ))
+		typToArity' (#2 (Type.asAll typ), makeMap)
 	    else if Type.isExist typ then
-		typToArity (#2 (Type.asExist typ))
+		typToArity' (#2 (Type.asExist typ), makeMap)
 	    else if Type.isLambda typ then
-		typToArity (#2 (Type.asLambda typ))
+		typToArity' (#2 (Type.asLambda typ), makeMap)
 	    else if Type.isApply typ then
-		typToArity (#1 (Type.asApply typ))
+		typToArity' (#1 (Type.asApply typ), makeMap)
 	    else if Type.isMu typ then
-		typToArity (Type.asMu typ)
+		typToArity' (Type.asMu typ, makeMap)
 	    else if Type.isTuple typ then
-		Arity.Tuple (Vector.length (Type.asTuple typ))
+		(Arity.Tuple (Vector.length (Type.asTuple typ)), NONE)
 	    else if Type.isProd typ then
-		rowToArity (Type.asProd typ)
+		rowToArity (Type.asProd, typ, makeMap)
 	    else if Type.isSum typ then
-		rowToArity (Type.asSum typ)
-	    else Arity.Unary
+		rowToArity (Type.asSum, typ, makeMap)
+	    else (Arity.Unary, NONE)
+
+	fun typToArity typ = #1 (typToArity' (typ, false))
 
 	fun find (labels, label', i, n) =
-	    if i = n then NONE
-	    else if Vector.sub (labels, i) = label' then
-		SOME (O.Product labels, i)
+	    if i = n then
+		raise Crash.Crash ("IntermediateAux.find " ^
+				   Label.toString label')
+	    else if Vector.sub (labels, i) = label' then (O.Product labels, i)
 	    else find (labels, label', i + 1, n)
 
-	fun findLabel (Arity.Unary, _) = NONE
+	fun findLabel (Arity.Unary, label) =
+	    raise Crash.Crash ("IntermediateAux.findLabel 1 " ^
+			       Label.toString label)
 	  | findLabel (Arity.Tuple n, label) =
 	    (case Label.toInt label of
-		 SOME i => if i <= n then SOME (O.Tuple n, i - 1) else NONE
-	       | NONE => NONE)
+		 SOME i =>
+		     if i <= n then (O.Tuple n, i - 1)
+		     else
+			 raise Crash.Crash ("IntermediateAux.findLabel 2 " ^
+					    Label.toString label)
+	       | NONE =>
+		     raise Crash.Crash ("IntermediateAux.findLabel 3 " ^
+					Label.toString label))
 	  | findLabel (Arity.Product labels, label) =
 	    find (labels, label, 0, Vector.length labels)
 
 	fun labelToIndex (typ, label) =
-	    case findLabel (typToArity typ, label) of
-		SOME i => i
-	      | NONE =>
-		    raise Crash.Crash ("IntermediateAux.labelToIndex " ^
-				       Label.toString label)
+	    case typToArity' (typ, true) of
+		(Arity.Tuple n, SOME map) =>
+		    (O.Tuple n, LabelMap.lookupExistent (map, label))
+	      | (Arity.Product labels, SOME map) =>
+		    (O.Product labels, LabelMap.lookupExistent (map, label))
+	      | (Arity.Unary, _) =>
+		    raise Crash.Crash ("IntermediateAux.labelToIndex")
+	      | (arity, NONE) => findLabel (arity, label)
+
+	fun reset () = Type.Map.deleteAll typToArityMap
     end
