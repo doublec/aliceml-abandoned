@@ -15,41 +15,17 @@
 
 #if defined(INTERFACE)
 #pragma implementation "store/HeaderOp.hh"
-#endif
-
-#if defined(INTERFACE)
 #pragma implementation "store/PointerOp.hh"
-#endif
-
-#if defined(INTERFACE)
 #pragma implementation "store/Store.hh"
-#endif
-
-#if defined(INTERFACE)
 #pragma implementation "store/Memory.hh"
-#endif
-
-#if defined(INTERFACE)
 #pragma implementation "store/GCHelper.hh"
-#endif
-
-#if defined(INTERFACE)
 #pragma implementation "store/Value.hh"
-#endif
-
-#if defined(INTERFACE)
 #pragma implementation "store/Set.hh"
 #endif
 
-#include "store/Base.hh"
-#include "store/Types.hh"
-#include "store/HeaderOp.hh"
-#include "store/Handler.hh"
-#include "store/PointerOp.hh"
 #include "store/Store.hh"
 #include "store/Memory.hh"
 #include "store/GCHelper.hh"
-#include "store/Value.hh"
 #include "store/Set.hh"
 
 #if defined(STORE_DEBUG)
@@ -215,7 +191,7 @@ inline Block *Store::CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen) {
   u_int size  = (1 + HeaderOp::DecodeSize(p));
   Block *newp = (Block *) Store::GCAlloc((size * sizeof(u_int)), dst_gen);
     
-  std::memcpy(newp, p, (size * sizeof(word)));
+  std::memcpy(newp, p, (size * sizeof(u_int)));
   GCHelper::EncodeGen(newp, cpy_gen);
 
 #if defined(STORE_DEBUG)
@@ -272,7 +248,7 @@ void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, u_int match_gen,
 	  }
 	}
       }
-      scan += ((cursize + 1) * sizeof(word));
+      scan += ((cursize + 1) * sizeof(u_int));
     }
 
     anchor = anchor->GetPrev();
@@ -615,8 +591,7 @@ void Store::DoGC(word &root) {
   // Handle Weak Dictionaries, if any (performs scanning itself)
   Block *arr = INVALID_POINTER;
   if (wkdict_set->GetSize() != 0) {
-    arr = Store::HandleWeakDictionaries(wkdict_set, new_wkdict_set,
-					match_gen, dst_gen, cpy_gen);
+    arr = Store::HandleWeakDictionaries(wkdict_set, new_wkdict_set, match_gen, dst_gen, cpy_gen);
   }
 
   // change to new dict list
@@ -650,7 +625,7 @@ void Store::DoGC(word &root) {
   SwitchToNewChunk(roots[0]->GetNext());
   root = new_root_set->ToWord();
 
-  // Call Finalisation Handler
+  // Call Finalization Handler
   if (arr != INVALID_POINTER) {
     rs_size = Store::WordToInt(arr->GetArg(1));
     for (u_int i = 2; i < rs_size; i += 2) {

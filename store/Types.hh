@@ -43,6 +43,7 @@ typedef enum {
 
 class Block;
 class Transient;
+class Chunk;
 class WeakDictionary;
 
 #endif __STORE__TYPES_HH__
