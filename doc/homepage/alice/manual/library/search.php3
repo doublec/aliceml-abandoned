@@ -42,7 +42,7 @@
     <DD>
       <P>This inference engine takes a constraint
          problem script <I>p</I> and returns a solution of the problem.
-         If no solution exist, <TT>NONE</TT> is returned.
+         If no solution exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
 
@@ -52,7 +52,7 @@
     <DD>
       <P>This inference engine takes a constraint
          problem script <I>p</I> and returns a list containing all
-         solutions of the problem. If no solution exist, the empty list
+         solutions of the problem. If no solution exists, the empty list
          is returned.
       </P>
     </DD>
@@ -64,7 +64,7 @@
       <P>This inference engine takes a constraint
          problem script <I>p</I> together with a ordering function <I>o</I>
          and returns the best solutions of the problem according to
-         the given order. If no solutions exist, <TT>NONE</TT> is returned.
+         the given order. If no solutions exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
   </DL>
