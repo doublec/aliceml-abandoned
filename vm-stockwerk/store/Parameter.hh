@@ -36,7 +36,7 @@
 //
 
 // Size of each allocated Memory Chunk
-#define STORE_MEMCHUNK_SIZE      (1024 * 32)
+#define STORE_MEMCHUNK_SIZE      (1024 * 128)
 // Number of Memory Generations
 // (must fit in HEADER_GEN_GCMARK_WIDTH starting at 1; zero is reserved)
 #define STORE_GENERATION_NUM     ((1 << HEADER_GEN_GC_MARK_WIDTH) - 1)

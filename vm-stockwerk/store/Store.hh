@@ -33,6 +33,7 @@ private:
   static MemChunk *roots[STORE_GENERATION_NUM];
   static u_int memMax[STORE_GENERATION_NUM];
   static u_int memFree;
+  static u_int memTolerance;
   static char *curChunkMax;
   static s_int curChunkTop;
   static MemChunk *curChunk;
@@ -95,12 +96,13 @@ public:
   static u_int gcLiveMem;
 #endif
   // Init Functions
-  static void InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free);
+  static void InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free, u_int mem_tolerance);
   static void CloseStore();
 
   // GC Related Functions
   static word ResolveForwardPtr(word v);
   static void DoGC(word &root);
+  static void SetGCParams(u_int mem_free, u_int mem_tolerance);
   // To be determined
   static void AddToIntgenSet(Block *v);
   static void RegisterWeakDict(WeakDictionary *v);
