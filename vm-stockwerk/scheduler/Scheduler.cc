@@ -91,9 +91,7 @@ void Scheduler::Run() {
 	      taskStack->PutWord(0, transient[i]->GetArg());
 	      goto raise;
 	    case BYNEED:
-	      //--** Perform application:
-	      //--** How in hell can we do this without knowing what a
-	      //--** closure is?
+	      //--** Perform application
 	      break;
 	    default:
 	      Error("invalid transient label");

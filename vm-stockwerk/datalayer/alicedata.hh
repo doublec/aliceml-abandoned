@@ -11,12 +11,16 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __ALICEDATA_HH__
-#define __ALICEDATA_HH__
+
+#ifndef __DATALAYER__ALICEDATA_HH__
+#define __DATALAYER__ALICEDATA_HH__
 
 #pragma interface "datalayer/alicedata.hh"
 
-#include "scheduler/Interpreter.hh"
+#include "store/store.hh"
+
+#define WORDS_NEEDED(n, t) \
+  ((sizeof(t) * n + sizeof(word) - 1) / sizeof(word))
 
 typedef unsigned short w_char;
 
@@ -72,11 +76,7 @@ public:
   }
 
   u_int GetLength() {
-    if (GetLabel() == Alice::ToBlockLabel(Alice::ArrayZero)) {
-      return 0;
-    } else {
-      return GetSize();
-    }
+    return GetLabel() == Alice::ToBlockLabel(Alice::ArrayZero)? 0: GetSize();
   }
   void Init(u_int index, word value) {
     InitArg(index + 1, value);
@@ -212,19 +212,19 @@ public:
   using Block::ToWord;
 
   static String *New(int len) {
-    Block *b = Store::AllocChunk((len + 2 * sizeof(word) - 1) / sizeof(word));
+    Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
     return static_cast<String *>(b);
   }
   static String *New(const char *str) {
     int len  = strlen(str);
-    Block *b = Store::AllocChunk((len + 2 * sizeof(word) - 1) / sizeof(word));
+    Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
     return static_cast<String *>(b);
   }
   static String *New(const char *str, int len) {
-    Block *b = Store::AllocChunk((len + 2 * sizeof(word) - 1) / sizeof(word));
+    Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
     return static_cast<String *>(b);
@@ -313,11 +313,7 @@ public:
   }
 
   u_int GetLength() {
-    if (HeaderOp::DecodeLabel(this) == Alice::ToBlockLabel(Alice::VectorZero)) {
-      return 0;
-    } else {
-      return GetSize();
-    }
+    return GetLabel() == Alice::ToBlockLabel(Alice::VectorZero)? 0: GetSize();
   }
   void Init(u_int index, word value) {
     InitArg(index + 1, value);
@@ -334,9 +330,10 @@ public:
   using Block::ToWord;
 
   static WideString *New(w_char *str, int len) {
-    Block *b = Store::AllocChunk((sizeof(w_char) * len + 2 * sizeof(word) - 1) / sizeof(word));
+    Block *b = Store::AllocChunk(WORDS_NEEDED(len, w_char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
-    memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len * sizeof(w_char));
+    memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str,
+	   len * sizeof(w_char));
     return static_cast<WideString *>(b);
   }
   static WideString *FromWord(word x) {
@@ -350,39 +347,6 @@ public:
   }
 };
 
-class TaskStack;
+#undef WORDS_NEEDED
 
-//--** Closure can be moved to scheduler; merge global env with Closure node
-class Closure: private Block {
-private:
-  static const u_int SIZE = 2;
-  static const u_int CONCRETE_CODE_POS = 1;
-  static const u_int GLOBAL_ENV_POS = 2;
-public:
-  using Block::ToWord;
-
-  static Closure *New(ConcreteCode *concreteCode, Vector *globalEnv) {
-    Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::Closure), SIZE);
-    b->InitArg(CONCRETE_CODE_POS, concreteCode->ToWord());
-    b->InitArg(GLOBAL_ENV_POS, globalEnv->ToWord());
-    return static_cast<Closure *>(b);
-  }
-  static Closure *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == Alice::ToBlockLabel(Alice::Closure));
-    return static_cast<Closure *>(b);
-  }
-
-  ConcreteCode *GetConcreteCode() {
-    return ConcreteCode::FromWord(GetArg(CONCRETE_CODE_POS));
-  }
-  Vector *GetGlobalEnv() {
-    return Vector::FromWord(GetArg(GLOBAL_ENV_POS));
-  }
-  void PushCall(TaskStack *taskStack) {
-    GetConcreteCode()->GetInterpreter()->PushCall(taskStack, ToWord());
-  }
-};
-
-#endif
+#endif __DATALAYER__ALICEDATA_HH__

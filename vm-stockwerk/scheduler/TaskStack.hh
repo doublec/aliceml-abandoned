@@ -15,7 +15,7 @@
 
 #pragma interface "scheduler/TaskStack.hh"
 
-#include "store/store.hh"
+#include "scheduler/Closure.hh"
 
 #define TASK_STACK_INITIAL_SIZE 8 /* words */
 
@@ -43,6 +43,9 @@ public:
   void PopFrame(u_int size); //--** implement
   bool IsEmpty(); //--** implement
   void Clear(); //--** implement
+  void PushCall(Closure *closure) {
+    closure->GetConcreteCode()->GetInterpreter()->PushCall(this, closure);
+  }
 
   // Accessing the current frame:
   void PutWord(u_int offset, word v); //---** implement

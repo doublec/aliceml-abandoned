@@ -16,6 +16,7 @@
 #include "scheduler/ConcreteCode.hh"
 
 class TaskStack;
+class Closure;
 
 class Interpreter {
 public:
@@ -40,7 +41,7 @@ public:
   virtual ConcreteCode *Prepare(word abstractCode) = 0;
 
   // Handling stack frames:
-  virtual void PushCall(TaskStack *taskStack, word closure) = 0;
+  virtual void PushCall(TaskStack *taskStack, Closure *closure) = 0;
   virtual void PopFrame(TaskStack *taskStack) = 0;
 
   // Execution:
