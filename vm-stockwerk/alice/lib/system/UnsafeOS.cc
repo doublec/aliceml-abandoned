@@ -70,7 +70,7 @@ static String *ErrorCodeToString(int errorCode) {
 }
 
 static word MakeSysErr(int errorCode) {
-  TagVal *some = TagVal::New(1, 1); // SOME
+  TagVal *some = TagVal::New(Types::SOME, 1);
   some->Init(0, Store::IntToWord(errorCode));
   ConVal *sysErr =
     ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
@@ -181,7 +181,7 @@ DEFINE1(UnsafeOS_FileSys_readLink) {
   ConVal *sysErr =
     ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
   sysErr->Init(0, String::New("symbolic links not supported")->ToWord());
-  sysErr->Init(1, Store::IntToWord(0)); // NONE
+  sysErr->Init(1, Store::IntToWord(Types::NONE));
   RAISE(sysErr->ToWord());
 #else
   String *buffer = String::FromWordDirect(wBufferString);
@@ -343,11 +343,11 @@ DEFINE1(UnsafeOS_Process_getEnv) {
   DECLARE_STRING(envVar, x0);
   char *envVal = getenv(envVar->ExportC());
   if (envVal != NULL) {
-    TagVal *val = TagVal::New(1, 1); // SOME
+    TagVal *val = TagVal::New(Types::SOME, 1);
     val->Init(0, String::New(envVal)->ToWord());
     RETURN(val->ToWord());
   } else
-    RETURN(Store::IntToWord(0)); // NONE
+    RETURN(Store::IntToWord(Types::NONE));
 } END
 
 static word UnsafeOS_Process() {
