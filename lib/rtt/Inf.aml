@@ -1901,13 +1901,13 @@ TextIO.print "Inf.instance done.\n";
 			then item
 			else (change := true; MOD(p,j'))
 	in
-	    case inspect j'
-	     of Sing(p',j'') =>
+	    case inspect j (* respective singleton will be removed in j' *)
+	     of Sing(p',_) =>
 		if PathMap.member(#mod b,p') then
-		    (PathMap.insertDisjoint(#mod_rea rea, p', (p,j''));
+		    (PathMap.insertDisjoint(#mod_rea rea, p', (p,j'));
 		     PathMap.removeExistent(#mod b,p');
 		     change := true;
-		     MOD(p,j''))
+		     MOD(p,j'))
 		else item'
 	      | _ => item'
 	end
