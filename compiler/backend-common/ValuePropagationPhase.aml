@@ -40,57 +40,60 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | SHARED_ANN of body option ref * env
 
 	local
-	    fun node ((edgeMap, _), stamp) =
+	    fun node (edgeMap, stamp) =
 		StampMap.insertDisjoint (edgeMap, stamp, nil)
 
-	    fun edge ((edgeMap, _), pred, succ) =
+	    fun edge (edgeMap, pred, succ) =
 		let
 		    val stamps = StampMap.lookupExistent (edgeMap, pred)
 		in
 		    StampMap.insert (edgeMap, pred, succ::stamps)
 		end
 
-	    fun sortStm (ValDec (_, _, _), _, _, _) = ()
-	      | sortStm (RecDec (_, _), _, _, _) = ()
-	      | sortStm (EvalStm (_, _), _, _, _) = ()
-	      | sortStm (RaiseStm (_, _), _, _, _) = ()
-	      | sortStm (ReraiseStm (_, _), _, _, _) = ()
+	    fun sortStm (ValDec (_, _, _), _, _, _, _) = ()
+	      | sortStm (RecDec (_, _), _, _, _, _) = ()
+	      | sortStm (EvalStm (_, _), _, _, _, _) = ()
+	      | sortStm (RaiseStm (_, _), _, _, _, _) = ()
+	      | sortStm (ReraiseStm (_, _), _, _, _, _) = ()
 	      | sortStm (HandleStm (_, body1, _, body2, body3, stamp),
-			 pred, graph, path) =
-		(node (graph, stamp);
-		 sortBody (body1, pred, graph, path);
-		 sortBody (body2, pred, graph, path);
-		 sortBody (body3, stamp, graph, path))
-	      | sortStm (EndHandleStm (_, stamp), pred, graph, _) =
-		edge (graph, pred, stamp)
+			 pred, edgeMap, shared, path) =
+		(node (edgeMap, stamp);
+		 sortBody (body1, pred, edgeMap, shared, path);
+		 sortBody (body2, pred, edgeMap, shared, path);
+		 sortBody (body3, stamp, edgeMap, shared, path))
+	      | sortStm (EndHandleStm (_, stamp), pred, edgeMap, _, _) =
+		edge (edgeMap, pred, stamp)
 	      | sortStm (TestStm (_, _, testBodyList, body),
-			 pred, graph, path) =
+			 pred, edgeMap, shared, path) =
 		(List.app (fn (_, body) =>
-			   sortBody (body, pred, graph, path)) testBodyList;
-		 sortBody (body, pred, graph, path))
-	      | sortStm (SharedStm (_, body, stamp), pred,
-			 graph as (edgeMap, shared), path) =
+			   sortBody (body, pred, edgeMap, shared, path))
+		 testBodyList;
+		 sortBody (body, pred, edgeMap, shared, path))
+	      | sortStm (SharedStm (_, body, stamp),
+			 pred, edgeMap, shared, path) =
 		(StampMap.insert (shared, stamp,
 				  if StampMap.member (shared, stamp)
 				  then SHARED else UNIQUE);
 		 if StampSet.member (path, stamp) then ()   (* ignore loops *)
 		 else
-		     (edge (graph, pred, stamp);
-		      if StampMap.member (edgeMap, stamp) then ()
-		      else sortSharedBody (body, stamp, graph, path)))
-	      | sortStm (ReturnStm (_, _), _, _, _) = ()
-	      | sortStm (IndirectStm (_, ref bodyOpt), pred, graph, path) =
-		sortBody (valOf bodyOpt, pred, graph, path)
-	      | sortStm (ExportStm (_, _), _, _, _) = ()
-	    and sortBody (stm::stms, pred, graph, path) =
-		(sortStm (stm, pred, graph, path);
-		 sortBody (stms, pred, graph, path))
-	      | sortBody (nil, _, _, _) = ()
-	    and sortSharedBody (body, stamp, graph, path) =
-		(node (graph, stamp);
-		 StampSet.insertDisjoint (path, stamp);
-		 sortBody (body, stamp, graph, path);
-		 StampSet.deleteExistent (path, stamp))
+		     (edge (edgeMap, pred, stamp);
+		      sortSharedBody (body, stamp, edgeMap, shared, path)))
+	      | sortStm (ReturnStm (_, _), _, _, _, _) = ()
+	      | sortStm (IndirectStm (_, ref bodyOpt),
+			 pred, edgeMap, shared, path) =
+		sortBody (valOf bodyOpt, pred, edgeMap, shared, path)
+	      | sortStm (ExportStm (_, _), _, _, _, _) = ()
+	    and sortBody (stm::stms, pred, edgeMap, shared, path) =
+		(sortStm (stm, pred, edgeMap, shared, path);
+		 sortBody (stms, pred, edgeMap, shared, path))
+	      | sortBody (nil, _, _, _, _) = ()
+	    and sortSharedBody (body, stamp, edgeMap, shared, path) =
+		if StampMap.member (edgeMap, stamp) then ()
+		else
+		    (node (edgeMap, stamp);
+		     StampSet.insertDisjoint (path, stamp);
+		     sortBody (body, stamp, edgeMap, shared, path);
+		     StampSet.deleteExistent (path, stamp))
 
 	    structure DepthFirstSearch =
 		MakeDepthFirstSearch(structure Key = FromEqHashKey(Stamp)
@@ -100,9 +103,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		let
 		    val edgeMap = StampMap.new ()
 		    val shared = StampMap.new ()
+		    val path = StampSet.new ()
 		in
-		    sortSharedBody (body, stamp, (edgeMap, shared),
-				    StampSet.new ());
+		    sortSharedBody (body, stamp, edgeMap, shared, path);
 		    (DepthFirstSearch.search edgeMap, shared)
 		end
 	end
@@ -137,35 +140,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	      | (EXP (exp as RefExp _, _), _) => exp
 	      | (_, _) => VarExp (info, id)
 
-	fun getConstruction (id, env) =
-	    case IdMap.lookupExistent (env, id) of
-		(value as EXP (LitExp (_, _), _), _) => value
-	      | (value as EXP (NewExp (_, _), _), _) => value
-	      | (value as EXP (TagExp (_, _, _, _), _), _) => value
-	      | (value as EXP (ConExp (_, _, _), _), _) => value
-	      | (value as EXP (StaticConExp (_, _, _), _), _) => value
-	      | (value as EXP (TupExp (_, _), _), _) => value
-	      | (value as EXP (RecExp (_, _), _), _) => value
-	      | (value as EXP (VecExp (_, _), _), _) => value
-	      | (value as TEST (_, _), _) => value
-	      | (_, _) => UNKNOWN
-
-	fun mapArgs f (OneArg id) = OneArg (f id)
-	  | mapArgs f (TupArgs ids) = TupArgs (List.map f ids)
-	  | mapArgs f (RecArgs labelIdList) =
-	    RecArgs (List.map (fn (label, id) => (label, f id)) labelIdList)
-
-	fun appArgs f (OneArg id) = f id
-	  | appArgs f (TupArgs ids) = List.app f ids
-	  | appArgs f (RecArgs labelIdList) =
-	    List.app (fn (_, id) => f id) labelIdList
-
 	fun deref (id, env) =
 	    case IdMap.lookupExistent (env, id) of
 		(EXP (VarExp (_, id'), _), _) => id'
 	      | (_, _) => id
 
-	fun derefArgs (args, env) = mapArgs (fn id => deref (id, env)) args
+	fun derefArgs (OneArg id, env) = OneArg (deref (id, env))
+	  | derefArgs (TupArgs ids, env) =
+	    TupArgs (List.map (fn id => deref (id, env)) ids)
+	  | derefArgs (RecArgs labelIdList, env) =
+	    RecArgs (List.map (fn (label, id) => (label, deref (id, env)))
+		     labelIdList)
 
 	fun doSelTup (info, ids, n) = VarExp (info, List.nth (ids, n))
 
@@ -178,13 +163,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun doSel (info, label, n, id, env) =
 	    case IdMap.lookupExistent (env, id) of
-		(EXP (TupExp (_, ids), _), _) =>
+		((EXP (TupExp (_, ids), _) |
+		  TEST (TupTest ids, _)), _) =>
 		    doSelTup (info, ids, n)
-	      | (EXP (RecExp (_, labelIdList), _), _) =>
-		    doSelRec (info, labelIdList, n)
-	      | (TEST (TupTest ids, _), _) =>
-		    doSelTup (info, ids, n)
-	      | (TEST (RecTest labelIdList, _), _) =>
+	      | ((EXP (RecExp (_, labelIdList), _) |
+		  TEST (RecTest labelIdList, _)), _) =>
 		    doSelRec (info, labelIdList, n)
 	      | (_, _) => SelAppExp (info, label, n, id)
 
@@ -221,18 +204,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    IdMap.insert
 	    (env, id, (EXP (VarExp (info', id'), Stamp.new ()), isToplevel))
 
-	fun matchArgs (OneArg id, OneArg id', env, isToplevel) =
+	fun aliasArgs (OneArg id, OneArg id', env, isToplevel) =
 	    alias (id, id', env, isToplevel)
-	  | matchArgs (TupArgs ids, TupArgs ids', env, isToplevel) =
+	  | aliasArgs (TupArgs ids, TupArgs ids', env, isToplevel) =
 	    ListPair.app (fn (id, id') => alias (id, id', env, isToplevel))
 	    (ids, ids')
-	  | matchArgs (RecArgs labelIdList, RecArgs labelIdList',
+	  | aliasArgs (RecArgs labelIdList, RecArgs labelIdList',
 		       env, isToplevel) =
 	    ListPair.app (fn ((_, id), (_, id')) =>
 			  alias (id, id', env, isToplevel))
 	    (labelIdList, labelIdList')
-	  | matchArgs (_, _, _, _) =
-	    raise Crash.Crash "ValuePropagationPhase.matchArgs"
+	  | aliasArgs (_, _, _, _) =
+	    raise Crash.Crash "ValuePropagationPhase.aliasArgs"
 
 	datatype testRes =
 	    ALWAYS_TRUE
@@ -242,8 +225,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun declareId (id, env, isToplevel) =
 	    IdMap.insertDisjoint (env, id, (UNKNOWN, isToplevel))
 
-	fun declareArgs (args, env, isToplevel) =
-	    appArgs (fn id => declareId (id, env, isToplevel)) args
+	fun declareArgs (OneArg id, env, isToplevel) =
+	    declareId (id, env, isToplevel)
+	  | declareArgs (TupArgs ids, env, isToplevel) =
+	    List.app (fn id => declareId (id, env, isToplevel)) ids
+	  | declareArgs (RecArgs labelIdList, env, isToplevel) =
+	    List.app (fn (_, id) => declareId (id, env, isToplevel))
+	    labelIdList
 
 	fun declareTest' (LitTest _, _, _) = ()
 	  | declareTest' (TagTest (_, _), _, _) = ()
@@ -283,63 +271,81 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	       | (_, _) => DYNAMIC_TEST (ConAppTest (deref (id, env), args)))
 	  | dynamicTest (test, _) = DYNAMIC_TEST test
 
-	fun vpTest (test, UNKNOWN, env, _) = dynamicTest (test, env)
-	  | vpTest (LitTest lit,
-		    (EXP (LitExp (_, lit'), _) |
-		     TEST (LitTest lit', _)), _, _) =
+	fun vpTest' (test, UNKNOWN, env, _) = dynamicTest (test, env)
+	  | vpTest' (LitTest lit,
+		     (EXP (LitExp (_, lit'), _) |
+		      TEST (LitTest lit', _)), _, _) =
 	    if lit = lit' then ALWAYS_TRUE else ALWAYS_FALSE
-	  | vpTest (TagTest (_, n),
-		    (EXP (TagExp (_, _, n', _), _) |
-		     TEST (TagTest (_, n'), _)), _, _) =
+	  | vpTest' (TagTest (_, n),
+		     (EXP (TagExp (_, _, n', _), _) |
+		      TEST (TagTest (_, n'), _)), _, _) =
 	    if n = n' then ALWAYS_TRUE else ALWAYS_FALSE
-	  | vpTest (TagAppTest (_, n, args),
-		    (EXP (TagAppExp (_, _, n', args'), _) |
-		     TEST (TagAppTest (_, n', args'), _)), env, isToplevel) =
+	  | vpTest' (TagAppTest (_, n, args),
+		     (EXP (TagAppExp (_, _, n', args'), _) |
+		      TEST (TagAppTest (_, n', args'), _)), env, isToplevel) =
 	    if n = n' then
-		(matchArgs (args, args', env, isToplevel); ALWAYS_TRUE)
+		(aliasArgs (args, args', env, isToplevel); ALWAYS_TRUE)
 	    else ALWAYS_FALSE
-	  | vpTest (test as ConTest id,
-		    (EXP (ConExp (_, id', _), _) |
-		     TEST (ConTest id', _)), env, _) =
+	  | vpTest' (test as ConTest id,
+		     (EXP (ConExp (_, id', _), _) |
+		      TEST (ConTest id', _)), env, _) =
 	    if idEq (id, id') then ALWAYS_TRUE else dynamicTest (test, env)
-	  | vpTest (test as ConAppTest (id, args),
-		    (EXP (ConAppExp (_, id', args'), _) |
-		     TEST (ConAppTest (id', args'), _)), env, isToplevel) =
+	  | vpTest' (test as ConAppTest (id, args),
+		     (EXP (ConAppExp (_, id', args'), _) |
+		      TEST (ConAppTest (id', args'), _)), env, isToplevel) =
 	    if idEq (id, id') then
-		(matchArgs (args, args', env, isToplevel); ALWAYS_TRUE)
+		(aliasArgs (args, args', env, isToplevel); ALWAYS_TRUE)
 	    else dynamicTest (test, env)
-	  | vpTest (test as StaticConTest stamp,
-		    (EXP (StaticConExp (_, stamp', _), _) |
-		     TEST (StaticConTest stamp', _)), env, _) =
+	  | vpTest' (test as StaticConTest stamp,
+		     (EXP (StaticConExp (_, stamp', _), _) |
+		      TEST (StaticConTest stamp', _)), env, _) =
 	    if stamp = stamp' then ALWAYS_TRUE else dynamicTest (test, env)
-	  | vpTest (test as StaticConAppTest (stamp, args),
-		    (EXP (StaticConAppExp (_, stamp', args'), _) |
-		     TEST (StaticConAppTest (stamp', args'), _)),
-		    env, isToplevel) =
+	  | vpTest' (test as StaticConAppTest (stamp, args),
+		     (EXP (StaticConAppExp (_, stamp', args'), _) |
+		      TEST (StaticConAppTest (stamp', args'), _)),
+		     env, isToplevel) =
 	    if stamp = stamp' then
-		(matchArgs (args, args', env, isToplevel); ALWAYS_TRUE)
+		(aliasArgs (args, args', env, isToplevel); ALWAYS_TRUE)
 	    else dynamicTest (test, env)
-	  | vpTest (TupTest ids,
-		    (EXP (TupExp (_, ids'), _) |
-		     TEST (TupTest ids', _)), env, isToplevel) =
+	  | vpTest' (TupTest ids,
+		     (EXP (TupExp (_, ids'), _) |
+		      TEST (TupTest ids', _)), env, isToplevel) =
 	    (ListPair.app (fn (id, id') => alias (id, id', env, isToplevel))
 	     (ids, ids'); ALWAYS_TRUE)
-	  | vpTest (RecTest labelIdList,
-		    (EXP (RecExp (_, labelIdList'), _) |
-		     TEST (RecTest labelIdList', _)), env, isToplevel) =
+	  | vpTest' (RecTest labelIdList,
+		     (EXP (RecExp (_, labelIdList'), _) |
+		      TEST (RecTest labelIdList', _)), env, isToplevel) =
 	    (ListPair.app (fn ((_, id), (_, id')) =>
 			   alias (id, id', env, isToplevel))
 	     (labelIdList, labelIdList'); ALWAYS_TRUE)
-	  | vpTest (test as LabTest (_, _, _), _, _, _) = DYNAMIC_TEST test
-	  | vpTest (VecTest ids,
-		    (EXP (VecExp (_, ids'), _) |
-		     TEST (VecTest ids', _)), env, isToplevel) =
+	  | vpTest' (test as LabTest (_, _, _), _, _, _) = DYNAMIC_TEST test
+	  | vpTest' (VecTest ids,
+		     (EXP (VecExp (_, ids'), _) |
+		      TEST (VecTest ids', _)), env, isToplevel) =
 	    if List.length ids = List.length ids' then
 		(ListPair.app (fn (id, id') =>
 			       alias (id, id', env, isToplevel))
 		 (ids, ids'); ALWAYS_TRUE)
 	    else ALWAYS_FALSE
-	  | vpTest (_, _, _, _) = ALWAYS_FALSE
+	  | vpTest' (_, _, _, _) = ALWAYS_FALSE
+
+	fun vpTest (test, id, env, isToplevel) =
+	    let
+		val value =
+		    case IdMap.lookupExistent (env, id) of
+			(value as EXP (LitExp (_, _), _), _) => value
+		      | (value as EXP (NewExp (_, _), _), _) => value
+		      | (value as EXP (TagExp (_, _, _, _), _), _) => value
+		      | (value as EXP (ConExp (_, _, _), _), _) => value
+		      | (value as EXP (StaticConExp (_, _, _), _), _) => value
+		      | (value as EXP (TupExp (_, _), _), _) => value
+		      | (value as EXP (RecExp (_, _), _), _) => value
+		      | (value as EXP (VecExp (_, _), _), _) => value
+		      | (value as TEST (_, _), _) => value
+		      | (_, _) => UNKNOWN
+	    in
+		vpTest' (test, value, env, isToplevel)
+	    end
 
 	fun indirect (_, [stm]) = stm
 	  | indirect (info, body) = IndirectStm (info, ref (SOME body))
@@ -359,9 +365,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		    (fn (id, exp) =>
 		     let
 			 val stamp = Stamp.new ()
+			 val entry = (EXP (exp, stamp), isToplevel)
 		     in
-			 IdMap.insertDisjoint
-			 (env, id, (EXP (exp, stamp), isToplevel));
+			 IdMap.insertDisjoint (env, id, entry);
 			 (id, exp, Stamp.new ())
 		     end) idExpList
 		val idExpList =
@@ -395,19 +401,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val entry = SHARED_ANN (bodyOptRef, IdMap.clone env)
 		val _ = StampMap.insertDisjoint (shared, stamp, entry)
 		val body1 = vpBody (body1, env, isToplevel, shared)
-		val _ = IdMap.insertScope env
 		val _ = IdMap.insertDisjoint (env, id, (HANDLE, isToplevel))
 		val body2 = vpBody (body2, env, isToplevel, shared)
-		val _ = IdMap.deleteScope env
+		val _ = IdMap.deleteExistent (env, id)
 		val info' = {region = #region info, liveness = ref Unknown}
 		val body3 = [IndirectStm (info', bodyOptRef)]
 	    in
 		HandleStm (info, body1, id, body2, body3, stamp)
 	    end
-	  | vpStm (stm as EndHandleStm (_, stamp), env, isToplevel, shared) =
+	  | vpStm (stm as EndHandleStm (_, stamp), env, _, shared) =
 	    (case StampMap.lookupExistent (shared, stamp) of
-		 SHARED_ANN (_, env') =>
-		     (unionEnv (env', env); stm)
+		 SHARED_ANN (_, env') => (unionEnv (env', env); stm)
 	       | _ => raise Crash.Crash "ValuePropagationPhase.vpStm")
 	  | vpStm (stm as TestStm (info, id, _, _), env, isToplevel, shared) =
 	    let
@@ -415,18 +419,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val (testBodyList, elseBody) =
 		    vpTestStm ([stm], id, env, isToplevel, shared)
 	    in
-		case testBodyList of
-		    _::_ => TestStm (info, id, testBodyList, elseBody)
-		  | nil => indirect (info, elseBody)
+		if List.null testBodyList then indirect (info, elseBody)
+		else TestStm (info, id, testBodyList, elseBody)
 	    end
 	  | vpStm (SharedStm (info, body, stamp), env, isToplevel, shared) =
 	    (case StampMap.lookupExistent (shared, stamp) of
 		 UNIQUE =>
-		     let
-			 val body' = vpBody (body, env, isToplevel, shared)
-		     in
-			 indirect (info, body')
-		     end
+		     indirect (info, vpBody (body, env, isToplevel, shared))
 	       | SHARED =>
 		     let
 			 val bodyOptRef = ref (SOME body)
@@ -449,16 +448,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     end)
 	  | vpStm (ReturnStm (info, exp), env, isToplevel, shared) =
 	    ReturnStm (info, vpExp (exp, env, isToplevel, shared))
-	  | vpStm (IndirectStm (_, ref (SOME [stm])),
-		   env, isToplevel, shared) =
-	    vpStm (stm, env, isToplevel, shared)
-	  | vpStm (stm as IndirectStm (info, bodyOptRef as ref bodyOpt),
-		   env, isToplevel, shared) =
-	    let
-		val body' = vpBody (valOf bodyOpt, env, isToplevel, shared)
-	    in
-		bodyOptRef := SOME body'; stm
-	    end
+	  | vpStm (IndirectStm (info, ref bodyOpt), env, isToplevel, shared) =
+	    indirect (info, vpBody (valOf bodyOpt, env, isToplevel, shared))
 	  | vpStm (ExportStm (info, exp), env, isToplevel, shared) =
 	    ExportStm (info, vpExp (exp, env, isToplevel, shared))
 	and vpTestStm (topBody as [TestStm (_, id, [(test, body)], elseBody)],
@@ -471,8 +462,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			val (testBodyList, elseBody) =
 			    vpTestStm (elseBody, id', env, isToplevel, shared)
 			val _ = IdMap.insertScope env
-			val value = getConstruction (id, env)
-			val testRes = vpTest (test, value, env, isToplevel)
+			val testRes = vpTest (test, id, env, isToplevel)
 			val _ = declareTest (id, testRes, env, isToplevel)
 			val body = vpBody (body, env, isToplevel, shared)
 			val _ = IdMap.deleteScope env
@@ -528,10 +518,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    let
 		val _ = IdMap.insertScope env
 		val _ = declareArgs (args, env, false)
-		val body' = vpBodyShared (body, stamp, env, false)
+		val body = vpBodyShared (body, stamp, env, false)
 		val _ = IdMap.deleteScope env
 	    in
-		FunExp (info, stamp, flags, args, body')
+		FunExp (info, stamp, flags, args, body)
 	    end
 	  | vpExp (PrimAppExp (info, name, ids), env, _, _) =
 	    vpPrimApp (info, name, List.map (fn id => deref (id, env)) ids)
@@ -623,7 +613,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				       bodyOptRef :=
 				       SOME (vpBody (body, env, isToplevel,
 						     shared))
-				   end
+				   end;
+			    StampMap.deleteExistent (shared, stamp)
 		       end) sorted)
 	       | (_, _) =>
 		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared 2")
