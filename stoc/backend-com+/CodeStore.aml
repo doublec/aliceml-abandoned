@@ -24,7 +24,7 @@ structure CodeStore :> CODE_STORE =
 	  | Fld of index
 	  | Arg of index
 	  | Loc of index
-	  | Prebound of string
+	  | Prebound of IL.id * IL.ty
 	withtype index = int
 
 	type class = stamp
@@ -54,14 +54,16 @@ structure CodeStore :> CODE_STORE =
 	    let
 		open Prebound
 		val scope = ScopedMap.new ()
+		val ty = StockWerk.StockWertTy
+		val cty = StockWerk.ConstructorTy
 	    in
-		ScopedMap.insert (scope, stamp_false, Prebound "false");
-		ScopedMap.insert (scope, stamp_true, Prebound "true");
-		ScopedMap.insert (scope, stamp_nil, Prebound "nil");
-		ScopedMap.insert (scope, stamp_cons, Prebound "cons");
-		ScopedMap.insert (scope, stamp_ref, Prebound "ref");
-		ScopedMap.insert (scope, stamp_Match, Prebound "Match");
-		ScopedMap.insert (scope, stamp_Bind, Prebound "Bind");
+		ScopedMap.insert (scope, stamp_false, Prebound ("false", ty));
+		ScopedMap.insert (scope, stamp_true, Prebound ("true", ty));
+		ScopedMap.insert (scope, stamp_nil, Prebound ("nil", ty));
+		ScopedMap.insert (scope, stamp_cons, Prebound ("cons", cty));
+		ScopedMap.insert (scope, stamp_ref, Prebound ("ref", ty));
+		ScopedMap.insert (scope, stamp_Match, Prebound ("Match", ty));
+		ScopedMap.insert (scope, stamp_Bind, Prebound ("Bind", ty));
 		scope
 	    end
 
@@ -167,9 +169,8 @@ structure CodeStore :> CODE_STORE =
 				      StockWerk.StockWertTy)))
 		  | Loc i => emit (Ldloc i)
 		  | Arg i => emit (Ldarg i)
-		  | Prebound name =>
-			emit (Ldsfld (StockWerk.Prebound, name,
-				      StockWerk.StockWertTy))
+		  | Prebound (id, ty) =>
+			emit (Ldsfld (StockWerk.Prebound, id, ty))
 	end
 
 	fun emitId (Id (_, stamp, _)) =

@@ -16,34 +16,40 @@ structure Builtins :> BUILTINS =
 
 	val builtinTable =
 	    let
-		val map: string Map.t = Map.new ()
+		val map: (string * IL.ty) Map.t = Map.new ()
+		val cty = StockWerk.ConstructorTy
+		val ty = StockWerk.StockWertTy
 	    in
-		Map.insert (map, "=", "eq");
-		Map.insert (map, "<>", "ne");
-		Map.insert (map, ":=", "General$assign");
-		Map.insert (map, "<", "Int$less");
-		Map.insert (map, "~", "Int$uminus");
-		Map.insert (map, "-", "Int$minus");
-		Map.insert (map, "+", "Int$plus");
-		Map.insert (map, "*", "Int$times");
-		Map.insert (map, ">", "Int$gt");
-		Map.insert (map, "<=", "Int$le");
-		Map.insert (map, ">=", "Int$ge");
-		Map.insert (map, "div", "Int$div");
-		Map.insert (map, "mod", "Int$mod");
-		Map.insert (map, "String.^", "String$conc");
-		Map.insert (map, "Word.+", "Word$plus");
-		Map.insert (map, "Word.-", "Word$minus");
-		Map.insert (map, "Word.*", "Word$times");
-		Map.insert (map, "Word.<<", "Word$shr");
-		Map.insert (map, "Word.>>", "Word$lsr");
-		Map.insert (map, "Word.~>>", "Word$asr");
-		Map.insert (map, "Word.fromInt'", "Word$fromInt2");
+		Map.insert (map, "cons", ("cons", cty));
+		Map.insert (map, "ByNeed", ("ByNeed", cty));
+		Map.insert (map, "=", ("eq", ty));
+		Map.insert (map, "<>", ("ne", ty));
+		Map.insert (map, ":=", ("General$assign", ty));
+		Map.insert (map, "<", ("Int$less", ty));
+		Map.insert (map, "~", ("Int$uminus", ty));
+		Map.insert (map, "-", ("Int$minus", ty));
+		Map.insert (map, "+", ("Int$plus", ty));
+		Map.insert (map, "*", ("Int$times", ty));
+		Map.insert (map, ">", ("Int$gt", ty));
+		Map.insert (map, "<=", ("Int$le", ty));
+		Map.insert (map, ">=", ("Int$ge", ty));
+		Map.insert (map, "div", ("Int$div", ty));
+		Map.insert (map, "mod", ("Int$mod", ty));
+		Map.insert (map, "String.^", ("String$conc", ty));
+		Map.insert (map, "Word.+", ("Word$plus", ty));
+		Map.insert (map, "Word.-", ("Word$minus", ty));
+		Map.insert (map, "Word.*", ("Word$times", ty));
+		Map.insert (map, "Word.<<", ("Word$shr", ty));
+		Map.insert (map, "Word.>>", ("Word$lsr", ty));
+		Map.insert (map, "Word.~>>", ("Word$asr", ty));
+		Map.insert (map, "Word.fromInt'", ("Word$fromInt2", ty));
 		map
 	    end
 
 	fun lookup name =
 	    case Map.lookup (builtinTable, name) of
-		SOME s => s
-	      | NONE => String.map (fn c => if c = #"." then #"$" else c) name
+		SOME (id, ty) => (id, ty)
+	      | NONE =>
+		    (String.map (fn c => if c = #"." then #"$" else c) name,
+		     StockWerk.StockWertTy)
     end

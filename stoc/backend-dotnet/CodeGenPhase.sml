@@ -344,8 +344,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    end
 	and genExp (LitExp (_, lit), PREPARE) = genLit lit
 	  | genExp (PrimExp (_, name), PREPARE) =
-	    emit (Ldsfld (StockWerk.Prebound, Builtins.lookup name,
-			  StockWerk.StockWertTy))
+	    let
+		val (id, ty) = Builtins.lookup name
+	    in
+		emit (Ldsfld (StockWerk.Prebound, id, ty))
+	    end
 	  | genExp (NewExp (_, _, false), PREPARE) =
 	    emit (Newobj (StockWerk.Name, nil))
 	  | genExp (NewExp (_, _, true), PREPARE) =
