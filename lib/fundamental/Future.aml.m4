@@ -52,12 +52,10 @@ ifdef([[FUTURE_AWAIT_EITHER_IS_PRIMITIVE]],[[
 	type thread
 	__primitive val currentThread: unit -> thread = "Thread.current"
 	__primitive val raiseIn: thread * exn -> unit = "Thread.raiseIn"
-	__primitive exception Terminate  = "Thread.Terminate"
-	__primitive exception Terminated = "Thread.Terminated"
+	exception AwaitEitherTerminate
     in
 	fun awaitEither (a, b) =
 	    let
-		exception AwaitEitherTerminate
 		val c  = Hole.hole ()
 		val t1 = Hole.hole ()
 		val t2 = Hole.hole ()
@@ -65,11 +63,11 @@ ifdef([[FUTURE_AWAIT_EITHER_IS_PRIMITIVE]],[[
 		spawn (Hole.fill (t1, currentThread ());
 		       (await a; ()) handle _ => ();
 		       Hole.fill (c, FST a) handle Hole.Hole => ();
-		       raiseIn (t2, AwaitEitherTerminate));
+		       raiseIn (Hole.future t2, AwaitEitherTerminate));
 		spawn (Hole.fill (t2, currentThread ());
 		       (await b; ()) handle _ => ();
 		       Hole.fill (c, SND b) handle Hole.Hole => ();
-		       raiseIn (t1, AwaitEitherTerminate));
+		       raiseIn (Hole.future t1, AwaitEitherTerminate));
 		await (Hole.future c)
 	    end
     end
