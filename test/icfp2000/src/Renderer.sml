@@ -222,24 +222,24 @@ structure Renderer :> RENDERER =
 	    end
 	  | testLight (Spot (color, pos, at, cutoff, exp), scene, point) =
 	    let
-		val dir = subVec (pos, point)
 		val spotDir = subVec (at, pos)
 		val unitSpotDir = normalizeVec spotDir
-		val phi = Math.acos (mulVec (spotDir, dir) / absVec dir)
+		val spotPointDir = subVec (pos, point)
+		val dist = absVec spotPointDir
+		val unitSpotPointDir = mulScalVec (1.0 / dist, spotPointDir)
+		val orthoDist = mulVec (unitSpotDir, unitSpotPointDir)
 	    in
-		if phi > cutoff orelse
-		    isShadowed (intersect (scene, point, dir), 1.0) then NONE
+		if Math.acos orthoDist > cutoff orelse
+		    isShadowed (intersect (scene, point, negVec spotPointDir),
+				1.0)
+		then NONE
 		else
 		    let
-			val dist = absVec dir
-			val unitDir = mulScalVec (1.0 / dist, dir)
-			val negUnitDir = negVec unitDir
-			val attenuation1 =
-			    Math.pow (mulVec (unitSpotDir, negUnitDir), exp)
+			val attenuation1 = Math.pow (~orthoDist, exp)
 			val attenuation2 = 100.0 / (99.0 + dist * dist)
 		    in
 			SOME (Color.scale (attenuation1 * attenuation2, color),
-			      unitDir)
+			      unitSpotPointDir)
 		    end
 	    end
 
