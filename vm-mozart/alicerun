@@ -41,6 +41,11 @@ esac
 
 ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz${ESC}:'?{x}'${SEP}pattern='?{x}'='?{x}.ozf'${SEP}pattern='?{x}'='?{x}'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'
 
+if [ ! -z "$ALICE_EXTRA_LOAD" ]
+then
+    ALICE_LOAD=$ALICE_EXTRA_LOAD${SEP}$ALICE_LOAD
+fi
+
 OZ_LOAD=$ALICE_LOAD${SEP}$OZ_LOAD
 
 export STOCKHOME OZ_LOAD ALICE_LOAD
