@@ -20,7 +20,8 @@
 #define DECLARE_BOOL(b, x)				\
   bool b;						\
   {							\
-    int i = Store::WordToInt(x);			\
+    s_int i = Store::WordToInt(x);			\
+    Assert(i == 0 || i == 1);				\
     if (i == INVALID_INT) { REQUEST(x); } else b = i;	\
   }
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
