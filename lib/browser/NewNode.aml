@@ -284,9 +284,6 @@ struct
     (* treatSum *)
     and treatSum (va,t,p,i,d,row) = 
         let
-	    val upperConcat = createConcat(createValue(va,t,NO_ACTIONS),
-					   p,i,d,Array.array(4,Empty),
-			                   ~1,~1,setGroup)
 	    val lt_list   = row2list(row)
 	    val l_vector  = labelvector(lt_list)
 	    val index     = UnsafeValue.tag(va,l_vector)
@@ -299,13 +296,24 @@ struct
 					   PervasiveType.path_strict)
 			    then  #2(Type.asApply(typ))
 			else typ
+	    val emptyrow = case Type.inspect(intyp) of 
+		Type.Prod(row') 
+		=> Type.isEmptyRow(row') 
+	      | _ => false
+	    val upperConcat = if emptyrow 
+				  then Empty 
+		    else createConcat(createValue(va,t,NO_ACTIONS),
+					   p,i,d,Array.array(4,Empty),
+					   ~1,~1,setGroup)
 	    val (lbra,rbra) =  let val row' = Type.asProd(intyp)
 			       in if Type.isTupleRow(row')
 				      then ("(",")")
 				   else ("{","}")
 			       end
 			       handle Type.Type => ("_","_")
-	    val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
+	    val (lbraNode,rbraNode) = if lbra = "_" orelse emptyrow
+					  then (Empty,Empty) 
+				      else (createSimple (INTERPUNCT,upperConcat,
 						     1,d,lbra,BRACK_COLOR,
 						     setGroup),
 				       createSimple (INTERPUNCT,upperConcat,
