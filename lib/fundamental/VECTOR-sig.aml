@@ -1,0 +1,60 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                          from "Pervasive"
+import type unit and int and bool and option and list from "ToplevelTypes"
+
+
+signature VECTOR =
+sig
+    eqtype 'a vector
+    type   'a t = 'a vector						(**)
+
+    val maxLen :	int
+
+    val toList :	'a vector -> 'a list				(**)
+    val fromList :	'a list -> 'a vector
+    val tabulate :	int * (int -> 'a) -> 'a vector
+
+    val length :	'a vector -> int
+    val sub :		'a vector * int -> 'a
+    val replace :	'a vector * int * 'a -> 'a vector		(**)
+    val extract :	'a vector * int * int option -> 'a vector
+    val append :	'a vector * 'a vector -> 'a vector		(**)
+    val concat :	'a vector list -> 'a vector
+    val rev :		'a vector -> 'a vector				(**)
+
+    val app :		('a -> unit) -> 'a vector -> unit
+    val appr :		('a -> unit) -> 'a vector -> unit		(**)
+    val map :		('a -> 'b) -> 'a vector -> 'b vector
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val appi :		(int * 'a -> unit) -> 'a vector * int * int option
+					   -> unit
+    val appri :		(int * 'a -> unit) -> 'a vector * int * int option (**)
+					   -> unit
+    val mapi :		(int * 'a -> 'b) -> 'a vector * int * int option
+					 -> 'b vector
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+				       -> 'a vector * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b
+				       -> 'a vector * int * int option -> 'b
+
+    val all :		('a -> bool) -> 'a vector -> bool		(**)
+    val exists :	('a -> bool) -> 'a vector -> bool		(**)
+    val find :		('a -> bool) -> 'a vector -> 'a option		(**)
+end

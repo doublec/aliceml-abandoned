@@ -1,0 +1,105 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                               from "Pervasive"
+import type int and word and real and char and string
+       type vector and array
+       datatype exn and ref
+       datatype bool and order and alt and option and list from "ToplevelTypes"
+import infix 0 before
+       infix 3 := :=: o
+       infix 4 = <> < > >= <=
+       infixr 5 :: @
+       infix 6 + -
+       infix 7 * / div mod
+       val ! and op := and op :=:
+       val op = and op <>
+       val op < and op > and op <= and op >=
+       val ~ and abs and op + and op -
+       val op * and op / and op div and op mod             from "ToplevelValues"
+import structure General                                   from "General"
+import structure Bool                                      from "Bool"
+import structure Alt                                       from "Alt"
+import structure Option                                    from "Option"
+import structure List                                      from "List"
+import structure Real                                      from "Real"
+import structure Char                                      from "Char"
+import structure String                                    from "String"
+import structure Vector                                    from "Vector"
+import structure Future                                    from "Future"
+
+
+structure Toplevel =						(**)
+struct
+    open General
+
+    exception Alt	= Alt.Alt				(**)
+    exception Option	= Option.Option
+    exception Empty	= List.Empty
+
+    val not		= Bool.not
+
+    val fst		= Alt.fst				(**)
+    val snd		= Alt.snd				(**)
+    val isFst		= Alt.isFst				(**)
+    val isSnd		= Alt.isSnd				(**)
+
+    val getOpt		= Option.getOpt
+    val isNone		= Option.isNone				(**)
+    val isSome		= Option.isSome
+    val valOf		= Option.valOf
+
+    val null		= List.null
+    val hd		= List.hd
+    val tl		= List.tl
+    val length		= List.length
+    val rev		= List.rev
+    val op @		= List.@
+    val app		= List.app
+    val map		= List.map
+    val foldr		= List.foldr
+    val foldl		= List.foldl
+
+    val ord		= Char.ord
+    val chr		= Char.chr
+
+    val str		= String.str
+    val size		= String.size
+    val op ^		= String.^
+    val concat		= String.concat
+    val explode		= String.explode
+    val implode		= String.implode
+    val substring	= String.substring
+
+    val vector		= Vector.fromList
+
+    val real		= Real.fromInt
+    val ceil		= Real.ceil
+    val floor		= Real.floor
+    val trunc		= Real.trunc
+    val round		= Real.round
+
+    (*TODO (or not)
+    __primitive val use : string -> unit = "use"
+    *)
+
+    exception Future	= Future.Future				(**)
+    exception Cyclic	= Future.Cyclic				(**)
+
+    val byneed		= Future.byneed				(**)
+    val concur		= Future.concur				(**)
+end
