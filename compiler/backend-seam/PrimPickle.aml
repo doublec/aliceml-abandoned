@@ -2,8 +2,12 @@
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
+ * Contributor:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
  * Copyright:
  *   Leif Kornstaedt, 2000-2002
+ *   Guido Tack, 2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,7 +18,9 @@ import structure BinIO        from "../../lib/system/BinIO"
 import structure MkHashImpMap from "../../lib/data/MkHashImpMap"
 import structure Crash        from "../infrastructure/Crash"
 import structure StringMap    from "../infrastructure/StringMap"
+import structure CharBuffer   from "../infrastructure/CharBuffer"
 import signature PRIM_PICKLE  from "PRIM_PICKLE-sig"
+import structure Word8Vector from "x-alice:/lib/fundamental/Word8Vector"
 
 structure PrimPickle :> PRIM_PICKLE =
     struct
@@ -22,32 +28,53 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	structure AtomMap = MkHashImpMap(Atom)
 
-	type id = int
-
 	type outstream =
 	     {stream: BinIO.outstream,
-	      id: id ref,
-	      stringMap: id StringMap.t,
-	      atomMap: id AtomMap.t,
-	      expect: int ref}
+	      buffer: CharBuffer.t,
+	      nextRegister: int ref,
+	      stringMap: int StringMap.t,
+	      atomMap: int AtomMap.t,
+	      maxStack: int ref,
+	      curStack: int ref}
 
-	fun inc ({id = r as ref id, ...}: outstream) = (r := id + 1; id)
+	type register = int
+
+	fun nextRegister ({nextRegister = r as ref reg, ...} : outstream) =
+	    (r := reg + 1; reg)
 
 	type label = int
 	type size = Int.int
+	
+	val tINIT        = Word8.fromInt 0
+	val tSTORE       = Word8.fromInt 1
+	val tLOAD        = Word8.fromInt 2
+	val tPOSINT      = Word8.fromInt 3
+	val tNEGINT      = Word8.fromInt 4
+	val tCHUNK       = Word8.fromInt 5
+	val tUNIQUE      = Word8.fromInt 6
+	val tBLOCK       = Word8.fromInt 7
+	val tTUPLE       = Word8.fromInt 8
+	val tCLOSURE     = Word8.fromInt 9
+	val tTRANSFORM   = Word8.fromInt 10
+	val tPROMBLOCK   = Word8.fromInt 11
+	val tPROMTUPLE   = Word8.fromInt 12
+	val tPROMCLOSURE = Word8.fromInt 13
+	val tPROMTRANSFORM = Word8.fromInt 14
+	val tFULFIL      = Word8.fromInt 15
+	val tENDOFSTREAM = Word8.fromInt 16
 
-	val tPOSINT    = Word8.fromInt 0
-	val tNEGINT    = Word8.fromInt 1
-	val tCHUNK     = Word8.fromInt 2
-	val tUNIQUE    = Word8.fromInt 3
-	val tBLOCK     = Word8.fromInt 4
-	val tTUPLE     = Word8.fromInt 5
-	val tCLOSURE   = Word8.fromInt 6
-	val tREF       = Word8.fromInt 7
-	val tTRANSFORM = Word8.fromInt 8
-
-	fun outputByte ({stream, ...}: outstream, w) =
+	fun streamOutputByte ({stream, ...}: outstream, w) =
 	    BinIO.output1 (stream, w)
+
+	fun streamOutputUInt (q, i) =
+	    if i >= 0x80 then
+		(streamOutputByte (q, Word8.fromLargeInt (i mod 0x80 + 0x80));
+		 streamOutputUInt (q, i div 0x80))
+	    else if i >= 0 then streamOutputByte (q, Word8.fromLargeInt i)
+	    else raise Crash.Crash "PrimPickle.outputUInt"
+
+	fun outputByte ({buffer, ...}: outstream, w) =
+	    CharBuffer.output1 (buffer, w)
 
 	fun outputUInt (q, i) =
 	    if i >= 0x80 then
@@ -58,87 +85,114 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	fun openOut name: outstream =
 	    {stream = BinIO.openOut name,
-	     id = ref 0,
+	     buffer = CharBuffer.buffer (),
+	     nextRegister = ref 1,
 	     stringMap = StringMap.map (),
 	     atomMap = AtomMap.map (),
-	     expect = ref 1}
+	     maxStack = ref 0,
+	     curStack = ref 0}
 
-	fun done ({expect = r as ref n, ...}: outstream) = r := n - 1
-	fun more ({expect = r as ref n, ...}: outstream, m) =
-	    r := n - 1 + fromInt m
+	fun push ({maxStack, curStack, ...} : outstream) =
+	    let
+		val _ = curStack := (!curStack) + 1
+	    in
+		if !curStack > (!maxStack) then
+		    maxStack := (!curStack)
+		else
+		    ()
+	    end
+
+	fun pop ({curStack, ...} : outstream, i) =
+	    curStack := !curStack - i
 
 	fun outputInt (q, i) =
-	    if i >= 0 then (done q; outputByte (q, tPOSINT); outputUInt (q, i))
-	    else (done q; outputByte (q, tNEGINT); outputUInt (q, ~(i + 1)))
+	    (if i >= 0 then (outputByte (q, tPOSINT); outputUInt (q, i))
+	     else (outputByte (q, tNEGINT); outputUInt (q, ~(i + 1)));
+	     push q)
 
 	fun outputChunk (q, bytes) =
-	    (done q; outputByte (q, tCHUNK);
+	    (outputByte (q, tCHUNK);
 	     outputUInt (q, fromInt (Vector.length bytes));
-	     Vector.app (fn b => outputByte (q, b)) bytes; inc q)
+	     Vector.app (fn b => outputByte (q, b)) bytes;
+	     push q)
 
 	fun outputUnique q =
-	    (more (q, 1); outputByte (q, tUNIQUE); inc q)
-
+	    (outputByte (q, tUNIQUE))
+	    
 	fun outputBlock (q, label, size) =
-	    (more (q, size); outputByte (q, tBLOCK);
-	     outputUInt (q, label); outputUInt (q, fromInt size); inc q)
+	    (outputByte (q, tBLOCK);
+	     outputUInt (q, label);
+	     outputUInt (q, fromInt size);
+	     pop (q, ((fromInt size)-1)))
 
 	fun outputTuple (q, size) =
-	    (more (q, size); outputByte (q, tTUPLE);
-	     outputUInt (q, fromInt size); inc q)
+	    (outputByte (q, tTUPLE);
+	     outputUInt (q, fromInt size);
+	     pop (q, ((fromInt size)-1)))
 
 	fun outputClosure (q, size) =
-	    (more (q, size); outputByte (q, tCLOSURE);
-	     outputUInt (q, fromInt size); inc q)
+	    (outputByte (q, tCLOSURE);
+	     outputUInt (q, fromInt size);
+	     pop (q, ((fromInt size)-1)))
 
-	fun outputReference (q, id) =
-	    (done q; outputByte (q, tREF); outputUInt (q, id))
+	fun outputTransform q =
+	    (outputByte (q, tTRANSFORM);
+	     pop (q, 1))
+	    
+	fun outputLoad (q, i) =
+	    (outputByte (q, tLOAD);
+	     outputUInt (q,i);
+	     push q)
+
+	fun outputStore (q, i) =
+	    (outputByte (q, tSTORE);
+	     outputUInt (q,i))
 
 	fun outputString (q as {stringMap, ...}: outstream, s) =
 	    case StringMap.lookup (stringMap, s) of
-		SOME id => (outputReference (q, id); id)
+		SOME id => (outputLoad (q, id))
 	      | NONE =>
 		    let
-			val id = inc q
+			val id = nextRegister q
 		    in
 			StringMap.insertDisjoint (stringMap, s, id);
-			done q; outputByte (q, tCHUNK);
+			outputByte (q, tCHUNK);
 			outputUInt (q, fromInt (String.size s));
 			CharVector.app
 			(fn c => outputByte (q, Word8.fromInt (Char.ord c))) s;
-			id
+			outputStore (q, id);
+			push q
 		    end
 
 	fun outputAtom (q as {atomMap, ...}: outstream, s) =
 	    case AtomMap.lookup (atomMap, s) of
-		SOME id => (outputReference (q, id); id)
+		SOME id => (outputLoad (q, id))
 	      | NONE =>
 		    let
-			val id = outputUnique q
+			val id = nextRegister q
 		    in
 			AtomMap.insertDisjoint (atomMap, s, id);
 			outputString (q, Atom.toString s);
-			id
+			outputUnique q;
+			outputStore (q,id);
+			push q
 		    end
 
-	fun outputTransform (q, name) =
+	fun closeOut (q as {stream, buffer, maxStack, ...}: outstream) =
 	    let
-		val id = inc q
+		val charVector = CharBuffer.getVector buffer
 	    in
-		more (q, 2); outputByte (q, tTRANSFORM);
-		outputString (q, name); id
+		(streamOutputByte (q, tINIT);
+		 streamOutputUInt (q, !maxStack);
+		 streamOutputUInt (q, nextRegister q);
+		 BinIO.output (stream, charVector);
+		 streamOutputByte (q, tSTORE);
+		 streamOutputUInt (q, 0);
+		 streamOutputByte (q, tENDOFSTREAM);
+		 BinIO.closeOut stream)
 	    end
-
-	fun closeOut ({stream, expect = ref n, ...}: outstream) =
-	    (BinIO.closeOut stream;
-	     if n = 0 then ()
-	     else
-		 let
-		     exception PickleSize
-		 in
-		     TextIO.output
-			 (TextIO.stdErr,
-			  "pickle size off by " ^ toString n ^ "\n");
-		     raise PickleSize
-		 end)
     end
+
+
+
+
