@@ -22,6 +22,7 @@
 class ConcreteCode: private Block {
 private:
   static const u_int SIZE = 2;
+  // static const u_int HANDLER_POS = 1;
   static const u_int TASK_MANAGER_POS = 2;
 public:
   using Block::ToWord;
@@ -42,6 +43,9 @@ public:
     return static_cast<ConcreteCode *>(b);
   }
 
+  word GetAbstractCode() {
+    return GetHandler()->GetAbstractRepresentation()->ToWord();
+  }
   TaskManager *GetTaskManager() {
     return static_cast<TaskManager *>
       (Store::DirectWordToUnmanagedPointer(GetArg(TASK_MANAGER_POS)));
