@@ -65,7 +65,7 @@ lexer lex =
   | ":>"	=> (print yytext )
   | ";"		=> (print yytext )
   | "="		=> (print (yytext ^ "(* line " ^ Int.toString yyline
-                                  ^ ",column " ^ Int.toString yycol ^ "*)") )
+                                  ^ ", column " ^ Int.toString yycol ^ "*)") )
   | "=>"	=> (print yytext )
   | "["		=> (print yytext )
   | "]"		=> (print yytext )
@@ -82,7 +82,7 @@ lexer lex =
   | "do"	=> (print yytext)
   | "else"	=> (print yytext)
   | "end" 	=> (print (yytext ^ "(* line " ^ Int.toString yyline
-                                  ^ ",column " ^ Int.toString yycol ^ "*)") )
+                                  ^ ", column " ^ Int.toString yycol ^ "*)") )
   | "eqtype"	=> (print yytext)
   | "exception"	=> (print yytext)
   | "fn"	=> (print yytext)
@@ -132,7 +132,7 @@ lexer lex =
   | "(*"        => (nesting := 1 ; comment())
   | eof         => (EOF:= true;
 	            print ("(*\nEOF\n" ^ " line " ^ Int.toString yyline
-		         ^ ",column " ^ Int.toString yycol ^ "*)\n") ) 
+		         ^ ", column " ^ Int.toString yycol ^ "*)\n") ) 
 
 
 and comment =
@@ -159,6 +159,13 @@ fun make () =
     (openF ();
      go (Lexer.fromStream (TextIO.openIn "in.hose.sml"));
      closeF ()) 
+
+fun getList instream xs =
+    case TextIO.input instream of
+	"" => rev xs
+      | s  => getList instream (s :: xs)
+
+fun get () = getList (TextIO.openIn "in.hose.sml") []
 
 
 (* regcase test *)

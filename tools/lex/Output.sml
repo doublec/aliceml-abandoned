@@ -83,8 +83,9 @@ structure Output :> OUTPUT =
 	fun printResultsLb say pIdList idList =
 	    let
 		fun printOne id =
-		    (say ["  val ", id, " = ", id,
-			  "(getChar, eof, strBuf, strBack, lexPos, lineNum, ("];
+		    (say ["    val ", id, " = ", id,
+			  " (getString, strBuf, eof, lexPos, delPos, ",
+			  "lineNum, ("];
 		     pIdList "dummy_" idList;
 		     say ["))\n"])
 	    in
@@ -96,13 +97,13 @@ structure Output :> OUTPUT =
 	 * prints the return value tuple
 	 *)
 	fun printFunctionsLb say num =
-	    if num = 1 then say ["fn getChar => build getChar"]
+	    if num = 1 then say ["fn getString => build getString"]
 	    else
 		let
 		    val n = ref (num - 1)
 		    fun printOne i =
-			say ["fn getChar => #", Int.toString i,
-			     " (build getChar)"]
+			say ["fn getString => #", Int.toString i,
+			     " (build getString)"]
 		in
 		    while !n > 0 do
 			(printOne (num - !n);
@@ -397,36 +398,36 @@ structure Output :> OUTPUT =
 			 \problems (thanks to Andreas Rossberg) ***)\n\n"];
 			pAnLb idList;
 			say ["\nfun annot f = (fn () => f (\
-			 \fn () => SOME #\" \", ref true, ref [], ref [], \
-			 \ref 0, ref 0, ("];
+			 \fn () => SOME \"\", ref \"\", ref true, \
+			 \ref 0, ref 0, ref 0, ("];
 			pIdList "annot_" idList;
 			say [")); f)\n\n"];
 
 			pMainLb idList ["val ", " = annot (Lexer.lexer \
 			 \(table_", ", action_", ", final_", "))\n"];
 
-			say ["fun build getChar =\n",
+			say ["fun build getString =\n",
 			     "  let\n",
-			     "  val strBuf = ref []\n",
-			     "  val strBack = ref []\n",
-			     "  val eof = ref false\n",
-			     "  val lexPos = ref 0\n",
-			     "  val lineNum = ref 1\n\n"];
+			     "    val strBuf = ref \"\"\n",
+			     "    val eof = ref false\n",
+			     "    val lexPos = ref 0\n",
+			     "    val delPos = ref 0\n",
+			     "    val lineNum = ref 1\n\n"];
 
-			pMainLb idList ["  val ref_", " = ref NONE\n"];
+			pMainLb idList ["    val ref_", " = ref NONE\n"];
 
-			pMainLb idList ["  fun dummy_", " () = \
+			pMainLb idList ["    fun dummy_", " () = \
 			 \valOf (!ref_", ") ()\n"];
 
 			pResLb idList;
 
 			say ["\n  in\n"];
-			pMainLb idList ["  ref_", " := SOME ", ";\n"];
-			say ["  ("];
+			pMainLb idList ["    ref_", " := SOME ", ";\n"];
+			say ["    ("];
 			pIdList "" idList;
 			say [")\n  end\n"];
 
-			say ["in\n("];
+			say ["in\n    ("];
 			pFunLb (length idList);
 			say [")\nend\n"];
 

@@ -187,15 +187,16 @@ TO-DO!
 
 *fixed* -bei regcase ... of ( ... ) müssen die Klammern stehen
 
--statt Ausnahme Error: RegMatch of string
-
--statt getChar : unit -> char option
-       getString : unit -> string option
+*OK* -statt getChar : unit -> char option
+            getString : unit -> string option
 
     Idee: CharArray.array als Buffer (evtl. wie bei ml-lex)
           oder string list
+    Realisiert: mit char vector, also string
 
--zusätzlich Lexer.fromList : string list -> (unit -> string option)
+*OK* -zusätzlich Lexer.fromList : string list -> (unit -> string option)
+
+-statt Ausnahme Error: RegMatch of string
 
 -tagged transitions einführen
 
@@ -230,8 +231,8 @@ FEATURES
 -[^"..."] steht fuer alles Zeichen ausser den aufgefuehrten und 'eof'
 
 -regcase string of       der string muss genau auf einen der regexp passen
-(  regexp1 => action1     dann wird die zugehörige action ausgeführt
+   regexp1 => action1     dann wird die zugehörige action ausgeführt
  | regexp2 => action2     in den regexp darf 'eof' nicht vorkommen
- | ... )
+ | ...
 
 

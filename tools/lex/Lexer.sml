@@ -1,10 +1,10 @@
 structure Lexer :> LEXER =
     struct
 
-	exception Error 
+	exception RegMatch of string 
 
 
-	fun lError s = (print ("Lex Error: " ^ s ^ "\n"); raise Error)
+	fun lError s = raise RegMatch ("Lex Error: " ^ s ^ "\n")
 
 	(* lexer :
 	 * takes an automaton and a string with position-references
@@ -12,44 +12,44 @@ structure Lexer :> LEXER =
 	 * x is a tuple of the lexids in the same lexbind list
 	 *)
 	fun lexer ((pointer, dtran, bigTable), action, finstates)
-	          (getChar, eof, strBuf, strBack, lexPos, lineNum, x) =
+	          (getString, strBuf, eof, lexPos, delPos, lineNum, x)  =
 	    let
 
 		val stateStack = ref [1]
 		val newLines = ref [~1]
 		val firstPos = ref 0
+		val numBack = ref 0
+
+		fun sub pos = String.sub (!strBuf, pos - !delPos)
+
+		fun substring (pos, len) =
+		    String.substring (!strBuf, pos - !delPos, len)
+
+		fun merge s =
+		    let
+			val realFirstPos = !firstPos - !delPos
+			val bufsize = size (!strBuf)
+			val len = bufsize - realFirstPos
+			val rest = String.substring (!strBuf, realFirstPos, len)
+		    in
+			strBuf := rest ^ s;
+			delPos := !delPos + realFirstPos
+		    end
 
 
-		(* oldChar : unit -> bool
-		 * recycling of already read chars
-		 *)
-		fun oldChar () =
-		    case !strBack of
-			[]      => false
-		      | (x::xs) => (strBuf := x :: !strBuf;
-				    strBack := xs;
-				    true)
-
-
-		(* newChar : unit -> unit
-		 * puts the next char from getChar to strBuf
-		 *)
-		fun newChar () =
-		    if oldChar () then ()
+		fun nextChr () =
+		    if !lexPos - !delPos < size (!strBuf) then ()
 		    else
-			if !eof then strBuf := NONE :: !strBuf
-			else
-			    case getChar() of
-				NONE   => (eof := true;
-					   strBuf := NONE :: !strBuf)
-			      | SOME c => strBuf := SOME c :: !strBuf
+			case getString () of
+			    NONE   => eof := true
+			  | SOME s => merge s
 
 
 		(* actChar : unit -> int
 		 * returns the ord of the actual character
 		 *)
-		fun actChar () = ord (valOf (hd (!strBuf)))
-		    handle Option => 256
+		fun actChar () = (ord (sub (!lexPos)))
+		    handle Subscript => 256
 
 
 		(* pretty : string -> string
@@ -76,55 +76,24 @@ structure Lexer :> LEXER =
 			       lineNum := !lineNum - 1)
 		     else ();
 		     stateStack := tl (!stateStack);
-		     strBack := hd (!strBuf) :: !strBack;
-		     strBuf := tl (!strBuf);
-		     lexPos := !lexPos - 1)
+		     lexPos := !lexPos - 1;
+		     numBack := !numBack + 1)
 
 
-		(* charList : char option list -> char list -> char list
-		 * 
+		(* finAction : int -> int
+		 * returns the position of the END-leaf for the state
 		 *)
-		fun charList nil ys _                  = ys
-		  | charList (NONE :: xs) ys showEof   =
-		    if showEof
-			then charList xs (#"F" :: #"O" :: #"E" :: ys) showEof
-		    else charList xs ys showEof
-		  | charList (SOME c :: xs) ys showEof =
-		    charList xs (c :: ys) showEof
+		fun finAction state = Vector.sub( finstates, state)
+				    
 
-
-		fun errorInfo () = implode (rev (charList (!strBack) [] true))
-
-
-		fun buildResult p =
-		    let
-			val len = length (!stateStack) - 1
-			val yytext = implode (charList (!strBuf) [] false)
-			val newLines = ref (!newLines)
-			val lines = ref 0
-			val yycol =
-			    (while !firstPos<hd (!newLines) do
-				 (newLines := tl (!newLines);
-				  lines := !lines + 1);
-			     !firstPos - hd (!newLines) ) 
-		    in
-			stateStack := [1];
-			strBuf := [];
-			newLines := [hd (!newLines)];
-			action (x, p, yytext, !lineNum - !lines, yycol)
-		    end
-
-
-		fun noAction () =
-		    let
-			val err = errorInfo ()
-		    in
-			stateStack := [1];
-			strBuf := [];
-			lexPos := !lexPos + 1;
-			lError("no rule matches for '" ^ pretty err
-			       ^ "' in line: " ^ Int.toString(!lineNum))
-		    end
+		(* errorInfo : unit -> string
+		 * returns the beginning of the string that could not be matched
+		 *)
+		fun errorInfo () = 
+		    if !eof then "EOF"
+		    else(substring(!lexPos + 1, !numBack ))
+			handle Subscript =>
+			    substring(!lexPos + 1, !numBack - 1) ^ "EOF"
 
 
 		(* getAction : unit -> 'a
@@ -132,19 +101,41 @@ structure Lexer :> LEXER =
 		 * the Action of the END-leaf
 		 *)
 		fun getAction () =
-		    case !stateStack of
-			nil           => noAction ()
-		      | (state :: _ ) => finAction state
-			 
+		    (case !stateStack of
+			nil => 
+			    let
+				val err = errorInfo ()
+			    in
+				stateStack := [1];
+				numBack := 0;
+				lexPos := !lexPos + 1;
+				lError("no rule matches for '" ^ pretty err
+				       ^ "' in line: " ^ Int.toString(!lineNum))
+			    end
+		      | (state :: _ ) => 
+			    (case finAction state of
+				 0  => (goBack ();
+					getAction ())
+			       | p => let
+					  val len = length (!stateStack) - 1
+					  val yytext =
+					      substring (!lexPos - len, len)
+					      handle Subscript => ""
+					  val newLines = ref (!newLines)
+					  val lines = ref 0
+					  val yycol =
+					      (while !firstPos<hd (!newLines) do
+						   (newLines := tl (!newLines);
+						    lines := !lines + 1);
+						   !firstPos - hd (!newLines) ) 
+				      in
+					  stateStack := [1];
+					  numBack := 0;
+					  newLines := [hd (!newLines)];
+					  action (x, p, yytext,
+						  !lineNum - !lines, yycol)
+				      end))
 
-		and finAction state =
-		    case Vector.sub (finstates, state) of
-			0 => (goBack () handle Empty => noAction();
-			      getAction ())
-			    
-		      | p => buildResult p
-			 
-			
 
 		(* trans : int -> int
 		 * returns the state for a transition
@@ -163,8 +154,8 @@ structure Lexer :> LEXER =
 			if chr = 10 then (newLines := !lexPos :: (!newLines);
 					  lineNum := !lineNum + 1)
 			else ();
-			getTrans (Vector.sub
-				  (dtran, Vector.sub (pointer, state)), chr)
+			getTrans( Vector.sub( dtran,
+					     Vector.sub (pointer, state)), chr)
 		    end
 
 
@@ -175,14 +166,12 @@ structure Lexer :> LEXER =
 
 		and lex () =
 		    let
-			val chr = (newChar (); actChar ())
+			val chr = (nextChr (); actChar ())
 		    in
 			case trans chr of
 			    0 => (if chr = 10 then (newLines := tl (!newLines);
 						    lineNum := !lineNum - 1)
 				  else ();
-				  strBack := hd (!strBuf) :: !strBack;
-				  strBuf := tl (!strBuf);
 				  getAction () )
 			  | n => (stateStack := n :: (!stateStack) ;
 				  if chr = 256 then ()
@@ -194,16 +183,43 @@ structure Lexer :> LEXER =
 	    end
 
 
+	(* fromString : string -> ( unit -> string option )
+	 * creates a getString-function from a string
+	 *)
 	fun fromString s =
 	    let
-		val count = ref ~1
+		val eof = ref false
 	    in
-		fn () => ((count := ! count + 1 ;
-			   SOME (String.sub ( s , ! count )))
-			  handle Subscript => NONE )
+		fn () => if !eof then NONE
+			 else (eof := true; SOME s)
 	    end 
 
 
-	fun fromStream instream = fn () => TextIO.input1 instream
+	fun fromList ys =
+	    let
+		val xs = ref ys
+		val eof = ref false
+	    in
+		fn () => if !eof then NONE
+			 else
+			     (case !xs of
+				  []      => NONE
+				| (s::ss) => (xs := ss; SOME s))
+	    end
 
-    end
+
+	(* fromStream : instream -> ( unit -> string option )
+	 * creates a getString-function from a stream
+	 *)
+	fun fromStream instream =
+	    let
+		val eof = ref false
+	    in
+		fn () => if !eof then NONE
+			 else
+			     (case TextIO.input instream of
+				  "" => (eof := true; NONE)
+				| s  => SOME s)
+	    end
+
+end
