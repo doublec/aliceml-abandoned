@@ -6,7 +6,8 @@ signature GENERAL =
   sig
     include GENERAL
 
-    val :=: :		'a ref * 'a ref -> unit
+    val :=: :	'a ref * 'a ref -> unit
+    val flip :	('a * 'b -> 'c) -> ('b * 'a -> 'c)
   end
 
 
@@ -15,6 +16,7 @@ structure General : GENERAL =
     open General
 
     fun op :=: (r1 as ref x1, r2 as ref x2)	= (r1 := x2 ; r2 := x1)
+    fun flip f (x,y)				= f(y,x)
   end
 
 
@@ -864,3 +866,4 @@ structure Time : TIME =
 infix 3 :=:
 
 val op :=:	= General.:=:
+val flip	= General.flip
