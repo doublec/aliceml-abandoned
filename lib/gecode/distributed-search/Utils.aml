@@ -1,0 +1,42 @@
+import structure Channel from "x-alice:/lib/data/Channel"
+
+structure Utils =
+struct
+
+  (* If (f a) = NONE for all elements of the list, return NONE
+   * Otherwise, returns SOME b such that (f a) = SOME b
+   * and a is the first element of the list returning SOME *)
+  fun findSome f nil     = NONE
+    | findSome f (x::xs) = case f x of 
+			       NONE => findSome f xs
+			     | (SOME b) as r => r
+
+  fun revFilter' (f, nil, accu) = accu
+    | revFilter' (f, x::xs, accu) = if f x then revFilter' (f, xs, x :: accu)
+				    else revFilter' (f, xs, accu)
+  fun revFilter (f, l) = revFilter' (f, l, [])
+
+  (* Sleep for t milliseconds *)        
+  fun sleepms t = Thread.sleep (Time.fromMilliseconds (IntInf.fromInt t))
+
+  (* Creates a new 'server' which evaluates tasks sequentially. *)
+  functor NewSequence () =
+    struct
+      (* A new channel for jobs that must be run sequentially. *)
+      val jobs = Channel.channel ()
+        
+      (* f () will be evaluated sequentially *)
+      fun add f = Channel.put (jobs, f)
+      fun app f arg = add (fn () => f arg)
+        
+      (* Run jobs. *)
+      val _ = spawn (Channel.app (fn job => job()) jobs)
+        
+      (* Nicely stop all jobs. *)
+      fun stop () =
+        (Channel.close jobs ;
+         Channel.purge jobs)
+        
+    end
+  
+end

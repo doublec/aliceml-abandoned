@@ -1,0 +1,139 @@
+import structure Channel     from "x-alice:/lib/data/Channel"
+import structure Inspector   from "x-alice:/lib/tools/Inspector"
+import signature CONSTRAINTS from "x-alice:/lib/gecode/CONSTRAINTS-sig"
+import signature MK_PROBLEM  from "Common"
+import structure Debug       from "Debug"
+import structure MkEngine    from "MkEngine"
+
+type solution = int Vector.t
+
+structure MkProblem : MK_PROBLEM = fct (Constraints : CONSTRAINTS) =>
+
+let
+  structure Space  = Constraints.Space
+  structure FD     = Constraints.FD
+  structure FS     = Constraints.FS
+  structure Linear = Constraints.Linear
+
+  (*** Search problem :
+   *   Choose one number in each column (numbers1, numbers2)
+   *   All numbers must be different
+   *)
+  val max = 10
+  val size = 6
+  val numbers1 = #[2, 1, 2, 5, 1, 6]
+  val numbers2 = #[1, 3, 4, 3, 6, 7]
+		 
+  infix %
+  fun a % b = Vector.sub (a,b)
+	      
+  val cn = FD.BND
+	   
+  fun fromInt sp n = FD.intvar (sp,#[(n,n)])
+  fun toInt   sp v = FD.Reflect.value (sp,v)
+		     
+  fun script space =  
+    let
+      (* Some variables. *)
+      val vars  = FD.rangeVec   (space, size, (0, max))
+      val reif  = FD.boolvarVec (space, size)
+      val nreif = FD.boolvarVec (space, size) (* not reif *)
+      val reif2 = Vector.map FD.boolvar2intvar reif
+      val sum   = FD.intvar (space, #[(0, size*max)])
+      val kvars = Vector.tabulate
+		  (size+1, (fn i => if i<size then (1,vars%i) else (~1, sum)))
+      fun readSolution space = Vector.map (toInt space) vars
+      fun bound (space, sol) =
+	let
+          val lsum = Vector.foldl (fn (e,s) => e+s) 0 sol
+          val vsum = fromInt space lsum
+	in
+            FD.rel (space, sum, FD.GR, vsum)
+	end
+	    
+    in
+      (* Propagators. *)
+      (FD.distinct (space, vars, cn) ;
+       VectorPair.app
+	 (fn (b1, b2) => FD.nega(space, b1, b2)) (reif, nreif) ;
+       
+       Vector.appi
+	 (fn (i, var) =>
+	   (FD.Reified.rel
+		(space, var, FD.EQ, fromInt space (numbers1%i), reif%i) ;
+		FD.Reified.rel
+		    (space, var, FD.EQ, fromInt space (numbers2%i), nreif%i)))
+	 vars ;
+	 
+       (* Sum *)
+       FD.linear (space, kvars, FD.EQ, 0, cn) ;
+     
+       FD.branch (space, reif2, FD.B_NONE, FD.B_MIN);
+       (readSolution, bound))
+    end
+      
+  (* Recomputation Policy : fixed distance *)
+  val rdist = 3
+
+  (* The initial root space. *)
+  val root = Space.new ()
+  val (readSolution, bound) = script root
+
+  val mask = Debug.dbAll
+
+  val sumvec = Vector.foldl (fn (x, s) => x+s) 0
+
+in	     
+struct
+  type space = Space.space
+  type solution = solution
+
+  val root = root
+  val readSolution = readSolution
+
+  fun copyq d = d mod rdist = 0
+  val bab = false
+  val bound = bound
+
+  fun compare (x,y) = (sumvec x) < (sumvec y)
+  val mask = mask
+end
+end  
+
+fun solToString v = Vector.foldl (fn (a, s) => s ^ " ; " ^ Int.toString a) "" v
+
+
+val _ =
+    let
+	(* Hosts used as remote workers. *)
+	val hosts = [("localhost", "Alice"),
+		     ("localhost", "Bob"),
+		     ("localhost", "Charlie")]
+	    
+	(* We build the search engine. *)
+	structure Engine = MkEngine
+			       (type solution = solution
+				val  toString = solToString)
+			       MkProblem
+	    
+	(* As soon as the engine starts, it returns a channel of solutions. *)
+	val (shutdown, sols) = Engine.start hosts
+
+	val l = Channel.toList sols
+    in
+      (* Inspect the solutions *)
+(*      Inspector.inspect l ; *)
+
+      (* Print all the solutions. *)
+      List.app (fn s => print ("SOLUTION : " ^ (solToString s) ^ "\n")) l ;
+      
+      print "\n\nSearch is done.\nType \"q[ENTER]\" to quit.\n" ;
+      
+      while Option.map (String.isPrefix "q")
+		       (TextIO.inputLine TextIO.stdIn) <> SOME true do () ;
+        
+      print "Bye.\n" ;
+      shutdown () ;
+      OS.Process.exit OS.Process.success
+    end
+

@@ -1,0 +1,17 @@
+(* Export interface of a remote worker. *)
+
+import structure Path from "x-alice:/lib/gecode/search-factory/Path"
+
+signature INTERFACE =
+sig
+    type solution
+
+    val interface : {id       : int,
+                     name     : string,
+		     share    : unit -> (solution Path.t) option ,
+		     explore  : solution Path.t -> unit,
+		     bestMsg  : solution -> unit,
+		     start    : unit -> unit,
+		     stop     : unit -> unit,
+		     shutdown : unit -> unit}
+end

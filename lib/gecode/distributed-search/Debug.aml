@@ -1,0 +1,13 @@
+import structure Debug from "x-alice:/lib/gecode/search-factory/Debug"
+
+structure Debug =
+struct
+
+    open Debug
+
+    val dbCom    = newDB 10 (* Communication. *)
+    val dbSearch = newDB 11 (* Search. *)
+    val dbManag  = newDB 12 (* Management. *)
+    val dbSlow   = newDB 13 (* Slow search. *)
+
+end

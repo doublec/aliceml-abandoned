@@ -1,0 +1,8 @@
+import signature CONSTRAINTS from "x-alice:/lib/gecode/CONSTRAINTS-sig"
+import signature PROBLEM from "x-alice:/lib/gecode/search-factory/PROBLEM-sig"
+
+
+signature MK_PROBLEM = fct (Constraints:CONSTRAINTS)
+		       -> PROBLEM where type space = Constraints.Space.space
+
+

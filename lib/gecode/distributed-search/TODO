@@ -1,0 +1,13 @@
+- Reimplement recomputable spaces: MkRSpace.aml
+
+- Remember, you have sleepms in MkWorker
+
+- When generative types are back, look for ??? in MkEngine.
+
+- HANDLE exceptions in THREADS. See MkWorker for inspiration.
+  Also find WHO should fail : the manager, the worker, both ???
+  In particular when a call to 'share' raises an exception.
+
+- Write (all?) the interfaces
+
+	

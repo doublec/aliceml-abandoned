@@ -1,0 +1,18 @@
+Debug.alc: \
+
+Utils.alc: \
+
+Common.alc: \
+
+INTERFACE-sig.alc: \
+
+MkEngine.alc: \
+	Debug.alc \
+	Utils.alc \
+	INTERFACE-sig.alc \
+
+Test.alc: \
+	Common.alc \
+	Debug.alc \
+	MkEngine.alc
+
