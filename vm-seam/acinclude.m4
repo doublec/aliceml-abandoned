@@ -43,6 +43,7 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_CHECKED],
       AC_MSG_RESULT(yes)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-inline-functions)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fimplement-inlines)
+      AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-rtti)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-ggdb,
          AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-ggdb),
          AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-g))
@@ -80,9 +81,10 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_OPTIMIZED],
                              -finline-limit=2500 -fno-implement-inlines \
                              -fno-keep-static-consts \
                              -fno-implicit-templates \
+                             -fno-rtti \
                              -fno-implicit-inline-templates)
-      AC_SEAM_CHECK_LDFLAG([[-Wl,-S]])
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,-S]])
+      AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,--stack=0x1000000]])
    else
       AC_MSG_RESULT(no)
    fi])
@@ -297,9 +299,8 @@ AC_DEFUN([AC_SEAM_SEAMTOOL_COMMANDS],
     case $host_os in
        darwin*)
           ac_seam_tmp="$CXX"
-          ac_seam_tmp="${ac_seam_tmp} -dynamic"
-          ac_seam_tmp="${ac_seam_tmp} -dynamiclib"
-          ac_seam_tmp="${ac_seam_tmp} -single_module"
+          ac_seam_tmp="${ac_seam_tmp} -bundle"
+          ac_seam_tmp="${ac_seam_tmp} -bundle_loader ${bindir}/seam"
           ac_seam_tmp="${ac_seam_tmp} -undefined suppress"
           ac_seam_tmp="${ac_seam_tmp} -flat_namespace"
           SEAMTOOL_LINK_CMD_PREAMBLE="${ac_seam_tmp}"
@@ -558,7 +559,7 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
    AC_MSG_CHECKING(whether to use GNU lightning)
    if test "${enable_lightning:-yes}" = "yes"; then
       AC_REQUIRE([AC_CANONICAL_HOST])dnl
-      if test -d "${srcdir}"/lightning; then
+      if test -f "${srcdir}/lightning/lightning.h"; then
         have_lightning=yes
         AC_DEFINE(HAVE_LIGHTNING, 1)
         AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
@@ -586,7 +587,7 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
    else
       have_lightning=no
       AC_DEFINE(HAVE_LIGHTNING, 0)
-      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
+      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=0)
       AC_MSG_RESULT(no)
    fi
    AM_CONDITIONAL(HAVE_LIGHTNING, test x$have_lightning = xyes)
