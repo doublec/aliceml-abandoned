@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "adt/Stack.hh"
+#include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/Closure.hh"
@@ -49,6 +50,9 @@
 // reference ::= REF id
 // id        ::= <uint>
 // transform ::= TRANSFORM (chunk|reference) field
+
+static word handlerTable;
+static const u_int initialHandlerTableSize = 7;
 
 //
 // Stream Classes
@@ -483,9 +487,6 @@ word ApplyTransform(Chunk *f, word x) {
     Block *xp = Store::WordToBlock(x);
     //--** xp->AssertWidth(1);
     return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(0)));
-  } else if ((len == sizeof("Alice.function") - 1) &&
-	     !std::memcmp(fs, "Alice.function", len)) {
-    return AliceConcreteCode::New(TagVal::FromWordDirect(x))->ToWord();
   } else if ((len == sizeof("Alice.constructor") - 1) &&
 	     !std::memcmp(fs, "Alice.constructor", len)) {
     Block *xp = Store::WordToBlock(x);
@@ -494,7 +495,14 @@ word ApplyTransform(Chunk *f, word x) {
       Constructor::New(xp->GetArg(0), Store::WordToBlock(xp->GetArg(1)));
     return constructor->ToWord();
   } else {
-    Error("ApplyTransform: unknown transform");
+    HashTable *table = HashTable::FromWordDirect(handlerTable);
+    if (table->IsMember(f->ToWord())) {
+      Unpickler::handler handler = (Unpickler::handler)
+	Store::DirectWordToUnmanagedPointer(table->GetItem(f->ToWord()));
+      return handler(x);
+    } else {
+      Error("ApplyTransform: unknown transform");
+    }
   }
 }
 
@@ -995,4 +1003,12 @@ void Unpickler::Init() {
   PickleLoadInterpreter::Init();
   Corrupt = UniqueConstructor::New(String::New("Component.Corrupt"))->ToWord();
   RootSet::Add(Corrupt);
+  handlerTable =
+    HashTable::New(HashTable::BLOCK_KEY, initialHandlerTableSize)->ToWord();
+  RootSet::Add(handlerTable);
+}
+
+void Unpickler::RegisterHandler(Chunk *name, handler handler) {
+  word x = Store::UnmanagedPointerToWord((void *) handler);
+  HashTable::FromWordDirect(handlerTable)->InsertItem(name->ToWord(), x);
 }

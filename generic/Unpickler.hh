@@ -27,6 +27,9 @@ public:
   // Unpickler Static Constructor
   static void Init();
 
+  typedef word (*handler)(word);
+  static void RegisterHandler(Chunk *name, handler handler);
+
   // Unpickler Functions
   static Interpreter::Result Unpack(Chunk *string, TaskStack *taskStack);
   static Interpreter::Result Load(Chunk *filename, TaskStack *taskStack);
