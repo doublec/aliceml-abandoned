@@ -3,4 +3,6 @@ CM
 *.grm.*
 ~*
 *.x86-linux
-*.ppm
+*.ppm *.jpg *.gif
+*.uo *.ui
+*.ozf *.so-linux-i486
