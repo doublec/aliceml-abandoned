@@ -516,6 +516,19 @@ structure CodeEmitter :> CODE_EMITTER =
 	    processProperties(doc, "GtkLabel", id, psr);
 	    processAccelerators(doc, "GtkLabel", id, accel)
 	end
+      | newObject'(doc, "GtkAlignment", id, prop, access, sign, accel) =
+	let
+	    val (xalign, psr) = getRealProp(prop, "xalign")
+	    val (yalign, psr) = getRealProp(psr,  "yalign")
+	    val (xscale, psr) = getRealProp(psr,  "xscale")
+	    val (yscale, psr) = getRealProp(psr,  "yscale")
+	in
+	    output(doc, "val "^id^" = Gtk.alignmentNew("^xalign^","^yalign^
+		   ","^xscale^","^yscale^")\n");
+	    processProperties(doc, "GtkAlignment", id, psr);
+	    processAccelerators(doc, "GtkAlignment", id, accel)
+	end
+
       | newObject'(doc, "GtkFrame", id, prop, access, sign, accel) =
 	let
 	    val (lxalign, psr) = getRealProp(prop, "label_xalign")
