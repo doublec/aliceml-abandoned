@@ -162,12 +162,14 @@ struct
 				 then lookupPath(coreSign,"Promise","promise") 
 			     else path 
 			     in newPath (va,t,p,i,d,p_path,canvas)
-			     end 
-			| _ => createError("apply/list", t, Type.Apply(t1,t2))) (* unknown *)
+			     end
+		        | (Type.Mu _, _) =>
+			  createUsualTree (NONE,va,Type.unroll t,p,i,d,canvas) (* Rekursion *)
+		        | _ => createError("apply/list", t, Type.Apply(t1,t2))) (* unknown *)
 		| Type.Prod(row) (* record *)
 		  => treatProd(va,t,p,i,d,row,canvas) 
-		| Type.Mu(sum) (* rekursion *)
-		  => createUsualTree (NONE,va,sum,p,i,d,canvas) (* Rekursion *)
+		| Type.Mu(t) (* rekursion *)
+		  => createUsualTree (NONE,va,Type.unroll t,p,i,d,canvas) (* Rekursion *)
 		| Type.Sum(row) (* datatype *)
 		  => treatSum(va,t,p,i,d,row,canvas) 
 		| _ =>
