@@ -256,7 +256,7 @@ final public class Array implements DMLValue {
     _BUILTIN(ArraY) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Array.array");
+	    _sfromTuple(args,val,2,"Array.array");
 	}
 
 	_SAPPLY2(v) {
@@ -288,7 +288,7 @@ final public class Array implements DMLValue {
     _BUILTIN(Tabulate) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Array.tabulate");
+	    _sfromTuple(args,val,2,"Array.tabulate");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -320,7 +320,7 @@ final public class Array implements DMLValue {
     _BUILTIN(Sub) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Array.sub");
+	    _sfromTuple(args,val,2,"Array.sub");
 	}
 	_SAPPLY2(v) {
 	    _REQUEST(v1,v1);
@@ -338,7 +338,7 @@ final public class Array implements DMLValue {
     _BUILTIN(Update) {
 	_NOAPPLY0;_NOAPPLY2;_APPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,3,"Array.update");
+	    _sfromTuple(args,val,3,"Array.update");
 	}
 	_SAPPLY3(v) {
 	    _REQUESTDEC(DMLValue array,v1);
@@ -356,7 +356,7 @@ final public class Array implements DMLValue {
     _BUILTIN(Extract) {
 	_NOAPPLY0;_NOAPPLY2;_APPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,3,"Array.extract");
+	    _sfromTuple(args,val,3,"Array.extract");
 	}
 	_SAPPLY3(v) {
 	    try {
@@ -491,7 +491,7 @@ final public class Array implements DMLValue {
 	    public DMLValue fun = null;
 	    public Appi1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_fromTuple(args,val,3,"Array.appi1");
+		_sfromTuple(args,val,3,"Array.appi1");
 	    }
 	    _VAPPLY3(v) {
 		try {

@@ -72,7 +72,7 @@ final public class String implements DMLValue {
     _BUILTIN(Extract) {
 	_NOAPPLY0;_NOAPPLY2;_APPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,3,"String.extract");
+	    _sfromTuple(args,val,3,"String.extract");
 	}
 	_SAPPLY3(v) {
 	    try {
@@ -111,7 +111,7 @@ final public class String implements DMLValue {
     _BUILTIN(Substring) {
 	_NOAPPLY0;_NOAPPLY2;_APPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,3,"String.substring");
+	    _sfromTuple(args,val,3,"String.substring");
 	}
 	_SAPPLY3(v) {
 	    try {
@@ -168,7 +168,7 @@ final public class String implements DMLValue {
     _BUILTIN(Append) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.^");
+	    _sfromTuple(args,val,2,"String.^");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -189,7 +189,7 @@ final public class String implements DMLValue {
     _BUILTIN(IsPrefix) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.isPrefix");
+	    _sfromTuple(args,val,2,"String.isPrefix");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -213,7 +213,7 @@ final public class String implements DMLValue {
     _BUILTIN(Compare) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.compare");
+	    _sfromTuple(args,val,2,"String.compare");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -240,7 +240,7 @@ final public class String implements DMLValue {
     _BUILTIN(Compare_) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.compare'");
+	    _sfromTuple(args,val,2,"String.compare'");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -286,7 +286,7 @@ final public class String implements DMLValue {
     _BUILTIN(Sub) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.sub");
+	    _sfromTuple(args,val,2,"String.sub");
 	}
 	_SAPPLY2(v) {
 	    try {

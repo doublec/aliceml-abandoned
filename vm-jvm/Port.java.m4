@@ -68,7 +68,7 @@ final public class Port extends UnicastRemoteObject
     _BUILTIN(Send) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Port.send");
+	    _sfromTuple(args,val,2,"Port.send");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue p,v1);

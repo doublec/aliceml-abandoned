@@ -26,7 +26,7 @@ final public class List {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	final public DMLValue apply(DMLValue val)
 	    throws RemoteException {
-	    _fromTuple(args,val,2,"List.cons");
+	    _sfromTuple(args,val,2,"List.cons");
 	}
 	_SAPPLY2(v) {
 	    return new Cons(v1,v2);
@@ -88,7 +88,7 @@ final public class List {
     _BUILTIN(Append) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"List.append");
+	    _sfromTuple(args,val,2,"List.append");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue first,v1);
@@ -202,7 +202,7 @@ final public class List {
     _BUILTIN(Nth) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"List.nth");
+	    _sfromTuple(args,val,2,"List.nth");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue n,v2);
@@ -244,7 +244,7 @@ final public class List {
     _BUILTIN(Take) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"List.take");
+	    _sfromTuple(args,val,2,"List.take");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue n,v2);
@@ -290,7 +290,7 @@ final public class List {
     _BUILTIN(Drop) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"List.drop");
+	    _sfromTuple(args,val,2,"List.drop");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue n,v2);
@@ -404,7 +404,7 @@ final public class List {
     _BUILTIN(RevAppend) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"List.revAppend");
+	    _sfromTuple(args,val,2,"List.revAppend");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue first,v1);
@@ -818,7 +818,7 @@ final public class List {
     _BUILTIN(Tabulate) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"List.tabulate");
+	    _sfromTuple(args,val,2,"List.tabulate");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue n,v1);

@@ -330,7 +330,7 @@ final public class Vector implements DMLValue {
     _BUILTIN(Tabulate) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Vector.tabulate");
+	    _sfromTuple(args,val,2,"Vector.tabulate");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -362,7 +362,7 @@ final public class Vector implements DMLValue {
     _BUILTIN(Sub) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Vector.sub");
+	    _sfromTuple(args,val,2,"Vector.sub");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -380,7 +380,7 @@ final public class Vector implements DMLValue {
     _BUILTIN(Extract) {
 	_NOAPPLY0;_NOAPPLY2;_APPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,3,"Vector.extract");
+	    _sfromTuple(args,val,3,"Vector.extract");
 	}
 	_SAPPLY3(v) {
 	    try {

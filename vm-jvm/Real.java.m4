@@ -67,7 +67,7 @@ final public class Real implements DMLValue {
     _BUILTIN(Plus) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Real.+");
+	    _sfromTuple(args,val,2,"Real.+");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -86,7 +86,7 @@ final public class Real implements DMLValue {
     _BUILTIN(Minus) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Real.-");
+	    _sfromTuple(args,val,2,"Real.-");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -106,7 +106,7 @@ final public class Real implements DMLValue {
     _BUILTIN(Mult) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Real.*");
+	    _sfromTuple(args,val,2,"Real.*");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -125,7 +125,7 @@ final public class Real implements DMLValue {
     _BUILTIN(Div) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Real./");
+	    _sfromTuple(args,val,2,"Real./");
 	}
 	_SAPPLY2(v) {
 	    try {

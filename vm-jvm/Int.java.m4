@@ -88,7 +88,7 @@ final public class Int implements DMLValue {
     _BUILTIN(Compare) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.compare");
+	    _sfromTuple(args,val,2,"Int.compare");
 	}
 	_SAPPLY2(v) {
 	    try {

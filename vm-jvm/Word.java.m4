@@ -99,7 +99,7 @@ final public class Word implements DMLValue {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // möglicherweise nicht so ganz richtig
-	    _fromTuple(args,val,2,"Word.fromInt'");
+	    _sfromTuple(args,val,2,"Word.fromInt'");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -127,7 +127,7 @@ final public class Word implements DMLValue {
     _BUILTIN(Orb) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-		_fromTuple(args,val,2,"Word.orb");
+		_sfromTuple(args,val,2,"Word.orb");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -145,7 +145,7 @@ final public class Word implements DMLValue {
     _BUILTIN(Xorb) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-		_fromTuple(args,val,2,"Word.xorb");
+		_sfromTuple(args,val,2,"Word.xorb");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -163,7 +163,7 @@ final public class Word implements DMLValue {
     _BUILTIN(Andb) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-		_fromTuple(args,val,2,"Word.andb");
+		_sfromTuple(args,val,2,"Word.andb");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -195,7 +195,7 @@ final public class Word implements DMLValue {
     _BUILTIN(Left) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-		_fromTuple(args,val,2,"Word.<<");
+		_sfromTuple(args,val,2,"Word.<<");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -216,7 +216,7 @@ final public class Word implements DMLValue {
     _BUILTIN(Right) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-		_fromTuple(args,val,2,"Word.>>");
+		_sfromTuple(args,val,2,"Word.>>");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -237,7 +237,7 @@ final public class Word implements DMLValue {
     _BUILTIN(NRight) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-		_fromTuple(args,val,2,"Word.>>");
+		_sfromTuple(args,val,2,"Word.>>");
 	}
 	_SAPPLY2(v) {
 	    try {

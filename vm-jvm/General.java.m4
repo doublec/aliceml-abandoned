@@ -56,7 +56,7 @@ final public class General {
     _BUILTIN(Assign) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"assign");
+	    _sfromTuple(args,val,2,"assign");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue car,v1);
@@ -76,7 +76,7 @@ final public class General {
     _BUILTIN(Exchange) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"exchange");
+	    _sfromTuple(args,val,2,"exchange");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue car,v1);
@@ -93,7 +93,7 @@ final public class General {
     _BUILTIN(Bind) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"General.bind");
+	    _sfromTuple(args,val,2,"General.bind");
 	}
 	_SAPPLY2(v) {
 	    if (v1 instanceof DMLTransient) {
@@ -120,7 +120,7 @@ final public class General {
 	}
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"compose");
+	    _sfromTuple(args,val,2,"compose");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue f,v1);
@@ -134,7 +134,7 @@ final public class General {
     _BUILTIN(Before) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"before");
+	    _sfromTuple(args,val,2,"before");
 	}
 	_SAPPLY2(v) {
 	    return v1;
@@ -229,7 +229,7 @@ final public class General {
     _BUILTIN(Equals) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"equals");
+	    _sfromTuple(args,val,2,"equals");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue car,v1);
@@ -248,7 +248,7 @@ final public class General {
     _BUILTIN(Pickle) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"General.pickle");
+	    _sfromTuple(args,val,2,"General.pickle");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue fst,v1);
@@ -384,7 +384,7 @@ final public class General {
     _BUILTIN(Neq) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"General.<>");
+	    _sfromTuple(args,val,2,"General.<>");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue l, v1);

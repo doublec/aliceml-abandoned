@@ -411,7 +411,7 @@ define(_COMPARECHAR,`
     _BUILTIN(capitalize($1)) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Char.$2");
+	    _sfromTuple(args,val,2,"Char.$2");
 	}
 	_SAPPLY2(v) {
 	    try {
