@@ -107,10 +107,8 @@ define
    end
 
    fun {ShareExp Exp ShareDict}
-      case Exp of funExp(Coord Stamp Flags ArgsBodyList) then
-	 funExp(Coord Stamp Flags
-		{Map ArgsBodyList
-		 fun {$ Args#Body} Args#{ShareBody Body ShareDict} end})
+      case Exp of funExp(Coord Stamp Flags Args Body) then
+	 funExp(Coord Stamp Flags Args {ShareBody Body ShareDict})
       else Exp
       end
    end

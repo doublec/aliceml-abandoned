@@ -122,11 +122,11 @@ define
 				     [Reg0 TmpReg {State.cs newReg($)}]
 				     ThenVInstr ElseVInstr VTl)
 	    end
-	 [] conTest(Id none) then
+	 [] conTest(Id none _) then
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
 			       ThenVInstr ElseVInstr VTl)
-	 [] conTest(Id1 some(Id2)) then NameReg ThenVInstr0 in
+	 [] conTest(Id1 some(Id2) _) then NameReg ThenVInstr0 in
 	    NameReg = {GetReg Id1 State}
 	    VHd = vTestBuiltin(_ 'Record.testLabel'
 			       [Reg0 NameReg {State.cs newReg($)}]
@@ -159,13 +159,9 @@ define
 	     proc {$ VHd _#Id VTl}
 		VHd = vGetVariable(_ {MakeReg Id State} VTl)
 	     end ThenVInstr0 ThenVInstr}
-	 [] labTest(Feature Id) then FeatureReg VInter in
-	    {State.cs newReg(?FeatureReg)}
-	    VHd = vEquateConstant(_ Feature FeatureReg VInter)
-	    VInter = vTestBuiltin(_ 'Record.testFeature'
-				  [Reg0 FeatureReg {State.cs newReg($)}
-				   {MakeReg Id State}]
-				  ThenVInstr ElseVInstr VTl)
+	 [] labTest(Feature Id) then
+	    VHd = vInlineDot(_ Reg0 Feature {MakeReg Id State} false
+			     unit ThenVInstr)
 	 [] vecTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
 			 [onRecord('#' {Length Ids} ThenVInstr0)]
@@ -229,9 +225,9 @@ define
 	 VHd = vEquateConstant(_ A Reg VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(_ Id false) then
+      [] conExp(_ Id nullary) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(Coord Id true) then
+      [] conExp(Coord Id _) then
 	 Pos PredId NLiveRegs ArgReg TmpReg ResReg
 	 VInstr NameReg VInter1 VInter2 GRegs Code
       in
@@ -282,23 +278,50 @@ define
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
 			     {Map Ids
 			      fun {$ Id} value({GetReg Id State}) end} VTl)
-      [] funExp(Coord _ _ oneArg(Id)#Body|ArgsBodyList) then
-	 Body2 PredId NLiveRegs ResReg FormalRegs VInstr GRegs Code
+      [] funExp(Coord _ _ Args Body) then
+	 PredId NLiveRegs ResReg FormalRegs ArgReg
+	 BodyVInstr ThenVInstr ElseVInstr MatchReg ElseVInter GRegs Code
       in
-	 Body2 = {FoldL ArgsBodyList
-		  fun {$ In Args#Body} Test in
-		     Test = case Args of tupArgs(Ids) then tupTest(Ids)
-			    [] recArgs(LabIdList) then recTest(LabIdList)
-			    end
-		     [testStm(Coord Id Test Body In)]
-		  end Body}
 	 PredId = pid('' 2 {TranslateCoord Coord State} nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ResReg)}
-	 FormalRegs = [{MakeReg Id State} ResReg]
-	 {TranslateBody Body2 ?VInstr nil State ResReg}
+	 FormalRegs = [ArgReg ResReg]
+	 case Args of oneArg(Id) then
+	    ArgReg = {MakeReg Id State}
+	    BodyVInstr = ThenVInstr
+	 [] tupArgs(nil) then
+	    {State.cs newReg(?ArgReg)}
+	    BodyVInstr = vTestConstant(_ ArgReg '#'
+				       ThenVInstr ElseVInstr
+				       {TranslateCoord Coord State} nil)
+	 [] tupArgs(Ids) then ThenVInstr0 in
+	    {State.cs newReg(?ArgReg)}
+	    BodyVInstr = vMatch(_ ArgReg ElseVInstr
+				[onRecord('#' {Length Ids} ThenVInstr0)]
+				{TranslateCoord Coord State} nil)
+	    {FoldL Ids
+	     proc {$ VHd Id VTl}
+		VHd = vGetVariable(_ {MakeReg Id State} VTl)
+	     end ThenVInstr0 ThenVInstr}
+	 [] recArgs(FeatureIdList) then Arity ThenVInstr0 in
+	    {State.cs newReg(?ArgReg)}
+	    Arity = {Map FeatureIdList fun {$ F#_} F end}
+	    BodyVInstr = vMatch(_ ArgReg ElseVInstr
+				[onRecord('#' Arity ThenVInstr0)]
+				{TranslateCoord Coord State} nil)
+	    {FoldL FeatureIdList
+	     proc {$ VHd _#Id VTl}
+		VHd = vGetVariable(_ {MakeReg Id State} VTl)
+	     end ThenVInstr0 ThenVInstr}
+	 end
+	 {TranslateBody Body ?ThenVInstr nil State ResReg}
+	 {State.cs newReg(?MatchReg)}
+	 ElseVInstr = vEquateConstant(_ Prebound.env.'Match'
+				      MatchReg ElseVInter)
+	 ElseVInter = vCallBuiltin(_ 'Exception.raiseError' [MatchReg]
+				   {TranslateCoord Coord State} nil)
 	 {State.cs
-	  endDefinition(VInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
+	  endDefinition(BodyVInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] appExp(Coord Id Args) then ArgReg VInter in
 	 {State.cs newReg(?ArgReg)}
@@ -308,7 +331,7 @@ define
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
 			  {TranslateCoord Coord State} VTl)
-      [] conAppExp(Coord Id Args) then
+      [] conAppExp(Coord Id Args _) then
 	 Pos TmpReg VInter1 NameReg ResReg VInter2 ArgReg VInter3 VInter4
       in
 	 Pos = {TranslateCoord Coord State}
@@ -350,17 +373,6 @@ define
        end VHd VTl}
    end
 
-/*
-   F = {Functor.new
-	'import'('A': info('from': 'A.ozf') 'B': info('from': 'B.ozf'))
-	'export'(c: value d: value)
-	fun {$ IMPORT} A B C D in
-	   A = IMPORT.'A'
-	   B = IMPORT.'B'
-	   'export'(c: C d: D)
-	end}
-*/
-
    fun {Translate Filename Import#Body}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
@@ -368,7 +380,11 @@ define
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
       CS = {New CodeStore.'class'
-	    init(proc {$ getSwitch(_ X)} X = false end Reporter)}
+	    init(proc {$ getSwitch(S $)}
+		    case S of mergecon then true
+		    else false
+		    end
+		 end Reporter)}
       {MakeRegDict CS ?RegDict ?Prebound}
       {CS startDefinition()}
       {CS newReg(?ImportReg)}
