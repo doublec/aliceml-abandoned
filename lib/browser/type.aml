@@ -13,7 +13,7 @@ sig
 
 (* Datentyp 'Node' zur internen Darstellung von Werten *)
     datatype Node = 
-    SimpleNode of {   isvalue: Reflect.value, (* here *)
+    SimpleNode of {   isvalue: Reflect.value, 
 		      istype: Type.t,
 		      parent: Node ref,
 		      index: int ref,
@@ -24,8 +24,7 @@ sig
 		      xkoord: int ref,
 		      ykoord: int ref,
 		      dirty: bool ref,
-		      tag: object option ref,
-		      color: int}
+		      tag: object option ref}
     
   | ContNode of   {   istype: Type.t,
 		      parent: Node ref,
@@ -39,8 +38,7 @@ sig
 		      ykoord: int ref,
 		      dirty: bool ref,
 		      more: bool ref,
-		      tag: object option ref,
-		      color: int}
+		      tag: object option ref}
 
   | SepNode of    {   content: Node ref,
 		      parent: Node ref,
@@ -51,8 +49,7 @@ sig
 		      xkoord: int ref,
 		      ykoord: int ref,
 		      dirty: bool ref,
-		      tag: object option ref,
-		      color: int}
+		      tag: object option ref}
 
   | LabelNode of   {   content: Node ref,
 		       label: string,
@@ -64,10 +61,9 @@ sig
 		       xkoord: int ref,
 		       ykoord: int ref,
 		       dirty: bool ref,
-		       tag: object option ref,
-		       color: int}
+		       tag: object option ref}
 
-  | BracketNode of {   isvalue: Reflect.value, (* here *)
+  | BracketNode of {   isvalue: Reflect.value, 
 		       istype: Type.t, 
 		       content: Node ref,
 		       parent: Node ref,
@@ -78,8 +74,7 @@ sig
 		       xkoord: int ref,
 		       ykoord: int ref,
 		       dirty: bool ref,
-		       tag: object option ref,
-		       color: int}
+		       tag: object option ref}
 
   | LimitNode of   {   isvalue: Reflect.value,
 		       istype: Type.t,
@@ -90,8 +85,7 @@ sig
 		       xkoord: int ref,
 		       ykoord: int ref,
 		       dirty: bool ref,
-		       tag: object option ref,
-		       color: int}
+		       tag: object option ref}
                              
   | EmptyNode
 
@@ -130,8 +124,7 @@ struct
 			  xkoord: int ref,
 			  ykoord: int ref,
 			  dirty: bool ref,
-			  tag: object option ref,
-			  color: int}
+			  tag: object option ref}
 
       | ContNode of   {   istype: Type.t,
 		          parent: Node ref,
@@ -145,8 +138,7 @@ struct
 			  ykoord: int ref,
 			  dirty: bool ref,
 			  more: bool ref,
-			  tag: object option ref,
-			  color: int}
+			  tag: object option ref}
 
       | SepNode of    {   content: Node ref,
 		          parent: Node ref,
@@ -157,8 +149,7 @@ struct
 			  xkoord: int ref,
 			  ykoord: int ref,
 			  dirty: bool ref,
-			  tag: object option ref,
-			  color: int}
+			  tag: object option ref}
 	
       | LabelNode of   {   content: Node ref,
 			   label: string,
@@ -170,8 +161,7 @@ struct
 			   xkoord: int ref,
 			   ykoord: int ref,
 			   dirty: bool ref,
-			   tag: object option ref,
-			   color: int}
+			   tag: object option ref}
 	
       | BracketNode of {   isvalue: Reflect.value,
                            istype: Type.t, 
@@ -184,8 +174,7 @@ struct
 			   xkoord: int ref,
 			   ykoord: int ref,
 			   dirty: bool ref,
-			   tag: object option ref,
-			   color: int}
+			   tag: object option ref}
 
       | LimitNode of  {   isvalue: Reflect.value,
 		          istype: Type.t,
@@ -196,8 +185,7 @@ struct
 			  xkoord: int ref,
 			  ykoord: int ref,
 			  dirty: bool ref,
-			  tag: object option ref,
-			  color: int}
+			  tag: object option ref}
 	
       | EmptyNode
 

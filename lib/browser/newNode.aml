@@ -89,8 +89,7 @@ struct
 		      xkoord = ref ~1,
 		      ykoord = ref ~1,
 		      dirty = ref true,
-		      tag = ref NONE,
-		      color = 0}
+		      tag = ref NONE}
 	
     (* makeContNode *)
     and makeContNode (t,p,n,i,d,m) = ContNode {istype = t,
@@ -105,8 +104,7 @@ struct
 					       ykoord = ref ~1,
 					       dirty = ref true,
 					       more = ref m,
-					       tag = ref NONE,
-					       color = 0}    
+					       tag = ref NONE}    
 
     (* makeSepNode *)
     and makeSepNode (c,p,i,d) = SepNode {content = ref c,
@@ -118,8 +116,7 @@ struct
 					 xkoord = ref ~1,
 					 ykoord = ref ~1,
 					 dirty = ref true,
-					 tag = ref NONE,
-					 color = 0}
+					 tag = ref NONE}
 
     (* makeLabelNode *)
     and makeLabelNode (c,l,p,i,d) = LabelNode {content = ref c,
@@ -132,8 +129,7 @@ struct
 					       xkoord = ref ~1,
 					       ykoord = ref ~1,
 					       dirty = ref true,
-					       tag = ref NONE,
-					       color = 0}
+					       tag = ref NONE}
 
     (* makeBracketNode *)
     and makeBracketNode (va,t,c,p,i,d) 
@@ -148,8 +144,7 @@ struct
 		       xkoord = ref ~1,
 		       ykoord = ref ~1,
 		       dirty = ref true,
-		       tag = ref NONE,
-		       color = 0}
+		       tag = ref NONE}
 
     (* makeLimitNode *)
     and makeLimitNode (va,t,p,i) = LimitNode {isvalue = va,
@@ -161,8 +156,7 @@ struct
 					      xkoord = ref ~1,
 					      ykoord = ref ~1,
 					      dirty = ref true,
-					      tag = ref NONE,
-					      color = 0}
+					      tag = ref NONE}
     
     (* newPath *)
     fun newPath (v,t) p i d path
