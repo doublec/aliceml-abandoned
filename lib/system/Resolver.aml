@@ -20,6 +20,8 @@ import structure UrlMap        from "UrlMap"
 import structure HttpClient    from "HttpClient"
 import signature RESOLVER      from "RESOLVER-sig"
 
+(*--** what if a handler returns a relative URL - is this permissible? *)
+
 structure Resolver: RESOLVER =
     struct
 	structure Handler =
@@ -239,6 +241,13 @@ structure Resolver: RESOLVER =
 		    in
 			root argUrl::parse' rest
 		    end
+
+		fun apply handlers url = apply' (handlers, url)
+		and apply' ((name', f)::handlers, url) =
+		    (case f url of
+			 SOME url' => SOME (url', handlers)
+		       | NONE => apply' (handlers, url))
+		  | apply' (nil, _) = NONE
 	    end
 
 	datatype result =

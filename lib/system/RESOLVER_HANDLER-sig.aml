@@ -27,4 +27,6 @@ signature RESOLVER_HANDLER =
 	val custom: string * (Url.t -> Url.t option) -> handler
 
 	val parse: string -> handler list          (* Syntax *)
+
+	val apply: handler list -> Url.t -> (Url.t * handler list) option
     end
