@@ -98,6 +98,7 @@ inline char *Store::GCAlloc(u_int size, u_int header) {
 }
 
 inline char *Store::GCAlloc(u_int size) {
+  size = HeaderOp::TranslateSize(size);
   return Store::GCAlloc(BlockMemSize(size),
 			HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, hdrGen));
 }
@@ -150,7 +151,8 @@ inline void Store::FreeMemChunks(MemChunk *chunk, const u_int threshold) {
 inline Block *Store::CloneBlock(Block *p) {
   u_int size   = HeaderOp::DecodeSize(p);
   u_int header = HeaderOp::EncodeHeader(HeaderOp::DecodeLabel(p), size, hdrGen);
-  Block *newp  = (Block *) Store::GCAlloc(BlockMemSize(size), header);
+  Block *newp  = (Block *)
+    Store::GCAlloc(BlockMemSize(size), header); // No size translation here
   std::memcpy(newp->GetBase(), p->GetBase(), (size * sizeof(u_int)));
 #if defined(STORE_GC_DEBUG)
   if (p->GetSize() != newp->GetSize()) {

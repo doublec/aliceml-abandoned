@@ -84,6 +84,7 @@ private:
   static Block *InternalAllocBlock(BlockLabel l, u_int s) {
     AssertStore(s >= MIN_BLOCKSIZE);
     AssertStore(s <= MAX_BIGBLOCKSIZE);
+    s = HeaderOp::TranslateSize(s);
     return (Block *) Store::Alloc(BlockMemSize(s),
 				  HeaderOp::EncodeHeader(l, s, 0));
   }
