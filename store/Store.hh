@@ -149,10 +149,10 @@ public:
     return (Transient *) Store::InternalAllocBlock(l, 1);
   }
   // Conversion Functions
-  static word IntToWord(int v) {
+  static word IntToWord(s_int v) {
     return PointerOp::EncodeInt(v);
   }
-  static int WordToInt(word v) {
+  static s_int WordToInt(word v) {
     return PointerOp::DecodeInt(PointerOp::Deref(v));
   }
   static Block *WordToBlock(word v) {
@@ -178,7 +178,7 @@ public:
   static void *WordToUnmanagedPointer(word x) {
     return PointerOp::DecodeUnmanagedPointer(PointerOp::Deref(x));
   }
-  static int DirectWordToInt(word x) {
+  static s_int DirectWordToInt(word x) {
     AssertStore(((u_int) x & INTTAG) == INTTAG);
     return PointerOp::DirectDecodeInt(x);
   }

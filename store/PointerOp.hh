@@ -67,28 +67,28 @@ public:
       return (Transient *) INVALID_POINTER;
   }
   // int Test
-  static int IsInt(word v) {
+  static bool IsInt(word v) {
     return ((u_int) v & (u_int) INTMASK);
   }
-  static int IsTransient(word v) {
+  static bool IsTransient(word v) {
     return (((u_int) v & TAGMASK) == TRTAG);
   }
   // int<->Word Conversion
-  static word EncodeInt(int v) {
+  static word EncodeInt(s_int v) {
     AssertStore(v >= MIN_VALID_INT);
     AssertStore(v <= MAX_VALID_INT);
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
-  static int DirectDecodeInt(word v) {
-    return (int) (((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) ?
-		  ((1 << (STORE_WORD_WIDTH - 1)) | ((u_int) v >> 1)) :
-		  ((u_int) v >> 1));
+  static s_int DirectDecodeInt(word v) {
+    return (s_int) (((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) ?
+		    ((1 << (STORE_WORD_WIDTH - 1)) | ((u_int) v >> 1)) :
+		    ((u_int) v >> 1));
   }
-  static int DecodeInt(word v) {
+  static s_int DecodeInt(word v) {
     if ((((u_int) v) & INTMASK) == INTTAG)
       return DirectDecodeInt(v);
     else
-      return (int) INVALID_INT;
+      return INVALID_INT;
   }
   static word EncodeUnmanagedPointer(void *v) {
     AssertStore(((u_int) v & INTMASK) == 0); // Require at least word alignment

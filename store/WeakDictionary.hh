@@ -39,7 +39,7 @@ private:
 public:
   using Block::ToWord;
 
-  int IsHandled() {
+  bool IsHandled() {
     return (GetLabel() == HANDLEDHASHNODE_LABEL);
   }
   word GetKey() {
@@ -191,7 +191,7 @@ protected:
   void RemoveEntry(u_int i, word prev, HashNode *node);
   void DeleteItem(word key);
 
-  int IsMember(word key);
+  bool IsMember(word key);
   word GetItem(word key); // must be member
   // returns alternative in case of failure
   word CondGetItem(word key, word alternative); 
@@ -201,19 +201,19 @@ protected:
 public:
   using Block::ToWord;
 
-  void InsertItem(int key, word value) {
+  void InsertItem(s_int key, word value) {
     InsertItem(Store::IntToWord(key), value);
   }
-  void DeleteItem(int key) {
+  void DeleteItem(s_int key) {
     DeleteItem(Store::IntToWord(key));
   }
-  int IsMember(int key) {
+  bool IsMember(s_int key) {
     return IsMember(Store::IntToWord(key));
   }
-  word GetItem(int key) {
+  word GetItem(s_int key) {
     return GetItem(Store::IntToWord(key));
   }
-  word CondGetItem(int key, word alternative) {
+  word CondGetItem(s_int key, word alternative) {
     return CondGetItem(Store::IntToWord(key), alternative);
   }
 
@@ -273,7 +273,7 @@ public:
   void DeleteItem(word key) {
     WeakDictionary::DeleteItem(key);
   }
-  int IsMember(word key) {
+  bool IsMember(word key) {
     return WeakDictionary::IsMember(key);
   }
   word GetItem(word key) {
