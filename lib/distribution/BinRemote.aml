@@ -1,32 +1,57 @@
 (*
- * Authors:
- *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus and Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature COMPONENT_MANAGER
-			      from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
-import structure Unix         from "x-alice:/lib/system/Unix"
-
-import signature REMOTE       from "REMOTE-sig"
-import structure UnsafeRemote from "UnsafeRemote"
+import signature COMPONENT_MANAGER from "../system/COMPONENT_MANAGER-sig"
+import structure Unix              from "../system/Unix"
+import structure Url               from "../utility/Url"
+import structure Http              from "Http"
+import structure HttpServer        from "HttpServer"
+import structure HttpClient        from "HttpClient"
+import signature REMOTE            from "REMOTE-sig"
+import structure UnsafeRemote      from "UnsafeRemote"
 
 structure Remote :> REMOTE =
     struct
-	exception Ticket = UnsafeRemote.Ticket
+	exception Ticket
 
 	type ticket = string
 
-	fun proxy f = UnsafeRemote.proxy (fn x => f x)
-	val offer = UnsafeRemote.offer
-	val take = UnsafeRemote.take
+	(*fun proxy f = UnsafeRemote.proxy (fn x => f x)*)
+
+	val pickleContentType = "application/x-alice-pickle"
+
+	fun makeTakeHandler value =
+	    let
+		(* make the snapshot here: can raise Sited exception *)
+		val packedValue = UnsafeRemote.packValue value
+	    in
+		fn (request: Http.request) =>
+		   Http.makeResponse
+		       {statusCode = 200,
+			contentType = pickleContentType,
+			body = packedValue}
+	    end
+
+	fun offer value =
+	    Url.toString (HttpServer.register (makeTakeHandler value))
+
+	fun take ticket =
+	    let
+		val response =
+		    HttpClient.get (Url.fromString ticket)
+		    handle HttpClient.Authority => raise Ticket
+	    in
+		UnsafeRemote.unpackValue (#body response)
+	    end
 
 	functor Offer(signature S structure X: S) =
 	    (val ticket =
@@ -41,6 +66,7 @@ structure Remote :> REMOTE =
 	    Package.Unpack(val package = take ticket
 			   signature S = S)
 
+(*
 	functor Execute(val host: string
 			signature RESULT
 			functor Start(ComponentManager:
@@ -71,4 +97,5 @@ structure Remote :> REMOTE =
 		Package.Unpack(val package = Promise.future p
 			       signature S = RESULT)
 	    end
+*)
     end
