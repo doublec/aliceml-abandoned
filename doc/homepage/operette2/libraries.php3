@@ -237,7 +237,6 @@
     available in Operette 2.
   </P>
 
-
 <?php section("utility", "utility") ?>
 
   <UL>
@@ -247,5 +246,46 @@
     </LI>
   </UL>
 
+<?php section("inspector", "Inspector") ?>
+
+  <P>
+    Access to the Inspector is provided through the structure <TT>Inspector</TT>
+    which resides in the lib namespace:
+  </P>
+
+  <PRE>
+	structure Inspector:
+	    sig
+		val inspect : 'a -> unit
+		val inspectN : int * 'a -> unit
+		val configure : 'a -> unit
+	    end
+  </PRE>
+
+<?php section("gtk", "GTK-toolkit") ?>
+
+  <P>
+    The gtk namespace provides the GTK-toolkit:
+  </P>
+
+  <UL>
+    <LI>
+      <TT><A name="gtk">structure</A>
+      <A href="http://developer.gnome.org/doc/API/gtk/index.html">GTK</A>
+      <BR>from "x-alice:/lib/gtk/GTK"</TT>
+    </LI>
+    <LI>
+      <TT><A name="gdk">structure</A>
+      <A href="http://developer.gnome.org/doc/API/gdk/index.html">GDK</A>
+      <BR>from "x-alice:/lib/gtk/GDK"</TT>
+    </LI>
+  </UL>
+
+  <P>
+    Both modules contain almost the full set of functions originally provided by the toolkit.
+    All function names have been converted to a SML-like naming scheme, that is,
+    <TT>gtk_foo_bar</TT> becomes <TT>GTK.fooBar</TT> and <TT>gdk_foo_baz</TT> becomes
+    <TT>GDK.fooBaz</TT>, respectively.     
+  </P>
 
 <?php footing() ?>
