@@ -201,15 +201,14 @@ struct
 		    START => OS.Process.exit OS.Process.success 
 		  | GAME  => 
 			let
-			    val answer = Promise.promise ()
+			    fun cancel () = ()
+			    fun no () = ()
+			    fun yes () = (!disconnect' ();
+					  reset NONE)
+			    val answer = {cancel, no, yes}
 			in
 			    QuestionWindow.mkQuestionBox 
-			    ("Sure?", "Do you want to quit?", answer);
-			    case Promise.future answer of
-			     QuestionWindow.YES    => (!disconnect' ();
-						       reset NONE)
-			   | QuestionWindow.NO     => ()
-			   | QuestionWindow.CANCEL => ()
+			    ("Sure?", "Do you want to quit?", answer)
 			end
 		     
 			

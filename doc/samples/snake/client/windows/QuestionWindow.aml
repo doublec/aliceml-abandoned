@@ -18,11 +18,8 @@ import structure Inspector from "x-alice:/lib/tools/Inspector"
 structure QuestionWindow =
 struct
 
-    datatype answer = YES | NO | CANCEL
-	
 
-
-    fun mkQuestionBox (title, quest, answer) =
+    fun mkQuestionBox (title, quest, {yes, no, cancel}) =
 	let
 
 	    val questionWindow = Gtk.dialogNew ()
@@ -40,10 +37,9 @@ struct
 				      10)
 		end
 
-	    fun mainQuit ans = (Inspector.inspect ("QuestionWindow", ans);
-				Promise.fulfill (answer, ans);
+	    fun mainQuit ans = (Inspector.inspect "QuestionWindow, pushed button";
 				Gtk.widgetDestroy questionWindow;
-				Inspector.inspect ("QuestionWindow", answer))
+			        ans ())
 
 	in
 
@@ -57,11 +53,11 @@ struct
 	    
 	    Gtk.signalConnect (Gtk.dialogGetFieldWindow questionWindow, 
 			       "delete-event",
-			       fn _ => mainQuit CANCEL);
+			       fn _ => mainQuit cancel);
 	    Gtk.signalConnect (yesButton, "clicked", 
-			       fn _ => mainQuit YES);
+			       fn _ => mainQuit yes);
 	    Gtk.signalConnect (noButton, "clicked", 
-			       fn _ => mainQuit NO);
+			       fn _ => mainQuit no);
 	    
 	    Gtk.boxPackStart (Gtk.dialogGetFieldActionArea questionWindow,
 			      yesButton, true, true, 5);
