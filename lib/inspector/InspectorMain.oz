@@ -278,17 +278,12 @@ define
 		0x8: &8 0x9: &9 0xA: &a 0xB: &b
 		0xC: &c 0xD: &d 0xE: &e 0xF: &f)
 
-      proc {TraceConfigure K V}
-	 {System.show configure(K V)}
-	 {Inspector.configure K V}
-      end
-
       proc {ConfigureColor Type}
-	 {TraceConfigure ColorNames.Type {Access Colors.Type}}
+	 {Inspector.configure ColorNames.Type {Access Colors.Type}}
       end
 
       proc {ConfigureMenu Type}
-	 {TraceConfigure MenuNames.Type
+	 {Inspector.configure MenuNames.Type
 	  menu(if {HasFeature Widths Type}
 	       then {Access Widths.Type} else nil end
 	       if {HasFeature Depths Type}
