@@ -80,7 +80,13 @@ structure __pervasive =
     structure Inf =
     struct
     end
-  end
+(*
+    structure PervasiveType =
+    struct
+	val typ_ref = 0	(* mmh... *)
+	fun lookup s = lookup s
+    end
+*)  end
 
 structure __pervasive =
   struct
