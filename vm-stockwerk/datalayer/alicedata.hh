@@ -42,7 +42,8 @@ public:
     Tuple        = MAX_DATALABELSIZE - 3,
     Vector       = MAX_DATALABELSIZE - 2,
     VectorZero   = MAX_DATALABELSIZE - 1,
-    WideString   = MAX_DATALABELSIZE
+    WideString   = MAX_DATALABELSIZE,
+    LAST_LABEL   = WideString
   };
   
   static BlockLabel MakeLabel(u_int l) {
@@ -50,7 +51,7 @@ public:
     return Store::MakeLabel(MIN_LABEL + l);
   }
   static BlockLabel ToBlockLabel(label l) {
-    Assert(l > MAX_LABEL && l <= MAX_DATALABELSIZE);
+    Assert(l > MAX_LABEL && l <= LAST_LABEL);
     return Store::MakeLabel(l);
   }
 };
