@@ -5,7 +5,7 @@
 ### 
 ### Copyright:
 ###   Thorsten Brunklaus, 2001
-###   Leif Kornstaedt, 2001-2002
+###   Leif Kornstaedt, 2001-2003
 ### 
 ### Last change:
 ###   $Date$ by $Author$
@@ -31,6 +31,7 @@ ALICEC_OPTS =
 ALICEDEP = alicedep
 ALICELINK = alicelink
 ALICELINK_OPTS = -v
+STC = ozf
 
 ALICESOURCES = \
 	HttpServerMain.aml HttpClientMain.aml \
@@ -43,11 +44,11 @@ NATIVES = Remote
 OZSOURCES = $(NATIVES:%=Unsafe%.oz)
 
 COMPONENTS = \
-	$(NATIVES:%=Linked%.ozf) \
-	$(ALICESOURCES:%.aml=%.ozf)
+	$(NATIVES:%=Linked%.$(STC)) \
+	$(ALICESOURCES:%.aml=%.$(STC))
 
 INSTALLDIRS = $(PREFIX)/lib/distribution
-INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.ozf)
+INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.$(STC))
 
 .PHONY: all depend install clean veryclean distclean
 
@@ -60,14 +61,14 @@ all: $(COMPONENTS) $(ALICECOMPONENTS)
 depend:
 	$(ALICEDEP) $(ALICESOURCES) > Makefile.depend
 
-%.ozf: %.oz
+%.$(STC): %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
-Linked%.ozf: %.ozf $(OZSOURCES:%.oz=%.ozf)
+Linked%.$(STC): %.$(STC) $(OZSOURCES:%.oz=%.$(STC))
 	$(ALICELINK) $(ALICELINK_OPTS) $* \
 	--include $* --include Unsafe$* -o $@
 
-%.ozf: %.aml
+%.$(STC): %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 -include Makefile.depend
@@ -81,11 +82,11 @@ install: $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(NATIVES:%=$(PREFIX)/lib/distribution/%.ozf): \
-	$(PREFIX)/lib/distribution/%.ozf: Linked%.ozf
+$(NATIVES:%=$(PREFIX)/lib/distribution/%.$(STC)): \
+	$(PREFIX)/lib/distribution/%.$(STC): Linked%.$(STC)
 	install -c -m 444 $< $@
 
-$(PREFIX)/lib/distribution/%.ozf: %.ozf
+$(PREFIX)/lib/distribution/%.$(STC): %.$(STC)
 	install -c -m 444 $< $@
 
 ##
@@ -93,7 +94,7 @@ $(PREFIX)/lib/distribution/%.ozf: %.ozf
 ##
 
 clean:
-	-rm -f $(NATIVES:%=Unsafe%.ozf) $(COMPONENTS) *.ozm
+	-rm -f $(NATIVES:%=Unsafe%.$(STC)) $(COMPONENTS) *.ozm
 
 veryclean: clean
 
