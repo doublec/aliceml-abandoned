@@ -8,12 +8,17 @@ all: stoc-mozart.$(PLATFORM)
 
 stoc-mozart.$(PLATFORM):
 	-rm -f $@
-	(cd top && echo 'use "Exec-mozart.sml";' | $(SML))
+	(cd top && echo 'use "make-stoc-mozart.sml";' | $(SML))
+	if [ ! -f $@ ]; then exit 1; fi
+
+stot-mozart.$(PLATFORM):
+	-rm -f $@
+	(cd top && echo 'use "make-stot-mozart.sml";' | $(SML))
 	if [ ! -f $@ ]; then exit 1; fi
 
 stoc-com+.$(PLATFORM):
 	-rm -f $@
-	(cd top && echo 'use "Exec-com+.sml";' | $(SML))
+	(cd top && echo 'use "make-stoc-com+.sml";' | $(SML))
 	if [ ! -f $@ ]; then exit 1; fi
 
 clean:
