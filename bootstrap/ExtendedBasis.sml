@@ -42,7 +42,6 @@ signature REF =
     datatype ref = datatype ref
     type  'a t   = 'a ref
 
-    val new :		'a -> 'a ref
     val ! :		'a ref -> 'a
     val := :		'a ref * 'a -> unit
     val :=: :		'a ref * 'a ref -> unit
@@ -60,7 +59,6 @@ structure Ref : REF =
     datatype ref = datatype ref
     type  'a t   = 'a ref
 
-    val new				= ref
     val !				= General.!
     val op :=				= General.:=
     val op :=:				= General.:=:
@@ -115,7 +113,7 @@ signature OPTION =
     val isNone :	'a option -> bool
 
     val equal :		('a * 'a -> bool) -> 'a option * 'a option -> bool
-    val compare :	('a * 'a -> order) -> 'a option * 'a option -> order
+    val collate :	('a * 'a -> order) -> 'a option * 'a option -> order
 
     val app :		('a -> unit) -> 'a option -> unit
     val fold :		('a * 'b -> 'b) -> 'b -> 'a option -> 'b
@@ -135,10 +133,10 @@ structure Option : OPTION =
       | equal eq (SOME x, SOME y)	= eq(x,y)
       | equal eq _			= false
 
-    fun compare cmp (NONE,   NONE)	= EQUAL
-      | compare cmp (NONE,   SOME _)	= LESS
-      | compare cmp (SOME _, NONE)	= GREATER
-      | compare cmp (SOME x, SOME y)	= cmp(x,y)
+    fun collate cmp (NONE,   NONE)	= EQUAL
+      | collate cmp (NONE,   SOME _)	= LESS
+      | collate cmp (SOME _, NONE)	= GREATER
+      | collate cmp (SOME x, SOME y)	= cmp(x,y)
 
     fun app f  NONE			= ()
       | app f (SOME x)			= f x
@@ -170,7 +168,7 @@ signature PAIR =
 
     val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
 			    ('a,'b) pair * ('a,'b) pair -> bool
-    val compare :	('a * 'a -> order) * ('b * 'b -> order) ->
+    val collate :	('a * 'a -> order) * ('b * 'b -> order) ->
 			    ('a,'b) pair * ('a,'b) pair -> order
   end
 
@@ -191,12 +189,12 @@ structure Pair : PAIR =
     fun mapFst f  (x,y)	= (f x, y)
     fun mapSnd f  (x,y)	= (x, f y)
 
-    fun equal (equalX,equalY) ((x1,y1), (x2,y2)) =
-	equalX(x1,x2) andalso equalY(y1,y2)
+    fun equal (eqX,eqY) ((x1,y1), (x2,y2)) =
+	eqX(x1,x2) andalso eqY(y1,y2)
 
-    fun compare (compareX,compareY) ((x1,y1), (x2,y2)) =
-	case compareX(x1,x2)
-	 of EQUAL => compareY(y1,y2)
+    fun collate (cmpX,cmpY) ((x1,y1), (x2,y2)) =
+	case cmpX(x1,x2)
+	 of EQUAL => cmpY(y1,y2)
 	  | other => other
   end
 
@@ -229,7 +227,7 @@ signature ALT =
 
     val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
 			    ('a,'b) alt * ('a,'b) alt -> bool
-    val compare :	('a * 'a -> order) * ('b * 'b -> order) ->
+    val collate :	('a * 'a -> order) * ('b * 'b -> order) ->
 			    ('a,'b) alt * ('a,'b) alt -> order
   end
 
@@ -275,9 +273,9 @@ structure Alt : ALT =
 	 | (SND y1, SND y2)	=> equalY(y1,y2)
 	 | _			=> false
 
-    fun compare (compareX,compareY) =
-	fn (FST x1, FST x2)	=> compareX(x1,x2)
-	 | (SND y1, SND y2)	=> compareY(y1,y2)
+    fun collate (cmpX,cmpY) =
+	fn (FST x1, FST x2)	=> cmpX(x1,x2)
+	 | (SND y1, SND y2)	=> cmpY(y1,y2)
 	 | (FST _,  SND _ )	=> LESS
 	 | (SND _,  FST _ )	=> GREATER
   end
@@ -296,18 +294,25 @@ signature LIST =
 
     val sub :		'a list * int -> 'a
 
+    val index :		'a list -> (int * 'a) list
     val appr :		('a -> unit) -> 'a list -> unit
     val appi :		(int * 'a -> unit) -> 'a list -> unit
     val appri :		(int * 'a -> unit) -> 'a list -> unit
     val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list
+    val mapiPartial :	(int * 'a -> 'b option) -> 'a list -> 'b list
     val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
     val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-
+    val alli :		(int * 'a -> bool) -> 'a list -> bool
+    val existsi :	(int * 'a -> bool) -> 'a list -> bool
+    val findi :		(int * 'a -> bool) -> 'a list -> (int * 'a) option
+    val filteri :	(int * 'a -> bool) -> 'a list -> (int * 'a) list
+    val partitioni :	(int * 'a -> bool) -> 'a list -> (int * 'a) list *
+							 (int * 'a) list
     val contains :	''a list -> ''a -> bool
     val notContains :	''a list -> ''a -> bool
 
     val equal :		('a * 'a -> bool) -> 'a list * 'a list -> bool
-    val compare :	('a * 'a -> order) -> 'a list * 'a list -> order
+    val collate :	('a * 'a -> order) -> 'a list * 'a list -> order
 
     val isSorted :	('a * 'a -> order) -> 'a list -> bool
     val sort :		('a * 'a -> order) -> 'a list -> 'a list
@@ -320,28 +325,15 @@ structure List : LIST =
 
     type 'a t			= 'a list
 
-    val append			= op @
     val sub			= nth
+
+    fun index xs		= index'(0,xs)
+    and index'(i, nil  )	= nil
+      | index'(i, x::xs)	= (i,x) :: index'(i+1,xs)
 
     fun appr  f   xs		= appr'(f,xs)
     and appr'(f,  nil )		= ()
       | appr'(f, x::xs)		= (appr'(f,xs) ; f x)
-
-    fun foldli f y xs		= foldli'(f,y,0,xs)
-    and foldli'(f, y, i,  nil )	= y
-      | foldli'(f, y, i, x::xs)	= foldli'(f, f(i,x,y), i+1, xs)
-
-    fun foldri  f  y xs		= foldri'(f,y,0,xs)
-    and foldri'(f, y, i,  nil )	= y
-      | foldri'(f, y, i, x::xs)	= f(i, x, foldri'(f, y, i+1, xs))
-
-    fun mapr  f   xs		= mapr'(f,xs)
-    and mapr'(f,  nil )		= nil
-      | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
-
-    fun mapi  f xs		= mapi'(f,0,xs)
-    and mapi'(f, i,  nil )	= nil
-      | mapi'(f, i, x::xs)	= f(i,x) :: mapi'(f, i+1, xs)
 
     fun appi  f xs		= appi'(f,0,xs)
     and appi'(f, i,  nil )	= ()
@@ -350,6 +342,47 @@ structure List : LIST =
     fun appri  f xs		= appri'(f,0,xs)
     and appri'(f, i,  nil )	= ()
       | appri'(f, i, x::xs)	= (appri'(f, i+1, xs) ; f(i,x))
+
+    fun foldli f y xs		= foldli'(f,y,0,xs)
+    and foldli'(f, y, i,  nil )	= y
+      | foldli'(f, y, i, x::xs)	= foldli'(f, f(i,x,y), i+1, xs)
+
+    fun mapi  f xs		= mapi'(f,0,xs)
+    and mapi'(f, i,  nil )	= nil
+      | mapi'(f, i, x::xs)	= f(i,x) :: mapi'(f, i+1, xs)
+
+    fun mapiPartial  f   xs	= mapiPartial'(f,0,xs)
+    and mapiPartial'(f,i, nil )	= nil
+      | mapiPartial'(f,i,x::xs)	= case f(i,x)
+				   of NONE   => mapiPartial'(f,i+1,xs)
+				    | SOME y => y::mapiPartial'(f,i+1,xs)
+
+    fun foldri  f  y xs		= foldri'(f,y,0,xs)
+    and foldri'(f, y, i,  nil )	= y
+      | foldri'(f, y, i, x::xs)	= f(i, x, foldri'(f, y, i+1, xs))
+
+    fun alli  f   xs		= alli'(f,0,xs)
+    and alli'(f, i,  nil )	= true
+      | alli'(f, i, x::xs)	= f(i,x) andalso alli'(f,i+1,xs)
+
+    fun existsi  f   xs		= existsi'(f,0,xs)
+    and existsi'(f, i,  nil )	= false
+      | existsi'(f, i, x::xs)	= f(i,x) orelse existsi'(f,i+1,xs)
+
+    fun findi  f   xs		= findi'(f,0,xs)
+    and findi'(f, i,  nil )	= NONE
+      | findi'(f, i, x::xs)	= if f(i,x) then SOME(i,x) else findi'(f,i+1,xs)
+
+    fun filteri  f   xs			= filteri'(f,0,xs,nil)
+    and filteri'(f, i,  nil,  zs)	= rev zs
+      | filteri'(f, i, x::xs, zs)	= filteri'(f,i+1,xs,
+					       if f(i,x) then (i,x)::zs else zs)
+
+    fun partitioni  f xs		= partitioni'(f,0,xs,nil,nil)
+    and partitioni'(f,i,  nil,  ys, zs)	= (rev ys, rev zs)
+      | partitioni'(f,i, x::xs, ys, zs)	= if f(i,x)
+					  then partitioni'(f,i+1,xs,(i,x)::ys,zs)
+					  else partitioni'(f,i+1,xs,ys,(i,x)::zs)
 
     fun contains xs y		= contains'(y, xs)
     and contains'(y, nil)	= false
@@ -362,32 +395,32 @@ structure List : LIST =
       | equal'(eq, x::xs,y::ys)	= eq(x,y) andalso equal'(eq,xs,ys)
       | equal' _		= false
 
-    fun compare  cmp (xs,ys)	= compare'(cmp,xs,ys)
-    and compare'(cmp, [], [])	= EQUAL
-      | compare'(cmp, [], _ )	= LESS
-      | compare'(cmp, _,  [])	= GREATER
-      | compare'(cmp, x::xs, y::ys) =
+    fun collate  cmp (xs,ys)	= collate'(cmp,xs,ys)
+    and collate'(cmp, [], [])	= EQUAL
+      | collate'(cmp, [], _ )	= LESS
+      | collate'(cmp, _,  [])	= GREATER
+      | collate'(cmp, x::xs, y::ys) =
 				  case cmp(x,y)
-				    of EQUAL => compare'(cmp,xs,ys)
+				    of EQUAL => collate'(cmp,xs,ys)
 				     | other => other
 
-    fun isSorted  compare xs	= isSorted'(compare, xs)
-    and isSorted'(compare,(nil|_::nil))
+    fun isSorted  cmp xs	= isSorted'(cmp, xs)
+    and isSorted'(cmp,(nil|_::nil))
 				= true
-      | isSorted'(compare, x1::(xs as x2::_))
-				= compare(x1,x2) <> GREATER
-					  andalso isSorted'(compare, xs)
+      | isSorted'(cmp, x1::(xs as x2::_))
+				= cmp(x1,x2) <> GREATER
+					  andalso isSorted'(cmp, xs)
 
     fun split nil		= (nil, nil)
       | split(xs as _::nil)	= (xs, nil)
       | split(x1::x2::xs)	= let val (xs1,xs2) = split xs
 				  in (x1::xs1, x2::xs2) end
-    fun sort compare		=
+    fun sort cmp		=
     let
 	fun merge(xs, nil)	= xs
 	  | merge(nil, ys)	= ys
 	  | merge(xs as x::xs',
-		  ys as y::ys')	= case compare(x,y)
+		  ys as y::ys')	= case cmp(x,y)
 				    of LESS    => x::merge(xs',ys)
 				     | EQUAL   => x::y::merge(xs',ys')
 				     | GREATER => y::merge(xs,ys')
@@ -725,6 +758,7 @@ signature WORD =
 
     type t = word
 
+    val ~ : word -> word
     val equal :	word * word -> bool
     val hash :	word -> int
   end
@@ -736,6 +770,7 @@ structure Word : WORD =
 
     type t	= word
 
+    fun ~w	= 0w0-w
     val equal	= op =
     fun hash w	= abs(toInt w) handle Overflow => 0
   end
@@ -747,6 +782,7 @@ structure LargeWord : WORD =
 
     type t	= word
 
+    fun ~w	= 0w0-w
     val equal	= op =
     fun hash w	= abs(toInt w) handle Overflow => 0
   end
@@ -795,39 +831,16 @@ structure LargeReal : REAL =
  * Vector
  *****************************************************************************)
 
-signature VECTOR =
-  sig
-    include VECTOR
-
-    type 'a t = 'a vector
-
-    val toList :	'a vector -> 'a list
-
-    val rev :		'a vector -> 'a vector
-    val update :	'a vector * int * 'a -> 'a vector
-
-    val appr :		('a -> unit) -> 'a vector -> unit
-    val appri :		(int * 'a -> unit) -> 'a vector * int * int option
-					   -> unit
-    val all :		('a -> bool) -> 'a vector -> bool
-    val exists :	('a -> bool) -> 'a vector -> bool
-    val find :		('a -> bool) -> 'a vector -> 'a option
-    val contains :	''a vector -> ''a -> bool
-    val notContains :	''a vector -> ''a -> bool
-
-    val equal :		('a * 'a -> bool) -> 'a vector * 'a vector -> bool
-    val compare :	('a * 'a -> order) -> 'a vector * 'a vector -> order
-
-    val isSorted :	('a * 'a -> order) -> 'a vector -> bool
-    val sort :		('a * 'a -> order) -> 'a vector -> 'a vector
-  end
-
-
-structure Vector : VECTOR =
+structure Vector =
   struct
     open Vector
 
-    type 'a t = 'a vector
+    fun appi f v		= Vector.appi f (v,0,NONE)
+    fun mapi f v		= Vector.mapi f (v,0,NONE)
+    fun foldli f b v		= Vector.foldli f b (v,0,NONE)
+    fun foldri f b v		= Vector.foldri f b (v,0,NONE)
+
+    type 'a t			= 'a vector
 
     fun toList v		= toList'(v, length v - 1, [])
     and toList'(v, ~1, xs)	= xs
@@ -840,26 +853,29 @@ structure Vector : VECTOR =
     fun update(v,i,x)		= let fun f j = if i = j then x else sub(v,j)
 				  in tabulate(length v, f) end
 
-    fun sliceLength(v,i,NONE)	= if i > length v then raise Subscript else
-				  length v - i
-      | sliceLength(v,i,SOME n)	= if i+n > length v orelse n < 0
-				  then raise Subscript else n
-
     fun appr  f v		= appr'(f, v, length v - 1)
     and appr'(f,v,~1)		= ()
       | appr'(f,v,i)		= (f(sub(v,i)) ; appr'(f,v,i-1))
 
-    fun appri f (v,i,no)	= appri'(f, v, i, i-1+sliceLength(v,i,no))
-    and appri'(f,v,i,j)		= if i < j then () else
-				  (f(i, sub(v,i)) ; appri'(f,v,i-1,j))
+    fun appri f v		= appri'(f, v, length v - 1)
+    and appri'(f,v,~1)		= ()
+      | appri'(f,v,i)		= (f(i, sub(v,i)) ; appri'(f,v,i-1))
 
     fun all  f v		= all'(f,v,0)
     and all'(f,v,i) 		= i = length v orelse
 				  f(sub(v,i)) andalso all'(f,v,i+1)
 
+    fun alli  f v		= alli'(f,v,0)
+    and alli'(f,v,i) 		= i = length v orelse
+				  f(i,sub(v,i)) andalso alli'(f,v,i+1)
+
     fun exists  f v		= exists'(f,v,0)
     and exists'(f,v,i) 		= i <> length v andalso
 				  (f(sub(v,i)) orelse exists'(f,v,i+1))
+
+    fun existsi  f v		= existsi'(f,v,0)
+    and existsi'(f,v,i) 	= i <> length v andalso
+				  (f(i,sub(v,i)) orelse existsi'(f,v,i+1))
 
     fun contains v x		= contains'(v,x,0)
     and contains'(v,x,i)	= i <> length v andalso
@@ -873,29 +889,36 @@ structure Vector : VECTOR =
 					     else find'(f,v,i+1)
 				  end
 
+    fun findi  f v		= findi'(f,v,0)
+    and findi'(f,v,i) 		= if i = length v then NONE else
+				  let val x = sub(v,i) in
+				      if f(i,x) then SOME x
+					        else findi'(f,v,i+1)
+				  end
+
     fun equal  eq (v1,v2)	= length v1 = length v2 andalso
 				  equal'(eq,v1,v2,0)
     and equal'(eq,v1,v2,i)	= i = length v1 orelse
 				  eq(sub(v1,i), sub(v2,i)) andalso
 				  equal'(eq,v1,v2,i+1)
 
-    fun compare  cmp (v1,v2)	= compare'(cmp,v1,v2,0)
-    and compare'(cmp,v1,v2,i)	= case (i = length v1, i = length v2)
+    fun collate  cmp (v1,v2)	= collate'(cmp,v1,v2,0)
+    and collate'(cmp,v1,v2,i)	= case (i = length v1, i = length v2)
 				    of (true,  true)  => EQUAL
 				     | (true,  false) => LESS
 				     | (false, true)  => GREATER
 				     | (false, false) =>
 				  case cmp(sub(v1,i), sub(v2,i))
-				    of EQUAL => compare'(cmp,v1,v2,i+1)
+				    of EQUAL => collate'(cmp,v1,v2,i+1)
 				     | other => other
 
-    fun sort compare		= sort'(List.sort compare)
+    fun sort cmp		= sort'(List.sort cmp)
     and sort' sortList v	= fromList(sortList(toList v))
 
-    fun isSorted compare v	= isSorted'(compare,v,1)
-    and isSorted'(compare,v,i)	= i >= length v orelse
-				  compare(sub(v,i-1), sub(v,i)) <> GREATER
-				  andalso isSorted'(compare,v,i+1)
+    fun isSorted cmp v		= isSorted'(cmp,v,1)
+    and isSorted'(cmp,v,i)	= i >= length v orelse
+				  cmp(sub(v,i-1), sub(v,i)) <> GREATER
+				  andalso isSorted'(cmp,v,i+1)
   end
 
 
@@ -916,150 +939,227 @@ signature VECTOR_PAIR =
     val foldr :		('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
     val all :		('a * 'b -> bool) -> 'a vector * 'b vector -> bool
     val exists :	('a * 'b -> bool) -> 'a vector * 'b vector -> bool
-
-    val appi :		(int * 'a * 'b -> unit) ->
-			   'a vector * 'b vector * int * int option -> unit
-    val appri :		(int * 'a * 'b -> unit) ->
-			   'a vector * 'b vector * int * int option -> unit
-    val mapi :		(int * 'a * 'b -> 'c) ->
-			   'a vector * 'b vector * int * int option -> 'c vector
-    val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
-			   'a vector * 'b vector * int * int option -> 'c
-    val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
-			   'a vector * 'b vector * int * int option -> 'c
-
     val find :		('a * 'b -> bool) -> 'a vector * 'b vector
 					  -> ('a * 'b) option
+
+    val appi :		(int * 'a * 'b -> unit) -> 'a vector * 'b vector -> unit
+    val appri :		(int * 'a * 'b -> unit) -> 'a vector * 'b vector -> unit
+    val mapi :		(int * 'a * 'b -> 'c) ->
+			   'a vector * 'b vector -> 'c vector
+    val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
+			   'a vector * 'b vector -> 'c
+    val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
+			   'a vector * 'b vector -> 'c
+    val alli :		(int * 'a * 'b -> bool) -> 'a vector * 'b vector -> bool
+    val existsi :	(int * 'a * 'b -> bool) -> 'a vector * 'b vector -> bool
+    val findi :		(int * 'a * 'b -> bool) -> 'a vector * 'b vector ->
+						   (int * 'a * 'b) option
   end
 
 
 structure VectorPair : VECTOR_PAIR =
   struct
-    val sub = Vector.sub
+    val sub' = Vector.sub
 
     fun length (v1,v2)		= Int.min(Vector.length v1, Vector.length v2)
-    fun sliceLength(v1,v2,i,NONE)
-				= if i > Vector.length v1 orelse
-				     i > Vector.length v2
-				  then raise General.Subscript
-				  else Int.min(Vector.length v1,
-					       Vector.length v2) - i
-      | sliceLength(v1,v2,i,SOME n)
-				= if i+n > Vector.length v1 orelse
- 				     i+n > Vector.length v2 orelse n < 0
-				  then raise General.Subscript
-				  else n
-
 
     fun zip(v1,v2)		= Vector.tabulate(length(v1,v2),
-				     fn i => (sub(v1,i), sub(v2,i)))
+				     fn i => (sub'(v1,i), sub'(v2,i)))
     fun unzip(v: ('a*'b)vector)	= (Vector.map #1 v, Vector.map #2 v)
 
     fun map f (v1,v2)		= Vector.tabulate(length(v1,v2),
-				     fn i => f(sub(v1,i), sub(v2,i)))
-    fun mapi f (v1,v2,i,no)	= Vector.tabulate(sliceLength(v1,v2,i,no),
-				     fn k => f(i+k, sub(v1,i+k), sub(v2,i+k)))
+				     fn i => f(sub'(v1,i), sub'(v2,i)))
+    fun mapi f (v1,v2)		= Vector.tabulate(length(v1,v2),
+				     fn i => f(i, sub'(v1,i), sub'(v2,i)))
 
     fun app f (v1,v2)		= app'(f, v1, v2, 0, length(v1,v2))
     and app'(f,v1,v2,i,0)	= ()
-      | app'(f,v1,v2,i,n)	= (f(sub(v1,i), sub(v2,i)) ;
+      | app'(f,v1,v2,i,n)	= (f(sub'(v1,i), sub'(v2,i)) ;
 				   app'(f,v1,v2,i+1,n-1))
+
+    fun appi f (v1,v2)		= appi'(f, v1, v2, 0, length(v1,v2))
+    and appi'(f,v1,v2,i,0)	= ()
+      | appi'(f,v1,v2,i,n)	= (f(i, sub'(v1,i), sub'(v2,i)) ;
+				   appi'(f,v1,v2,i+1,n-1))
 
     fun appr f (v1,v2)		= appr'(f, v1, v2, length(v1,v2)-1)
     and appr'(f,v1,v2,~1)	= ()
-      | appr'(f,v1,v2,i)	= (f(sub(v1,i),sub(v2,i)) ; appr'(f,v1,v2,i-1))
+      | appr'(f,v1,v2,i)	= (f(sub'(v1,i),sub'(v2,i)); appr'(f,v1,v2,i-1))
+
+    fun appri f (v1,v2)		= appri'(f,v1,v2, length(v1,v2)-1)
+    and appri'(f,v1,v2,~1)	= ()
+      | appri'(f,v1,v2,i)	= (f(i, sub'(v1,i), sub'(v2,i)) ;
+  				   appri'(f,v1,v2,i-1))
 
     fun foldl f x (v1,v2)	= foldl'(f, x, v1, v2, 0, length(v1,v2))
     and foldl'(f,x,v1,v2,i,0)	= x
-      | foldl'(f,x,v1,v2,i,n)	= foldl'(f, f(sub(v1,i), sub(v2,i), x),
+      | foldl'(f,x,v1,v2,i,n)	= foldl'(f, f(sub'(v1,i), sub'(v2,i), x),
 					 v1, v2, i+1, n-1)
+
+    fun foldli f x (v1,v2)	= foldli'(f,x,v1,v2, 0, length(v1,v2))
+    and foldli'(f,x,v1,v2,i,0)	= x
+      | foldli'(f,x,v1,v2,i,n)	= foldli'(f, f(i, sub'(v1,i), sub'(v2,i), x),
+					  v1, v2, i+1, n-1)
 
     fun foldr f x (v1,v2)	= foldr'(f, x, v1, v2, length(v1,v2)-1)
     and foldr'(f,x,v1,v2,~1)	= x
-      | foldr'(f,x,v1,v2,i)	= foldr'(f, f(sub(v1,i), sub(v2,i), x),
+      | foldr'(f,x,v1,v2,i)	= foldr'(f, f(sub'(v1,i), sub'(v2,i), x),
 					 v1, v2, i-1)
 
-    fun appi f (v1,v2,i,no)	= appi'(f, v1, v2, i, sliceLength(v1,v2,i,no))
-    and appi'(f,v1,v2,i,0)	= ()
-      | appi'(f,v1,v2,i,n)	= (f(i, sub(v1,i), sub(v2,i)) ;
-				   appi'(f,v1,v2,i+1,n-1))
-
-    fun appri f (v1,v2,i,no)	= appri'(f,v1,v2,i, i-1+sliceLength(v1,v2,i,no))
-    and appri'(f,v1,v2,i,j)	= if i < j then () else
-				  (f(i, sub(v1,i), sub(v2,i)) ;
-  				   appri'(f,v1,v2,i-1,j))
-
-    fun foldli f x (v1,v2,i,no)	= foldli'(f,x,v1,v2, i, sliceLength(v1,v2,i,no))
-    and foldli'(f,x,v1,v2,i,0)	= x
-      | foldli'(f,x,v1,v2,i,n)	= foldli'(f, f(i, sub(v1,i), sub(v2,i), x),
-					  v1, v2, i+1, n-1)
-
-    fun foldri f x (v1,v2,i,no)	= foldri'(f, x, v1, v2,
-					  i-1+sliceLength(v1,v2,i,no), i)
-    and foldri'(f,x,v1,v2,i,j)	= if i < j then x else
-				  foldri'(f, f(i, sub(v1,i), sub(v2,i), x),
-					  v1, v2, i-1, j)
+    fun foldri f x (v1,v2)	= foldri'(f, x, v1, v2, length(v1,v2))
+    and foldri'(f,x,v1,v2,~1)	= x
+      | foldri'(f,x,v1,v2,i)	= foldri'(f, f(i, sub'(v1,i), sub'(v2,i), x),
+					  v1, v2, i-1)
 
     fun all f (v1,v2)		= all'(f, v1, v2, 0, length(v1,v2))
-    and all'(f,v1,v2,i,n) 	= n = 0 orelse ( f(sub(v1,i), sub(v2,i))
+    and all'(f,v1,v2,i,n) 	= n = 0 orelse ( f(sub'(v1,i), sub'(v2,i))
 					andalso  all'(f,v1,v2,i+1,n-1) )
 
+    fun alli f (v1,v2)		= alli'(f, v1, v2, 0, length(v1,v2))
+    and alli'(f,v1,v2,i,n) 	= n = 0 orelse ( f(i, sub'(v1,i), sub'(v2,i))
+					andalso  alli'(f,v1,v2,i+1,n-1) )
+
     fun exists f (v1,v2)	= exists'(f, v1, v2, 0, length(v1,v2))
-    and exists'(f,v1,v2,i,n)	= n <> 0 andalso ( f(sub(v1,i), sub(v2,i))
-					   orelse  exists'(f,v1,v2,i+1,n-1) )
+    and exists'(f,v1,v2,i,n)	= n <> 0 andalso ( f(sub'(v1,i), sub'(v2,i))
+					 orelse  exists'(f,v1,v2,i+1,n-1) )
+
+    fun existsi f (v1,v2)	= existsi'(f, v1, v2, 0, length(v1,v2))
+    and existsi'(f,v1,v2,i,n)	= n <> 0 andalso ( f(i, sub'(v1,i), sub'(v2,i))
+					 orelse  existsi'(f,v1,v2,i+1,n-1) )
 
     fun find  f (v1,v2)		= find'(f, v1, v2, 0, length(v1,v2))
     and find'(f,v1,v2,i,0)	= NONE
-      | find'(f,v1,v2,i,n)	= let val xy = (sub(v1,i), sub(v2,i)) in
+      | find'(f,v1,v2,i,n)	= let val xy = (sub'(v1,i), sub'(v2,i)) in
 				      if f xy then SOME xy
 					      else find'(f,v1,v2,i+1,n-1)
 				  end
+
+    fun findi  f (v1,v2)	= findi'(f, v1, v2, 0, length(v1,v2))
+    and findi'(f,v1,v2,i,0)	= NONE
+      | findi'(f,v1,v2,i,n)	= let val ixy = (i, sub'(v1,i), sub'(v2,i)) in
+				      if f ixy then SOME ixy
+					      else findi'(f,v1,v2,i+1,n-1)
+				  end
   end
 
+
+(*****************************************************************************
+ * VectorSlice
+ *****************************************************************************)
+
+signature VECTOR_SLICE =
+sig
+    type 'a slice
+    val length : 'a slice -> int
+    val sub : 'a slice * int -> 'a
+    val full : 'a Vector.vector -> 'a slice
+    val slice : 'a Vector.vector * int * int option -> 'a slice
+    val subslice : 'a slice * int * int option -> 'a slice
+    val base : 'a slice -> 'a Vector.vector * int * int
+    val vector : 'a slice -> 'a Vector.vector
+    val concat : 'a slice list -> 'a Vector.vector
+    val isEmpty : 'a slice -> bool
+    val getItem : 'a slice -> ('a * 'a slice) option
+    val appi : (int * 'a -> unit) -> 'a slice -> unit
+    val app : ('a -> unit) -> 'a slice -> unit
+    val mapi : (int * 'a -> 'b) -> 'a slice -> 'b vector
+    val map : ('a -> 'b) -> 'a slice -> 'b vector
+    val foldli : (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val foldri : (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val foldl : ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val foldr : ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+    val findi : (int * 'a -> bool) -> 'a slice -> (int * 'a) option
+    val find : ('a -> bool) -> 'a slice -> 'a option
+    val exists : ('a -> bool) -> 'a slice -> bool
+    val all : ('a -> bool) -> 'a slice -> bool
+    val collate : ('a * 'a -> order) -> 'a slice * 'a slice -> order
+end
+
+structure VectorSlice :> VECTOR_SLICE =
+struct
+    type 'a slice		= 'a Vector.vector * int * int
+
+    fun base sl			= sl : 'a slice
+    fun length (v,i,n)		= n
+    fun isEmpty sl		= length sl = 0
+    fun sub((v,i,n), j)		= if j < 0 orelse n <= j then raise Subscript
+							 else Vector.sub(v, i+j)
+
+    fun subslice(sl, i, NONE)	= subslice(sl, i, SOME(length sl - i))
+      | subslice(sl, i, SOME n)	= (if i < 0 orelse n < 0 orelse length sl < i+n
+				   then raise Subscript
+				   else (#1 sl, #2 sl + i, n)
+				  ) handle Overflow => raise Subscript
+    fun full v			= (v, 0, Vector.length v)
+    fun slice(v, i, sz)		= subslice(full v, i, sz)
+
+    fun vector sl		= Vector.tabulate(length sl, fn i => sub (sl,i))
+    fun concat l		= Vector.concat(List.map vector l)
+
+    fun getItem sl		= if isEmpty sl then NONE else
+				  SOME(sub(sl, 0), subslice(sl, 1, NONE))
+
+    fun appi  f  sl		= appi'(f, sl, 0)
+    and appi'(f, sl, i)		= if i = length sl then () else
+				  (f(i, sub(sl, i)); appi'(f, sl, i+1))
+
+    fun foldli f init sl	= foldli'(f, init, sl, 0)
+    and foldli'(f, x, sl, i)	= if i = length sl then x else
+				  foldli'(f, f(i, sub(sl, i), x), sl, i+1)
+    fun foldri f init sl	= foldri'(f, init, sl, length sl)
+    and foldri'(f, x, sl, i)	= if i = 0 then x else
+				  foldli'(f, f(i-1, sub(sl, i-1), x), sl, i-1)
+
+    fun mapi f sl		= Vector.fromList
+				      (foldri (fn (i,a,l) => f(i,a)::l) [] sl)
+
+    fun findi  f  sl		= findi'(f, sl, 0)
+    and findi'(f, sl, i)	= if i = length sl then NONE
+				  else if f(i, sub(sl, i))
+				  then SOME(i, sub(sl, i))
+				  else findi'(f, sl, i+1)
+
+    fun app f sl		= appi (f o #2) sl
+    fun map f sl		= mapi (f o #2) sl
+    fun foldl f init sl		= foldli (fn (_, a, x) => f(a, x)) init sl
+    fun foldr f init sl		= foldri (fn (_, a, x) => f(a, x)) init sl
+    fun find f sl		= Option.map #2 (findi (f o #2) sl)
+    fun exists f sl		= Option.isSome(find f sl)
+    fun all f sl		= Bool.not(exists (Bool.not o f) sl)
+
+    fun collate f ((v1,i1,0),  (v2,i2,0))  = EQUAL
+      | collate f ((v1,i1,0),  (v2,i2,n2)) = LESS
+      | collate f ((v1,i1,n1), (v2,i2,0) ) = GREATER
+      | collate f ((v1,i1,n1), (v2,i2,n2)) =
+	case f(Vector.sub(v1, i1), Vector.sub(v2, i2))
+	  of EQUAL => collate f ((v1, i1+1, n1-1), (v2, i2+1, n2-1))
+	   | other => other
+end
 
 
 (*****************************************************************************
  * Array
  *****************************************************************************)
 
-signature ARRAY =
-  sig
-    include ARRAY
-
-    type 'a t = 'a array
-
-    val new :		int * 'a -> 'a array
-
-    val fromVector :	'a vector -> 'a array
-    val toVector :	'a array -> 'a vector
-    val toList :	'a array -> 'a list
-
-    val swap :		'a array * int * int -> unit
-    val rev :		'a array -> unit
-
-    val appr :		('a -> unit) -> 'a array -> unit
-    val appri :		(int * 'a -> unit) -> 'a array * int * int option
-					   -> unit
-
-    val all :		('a -> bool) -> 'a array -> bool
-    val exists :	('a -> bool) -> 'a array -> bool
-    val find :		('a -> bool) -> 'a array -> 'a option
-
-    val equal :		('a * 'a -> bool) -> 'a array * 'a array -> bool (**)
-    val compare :	('a * 'a -> order) -> 'a array * 'a array -> order
-
-    val isSorted :	('a * 'a -> order) -> 'a array -> bool
-    val sort :		('a * 'a -> order) -> 'a array -> unit
-  end
-
-
-structure Array : ARRAY =
+structure Array =
   struct
     open Array
+    val sub' = sub
+
+    fun appi f a	= Array.appi f (a,0,NONE)
+    fun modifyi f a	= Array.modifyi f (a,0,NONE)
+    fun foldli f b a	= Array.foldli f b (a,0,NONE)
+    fun foldri f b a	= Array.foldri f b (a,0,NONE)
+
+    fun vector a	= Vector.tabulate(length a, fn i => sub(a,i))
+
+    fun copy{src,dst,di} =
+	Array.copy{src=src, si=0, dst=dst, di=di, len=NONE}
+    fun copyVec{src,dst,di} =
+	Array.copyVec{src=src, si=0, dst=dst, di=di, len=NONE}
 
     type 'a t		= 'a array
 
-    val new		= array
     fun fromVector v	= tabulate(Vector.length v, fn i => Vector.sub(v,i))
     fun toVector a	= Vector.tabulate(length a, fn i => sub(a,i))
 
@@ -1077,26 +1177,29 @@ structure Array : ARRAY =
 					  (swap(a,i,j) ; rev'(i+1, j-1))
 				  in rev'(0, length a - 1) end
 
-    fun sliceLength(v,i,NONE)	= if i > length v then raise Subscript else
-				  length v - i
-      | sliceLength(v,i,SOME n)	= if i+n > length v orelse n < 0
-				  then raise Subscript else n
-
     fun appr  f v		= appr'(f, v, length v - 1)
     and appr'(f,v,~1)		= ()
       | appr'(f,v,i)		= (f(sub(v,i)) ; appr'(f,v,i-1))
 
-    fun appri f (v,i,no)	= appri'(f, v, i, i-1+sliceLength(v,i,no))
-    and appri'(f,v,i,j)		= if i < j then () else
-				  (f(i, sub(v,i)) ; appri'(f,v,i-1,j))
+    fun appri f v		= appri'(f, v, length v - 1)
+    and appri'(f,v,~1)		= ()
+      | appri'(f,v,i)		= (f(i, sub(v,i)) ; appri'(f,v,i-1))
 
     fun all  f a		= all'(f,a,0)
     and all'(f,a,i) 		= i = length a orelse
 				  f(sub(a,i)) andalso all'(f,a,i+1)
 
+    fun alli  f a		= alli'(f,a,0)
+    and alli'(f,a,i) 		= i = length a orelse
+				  f(i,sub'(a,i)) andalso alli'(f,a,i+1)
+
     fun exists  f a		= exists'(f,a,0)
     and exists'(f,a,i) 		= i <> length a andalso
-				  (f(sub(a,i)) orelse exists'(f,a,i+1))
+				  (f(sub'(a,i)) orelse exists'(f,a,i+1))
+
+    fun existsi  f a		= existsi'(f,a,0)
+    and existsi'(f,a,i) 	= i <> length a andalso
+				  (f(i,sub'(a,i)) orelse existsi'(f,a,i+1))
 
     fun find  f a		= find'(f,a,0)
     and find'(f,a,i) 		= if i = length a then NONE else
@@ -1105,48 +1208,60 @@ structure Array : ARRAY =
 					     else find'(f,a,i+1)
 				  end
 
+    fun findi  f a		= findi'(f,a,0)
+    and findi'(f,a,i) 		= if i = length a then NONE else
+				  let val x = sub(a,i) in
+				      if f(i,x) then SOME x
+					        else findi'(f,a,i+1)
+				  end
+
+    fun contains v x		= contains'(v,x,0)
+    and contains'(v,x,i)	= i <> length v andalso
+				  (x = sub(v,i) orelse contains'(v,x,i+1))
+    fun notContains v x		= Bool.not(contains'(v,x,0))
+
     fun equal  eq (a1,a2)	= length a1 = length a2 andalso
 				  equal'(eq,a1,a2,0)
     and equal'(eq,a1,a2,i)	= i = length a1 orelse
 				  eq(sub(a1,i), sub(a2,i)) andalso
 				  equal'(eq,a1,a2,i+1)
 
-    fun compare  cmp (a1,a2)	= compare'(cmp,a1,a2,0)
-    and compare'(cmp,a1,a2,i)	= case (i = length a1, i = length a2)
+    fun collate  cmp (a1,a2)	= collate'(cmp,a1,a2,0)
+    and collate'(cmp,a1,a2,i)	= case (i = length a1, i = length a2)
 				    of (true,  true)  => EQUAL
 				     | (true,  false) => LESS
 				     | (false, true)  => GREATER
 				     | (false, false) =>
 				  case cmp(sub(a1,i), sub(a2,i))
-				    of EQUAL => compare'(cmp,a1,a2,i+1)
+				    of EQUAL => collate'(cmp,a1,a2,i+1)
 				     | other => other
 
-    fun isSorted compare a	= isSorted'(compare,a,1)
-    and isSorted'(compare,a,i)	= i >= length a orelse
-				  compare(sub(a,i-1), sub(a,i)) <> GREATER
-				  andalso isSorted'(compare,a,i+1)
+    fun isSorted cmp a		= isSorted'(cmp,a,1)
+    and isSorted'(cmp,a,i)	= i >= length a orelse
+				  cmp(sub(a,i-1), sub(a,i)) <> GREATER
+				  andalso isSorted'(cmp,a,i+1)
 
-    fun sort compare a =
+    fun sort cmp a =
     let
 	fun partition(i,j,p) =
 	    if i = j then j
-	    else if compare(sub(a,i),p) <> GREATER then partition(i+1,j,p)
-	    else if compare(p,sub(a,j-1)) = LESS   then partition(i,j-1,p)
+	    else if cmp(sub(a,i),p) <> GREATER then partition(i+1,j,p)
+	    else if cmp(p,sub(a,j-1)) = LESS   then partition(i,j-1,p)
 	    else (swap(a,i,j-1); partition(i+1,j-1,p))
 
 	fun sort(i,j) =
 	    if j-i <= 1 then ()
 	    else if j-i = 2 then
-		if compare(sub(a,i), sub(a,j-1)) <> GREATER
+		if cmp(sub(a,i), sub(a,j-1)) <> GREATER
 		then ()
 		else swap(a,i,j-1)
 	    else let
 		val mid = (i+j) div 2
-		val _ = if compare(sub(a,i), sub(a,mid)) <> GREATER then ()
+		val _ = if cmp(sub(a,i), sub(a,mid)) <> GREATER then ()
 			else swap(a,i,mid)
-		val _ = if compare(sub(a,mid), sub(a,j-1)) <> GREATER then ()
+		val _ = if cmp(sub(a,mid), sub(a,j-1)) <> GREATER then ()
 			else (swap(a,mid,j-1);
-			      if compare(sub(a,i),sub(a,mid)) <> GREATER then ()
+			      if cmp(sub(a,i),sub(a,mid)) <> GREATER then ()
 			      else swap(a,i,mid))
 	  	val k = partition(i+1,j-1, sub(a,mid))
 	    in
