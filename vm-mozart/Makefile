@@ -630,12 +630,6 @@ build3/lib/fundamental/LinkedFundamental.ozf: \
 	build3/lib/fundamental/Fundamental.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) $< -o $@
 
-build3/compiler/backend-mozart/CodeGenPhase.ozf: \
-	build1/compiler/backend-mozart/CodeGenPhase.ozf \
-	build3/compiler/backend-mozart/CodeGenPhase.asig
-	$(ALICEC1) $(ALICEC_OPTS) --rtt-level=no --replacesign $< \
-		build3/compiler/backend-mozart/CodeGenPhase.asig $@
-
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
