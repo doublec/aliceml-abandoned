@@ -1,21 +1,21 @@
 
-functor MkCore(structure TypeManager : TYPE_MANAGER
-	       structure Special : SPECIAL
-	       val space : Util.spaces
-	       val tree : TypeTree.tree) :> GENERATOR =
+functor MkUnsafe(structure TypeManager : TYPE_MANAGER
+	         structure Special : SPECIAL
+	         val space : Util.spaces
+	         val tree : TypeTree.tree) :> GENERATOR =
     struct
 	open TypeTree
 	open TypeManager
 
 	val nativeName = "Native"^Util.spaceName(space)
-	val safeName = Util.spaceName(space)^"Core"
+	val unsafeName = Util.spaceName(space)^"Unsafe"
 
 	(* Indentation constants *)
 	val sigIndent = Util.indent 1
 	val wrIndent = Util.indent 2
 
 	val siginfo = {
-	     name = Util.strUpper(safeName)^"-sig.aml" ,
+	     name = Util.strUpper(unsafeName)^"-sig.aml" ,
 	     intro = 
 	         ["(* This is a generated file. ",
 		  "Modifications may get lost. *)\n\n",
@@ -23,7 +23,7 @@ functor MkCore(structure TypeManager : TYPE_MANAGER
 		  "import structure GtkEnums from \"GtkEnums\"\n",
 		  "import structure GdkEnums from \"GdkEnums\"\n",
 		  "\n",
-		  "signature ", Util.strUpper safeName, " =\n",
+		  "signature ", Util.strUpper unsafeName, " =\n",
 		  "sig\n",
 		  sigIndent, "type object = GtkUtils.object\n" ,
 		  sigIndent, "exception TypeMismatch of string\n",
@@ -33,7 +33,7 @@ functor MkCore(structure TypeManager : TYPE_MANAGER
 	    } : Util.fileInfo
 
 	val wrapperinfo = {
-             name = safeName^".aml" ,
+             name = unsafeName^".aml" ,
              intro =
 		["(* This is a generated file. ",
 		 "Modifications may get lost. *)\n\n",
@@ -41,9 +41,9 @@ functor MkCore(structure TypeManager : TYPE_MANAGER
 		 "import structure GtkUtils from \"GtkUtils\"\n",
 		 "import structure GtkEnums from \"GtkEnums\"\n",
 		 "import structure GdkEnums from \"GdkEnums\"\n",
-		 "import signature ", Util.strUpper(safeName), 
-		 " from \"", Util.strUpper(safeName), "-sig\"\n\n",
-		 "structure ", safeName, " :> ",Util.strUpper(safeName)," =\n",
+		 "import signature ", Util.strUpper(unsafeName), 
+		 " from \"", Util.strUpper(unsafeName), "-sig\"\n\n",
+		 "structure ", unsafeName, " :> ",Util.strUpper(unsafeName)," =\n",
 		 Util.indent 1, "struct\n",
 		 wrIndent, "type object = GtkUtils.object\n",
 		 wrIndent, "exception TypeMismatch = GtkUtils.TypeMismatch",
@@ -120,10 +120,10 @@ functor MkCore(structure TypeManager : TYPE_MANAGER
 				    Util.funNot Special.isIgnoredSafe] 
 		      (myItems' @ Special.changedFuns @ Special.specialFuns)
 
-        (* main function for creating safe files *)
+        (* main function for creating unsafe files *)
         fun create() =
 	let
-	    val _ = print ("Generating "^safeName^"\n")
+	    val _ = print ("Generating "^unsafeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo
 

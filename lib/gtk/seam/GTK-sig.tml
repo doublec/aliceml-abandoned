@@ -6,7 +6,7 @@ signature GTK =
 sig
 
 <<< "GTK_ENUMS-sig.aml" >>>
-<<< "GTK_CORE-sig.aml" >>>
+<<< "GTK_UNSAFE-sig.aml" >>>
 
     val NULL : object
     val TRUE : int

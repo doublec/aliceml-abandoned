@@ -1,22 +1,20 @@
 
 COMPS = Gtk Gdk
 COMPSCAP = GTK GDK
-
 NATIVES = $(COMPS:%=Native%)
 
-UNSAFE = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
-
-CORE = $(COMPSCAP:%=%_CORE-sig.aml) $(COMPS:%=%Core.aml)
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml)
-SAFE = $(ENUMS) $(CORE)
-COMMON = GTK_UTILS-sig.aml GtkUtils.aml
+UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
 
-MAINSIG = $(COMPSCAP:%=%-sig.aml)
-
-GENFILES = $(UNSAFE) $(SAFE)
-GENSIGS = $(MAINSIG)
-COMPFILES = $(COMMON) $(SAFE) $(MAINSIG) $(COMPS:%=%.aml)
+GENNATIVES = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
+GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
+GENSIGS = $(COMPSCAP:%=%-sig.aml) 
 OUTDIR = output
+
+COMMON = GTK_UTILS-sig.aml GtkUtils.aml
+MAINFILES = $(COMPS:%=%.aml)
+
+COMPFILES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
@@ -28,7 +26,7 @@ all: generate compile
 
 #################################################
 
-generate: rungenerator $(MAINSIG)
+generate: rungenerator $(GENSIGS)
 
 gtkclean.c:
 	(cd prepare ; $(MAKE) )
@@ -42,7 +40,7 @@ rungenerator: gtkclean.c
 
 $(GENFILES): rungenerator ;
 
-%-sig.aml: %-sig.tml %_CORE-sig.aml %_ENUMS-sig.aml
+%-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
 	gawk -f includesig.awk -v filename=includesig.awk < $< > $@
 
 #################################################
@@ -71,7 +69,7 @@ docs:
 clean:
 	rm -f $(GENFILES)
 	rm -f $(GENSIGS)
-	rm -f *.stc
+	rm -f $(COMPFILES:%.aml=%.stc)
 	rm -f $(NATIVES:%=%.o)
 	rm -f *~
 

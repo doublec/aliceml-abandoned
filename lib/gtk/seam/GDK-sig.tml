@@ -5,6 +5,6 @@ signature GDK =
 sig
 
 <<< "GDK_ENUMS-sig.aml" >>>
-<<< "GDK_CORE-sig.aml" >>>
+<<< "GDK_UNSAFE-sig.aml" >>>
 
 end

@@ -8,10 +8,10 @@ in
                               structure Special = SGTK
 			      val space = Util.GTK
 			      val tree = tree)
-    structure CGTK = MkCore(structure TypeManager = TypeManager
-		 	    structure Special = SGTK
-			    val space = Util.GTK
-			    val tree = tree)
+    structure CGTK = MkUnsafe(structure TypeManager = TypeManager
+		 	      structure Special = SGTK
+			      val space = Util.GTK
+			      val tree = tree)
     structure EGTK = MkEnums(structure TypeManager = TypeManager
 		 	     structure Special = SGTK
 			     val space = Util.GTK
@@ -23,10 +23,10 @@ in
 			      structure Special = SGDK
 			      val space = Util.GDK
 			      val tree = tree)
-    structure CGDK = MkCore(structure TypeManager = TypeManager
-		 	    structure Special = SGDK
-			    val space = Util.GDK
-			    val tree = tree)
+    structure CGDK = MkUnsafe(structure TypeManager = TypeManager
+		 	      structure Special = SGDK
+			      val space = Util.GDK
+			      val tree = tree)
     structure EGDK = MkEnums(structure TypeManager = TypeManager
 		 	     structure Special = SGDK
 			     val space = Util.GDK

@@ -2,7 +2,7 @@
 import structure GtkUtils from "GtkUtils"
 import structure NativeGtk from "NativeGtk"
 import structure GtkEnums from "GtkEnums"
-import structure GtkCore from "GtkCore"
+import structure GtkUnsafe from "GtkUnsafe"
 import signature GTK from "GTK-sig"
 
 structure Gtk :> GTK =
@@ -10,7 +10,7 @@ struct
     val _ = GtkUtils.init()
 
     open GtkEnums 
-    open GtkCore
+    open GtkUnsafe
 
     type callBackFunction = object * object list -> unit
 
