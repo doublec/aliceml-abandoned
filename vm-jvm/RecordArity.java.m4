@@ -1,10 +1,10 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class RecordArity implements java.io.Serializable {
+final public class DMLRecordArity implements java.io.Serializable {
   DMLLabel[] labels=null;
   java.util.Hashtable hashtable=null;
 
-  public RecordArity(DMLLabel[] ls) {
+  public DMLRecordArity(DMLLabel[] ls) {
     super();
     int i=0;
     labels=ls;

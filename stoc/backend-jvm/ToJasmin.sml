@@ -45,6 +45,7 @@ local
 	fn Astore i => if i<4 then "astore_"^Int.toString i
 		       else "astore "^Int.toString i
 	 | Aastore  => "aastore"
+	 | Aconst_null => "aconst_null"
 	 | Aload i  => if i<4 then "aload_"^Int.toString i
 		       else "aload "^Int.toString i
 	 | Anewarray cn => "anewarray "^cn
@@ -53,6 +54,7 @@ local
 	 | Bipush i => "bipush "^Int.toString i
 	 | Catch(cn,from,to,use) => ".catch "^cn^" from "^from^" to "^to^" using "^use
 	 | Checkcast cn => "checkcast "^cn
+	 | Comment c => "\t; "^c
 	 | Dup => "dup"
 	 | Fconst i => if i=0 then "fconst_0" else if i=1 then "fconst_1" else "fconst_2"
 	 | Getfield(cn,f) => "getfield "^cn^" L"^f^";"
@@ -65,6 +67,8 @@ local
 	 | Ifnull l => "ifnull "^l
 	 | Ireturn => "ireturn"
 	 | Instanceof cn => "instanceof "^cn
+	 | Invokeinterface(cn,mn,ms as (arg,ret)) => "invokeinterface "^cn^"/"^mn^
+			   (descriptor2string ms)^" "^Int.toString(length arg + 1)
 	 | Invokespecial(cn,mn,ms) => "invokespecial "^cn^"/"^mn^(descriptor2string ms)
 	 | Invokevirtual(cn,mn,ms) => "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
 	 | Label l => l^": "

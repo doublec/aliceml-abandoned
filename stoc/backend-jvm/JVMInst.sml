@@ -21,7 +21,7 @@ datatype
     INSTRUCTION =
     Astore of int
   | Aastore
-(*  | Aconst of int *)
+  | Aconst_null
   | Aload of int
   | Anewarray of classname
   | Areturn
@@ -29,6 +29,7 @@ datatype
   | Bipush of int
   | Catch of classname * label * label * label
   | Checkcast of classname
+  | Comment of string
   | Dup
   | Fconst of int
   | Getfield of classname * fieldname
@@ -41,6 +42,7 @@ datatype
   | Ifnull of label
   | Ireturn
   | Instanceof of classname
+  | Invokeinterface of classname * methodname * (ARG list * ARG)
   | Invokespecial of classname * methodname * (ARG list * ARG)
   | Invokevirtual of classname * methodname * (ARG list * ARG)
   | Label of label

@@ -16,9 +16,10 @@ local
     val localscount = ref 1 (* in 0 ist this, in 1 ist das Argument *)
     val maxlocals   = ref 1
     val stack : ((int * int) list) ref = ref nil
+
 in
     val rec
-	nextFreeLocal = fn () => (localscount := !localscount + 1;
+	nextFreeLocal = fn () => (localscount := !localscount + 1; print ("Bla: "^(Int.toString (!localscount)));
 				  if !localscount > !maxlocals then maxlocals := !localscount else ();
 				     !localscount)
     and
@@ -35,6 +36,8 @@ in
 	  | nil => raise Error("empty locals stack")
     and
 	maxLocals = fn () => ! maxlocals
+    val
+	batsch = print("FIDLL: "^Int.toString(!localscount))
 end
 
 (* Wie lautet die aktuelle Klasse, in der wir sind? Stack weil verschachtelte Lambdas. *)
@@ -100,7 +103,7 @@ and
 	val e2 = expCode(exp2)
     in
 	e1 @ [
-	      Invokevirtual (CVal, "request",([],Classsig CVal)),
+	      Invokeinterface (CVal, "request",([],Classsig CVal)),
 	      Dup,
 	      Getstatic (CConstants^"/dmlfalse",CConstructor0),
 	      Ifacmp falselabel,
@@ -127,11 +130,11 @@ and
 	    val h          = nextFreeLocal()
 	    val i          = nextFreeLocal()
 	    val insts = exp @ atexp @
-		[
+		[Comment "[ apply",
 		 Astore h,
-		 Invokevirtual (CVal, "request", ([],Classsig CVal)),
+		 Invokeinterface (CVal, "request", ([],Classsig CVal)),
 		 Dup,
-		 Invokevirtual (CVal, "whatAreYou", (nil, Intsig)),
+		 Invokeinterface (CVal, "whatAreYou", (nil, Intsig)),
 		 Tableswitch (0,
 			      [
 			       coname,
@@ -139,12 +142,14 @@ and
 			       builtin
 			       ],
 			      errorlabel),
+		 Comment "error",
 		 Label errorlabel,
 		 New CInternalError,
 		 Dup,
 		 Ldc (JVMString "PANIC"),
 		 Invokespecial (CInternalError, "<init>", ([Classsig CString],Voidsig)),
 		 Athrow,
+		 Comment "coname",
 		 Label coname,
 		 Checkcast CCoName,
 		 Astore i,
@@ -154,6 +159,7 @@ and
 		 Aload h,
 		 Invokespecial (CConstructor1, "<init>", ([Classsig CCoName, Classsig CVal], Voidsig)),
 		 Goto endlabel,
+		 Comment "exname",
 		 Label exname,
 		 Checkcast CExName,
 		 Astore i,
@@ -165,8 +171,9 @@ and
 		 Goto endlabel,
 		 Label builtin,
 		 Aload h,
-		 Invokevirtual (CVal, "apply", ([Classsig CVal],Classsig CVal)),
-		 Label endlabel
+		 Invokeinterface (CVal, "apply", ([Classsig CVal],Classsig CVal)),
+		 Label endlabel,
+		 Comment "end of apply ]"
 		 ]
 	in
 	    ( dropLocals(2); insts)
@@ -190,7 +197,12 @@ and
 	    val names = flatten (map Load freevars)
 	    val rec vals = fn (fx :: fxs) => (Classsig CVal)::(vals fxs) | nil => nil
 	    val i = vals(freevars)
-	    val result = [New name, Dup] @ names @ [Invokespecial (name, "<init>", (i, Voidsig))]
+	    val result = [Comment ("{ lambda "^name),
+			  New name,
+			  Dup] @
+		names @
+		[Invokespecial (name, "<init>", (i, Voidsig)),
+		 Comment ("end of lambda "^name^"}")]
 	in
 	    (
 	     pushLocals();
@@ -257,7 +269,7 @@ and
 	    val e2 = expCode(exp2)
 	in
 	    e1 @ [
-		  Invokevirtual (CVal, "request", (nil, Classsig CVal)),
+		  Invokeinterface (CVal, "request", (nil, Classsig CVal)),
 		  Dup,
 		  Getstatic (CConstants^"/dmltrue",CConstructor0),
 		  Ifacmp truelabel,
@@ -321,15 +333,17 @@ and
 		labexpiter = fn ((_,e)::rest,i) => [Dup, atCodeInt(i)] @ expCode(e) @ [Aastore] @ labexpiter(rest, i+1)
 	      | (nil,_) => nil
 	in
-	    [New CRecord,
+	    [Comment "[ Record",
+	     New CRecord,
 	     Dup,
-	     atCodeInt(arity-1),
+	     atCodeInt(arity),
 	     Anewarray CLabel] @
 	    labeliter(reclablist,0) @
-	    [atCodeInt(arity-1),
+	    [atCodeInt(arity),
 	     Anewarray CVal] @
 	    labexpiter(reclablist,0) @
-	    [Invokespecial (CRecord,"<init>",([Arraysig, Classsig CLabel, Arraysig, Classsig CVal],Voidsig))]
+	    [Invokespecial (CRecord,"<init>",([Arraysig, Classsig CLabel, Arraysig, Classsig CVal],Voidsig)),
+	     Comment "Record ]"]
 	end
 
      | SCon(scon) =>
@@ -355,23 +369,26 @@ and
 	      | STRINGscon s => CStr
 	      | WORDscon w   => CInt
 	in
-	    [New skon,
+	    [Comment "constant(",
+	     New skon,
 	     Dup,
 	     F,
-	     Invokespecial (skon,"<init>",jtype)]
+	     Invokespecial (skon,"<init>",jtype),
+	     Comment "end of constant)"
+	     ]
 	end
 
      | VId(Shortvid(vidname, Defining loc)) => (
 				      loc  := nextFreeLocal();
-				      nil)
+				      [Comment ("Defining Constant "^vidname^"(no code)")])
 
      | VId(Shortvid(_,Bound b)) => (case !b of
 					Shortvid (_,Defining wherever) =>
-					    [Aload (!wherever)]
+					    [Aload (!wherever), Comment "Bound VId"]
 				      | _ => raise Error "invalid vid")
      | VId(Shortvid(vidname,Free)) =>
 	[Aload 0,
-	 Getfield (getCurrentClass()^vidname, CVal)]
+	 Getfield (getCurrentClass()^vidname, CVal), Comment ("Free VId "^vidname)]
      | VId(Primitive(which)) =>
 	(case which of
 	     "+" => [Getstatic CPlus]
@@ -386,7 +403,7 @@ and
 	in
 	    [Label beforelabel] @
 	    e1 @
-	    [Invokevirtual (CVal,"request",(nil,Classsig CVal)),
+	    [Invokeinterface (CVal,"request",(nil,Classsig CVal)),
 	     Dup,
 	     Getstatic (CConstants^"/dmltrue",CConstructor0),
 	     Ifacmp truelabel,
@@ -420,7 +437,7 @@ and
 	    val endlabel = aNewLabel()
 	    val p = patCode(pat)
 	in
-	    [Invokevirtual (CVal, "request", (nil, Classsig CVal)),
+	    [Invokeinterface (CVal, "request", (nil, Classsig CVal)),
 	     Dup,
 	     Instanceof CConstructor1,
 	     Ifeq faillabel,
@@ -430,7 +447,7 @@ and
 	     Ldc (JVMString vidname),
 	     Invokevirtual (CString, "equals", ([Classsig CString],Intsig)),
 	     Ifeq faillabel,
-	     Invokevirtual (CVal, "getContent", (nil, Classsig CVal))] @
+	     Invokeinterface (CVal, "getContent", (nil, Classsig CVal))] @
 	    p @
 	    [Goto endlabel,
 	     Label faillabel,
@@ -444,7 +461,7 @@ and
 	    val endlabel = aNewLabel()
 	    val p = patCode(pat)
 	in
-	    [Invokevirtual (CVal, "request", (nil, Classsig CVal)),
+	    [Invokeinterface (CVal, "request", (nil, Classsig CVal)),
 	     Dup,
 	     Instanceof CException1,
 	     Ifeq faillabel,
@@ -454,7 +471,7 @@ and
 	     Ldc (JVMString vidname),
 	     Invokevirtual (CString, "equals", ([Classsig CString], Intsig)),
 	     Ifeq faillabel,
-	     Invokevirtual (CVal, "getContent", ([], Classsig CVal))] @
+	     Invokeinterface (CVal, "getContent", ([], Classsig CVal))] @
 	    p @
 	    [Goto endlabel,
 	     Label faillabel,
@@ -485,9 +502,9 @@ and
   | Patrec _ => raise Error "not yet understood"
 
   | Patscon (scon) =>
-	[Invokevirtual (CVal, "request", ([], Classsig CVal))] @
+	[Invokeinterface (CVal, "request", ([], Classsig CVal))] @
 	expCode(SCon scon) @
-	[Invokevirtual (CVal, "equals", ([Classsig CVal], Intsig))]
+	[Invokeinterface (CVal, "equals", ([Classsig CVal], Intsig))]
 
   | Patvid (Shortvid vid) =>
 	(case vid of
@@ -496,7 +513,7 @@ and
 	   | (_, Bound def) => (case !def of
 				    Shortvid (_,Defining loc) =>
 					[Aload (!loc),
-					 Invokevirtual (CVal, "equals", ([Classsig CVal], Intsig))]
+					 Invokeinterface (CVal, "equals", ([Classsig CVal], Intsig))]
 				  | _ => raise Error "patvid bound def")
 	   | (_, Free) => raise Error "patvid free"
 		 )
@@ -546,6 +563,7 @@ and
     fn Mrule patexplist =>
     let
 	val endlabel = aNewLabel()
+	val speicherMich = nextFreeLocal()
 	val ruleCode =
 	    fn (pat,exp) =>
 	    let
@@ -557,24 +575,29 @@ and
 		[Dup,
 		 Ifeq eigenerendlabel] @
 		e @
-		[Swap,
+		[Astore speicherMich,
 		 Label eigenerendlabel,
 		 Ifneq endlabel]
 	    end
 	val rc = flatten (map ruleCode patexplist)
     in
+	[Comment "[ MRule",
+	 Aconst_null,
+	 Astore speicherMich] @
 	rc @
 	[New CException0,
 	 Dup,
 	 Getstatic CMatch,
 	 Invokespecial (CException0,"<init>", ([Classsig CExName], Voidsig)),
 	 Athrow,
-	 Label endlabel]
+	 Label endlabel,
+	 Aload speicherMich,
+	 Comment "MRule ]"]
     end
 
 and
     Load = fn (JVMString name) => [Aload 0, Getfield ( getCurrentClass(), name)]
-  | (JVMInt i) => [Aload i]
+  | (JVMInt i) => [Aload i, Comment ("Load loc. Var")]
   | _ => raise Error("cannot load scrap")
 
 and
@@ -590,7 +613,7 @@ and
 	val fieldlist = fields freevars
 	val rec args = fn _::vars => (Classsig CVal)::args(vars) | nil => nil
 	val rec initbody = fn
-	    (nil,_) => nil
+	    (nil,_) => [Return]
 	  | ((JVMString var)::nil,i) =>
 		[Aload i,
 		 Putfield (name^"/"^var, CVal),
@@ -601,10 +624,16 @@ and
 		 Putfield (name^"/"^var, CVal)]@
 		initbody(vars,i+1)
 	  | _ => raise Error "initbody"
-	val init = Method([MPublic],"<init>",(args(freevars), Voidsig),Limits (length freevars, 3),(Aload 0)::initbody(freevars,1))
+	val k = length freevars
+	val init = Method([MPublic],"<init>",(args(freevars), Voidsig),Limits (k+1, 3),
+			  (if k=0
+			       then [Aload 0]
+			   else [(Aload 0),Dup])@
+			       Invokespecial (CFcnClosure,"<init>",([],Voidsig))::
+			       initbody(freevars,1))
 	val mcm = matchCode match
 	val stack = stackneed match
-	val applY = Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),Limits (maxLocals(),stack),(Aload 1) :: (mcm @ [Areturn]))
+	val applY = Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),Limits (maxLocals()+1,stack),(Aload 1) :: (mcm @ [Areturn]))
     in
 	schreibs(name,classToJasmin(Class(access,name,CFcnClosure,fieldlist,[init,applY])))
     end
