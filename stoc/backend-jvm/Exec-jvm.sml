@@ -13,7 +13,7 @@
 SMLofNJ.Internals.GC.messages false;
 CM.make();
 
-fun dmlc (_, debug::verbose::optimize::lines::x) =
+fun dmlc (_, debug::verbose::optimize::lmaa::lines::x) =
     let
 	val v=valOf (Int.fromString (String.substring(verbose, 2,1)))
 	fun dc (fi::rest) =
@@ -22,6 +22,7 @@ fun dmlc (_, debug::verbose::optimize::lines::x) =
 	     (valOf (Int.fromString (String.substring(debug, 2,1))),
 	      v,
 	      valOf (Int.fromString (String.substring(optimize, 2,1))),
+	      valOf (Bool.fromString lmaa),
 	      valOf (Bool.fromString lines),
 	      if (String.extract(fi, size fi-4, NONE)=".dml")
 		  then String.substring(fi, 0, size fi-4)

@@ -65,6 +65,7 @@ structure Common=
 	 val VERBOSE = ref 0
 	 val OPTIMIZE = ref 0
 	 val LINES = ref false
+	 val LMAA = ref false
 
 	 (* Stamps and Ids for formal Method Parameters. *)
 	 val thisstamp = Stamp.new ()

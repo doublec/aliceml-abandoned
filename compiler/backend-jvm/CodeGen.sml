@@ -233,7 +233,7 @@ structure CodeGen =
 	  | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
 
 	(* entry point *)
-	fun genComponentCode (debug, verbose, optimize, lines, name, (components, _, program)) =
+	fun genComponentCode (debug, verbose, optimize, lmaa, lines, name, (components, _, program)) =
 	    let
 		fun loadComponents ((Id (_, stamp', _), name')::rest, akku) =
 		    loadComponents
@@ -252,6 +252,7 @@ structure CodeGen =
 		VERBOSE := verbose;
 		OPTIMIZE := optimize;
 		LINES := lines;
+		LMAA := lmaa;
 		Class.setInitial name;
 		if !VERBOSE >=2 then
 		    (print ("thisStamp: "^Stamp.toString thisStamp^"\n");
@@ -1547,9 +1548,9 @@ structure CodeGen =
 	    end
 	  | expCodeClass _ = Crash.crash "CodeGen.expCodeClass"
 	and
-	    compile prog = genComponentCode (0,0,2,false,"Emil", imperatifyString prog)
+	    compile prog = genComponentCode (0,0,2,false,false,"Emil", imperatifyString prog)
 	and
-	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,"Emil", imperatifyFile f)
+	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,"Emil", imperatifyFile f)
 
 	(* make array of value list *)
 	and
