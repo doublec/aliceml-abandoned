@@ -5,6 +5,114 @@ struct
     type object
     exception TypeMismatch of string
 
+(*
+	    datatype inputSource =
+		GDK_SOURCE_MOUSE
+	      | GDK_SOURCE_PEN
+	      | GDK_SOURCE_ERASER
+	      | GDK_SOURCE_CURSOR
+	      | GDK_SOURCE_ALICEDUMMY
+
+    datatype scrollDirection =
+	GDK_SCROLL_UP
+      | GDK_SCROLL_DOWN
+      | GDK_SCROLL_LEFT
+      | GDK_SCROLL_RIGHT
+
+    datatype crossingMode =
+	GDK_CROSSING_NORMAL
+      | GDK_CROSSING_GRAB
+      | GDK_CROSSING_UNGRAB
+             | GDK_CROSSING_ALICEDUMMY
+
+    datatype notifyType =
+	GDK_NOTIFY_ANCESTOR
+      | GDK_NOTIFY_VIRTUAL
+      | GDK_NOTIFY_INFERIOR
+      | GDK_NOTIFY_NONLINEAR
+      | GDK_NOTIFY_NONLINEAR_VIRTUAL
+      | GDK_NOTIFY_UNKNOWN
+	      | GDK_NOTIFY_ALICEDUMMY
+
+    datatype visibilityState =
+	GDK_VISIBILITY_UNOBSCURED
+      | GDK_VISIBILITY_PARTIAL
+      | GDK_VISIBILITY_FULLY_OBSCURED
+              | GDK_VISIBILITY_ALICEDUMMY
+
+    datatype event =
+	GDK_EXPOSE of {window:object, send:bool, area:object, count:int}
+      | GDK_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 devece: object, x_root:real, y_root:real}
+      | GDK_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 devece: object, x_root:real, y_root:real}
+      | GDK_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 devece: object, x_root:real, y_root:real}
+      | GDK_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 devece: object, x_root:real, y_root:real}
+      | GDK_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 devece: object, x_root:real, y_root:real}
+      | GDK_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | GDK_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | GDK_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:crossingMode, detail:notifyType,
+	 focus:bool, state:int}
+      | GDK_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:crossingMode, detail:notifyType,
+	 focus:bool, state:int}
+      | GDK_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | GDK_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | GDK_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:visibilityState}
+      | GDK_NO_EXPOSE of {window:object, send:bool}
+      | GDK_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:scrollDirection, device:object,
+	 x_root:real, y_root:real}
+
+      | GDK_PROPERTY_NOTIFY
+      | GDK_SELECTION_CLEAR
+      | GDK_SELECTION_REQUEST
+      | GDK_SELECTION_NOTIFY
+      | GDK_DRAG_ENTER
+      | GDK_DRAG_LEAVE
+      | GDK_DRAG_MOTION
+      | GDK_DRAG_STATUS
+      | GDK_DROP_START
+      | GDK_DROP_FINISHED
+      | GDK_PROXIMITY_IN
+      | GDK_PROXIMITY_OUT
+      | GDK_CLIENT_EVENT
+      | GDK_WINDOW_STATE
+      | GDK_SETTING
+      | UNSUPPORTED
+*)
+
+    datatype event = UNSUPPORTED of object
+
     datatype arg = 
 	BOOL of bool
       | INT of int
@@ -12,4 +120,5 @@ struct
       | STRING of string
       | OBJECT of object
       | LIST of object list
+      | EVENT of event
 end

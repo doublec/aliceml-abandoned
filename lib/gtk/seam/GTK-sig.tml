@@ -6,14 +6,8 @@ signature GTK =
 sig
     type object = GtkTypes.object
     exception TypeMismatch of string
-    datatype arg = 
-	BOOL of bool
-      | INT of int
-      | REAL of real
-      | STRING of string
-      | OBJECT of object
-      | LIST of object list
 
+<<< "GTK_TYPES-sig.aml" >>>
 
 <<< "GTK_CORE-sig.aml" >>>
 <<< "GTK_ENUMS-sig.aml" >>>

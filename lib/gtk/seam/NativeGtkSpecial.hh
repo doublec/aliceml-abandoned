@@ -127,6 +127,12 @@ word create_param(int tag, word value) {
   return param->ToWord();
 }
 
+word GdkEventToEventDatatype(GdkEvent *event) {
+  TagVal *ev = TagVal::New(0,1);
+  ev->Init(0,Store::UnmanagedPointerToWord(gdk_event_copy(event))); 
+  return ev->ToWord();
+}
+
 word create_object(GType t, gpointer p) {
   static const GType G_LIST_TYPE = g_type_from_name("GList");
   static const GType G_SLIST_TYPE = g_type_from_name("GSList");
@@ -144,8 +150,12 @@ word create_object(GType t, gpointer p) {
       value = GSListToObjectList(static_cast<GSList*>(p));
     }
     else
-      value = Store::UnmanagedPointerToWord(
-	(t != GDK_EVENT_TYPE) ? p : gdk_event_copy(static_cast<GdkEvent*>(p)));
+      if (t == GDK_EVENT_TYPE) {
+	tag = EVENT;
+	value = GdkEventToEventDatatype(static_cast<GdkEvent*>(p));
+      }
+      else
+	value = Store::UnmanagedPointerToWord(p);
   return create_param(tag, value);
 }
 

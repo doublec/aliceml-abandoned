@@ -1,7 +1,11 @@
 signature GTK_TYPES =
     sig
-	type object
-	exception TypeMismatch of string
+(**)	type object
+(**)	exception TypeMismatch of string
+
+
+	datatype event = UNSUPPORTED of object
+
 	datatype arg = 
 	    BOOL of bool
 	  | INT of int
@@ -9,4 +13,5 @@ signature GTK_TYPES =
 	  | STRING of string
 	  | OBJECT of object
 	  | LIST of object list
+	  | EVENT of event
     end

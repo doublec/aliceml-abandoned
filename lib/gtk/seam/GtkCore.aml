@@ -20,21 +20,24 @@ struct
     val DeleteRef = (fn p => p, NativeGtk.deleteUnref)
     val NoRef = (fn p => p, fn _ => ())
 
+    (* weak map *)
     local
 	val weakMap = 
 	    ref nil : ( object * (object->unit) * int list ref ) list ref
 
         fun weakMapRemove p = List.filter (fn (p',_,_) => p<>p') (!weakMap)
-	fun finalizer nil                        = ()
-	  | finalizer ((obj as (p,unref,_))::xs) = 
-	        (weakMapRemove p ; unref p ; finalizer xs)
     in
 	fun weakMapAdd (_,obj) = ( weakMap := (obj::(!weakMap)) )
 	fun weakMapContains p = List.exists (fn (p',_,_) => p=p') (!weakMap)
 	fun weakMapGet p def = 
 	    foldl (fn (obj,e)=>if p = (#1obj) then obj else e) def (!weakMap)
-    end
 
+	fun finalizer nil                        = ()
+	  | finalizer ((obj as (p,unref,_))::xs) = 
+	        (weakMapRemove p ; unref p ; finalizer xs)
+    end
+    
+    (* signal table *)
     local
 	val sigTable = ref nil : (int * callBackFunction) list ref
     in
