@@ -657,8 +657,11 @@ Worker::Result AbstractCodeInterpreter::Run() {
       break;
     case AbstractCode::Raise: // of idRef
       {
-	Scheduler::currentData = GetIdRefKill(pc->Sel(0), pc,
-					      globalEnv, localEnv);
+	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	Transient *transient = Store::WordToTransient(requestWord);
+	if (transient != INVALID_POINTER) REQUEST(transient->ToWord());
+	KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
+	Scheduler::currentData = requestWord;
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Worker::RAISE;
       }

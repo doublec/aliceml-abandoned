@@ -1688,7 +1688,9 @@ TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
 // Raise of idRef
 TagVal *NativeCodeJitter::InstrRaise(TagVal *pc) {
   PrintPC("Raise\n");
-  u_int Reg = LoadIdRefKill(JIT_R0, pc->Sel(0));
+  word instrPC = Store::IntToWord(GetRelativePC());
+  u_int Reg = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
+  KillIdRef(pc->Sel(0));
   Generic::Scheduler::SetCurrentData(Reg);
   Prepare();
   jit_pushr_ui(JIT_V2); // Frame ptr
