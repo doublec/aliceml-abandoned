@@ -302,10 +302,10 @@ struct
     and closeAnns'(desc, []) = ([], Inf.rea(), Inf.boundPaths(Inf.top()))
       | closeAnns'(desc, O.ImpAnn(i, imps, url, false)::ranns) =
 	let
+	    val (ranns',rea,b) = closeAnns'(desc, ranns)
 (*DEBUG
 val _=TextIO.print("### checking imports for \"" ^ Url.toString url ^ "\"\n")
 *)
-	    val (ranns',rea,b) = closeAnns'(desc, ranns)
 	    val _           = checkExportPaths(#region i, url, #sign i)
 	    val imports     = loadImports(desc, url)
 	    val imports'    = Vector.map (Pair.mapFst(Url.resolve url)) imports
@@ -318,7 +318,7 @@ fun prPath p = TextIO.print(" " ^ PrettyPrint.toString(PPPath.ppPath p, 100) ^ "
 val _=TextIO.print("free export paths:")
 val _=PathSet.app prPath paths
 val _=TextIO.print("\ntransitive import paths:")
-val _=PathMap.appi (prPath o Pair.fst) importPaths
+val _=Vector.app (PathMap.appi (prPath o Pair.fst)) importPaths
 val _=TextIO.print("\n")
 *)
 	    val ranns''     =
@@ -432,6 +432,9 @@ val _=TextIO.print("\n")
 	    val s''    = if PathMap.isEmpty(#mod b) then s' else
 			 Inf.asSig(Option.valOf(Inf.avoid(b, Inf.sign s')))
 			 handle Option.Option => s'
+(*DEBUG
+before TextIO.print "couldn't avoid imports!\n"
+*)
 	in
 	    (anns'',s')
 	end
