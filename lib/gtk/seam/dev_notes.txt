@@ -1,3 +1,54 @@
+
+Note that the positive list section is now obsolete as it didn't solve
+the binary compatibility problem it was supposed to solve.
+
+What we actually would need is a positive struct member list.  Gtk often
+contains a lot of placeholder members in a struct to ensure binary
+compatibility in later versions and as soon as we generate a function
+which uses such a member we lose the ability to compile a generated
+wrapper with a later version of Gtk.
+
+A possible solution was suggested by Guido: use the .defs file from the
+PyGtk project which describe the "public" interface of gtk in a kind of
+scheme like language.  There are two options to that:
+    1) Just use a that as a new frontend and still try to generate more or
+       less the same internal typetree as before so that the backend
+       can be reused.
+    2) Throw away the whole of the current generator and restart from the
+       beginning
+
+Pros of 1): Less work :-)
+
+Pros of 2): - The current generator is already somewhat messy and
+              would need a code cleanup anyway.
+            - To take advance of some of the advanced informations of
+              the .defs files (like null-ok) the internal typetree would 
+              have to be expanded anyway
+            - One could probably write a generator easily in scheme
+              by just writing a few functions and probably some 
+              syntax-case macros generation would then just be a 
+              (load "gtk.defs") :-)
+
+Things to consider when rewriting the generator:
+    - take const modifiers into account! const char** is not compatible
+      to char** - One substructure per Gtk - type?  Aka:
+        
+        structure Gtk = 
+        struct
+            type object 
+            ...  
+            struct Button = 
+            struct
+                val new : unit -> object ...
+            end 
+            ...
+        end 
+        
+        Would need some changes to existing alice applications but
+        let's face it there are not yet that many ...  And they would
+        be more or less automatic anyway
+
+==================== Positive type list =========================================
 Now using a positive type list.  Generated from the html
 documentation index by saving the list as txt in mozilla
 and applying the following script on the generated file:
@@ -8,6 +59,9 @@ After that I just inserted val gtk_positive_type_list = [ ...original-content...
 Added to GdkPositiveTypeList:
     GdkColorspace
     GdkInterpType
+
+
+===================== failure to load problem ===================================
 
 On my machine I also had to add the alice.dll to the link process:
 
