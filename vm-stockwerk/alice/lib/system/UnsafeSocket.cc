@@ -23,8 +23,9 @@
 #include <arpa/inet.h>
 #endif
 
-#include "emulator/Authoring.hh"
-#include "emulator/IOHandler.hh"
+#include "generic/IOHandler.hh"
+#include "generic/Transients.hh"
+#include "alice/primitives/Authoring.hh"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 typedef int socklen_t;
