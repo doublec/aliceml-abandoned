@@ -522,6 +522,7 @@ HashTable *NativeCodeJitter::sharedTable;
 LivenessTable *NativeCodeJitter::livenessTable;
 LivenessTable *NativeCodeJitter::livenessFreeList;
 Tuple *NativeCodeJitter::assignment;
+Vector *NativeCodeJitter::globalSubst;
 
 word NativeCodeJitter::inlineTable;
 word NativeCodeJitter::defaultContinuation;
@@ -580,6 +581,10 @@ void NativeCodeJitter::ImmediateSel(u_int Dest, u_int Ptr, u_int pos) {
   NativeCodeFrame::GetImmediateArgs(JIT_V2, Ptr);
   JITStore::GetArg(Dest, JIT_V2, pos);
   jit_movr_p(JIT_V2, JIT_FP);
+}
+
+TagVal *NativeCodeJitter::LookupSubst(u_int index) {
+  return TagVal::FromWordDirect(globalSubst->Sub(index));
 }
 
 // LazySelClosure (belongs to alice, of course)
@@ -819,6 +824,8 @@ void NativeCodeJitter::CompileCCC(TagVal *idDefArgs, bool update = false) {
 //
 u_int NativeCodeJitter::LoadIdRefKill(u_int Dest, word idRef) {
   TagVal *tagVal = TagVal::FromWord(idRef);
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Local:
     {
@@ -863,6 +870,8 @@ void NativeCodeJitter::Await(u_int Ptr, word pc) {
 
 u_int NativeCodeJitter::LoadIdRef(u_int Dest, word idRef, word pc) {
   TagVal *tagVal = TagVal::FromWord(idRef);
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Local:
   case AbstractCode::LastUseLocal:
@@ -1373,9 +1382,23 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
   abstractCode->Init(0, template_->Sel(0));
   Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
 	 nGlobals);
+  // Inherit substitution
   Vector *subst = Vector::New(nGlobals);
-  for (u_int i = nGlobals; i--; )
-    subst->Init(0, Store::IntToWord(0)); // NONE
+  for (u_int i = nGlobals; i--; ) {
+    TagVal *tagVal = TagVal::FromWord(idRefs->Sub(i));
+    if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global) {
+      TagVal *substVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+      if (AbstractCode::GetIdRef(substVal) == AbstractCode::Immediate) {
+	TagVal *some = TagVal::New(1, 1); // SOME ...
+	some->Init(0, substVal->Sel(0));
+	subst->Init(i, some->ToWord());
+      }
+      else
+	subst->Init(i, Store::IntToWord(0)); // NONE
+    }
+    else
+      subst->Init(i, Store::IntToWord(0)); // NONE
+  }
   abstractCode->Init(1, subst->ToWord());
   abstractCode->Init(2, template_->Sel(2));
   abstractCode->Init(3, template_->Sel(3));
@@ -2334,6 +2357,23 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   livenessFreeList    = NULL;
   // Compile argument calling convention conversion
   CompileCCC(currentArgs, true);
+  // Initialize global substitution
+  Vector *substInfo = Vector::FromWordDirect(abstractCode->Sel(1));
+  u_int nSubst      = substInfo->GetLength();
+  globalSubst       = Vector::New(nSubst);
+  for (u_int i = nSubst; i--;) {
+    TagVal *valueOpt = TagVal::FromWord(substInfo->Sub(i));
+    TagVal *subst;
+    if (valueOpt != INVALID_POINTER) {
+      subst = TagVal::New(AbstractCode::Immediate, 1);
+      subst->Init(0, valueOpt->Sel(0));
+    }
+    else {
+      subst = TagVal::New(AbstractCode::Global, 1);
+      subst->Init(0, Store::IntToWord(i));
+    }
+    globalSubst->Init(i, subst->ToWord());
+  }
   // Compile function body
   CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(4)));
   char *end = jit_get_ip().ptr;
