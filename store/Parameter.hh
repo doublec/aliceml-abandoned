@@ -26,10 +26,14 @@
 #define HEADER_SIZESHIFT_WIDTH     1
 // Space used for Block Size (MAX_BLOCKSIZE = (2 ^ (HEADER_SIZE_WIDTH) - 1))
 #define HEADER_SIZE_WIDTH          20
+/*TODO: immutable flag disabled, since broken
 // Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))
-#define HEADER_TAG_WIDTH           7
+//#define HEADER_TAG_WIDTH           7
 // Space used for Immutable Flag
-#define HEADER_IMMUTABLE_WIDTH     1
+//#define HEADER_IMMUTABLE_WIDTH     1
+*/
+// Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))
+#define HEADER_TAG_WIDTH           8
 // Space used for Intgen-Marking (Names thanks to Christian)
 #define HEADER_CHILDISH_WIDTH      1
 
