@@ -45,7 +45,6 @@ public:
 
   static Future *New() {
     Transient *transient = Store::AllocTransient(FUTURE);
-    transient->InitArg(Store::IntToWord(0));
     return static_cast<Future *>(transient);
   }
 
