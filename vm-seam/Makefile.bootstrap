@@ -625,7 +625,7 @@ build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
 	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT \
 	--exclude build2/lib/utility/Unsafe \
 	--exclude build2/lib/system/Unsafe \
-	--include build2 --rewrite build2/=x-alice:/ -o $@
+	--include build2 --rewrite "build2/?{x}=x-alice:/?{x}" -o $@
 
 ########################################################################
 ### BUILD 3
@@ -710,11 +710,12 @@ build3/lib/fundamental/LinkedPervasive.stc: \
 	--exclude build3/lib/utility/Unsafe \
 	--exclude build3/lib/system/Unsafe \
 	--include build3 \
-	--rewrite build3/=../../ --rewrite x-alice:/=../../ \
+	--rewrite "build3/?{x}=../../?{x}" \
+	--rewrite "x-alice:/?{x}=../../?{x}" \
 	build3/lib/fundamental/Pervasive -o $@
 
 build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
@@ -722,7 +723,7 @@ build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
 	build3/compiler/CompilerMain -o $@
 
 build3/compiler/LinkedToplevelMain.stc: build3/compiler/ToplevelMain.stc
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
@@ -731,17 +732,17 @@ build3/compiler/LinkedToplevelMain.stc: build3/compiler/ToplevelMain.stc
 
 build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc: \
 	build3/compiler/top/SMLToStockwerkRecursiveCompiler.stc
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3/compiler \
 	build3/compiler/top/SMLToStockwerkRecursiveCompiler -o $@
 
 build3/linker/LinkedMain.stc: $(LINKERSOURCES:%.aml=build3/%.stc)
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--include build3/linker \
 	build3/linker/Main -o $@
 
 build3/depend/LinkedMain.stc: $(DEPENDSOURCES:%.aml=build3/%.stc)
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--include build3/depend \
 	build3/depend/Main -o $@
 
