@@ -18,7 +18,6 @@ import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
 import structure MkDictionary from "MkDictionary"
 import structure Dictionaries from "Dictionaries"
@@ -48,6 +47,8 @@ struct
        - werden beim Starten des Inspectors "gefuellt" *)
     val incrActLine = ref (fn _ => ())
     val resize = ref (fn () => ()) 
+
+    val stopflag = ref false;
         
     (* max *)
     fun max (xs,f) = foldl(fn (x,e) => Int.max(f(x),e)) 0 xs
@@ -130,14 +131,16 @@ struct
 	       val old_ydim = get_ydim(anc)
 	       val (p,index) = if !(Settings.relmode) 
 				   then (getParent(n),getIndex(n)) 
-			       else getNoRelAnc n	
+			       else getNoRelAnc n
+	       val old_settings = (!Settings.max_width,!Settings.max_depth)
 	       val new = 
-		   ( if !(Settings.relmode) (* RELATIONSMODUS *)
+		   (if !(Settings.relmode) (* RELATIONSMODUS *)
 			 then ( Dictionaries.RelMan.delete
 			       (Dictionaries.reldict,ind)
 			       ; relnumber := 0 )
 		     else ()  
-		   ; case getDesc(n) of
+		     ; GtkSupport.stopButtonSetActive(true) 
+		     ; case getDesc(n) of
 			 VALUE(r) => f(NONE,va,#typ(r),p,index,
 				       getDepth(n),root)
 		       | I_VALUE(r) => let val va_inf =   
@@ -150,7 +153,13 @@ struct
 					getDepth(n)) 
 					*) 
 				       raise UpdateError )
-	       val _ = updateChild(p,index,new)
+	       val _ = (GtkSupport.stopButtonSetActive(false)
+		      ; if !stopflag 
+			    then (Settings.set_width (#1(old_settings))
+				  ; Settings.set_depth (#2(old_settings))
+				  ; stopflag := false)
+				else () 
+		       ; updateChild(p,index,new))
 	       val node = if getParent(new) = Empty then new else anc
 	       val _ = if isRelRefNode new
 			   then findRelNode(node,va)
@@ -159,7 +168,7 @@ struct
 						      Settings.getFontHeight(),
 						      Settings.getFontWidth())
 	   in ( setDazzled n
-	       ; Gtk.objectDestroy(getGroup(n))
+	       ; GtkSupport.objectDestroy(getGroup(n))
                ; Layout.layout(node)  
 	       ; Dictionaries.Main.update(Dictionaries.maindict,
 					  (ind,(node,ancline)))

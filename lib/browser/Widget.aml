@@ -328,11 +328,14 @@ struct
 
      (* val stopButtonActive = ref false *)
 
+        val stopflag = Update.stopflag
+
 	val _ = signalConnect(stopButton,
 		  "activate",
 		  fn _ => (stopButtonSetActive(false)
 			   ; Settings.set_width 0
-			   ; Settings.set_depth 0)) (* needs to be repaired *)
+			   ; Settings.set_depth 0
+                           ; stopflag := true)) (* needs to be repaired *)
 	    
     
      (* fun stopButtonIsActive() = !stopButtonActive *)
@@ -1049,11 +1052,13 @@ fun setVisible (x,y) = let
 			;!canvasroot)
 	    val save_settings = (!Settings.max_width,!Settings.max_depth)
 	    val n = (stopButtonSetActive(true)
-		     ;NewNode.newNode(va,t,i,root))
+		     ;NewNode.newNode(va,t,i,root))		
             val line = (stopButtonSetActive(false)
-			;Settings.set_width(#1(save_settings))
-			;Settings.set_width(#2(save_settings))
-			;Settings.set_depth
+			; if !stopflag 
+			      then ( Settings.set_width(#1(save_settings))
+				    ; Settings.set_depth(#2(save_settings))
+				    ; stopflag := false )
+				  else ()
 			;Layout.layout(n)
 			;setVisible(get_xdim(n),get_ydim(n)+1)
 			;createSepLine(root,!act_line,canvaswidth(hadj),
@@ -1082,8 +1087,11 @@ fun setVisible (x,y) = let
 	    val n = (stopButtonSetActive(true)
 		     ;NewNode.newNodeInf(va,t,i,root))
             val line =(stopButtonSetActive(false) 
-		       ;Settings.set_width(#1(save_settings))
-		       ;Settings.set_width(#2(save_settings))
+		       ; if !stopflag 
+			      then ( Settings.set_width(#1(save_settings))
+				    ; Settings.set_depth(#2(save_settings))
+				    ; stopflag := false )
+				  else ()
 		       ;Layout.layout(n)
 		       ;setVisible(get_xdim(n),get_ydim(n)+1)
 		       ;createSepLine(root,!act_line,canvaswidth(hadj),
