@@ -3,9 +3,7 @@ Group is
 	crash.cm
 	switches.cm
 	phase.cm
-	signature.cm
 	target.cm
-	composer.cm
 	pp-misc.cm
 
 	MkHashScopedImpSet.aml
