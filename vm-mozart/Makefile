@@ -98,7 +98,7 @@ STOC2 = build2/install/bin/stoc
 
 STOC_OPTS = $(STOC_EXTRA_OPTS) --no-dump-elaboration-sig --no-implicit-import
 STOC_EXTRA_OPTS = --dump-target
-STODEP = sml @SMLload=../../stoc/stodep
+STODEP = sml @SMLload=../../bootstrap/stodep
 
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
