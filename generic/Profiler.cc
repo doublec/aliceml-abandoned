@@ -85,7 +85,7 @@ double Profiler::sampleTime;
 
 static double startTime;
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
 #include <windows.h>
 #include <cmath>
 
