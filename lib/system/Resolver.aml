@@ -114,6 +114,7 @@ structure Resolver: RESOLVER =
 					 SOME (prefix, suffix) =>
 					     SOME (c::prefix, suffix)
 				       | NONE => NONE)
+			      | nil => NONE
 
 		datatype elem = TEXT of char list | VAR of string
 
@@ -220,7 +221,7 @@ structure Resolver: RESOLVER =
 		    (case token (cs, #"=", nil) of
 			 (arg1, inter, true) =>
 			     let
-				 val (arg2, rest, _) = token (cs, sep, nil)
+				 val (arg2, rest, _) = token (inter, sep, nil)
 			     in
 				 prefix (arg1, arg2)::parse' rest
 			     end
@@ -230,7 +231,7 @@ structure Resolver: RESOLVER =
 		    (case token (cs, #"=", nil) of
 			 (arg1, inter, true) =>
 			     let
-				 val (arg2, rest, _) = token (cs, sep, nil)
+				 val (arg2, rest, _) = token (inter, sep, nil)
 			     in
 				 pattern (arg1, arg2)::parse' rest
 			     end
@@ -248,11 +249,15 @@ structure Resolver: RESOLVER =
 
 	fun new (name, handlers) = (name, handlers)
 
-	fun exists filename =
-	    (TextIO.closeIn (TextIO.openIn filename); true)
-	    handle IO.Io _ => false
+	fun exists url =
+	    (*--** we need something more general (also interpret scheme) *)
+	    case Url.getScheme url of
+		SOME "x-oz" => true   (*--** hack for the Mozart VM *)
+	      | _ =>
+		(TextIO.closeIn (TextIO.openIn (Url.toStringRaw url)); true)
+		handle IO.Io _ => false
 
-	fun localize ((name, handlers), s) =
+	fun localize (name, handlers) s =
 	    (trace ("[" ^ name ^ "] localize request: " ^ s ^ "\n");
 	     localize' (name, handlers, s))
 	and localize' (name, (name', f)::handlers, s) =
@@ -263,8 +268,8 @@ structure Resolver: RESOLVER =
 		     in
 			 trace ("[" ^ name ^ "] ...[" ^ s' ^ "] (" ^
 				name' ^ ")\n");
-			 if exists s' then
-			     (trace ("[" ^ name ^ "] ...load succeeded\n");
+			 if exists url then
+			     (trace ("[" ^ name ^ "] ...localize succeeded\n");
 			      SOME s')
 			 else localize' (name, handlers, s)
 		     end
