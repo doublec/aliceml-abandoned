@@ -560,14 +560,15 @@ struct
 	    ( t, O.LetExp(typInfo(i,t), decs', exp') )
 	end
 
-      | elabExp(E, I.PackExp(i, mod)) =
+      | elabExp(E, I.PackExp(i, mod, inf)) =
 	let
-	    val (j,mod') = elabMod(E, NONE, mod)
-	    (*UNFINISHED*)
-	    val  t       = Type.unknown(Type.starKind())
+	    val (j1,mod') = elabMod(E, NONE, mod)
+	    val (j2,inf') = elabGroundInf(E, NONE, inf)
+	    val  _        = Inf.match(j1,j2) handle Inf.Mismatch mismatch =>
+				error(i, E.AnnModMismatch mismatch)
+	    val  t        = PervasiveType.typ_package
 	in
-	    unfinished i "elabExp" "packages";
-	    ( t, O.PackExp(typInfo(i,t), mod') )
+	    ( t, O.PackExp(typInfo(i,t), mod', inf') )
 	end
 
     and elabExps(E, exps) =
@@ -1001,16 +1002,6 @@ struct
 	    ( t, O.ExTyp(typInfo(i,t), varid', typ') )
 	end
 
-      | elabTyp'(E, allowJok, I.PackTyp(i, inf)) =
-	let
-	    val (j,inf') = elabInf(E, NONE, inf)
-	    (*UNFINISHED*)
-	    val  t       = Type.unknown(Type.starKind())
-	in
-	    unfinished i "elabTyp" "packages";
-	    ( t, O.PackTyp(typInfo(i,t), inf') )
-	end
-
       | elabTyp'(E, allowJok, I.SingTyp(i, vallongid)) =
 	let
 	    val (t,vallongid') = elabVallongid(E, vallongid)
@@ -1342,9 +1333,10 @@ TextIO.print "\n";
 	let
 	    val (t,exp') = elabExp(E, exp)
 	    val (j,inf') = elabInf(E, po, inf)
-	    (*UNFINISHED*)
+	    val  t2      = PervasiveType.typ_package
+	    val  _       = Type.unify(t,t2) handle Type.Mismatch(t3,t4) =>
+				error(i, E.UnpackModMismatch(t,t2, t3,t4))
 	in
-	    unfinished i "elabMod" "packages";
 	    ( j, O.UnpackMod(infInfo(i,j), exp', inf') )
 	end
 

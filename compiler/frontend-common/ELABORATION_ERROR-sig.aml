@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -87,6 +87,7 @@ sig
 	| AppModFunMismatch	of inf
 	| AppModArgMismatch	of inf_mismatch
 	| AnnModMismatch	of inf_mismatch
+	| UnpackModMismatch	of typ_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
 	| AppInfFunMismatch	of inf

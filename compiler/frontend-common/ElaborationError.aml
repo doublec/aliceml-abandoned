@@ -105,6 +105,7 @@ struct
 	| AppModFunMismatch	of inf
 	| AppModArgMismatch	of inf_mismatch
 	| AnnModMismatch	of inf_mismatch
+	| UnpackModMismatch	of typ_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
 	| AppInfFunMismatch	of inf
@@ -469,6 +470,10 @@ struct
       | ppError(AnnModMismatch im) =
 	ppInfMismatch(
 	  textpar["module","expression","does","not","match","signature:"], im)
+      | ppError(UnpackModMismatch ue) =
+	ppTypMismatch2(
+	  textpar["operand","of","`unpack'","is","not","a","package:"],
+	  textpar["does","not","match","type"], ue)
       (* Interfaces *)
       | ppError(GroundInfKind k) =
 	  textpar["missing","arguments","in","signature","expression"]

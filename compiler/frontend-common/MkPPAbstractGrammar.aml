@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -302,8 +302,9 @@ struct
 					    ppDecs decs ^/^
 					    ppExp exp
 					  )
-      | ppExp(PackExp(i, mod))		= exptree "Pack" i (
-					    ppMod mod
+      | ppExp(PackExp(i, mod, inf))	= exptree "Pack" i (
+					    ppMod mod ^/^
+					    ppInf inf
 					  )
 
     and ppMats mats			= vec(Vector.map ppMat mats)
@@ -416,9 +417,6 @@ struct
       | ppTyp(ExTyp(i, varid, typ))	= typtree "Ex" i (
 					    ppVarid varid ^/^
 					    ppTyp typ
-					  )
-      | ppTyp(PackTyp(i, inf))		= typtree "Pack" i (
-					    ppInf inf
 					  )
       | ppTyp(SingTyp(i, vallongid))	= typtree "Sing" i (
 					    ppVallongid vallongid

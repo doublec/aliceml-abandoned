@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -139,7 +139,7 @@ struct
 	| HandleExp of exp_info * exp * mat vector (* exception handling *)
 	| AnnExp    of exp_info * exp * typ	(* type annotation *)
 	| LetExp    of exp_info * dec vector * exp (* let *)
-	| PackExp   of exp_info * mod		(* package introduction *)
+	| PackExp   of exp_info * mod * inf	(* package introduction *)
 
     and 'a row = Row of 'a row_info * 'a fld vector * bool
     and 'a fld = Fld of 'a fld_info * vallab * 'a
@@ -181,7 +181,6 @@ struct
 	| ArrTyp    of typ_info * typ * typ	(* arrow (function) type *)
 	| AllTyp    of typ_info * varid * typ	(* universal quantification *)
 	| ExTyp     of typ_info * varid * typ	(* existential quantification *)
-	| PackTyp   of typ_info * inf		(* package type *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
 	| AbsTyp    of typ_info * bool		(* abstract type (extensible?)*)
 
@@ -298,7 +297,7 @@ struct
       | infoExp(FailExp(i))		= i
       | infoExp(AnnExp(i,_,_))		= i
       | infoExp(LetExp(i,_,_))		= i
-      | infoExp(PackExp(i,_))		= i
+      | infoExp(PackExp(i,_,_))		= i
 
     fun infoRow(Row(i,_,_))		= i
     fun infoFld(Fld(i,_,_))		= i
@@ -333,7 +332,6 @@ struct
       | infoTyp(ArrTyp(i,_,_))		= i
       | infoTyp(AllTyp(i,_,_))		= i
       | infoTyp(ExTyp(i,_,_))		= i
-      | infoTyp(PackTyp(i,_))		= i
       | infoTyp(SingTyp(i,_))		= i
       | infoTyp(AbsTyp(i,_))		= i
 

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -112,7 +112,7 @@ sig
 	| FailExp   of exp_info			(* failure *)
 	| AnnExp    of exp_info * exp * typ	(* type annotation *)
 	| LetExp    of exp_info * dec vector * exp (* let *)
-	| PackExp   of exp_info * mod		(* package introduction *)
+	| PackExp   of exp_info * mod * inf	(* package introduction *)
 
     and 'a row = Row of 'a row_info * 'a fld vector * bool
     and 'a fld = Fld of 'a fld_info * vallab * 'a
@@ -154,7 +154,6 @@ sig
 	| ArrTyp    of typ_info * typ * typ	(* arrow (function) type *)
 	| AllTyp    of typ_info * varid * typ	(* universal quantification *)
 	| ExTyp     of typ_info * varid * typ	(* existential quantification *)
-	| PackTyp   of typ_info * inf		(* package type *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
 	| AbsTyp    of typ_info * bool		(* abstract type (extensible?)*)
 
