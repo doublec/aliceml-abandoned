@@ -1,22 +1,9 @@
 Group is
 	../../bootstrap/sources.cm
+	../data/sources.cm
 
 	ASSERT-sig.aml
 	Assert.aml
-
-	STAMP-sig.aml
-	MkStamp.aml
-
-	GLOBAL_STAMP-sig.aml
-	../../bootstrap/GlobalStamp.sml
-	../../bootstrap/DummyAddr.sml
-
-	HASH_KEY-sig.aml
-
-	IMP_MAP-sig.aml
-	IMP_SET-sig.aml
-	MkHashImpMap.aml
-	MkHashImpSet.aml
 
 	SCOPED_IMP_MAP-sig.aml
 	SCOPED_IMP_SET-sig.aml
@@ -25,8 +12,8 @@ Group is
 
 	CELL-sig.aml
 	../../bootstrap/Cell.sml
-
 	../../bootstrap/DummyHole.sml
+	../../bootstrap/DummyAddr.sml
 
 	DEPTH_FIRST_SEARCH-sig.aml
 	MkDepthFirstSearch.aml
