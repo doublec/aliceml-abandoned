@@ -758,6 +758,17 @@ const char *AbstractCodeInterpreter::Identify() {
   return "AbstractCodeInterpreter";
 }
 
-void AbstractCodeInterpreter::DumpFrame(word) {
-  fprintf(stderr, "Alice Function\n"); //--** include the name of the function
+void AbstractCodeInterpreter::DumpFrame(word frameWord) {
+  AbstractCodeFrame *frame = AbstractCodeFrame::FromWord(frameWord);
+  Assert(frame != INVALID_POINTER);
+  Closure *closure = frame->GetClosure();
+  ConcreteCode *concreteCode =
+    ConcreteCode::FromWord(closure->GetConcreteCode());
+  Assert(concreteCode != INVALID_POINTER);
+  TagVal *function = TagVal::FromWord(concreteCode->Get(0));
+  Tuple *coord = Tuple::FromWord(function->Sel(0));
+  String *name = String::FromWord(coord->Sel(0));
+  fprintf(stderr, "Alice Function in file %.*s, line %d\n",
+	  (int) name->GetSize(), name->GetValue(),
+	  Store::WordToInt(coord->Sel(1)));
 }
