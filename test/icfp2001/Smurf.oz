@@ -8,35 +8,114 @@ import
 export
    'Smurf$': SmurfModule
 define
-   Tags = tags(0: unit   % epsilon
-	       1: 'B'
-	       2: 'EM'
-	       3: 'I'
-	       4: 'PL'
-	       5: 'S'
-	       6: 'TT'
-	       7: 'U'
-	       8: 'SIZE'(0)
-	       9: 'SIZE'(1)
-	       10: 'SIZE'(2)
-	       11: 'SIZE'(3)
-	       12: 'SIZE'(4)
-	       13: 'SIZE'(5)
-	       14: 'SIZE'(6)
-	       15: 'SIZE'(7)
-	       16: 'SIZE'(8)
-	       17: 'SIZE'(9)
-	       18: 'COLOR'('R')
-	       19: 'COLOR'('G')
-	       20: 'COLOR'('B\'')
-	       21: 'COLOR'('C')
-	       22: 'COLOR'('M')
-	       23: 'COLOR'('Y')
-	       24: 'COLOR'('K')
-	       25: 'COLOR'('W'))
+   %% Attribute A is one of [b ems i tt u size color]
+
+   InitialAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
+				  size: 11 color: 9)
+
+   fun {MkSizeProc I}
+      proc {$ A In Out}
+	 case A of size then Out = I
+	 else Out = In
+	 end
+      end
+   end
+
+   fun {MkColorProc I}
+      proc {$ A In Out}
+	 case A of color then Out = I
+	 else Out = In
+	 end
+      end
+   end
+
+   Tags = tags(0: tag(p: proc {$ _ In Out} Out = In end)   % epsilon
+	       1: tag(name: 'B'
+		      p: proc {$ A In Out}
+			    case A of b then Out = 2
+			    else Out = In
+			    end
+			 end)
+	       2: tag(name: 'EM'
+		      p: proc {$ A In Out}
+			    case A of ems then Out = {Select.fd [2 1 3] In}
+			    else Out = In
+			    end
+			 end)
+	       3: tag(name: 'I'
+		      p: proc {$ A In Out}
+			    case A of i then Out = 2
+			    else Out = In
+			    end
+			 end)
+	       4: tag(name: 'PL'
+		      p: proc {$ A In Out}
+			    case A of b then Out = 1
+			    [] em then Out = 1
+			    [] i then Out = 1
+			    [] tt then Out = 1
+			    [] u then Out = 1
+			    else Out = In
+			    end
+			 end)
+	       5: tag(name: 'S'
+		      p: proc {$ A In Out}
+			    case A of em then Out = 3
+			    else Out = In
+			    end
+			 end)
+	       6: tag(name: 'TT'
+		      p: proc {$ A In Out}
+			    case A of tt then Out = 2
+			    else Out = In
+			    end
+			 end)
+	       7: tag(name: 'U'
+		      p: proc {$ A In Out}
+			    case A of u then Out = {FD.max {FD.plus In 1} 4}
+			    else Out = In
+			    end
+			 end)
+	       8: tag(name: 'SIZE'(0)
+		      p: {MkSizeProc 1})
+	       9: tag(name: 'SIZE'(1)
+		      p: {MkSizeProc 2})
+	       10: tag(name: 'SIZE'(2)
+		      p: {MkSizeProc 3})
+	       11: tag(name: 'SIZE'(3)
+		      p: {MkSizeProc 4})
+	       12: tag(name: 'SIZE'(4)
+		      p: {MkSizeProc 5})
+	       13: tag(name: 'SIZE'(5)
+		      p: {MkSizeProc 6})
+	       14: tag(name: 'SIZE'(6)
+		      p: {MkSizeProc 7})
+	       15: tag(name: 'SIZE'(7)
+		      p: {MkSizeProc 8})
+	       16: tag(name: 'SIZE'(8)
+		      p: {MkSizeProc 9})
+	       17: tag(name: 'SIZE'(9)
+		      p: {MkSizeProc 10})
+	       18: tag(name: 'COLOR'('R')
+		      p: {MkColorProc 1})
+	       19: tag(name: 'COLOR'('G')
+		      p: {MkColorProc 2})
+	       20: tag(name: 'COLOR'('B\'')
+		      p: {MkColorProc 3})
+	       21: tag(name: 'COLOR'('C')
+		      p: {MkColorProc 4})
+	       22: tag(name: 'COLOR'('M')
+		      p: {MkColorProc 5})
+	       23: tag(name: 'COLOR'('Y')
+		      p: {MkColorProc 6})
+	       24: tag(name: 'COLOR'('K')
+		      p: {MkColorProc 7})
+	       25: tag(name: 'COLOR'('W')
+		      p: {MkColorProc 8}))
 
    RootI = 0
    Epsilon = 0
+   MaxTag = 25
 
    fun {Constrain Meaning NumberOfElements}
       NumberOfDataItems = {Length Meaning}
@@ -61,7 +140,7 @@ define
 			     down: {FS.var.upperBound 1#NumberOfVertices}
 			     eqdown: {FS.var.upperBound 0#NumberOfVertices}
 			     scope: {FS.var.upperBound 1#NumberOfDataItems}
-			     tag: {FD.int 0#25})}
+			     tag: {FD.int Epsilon#MaxTag})}
 		 end
 
       V = {AdjoinAt
@@ -133,7 +212,7 @@ define
 		'TEXT'(Text)|In
 	     [] element(tag: !Epsilon ...) then In
 	     [] element(tag: Tag daughters: Daughters ...) then
-		'TAGGED'(Tags.Tag {ToDocSub Daughters V})|In
+		'TAGGED'(Tags.Tag.name {ToDocSub Daughters V})|In
 	     end
 	  end nil}
       end
