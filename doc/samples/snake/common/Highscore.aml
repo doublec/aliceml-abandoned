@@ -48,11 +48,8 @@ struct
 				 color,
 				 points,
 				 gamePoints,
-                                 lives}, xs) => {name,
-						      color,
-						      points,
-						      player,
-						      level} :: xs) nil
+                                 lives}, xs) => {name, color, points, 
+                                                    player, level} :: xs) nil
 
 	    fun order (e1 : entry, e2 : entry) = 
 		if #points e1 < #points e2 

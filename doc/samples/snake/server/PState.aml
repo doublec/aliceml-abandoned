@@ -81,7 +81,8 @@ struct
 
     fun die (p:pstate, maxLives) =
         case ! (#state p) of
-            PLAYING (info, snake) =>
+            (PLAYING (info, snake) |
+             GATE_ENTERED (info, snake)) =>
             (#gamePoints info := 0;
              #deathCount info := !(#deathCount info) + 1;
              if isSome maxLives andalso 

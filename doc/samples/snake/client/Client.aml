@@ -63,15 +63,23 @@ struct
             
             fun invoke msg arg =
                 (msg server arg)
+            handle e =>
+                Gui.serverError e
 
             fun turn d =
                 invoke #turn d
+            handle e =>
+                Gui.serverError e
 
             fun changeView h =
                 invoke #changeView h
+            handle e =>
+                Gui.serverError e
 
             fun giveUp () =
                 invoke #giveUp ()
+            handle e =>
+                Gui.serverError e
                 
             fun play (name, color) = 
                 (if invoke #play (name, color) then
@@ -84,12 +92,15 @@ struct
             fun watch () =
                 (invoke #watch ();
                  FST ({ turn, changeView, giveUp }, promise))
+            handle e =>
+                Gui.serverError e
 
             fun disconnect () = 
                  invoke #disconnect ()
             
             val lock = Lock.lock ()
 
+            (*
             fun locked name f =
                 Lock.sync lock (fn a => 
                       let   val _   = Inspector.inspect ("calling: " ^ name, a); 
@@ -101,7 +112,7 @@ struct
                             Inspector.inspect ("leaving: " ^ name ^ " with exception", e);
                             raise e
                         ))
-            
+            *)
             fun locked name f = Lock.sync lock f 
         in
             (* return locked but not yet proxied client interface! *)

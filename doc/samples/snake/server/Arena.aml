@@ -124,6 +124,36 @@ struct
                 raise NoMoreEmptySpots
         end
 
+ 
+    fun findBigEmptySpot (arena, tries) =
+        let
+            val (rows, cols)    = TA.dimensions arena
+
+            val r2  = rows div 2 - 2
+            val c2  = cols div 2 - 2
+            
+            val (r, c) = case tries mod 4 of
+                    0   => (Random.int r2, Random.int c2)
+                |   1   => (r2 + Random.int r2, Random.int c2)
+                |   2   => (r2 + Random.int r2, c2 + Random.int c2)
+                |   3   => (Random.int r2, c2 + Random.int c2)
+                |   _   => assert false
+            
+            val lu = (r, c)
+            val p  = (r + 2, c + 2)
+            val ru = (r, c + 2)
+
+            fun testSpot p = test (arena, p, P.UP) andalso
+                                test (arena, p, P.DOWN)
+        in
+            if testSpot p then p
+            else if testSpot lu then lu
+            else if testSpot ru then ru
+            else if tries < maxNumberOfTries then
+                findEmptySpot (arena, tries + 1)
+            else
+                raise NoMoreEmptySpots
+        end
 
     fun random' {dimensions = (rows, cols), players,walls} =
 	let

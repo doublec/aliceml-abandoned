@@ -13,7 +13,7 @@ import structure Gui        from "Gui"
 import structure Client     from "Client"
 import structure Protocol   from "../common/Protocol"
 import structure Server     from "../server/Server"
-import structure Config     from "../server/Config"
+import structure Config     from "../common/Config"
 import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
 import structure Remote     from "x-alice:/lib/distribution/Remote"
 

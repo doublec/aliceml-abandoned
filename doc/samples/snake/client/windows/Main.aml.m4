@@ -37,13 +37,19 @@ open Ctrl
    differentiated by newlines *)
 fun highscoreToString score =
     let
+	fun pToString p = (if p <= 9 then "    " 
+				else if p <= 99 then "   "
+				else if p <= 999 then "  " 
+				else if p <= 9999 then " "
+			  	else "") ^ (Int.toString p)
+
 	fun toString' ({name, color, points,
 			player, level}, str) =
-	    ("Player: "    ^ name     ^ "  Color: "
-	     ^ (Color.toString color) ^ "  Points: "
-	     ^ (Int.toString points)  ^ "  Player: "
-	     ^ (Int.toString player)  ^ "  Level: "
-	     ^ (Int.toString level)   ^ "\n\n" ^ str)
+	    ("Player: "   ^ name                   ^
+             "\nColor: "  ^ (Color.toString color) ^ 
+             "  Points: " ^ (pToString points)  ^ 
+             "  Player: " ^ (pToString player)  ^ 
+             "  Level: "  ^ (pToString level)   ^ "\n\n" ^ str)
 
 	fun toString score = 
 	    case Highscore.foldl toString' "" score of
@@ -112,7 +118,6 @@ struct
 	    val dialogHBox     = Gtk.hboxNew (false, 5)
 	    val menuBar        = Gtk.menuBarNew ()
 	    val menuMenu       = Gtk.menuNew ()
-	    val menuHighscore  = Gtk.menuNew ()
 	    val menuLeave      = Gtk.menuNew ()
 	    val menuMenuSingle = Gtk.menuItemNewWithLabel "Single-Player"
 	    val menuMenuClient = Gtk.menuItemNewWithLabel "Multi-Player Client"
@@ -183,22 +188,28 @@ struct
 		     by newlines *)
 		    fun updatePoints plist =
 			let
+			    fun pToString p = (if p <= 9 then "    " 
+						else if p <= 99 then "   "
+						else if p <= 999 then "  " 
+						else if p <= 9999 then " "
+			  			else "") ^ (Int.toString p)
+
 			    fun toString' ({name, 
 					     color, 
 					     points, 
 					     gamePoints,
                                              lives = NONE}, str) =
-				(str ^ name ^ ":  " 
-				 ^ (Int.toString points) ^ "  +  " 
-				 ^ (Int.toString gamePoints) ^ "\n\n")
+				(str ^ name ^ ":\n" 
+				 ^ (pToString points) ^ "  +  " 
+				 ^ (pToString gamePoints) ^ "\n\n")
 			      | toString' ({name, 
 					     color, 
 					     points, 
 					     gamePoints,
                                              lives = SOME lives}, str) =
-				(str ^ name ^ ":  " 
-				^ (Int.toString points) ^ "  +  " 
-				^ (Int.toString gamePoints)
+				(str ^ name ^ ":\n" 
+				^ (pToString points) ^ "  +  " 
+				^ (pToString gamePoints)
 				^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
 			    fun toString () = List.foldl toString' "" plist
 			in

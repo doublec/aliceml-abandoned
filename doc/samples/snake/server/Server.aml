@@ -209,7 +209,11 @@ struct
                 DynArray.app (fn (c as PDESC pdesc) => 
                     if PState.id (#state pdesc) = id then ()
                     else invoke (c, f, a)) partDescs
-
+                
+            fun invokeOnAllNonPlayers (partDescs, f, a) =
+                DynArray.app (fn (c as PDESC pdesc) =>
+                    if PState.isPlayer (#state pdesc) then ()
+                    else invoke (c, f, a)) partDescs
             
             fun computePoints (partDescs, config : P.config) = 
                 mapPlayed (partDescs, fn (PDESC pd) => 
@@ -492,9 +496,10 @@ struct
               
             fun finishTournament (partDescs, config : P.config)=
                 let
-                    val highscore = HighscoreIO.load ()
-                    val highscore = Highscore.merge (highscore,
+                    val highscore' = HighscoreIO.load ()
+                    val highscore  = Highscore.merge (highscore',
                                         computePoints (partDescs, config), 0)
+                    val _          = HighscoreIO.save highscore
                 in
                     gameStarted := false;
                     invokeOnAll (partDescs, #tournamentFinished, highscore)
@@ -563,7 +568,9 @@ struct
                                     in
                                         invoke (p, #tick, 
                                             (pts, diffs, SOME pos, time) )
-                                    end) (players, startPos)
+                                    end) (players, startPos);
+                                invokeOnAllNonPlayers (partDescs, #tick, 
+                                        (pts, diffs, NONE, time) )
                             end;
                             countdown (partDescs, 3))
                 end

@@ -14,7 +14,7 @@ import structure Highscore  from "../common/Highscore"
 import structure Pos        from "../common/Pos"
 import structure Color      from "../common/Color"
 import structure Protocol   from "../common/Protocol"
-import structure Config     from "../server/Config"
+import structure Config     from "../common/Config"
 import structure Main       from "windows/Main"
 import structure Error      from "windows/Error"
 

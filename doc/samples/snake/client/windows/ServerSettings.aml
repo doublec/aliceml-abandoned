@@ -12,7 +12,7 @@
 import structure Gtk        from "GtkSupport"
 
 import structure Color      from "../../common/Color"
-import structure Config     from "../../server/Config"
+import structure Config     from "../../common/Config"
 
 import structure Error      from "Error"
 import structure Wait       from "Wait"
