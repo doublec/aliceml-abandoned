@@ -33,7 +33,6 @@ structure Builtins :> BUILTINS =
 		Map.insert (map, "Char.<=", "Char_op_LessThanOrEqual");
 		Map.insert (map, "Char.>=", "Char_op_GreaterThanOrEqual");
 		Map.insert (map, "Future.alarm'", "Future_alarmQuote");
-		Map.insert (map, "General.:=", "General_op_Assignment");
 		Map.insert (map, "Int.~", "Int_op_UnaryNegation");
 		Map.insert (map, "Int.+", "Int_op_Addition");
 		Map.insert (map, "Int.-", "Int_op_Subtraction");
@@ -51,18 +50,32 @@ structure Builtins :> BUILTINS =
 		Map.insert (map, "Real.>", "Real_op_GreaterThan");
 		Map.insert (map, "Real.<=", "Real_op_LessThanOrEqual");
 		Map.insert (map, "Real.>=", "Real_op_GreaterThanOrEqual");
+		Map.insert (map, "Ref.:=", "Ref_op_Assignment");
 		Map.insert (map, "String.^", "String_op_Concatenation");
 		Map.insert (map, "String.<", "String_op_LessThan");
 		Map.insert (map, "String.>", "String_op_GreaterThan");
 		Map.insert (map, "String.<=", "String_op_LessThanOrEqual");
 		Map.insert (map, "String.>=", "String_op_GreaterThanOrEqual");
-		Map.insert (map, "Word.fromInt'", "Word_fromIntQuote");
-		Map.insert (map, "Word.+", "Word_op_Addition");
-		Map.insert (map, "Word.-", "Word_op_Subtraction");
-		Map.insert (map, "Word.*", "Word_op_Multiply");
-		Map.insert (map, "Word.<<", "Word_op_LeftShift");
-		Map.insert (map, "Word.>>", "Word_op_UnsignedRightShift");
-		Map.insert (map, "Word.~>>", "Word_op_SignedRightShift");
+		Map.insert (map, "Word8.+", "Word8_op_Addition");
+		Map.insert (map, "Word8.-", "Word8_op_Subtraction");
+		Map.insert (map, "Word8.*", "Word8_op_Multiply");
+		Map.insert (map, "Word8.<<", "Word8_op_LeftShift");
+		Map.insert (map, "Word8.>>", "Word8_op_UnsignedRightShift");
+		Map.insert (map, "Word8.~>>", "Word8_op_SignedRightShift");
+		Map.insert (map, "Word8.<", "Word8_op_LessThan");
+		Map.insert (map, "Word8.>", "Word8_op_GreaterThan");
+		Map.insert (map, "Word8.<=", "Word8_op_LessThanOrEqual");
+		Map.insert (map, "Word8.>=", "Word8_op_GreaterThanOrEqual");
+		Map.insert (map, "Word31.+", "Word31_op_Addition");
+		Map.insert (map, "Word31.-", "Word31_op_Subtraction");
+		Map.insert (map, "Word31.*", "Word31_op_Multiply");
+		Map.insert (map, "Word31.<<", "Word31_op_LeftShift");
+		Map.insert (map, "Word31.>>", "Word31_op_UnsignedRightShift");
+		Map.insert (map, "Word31.~>>", "Word31_op_SignedRightShift");
+		Map.insert (map, "Word31.<", "Word31_op_LessThan");
+		Map.insert (map, "Word31.>", "Word31_op_GreaterThan");
+		Map.insert (map, "Word31.<=", "Word31_op_LessThanOrEqual");
+		Map.insert (map, "Word31.>=", "Word31_op_GreaterThanOrEqual");
 		map
 	    end
 
