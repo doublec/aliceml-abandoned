@@ -16,6 +16,7 @@
 #include "generic/Closure.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/primitives/Authoring.hh"
+#include "alice/AliceLanguageLayer.hh"
 
 DEFINE2(Unsafe_Array_sub) {
   DECLARE_ARRAY(array, x0);
@@ -53,7 +54,7 @@ DEFINE1(Unsafe_getPrimitiveByName) {
 
 DEFINE1(Unsafe_makeConcreteCode) {
   DECLARE_TAGVAL(abstractCode, x0);
-  RETURN(AliceConcreteCode::New(abstractCode)->ToWord());
+  RETURN(AliceLanguageLayer::concreteCodeConstructor(abstractCode));
 } END
 
 DEFINE2(Unsafe_makeClosure) {
