@@ -15,6 +15,7 @@ local
 	      (case k of
 		   "__extension__"              => ""
 		 | "__cdecl"                    => ""
+		 | "*__cdecl"                   => "*"
 		 | "__ssize_t"                  => "unsigned int"
 		 | "(__const"                   => "(const"
 		 | "__const"                    => "const"
