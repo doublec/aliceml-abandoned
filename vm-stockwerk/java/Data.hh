@@ -28,23 +28,25 @@ private:
   static const u_int base = MIN_DATA_LABEL;
 public:
   static const BlockLabel ClassLoader         = (BlockLabel) (base + 0);
-  // Symbolic class representations
+  // Symbolic class representation
   static const BlockLabel ConstantPool        = (BlockLabel) (base + 1);
   static const BlockLabel Table               = (BlockLabel) (base + 2);
   static const BlockLabel FieldInfo           = (BlockLabel) (base + 3);
   static const BlockLabel MethodInfo          = (BlockLabel) (base + 4);
   static const BlockLabel ClassInfo           = (BlockLabel) (base + 5);
-  // Code
-  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 6);
+  // Runtime class representation
+  static const BlockLabel RuntimeConstantPool = (BlockLabel) (base + 6);
   static const BlockLabel VirtualTable        = (BlockLabel) (base + 7);
+  // Code
+  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 8);
   // Types
-  static const BlockLabel Class               = (BlockLabel) (base + 8);
-  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 9);
-  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 10);
+  static const BlockLabel Class               = (BlockLabel) (base + 9);
+  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 10);
+  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 11);
   // Data layer
-  static const BlockLabel Lock                = (BlockLabel) (base + 11);
-  static const BlockLabel Object              = (BlockLabel) (base + 12);
-  static const BlockLabel ObjectArray         = (BlockLabel) (base + 13);
+  static const BlockLabel Lock                = (BlockLabel) (base + 12);
+  static const BlockLabel Object              = (BlockLabel) (base + 13);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 14);
 };
 
 //
@@ -297,8 +299,30 @@ public:
 };
 
 //
-// Resolved Constant Pool Entries
+// Runtime Constant Pool Entries
 //
+
+class DllExport RuntimeConstantPool: private Block {
+public:
+  using Block::ToWord;
+
+  static RuntimeConstantPool *New(u_int size) {
+    Block *b = Store::AllocBlock(JavaLabel::RuntimeConstantPool, size);
+    return static_cast<RuntimeConstantPool *>(b);
+  }
+  static RuntimeConstantPool *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::RuntimeConstantPool);
+    return static_cast<RuntimeConstantPool *>(b);
+  }
+
+  void Init(u_int index, word value) {
+    InitArg(index - 1, value);
+  }
+  word Get(u_int index) {
+    return GetArg(index - 1);
+  }
+};
 
 class DllExport FieldRef: private Block {
 public:

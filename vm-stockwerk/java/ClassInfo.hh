@@ -182,7 +182,8 @@ public:
 
   static ClassInfo *New(ClassLoader *classLoader, u_int accessFlags,
 			JavaString *name, word super, Table *interfaces,
-			Table *fields, Table *methods, Table *constantPool) {
+			Table *fields, Table *methods,
+			RuntimeConstantPool *runtimeConstantPool) {
     Assert(((accessFlags & ACC_INTERFACE) == 0 &&
 	    ((accessFlags & ACC_FINAL) != 0) +
 	    ((accessFlags & ACC_ABSTRACT) != 0) <= 1) ||
@@ -196,7 +197,7 @@ public:
     b->InitArg(INTERFACES_POS, interfaces->ToWord());
     b->InitArg(FIELDS_POS, fields->ToWord());
     b->InitArg(METHODS_POS, methods->ToWord());
-    b->InitArg(CONSTANT_POOL_POS, constantPool->ToWord());
+    b->InitArg(CONSTANT_POOL_POS, runtimeConstantPool->ToWord());
     return static_cast<ClassInfo *>(b);
   }
   static ClassInfo *FromWordDirect(word x) {
