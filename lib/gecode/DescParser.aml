@@ -1,5 +1,3 @@
-import structure Print from  "x-alice:/lib/system/Print"
-
 structure DescParser =
 struct
   datatype var_types = IntVar | BoolVar | SetVar | List of var_types
