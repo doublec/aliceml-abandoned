@@ -41,8 +41,10 @@ public:
   static word Internal_applyUnit;
   static word Internal_bind;
   static word Internal_byneedHandler;
+  static word Internal_defaultHandler;
   static word Internal_popHandler;
   static word Internal_raise;
+  static word Internal_terminate;
   static word Vector_tabulate_cont;
 
   static void Init();

@@ -35,6 +35,11 @@ DEFINE1(Internal_byneedHandler) {
   RETURN(result->ToWord());
 } END
 
+DEFINE1(Internal_defaultHandler) {
+  //--** print out information about the unhandled exception
+  return Interpreter::Result(Interpreter::Result::TERMINATE);
+} END
+
 DEFINE1(Internal_popHandler) {
   Assert(taskStack->GetUnmanagedPointer(0) == NULL);
   taskStack->PopFrame(1);
@@ -45,10 +50,16 @@ DEFINE1(Internal_raise) {
   RAISE(x0);
 } END
 
+DEFINE1(Internal_terminate) {
+  return Interpreter::Result(Interpreter::Result::TERMINATE);
+} END
+
 void Primitive::RegisterInternal() {
   Register("Internal.applyUnit", Internal_applyUnit, 1);
   Register("Internal.bind", Internal_bind, 1, 1);
   Register("Internal.byneedHandler", Internal_byneedHandler, 1);
+  Register("Internal.defaultHandler", Internal_defaultHandler, 1);
   Register("Internal.popHandler", Internal_popHandler, 1);
   Register("Internal.raise", Internal_raise, 1);
+  Register("Internal.terminate", Internal_terminate, 1);
 }

@@ -47,9 +47,17 @@ DEFINE1(Future_concur) {
   word byneed = Byneed::New(x0)->ToWord();
   Thread *thread = Thread::New(Scheduler::GetCurrentThread()->GetPriority());
   TaskStack *newTaskStack = thread->GetTaskStack();
-  //--** push toplevel exception handler on taskStack
-  newTaskStack->
-    PushCall(Closure::FromWordDirect(GlobalPrimitives::Future_await));
+  // Push the exception handler and the mark:
+  word primitive = GlobalPrimitives::Internal_defaultHandler;
+  newTaskStack->PushCall(Closure::FromWordDirect(primitive));
+  newTaskStack->PushFrame(1);
+  newTaskStack->PutUnmanagedPointer(0, NULL);
+  // Push a task that terminates the thread after evaluation:
+  primitive = GlobalPrimitives::Internal_terminate;
+  newTaskStack->PushCall(Closure::FromWordDirect(primitive));
+  // Start the computation by requesting the by-need future:
+  primitive = GlobalPrimitives::Future_await;
+  newTaskStack->PushCall(Closure::FromWordDirect(primitive));
   newTaskStack->PushFrame(2);
   newTaskStack->PutWord(1, byneed);
   newTaskStack->PutInt(0, 1);

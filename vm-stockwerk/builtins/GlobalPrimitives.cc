@@ -29,8 +29,10 @@ word GlobalPrimitives::Hole_Hole;
 word GlobalPrimitives::Internal_applyUnit;
 word GlobalPrimitives::Internal_bind;
 word GlobalPrimitives::Internal_byneedHandler;
+word GlobalPrimitives::Internal_defaultHandler;
 word GlobalPrimitives::Internal_popHandler;
 word GlobalPrimitives::Internal_raise;
+word GlobalPrimitives::Internal_terminate;
 word GlobalPrimitives::Vector_tabulate_cont;
 
 void GlobalPrimitives::Init() {
@@ -47,8 +49,11 @@ void GlobalPrimitives::Init() {
   Internal_bind = Primitive::Lookup(String::New("Internal.bind"));
   Internal_byneedHandler =
     Primitive::Lookup(String::New("Internal.byneedHandler"));
+  Internal_defaultHandler =
+    Primitive::Lookup(String::New("Internal.defaultHandler"));
   Internal_popHandler = Primitive::Lookup(String::New("Internal.popHandler"));
   Internal_raise = Primitive::Lookup(String::New("Internal.raise"));
+  Internal_terminate = Primitive::Lookup(String::New("Internal.terminate"));
   Vector_tabulate_cont =
     Primitive::Lookup(String::New("Vector.tabulate/cont"));
 }
