@@ -12,7 +12,7 @@
  *   $Revision$
  *)
 
-(* This file is prepended to every file compiled by stoc. *)
+(* This file is prepended to every compiled input. *)
 
 import "x-alice:/lib/system/IO-sig"
 import "x-alice:/lib/system/IO"
@@ -29,7 +29,3 @@ import "x-alice:/lib/system/CommandLine"
 
 import "x-alice:/lib/system/PICKLE-sig"
 import "x-alice:/lib/system/Pickle"
-
-(*--** these should only be active for stot: *)
-import "x-alice:/lib/tools/Inspector"
-import "x-alice:/compiler/ToplevelMain"
