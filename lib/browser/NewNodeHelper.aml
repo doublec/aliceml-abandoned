@@ -1,0 +1,169 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Label from "x-alice:/lib/rtt/Label"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Types from "Types"
+import structure Helper from "Helper"
+import structure Settings from "Settings"
+import structure WindowManager from "WindowManager"
+import signature NEW_NODE_HELPER from "NEW_NODE_HELPER-sig"
+
+local 
+    open Types Helper Settings
+in
+
+structure NewNodeHelper :> NEW_NODE_HELPER = 
+struct
+
+    (* itemToLabel *)
+    fun itemToLabel i = case Inf.inspectItem i of
+	Inf.FixItem(l,_) => l
+      | Inf.ValItem(l,_) => l
+      | Inf.TypItem(path,_) => let val str = Label.toString(Path.toLab(path))
+				in Label.fromString("$"^str)
+				end
+      | Inf.ModItem(path,_) => let val str = Label.toString(Path.toLab(path))
+			       in Label.fromString(str^"$")
+			       end
+      | Inf.InfItem(path,_) => let val str = Label.toString(Path.toLab(path))
+			       in Label.fromString("$"^str^"$")
+			       end   
+      | Inf.HiddenItem(i) => itemToLabel i
+
+    fun createGroupItem (parent,x,y) = 
+	           GtkCanvas.itemNew(parent, 
+				     GtkCanvas.GROUP,
+				     [("x", Gtk.DOUBLE y), 
+				      ("y", Gtk.DOUBLE y)])
+   
+    (* setGroup *) 
+    fun setGroup pnode = case pnode of 
+	Simple(r)    => createGroupItem(#group(r),0.0,0.0) 
+      | Container(r) => createGroupItem(#group(r),0.0,0.0) 
+      | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
+      | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
+      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
+      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
+      | Empty        => let  val _ = WindowManager.new()
+			in createGroupItem(!WindowManager.canvasroot,0.0,0.0)
+			end
+      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
+      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
+   
+   (* low-level-Konstruktion der verschiedenen node-Arten *)
+
+   (* createSimple *) 
+    fun createSimple (desc,p,i,d,str,color,f) = Simple {desc = desc, 
+							parent = p,
+							index = i,
+							depth = d,
+							rep = str,
+							width = 
+							ref(String.length
+							    (str)), 
+							color = color, 
+							status = ref DAZZLED,
+							group = f(p)}
+	
+    (* createConcat *)
+    and createConcat (desc,p,i,d,na,f) =  Concat {desc = desc,
+						      parent = p,
+						      index  = i,
+						      depth = d,
+						      kids = na, 
+						      width  = ref ~1,
+						      height = ref ~1,
+						      status = ref DAZZLED,
+						      group = f(p)}
+
+    (* createContainer *)
+    and createContainer (desc,p,i,d,na,f) =  
+	Container {desc = desc, 
+		   parent = p,
+		   index = i,
+		   depth = d,
+		   kids = na, 
+		   width = ref ~1,
+		   height = ref ~1,
+		   l_width = ref ~1,
+		   status = ref DAZZLED,
+		   group = f(p)}
+
+    (* createLimit *)
+    and createLimit (desc,sort,p,i,d,f) =  Limit  {desc = desc,
+						   sort = sort, 
+						   parent = p,
+						   index  = i,
+						   depth = d,
+						   status = ref DAZZLED,
+						   group = f(p)}
+
+    (* createRelNode *)
+    and createRelNode (desc,c,p,i,d,str,rman,f) = 
+	let val node = RelNode {desc = desc, 
+				content = ref c,
+				parent = p,  
+				index = i, 
+				depth = d,
+				counter = ref 1, 
+				rep = str, 
+				relman = ref rman, 
+				width = ref ~1,
+				height = ref ~1,
+				color = REL_COLOR  , 
+				status = ref DAZZLED, 
+				group = f(p)}
+	    val _ = relnumber := (!relnumber) + 1
+	in node
+	end
+
+    (* createRelRefNode *)
+    and createRelRefNode (desc,p,i,d,str,rnode,f) = 
+	RelRefNode {desc = desc, 
+		    parent = p, 
+		    index = i, 
+		    depth = d,
+		    rep = str, 
+		    relnode = rnode,
+		    width = ref(String.length(str)), 
+		    color = REL_COLOR, 
+		    status = ref DAZZLED,  
+		    group = f(p)}
+
+    (* queryDepth *)
+    fun queryDepth (va,t,p,i,d,row,f) = 
+	if d > !max_depth 
+	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+			      p,i,d,setGroup)
+	else f (va,t,p,i,d,row)
+
+    (* queryDepthL *)
+    fun queryDepthL (va,t,p,i,d,ld,f) = 
+	if d > !max_depth 
+	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+			      p,i,d,setGroup)
+	else f (va,t,p,i,d,ld)
+
+end (* struct *)
+
+end
+    
