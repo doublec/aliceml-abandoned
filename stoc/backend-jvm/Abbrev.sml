@@ -2,8 +2,8 @@ structure Abbrev  =
     struct
 	val CBind          = ("de/uni_sb/ps/dml/runtime/Constants/dmlbind",
 			      "de/uni_sb/ps/dml/runtime/Name", 0)
-	val CCons          = ("de/uni_sb/ps/dml/runtime/Constants/cons",
-			      "de/uni-sb/ps/dml/runtime/Constructor", 0)
+	val CCons          = ("de/uni_sb/ps/dml/runtime/List/cons",
+			      "de/uni_sb/ps/dml/runtime/Constructor", 0)
 	val CFalse         = ("de/uni_sb/ps/dml/runtime/Constants/dmlfalse",
 			      "de/uni_sb/ps/dml/runtime/Name", 0)
 	val CMatch         = ("de/uni_sb/ps/dml/runtime/Constants/dmlmatch",
@@ -49,14 +49,6 @@ structure Abbrev  =
 	val CBuiltin       = "de/uni_sb/ps/dml/runtime/Builtin"
 	val CDMLTuple      = "de/uni_sb/ps/dml/runtime/DMLTuple"
 
-	(* Ab hier nur Unfug! *)
-	val CEquals        = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Equals",0 )
-	val CNot           = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Not",0)
-	val CDeref         = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Deref",0)
-	val CRef           = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Ref",0)
-	val CAssign        = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Assign",0)
-	val CIntFromString = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/IntFromString",0)
-	val CBoolFromString = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/BoolFromString",0)
-	val CRealFromString = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/RealFromString",0)
-	val CSel            = "de/uni_sb/ps/dml/runtime/Builtin"
+	val CSelString     = "de/uni_sb/ps/dml/runtime/General$SelFunString"
+	val CSelInt     = "de/uni_sb/ps/dml/runtime/General$SelFunInt"
     end

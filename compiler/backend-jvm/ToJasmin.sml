@@ -264,7 +264,7 @@ structure ToJasmin =
 			      | _ => (if noStack i
 					  then ""
 				      else
-					  ((*"\t\t.line "^line()^*)
+					  ("\t\t.line "^line()^
 					   "\t; Stack: "^Int.toString need^
 					   " Max: "^Int.toString max))
 					      ^"\n"^

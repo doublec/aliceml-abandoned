@@ -66,9 +66,9 @@ structure CodeGen =
 		fun fromNumber i = "label"^Int.toString i
 	    end
 
-		(* Den Feldnamen zu einer Id bestimmen. Die Id kann eine beliebige Variable sein. *)
-	fun fieldNameFromId (Id(_,stamp',ExId name')) = "field"^name'^(Stamp.toString stamp')
-	  | fieldNameFromId (Id(_,stamp',InId)) ="field"^(Stamp.toString stamp')
+	(* Den Feldnamen zu einer Id bestimmen. Die Id kann eine beliebige Variable sein. *)
+	fun fieldNameFromStamp stamp' = "field"^(Stamp.toString stamp')
+	fun fieldNameFromId (Id(_,stamp',_)) = fieldNameFromStamp stamp'
 
 	(* Den Stamp aus einer Id extrahieren. *)
 	fun stampFromId (Id (_, stamp', _)) = stamp'
@@ -113,22 +113,15 @@ structure CodeGen =
 
 		    fun get stamp' =
 			case StampHash.lookup (register, stamp') of
-			    NONE => ~1
+			    NONE => 1 (* nichtgebundene Stamps sind formale Parameter. *)
 			  | SOME register => register
-
-		    fun fieldNameFromStamp stamp' =
-			"field"^
-			(case StampHash.lookup(fields, stamp') of
-			     NONE => ""
-			   | SOME name => name)
-			     ^(Stamp.toString stamp')
 
 		    (* Zuordnung von Ids zu JVM-Registern mit definierender Funktion *)
 		    (* xxx inzwischen überflüssig ? *)
 		    fun assignLambda (Id(_,stamp',_), wohin) =
 			(StampHash.insert(lambda,stamp',wohin);
 			 wohin)
-		    fun getLambda stamp' =
+		    fun getLambda stamp' = (* xxx Unterschied zu Lambda.getLambda? *)
 			case StampHash.lookup(lambda,stamp') of
 			    NONE => ~1
 			  | SOME lambda => lambda
@@ -600,20 +593,25 @@ structure CodeGen =
 	     in
 		 schreibs(name^".j",classToJasmin class)
 	     end
-	     )
+	 )
+
+	and getBuiltin builtin' =
+	    [Getstatic (Literals.insert (StringLit builtin'), CStr, 0),
+	     Invokestatic (CBuiltin, "getBuiltin",
+			   ([Classsig CStr], [Classsig CVal]))]
 
 	and builtinStamp stamp' =
-	    if stamp'=stamp_plus then CPlus else
-		if stamp'=stamp_Match then CMatch else
-		    if stamp'=stamp_false then CFalse else
-			if stamp'=stamp_true then CTrue else
-			    if stamp'=stamp_nil then CNil else
-				if stamp'=stamp_cons then CCons else
-				    if stamp'=stamp_ref then CRef else
-					if stamp'=stamp_Bind then CBind else
-					    if stamp'=stamp_eq then CEquals else
-						if stamp'=stamp_assign then CAssign else
-						    ("","",0)
+	    if stamp'=stamp_plus then ([Getstatic CPlus],true) else
+		if stamp'=stamp_Match then ([Getstatic CMatch],true) else
+		    if stamp'=stamp_false then ([Getstatic CFalse],true) else
+			if stamp'=stamp_true then ([Getstatic CTrue],true) else
+			    if stamp'=stamp_nil then (getBuiltin "nil",true) else
+				if stamp'=stamp_cons then (getBuiltin "cons",true) else
+				    if stamp'=stamp_ref then (getBuiltin "ref",true) else
+					if stamp'=stamp_Bind then (getBuiltin "Bind",true) else
+					    if stamp'=stamp_eq then (getBuiltin "equals",true) else
+						if stamp'=stamp_assign then (getBuiltin "assign",true) else
+						    (nil,false)
 
 
 	and decListCode decs = List.concat (map decCode decs)
@@ -767,14 +765,14 @@ structure CodeGen =
 			val litcode = expCode (LitExp((~1,~1),lit'))
 		    in
 			litcode @
-			(idCode id') @
+			(stampCode stamp') @
 			[Invokevirtual (CObj, "equals",
 					([Classsig CObj],[Boolsig])),
 			 Ifeq elselabel]
 		    end
 		  | testCode (ConTest (id'',NONE)) =
 		    Comment "Hi8" ::
-		    (idCode id') @
+		    (stampCode stamp') @
 		    (idCode id'') @
 		    [Ifacmpne elselabel]
 		  | testCode (ConTest(id'',SOME id''')) =
@@ -783,7 +781,7 @@ structure CodeGen =
 			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			Comment "Hi9" ::
-			 (idCode id') @
+			 (stampCode stamp') @
 			 [Checkcast CConVal,
 			  Invokeinterface (CConVal, "getConstructor",
 					   ([], [Classsig CConstructor])),
@@ -835,11 +833,11 @@ structure CodeGen =
 					([Arraysig,Classsig CLabel],
 					 [Voidsig]))) ::
 			(Comment "Hi11") ::
-			(Aload (Local.get stamp')) ::
-			(Invokevirtual (CRecord,"getArity",
-					([],[Classsig CRecordArity]))) ::
-			(Ifacmpne elselabel) ::
-			(idCode id') @
+			((stampCode stamp') @
+			 ((Invokevirtual (CRecord,"getArity",
+					  ([],[Classsig CRecordArity]))) ::
+			  (Ifacmpne elselabel) ::
+			  (stampCode stamp'))) @
 			[Invokevirtual (CRecord,"getValues",
 					([],[Arraysig, Classsig CVal]))] @
 			(bindit(stringid,0))
@@ -871,12 +869,12 @@ structure CodeGen =
 			    end
 			  | bindit (nil,_) = nil
 		    in
-			idCode id'@
+			stampCode stamp'@
 			[Checkcast CDMLTuple,
 			 Invokeinterface (CDMLTuple,"getArity",([],[Intsig])),
 			 Iconst (length ids),
 			 Ificmpne elselabel] @
-			(idCode id') @
+			(stampCode stamp') @
 			[Checkcast CDMLTuple,
 			 Invokeinterface (CDMLTuple,"getVals",
 					([],[Arraysig, Classsig CVal]))] @
@@ -975,11 +973,13 @@ structure CodeGen =
 	  | decCode (ExportStm (_,Id (_,stamp',_)::_)) = (mainpickle:=Local.get stamp'; nil)
 	  | decCode dings = raise Debug (Dec dings)
 	and
-	    idCode (id' as Id(_,stamp',_)) =
+	    idCode (Id(_,stamp',_)) = stampCode stamp'
+	and
+	    stampCode stamp' =
 	    let
-		val bstamp = builtinStamp stamp'
+		val (bstamp,isBuiltin) = builtinStamp stamp'
 	    in
-		if bstamp<>("","",0) then [Getstatic bstamp]
+		if isBuiltin then bstamp
 		else
 		    if stamp'=(stampFromId (Lambda.getId
 					    (Lambda.top())))
@@ -1020,7 +1020,7 @@ structure CodeGen =
 				       "Id (Lambda.top) ="^(Stamp.toString (stampFromId
 									  (Lambda.getId(Lambda.top()))))^"\n"),
 			      Aload 0,
-			      Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)])
+			      Getfield (Class.getCurrent()^"/"^(fieldNameFromStamp stamp'), CVal,0)])
 	    end
 	and
 	    idArgCode (OneArg id') = idCode id'
@@ -1094,7 +1094,7 @@ structure CodeGen =
 					      "sapply",
 					      ([Classsig CVal],
 					       [Classsig CVal]))],
-			       idCode id' @
+			       stampCode stamp' @
 			       idacode @
 			       [Invokeinterface (CVal, "apply",
 						 ([Classsig CVal],
@@ -1188,14 +1188,14 @@ structure CodeGen =
 			 local
 			     fun loadFreeVar stamp'' =
 				 let
-				     val bstamp = builtinStamp stamp''
+				     val (bstamp,isBuiltin) = builtinStamp stamp''
 				 in
-				     if bstamp<>("","",0)
+				     if isBuiltin
 					 then
-					     [Dup,
-					      Getstatic bstamp,
-					      Putfield (className^"/"^
-							(Local.fieldNameFromStamp stamp''),
+					     Dup ::
+					     bstamp @
+					     [Putfield (className^"/"^
+							(fieldNameFromStamp stamp''),
 							CVal, 0)]
 				     else
 					 if FreeVars.getFun stamp'' = Lambda.top() then
@@ -1205,9 +1205,9 @@ structure CodeGen =
 						       raise Debug (Ias FreeVars.array)
 					     else *)
 						     [Dup,
-						      Comment ("Hi3: id="^Int.toString (Local.get stamp'')),
+						      Comment ("Hi3: stamp="^Stamp.toString stamp''),
 						      Aload (Local.get stamp''),
-						      Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
+						      Putfield(className^"/"^(fieldNameFromStamp stamp''),CVal, 0),
 						      Comment ("load local variable")]
 					     else nil
 					 else
@@ -1217,8 +1217,8 @@ structure CodeGen =
 					       Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
 							Stamp.toString (FreeVars.getFun stamp'')^"; Lambda.top() = "^
 							Stamp.toString (Lambda.top())),
-					       Getfield(Class.getCurrent()^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
-					       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0)])
+					       Getfield(Class.getCurrent()^"/"^(fieldNameFromStamp stamp''),CVal, 0),
+					       Putfield(className^"/"^(fieldNameFromStamp stamp''),CVal, 0)])
 				 end
 			 in
 			     val loadVars = List.concat (map loadFreeVar freeVarList)
@@ -1344,13 +1344,13 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	  | expCode (TupExp(_,longids)) =
 		     let
 			 val arity = length longids
-			 fun ids (Id(_,stamp',_)::rest,i) =
+			 fun ids ((id' as Id(_,stamp',_))::rest,i) =
 			     Dup::
 			     (atCodeInt i)::
 			     (Comment "Hi5")::
-			     (Aload (Local.get stamp'))::
-			     Aastore::
-			     ids(rest,i+1)
+			     (stampCode stamp') @
+			     (Aastore::
+			     ids(rest,i+1))
 			   | ids (nil,_) = nil
 		     in
 			 [New CTuple,
@@ -1369,11 +1369,19 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	  | expCode (AdjExp _) = raise Error "seltsame operation adjexp"
 
 	  | expCode (SelExp(_,Lab(_,lab'))) =
-		     [New CSel,
-		      Dup,
-		      Ldc (JVMString lab'),
-		      Invokespecial (CSel, "<init>",
-				     ([Classsig CString],[Voidsig]))]
+		     (case Int.fromString lab' of
+			 NONE =>
+			     [New CSelString,
+			      Dup,
+			      Ldc (JVMString lab'),
+			      Invokespecial (CSelString, "<init>",
+					     ([Classsig CString],[Voidsig]))]
+		       | SOME i =>
+			     [New CSelInt,
+			      Dup,
+			      Iconst i,
+			      Invokespecial (CSelInt, "<init>",
+					     ([Intsig],[Voidsig]))])
 
 	  | expCode (ConExp (_, id', _)) =
 		     idCode id'
@@ -1406,7 +1414,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		(* baut die Felder, d.h. die freien Variablen der Klasse *)
 		local
 		    fun fields (stamp'::stamps) =
-			(Field ([FPublic],Local.fieldNameFromStamp stamp', Classtype (CVal, 0)))::(fields stamps)
+			(Field ([FPublic],fieldNameFromStamp stamp', Classtype (CVal, 0)))::(fields stamps)
 		      | fields nil = nil
 		in
 		    val fieldscode = fields freeVarList
