@@ -110,12 +110,15 @@ signature FLAT_GRAMMAR =
 	    (* sorted, all labels distinct *)
 	  | VecExp of exp_info * idRef vector
 	  | FunExp of exp_info * stamp * funFlag list * idDef args * body
-	  | PrimAppExp of exp_info * string * idRef vector       (* exact *)
+	  | PrimAppExp of exp_info * string * idRef vector
+	    (* no calling convention required conversion for in-arguments *)
 	  | VarAppExp of exp_info * idRef * idRef args
 	  | DirectAppExp of exp_info * idRef * idRef args
+	    (* no calling convention required conversion for in-arguments *)
 	  | SelExp of exp_info * prod * label * int * idRef
 	  | LazyPolySelExp of exp_info * label * idRef
-	  | FunAppExp of exp_info * idRef * stamp * idRef args   (* exact *)
+	  | FunAppExp of exp_info * idRef * stamp * idRef args
+	    (* no calling convention required conversion for in-arguments *)
 	  | FailExp of exp_info
 	withtype body = stm list
 
