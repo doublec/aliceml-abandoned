@@ -14,6 +14,7 @@ import structure Inf                from "../lib/rtt/Inf"
 import structure TextIO             from "../lib/system/TextIO"
 import structure IO                 from "../lib/system/IO"
 import structure Url                from "../lib/system/Url"
+import structure Resolver           from "../lib/system/Resolver"
 import structure FromEqHashKey      from "../lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
 import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
@@ -29,6 +30,7 @@ struct
     exception Empty
     exception Mismatch of Url.t * Url.t
     exception Conflict of Url.t
+    exception Rewrite of Url.t * Url.t * Url.t
     exception Io of Url.t * exn
 
     structure UrlHashKey = FromEqHashKey(Url)
@@ -133,18 +135,10 @@ struct
 	    DepthFirstSearch.search graph
 	end
 
-    fun rewrite rewrites s =
-	rewrite' (s, rewrites, 0, Vector.length rewrites)
-    and rewrite' (s, rewrites, i, n) =
-	if i = n then s
-	else
-	    let
-		val (fro, to) = Vector.sub (rewrites, i)
-	    in
-		if String.isPrefix fro s then
-		    to ^ String.extract (s, String.size fro, NONE)
-		else rewrite' (s, rewrites, i + 1, n)
-	    end
+    fun trace s = TextIO.output (TextIO.stdErr, "[rewrite] " ^ s)
+
+    fun rewrite handlers url =
+	#1 (Option.valOf (Resolver.Handler.tracingApply trace url handlers))
 
     fun build (root, componentMap, includeMap, excludeMap, rewrite) =
 	let
@@ -167,11 +161,20 @@ struct
 		Vector.appi (fn (i, url) =>
 				UrlMap.insert (urlToIndexMap, url, (false, i)))
 			    excludes
+	    val rewritesMap = UrlMap.new ()
 	    val imports =
 		Vector.map (fn url =>
-			       (rewrite (Url.toString url),
-				UrlMap.lookupExistent (excludeMap, url)))
-			   excludes
+			       let
+				   val url' = rewrite url
+			       in
+				   case UrlMap.lookup (rewritesMap, url') of
+				       SOME url'' =>
+					   raise Rewrite (url'', url, url')
+				     | NONE => ();
+				   UrlMap.insert (rewritesMap, url', url);
+				   (Url.toString url',
+				    UrlMap.lookupExistent (excludeMap, url))
+			       end) excludes
 	    val includeTable =
 		Vector.map
 		    (fn url =>
@@ -226,11 +229,11 @@ struct
 			  \inter-dependencies:\n" ^ String.concat ss)
 	end
 
-    fun link {root, verbose, typeCheck, boundary, rewrite = rewrites} =
+    fun link {root, verbose, typeCheck, boundary, rewrite = handlers} =
 	let
 	    val {componentMap, includeMap, excludeMap} =
 		collect (boundary, typeCheck) root
-	    val rewrite = rewrite rewrites
+	    val rewrite = rewrite handlers
 	    val order = sort (includeMap, excludeMap)
 	in
 	    if verbose then
@@ -245,7 +248,7 @@ struct
 			List.sort String.compare
 				  (UrlMap.foldi
 				       (fn (url, _, rest) =>
-					   rewrite (Url.toString url)::rest)
+					   Url.toString (rewrite url)::rest)
 				       nil excludeMap)
 		in
 		    TextIO.print ("Included components:\n");

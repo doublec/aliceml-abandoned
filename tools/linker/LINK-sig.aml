@@ -12,6 +12,7 @@
 
 import signature IMP_MAP     from "../lib/utility/IMP_MAP-sig"
 import structure Url         from "../lib/system/Url"
+import structure Resolver    from "../lib/system/Resolver"
 import structure MyComponent from "MyComponent"
 
 signature LINK =
@@ -25,6 +26,7 @@ signature LINK =
 	exception Empty
 	exception Mismatch of Url.t * Url.t
 	exception Conflict of Url.t
+	exception Rewrite of Url.t * Url.t * Url.t
 	exception Io of Url.t * exn
 
 	val collect: boundary vector * bool -> Url.t ->
@@ -35,12 +37,13 @@ signature LINK =
 
 	val sort: Url.t vector UrlMap.t * 'a UrlMap.t -> Url.t list list
 
-	val rewrite: (string * string) vector -> string -> string
+	val rewrite: Resolver.Handler.t list -> Url.t -> Url.t
+	    (* Option.Option *)
 
 	val link: {root: Url.t,
 		   verbose: bool,
 		   typeCheck: bool,
 		   boundary: boundary vector,
-		   rewrite: (string * string) vector} -> MyComponent.t
-		     (* Empty, Mismatch, Conflict, Io *)
+		   rewrite: Resolver.Handler.t list} -> MyComponent.t
+		     (* Empty, Mismatch, Conflict, Rewrite, Io *)
     end
