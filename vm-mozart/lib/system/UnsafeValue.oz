@@ -81,7 +81,12 @@ define
 	      fun {$ X L}
 		 try
 		    case L of 'NUM'(I) then X.I
-		    [] 'ALPHA'(S) then X.{VirtualString.toAtom S}
+		    [] 'ALPHA'(S) then
+		       case {VirtualString.toAtom S} of 'true' then X.true
+		       [] 'false' then X.false
+		       [] '::' then X.'|'
+		       [] A then X.A
+		       end
 		    end
 		 catch E then {Handle projPoly(X L) E 0}
 		 end
