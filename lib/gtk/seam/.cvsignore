@@ -30,7 +30,7 @@ CanvasEnums.alc
 CanvasUnsafe.aml
 CanvasUnsafe.alc
 Gtk.alc
-GtkBinding.x86-linux
+GtkBinding.x86-*
 GtkEnums.aml
 GtkEnums.alc
 GtkUnsafe.aml
