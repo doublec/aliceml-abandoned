@@ -10,7 +10,9 @@
 //   $Revision$
 //
 
+#if defined(INTERFACE)
 #pragma implementation "scheduler/Scheduler.hh"
+#endif
 
 #include "scheduler/Transients.hh"
 #include "scheduler/Interpreter.hh"

@@ -13,7 +13,9 @@
 #ifndef __SCHEDULER__TRANSIENTS_HH__
 #define __SCHEDULER__TRANSIENTS_HH__
 
+#if defined(INTERFACE)
 #pragma interface "scheduler/Transients.hh"
+#endif
 
 #include "store/store.hh"
 #include "scheduler/Scheduler.hh"

@@ -13,7 +13,9 @@
 #ifndef __SCHEDULER__CLOSURE_HH__
 #define __SCHEDULER__CLOSURE_HH__
 
+#if defined(INTERFACE)
 #pragma interface "scheduler/Closure.hh"
+#endif
 
 #include "scheduler/Interpreter.hh"
 

@@ -13,7 +13,9 @@
 #ifndef __SCHEDULER__THREAD_HH__
 #define __SCHEDULER__THREAD_HH__
 
+#if defined(INTERFACE)
 #pragma interface "scheduler/Thread.hh"
+#endif
 
 #include "scheduler/TaskStack.hh"
 

@@ -3,9 +3,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-OBJS = \
-	ConcreteCode.o Closure.o Transients.o \
-	Thread.o ThreadPool.o TaskStack.o Scheduler.o
+OBJS = Outline.o Scheduler.o
 
 .PHONY: all header clean distclean
 

@@ -13,7 +13,9 @@
 #ifndef __SCHEDULER__THREADPOOL_HH__
 #define __SCHEDULER__THREADPOOL_HH__
 
+#if defined(INTERFACE)
 #pragma interface "scheduler/ThreadPool.hh"
+#endif
 
 #include "store/store.hh"
 

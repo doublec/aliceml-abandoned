@@ -13,7 +13,9 @@
 #ifndef __SCHEDULER__CONCRETE_CODE_HH__
 #define __SCHEDULER__CONCRETE_CODE_HH__
 
+#if defined(INTERFACE)
 #pragma interface "scheduler/ConcreteCode.hh"
+#endif
 
 #include "store/store.hh"
 
