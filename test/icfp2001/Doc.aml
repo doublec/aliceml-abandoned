@@ -7,6 +7,7 @@ sig
 	| TAGGED of Tag.tag * doc
     withtype doc = item list
 
+    val length : doc -> int
     val output : TextIO.outstream * doc -> unit
 end
 
@@ -17,10 +18,15 @@ struct
 	| TAGGED of Tag.tag * doc
     withtype doc = item list
 
-    fun output(out, items) = List.app (fn x => output'(out, x)) items
-    and output'(out, TEXT ss) =
-	    List.appr (fn s => TextIO.output(out, s)) ss
-      | output'(out, TAGGED(t,doc)) =
+    fun length doc                   = length'(doc, 0)
+    and length'(items, n)            = List.foldl lengthItem n items
+    and lengthItem(TEXT ss, n)       = List.foldl lengthString n ss
+      | lengthItem(TAGGED(t,doc), n) = length'(doc, n + Tag.cost t)
+    and lengthString(s, n)           = String.length s + n
+
+    fun output(out, items)       = List.app (fn x => outputItem(out, x)) items
+    and outputItem(out, TEXT ss) = List.appr (fn s => TextIO.output(out, s)) ss
+      | outputItem(out, TAGGED(t,doc)) =
 	let
 	    val tag = Tag.toString t
 	in

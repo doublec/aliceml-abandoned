@@ -1,6 +1,9 @@
 .PHONY:	all clean
 
-all:	Main.ozf Smurf.ozf
+all:	Linked.ozf
+
+Linked.ozf:	Main.ozf Smurf.ozf
+	alicelink -z9 $< -o $@
 
 %.ozf:	%.aml
 	alicec -c $< -o $@

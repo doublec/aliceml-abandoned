@@ -1,8 +1,41 @@
-import structure Parse from "Parse"
+import structure Doc    from "Doc"
+import structure Parse  from "Parse"
+import structure Smurf  from "Smurf"
+import structure Assert from "x-alice:/lib/utility/Assert"
 
 structure Main =
 struct
+(*DEBUG*)
     val file = TextIO.openIn "example.smlng"
     val s    = TextIO.inputAll file
     val _    = TextIO.closeIn file
+
+    fun process(bound, best, others, timeout) = 
+	if Future.isFuture(Future.awaitOne(others, timeout)) then
+	    best
+	else
+	    case others of [] =>
+		best
+	    | doc::docs =>
+		(Assert.assert(Doc.length doc < bound);
+		 process(bound, doc, docs, timeout))
+		handle _ => process(bound, best, docs, timeout)
+		(* for robustness! *)
+
+    fun main' timeout =
+	let
+	    val source = TextIO.inputAll(TextIO.stdIn)
+	    val doc    = process(String.size source, [Doc.TEXT [source]],
+				 Smurf.smurf(Parse.parse source), timeout)
+	in
+	    Doc.output(TextIO.stdOut, doc);
+	    OS.Process.exit(OS.Process.success)
+	end
+
+    fun timeout secs  = Time.fromSeconds(9 * (secs div 10) - 10)
+
+    fun main []       = main'(Promise.future(Promise.promise()))
+      | main(time::_) = main'(Future.alarm(timeout(valOf(Int.fromString time))))
+
+(*    val _ = main(CommandLine.arguments())*)
 end

@@ -57,7 +57,8 @@ struct
       | space(x, contextUntouched, space_context, doc) =
 	    ([x], true, space_context) :: doc
 
-    fun parse'( [],   contextUntouched, context, stack, doc, cost) = (doc, cost)
+    fun parse'( [],   contextUntouched, context, stack, doc, cost) =
+	    (doc, cost div Tag.minCost)
       | parse'(t::ts, contextUntouched, context, stack, doc, cost) =
 	case t of
 	     Lex.TEXT x =>
