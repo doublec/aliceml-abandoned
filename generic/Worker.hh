@@ -30,12 +30,12 @@ class String;
 
 class Interpreter: public ConcreteRepresentationHandler {
 public:
-  bool primitive;
   enum Result {
     CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE
   };
+  typedef Interpreter::Result (*function)();
   // Interpreter Constructor
-  Interpreter() { primitive = false; }
+  Interpreter() {}
   // ConcreteRepresentation Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Calling Convention Conversion
@@ -53,6 +53,9 @@ public:
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(word frame) = 0;
+  // Runtime compilation
+  virtual u_int GetArity();
+  virtual function GetCFunction();
 #if PROFILE
   // Profiling
   virtual word GetProfileKey(StackFrame *frame);
