@@ -34,7 +34,7 @@ public:
   enum { inf1, mod };                   // EVALUATED labels
   enum { body, imports, inf2 };         // UNEVALUATED labels
   // Config.platform
-  enum { UNIX, WIN32 };
+  enum { Config_UNIX, Config_WIN32 };
   // Label.lab
   enum { ALPHA, NUM };
   // Name.name

@@ -16,9 +16,9 @@
 
 static inline s_int GetPlatform() {
 #if defined(__CYGWIN32__) || defined(__MINGW32__) || defined(_MSC_VER)
-  return Types::WIN32;
+  return Types::Config_WIN32;
 #else
-  return Types::UNIX;
+  return Types::Config_UNIX;
 #endif
 }
 
