@@ -19,6 +19,10 @@
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
 
+//
+// PrimitiveInterpreter: An interpreter that runs primitives
+//
+
 class PrimitiveInterpreter: public Interpreter {
 private:
   Primitive::function function;
@@ -34,7 +38,7 @@ public:
 };
 
 ConcreteCode *PrimitiveInterpreter::Prepare(word /*abstractCode*/) {
-  Error("PrimitiveInterpreter::Prepare must never be called");
+  Error("PrimitiveInterpreter::Prepare: must never be called");
 }
 
 void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *w) {
@@ -91,7 +95,14 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
   return function(taskStack);
 }
 
+//
+// Implementation of `Primitive' methods
+//
+
+HashTable *Primitive::table;
+
 void Primitive::Init() {
+  table = HashTable::New(HashTable::BLOCK_KEY, 19);
   RegisterInternal();
   RegisterUnqualified();
   RegisterArray();
@@ -113,7 +124,7 @@ void Primitive::Init() {
 }
 
 void Primitive::Register(const char *name, word value) {
-  //--** implement - use a hash table (which is another root for GC)
+  table->InsertItem(String::New(name)->ToWord(), value);
 }
 
 void Primitive::Register(const char *name, function value, u_int arity) {
@@ -124,4 +135,13 @@ void Primitive::Register(const char *name, function value, u_int arity) {
   Register(name, closure->ToWord());
 }
 
-//--** word Primitive::Lookup(const char *name);
+word Primitive::Lookup(String *name) {
+  word key = name->ToWord();
+  if (!table->IsMember(key)) {
+    char message[80 + strlen(name->GetValue())];
+    sprintf(message, "Primitive::Lookup: unknown primitive `%s'",
+	    name->GetValue());
+    Error(message);
+  }
+  return table->GetItem(key);
+}

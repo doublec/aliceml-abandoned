@@ -17,6 +17,7 @@
 #pragma interface "builtins/Primitive.hh"
 #endif
 
+#include "adt/Hashtable.hh"
 #include "datalayer/alicedata.hh"
 #include "scheduler/Interpreter.hh"
 
@@ -24,6 +25,8 @@ class TaskStack;
 
 class Primitive {
 private:
+  static HashTable *table; //--** include in GC roots
+
   typedef Interpreter::Result (*function)(TaskStack *);
 
   static void Register(const char *name, word value);
@@ -49,7 +52,7 @@ private:
   static void RegisterWord();
 public:
   static void Init();
-  static word Lookup(const char *name);
+  static word Lookup(String *name);
 };
 
 #endif __BUILTINS__PRIMITIVE_HH__

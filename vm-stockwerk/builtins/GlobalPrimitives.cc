@@ -29,14 +29,14 @@ word GlobalPrimitives::Hole_Hole;
 word GlobalPrimitives::Internal_raise;
 
 void GlobalPrimitives::Init() {
-  General_Chr = Primitive::Lookup("General.Chr");
-  General_Div = Primitive::Lookup("General.Div");
-  General_Overflow = Primitive::Lookup("General.Overflow");
-  General_Size = Primitive::Lookup("General.Size");
-  General_Subscript = Primitive::Lookup("General.Subscript");
-  Future_Future = Primitive::Lookup("Future.Future");
-  Future_await = Primitive::Lookup("Future.await");
-  Hole_Cyclic = Primitive::Lookup("Hole.Cyclic");
-  Hole_Hole = Primitive::Lookup("Hole.Hole");
-  Internal_raise = Primitive::Lookup("Internal.raise");
+  General_Chr = Primitive::Lookup(String::New("General.Chr"));
+  General_Div = Primitive::Lookup(String::New("General.Div"));
+  General_Overflow = Primitive::Lookup(String::New("General.Overflow"));
+  General_Size = Primitive::Lookup(String::New("General.Size"));
+  General_Subscript = Primitive::Lookup(String::New("General.Subscript"));
+  Future_Future = Primitive::Lookup(String::New("Future.Future"));
+  Future_await = Primitive::Lookup(String::New("Future.await"));
+  Hole_Cyclic = Primitive::Lookup(String::New("Hole.Cyclic"));
+  Hole_Hole = Primitive::Lookup(String::New("Hole.Hole"));
+  Internal_raise = Primitive::Lookup(String::New("Internal.raise"));
 }
