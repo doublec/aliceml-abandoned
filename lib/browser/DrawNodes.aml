@@ -215,7 +215,7 @@ struct
 						  new_x,new_y)
 			  in
 			      (x + String.length(#rep(r)) +   
-			       Layout.get_last(content),
+			       Layout.get_l_xdim(content),
 			       y + Layout.get_ydim(n)-1)
 			  end))
 	    end)

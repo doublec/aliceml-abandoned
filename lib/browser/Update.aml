@@ -114,7 +114,9 @@ struct
 	       ; Layout.layout(node)
                ; TextIO.print ("UPDATE: beginne zu zeichnen...\n")
 	       ; MainDictionary.update(Dictionaries.dict, (ind,node)) 
-               ; DrawNodes.draw(node,x_pos,y_pos,DrawNodes.DRAW) 
+               ; DrawNodes.draw(node,0,y_pos) 
+	       ; TextIO.print ("UPDATE: drawing with y = "
+			       ^Int.toString(y_pos)^"\n")
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim
 		 in ( WindowManager.incr_act_line dy
 		     ; iterMove (Dictionaries.dict,dy,getIndex(node) + 1,
