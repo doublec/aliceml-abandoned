@@ -47,6 +47,9 @@ signature IO_DESC =
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
 
+	val mkReader : OS.IO.iodesc -> (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) reader
+	val mkWriter : OS.IO.iodesc -> (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer				       
+
 	val stdIn: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) reader
 	val stdOut: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer
 	val stdErr: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer
