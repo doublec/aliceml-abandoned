@@ -7,16 +7,16 @@ import
 from "x-alice:/infrastructure/Source.ozf"
 
 import
-    signature CONTEXT
-from "x-alice:/infrastructure/CONTEXT.ozf"
-
-import
     structure EmptyContext
 from "x-alice:/infrastructure/EmptyContext.ozf"
 
 import
     structure StampSet
 from "x-alice:/common/StampSet.ozf"
+
+import
+    structure StampMap
+from "x-alice:/common/StampMap.ozf"
 
 import
     structure FlatGrammar
