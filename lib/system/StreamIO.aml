@@ -462,7 +462,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				      cause = IO.ClosedStream})
 	    end
 
-	fun setPosOut (outstream, pos) =
+	fun setPosOut (f, pos) =
 	    let
 		val p = Promise.promise ()
 		val state = Ref.exchange (f, Promise.future p)
@@ -475,12 +475,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
 				  {name, function = "setPosOut", cause});
-			 valOf setPos pos before
-			 (Promise.fulfill (p, state); f)
+			 valOf setPos pos
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
-				  {name, function = "setPosOut", cause}))
+				  {name, function = "setPosOut", cause});
+			 Promise.fulfill (p, state); f)
 		  | TERMINATED name =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "setPosOut",
