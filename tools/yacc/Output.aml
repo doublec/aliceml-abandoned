@@ -37,7 +37,12 @@ struct
     fun warning s = TextIO.print ("Warning: "^s^"\n")
 
     fun error s = TextIO.print ("Error: "^s^"\n")
-	
+
+    fun hasNoSemanticValue (t, termlist) =
+        case List.find (fn (t', _) => t = t') termlist of
+            SOME (_, NONE) => true
+          | _              => false
+
     local open MakeLrTable.Errs
     in
 	fun issueWarnings errs =
@@ -88,7 +93,7 @@ struct
 			   else str^(Int.toString m)^","^(mk (m+1)) 
 	    in "("^(mk 1)^")" end
 	    fun prTermConstr terms =
-		let fun tyToString (s,NONE) = s^" of unit -> unit"
+		let fun tyToString (s,NONE) = s
 		      | tyToString (s,SOME t) = s^" of unit -> ("^t^")"
 		    fun toString [] = ""
 		      | toString [e] = tyToString e
@@ -131,9 +136,9 @@ struct
 	end
 
     fun printToIntTokenFn (terms,stringToTerm,parsers) =
-	let fun constrPat (t,NONE) = "(SOME ( "^t^" ),p1,p2)"
+	let fun constrPat (t,NONE)   = "(SOME ( "^t^" ),p1,p2)"
 	      | constrPat (t,SOME _) = "(SOME ("^t^" a),p1,p2)"
-	    fun constrInt (t,NONE) = t^" (fn () => ())"
+	    fun constrInt (t,NONE)   = t
 	      | constrInt (t,SOME _) = t^" (fn () => a)"
 	    fun constrCase (tok as (t,_)) = 
 		(constrPat tok)
@@ -145,7 +150,7 @@ struct
 		(Int.toString parsers)
 		^", (SValue."^
 		(Translate.eop)
-		^" (fn () => ()), p1, p2))\n" 
+		^" , p1, p2))\n" 
 	      | cases (t::ts) = (constrCase t)^"\n    | "^(cases ts)
 	in
 	    "\n(* lexxer -> (unit -> (SValue.svalue, pos) Token.token),\n "
@@ -155,12 +160,15 @@ struct
 	    ^"      "^(cases terms)
 	end
 
-    fun printActions stringToNonterm rules = 
+    fun printActions stringToNonterm rules termlist = 
 	let fun printActions n ((r as (lhs,t,A.Transform(bnf,(posInfo,code))))::rs) = 
 	    let fun mkPat rulenum rhs = 
 		let fun prRhs first [] = "rest671"
 		      | prRhs first ((A.As(s,A.Symbol t))::rhs) =
-		    "(_, (SValue."^t^"("^s^"), "
+                      (if hasNoSemanticValue (t, termlist) then
+                        "(_, (SValue."^t^", "
+                       else
+		        "(_, (SValue."^t^"("^s^"), ")
 		    ^(if first then s^"left, " else s^"left, ")
 		    ^(if List.length rhs = 0 then s^"right)) ::" else s^"right)) ::")
 		    ^(prRhs false rhs)
@@ -170,8 +178,15 @@ struct
 		end
 		fun mkMatch [] = ""
 		  | mkMatch ((A.As(s,A.Symbol t))::rhs) =
-		    (blank 44)^"val "^s^" = "^s^" ()\n"
-		    ^(mkMatch rhs)
+                    let
+                        val hasUnitType = hasNoSemanticValue (t, termlist) 
+                    in
+                        (if hasUnitType then
+                            ""
+                         else
+                             (blank 44) ^ "val " ^ s ^" = " ^ s ^ " ()\n")
+		        ^ (mkMatch rhs)
+                    end
 		val A.Seq rhs = bnf
 		val code = A.expToString code
 		val rightpos = if List.null rhs then "defPos"
@@ -287,7 +302,7 @@ struct
                         ^ "    val start =  J.Token.TOKEN(J.LrTable.T "
 			^ (Int.toString n) ^ ", (J.SValue."
 			^ ((fn (a, _) => a) (List.nth (termlist, n)))
-			^ " (fn _ => ()),dummypos,dummypos))\n"
+			^ ",dummypos,dummypos))\n"
 			^ "    val lexxer1 = J.toInternalToken lexxer\n"
 			^ "    val arg = ()\n"
 			^ "    val table = J.generatedLrTable\n"
@@ -363,7 +378,7 @@ struct
 		^ "exception exnAction of int\n"
 		^ "val actions =\n    fn (i392,defPos,stack,()) =>\n"
 		^ "        case (i392,stack) of\n"
-		^ (printActions stringToNonterm rules)
+		^ (printActions stringToNonterm rules termlist)
 		^ "end\n"
 		^ "\nend (* end of structure " ^ structureName ^ " *)\n\n"
 	      | absSynToString _ _ = "" (* do not output assocDecs *)

@@ -5,16 +5,15 @@ import structure TextIO     from "x-alice:/lib/system/TextIO"
 import structure IO         from "x-alice:/lib/system/IO"
 import structure OS         from "x-alice:/lib/system/OS"
 import structure Print      from "x-alice:/lib/system/Print"
-
+ 
 
 structure Main :> MAIN =
     struct
-
-    val binName     = "aliceyacc"
+	val binName     = "aliceyacc"
 
 	val inFile      = ref ""
-    val outFile     = ref ""
-    val smlMode     = ref false
+    	val outFile     = ref ""
+    	val smlMode     = ref false
 
 
 	fun printEx s = (TextIO.output (TextIO.stdErr, s);
@@ -29,8 +28,8 @@ structure Main :> MAIN =
 
 
 	fun usage () = 
-        printEx ("Usage: " ^ binName ^ "[<option>] infile [-o <output file>]\n" ^
-                 "Options:\n" ^ 
+            printEx ("Usage: " ^ binName ^ "[<option>] infile [-o <output file>]\n" ^
+                     "Options:\n" ^ 
                  "\t--sml-mode\n" ^
                  "\t\tDo not emit alice style import declarations.\n\n" ^ 
                  "Report bugs using our online bug-tracking system:\n" ^
@@ -44,17 +43,17 @@ structure Main :> MAIN =
 
 
 	fun setFile infile  = inFile := infile
-    fun setOutFile outF = outFile := outF
+    	fun setOutFile outF = outFile := outF
 
-    fun outExt () = if !smlMode then ".sml" else ".aml" 
+    	fun outExt () = if !smlMode then ".sml" else ".aml" 
 
 	fun main' ("--sml-mode" :: xs)      = (smlMode := true; main' xs)
-      | main' [infile]                  = (setFile infile;
-					                       setOutFile (infile ^ outExt ());
-                                           start jacke)
-      | main' [infile, "-o", outfile]   = (setFile infile;
-                                           setOutFile outfile;
-                                           start jacke)
+          | main' [infile]                  = (setFile infile;
+					       setOutFile (infile ^ outExt ());
+                                               start jacke)
+          | main' [infile, "-o", outfile]   = (setFile infile;
+                                               setOutFile outfile;
+                                               start jacke)
 	  | main' _                         = usage () 
 
 

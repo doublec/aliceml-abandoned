@@ -68,7 +68,7 @@ struct
 	    val t3 = if List.null t3 then []
 		     else (List.last
 			   (List.map (fn A.TokenDec t => toDict (parsers+1) t
-			 | _ => []) t3))
+			               | _            => [])    t3))
 	    fun pr ((s,_),i) = print ("("^s^","^(Int.toString i)^")")
 	in 
 	    t2@t3
