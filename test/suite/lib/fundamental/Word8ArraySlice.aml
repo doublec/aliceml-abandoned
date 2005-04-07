@@ -173,10 +173,11 @@ struct
 	let
 	    fun t asl = Word8Vector.tabulate (Word8ArraySlice.length asl,
 					 fn i => Word8ArraySlice.sub (asl, i))
+
+	    fun tt asl = Word8Vector.toList (Word8ArraySlice.vector asl)
 	in 
 	    Gen.try 1000 (Gen.word8ArraySlice Gen.word8) 
-		    (Test.test (fn asl => Word8ArraySlice.vector asl = 
-					  t asl))
+	    (Test.test (fn asl => Word8Vector.toList (t asl) = tt asl))
 	end 
 
     fun testCopy () = Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -478,8 +479,9 @@ struct
 
     fun testToVector () = 
 	let
-	    fun t asl = Word8ArraySlice.toVector asl =
-			Word8ArraySlice.vector asl
+	    fun t asl = 
+		Word8Vector.equal Word8.equal (Word8ArraySlice.toVector asl,
+					       Word8ArraySlice.vector asl)
 	in
 	    Gen.try 100 (Gen.word8ArraySlice Gen.word8) (Test.test t)
 	end

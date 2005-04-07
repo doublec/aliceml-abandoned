@@ -175,10 +175,12 @@ struct
 	let
 	    fun t asl = WideCharVector.tabulate (WideCharArraySlice.length asl,
 					 fn i => WideCharArraySlice.sub (asl, i))
+
+	    fun tt asl = WideCharVector.toList (WideCharArraySlice.vector asl)
 	in 
 	    Gen.try 1000 (Gen.wideCharArraySlice Gen.wideChar) 
-		    (Test.test (fn asl => WideCharArraySlice.vector asl = 
-					  t asl))
+		    (Test.test (fn asl => WideCharVector.toList (t asl) = 
+					  tt asl))
 	end 
 
     fun testCopy () = Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -485,8 +487,10 @@ struct
 
     fun testToVector () = 
 	let
-	    fun t asl = WideCharArraySlice.toVector asl =
-			WideCharArraySlice.vector asl
+	    fun t asl = 
+		WideCharVector.equal WideChar.equal 
+				     (WideCharArraySlice.toVector asl,
+				      WideCharArraySlice.vector asl)
 	in
 	    Gen.try 100 (Gen.wideCharArraySlice Gen.wideChar) (Test.test t)
 	end

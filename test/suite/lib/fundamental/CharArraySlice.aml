@@ -175,10 +175,12 @@ struct
 	let
 	    fun t asl = CharVector.tabulate (CharArraySlice.length asl,
 					 fn i => CharArraySlice.sub (asl, i))
+
+	    fun tt asl = CharVector.toList (CharArraySlice.vector asl)
 	in 
 	    Gen.try 1000 (Gen.charArraySlice Gen.char) 
-		    (Test.test (fn asl => CharArraySlice.vector asl = 
-					  t asl))
+		    (Test.test (fn asl => CharVector.toList (t asl) = 
+					  tt asl))
 	end 
 
     fun testCopy () = Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -485,8 +487,8 @@ struct
 
     fun testToVector () = 
 	let
-	    fun t asl = CharArraySlice.toVector asl =
-			CharArraySlice.vector asl
+	    fun t asl = String.equal (CharArraySlice.toVector asl,
+				      CharArraySlice.vector asl)
 	in
 	    Gen.try 100 (Gen.charArraySlice Gen.char) (Test.test t)
 	end

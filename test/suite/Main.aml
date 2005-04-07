@@ -123,10 +123,10 @@ val allTests = [(*TestRegressions.suite,
 		TestRef.suite,
 		TestAlt.suite,
 		TestBool.suite,
-		TestGeneral.suite,*)
+		TestGeneral.suite,
 		TestWord.suite,
 		TestWord8.suite,
-		TestWord32.suite,(*
+		TestWord32.suite,
 		TestReal.suite,
 		TestOption.suite, 
 		TestList.suite,
@@ -138,8 +138,8 @@ val allTests = [(*TestRegressions.suite,
 		TestArraySlice.suite,
 		TestWord8ArraySlice.suite,
 		TestCharArraySlice.suite,
-		TestWideCharArraySlice.suite,(*
-		TestArray2.suite,*)
+		TestWideCharArraySlice.suite,
+		TestArray2.suite,
 		TestVector.suite,
 		TestWord8Vector.suite,
 		TestCharVector.suite,
@@ -150,8 +150,8 @@ val allTests = [(*TestRegressions.suite,
 		TestWideCharVectorSlice.suite,(*
 		TestVectorPair.suite,
 		TestChar.suite,
-		TestString.suite,*)
-		TestSubstring.suite,(*
+		TestString.suite,
+		TestSubstring.suite,
 		TestIEEEReal.suite,
 		TestInteger.suite,
 		TestIntInf.suite,
@@ -197,25 +197,26 @@ fun start cfg =
 
 fun main () = 
     case CommandLine.arguments () of
-	 []                           => 
-	     (randomizeTests ();
-	      start defaultConfig)
+	                []                       => (randomizeTests ();
+						     start defaultConfig)
        | [timeout, sep, showMissing, randomize]  => 
 	 let
-	     val t = Time.fromString timeout
-	     val b1 = Bool.fromString sep
-	     val b2 = Bool.fromString showMissing
-	     val b3 = (*Bool.fromString randomize*) true
+	     val t = valOf (Time.fromString timeout)
+		       handle Option => #timeout defaultConfig
+	     val b1 = valOf (Bool.fromString sep)
+		       handle Option => #separate defaultConfig
+	     val b2 = valOf (Bool.fromString showMissing)
+		       handle Option => #showMissing defaultConfig
+	     val b3 = valOf (Bool.fromString randomize)
+		       handle Option => true
 	 in 
 	     if b3 then randomizeTests () else ();
-	     case t of
-		 NONE    => start defaultConfig
-	       | SOME t1 => (start {timeout = t1,
-				   separate = valOf b1,
-				   showMissing = valOf b2}) 
-		 handle _ => usage ()
+             (start {timeout = t,
+		     separate = b1,
+		     showMissing = b2})
+	     handle _ => usage ()
 	 end
-       | _ => ()
+       |                 _                       => usage ()
 
 
 val _ = (main ();
