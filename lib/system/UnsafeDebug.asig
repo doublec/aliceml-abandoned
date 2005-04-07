@@ -21,6 +21,7 @@ signature UNSAFE_DEBUG_COMPONENT =
 
 		val print: 'a -> unit
 		val inspect: 'a -> unit
+		val disassemble: ('a -> 'b) -> unit
 
 		structure Print: fct(S: any) -> sig end
 		functor Inspect(signature S structure X: S): any

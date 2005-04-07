@@ -13,6 +13,8 @@
 //
 
 #include "alice/Authoring.hh"
+#include "alice/AliceConcreteCode.hh"
+#include "alice/NativeConcreteCode.hh"
 
 DEFINE1(UnsafeDebug_print) {
   Debug::Dump(x0);
@@ -23,8 +25,24 @@ DEFINE1(UnsafeDebug_unimplemented) {
   Error("UnsafeDebug: unimplemented");
 } END
 
+DEFINE1(UnsafeDebug_disassemble) {
+  DECLARE_CLOSURE(closure, x0);
+  word cc = closure->GetConcreteCode();
+  ConcreteCode *b = ConcreteCode::FromWord(cc);
+  if (b == INVALID_POINTER)
+    REQUEST(cc);
+  if (b->GetInterpreter() == AbstractCodeInterpreter::self) {
+    AliceConcreteCode *acc = AliceConcreteCode::FromWord(cc);
+    acc->Disassemble(stderr);
+  } else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
+    NativeConcreteCode *acc = NativeConcreteCode::FromWord(cc);
+    acc->Disassemble(stderr);
+  }
+  RETURN_UNIT;
+} END
+
 AliceDll word UnsafeDebug() {
-  Record *record = Record::New(9);
+  Record *record = Record::New(10);
   INIT_STRUCTURE(record, "UnsafeDebug", "setPrintDepth",
 		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "setPrintWidth",
@@ -35,6 +53,8 @@ AliceDll word UnsafeDebug() {
 		 UnsafeDebug_print, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "inspect",
 		 UnsafeDebug_unimplemented, 1);
+  INIT_STRUCTURE(record, "UnsafeDebug", "disassemble",
+		 UnsafeDebug_disassemble, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "Print$",
 		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "Inspect$",
