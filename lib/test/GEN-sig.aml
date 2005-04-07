@@ -40,9 +40,21 @@ sig
     val option:	     'a gen -> 'a option gen
     val alt:	     'a gen * 'b gen -> ('a, 'b) alt gen
     val vector:	     'a gen -> 'a vector gen
+    val word8Vector:    'a gen -> Word8Vector.vector gen
+    val charVector:     'a gen -> CharVector.vector gen
+    val wideCharVector: 'a gen -> WideCharVector.vector gen
     val vectorSlice: 'a gen -> 'a VectorSlice.slice gen
+    val word8VectorSlice:    'a gen -> Word8VectorSlice.slice gen
+    val charVectorSlice:     'a gen -> CharVectorSlice.slice gen
+    val wideCharVectorSlice: 'a gen -> WideCharVectorSlice.slice gen
     val array:	     'a gen -> 'a array gen
+    val word8Array:  'a gen -> Word8Array.array gen
+    val charArray:   'a gen -> CharArray.array gen
+    val wideCharArray: 'a gen -> WideCharArray.array gen
     val arraySlice:  'a gen -> 'a ArraySlice.slice gen
+    val word8ArraySlice:    'a gen -> Word8ArraySlice.slice gen
+    val charArraySlice:     'a gen -> CharArraySlice.slice gen
+    val wideCharArraySlice: 'a gen -> WideCharArraySlice.slice gen
     val array2:      'a gen -> 'a Array2.array gen
     val refOf:	     'a gen -> 'a ref gen
 
@@ -54,6 +66,7 @@ sig
     val bool:	    bool gen
     val string:	    string gen
     val char:	    char gen
+    val wideChar:   WideChar.char gen
     val int:	    int gen
     val largeInt:   IntInf.int gen
     val cardinal:   int gen

@@ -61,6 +61,7 @@ struct
     val cardinal	= Random.int
     fun bool n		= oneOf [const true, const false] n
     fun char n		= Char.chr (cardinal (Char.maxOrd + 1))
+    fun wideChar n	= WideChar.chr (cardinal (WideChar.maxOrd + 1))
     fun string n	= String.tabulate (Int.abs n, char) 
     fun int n		= if bool 0 then cardinal n else ~ (cardinal n)
     fun largeInt n      = IntInf.* (IntInf.fromInt (int n), 
@@ -73,15 +74,51 @@ struct
     fun option gen n	= if bool 0 then SOME (gen n) else NONE
     fun alt (ga, gb) n	= if bool 0 then FST (ga n) else SND (gb n)	
     fun vector gen n	= Vector.tabulate (cardinal n, gen)
+    fun word8Vector gen n     = Word8Vector.tabulate (cardinal n, word8)
+    fun charVector gen n      = CharVector.tabulate (cardinal n, char)
+    fun wideCharVector gen n  = WideCharVector.tabulate (cardinal n, wideChar)
     fun vectorSlice gen n = VectorSlice.slice (vector gen n,
 					       cardinal n,
 					       option cardinal n)
 			    handle Subscript => vectorSlice gen n
-    fun array gen n	= Array.tabulate (cardinal n, gen)
+    fun word8VectorSlice gen n = 
+	                   Word8VectorSlice.slice (word8Vector gen n, 
+						  cardinal n,
+						  option cardinal n) 
+			    handle Subscript => word8VectorSlice gen n
+    fun charVectorSlice gen n = 
+	                   CharVectorSlice.slice (charVector gen n, 
+						 cardinal n,
+						 option cardinal n) 
+	                        handle Subscript => charVectorSlice gen n
+    fun wideCharVectorSlice gen n = 
+	                   WideCharVectorSlice.slice (wideCharVector gen n, 
+						     cardinal n,
+						     option cardinal n) 
+	                        handle Subscript => charVectorSlice gen n
+    fun array gen n          = Array.tabulate (cardinal n, gen)
+    fun word8Array gen n     = Word8Array.tabulate (cardinal n, word8)
+    fun charArray gen n      = CharArray.tabulate (cardinal n, char)
+    fun wideCharArray gen n  = WideCharArray.tabulate (cardinal n, wideChar)
     fun arraySlice gen n = ArraySlice.slice (array gen n, 
 					     cardinal n,
 					     option cardinal n) 
 			    handle Subscript => arraySlice gen n
+    fun word8ArraySlice gen n = 
+	                   Word8ArraySlice.slice (word8Array gen n, 
+						  cardinal n,
+						  option cardinal n) 
+			    handle Subscript => word8ArraySlice gen n
+    fun charArraySlice gen n = 
+	                   CharArraySlice.slice (charArray gen n, 
+						 cardinal n,
+						 option cardinal n) 
+	                        handle Subscript => charArraySlice gen n
+    fun wideCharArraySlice gen n = 
+	                   WideCharArraySlice.slice (wideCharArray gen n, 
+						     cardinal n,
+						     option cardinal n) 
+	                        handle Subscript => charArraySlice gen n
     fun array2 gen n    = Array2.tabulate Array2.ColMajor 
 			                  (cardinal n, 
 					   cardinal n, 
