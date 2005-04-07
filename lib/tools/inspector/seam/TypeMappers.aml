@@ -11,6 +11,8 @@ import structure Builtin       from "BuiltinTypeMappers"
 import structure AbsTree       from "AbsTree"
 import structure Prefs         from "Prefs"
 import structure Cache         from "Cache"
+import structure StdExceptions from "StdExceptionMappers"
+
 
 structure TypeMappers =
 struct
@@ -177,4 +179,5 @@ struct
   val _ = register Builtin.word8Vector
   val _ = register Builtin.package
 
+  val _ = register StdExceptions.stdExceptions
 end

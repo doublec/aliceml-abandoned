@@ -168,7 +168,13 @@ TypeMappers.alc: \
 	BuiltinTypeMappers.alc \
 	AbsTree.alc \
 	Prefs.alc \
-	Cache.alc
+	Cache.alc \
+	StdExceptionMappers.alc
+
+StdExceptionMappers.alc: \
+	AbsTree.alc \
+	Common.alc \
+	Prefs.alc \
 
 MONITORS-sig.alc: \
 	gui/GrTypes.alc \

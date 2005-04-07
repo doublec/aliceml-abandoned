@@ -1,0 +1,76 @@
+import structure AbsTree        from "AbsTree"
+import structure Reflect        from "x-alice:/lib/system/Reflect"
+import structure Common         from "Common"
+import structure UnsafeValue    from "x-alice:/lib/system/UnsafeValue"
+import structure Name           from "x-alice:/lib/rtt/Name"
+import structure Prefs          from "Prefs"
+
+(* imported for their exceptions: *)
+import structure IO             from "x-alice:/lib/system/IO"
+import structure OS             from "x-alice:/lib/system/OS"
+import structure Remote         from "x-alice:/lib/distribution/Remote"
+import structure Component      from "x-alice:/lib/system/Component"
+
+
+(* Type mappers for std exceptions *)
+
+structure StdExceptions =
+struct
+
+    val applyPar        = AbsTree.abstractApplication
+
+    fun applyNoPar (item, label, tree) = 
+        AbsTree.makeBox { 
+            prefix = (label, Prefs.exnStyle) :: AbsTree.spaceL,
+            tree, item,
+            suffix = [] 
+        }
+(*
+    fun valueToItem' t v = (Common.Value (t, Reflect.reflect v), t, Reflect.reflect v)
+
+    __overload 'a valueToItem : 
+        'a -> (Common.alice_item * Type.typ * Reflect.value) = valueToItem'
+  *)     
+    fun exnToTreeNoPar' t (depth, item, label, v) =
+        let val x              = Reflect.reflect v
+            val item'          = Common.Value (t, x)
+            val tree           = AbsTree.mapValue (depth - 1, item', t, x)
+        in
+            applyNoPar (item, label, tree)
+        end
+    
+    __overload 'a exnToTreeNoPar : 
+        int * AbsTree.absitem * string * 'a -> AbsTree.tree = exnToTreeNoPar'
+            
+    fun stdExceptions (depth, item, ty, argTy, exn) =
+        case exn of
+            Fail s              => exnToTreeNoPar (depth, item, "Fail", s)
+          | Assert a            => exnToTreeNoPar (depth, item, "Assert", a)
+          | Package.Mismatch m  => exnToTreeNoPar 
+                    (depth, item, "Package.Mismatch", m)
+          | IO.Io a             => exnToTreeNoPar (depth, item, "IO.Io", a)
+          | OS.SysErr a         => exnToTreeNoPar (depth, item, "OS.SysErr", a)
+          | Remote.Proxy e      => exnToTreeNoPar 
+                    (depth, item, "Remote.Proxy", e)
+          | Remote.Protocol s   => exnToTreeNoPar 
+                    (depth, item, "Remote.Protocol", s)
+          | Component.Eval e    => exnToTreeNoPar
+                    (depth, item, "Component.Eval", e)
+          | Component.Failure a => exnToTreeNoPar
+                    (depth, item, "Component.Failure", a)
+          | Component.Internal e => exnToTreeNoPar 
+                    (depth, item, "Component.Internal", e)
+          | Component.Mismatch i => exnToTreeNoPar
+                    (depth, item, "Component.Mismatch", i)
+          | value =>
+            let
+                val con  = UnsafeValue.con value
+                val name = Name.toString (UnsafeValue.conName con)
+            in
+                (* Is it a nullary constructor ? *)
+                if UnsafeValue.same (con, value) 
+                    then AbsTree.simpleText (item, name, Prefs.exnStyle)
+                    else AbsTree.abstractApplication (item, name)
+            end
+
+end
