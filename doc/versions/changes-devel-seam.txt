@@ -1,3 +1,8 @@
+Libraries:
+
+* [FIX] Inspector: fixed handling of polymorphic types.
+
+
 Alice 1.1 (Kraftwerk 'Eval Your Own' Album) - 2005/03/24
 --------------------------------------------------------
 

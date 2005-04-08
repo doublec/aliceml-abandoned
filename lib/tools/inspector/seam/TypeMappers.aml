@@ -123,8 +123,8 @@ struct
   (* Mapping VALUES to Abstract Trees. *)
   fun mapValue' (depth, item, typ, value) =
     case Type.inspect (getAlias typ) of
-      Type.Unknown _ => assert false
-    | Type.Var _     => assert false
+      Type.Unknown _ => Basic.abstract item
+    | Type.Var _     => Basic.abstract item
     | Type.Con path  => mapConstructor (depth, item, typ, path, [], value)
     | Type.Arrow tt  => Basic.arrow item
     | Type.Prod row  => Basic.prod (depth, item, row, value, false)

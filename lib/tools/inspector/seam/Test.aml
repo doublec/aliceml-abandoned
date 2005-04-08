@@ -480,6 +480,8 @@ val _ =
   Inspector.inspect (listn 1000) ; waitLine () ;
   Inspector.inspect listn ; waitLine () ;
 
+  let fun f x = Inspector.inspect [x] in f 5 end ; waitLine () ;
+
   print "Quitting.\n" ; waitLine () ;
   OS.Process.exit OS.Process.success ;
   ())
