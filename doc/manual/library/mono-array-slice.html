@@ -10,11 +10,6 @@
 	        and type vector       = string
 		and type vector_slice = substring
 		and type array        = CharArray.t
-    structure WideCharArraySlice : MONO_ARRAY_SLICE
-              where type elem         = WideChar.t
-	        and type vector       = WideString.t
-		and type vector_slice = WideSubstring.t
-		and type array        = WideCharArray.t
     structure Word8ArraySlice : MONO_ARRAY_SLICE
               where type elem         = Word8.t
 	        and type vector       = Word8Vector.t

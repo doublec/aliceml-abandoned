@@ -6,17 +6,11 @@
   <PRE>
     signature CHAR
     structure Char : CHAR where type char = char and type string = string
-    structure WideChar : CHAR
   </PRE>
 
   <P>
     An extended version of the Standard ML Basis'
     <A href="http://www.standardml.org/Basis/char.html"><TT>CHAR</TT></A> signature.
-  </P>
-
-  <P>
-    <I>Limitation:</I> <TT>WideChar</TT> currently is the same structure as
-    <TT>Char</TT>.
   </P>
 
   <P>See also:
@@ -77,9 +71,6 @@
 	val isSpace :     char -> bool
 	val isCntrl :     char -> bool
 	val isAscii :     char -> bool
-
-	val toWide :      char -> WideChar.char
-	val fromWide :    WideChar.char -> char
 
 	val toString :    char -> string
 	val toCString :   char -> string
@@ -145,15 +136,6 @@
       <TT>fromCString</TT>.</P>
     </DD>
 
-    <DT>
-      <TT>toWide <I>c</I></TT> <BR>
-      <TT>fromWide <I>c</I></TT>
-    </DT>
-    <DD>
-      <P>Convert between the standard and the wide character set. Raise
-      <TT>Chr</TT> if the given character is not representable in the target
-      character set.</P>
-    </DD>
   </DL>
 
 <?php footing() ?>

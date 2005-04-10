@@ -7,7 +7,6 @@
     signature STRING
     structure String : STRING where type string = string
                                 and type char   = char
-    structure WideString : STRING where type char = WideChar.t
   </PRE>
 
   <P>
@@ -72,9 +71,6 @@
 	val isSuffix :    string -> string -> bool
 	val isSubstring : string -> string -> bool
 
-	val toWide :      string -> WideString.string
-	val fromWide :    WideString.string -> string
-
 	val toString :    string -> string
 	val toCString :   string -> string
 	val fromString :  string -> string option
@@ -137,15 +133,6 @@
       arbitrary streams.</P>
     </DD>
 
-    <DT>
-      <TT>toWide <I>s</I></TT> <BR>
-      <TT>fromWide <I>s</I></TT>
-    </DT>
-    <DD>
-      <P>Convert between the standard and the wide character set. Raise
-      <TT>Chr</TT> if any character of the given string is not representable
-      in the target character set.</P>
-    </DD>
   </DL>
 
 <?php footing() ?>

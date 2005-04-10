@@ -6,7 +6,6 @@
   <PRE>
     signature ATOM
     structure Atom : ATOM where String = String
-    structure WideAtom : ATOM where String = WideString
   </PRE>
 
   <P>
@@ -27,8 +26,7 @@
 
   <PRE>
     import signature ATOM from "x-alice:/lib/data/ATOM-sig"
-    import structure Atom from "x-alice:/lib/data/Atom"
-    import structure WideAtom from "x-alice:/lib/data/WideAtom"</PRE>
+    import structure Atom from "x-alice:/lib/data/Atom"</PRE>
 
 <?php section("interface", "interface") ?>
 
