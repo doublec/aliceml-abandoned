@@ -29,6 +29,9 @@ import structure UrlMap            from "UrlMap"
 import signature COMPONENT         from "COMPONENT-sig"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 
+import structure PPValue           from "PPValue"
+
+
 structure Component : COMPONENT =
 struct
     nonfix mod
@@ -377,4 +380,19 @@ val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
 	functor Enter (val url: Url.t signature S structure X: S) =
 	    (val _ = enter (url, fromPackage (pack X : S)))
     end
+
+
+    fun ppExn t fm (Eval e as exn) =
+        PPValue.ppExnWithArg fm exn e  
+      | ppExn t fm (Failure e as exn) =
+        PPValue.ppExnWithArg fm exn e  
+      | ppExn t fm (Internal e as exn) =
+        PPValue.ppExnWithArg fm exn e  
+      | ppExn t fm (Mismatch i as exn) =
+        PPValue.ppExnWithArg fm exn i  
+      | ppExn _ _  _ = NONE
+
+
+    val _ = PPValue.registerTyp ppExn
+
 end

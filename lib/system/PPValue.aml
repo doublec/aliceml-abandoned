@@ -24,6 +24,9 @@ import structure Atom             from "../data/Atom"
 import structure PrettyPrint      from "../utility/PrettyPrint"
 import structure PPMisc           from "../rtt/PPMisc"
 import signature PP_VALUE         from "PP_VALUE-sig"
+import structure IO               from "IO"
+import structure OS               from "OS"
+
 
 structure PPValue (*: PP_VALUE*) =
 struct
@@ -349,6 +352,18 @@ local
 	else SOME(text("\"" ^ String.toString(String.substring(x,0,4* #width fm))
 			    ^ "\\...\""))
 
+    fun ppExnWithArg' t fm exn a  =
+        SOME (ppApply fm (text (General.exnName exn),
+                          [ppVal' t (arg fm) a]))
+
+    __overload 'a ppExnWithArg : format -> exn -> 'a -> doc option
+        = ppExnWithArg'
+
+    (* pretty printing of exceptions of the fundamental library,
+       and those of the system library which we cannot handle
+       in their own component. 
+     *)
+
     fun ppExn t fm x =
 	case x
 	 of ( Bind | Chr | Div | Domain | Match | Overflow
@@ -360,15 +375,15 @@ local
 		text(General.exnName x)
 	    )
 	  | Fail x' =>
-	    SOME(
-		ppApply fm (text(General.exnName x),
-			    [ppVal' typ_string (arg fm) x'])
-	    )
-	  | Package.Mismatch _ =>
-	    SOME(
-		ppApply fm (text(General.exnName x),
-			    [ppKeyword (arg fm) absDoc])
-	    )
+            ppExnWithArg fm x x'
+          | Assert e =>
+            ppExnWithArg fm x e
+          | OS.SysErr err =>
+            ppExnWithArg fm x err
+	  | Package.Mismatch m =>
+            ppExnWithArg fm x m
+          | IO.Io a =>
+            ppExnWithArg fm x a
 	  | _ => NONE
 
     fun ppRef t fm x =
@@ -552,6 +567,10 @@ in
     val registerTyp' = registerTyp'
     __overload 'a registerTyp   : 'a printer -> unit = registerTyp'
     __overload 'a unregisterTyp : 'a -> unit = unregisterTyp'
+
+
+    __overload 'a ppExnWithArg : format -> exn -> 'a -> doc option = 
+            ppExnWithArg'
 
   (* Register *)
 

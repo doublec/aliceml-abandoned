@@ -39,4 +39,7 @@ sig
 
     val streamsOf :	(TextIO.instream, TextIO.outstream) proc
 			-> TextIO.instream * TextIO.outstream
+
+    val allStreamsOf :  (TextIO.instream, TextIO.outstream) proc
+                        -> TextIO.instream * TextIO.outstream * TextIO.outstream
 end

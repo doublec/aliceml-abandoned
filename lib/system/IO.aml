@@ -22,4 +22,5 @@ structure IO :> IO =
 	exception ClosedStream = UnsafeIODesc.ClosedStream
 
 	datatype buffer_mode = NO_BUF | LINE_BUF | BLOCK_BUF
+
     end

@@ -30,6 +30,10 @@ import structure Inf   from "x-alice:/lib/rtt/Inf"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 
+(* for pretty printing this component's exceptions *)
+import structure PPValue from "x-alice:/lib/system/PPValue"
+
+
 (** bgrund:
     I needed quite some time to digest what exactly happens / should
     happen when certain functions of the Remote structure are called.  
@@ -421,4 +425,16 @@ struct
         in
 	    unpack package : S
 	end
+
+
+    (* exception pretty printing handler *)
+
+    fun ppExn t fm (Proxy e as exn) =
+        PPValue.ppExnWithArg fm exn e
+      | ppExn t fm (Protocol s as exn) =
+        PPValue.ppExnWithArg fm exn s
+      | ppExn _ _ _ = NONE
+
+    val _ = PPValue.registerTyp ppExn
+
 end
