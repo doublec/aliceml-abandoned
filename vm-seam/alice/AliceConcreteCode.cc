@@ -38,6 +38,6 @@ void AliceConcreteCode::Disassemble(std::FILE *file) {
 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
 	       Store::DirectWordToInt(coord->Sel(1)),
 	       Store::DirectWordToInt(coord->Sel(2)));
-  TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
+  TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(5));
   AbstractCode::Disassemble(file, pc);
 }
