@@ -25,13 +25,15 @@ structure ExplorerSearch =
       case Space.status s of
           Space.FAILED =>
           (case !state of
-               SOME {tree={tree,rootSpace,constrain,currentNode,...},...} =>
+               SOME {tree={tree,rootSpace,bestSpace,
+                           constrain,currentNode,...},...} =>
                (ExplorerNode.discardTree (!tree);
                 resetCanvas serve state;
                 tree := ExplorerNode.createNode(state, NONE, 0);
                 ExplorerNode.setStatus (!tree) Types.FAILED;
                 rootSpace := NONE;
 		constrain := better;
+                bestSpace := NONE;
                 currentNode := SOME (!tree);
                 ExplorerNode.setSpace (!tree) NONE;
                 MenuManager.updateMenus (!tree);
@@ -43,12 +45,17 @@ structure ExplorerSearch =
               val s' = Space.clone s
           in
               case !state of
-                  SOME {tree={tree,rootSpace,constrain,currentNode,...},...} =>
+                  SOME {tree={tree,rootSpace,bestSpace,
+                              constrain,currentNode,...},...} =>
                   (ExplorerNode.discardTree (!tree);
+		   Types.resetSearchState state;
+		   Types.resetCancelSearch state;
+		   MenuManager.refreshStatusbar state;                   
                    resetCanvas serve state;
                    tree := ExplorerNode.createNode(state, NONE, 0);
                    rootSpace := SOME s;
 		   constrain := better;
+                   bestSpace := NONE;
                    currentNode := SOME (!tree);
                    MenuManager.updateMenus (!tree);
                    MenuManager.finishSearch();

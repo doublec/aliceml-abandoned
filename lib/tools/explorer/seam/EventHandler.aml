@@ -89,18 +89,6 @@ structure EventHandler =
 
   val itr = Real.fromInt
 
-  fun refreshStatusbar state =
-      let
-          val (choices, failed, solved) = Types.getSearchState state
-      in
-          Gtk.labelSetText(ExplorerGUI.noOfChoices,
-                           Int.toString choices);
-          Gtk.labelSetText(ExplorerGUI.noOfFailed,
-                           Int.toString failed);
-          Gtk.labelSetText(ExplorerGUI.noOfSolved,
-                           Int.toString solved)
-      end
-
   fun destroyMainWindow (resetCanvas,
                          serve,
                          state as ref (SOME {gtk={window,...},
@@ -112,7 +100,7 @@ structure EventHandler =
        resetCanvas serve state;
        Types.resetSearchState state;
        Types.resetCancelSearch state;
-       refreshStatusbar state;
+       MenuManager.refreshStatusbar state;
        ExplorerNode.discardTree (!tree) )
     | destroyMainWindow _ = ()
 
@@ -176,7 +164,7 @@ structure EventHandler =
 	      val (minx, maxx, depth) = TreeNode.getBBox shape
           in
               Gtk.widgetShowAll window;
-              refreshStatusbar state;
+              MenuManager.refreshStatusbar state;
               setBBox (state, (minx, maxx, depth));
               Gtk.layoutFreeze canvas;
 	      VisualNode.adjust (rstate, tree, 0, 0, TreeNode.verSpaceI, 0);
@@ -273,7 +261,7 @@ structure EventHandler =
                     SOME {tree={rootSpace=ref (SOME rs),constrain,...},...} =>
                     (Types.resetSearchState state;
                      Types.resetCancelSearch state;
-                     refreshStatusbar state;
+                     MenuManager.refreshStatusbar state;
                      ExplorerSearch.initSearch (serve, state,
                                                 fn (x,y) => refresh (cmw,x,y),
                                                 resetCanvas, rs, !constrain))
