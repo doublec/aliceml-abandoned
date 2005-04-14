@@ -26,6 +26,7 @@ import structure PPMisc           from "../rtt/PPMisc"
 import signature PP_VALUE         from "PP_VALUE-sig"
 import structure IO               from "IO"
 import structure OS               from "OS"
+import structure Component        from "Component"
 
 
 structure PPValue (*: PP_VALUE*) =
@@ -382,6 +383,14 @@ local
             ppExnWithArg fm x err
 	  | Package.Mismatch m =>
             ppExnWithArg fm x m
+          | Component.Eval e =>
+            ppExnWithArg fm x e  
+          | Component.Failure e =>
+            ppExnWithArg fm x e
+          | Component.Internal e =>
+            ppExnWithArg fm x e  
+          | Component.Mismatch i =>
+            ppExnWithArg fm x i  
           | IO.Io a =>
             ppExnWithArg fm x a
 	  | _ => NONE
