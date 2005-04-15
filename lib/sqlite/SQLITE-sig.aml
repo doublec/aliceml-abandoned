@@ -15,6 +15,7 @@ import structure Type from "x-alice:/lib/rtt/Type"
 signature SQLITE = sig
     type db
     exception SQLError of string
+    exception TypeError of string
 
     val opendb : string -> db
     val closedb : db -> unit

@@ -19,6 +19,9 @@ import structure Name from "x-alice:/lib/rtt/Name"
 
 import signature SQLITE from "SQLITE-sig"
 
+import structure PPValue from "x-alice:/lib/system/PPValue"
+
+
 structure SQLite' :> SQLITE = struct
     type db
     type row
@@ -154,11 +157,18 @@ structure SQLite =
   struct
       type db = SQLite'.db
 
-      exception SQLError of string
-      exception TypeError of string
+      exception SQLError  = SQLite'.SQLError
+      exception TypeError = SQLite'.TypeError
 
       val opendb : string -> db = SQLite'.opendb
       val closedb : db -> unit = SQLite'.closedb
       __overload 'a query : (db * string) -> 'a list = SQLite'.query'
 
+      fun ppExn t fm (SQLError msg as exn) =
+          PPValue.ppExnWithArg fm exn msg
+        | ppExn t fm (TypeError msg as exn) =
+          PPValue.ppExnWithArg fm exn msg
+        | ppExn _ _ _ = NONE
+
+      val _ = PPValue.registerTyp ppExn
   end
