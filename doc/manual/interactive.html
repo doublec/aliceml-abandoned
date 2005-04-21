@@ -29,6 +29,11 @@ can stretch several lines, it is terminated by a line containing a semicolon as
 its last character. The system will print the results and inferred types
 for the given declarations, or an appropriate error message.</P>
 
+<P>Nested and aggregated data structures are only printed up to certain depth and width limits. These can be controlled using the respective references from the <A href="library/print.html"><TT>Print</TT></A> module.</P>
+
+<P>Values of abstract type are not printed. The <TT>register</TT> function from the <A href="library/print.html"><TT>Print</TT></A> module can be used to install simple user-defined printing functions for abstract types that the
+top-level will use in its outputs.</P>
+
 <P>Values of abstract type are not printed. The <TT>register</TT> function from the <A href="library/print.html"><TT>Print</TT></A> module can be used to install simple user-defined printing functions for abstract types that the
 top-level will use in its outputs.</P>
 

@@ -29,7 +29,9 @@
   <PRE>
     signature PRINT =
     sig
-	val printWidth : int ref
+	val depth :       int ref
+	val width :       int ref
+	val layoutWidth : int ref
 
 	val printVal :   'a -> unit
 	val printType :  'a -> unit
@@ -55,11 +57,25 @@
     </DD>
 
     <DT>
-      <TT>printWidth</TT>
+      <TT>depth</TT> <BR>
+      <TT>width</TT>
     </DT>
     <DD>
       <P>
-        Controls the width of the output as performed by <TT>printVal</TT>
+        Control up to which depth and width nested and aggregated
+	data structures are printed by <TT>printVal</TT>. Sub-structures
+	beyond the depth limit are output as <TT>_</TT>, items of collections
+	(e.g. lists) beyond the width limit are abbreviated to <TT>...</TT>
+	in the output.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>layoutWidth</TT>
+    </DT>
+    <DD>
+      <P>
+        Controls the width of the layout as performed by <TT>printVal</TT>
 	and <TT>printType</TT>, i.e. the maximum number of characters on each
 	line.
       </P>

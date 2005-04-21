@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2004
+ *   Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -145,8 +145,8 @@ local
     val applyPrec	= 10
     val atomPrec	= 11
 
-    val defaultDepth	= ref 8
-    val defaultWidth	= ref 16
+    val defaultDepth	= ref 16
+    val defaultWidth	= ref 32
 
     fun default()	= {depth = !defaultDepth, width = !defaultWidth,
 			   prec = rootPrec}

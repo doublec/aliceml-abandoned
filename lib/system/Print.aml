@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2003
+ *   Andreas Rossberg, 2003-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,14 +19,16 @@ import signature PRINT       from "PRINT-sig"
 
 structure Print' =
 struct
-    val printWidth = ref 80
+    val depth       = PPValue.defaultDepth
+    val width       = PPValue.defaultWidth
+    val layoutWidth = ref 80
 
     fun outputVal'  t (s,x,n) = PrettyPrint.output(s, PPValue.ppVal t x, n)
     fun outputType' t (s,x,n) = PrettyPrint.output(s, PPType.ppTyp t, n)
 
-    fun printVal'  t x = (outputVal'  t (TextIO.stdOut, x, !printWidth);
+    fun printVal'  t x = (outputVal'  t (TextIO.stdOut, x, !layoutWidth);
 			  TextIO.flushOut TextIO.stdOut)
-    fun printType' t x = (outputType' t (TextIO.stdOut, x, !printWidth);
+    fun printType' t x = (outputType' t (TextIO.stdOut, x, !layoutWidth);
 			  TextIO.flushOut TextIO.stdOut)
 
     fun register t f =
@@ -36,7 +38,9 @@ end
 
 structure Print (* : PRINT *) =
 struct
-    val printWidth = Print'.printWidth
+    val depth = Print'.depth
+    val width = Print'.width
+    val layoutWidth = Print'.layoutWidth
     __overload 'a printVal :   'a -> unit = Print'.printVal'
     __overload 'a printType :  'a -> unit = Print'.printType'
     __overload 'a outputVal :  TextIO.outstream * 'a * int -> unit

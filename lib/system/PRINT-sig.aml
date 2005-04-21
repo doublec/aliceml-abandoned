@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2003-2004
+ *   Andreas Rossberg, 2003-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,7 +14,9 @@ import structure TextIO from "TextIO"
 
 signature PRINT =
 sig
-    val printWidth :	int ref
+    val depth :		int ref
+    val width :		int ref
+    val layoutWidth :	int ref
 
     val printVal :	'a -> unit
     val printType :	'a -> unit
