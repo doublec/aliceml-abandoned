@@ -63,6 +63,10 @@ struct
     fun char n		= Char.chr (cardinal (Char.maxOrd + 1))
     fun wideChar n	= WideChar.chr (cardinal (WideChar.maxOrd + 1))
     fun string n	= String.tabulate (Int.abs n, char) 
+    fun substring n     = Substring.substring (string n,
+					       cardinal n,
+					       cardinal n)
+			      handle Subscript => substring n
     fun int n		= if bool 0 then cardinal n else ~ (cardinal n)
     fun largeInt n      = IntInf.* (IntInf.fromInt (int n), 
 				    IntInf.fromInt (int n))

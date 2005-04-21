@@ -20,7 +20,555 @@ struct
 
     val randomize = Gen.randomize
 
+    fun testSubstring () =
+	let
+	    fun t' (s, a, b) =
+		let
+		    val x = String.size s
+		in
+		    if a < 0 orelse a > x orelse b < 0 orelse x < a + b
+		    then NONE
+		    else SOME (s, a, b)
+		end
+
+	    fun t (s, a, b) = 
+		let
+		    val r = t' (s, a, b)
+		in 
+		    if Option.isNone r
+		    then (Substring.substring (s, a, b); false)
+			      handle Subscript => true
+		    else 
+		       valOf r = Substring.base (Substring.substring (s, a, b))
+		end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.string, Gen.int, Gen.int)) 
+		    (Test.test t)
+	end
+
+    fun testExtract () =
+	let
+	    fun t' (s, i, NONE) = 
+		if i < 0 orelse i > String.size s
+		then NONE
+		else SOME (s, i, String.size s - i)
+	      | t' (s, i, SOME j) = 
+		SOME (Substring.base (Substring.substring (s, i, j)))
+		  handle Subscript => NONE
+
+	    fun t (s, i, opt) = 
+		let
+		    val r = t' (s, i, opt)
+		in
+		    if Option.isNone r
+		    then (Substring.extract (s, i, opt); false)
+			   handle Subscript => true
+		    else valOf r = 
+			 Substring.base (Substring.extract (s, i, opt))
+		end
+	    
+	in
+	    Gen.try 1000 (Gen.triple (Gen.string, Gen.int, Gen.option Gen.int))
+	      (Test.test t)
+	end
+
+    fun testEqual () =
+	(* TODO: more testcases *)
+	let
+	    fun t (s1, s2) = Substring.equal (s1, s2) =
+			     String.equal (Substring.string s1, 
+					   Substring.string s2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.substring, Gen.substring))
+	       (Test.test t)
+	end
+
+    fun testSub () =
+	let
+	    fun t' (s, i) = SOME (String.sub (Substring.string s, i))
+			       handle Subscript => NONE
+				 
+	    fun t (s, i) = 
+		let
+		    val r = t' (s, i)
+		in
+		    (Substring.sub (s, i) = valOf r)
+		      handle Subscript => Option.isNone r
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.substring, Gen.int)) (Test.test t)
+	end
+
+    fun testBase () = 
+	let
+	    fun t s = 
+		let
+		    val x = String.size s
+		    val a = Gen.cardinal x
+		    val b = Gen.cardinal (x - a)
+		    val sub = Substring.substring (s, a, b)
+		in
+		    Substring.base sub = (s, a, b)
+		end
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testString () =
+	let
+	    fun t sub =
+		String.substring (Substring.base sub) = 
+		Substring.string sub
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testFull () =
+	let
+	    fun t s = 
+		Substring.full s =
+		Substring.substring (s, 0, String.size s)
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testSize () =
+	let
+	    fun t s = 
+		let
+		    val size = Substring.size s
+		in 
+		    size = #3 (Substring.base s) andalso
+		    size = String.size (Substring.string s)
+		end
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testIsEmpty () =
+	let
+	    fun t sub = 
+		Substring.isEmpty sub =
+		(#3 (Substring.base sub) = 0)
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testGetC () =
+	(* TODO: ???? *)
+	let
+	    fun t' (s, i, j) = 
+		if j = 0 orelse s = "" then NONE
+		else 
+		    SOME (String.sub (s, i), 
+			  Substring.substring (s, i + 1, j - 1))
+
+	    fun t sub =
+		t' (Substring.base sub) = Substring.getc sub
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testFirst () =
+	let
+	    fun t' NONE            = NONE
+	      | t' (SOME (c, sub)) = SOME c
+
+	    fun t sub = t' (Substring.getc sub) = Substring.first sub
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testTriml () = 
+	let
+	    fun t (k, sub) = true (* TODO... *)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.substring)) (Test.test t)
+	end
+
+    fun testTrimr () = 
+	let
+	    fun t (k, sub) = true (* TODO... *)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.substring)) (Test.test t)
+	end
+
+    fun testSlice () =
+	let
+	    fun t' (s, i, NONE) =
+		if i < 0 orelse Substring.size s < i 
+		then NONE
+		else let
+			val (st, a, b) = Substring.base s
+		    in
+			SOME (Substring.substring (st, a + i, b - i))
+		    end
+	      | t' (s, i, SOME m) = 
+		if i < 0 orelse m < 0 orelse i + m > Substring.size s
+		then NONE
+		else let
+			val (st, a, b) = Substring.base s
+		    in
+			SOME (Substring.substring (st, a + i, m))
+		    end
+
+	    fun t x = 
+		let
+		    val r = t' x
+		in
+		    if Option.isNone r 
+		    then (Substring.slice x; false)
+			    handle Subscript => true
+		    else valOf r = Substring.slice x
+		end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.substring, Gen.int,
+				      Gen.option Gen.int)) (Test.test t)
+	end
+
+    fun testConcat () =
+	let
+	    fun t xs = 
+		let
+		    val r = SOME (String.concat (List.map Substring.string xs))
+			       handle Subscript => NONE
+		in
+		    (Substring.concat xs = valOf r)
+		       handle Size => Option.isNone r
+		end
+	in
+	    Gen.try 100 (Gen.list Gen.substring) (Test.test t)
+	end
+
+    fun testConcatWith () =
+	let
+	    fun t (s, l) = true (* TODO... *)
+
+	in
+	    Gen.try 100 (Gen.pair (Gen.string, Gen.list Gen.substring))
+	      (Test.test t)
+	end
+
+    fun testExplode () =
+	let
+	    fun t s = String.explode (Substring.string s) =
+		      Substring.explode s
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testIsPrefix () =
+	let
+	    fun t (s, ss) = 
+		String.isPrefix s (Substring.string ss) = 
+		Substring.isPrefix s ss
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.substring)) (Test.test t)
+	end
+
+    fun testIsSuffix () =
+	let
+	    fun t (s, ss) = 
+		String.isSuffix s (Substring.string ss) = 
+		Substring.isSuffix s ss
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.substring)) (Test.test t)
+	end
+
+    fun testIsSubstring () =
+	let
+	    fun t (s, ss) = 
+		String.isSubstring s (Substring.string ss) = 
+		Substring.isSubstring s ss
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string, Gen.substring)) (Test.test t)
+	end
+
+    fun testCompare () =
+	let
+	    fun t (s1, s2) = 
+		Substring.compare (s1, s2) =
+		String.compare (Substring.string s1,
+				Substring.string s2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.substring, Gen.substring)) 
+		    (Test.test t)
+	end
+
+    fun testCollate () =
+	let
+	    fun t (s1, s2) = 
+		Substring.collate Char.compare (s1, s2) =
+		String.collate Char.compare (Substring.string s1,
+					     Substring.string s2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.substring, Gen.substring))
+	            (Test.test t)
+	end
+
+    fun testSplitl () = 
+	let
+	    val xs = ref []
+	    val ys = ref []
+
+	    fun fromInt x = if x > 255 then Char.chr 255 else Char.chr x
+
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		Substring.equal (sl1, sl3) andalso
+		Substring.equal (sl2, sl4)
+
+	    fun t' (sl, f, i) = if i = Substring.size sl
+				then i
+				else 
+				    if not (f (Substring.sub (sl, i)))
+				     then i
+				     else t' (sl, f, i + 1)
+
+	    fun f y x = (y := x :: !y; x = fromInt 42)
+
+	    fun t sl = eq (Substring.splitl (f xs) sl, 
+			   Substring.splitAt (sl, t' (sl, f ys, 0))) 
+		       andalso !xs = !ys
+	in
+	    Gen.try 100 Gen.substring
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+
+    fun testDropl () =
+	let
+	    fun f c = Char.ord c <> 10
+		      
+	    fun t s = Substring.dropl f s = 
+		      #2 (Substring.splitl f s)
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testDropr () =
+	let
+	    fun f c = Char.ord c <> 10
+		      
+	    fun t s = Substring.dropr f s = 
+		      #1 (Substring.splitr f s)
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testTakel () =
+	let
+	    fun f c = Char.ord c <> 10
+		      
+	    fun t s = Substring.takel f s = 
+		      #1 (Substring.splitl f s)
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testTaker () =
+	let
+	    fun f c = Char.ord c <> 10
+		      
+	    fun t s = Substring.taker f s = 
+		      #2 (Substring.splitr f s)
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+
+    fun testSplitAt () = 
+	let
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		Substring.equal (sl1, sl3) andalso
+		Substring.equal (sl2, sl4)
+
+	    fun t' (sl, i) = SOME (Substring.slice (sl, 0, SOME i),
+				   Substring.slice (sl, i, NONE))
+			       handle Subscript => NONE
+	    fun t (sl, i) = 
+		let
+		    val r = t' (sl, i)
+		in 
+		    eq (Substring.splitAt (sl, i), valOf r)
+			       handle Subscript => Option.isNone r
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.substring,
+				    Gen.int)) (Test.test t)
+	end
+
+    fun testSplitr () = 
+	let
+	    val xs = ref []
+	    val ys = ref []
+
+	    fun fromInt x = if x > 255 then Char.chr 255 else Char.chr x
+
+	    fun eq ((sl1, sl2), (sl3, sl4)) = 
+		Substring.equal (sl1, sl3) andalso
+		Substring.equal (sl2, sl4)
+
+	    fun t' (sl, f, i) = if i < 0
+				then 0
+				else if not (f (Substring.sub (sl, i)))
+				     then i + 1
+				     else t' (sl, f, i - 1)
+
+	    fun f y x = (y := x :: !y; x >= fromInt 42)
+
+	    fun t sl = 
+		eq (Substring.splitr (f xs) sl, 
+		    Substring.splitAt (sl, t' (sl, f ys, 
+					     Substring.size sl - 1))) 
+		andalso !xs = !ys
+	in
+	    Gen.try 100 Gen.substring
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+
+    fun testPosition () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	
+    fun testSpan () = 
+	let
+	    fun t' (s1, s2) = 
+		let
+		    val (s, i, n) = Substring.base s1
+		    val (s', i', n') = Substring.base s2
+		in
+		    if s <> s' orelse i' + n' < i
+		    then NONE
+		    else SOME (Substring.substring (s, i, (i' + n') - i))
+		end
+
+	    fun t (s1, s2) = 
+		let
+		    val r = t' (s1, s2) 
+		in 
+		    (Substring.span (s1, s2) = valOf r)
+		       handle Span => Option.isNone r
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.substring, Gen.substring)) 
+		    (Test.test t)
+	end
+	
+    fun testTranslate () = 
+	let
+	    fun f c = String.str (Char.chr ((1 + Char.ord c) mod 256))
+
+	    fun t s = Substring.translate f s =
+		      String.concat (List.map f (Substring.explode s))
+	in
+	    Gen.try 1000 Gen.substring (Test.test t)
+	end
+	
+    fun testTokens () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	
+    fun testFields () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	
+    fun testApp () = 
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f x c = (x := c :: !x)
+
+	    fun t s = (x1 := nil; x2 := nil;
+		       Substring.app (f x1) s = 
+		       List.app (f x2) (Substring.explode s) andalso
+		       !x1 = !x2)
+	in
+	    Gen.try 100 Gen.substring (Test.test t)
+	end
+
+    fun testAppr () = 
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f x c = (x := c :: !x)
+
+	    fun t s = (x1 := nil; x2 := nil;
+		       Substring.appr (f x1) s = 
+		       List.appr (f x2) (Substring.explode s) andalso
+		       !x1 = !x2)
+	in
+	    Gen.try 100 Gen.substring (Test.test t)
+	end
+
+    fun testFoldl () = 
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f x (c, a) = (x := c :: !x; Char.ord c + a)
+
+	    fun t s = (x1 := nil; x2 := nil;
+		       Substring.foldl (f x1) 0 s = 
+		       List.foldl (f x2) 0 (Substring.explode s) andalso
+		       !x1 = !x2)
+	in
+	    Gen.try 100 Gen.substring (Test.test t)
+	end
+
+    fun testFoldr () = 
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f x (c, a) = (x := c :: !x; Char.ord c + a)
+
+	    fun t s = (x1 := nil; x2 := nil;
+		       Substring.foldr (f x1) 0 s = 
+		       List.foldr (f x2) 0 (Substring.explode s) andalso
+		       !x1 = !x2)
+	in
+	    Gen.try 100 Gen.substring (Test.test t)
+	end
+
     fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    val suite = ("Substring", [])
+    val suite = ("Substring", [("substring", testSubstring),
+			       ("extract", testExtract),
+			       ("equal", testEqual),
+			       ("sub", testSub),
+			       ("base", testBase),
+			       ("size", testSize),
+			       ("string", testString),
+			       ("full", testFull),
+			       ("isEmpty", testIsEmpty),
+			       ("getc", testGetC),
+			       ("first", testFirst),
+			       ("triml", testTriml),
+			       ("trimr", testTrimr),
+			       ("slice", testSlice),
+			       ("concat", testConcat),
+			       ("concatWith", testConcatWith),
+			       ("explode", testExplode),
+			       ("isPrefix", testIsPrefix),
+			       ("isSuffix", testIsSuffix),
+			       ("isSubstring", testIsSubstring),
+			       ("compare", testCompare),
+			       ("collate", testCollate),
+			       ("splitl", testSplitl),
+			       ("splitr", testSplitr),
+			       ("splitAt", testSplitAt),
+			       ("dropl", testDropl),
+			       ("dropr", testDropr),
+			       ("takel", testTakel),
+			       ("taker", testTaker),
+			       ("position", testPosition),
+			       ("span", testSpan),
+			       ("translate", testTranslate),
+			       ("tokens", testTokens),
+			       ("fields", testFields),
+			       ("app", testApp),
+			       ("appr", testAppr),
+			       ("foldl", testFoldl),
+			       ("foldr", testFoldr)])
 end
+
+
+
+
+

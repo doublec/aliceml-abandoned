@@ -65,6 +65,7 @@ sig
     val real:	    real gen
     val bool:	    bool gen
     val string:	    string gen
+    val substring:  Substring.substring gen
     val char:	    char gen
     val wideChar:   WideChar.char gen
     val int:	    int gen
