@@ -3,14 +3,23 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* Text fields in search dialog should span full window
+* jump to error does not work with compile
+* search/goto dialogs should always be raised and moved to mouse position
+* aliceglade ignores packing flags
+  (manually replace alignment21's first Gtk.FILL by Gtk.EXPAND for text fields
+   in search dialog to span full window)
+* in/outdent shortcuts don't work on Windows (german keyboard)
+* context menu doesn't display correctly (chinese Windows)
+* Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
+* cannot assign .AML files to toplevel on Windows
+
 * Reconsider implicit imports
 * Proper treatment of relative import/cwd
-* Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
 
 Missing Features:
 
 * completion
+* detect file changes
 * bookmarks?
 * configure autoindent, tab expansion?
 * propagate output width on init and after resize (requires Pango binding)

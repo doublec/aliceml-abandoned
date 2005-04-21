@@ -26,9 +26,9 @@ structure GuiToplevel =
 	in
 	    Config.init ();
 	    GuiMain.init EH.notebook1_on_notebook1_switch_page;
-	    List.app GuiMain.openGivenFile files;
 	    Evaluator.init ();
 	    GuiMain.initDone ();
+	    List.app GuiMain.openGivenFile files;
 	    await (Promise.future (Promise.promise ()))
 	end
   end

@@ -59,25 +59,31 @@ structure GuiMain =
             case getCurrentPage() of NONE => ()
                                    | SOME id => Buffer.undo id
 
-        fun getCurBuf () =
+        fun getCurViewBuf () =
             let
                 val view = case (!curtextview) of
                                BUFFER view => view
                              | COMPILER => Gui.compilerout
                              | STDSTREAMS => Gui.progout
             in
-                Gtk.textViewGetBuffer view
+                (view, Gtk.textViewGetBuffer view)
             end
-                                             
+
+        fun getCurBuf () = #2 (getCurViewBuf ())
+
         fun copy() = Gtk.textBufferCopyClipboard(getCurBuf(), clipboard)
 
         fun paste() =
             let
 		val txt = Gtk.clipboardWaitForText clipboard
-		val buf = getCurBuf()
-		val _ =
-		    Gtk.textBufferInsertInteractiveAtCursor(buf,txt,~1,true)
+		val (view, buf) = getCurViewBuf()
 	    in
+		Gtk.textBufferBeginUserAction buf;
+		Gtk.textBufferDeleteSelection(buf, true, true);
+		Gtk.textBufferInsertInteractiveAtCursor(buf,txt,~1,true);
+		Gtk.textBufferEndUserAction buf;
+		Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buf,
+					 0.0, false, 0.0, 0.0);
 		()
 	    end
 
@@ -252,6 +258,14 @@ structure GuiMain =
         fun new() = new' NONE
 
         fun openGivenFile f =
+	    let
+	        val (buf,id) = Buffer.getBufferByName
+		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
+	    in
+		case buf of
+		    SOME buf =>
+		    Gtk.notebookSetCurrentPage(Gui.notebook1, valOf (findPage id))
+		  | NONE =>
                 let
 		    val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						    notebookSwitchEventId)
@@ -271,6 +285,7 @@ structure GuiMain =
 		    Promise.fulfill(!highlight, SOME 0);
                     checkNotebookSize()
                 end
+	    end
 
 	fun openFile () =
 	    let
@@ -724,7 +739,7 @@ structure GuiMain =
 	    (fn () =>
 	     let
 		 val buf = Gtk.textViewGetBuffer Gui.compilerout
-		 val iter = Gtk.textIterNew();
+		 val iter = Gtk.textIterNew()
 		 val _ = Gtk.textBufferGetEndIter(buf, iter)
 		 val errorTag =
 		     Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
@@ -770,6 +785,12 @@ structure GuiMain =
 	  | switchTo 2 =
 		Gtk.widgetGrabFocus Gui.progout
 	  | switchTo _ = ()
+
+	fun clearIO () =
+	    Lock.sync Gtk.lock
+	    (fn () =>
+	        Gtk.textBufferSetText(Gtk.textViewGetBuffer Gui.progout, "", ~1)
+	    ) ()
 
 	fun activateSyntax () =
 	    case getCurrentPage() of

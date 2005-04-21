@@ -79,7 +79,20 @@ structure SearchDialog =
 	     Gtk.windowSetModal(searchDialog, false);
              Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE);
              Gtk.widgetShowAll searchDialog;
-             Gtk.widgetMap searchDialog)
+             Gtk.widgetMap searchDialog;
+	     let
+		val buf = Gtk.textViewGetBuffer Gui.searchString
+		val startiter = Gtk.textIterNew ()
+		val enditer = Gtk.textIterNew ()
+	     in
+	        Gtk.textBufferGetStartIter(buf, startiter);
+	        Gtk.textBufferGetStartIter(buf, enditer);
+		Gtk.textBufferPlaceCursor(buf, enditer);
+		Gtk.textBufferMoveMarkByName(buf, "selection_bound", startiter)
+		(* Gtk2.4 Gtk.textBufferSelectRange(buf, startiter, enditer)*)
+		
+	     end;
+	     Gtk.widgetGrabFocus Gui.searchString)
 
 	fun searchAgain(id, arg) = 
             (reconnect id;
@@ -100,7 +113,20 @@ structure SearchDialog =
 	     Gtk.windowSetModal(searchDialog, false);
              Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE);
              Gtk.widgetShowAll searchDialog;
-             Gtk.widgetMap searchDialog)
+             Gtk.widgetMap searchDialog;
+	     let
+		val buf = Gtk.textViewGetBuffer Gui.searchString
+		val startiter = Gtk.textIterNew ()
+		val enditer = Gtk.textIterNew ()
+	     in
+	        Gtk.textBufferGetStartIter(buf, startiter);
+	        Gtk.textBufferGetStartIter(buf, enditer);
+		Gtk.textBufferPlaceCursor(buf, enditer);
+		Gtk.textBufferMoveMarkByName(buf, "selection_bound", startiter)
+		(* Gtk2.4 Gtk.textBufferSelectRange(buf, startiter, enditer)*)
+		
+	     end;
+	     Gtk.widgetGrabFocus Gui.searchString)
 
 	fun gotoLine id =
             let

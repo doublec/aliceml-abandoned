@@ -40,13 +40,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="new1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Create empty editor buffer</property>
 		      <property name="label" translatable="yes">_New</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_new1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="N" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image554">
+			<widget class="GtkImage" id="image784">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-new</property>
 			  <property name="icon_size">1</property>
@@ -62,13 +63,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="open1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Load file to new editor buffer</property>
 		      <property name="label" translatable="yes">_Open...</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_open1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="O" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image555">
+			<widget class="GtkImage" id="image785">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-open</property>
 			  <property name="icon_size">1</property>
@@ -84,13 +86,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="save1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Write current editor buffer to original file</property>
 		      <property name="label" translatable="yes">_Save</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_save1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="S" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image556">
+			<widget class="GtkImage" id="image786">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-save</property>
 			  <property name="icon_size">1</property>
@@ -106,13 +109,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="save_as1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Write current editor buffer to new file</property>
 		      <property name="label" translatable="yes">Save _As...</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_save_as1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="S" modifiers="GDK_CONTROL_MASK | GDK_SHIFT_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image557">
+			<widget class="GtkImage" id="image787">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-save-as</property>
 			  <property name="icon_size">1</property>
@@ -128,13 +132,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="close1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Close current editor buffer</property>
 		      <property name="label" translatable="yes">_Close</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_close1_activate" last_modification_time="Mon, 28 Feb 2005 15:34:33 GMT"/>
 		      <accelerator key="W" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image558">
+			<widget class="GtkImage" id="image788">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-close</property>
 			  <property name="icon_size">1</property>
@@ -157,14 +162,14 @@
 		    <widget class="GtkImageMenuItem" id="compilefile">
 		      <property name="visible">True</property>
 		      <property name="sensitive">False</property>
-		      <property name="tooltip" translatable="yes">Compile the current file to a component</property>
+		      <property name="tooltip" translatable="yes">Compile current editor buffer to component file</property>
 		      <property name="label" translatable="yes">Co_mpile</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_compilefile_activate" last_modification_time="Mon, 28 Feb 2005 13:00:52 GMT"/>
 		      <accelerator key="K" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image559">
+			<widget class="GtkImage" id="image789">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-convert</property>
 			  <property name="icon_size">1</property>
@@ -186,13 +191,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="quit1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Quit Toplevel</property>
 		      <property name="label" translatable="yes">_Quit</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_quit1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="Q" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image560">
+			<widget class="GtkImage" id="image790">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-quit</property>
 			  <property name="icon_size">1</property>
@@ -221,13 +227,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="undo">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Revert last action</property>
 		      <property name="label" translatable="yes">_Undo</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_undo_activate" last_modification_time="Tue, 08 Mar 2005 08:36:58 GMT"/>
 		      <accelerator key="Z" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image561">
+			<widget class="GtkImage" id="image791">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-undo</property>
 			  <property name="icon_size">1</property>
@@ -243,13 +250,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="cut1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Cut current selection to clipboard</property>
 		      <property name="label" translatable="yes">Cu_t</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_cut1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="X" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image562">
+			<widget class="GtkImage" id="image792">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-cut</property>
 			  <property name="icon_size">1</property>
@@ -265,13 +273,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="copy1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Copy current selection to clipboard</property>
 		      <property name="label" translatable="yes">_Copy</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_copy1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="C" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image563">
+			<widget class="GtkImage" id="image793">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-copy</property>
 			  <property name="icon_size">1</property>
@@ -287,13 +296,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="paste1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Insert clipboard content</property>
 		      <property name="label" translatable="yes">_Paste</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_paste1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 		      <accelerator key="V" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image564">
+			<widget class="GtkImage" id="image794">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-paste</property>
 			  <property name="icon_size">1</property>
@@ -309,12 +319,13 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="delete1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Delete current selection</property>
 		      <property name="label" translatable="yes">_Delete</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_delete1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image565">
+			<widget class="GtkImage" id="image795">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-delete</property>
 			  <property name="icon_size">1</property>
@@ -336,13 +347,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="indent_region">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Increase indentation of selected lines</property>
 		      <property name="label" translatable="yes">_Indent Region</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_indent_region_activate" last_modification_time="Tue, 15 Mar 2005 16:25:27 GMT"/>
 		      <accelerator key="greater" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image566">
+			<widget class="GtkImage" id="image796">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-goto-last</property>
 			  <property name="icon_size">1</property>
@@ -358,13 +370,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="outdent_region">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Decrease indentation of selected lines</property>
 		      <property name="label" translatable="yes">_Outdent Region</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_outdent_region_activate" last_modification_time="Tue, 15 Mar 2005 16:25:27 GMT"/>
 		      <accelerator key="less" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image567">
+			<widget class="GtkImage" id="image797">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-goto-first</property>
 			  <property name="icon_size">1</property>
@@ -386,13 +399,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="find">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Search for text</property>
 		      <property name="label" translatable="yes">_Find...</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_find_activate" last_modification_time="Fri, 04 Mar 2005 18:49:12 GMT"/>
 		      <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image568">
+			<widget class="GtkImage" id="image798">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-find</property>
 			  <property name="icon_size">1</property>
@@ -408,13 +422,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="find_again">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Search for previous text</property>
 		      <property name="label" translatable="yes">Find A_gain</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_find_again_activate" last_modification_time="Wed, 16 Mar 2005 17:00:56 GMT"/>
 		      <accelerator key="G" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image569">
+			<widget class="GtkImage" id="image799">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-find</property>
 			  <property name="icon_size">1</property>
@@ -430,13 +445,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="replace">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Search and replace text</property>
 		      <property name="label" translatable="yes">_Replace...</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_replace_activate" last_modification_time="Fri, 04 Mar 2005 18:49:12 GMT"/>
 		      <accelerator key="R" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image570">
+			<widget class="GtkImage" id="image800">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-find-and-replace</property>
 			  <property name="icon_size">1</property>
@@ -458,13 +474,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="go_to_line">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Jump to line by number</property>
 		      <property name="label" translatable="yes">Go to _Line...</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_go_to_line_activate" last_modification_time="Tue, 15 Mar 2005 15:02:19 GMT"/>
 		      <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image571">
+			<widget class="GtkImage" id="image801">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-jump-to</property>
 			  <property name="icon_size">1</property>
@@ -480,13 +497,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="jump_to_last_error">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Jump to _Error</property>
+		      <property name="tooltip" translatable="yes">Jump to last error position</property>
+		      <property name="label" translatable="yes">Go to _Error</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_jump_to_last_error_activate" last_modification_time="Tue, 15 Mar 2005 12:32:11 GMT"/>
 		      <accelerator key="E" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image572">
+			<widget class="GtkImage" id="image802">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-dialog-warning</property>
 			  <property name="icon_size">1</property>
@@ -508,12 +526,13 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="preferencesM">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Edit preferences</property>
 		      <property name="label" translatable="yes">_Preferences...</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_preferences_activate" last_modification_time="Mon, 21 Mar 2005 13:26:43 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image573">
+			<widget class="GtkImage" id="image803">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-preferences</property>
 			  <property name="icon_size">1</property>
@@ -544,13 +563,14 @@
 		    <widget class="GtkImageMenuItem" id="feedregion">
 		      <property name="visible">True</property>
 		      <property name="sensitive">False</property>
+		      <property name="tooltip" translatable="yes">Evaluate current selection or paragraph</property>
 		      <property name="label" translatable="yes">Feed _Region</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_feedregion_activate" last_modification_time="Mon, 28 Feb 2005 12:58:14 GMT"/>
 		      <accelerator key="Return" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image574">
+			<widget class="GtkImage" id="image804">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-execute</property>
 			  <property name="icon_size">1</property>
@@ -567,13 +587,14 @@
 		    <widget class="GtkImageMenuItem" id="feedfile">
 		      <property name="visible">True</property>
 		      <property name="sensitive">False</property>
+		      <property name="tooltip" translatable="yes">Evaluate whole buffer</property>
 		      <property name="label" translatable="yes">Feed _File</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_feedfile_activate" last_modification_time="Mon, 28 Feb 2005 12:58:14 GMT"/>
 		      <accelerator key="Return" modifiers="GDK_CONTROL_MASK | GDK_SHIFT_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image575">
+			<widget class="GtkImage" id="image805">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-execute</property>
 			  <property name="icon_size">1</property>
@@ -595,14 +616,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="interrupt">
 		      <property name="visible">True</property>
-		      <property name="tooltip" translatable="yes">Interrupt current evaluation</property>
+		      <property name="tooltip" translatable="yes">Abort current evaluation</property>
 		      <property name="label" translatable="yes">_Interrupt</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_interrupt_activate" last_modification_time="Tue, 15 Mar 2005 12:21:19 GMT"/>
 		      <accelerator key="I" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image576">
+			<widget class="GtkImage" id="image806">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-stop</property>
 			  <property name="icon_size">1</property>
@@ -618,14 +639,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="background">
 		      <property name="visible">True</property>
-		      <property name="tooltip" translatable="yes">Send current evaluation to background, spawning a new thread</property>
+		      <property name="tooltip" translatable="yes">Put current evaluation into background by spawning a new thread</property>
 		      <property name="label" translatable="yes">_Background</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_background_activate" last_modification_time="Tue, 15 Mar 2005 12:26:10 GMT"/>
 		      <accelerator key="B" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image577">
+			<widget class="GtkImage" id="image807">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-goto-bottom</property>
 			  <property name="icon_size">1</property>
@@ -647,12 +668,13 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="reset">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Remove all previous declarations from interpreter environment</property>
 		      <property name="label" translatable="yes">Re_set Environment</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_reset_activate" last_modification_time="Wed, 16 Mar 2005 13:33:53 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image578">
+			<widget class="GtkImage" id="image808">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-clear</property>
 			  <property name="icon_size">1</property>
@@ -674,13 +696,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="back_in_history">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Fetch previous input</property>
 		      <property name="label" translatable="yes">B_ack in History</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_back_in_history_activate" last_modification_time="Tue, 15 Mar 2005 14:41:05 GMT"/>
 		      <accelerator key="Up" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image579">
+			<widget class="GtkImage" id="image809">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-up</property>
 			  <property name="icon_size">1</property>
@@ -696,13 +719,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="forward_in_history">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Fetch next input</property>
 		      <property name="label" translatable="yes">For_ward in History</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_forward_in_history_activate" last_modification_time="Tue, 15 Mar 2005 14:41:05 GMT"/>
 		      <accelerator key="Down" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image580">
+			<widget class="GtkImage" id="image810">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-down</property>
 			  <property name="icon_size">1</property>
@@ -731,13 +755,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="previous_file">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Switch to previous editor buffer</property>
 		      <property name="label" translatable="yes">_Previous File</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_previous_file_activate" last_modification_time="Wed, 23 Mar 2005 08:51:22 GMT"/>
 		      <accelerator key="Left" modifiers="GDK_MOD1_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image581">
+			<widget class="GtkImage" id="image811">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-back</property>
 			  <property name="icon_size">1</property>
@@ -753,13 +778,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="next_file">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Switch to next editor buffer</property>
 		      <property name="label" translatable="yes">_Next File</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_next_file_activate" last_modification_time="Wed, 23 Mar 2005 08:51:22 GMT"/>
 		      <accelerator key="Right" modifiers="GDK_MOD1_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image582">
+			<widget class="GtkImage" id="image812">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-forward</property>
 			  <property name="icon_size">1</property>
@@ -776,13 +802,14 @@
 		    <widget class="GtkImageMenuItem" id="switch_to_editor">
 		      <property name="visible">True</property>
 		      <property name="sensitive">False</property>
+		      <property name="tooltip" translatable="yes">Switch focus to current editor buffer</property>
 		      <property name="label" translatable="yes">Switch to _Editor</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_switch_to_editor_activate" last_modification_time="Wed, 16 Mar 2005 15:14:48 GMT"/>
 		      <accelerator key="1" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image583">
+			<widget class="GtkImage" id="image813">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-justify-left</property>
 			  <property name="icon_size">1</property>
@@ -798,13 +825,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="switch_to_compiler">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Switch focus to Interpreter I/O pane</property>
 		      <property name="label" translatable="yes">Switch to _Interpreter</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_switch_to_compiler_activate" last_modification_time="Wed, 16 Mar 2005 15:14:48 GMT"/>
 		      <accelerator key="2" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image584">
+			<widget class="GtkImage" id="image814">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-execute</property>
 			  <property name="icon_size">1</property>
@@ -820,13 +848,14 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="switch_to_io">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Switch focus to program I/O pane</property>
 		      <property name="label" translatable="yes">Switch to I/_O</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_switch_to_io_activate" last_modification_time="Wed, 16 Mar 2005 15:14:48 GMT"/>
 		      <accelerator key="3" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image585">
+			<widget class="GtkImage" id="image815">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-dialog-question</property>
 			  <property name="icon_size">1</property>
@@ -846,8 +875,37 @@
 		  </child>
 
 		  <child>
+		    <widget class="GtkImageMenuItem" id="clear_io">
+		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Clear program I/O pane</property>
+		      <property name="label" translatable="yes">_Clear I/O</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_clear_io_activate" last_modification_time="Thu, 21 Apr 2005 08:34:47 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image816">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-clear</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="separator15">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
 		    <widget class="GtkCheckMenuItem" id="syntax_colouring">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Activate syntax colouring for current editor buffer</property>
 		      <property name="label" translatable="yes">_Syntax Colouring</property>
 		      <property name="use_underline">True</property>
 		      <property name="active">False</property>
@@ -877,12 +935,13 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="about1">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Show general information</property>
 		      <property name="label" translatable="yes">_About...</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_about1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image586">
+			<widget class="GtkImage" id="image817">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-dialog-info</property>
 			  <property name="icon_size">1</property>
@@ -2070,6 +2129,28 @@
 	  </child>
 
 	  <child>
+	    <widget class="GtkEntry" id="replaceString">
+	      <property name="visible">True</property>
+	      <property name="can_focus">True</property>
+	      <property name="editable">True</property>
+	      <property name="visibility">True</property>
+	      <property name="max_length">0</property>
+	      <property name="text" translatable="yes"></property>
+	      <property name="has_frame">True</property>
+	      <property name="invisible_char" translatable="yes">*</property>
+	      <property name="activates_default">True</property>
+	    </widget>
+	    <packing>
+	      <property name="left_attach">1</property>
+	      <property name="right_attach">2</property>
+	      <property name="top_attach">1</property>
+	      <property name="bottom_attach">2</property>
+	      <property name="x_options">fill</property>
+	      <property name="y_options"></property>
+	    </packing>
+	  </child>
+
+	  <child>
 	    <widget class="GtkEntry" id="searchString">
 	      <property name="visible">True</property>
 	      <property name="can_focus">True</property>
@@ -2086,48 +2167,38 @@
 	      <property name="right_attach">2</property>
 	      <property name="top_attach">0</property>
 	      <property name="bottom_attach">1</property>
+	      <property name="x_options">fill</property>
 	      <property name="y_options"></property>
 	    </packing>
 	  </child>
 
 	  <child>
-	    <widget class="GtkEntry" id="replaceString">
+	    <widget class="GtkAlignment" id="alignment21">
 	      <property name="visible">True</property>
-	      <property name="can_focus">True</property>
-	      <property name="editable">True</property>
-	      <property name="visibility">True</property>
-	      <property name="max_length">0</property>
-	      <property name="text" translatable="yes"></property>
-	      <property name="has_frame">True</property>
-	      <property name="invisible_char" translatable="yes">*</property>
-	      <property name="activates_default">False</property>
-	    </widget>
-	    <packing>
-	      <property name="left_attach">1</property>
-	      <property name="right_attach">2</property>
-	      <property name="top_attach">1</property>
-	      <property name="bottom_attach">2</property>
-	      <property name="y_options"></property>
-	    </packing>
-	  </child>
+	      <property name="xalign">0.5</property>
+	      <property name="yalign">0.5</property>
+	      <property name="xscale">1</property>
+	      <property name="yscale">1</property>
 
-	  <child>
-	    <widget class="GtkCheckButton" id="search_case_sensitive">
-	      <property name="visible">True</property>
-	      <property name="can_focus">True</property>
-	      <property name="label" translatable="yes">Case _sensitive</property>
-	      <property name="use_underline">True</property>
-	      <property name="relief">GTK_RELIEF_NORMAL</property>
-	      <property name="active">False</property>
-	      <property name="inconsistent">False</property>
-	      <property name="draw_indicator">True</property>
+	      <child>
+		<widget class="GtkCheckButton" id="search_case_sensitive">
+		  <property name="visible">True</property>
+		  <property name="can_focus">True</property>
+		  <property name="label" translatable="yes">Case _sensitive</property>
+		  <property name="use_underline">True</property>
+		  <property name="relief">GTK_RELIEF_NORMAL</property>
+		  <property name="active">False</property>
+		  <property name="inconsistent">False</property>
+		  <property name="draw_indicator">True</property>
+		</widget>
+	      </child>
 	    </widget>
 	    <packing>
 	      <property name="left_attach">1</property>
 	      <property name="right_attach">2</property>
 	      <property name="top_attach">2</property>
 	      <property name="bottom_attach">3</property>
-	      <property name="x_options">fill</property>
+	      <property name="x_options">expand</property>
 	      <property name="y_options"></property>
 	    </packing>
 	  </child>

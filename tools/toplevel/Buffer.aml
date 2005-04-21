@@ -410,9 +410,10 @@ structure Buffer =
           #view (Map.lookupExistent(bufferMap, id))
 
       fun getFileNames () =
-	  Map.fold (fn ({file,...},fs) => 
+	  List.sort String.compare
+	  (Map.fold (fn ({file,...},fs) => 
 			  case !file of NONE => fs
-			   | SOME f => f::fs) nil bufferMap
+			   | SOME f => f::fs) nil bufferMap)
 
       fun haveModified () =
 	  Map.exists (fn {buf,...} => Gtk.textBufferGetModified buf)
