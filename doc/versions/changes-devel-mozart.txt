@@ -40,7 +40,8 @@ Interactive Toplevel:
 * Enable Ctrl-C for interrupting a computation.
 * Enable Ctrl-Z for putting a computation into background (new Alice thread).
 * Function exit() as an alternative for Ctrl-D in broken environments.
-* Value printer is customizable for abstract types.
+* Value printer is customizable for abstract types; depth and width limits are
+  configurable; most library exceptions regognized.
 * Fixed off-by-one line numbers, including use function.
 
 Library:
@@ -92,7 +93,11 @@ Library:
 * PrimIO: new functions openVectorList{Rd,Wr}, useful for internal redirection.
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
-* Print: added function register for hooking user-defined printing functions.
+* Print:
+  - Added depth and width to control printing bounds; renamed printWidth to
+    layoutWidth.
+  - Added function register for hooking user-defined printing functions.
+  - Most library exceptions recognized.
 * Config: added buildDate, version, and codename.
 * Http: ignore multiple headers; replace empty reguest URIs with "/".
 * Remote:

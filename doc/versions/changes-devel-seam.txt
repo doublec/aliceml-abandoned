@@ -1,6 +1,31 @@
-Libraries:
+Runtime System:
 
-* [FIX] Inspector: fixed handling of polymorphic types.
+* [FIX] VM no longer goes into busy loop when stdIn has been closed and no
+        thread is runnable.
+
+Interactive Toplevel:
+
+* [NEW] GUI I/O pane can be cleared via menu.
+* [NEW] Nesting depth and width printing limits are now configurable.
+* [NEW] Most library exceptions recognized by printer.
+* [FIX] Miscellaneous usability fixes and tweaks in GUI.
+
+Basis Library:
+
+* [NEW] Print: added depth and width to control printing bounds (these also
+        control output of the toplevel); renamed printWidth to layoutWidth;
+	more exceptions recognized by printer.
+
+Constraint Library:
+
+* [FIX] Explorer: branch-and-bound now works properly for more than one search.
+* [FIX] Explorer: status bar is now reset upon each new search.
+
+Other Libraries:
+
+* [FIX] Inspector: fixed handling of polymorphic types; most library exceptions
+        now recognized.
+* [FIX] SQLite: fixed exception generation.
 
 
 Alice 1.1 (Kraftwerk 'Eval Your Own' Album) - 2005/03/24
