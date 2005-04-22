@@ -3,7 +3,7 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* jump to error does not work with compile
+? jump to error does not on Windows
 * search/goto dialogs should always be raised and moved to mouse position
 * aliceglade ignores packing flags
   (manually replace alignment21's first Gtk.FILL by Gtk.EXPAND for text fields
@@ -13,8 +13,7 @@ Bugs:
 * Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
 * cannot assign .AML files to toplevel on Windows
 
-* Reconsider implicit imports
-* Proper treatment of relative import/cwd
+* reconsider implicit imports
 
 Missing Features:
 

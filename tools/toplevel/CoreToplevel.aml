@@ -58,12 +58,14 @@ struct
 
     val useFiles : string list ref = ref nil
 
-    fun use filename =
+    fun use path =
 	let
-	    val new = Promise.promise ()
-	    val old = Ref.exchange (useFiles, Promise.future new)
+	    val dir  = OS.FileSys.getDir ()
+	    val file = OS.Path.mkAbsolute {path, relativeTo = dir}
+	    val new  = Promise.promise ()
+	    val old  = Ref.exchange (useFiles, Promise.future new)
 	in
-	    Promise.fulfill (new, old @ [filename])
+	    Promise.fulfill (new, old @ [file])
 	end
 
 
@@ -78,7 +80,7 @@ struct
 			      trace = !traceWidth}
 	 prepare) (env, source)
 
-    fun eval' prepare (printSig, env, source, signal) =
+    fun eval' (prepare, cd) (printSig, env, source, signal) =
 	(
 	    (case interruptable (signal, fn _ => call prepare (env, source))
 	     of NONE => (* interrupted *)
@@ -88,10 +90,17 @@ struct
 		  (signal,
 		   fn _ =>
 		   let
-		       val act = if Future.isFuture signal (* not stopped *)
-				 then fn f => f ()
-				 else Future.byneed
+		       val dir  = OS.FileSys.getDir ()
+		       val dir' = OS.Path.getParent source
+				  handle OS.Path.Path => dir
+		       val cd   = cd andalso dir' <> dir andalso
+				  case Url.getScheme (Url.fromString source)
+				   of (NONE | SOME "file") => true | _ => false
+		       val act  = if Future.isFuture signal (* not stopped *)
+				  then fn f => f ()
+				  else Future.byneed
 		   in
+		       if cd then OS.FileSys.chDir dir' else ();
 		       Exn.catch
 		       (fn packet =>
 			case Exn.fromPacket packet
@@ -102,6 +111,11 @@ struct
 						 Component.Eval exn)))
 		       )
 		       (fn _ => act (#1 o Reflect.reflectPackage o eval))
+		       finally
+			   (* Hack: this fails when the code cd'ed to
+			    * its file's own directory... *)
+			   if cd andalso OS.FileSys.getDir () = dir'
+			   then OS.FileSys.chDir dir else ()
 		   end)
 	     of NONE =>
 		(TextIO.output (errStream, "Evaluation interrupted\n"); NONE)
@@ -185,8 +199,8 @@ struct
 				   General.exnName exn ^ "\n");
 	     NONE)
 
-    val evalString = eval' Compiler.prepareWith
-    val evalFile   = eval' Compiler.prepareFileWith
+    val evalString = eval' (Compiler.prepareWith, false)
+    val evalFile   = eval' (Compiler.prepareFileWith, true)
 
 
     (* Initialization *)

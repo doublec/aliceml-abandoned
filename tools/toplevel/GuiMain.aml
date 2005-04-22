@@ -267,11 +267,13 @@ structure GuiMain =
 		    Gtk.notebookSetCurrentPage(Gui.notebook1, valOf (findPage id))
 		  | NONE =>
                 let
+		    val file = OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()}
+val _ = print("[open "^file^"]\n")
 		    val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						    notebookSwitchEventId)
                     val {buf,view,highlight,...} =
                         Buffer.buffer {notebook=Gui.notebook1, loadFile=true,
-                                       id=(!numberOfPages), file=SOME f}
+                                       id=(!numberOfPages), file=SOME file}
                 in
                     Gtk.signalConnect(buf, "mark-set", markSet);
                     Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
@@ -380,19 +382,10 @@ structure GuiMain =
 		    let
                 	val signalP = Promise.promise()
 			val signal = Promise.future signalP
-			val dir = OS.FileSys.getDir()
-			val srcDir' = OS.Path.getParent f
-				      handle OS.Path.Path => dir
-			val srcDir = if srcDir' = dir then NONE else SOME srcDir'
 		    in
                 	evalSignal := SOME signalP;
-			spawn (Option.app OS.FileSys.chDir srcDir;
-			       Evaluator.evalFile (f, signal);
-                	       (* Hack: this fails when the feeded code cd'ed to
-		        	* its own directory... *)
-			       Option.app (fn dir' => if dir' <> OS.FileSys.getDir() then ()
-						      else OS.FileSys.chDir dir) srcDir;
-			       evalSignal := NONE)
+			spawn (Evaluator.evalFile (f, signal);
+                	       evalSignal := NONE)
 		    end
             end
 (*
@@ -597,12 +590,13 @@ structure GuiMain =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
+val i = Int.toString
+val _ = print("[error "^OS.Path.mkAbsolute {path=file,relativeTo=OS.FileSys.getDir()}^":"^i row^"."^i col^"-"^i row'^"."^i col'^"]\n")
                 val (buf,id) =
-		    case file of
-			NONE => (SOME (Buffer.getBuffer id), id)
-		      | SOME f =>
-	        Buffer.getBufferByName
-		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
+		    if file = ""
+		    then (SOME (Buffer.getBuffer id), id)
+		    else Buffer.getBufferByName
+			 (OS.Path.mkAbsolute {path=file,relativeTo=OS.FileSys.getDir()})
 	    in
 		case buf of
 		    NONE => ()
@@ -665,31 +659,29 @@ structure GuiMain =
                 if Gtk.textIterBackwardChar iter then findErrorStart(iter, tag)
 		else ()
 
+	exception ParseError
+
+	fun findCoords([], fs) = raise ParseError
+	  | findCoords(s::ss, fs) =
+	    if CharVector.all (fn (#"." | #"-") => true | c => Char.isDigit c) s
+	    then (String.concat (List.rev fs), s)
+	    else findCoords(ss, s::fs)
+
+	fun parseInt s =
+	    case Int.fromString s
+	     of SOME n => n
+	      | NONE => raise ParseError
+
         fun parseErrorCoords s =
             let
-                val (file, error) =
-                    case String.tokens (fn #":" => true | _ => false) s of
-                        [s1,s2] => (NONE, s1)
-                      | (s1::s2::s3::_) => (SOME s1, s2)
-		      | _ => raise Match (* make compiler happy *)
-                val (s11,s12,s21,s22) =
-                    case
-                    String.tokens (fn #"-" => true
-                                    | #"." => true
-                                    | _ => false) error
-                    of [s11,s12,s21,s22] => (s11,s12,s21,s22)
-                     | _ => raise Match (* make compiler happy *)
-                val s11 = Int.fromString s11
-                val s12 = Int.fromString s12
-                val s21 = Int.fromString s21
-                val s22 = Int.fromString s22
+		val (file, pos) = findCoords(String.tokens (fn c => c = #":") s, [])
+                val (s1,s2,s3,s4) =
+                    case String.tokens (fn c => c = #"-" orelse c = #".") pos
+                    of [s1,s2,s3,s4] => (s1,s2,s3,s4)
+                     | _ => raise ParseError
             in
-                if isNone s11 orelse isNone s12 orelse
-                   isNone s21 orelse isNone s22 then
-                    NONE
-                else
-                    SOME (file, valOf s11, valOf s12, valOf s21, valOf s22)
-            end handle Match => NONE
+                SOME (file, parseInt s1, parseInt s2, parseInt s3, parseInt s4)
+            end handle ParseError => NONE
 
         fun populatePopup (view, [Gtk.OBJECT menu]) =
             let
