@@ -73,7 +73,7 @@ struct
     fun isSuffix s ss		= isSuffix'(s, ss, String.size(s)-1, size(ss)-1)
     and isSuffix'(s,ss,i1,i2)	= i1 = ~1 orelse
 				  i2 <> ~1 andalso
-				  String.sub(s,i1) = sub(ss,i1)
+				  String.sub(s,i1) = sub(ss,i2)
 				  andalso isSuffix'(s,ss,i1-1,i2-1)
 
     fun isSubstring s ss	= isSubstring'(s,ss,0)
