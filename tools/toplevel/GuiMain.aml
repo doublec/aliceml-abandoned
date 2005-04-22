@@ -268,7 +268,6 @@ structure GuiMain =
 		  | NONE =>
                 let
 		    val file = OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()}
-val _ = print("[open "^file^"]\n")
 		    val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						    notebookSwitchEventId)
                     val {buf,view,highlight,...} =
@@ -590,8 +589,6 @@ val _ = print("[open "^file^"]\n")
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
-val i = Int.toString
-val _ = print("[error "^OS.Path.mkAbsolute {path=file,relativeTo=OS.FileSys.getDir()}^":"^i row^"."^i col^"-"^i row'^"."^i col'^"]\n")
                 val (buf,id) =
 		    if file = ""
 		    then (SOME (Buffer.getBuffer id), id)
