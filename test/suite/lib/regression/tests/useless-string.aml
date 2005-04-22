@@ -15,12 +15,16 @@ fun concatResult s = result := (!result) ^ s
 val x = "abc"
 val y = "defg"
 val _ =
-   if 3 = (String.size
-	   (if 0 = length (CommandLine.arguments ())
-	       then x
-	    else y))
-      then ()
-   else raise Fail "bug"
+   let
+       val s = (String.size
+		    (if 0 = length (CommandLine.arguments ())
+		     then x
+		     else y))
+   in
+       if s = 3
+       then ()
+       else raise Fail "bug"
+   end
 
 val result = !result
 

@@ -117,49 +117,49 @@ fun randomizeTests () =
 	List.app (fn x => x ()) allTests
     end
 
-val allTests = [TestRegressions.suite,
-		TestCompiler.suite,
-		TestPair.suite,
-		TestRef.suite,
-		TestAlt.suite,
-		TestBool.suite,
-		TestGeneral.suite,
-		TestWord.suite,
-		TestWord8.suite,
-		TestWord32.suite,
-		TestReal.suite,
-		TestOption.suite, 
-		TestList.suite,
-		TestListPair.suite,
-		TestArray.suite,
-		TestWord8Array.suite,
-		TestCharArray.suite,
-		TestWideCharArray.suite,
-		TestArraySlice.suite,
-		TestWord8ArraySlice.suite,
-		TestCharArraySlice.suite,
-		TestWideCharArraySlice.suite,
-		TestArray2.suite,
-		TestVector.suite,
-		TestWord8Vector.suite,
-		TestCharVector.suite,
-		TestWideCharVector.suite,
-		TestVectorSlice.suite,
-		TestWord8VectorSlice.suite,
-		TestCharVectorSlice.suite,
-		TestWideCharVectorSlice.suite,
-		TestVectorPair.suite,
-		TestChar.suite,
-		TestString.suite,
-		TestSubstring.suite,
-		TestIEEEReal.suite,
-		TestInteger.suite,
-		TestIntInf.suite,
-		TestByte.suite,
-		TestConfig.suite,
-		TestOSPath.suite,
-		TestTime.suite,
-		TestTimer.suite]
+fun allTests b = [TestRegressions.suite b,
+		  TestCompiler.suite,
+		  TestPair.suite,
+		  TestRef.suite,
+		  TestAlt.suite,
+		  TestBool.suite,
+		  TestGeneral.suite,
+		  TestWord.suite,
+		  TestWord8.suite,
+		  TestWord32.suite,
+		  TestReal.suite,
+		  TestOption.suite, 
+		  TestList.suite,
+		  TestListPair.suite,
+		  TestArray.suite,
+		  TestWord8Array.suite,
+		  TestCharArray.suite,
+		  TestWideCharArray.suite,
+		  TestArraySlice.suite,
+		  TestWord8ArraySlice.suite,
+		  TestCharArraySlice.suite,
+		  TestWideCharArraySlice.suite,
+		  TestArray2.suite,
+		  TestVector.suite,
+		  TestWord8Vector.suite,
+		  TestCharVector.suite,
+		  TestWideCharVector.suite,
+		  TestVectorSlice.suite,
+		  TestWord8VectorSlice.suite,
+		  TestCharVectorSlice.suite,
+		  TestWideCharVectorSlice.suite,
+		  TestVectorPair.suite,
+		  TestChar.suite,
+		  TestString.suite,
+		  TestSubstring.suite,
+		  TestIEEEReal.suite,
+		  TestInteger.suite,
+		  TestIntInf.suite,
+		  TestByte.suite,
+		  TestConfig.suite,
+		  TestOSPath.suite,
+		  TestTime.suite,
+		  TestTimer.suite]
 
 val defaultConfig = {
 	    timeout = Time.fromSeconds (Int.toLarge 20),
@@ -186,19 +186,19 @@ fun displayNeededTime () =
 
 fun usage () = print "usage: alicerun Main [timeout, seperate, showMissing]\n"
 
-fun runTests conf = 
-    Report.runAll TextIO.stdOut conf allTests
+fun runTests conf b = 
+    Report.runAll TextIO.stdOut conf (allTests b)
 
-fun start cfg = 
+fun start cfg b = 
     (beg := Time.now ();
      TextIO.output (TextIO.stdOut, "\n\n   automatic testing sequence for " 
                  ^ "Alice\n------------------------------------------\n\n");
-	 runTests cfg)
+	 runTests cfg b)
 
 fun main () = 
     case CommandLine.arguments () of
 	                []                       => (randomizeTests ();
-						     start defaultConfig)
+						     start defaultConfig false)
        | [timeout, sep, showMissing, randomize]  => 
 	 let
 	     val t = valOf (Time.fromString timeout)
@@ -213,8 +213,7 @@ fun main () =
 	     if b3 then randomizeTests () else ();
              (start {timeout = t,
 		     separate = b1,
-		     showMissing = b2})
-	     handle _ => usage ()
+		     showMissing = b2} true)
 	 end
        |                 _                       => usage ()
 
