@@ -246,6 +246,8 @@ struct
 	val base = #base o splitBaseExt
 	val ext  = #ext o splitBaseExt
 
+	fun mkCanonicalVol vol = String.map Char.toLower vol
+
 	fun mkCanonicalArcs((*isAbs*)false, nil, nil) =
 		"."::nil
 	  | mkCanonicalArcs(isAbs, nil, arcs') =
@@ -266,9 +268,10 @@ struct
 	fun mkCanonical s =
 	    let
 		val {isAbs, vol, arcs} = fromString s
+		val vol'  = mkCanonicalVol vol
 		val arcs' = mkCanonicalArcs(isAbs, arcs, nil)
 	    in
-		toString{isAbs, vol=String.map Char.toLower vol, arcs=arcs'}
+		toString{isAbs, vol=vol', arcs=arcs'}
 	    end
 
 	fun isCanonical s = s = mkCanonical s
@@ -285,7 +288,7 @@ struct
 	    case (fromString s1, fromString s2)
 	     of (_, {isAbs=true, ...}) => raise Path
 	      | ({isAbs, vol=vol1, arcs=arcs1}, {vol=vol2, arcs=arcs2, ...}) =>
-		if vol2 = "" orelse vol1 = vol2
+		if vol2 = "" orelse mkCanonical vol1 = mkCanonical vol2
 	        then toString{isAbs=isAbs, vol=vol1, arcs=concatArcs(arcs1, arcs2)}
 		else raise Path
 
@@ -306,6 +309,7 @@ struct
 		val abs = mkCanonical relativeTo
 		val {isAbs=isAbs1, vol=vol1, arcs=arcs1} = fromString path
 		val {isAbs=isAbs2, vol=vol2, arcs=arcs2} = fromString abs
+		val vol1  = mkCanonicalVol vol1
 		val arcs1 = case arcs1 of [""] => nil | _ => arcs1
 		val arcs2 = case arcs2 of [""] => nil | _ => arcs2
 	    in
@@ -315,9 +319,9 @@ struct
 		    raise Path
 		else case stripCommonPrefix(arcs1, arcs2)
 		 of (arcs1' as (nil | ""::_), nil) =>
-		    toString{isAbs=false, vol=vol1, arcs = "."::arcs1'}
+		    toString{isAbs=false, vol="", arcs = "."::arcs1'}
 		  | (arcs1', (""::arcs2' | "."::arcs2' | arcs2')) =>
-		    toString{isAbs=false, vol=vol1,
+		    toString{isAbs=false, vol="",
 			     arcs = List.map (fn _ => parentArc) arcs2' @ arcs1'}
 	    end
 
