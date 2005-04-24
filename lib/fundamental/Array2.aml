@@ -17,9 +17,7 @@
 
 (* Notes:
  * Most of the procedures can probably be optimized somewhat but
- * I believe that shouldn't be done before
- * a) We have an profiler
- * b) We have a XP-like testing framework
+ * I believe that shouldn't be done before we have an profiler
  *)
 
 import structure __pervasive from "Pervasive"
@@ -30,7 +28,7 @@ import __primitive
 import __primitive
        infix 4 = <> < > >= <= infixr 5 :: @ infix 6 + - infix 7 *
        infix 3 := 
-       val op = and op < and op >= and op <= and op >
+       val op = and op <> and op < and op >= and op <= and op >
        val op + and op - val op *                  from "ToplevelValues"
 import __primitive structure General               from "General"
 import __primitive structure Bool                  from "Bool"
@@ -116,7 +114,9 @@ local
 				  }
 		       in
 			   List.foldl (fn (row, r) => 
-				       (List.foldl (fn (e, c) =>
+				       (if List.length row <> cols then raise General.Size
+				       else ();
+				         List.foldl (fn (e, c) =>
 						   (update (res, r, c, e);
 						   c + 1)) 0 row;
 				       r + 1)) 0 l;
@@ -201,11 +201,15 @@ local
 	                        	| SOME r => row + r - 1
 		   val uc = case ncols of NONE => (nCols base) - 1
 	                        	| SOME c => col + c - 1
+
+                   fun test (low, span, num) =
+                       case span of
+                         NONE    => inRange (low, 0, num)
+                       | SOME n  => inRange (low, 0, low + n) andalso
+                                    low + n <= num
 	       in
-		   if inRange (row, 0, nRows base - 1) andalso
-		       inRange (col, 0, nCols base - 1) andalso
-		       inRange (ur , row, nRows base - 1) andalso
-		       inRange (uc, col, nCols base - 1) then
+                   if test (row, nrows, nRows base) andalso
+                      test (col, ncols, nCols base) then
 		       (base, row, col, ur, uc)
 		   else
 		       raise exn
