@@ -59,6 +59,7 @@ struct
 	    in
 		OS.Path.mkRelative{path = OS.Path.mkCanonical file,
 				   relativeTo = cwd}
+		handle OS.Path.Path => file
 	    end
 	  | _ =>
 	    Url.toString url
