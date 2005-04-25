@@ -106,6 +106,17 @@ DEFINE1(UnsafeComponent_load) {
   return Unpickler::Load(filename);
 } END
 
+DEFINE1(UnsafeComponent_unzip) {
+    DECLARE_STRING(str, x0);
+    String *res = Unpickler::Unzip (str);
+    if (res == NULL) {
+        RAISE(Unpickler::Corrupt);
+    } else {
+        RETURN(res->ToWord ());
+    }
+} END
+
+
 DEFINE1(UnsafeComponent_linkNative) {
   DECLARE_STRING(filename, x0);
   DllLoader::libhandle handle = DllLoader::OpenLibrary(filename);
@@ -158,7 +169,7 @@ AliceDll word UnsafeComponent() {
     UniqueConstructor::New("Native", "Component.Native")->ToWord();
   RootSet::Add(NativeConstructor);
 
-  Record *record = Record::New(25);
+  Record *record = Record::New(26);
   record->Init("'SitedInternal", Pickler::Sited);
   record->Init("SitedInternal", Pickler::Sited);
   record->Init("'CorruptInternal", Unpickler::Corrupt);
@@ -188,6 +199,8 @@ AliceDll word UnsafeComponent() {
 		 UnsafeComponent_save, 2);
   INIT_STRUCTURE(record, "UnsafeComponent", "load",
 		 UnsafeComponent_load, 1);
+  INIT_STRUCTURE(record, "UnsafeComponent", "unzip",
+                 UnsafeComponent_unzip, 1);
   INIT_STRUCTURE(record, "UnsafeComponent", "linkNative",
 		 UnsafeComponent_linkNative, 1);
   INIT_STRUCTURE(record, "UnsafeComponent", "pack_",

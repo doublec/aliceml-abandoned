@@ -123,8 +123,8 @@ struct
 			     raise IO.Io {name, function = "load",
 					  cause = Corrupt}))
 	  | SOME (Resolver.STRING string) =>
-		(UnsafeComponent.unpack_ string
-		 handle UnsafeComponent.CorruptInternal =>
+		(UnsafeComponent.unpack_ (UnsafeComponent.unzip string)
+		 handle (UnsafeComponent.CorruptInternal | UnsafeComponent.Corrupt) =>
 		            raise IO.Io {name = Url.toStringRaw url,
 					 function = "load", cause = Corrupt}
 		      | cause =>

@@ -46,5 +46,7 @@ signature UNSAFE_COMPONENT_COMPONENT =
 
 		val pack_: 'component -> string         (* SitedInternal *)
 		val unpack_: string -> 'component       (* CorruptInternal *)
+
+                val unzip : string -> string            (* Corrupt *)
 	    end
     end
