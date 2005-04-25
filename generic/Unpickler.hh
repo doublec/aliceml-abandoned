@@ -32,6 +32,8 @@ public:
 
   static Worker::Result Unpack(String *string);
   static Worker::Result Load(String *filename);
+
+  static String *Unzip (String *s);
 };
 
 #endif

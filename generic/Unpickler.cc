@@ -1254,3 +1254,139 @@ void Unpickler::RegisterHandler(String *name, handler handler) {
   word x = Store::UnmanagedPointerToWord((void *) handler);
   ChunkMap::FromWordDirect(handlerTable)->Put(name->ToWord(), x);
 }
+
+
+namespace gzip {
+    typedef unsigned char ubyte_t;
+
+    struct header {
+        ubyte_t id1;
+        ubyte_t id2;
+        ubyte_t cm;
+        ubyte_t flags;
+        ubyte_t mtime[4];
+        ubyte_t extra_flags;   
+        ubyte_t os;
+    };
+
+    struct trailer {
+        ubyte_t crc32[4];
+        ubyte_t isize[4];
+    };
+
+    namespace {
+        unsigned long number2 (const ubyte_t *arr) {
+            return (unsigned long)arr[0] + (unsigned long)arr[1] * 256UL;
+        }
+
+        unsigned long number4 (const ubyte_t *arr) {
+            return ((unsigned long)arr[0] + 
+                    (unsigned long)arr[1] * 256UL + 
+                    (unsigned long)arr[2] * 256UL * 256UL + 
+                    (unsigned long)arr[3] * 256UL * 256UL);
+        }
+    }
+
+    namespace flags {
+        const int text    = 0;
+        const int hcrc    = 1;
+        const int extra   = 2;
+        const int name    = 3;
+        const int comment = 4;
+        
+        bool is_set (ubyte_t b, int flag) {
+            return b & (1 << flag);
+        }
+    }
+
+    namespace {
+        bool skip_cstr (ubyte_t *&s, unsigned long &srclen) {
+            while (*s++) { 
+                srclen--;
+                if (srclen <= 0) return false;
+            }
+            srclen--;
+            if (srclen <= 0) return false;
+            return true;
+        }
+    }
+
+    bool parse_meta_data (ubyte_t *src, unsigned long srclen,
+                          ubyte_t *&compressed_start, 
+                          unsigned long &compressed_len,
+                          unsigned long &uncompressed_len) {
+        if (srclen < sizeof(header) + sizeof(trailer)) return false;
+        const header  *h = (const header*)src;
+        src += sizeof(header);
+        srclen -= (sizeof(header) + sizeof(trailer));
+        // correct gzip magic identification numbers?
+        if (h->id1 != 0x1f || h->id2 != 0x8b) return false;
+        // only compression method = deflate (8) is known to us.
+        if (h->cm != 8) return false;
+        
+        if (flags::is_set (h->flags, flags::extra)) {
+            unsigned long xlen = number2 (src);
+            src += 2 + xlen;
+            srclen -= (2 + xlen);
+            if (srclen <= 0) return false;
+        }
+
+        if (flags::is_set (h->flags, flags::name) && !skip_cstr (src, srclen)) 
+            return false;
+
+        if (flags::is_set (h->flags, flags::comment) && !skip_cstr (src, srclen))
+            return false;
+        
+        if (flags::is_set (h->flags, flags::hcrc)) {
+            srclen -= 2;
+            if (srclen <= 0) return false;
+            src+=2;
+        }
+        
+        compressed_start = src;
+        
+        const trailer *t = (const trailer*)(src + srclen);
+
+        uncompressed_len = number4 (t->isize);
+        compressed_len = srclen;
+
+        return true;
+    }
+}
+
+
+            
+String *Unpickler::Unzip (String *s) {
+    unsigned long compressed_len;
+    unsigned long uncompressed_len;
+    u_char *str = s->GetValue ();
+    u_char *compressed_start;
+
+    if (gzip::parse_meta_data (str, s->GetSize (), compressed_start,
+                compressed_len, uncompressed_len)) {
+        String *res = String::New (uncompressed_len);
+        z_stream stream;
+        stream.next_in   = (Bytef*)compressed_start;
+        stream.avail_in  = compressed_len;
+        stream.next_out  = res->GetValue ();
+        stream.avail_out = uncompressed_len;
+        stream.zalloc    = (alloc_func) 0;
+        stream.zfree     = (free_func) 0;
+
+        // raw deflate no zlib / gzip header handling
+        // as we have already done that
+        int err = inflateInit2 (&stream, -15);
+        if (err != Z_OK) { return 0; }
+
+        err = inflate (&stream, Z_FINISH);
+       
+        if ( (err == Z_OK || err == Z_STREAM_END) && inflateEnd (&stream) == Z_OK) {
+            return res;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
