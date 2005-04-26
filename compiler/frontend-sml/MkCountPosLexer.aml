@@ -36,15 +36,22 @@ struct
 	type pos = Source.pos
     end
 
+    fun queue () = (ref [], ref [])
+    fun enqueue((_, back as ref xs), x) = back := x::xs
+    fun dequeue(front as ref (x::xs), _) = (front := xs; x)
+      | dequeue(ref [], ref []) = raise Empty
+      | dequeue(front as ref [], back as ref xs) =
+	(front := List.rev xs; back := []; dequeue(front, back))
+
     fun makeLexer yyinput =
 	let
 	    val lin  = ref startLine
 	    val col  = ref 0
 	    val pos  = ref 0
 	    val buf  = ref ""	(* current buffer *)
-	    val buf' = ref ""	(* next buffer *)
 	    val off  = ref 0	(* offset to start of current buffer *)
-	    val off' = ref 0	(* offset for next buffer *)
+	    val que  = queue ()	(* buffer queue *)
+	    val offE = ref 0	(* end offset *)
 
 	    fun count(i, i', lin, col) =
 		if i = i' then
@@ -56,10 +63,10 @@ struct
 		) handle Subscript =>
 		let
 		    val n = String.size(!buf)
+		    val (buf',off') = dequeue que
 		in
-		    buf  := !buf' ;
-		    buf' := ""    ;
-		    off  := !off' ;
+		    buf := buf' ;
+		    off := off' ;
 		    count(0, i'-n, lin, col)
 		end
 
@@ -80,8 +87,8 @@ struct
 		let
 		    val s = yyinput n
 		in
-		    buf' := s ;
-		    off' := !off + String.size(!buf) ;
+		    enqueue(que, (s, !offE)) ;
+		    offE := !offE + String.size s ;
 		    s
 		end
 
@@ -90,8 +97,7 @@ struct
 	    fn () =>
 		let
 		    val LrParser.Token.TOKEN(term, (svalue,pos1,pos2)) =
-			lexer() handle LexerError.EOF f =>
-			let val pos = !off'+String.size(!buf') in f(pos,pos) end
+			lexer() handle LexerError.EOF f => f(!offE, !offE)
 		    val (pos1', pos2') = transform(pos1, pos2)
 		in
 		    LrParser.Token.TOKEN(term, (svalue, pos1', pos2'))
