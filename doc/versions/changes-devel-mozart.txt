@@ -28,6 +28,8 @@ Compiler:
   allowing proper separation of source and build directories.
 * Support for smart recompilation, taking component signatures into account.
 * Produce proper error messages for out-of-range literals.
+* Fixed border case where lexer went into infinite loop for some inputs only
+  consisting of one token.
 
 Linker:
 
@@ -80,9 +82,10 @@ Library:
 * VectorPair: fixed foldri.
 * VectorSlice: fixed toVector.
 * ArraySlice, {Char,Word8}ArraySlice: fixed copying overlapping slices.
+* Array2: properly treat zero-size regions.
 * Char: fixed scan, scanC, fromCString.
 * String: fixed isSubstring, scanC, fromCString.
-* Substring: fixed isSubstring, tokens.
+* Substring: fixed isSubstring, isSuffix, tokens.
 * StringCvt: fixed pad{Left,Right}.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.

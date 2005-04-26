@@ -1,25 +1,39 @@
 Runtime System:
 
+* [FIX] Importing from HTTP was broken.
 * [FIX] VM no longer goes into busy loop when stdIn has been closed and no
         thread is runnable.
+
+Compiler:
+
+* [FIX] Under Windows, outputting error messages for files compiled on
+        drives other than the current didn't work.
+* [FIX] Fixed border case where lexer went into infinite loop for some inputs
+        only consisting of one token.
 
 Interactive Toplevel:
 
 * [NEW] GUI I/O pane can be cleared via menu.
 * [NEW] Nesting depth and width printing limits are now configurable.
 * [NEW] Most library exceptions recognized by printer.
+* [FIX] Jump-to-error works with Windows paths containing volumes.
 * [FIX] Miscellaneous usability fixes and tweaks in GUI.
 
 Basis Library:
 
 * [NEW] Print: added depth and width to control printing bounds (these also
         control output of the toplevel); renamed printWidth to layoutWidth;
-	more exceptions recognized by printer.
+        more exceptions recognized by printer.
+* [FIX] Substring: fixed isSuffix.
+* [FIX] Array2: properly treat zero-size regions.
+* [FIX] OS.Path: fixed handling of volumes in mkRelative and concat.
+* [FIX] TextIO: closing stdIn now works on Windows.
+* [FIX] ComponentManager: loading components via HTTP was broken.
 
 Constraint Library:
 
-* [FIX] Explorer: branch-and-bound now works properly for more than one search.
-* [FIX] Explorer: status bar is now reset upon each new search.
+* [FIX] Explorer: status bar is now reset upon each new search;
+        branch-and-bound works properly for more than one search.
 
 Other Libraries:
 
