@@ -212,6 +212,7 @@ reinstall-seam-rec: bootstrap-seam libs-seam
 
 bootstrap-seam:
 	unset ALICE_HOME ;\
+	export PATH="$(PREFIX)/bin:$(PREFIX)/lib/seam:$(PATH)" ;\
 	export TIMEDIR ;\
 	(cd vm-seam && make -f Makefile.bootstrap depend) || exit 1 ;\
 	(cd vm-seam && $(TIMECOMMAND1) \
@@ -227,7 +228,7 @@ bootstrap-seam:
 
 libs-seam:
 	unset ALICE_HOME ;\
-	export PATH="$(PREFIX)/bin:$(PATH)" ;\
+	export PATH="$(PREFIX)/bin:$(PREFIX)/lib/seam:$(PATH)" ;\
 	(cd lib/distribution && make TARGET=seam depend) || exit 1 ;\
 	(cd lib/distribution && \
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
