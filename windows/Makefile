@@ -131,12 +131,15 @@ rebuild-gecode:
 	(cd gecode/build && make install)
 
 build-alice-ll:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/sources/vm-seam && make -f Makefile.cvs) && \
 	(cd alice/build && $(PWD)/conf-alice && make install)
 rebuild-alice-ll:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/build && make install)
 
 build-alice-bootstrap:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cp alice/build/Makefile.bootstrap alice/sources/vm-seam) && \
 	(cd alice/sources && \
 	 make PREFIX="$(PREFIX)" \
@@ -144,6 +147,7 @@ build-alice-bootstrap:
 	      GECODEDIR=$(PWD)/gecode/install \
 	      bootstrap-smlnj reinstall-seam)
 rebuild-alice-bootstrap:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/sources && \
 	 make PREFIX="$(PREFIX)" \
 	      TARGET=seam \
@@ -190,10 +194,10 @@ distro: build-win build-xml-dll
 
 run:
 	ALICE_HOME=`cygpath -m "$(PREFIX)/share/alice"` && \
-	PATH="$(PREFIX)/bin:$(PATH)" && \
+	PATH="$(PREFIX)/bin:$(PREFIX)/lib/seam:$(PATH)" && \
 	alice
 
 rungui:
 	ALICE_HOME=`cygpath -m "$(PREFIX)/share/alice"` && \
-	PATH="$(PREFIX)/bin:$(PATH)" && \
+	PATH="$(PREFIX)/bin:$(PREFIX)/lib/seam:$(PATH)" && \
 	alicerunwin x-alice:/tools/Toplevel --gui
