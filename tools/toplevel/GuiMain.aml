@@ -661,7 +661,7 @@ structure GuiMain =
 	fun findCoords([], fs) = raise ParseError
 	  | findCoords(s::ss, fs) =
 	    if CharVector.all (fn (#"." | #"-") => true | c => Char.isDigit c) s
-	    then (String.concat (List.rev fs), s)
+	    then (String.concatWith ":" (List.rev fs), s)
 	    else findCoords(ss, s::fs)
 
 	fun parseInt s =
