@@ -252,13 +252,18 @@ be computed before it is actually required. For example,</P>
 <I><SMALL>val it : int * int = (_lazy, _lazy)</SMALL></I>
 x
 <I><SMALL>val it : int = _lazy</SMALL></I>
+fun pair x = (x,x)
+<I><SMALL>val pair : 'a -> 'a * 'a = _fn</SMALL></I>
+pair x
+<I><SMALL>val it : int * int = (_lazy, _lazy)</SMALL></I>
 x > 10
 <I><SMALL>val it : bool = false</SMALL></I>
 x
 <I><SMALL>val it : int = 9</SMALL></I></PRE>
 
-<P>Tupling is parametric in its components and does not trigger <TT>x</TT>. The
-comparison operator <TT>></TT> is <I>strict</I> in its arguments, however, and hence
+<P>Tupling is parametric in its components and does not trigger <TT>x</TT>. 
+Neither does applying it to a function whose body does not trigger its argument, like <TT>pair</TT> above.
+The comparison operator <TT>></TT> is <I>future-strict</I> in its arguments, however, and hence
 forces evaluation of <TT>x</TT>. Likewise, pattern matching, arithmetic
 operations, comparison (<TT>op=</TT>) or similar operations can force a
 value.</P>
