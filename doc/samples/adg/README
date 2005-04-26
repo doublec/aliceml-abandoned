@@ -1,0 +1,11 @@
+1) alicec depend.aml
+
+2) alicerun depend <inputFile> [<outputFile>] [<multipleEgdes>]
+	-> will go through <inputFile> and makes {output.adl, <outputFile>.adl}
+	-> if multipleEdges is set ({true, false})
+	     => multiple edges will be drawn or not
+
+3) visit the builded file with GDL-Viewer
+	(get it from http://www.absint.com/aisee/download/index_de.htm)
+
+
