@@ -1,11 +1,15 @@
 1) alicec depend.aml
 
-2) alicerun depend <inputFile> [<outputFile>] [<multipleEgdes>]
-	-> will go through <inputFile> and makes {output.adl, <outputFile>.adl}
-	-> if multipleEdges is set ({true, false})
-	     => multiple edges will be drawn or not
+2) alicerun depend <inputFile> [<outputFile>]
+	-> will go through <inputFile> and makes {output.adg, <outputFile>.adg}
 
-3) visit the builded file with GDL-Viewer
+3) visit the built file with GDL-Viewer
 	(get it from http://www.absint.com/aisee/download/index_de.htm)
+
+
+examples:
+
+	alicerun depend ../snake/client/ClientMain.aml
+	alicerun depend ../snake/client/ClientMain.aml snake_out 
 
 
