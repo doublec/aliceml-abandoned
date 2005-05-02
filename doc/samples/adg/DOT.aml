@@ -1,0 +1,81 @@
+(* ADG 1.0 - Alice Dependence Graph
+*
+*  Author: Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+
+import signature BACKEND from "BACKEND-sig"
+import structure Depend  from "Depend"
+
+structure Backend :> BACKEND =
+struct
+
+    val name = "DOT"
+	       
+    val program = "http://www.graphviz.org"
+
+    val header = "digraph adg {ratio = fill;\n" ^
+		 "node [style=filled shape=record];\n\n\n"
+
+    val fileEnding = ".dot"
+
+    exception UnknownColor
+
+    fun convertColor s = 
+	case s of
+	    "red"    => "1.000 0.000 0.000"
+	  | "blue"   => "0.000 0.000 1.000"
+	  | "yellow" => "1.000 1.000 0.000"
+	  | "green"  => "0.000 1.000 0.000"
+	  |    _     => raise UnknownColor
+
+    fun writeFile (nodes, edges, stream) =
+	let
+	    fun node (t, p, f, a) =
+		(TextIO.output (stream, 
+				"       \"" ^ t ^ "\" [label=\"" ^ 
+			       p ^ "\\n" ^ f ^ "\" "); 
+		 List.app (fn (x, y) => 
+			      if x = "color" 
+			      then TextIO.output (stream, "fill" ^ x ^ "=\"" ^ 
+							  y ^ 
+							  "\"")
+			      else TextIO.output (stream, x ^ "=\"" ^ 
+							  y ^ "\"")) a;
+			  TextIO.output (stream, "];\n"))
+		
+	    fun edge (s, t, a)    =
+		(TextIO.output (stream, 
+				"       \"" ^ s ^ "\" -> \"" ^ t ^ "\" "); 
+		 List.app (fn (a, b) => TextIO.output (stream, a ^ ": " ^ 
+							       b ^ " ")) a;
+		 TextIO.output (stream, ";\n"))
+	in
+	    List.app node nodes;
+	    TextIO.output (stream, "\n\n");
+	    List.app edge edges;
+	    print "\n\ndone.\n"
+	end 
+	
+
+    fun output (inFile, switch, regex, stream) = 
+	let
+	    val path = if OS.Path.isAbsolute inFile
+		       then OS.Path.dir inFile
+		       else OS.Path.mkCanonical 
+				(OS.Path.dir ((OS.FileSys.getDir ()) ^ "\\" ^ 
+					      inFile))
+	    val file = OS.Path.file inFile
+	    val parent = OS.Path.mkCanonical (path ^ "/" ^ file)
+	    val (nodes, edges) = Depend.tree (inFile, switch, regex, stream, parent)
+	in
+	    writeFile (nodes, edges, stream)
+	end
+
+end

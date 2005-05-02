@@ -1,0 +1,63 @@
+(* ADG 1.0 - Alice Dependence Graph
+*
+*  Author: Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import signature TREE  from "TREE-sig"
+(*
+import structure Regex from "x-alice:/lib/regex/Regex"
+*)
+
+structure Tree :> TREE =
+struct
+
+(* its storing (title, path, filename, atributes list) *)
+     val nodes = ref nil
+(* its storing (source(title), target(title), attributes list) *)
+     val edges = ref nil
+
+     fun isRegExImport (r, p) = String.isSubstring r p (* Option.isSome (Regex r p) *)
+
+     fun isImport s = isRegExImport ("import", s)
+	 
+     fun isLibImport p = isRegExImport ("x-alice:", p)
+
+     fun isUnsafeImport p = isRegExImport ("Unsafe", p)
+
+     fun isNodeStillVisited title =
+	 List.exists (fn (t, _, _, _) => t = title) (!nodes)
+
+     fun insertNode (pathNfile, attrList) = 
+	 let
+	     val path     = OS.Path.dir pathNfile
+	     val filename = OS.Path.file pathNfile
+	     val title    = pathNfile
+	     val path' = if String.size path >= 15 andalso 
+			    not (isLibImport path orelse isUnsafeImport path)
+			 then ("..." ^ 
+			       (implode (rev 
+					 (List.take (rev (explode path), 
+						     List.length (explode path)
+						     - 3)))))
+			 else path
+	     val mult = isNodeStillVisited title
+	 in
+	     if mult
+	     then ()
+	     else nodes := (title, path', filename, attrList) :: !nodes;
+	     (title, mult)
+	 end
+	 
+     fun insertEdge (source, target, attrList) = 
+	 if List.exists (fn (s, t, _) => s = source andalso 
+					 t = target) (!edges)
+	 then ()
+	 else edges := (source, target, attrList) :: !edges
+
+end

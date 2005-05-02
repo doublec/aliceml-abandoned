@@ -9,54 +9,11 @@
 *
 *)
 
-structure Tree =
+import structure Tree from "Tree"
+
+structure Depend =
 struct
 
-(* its a (string * string * string * (string * string) list) list storing 
-   (title, path, filename, atributes list) *)
-     val nodes = ref nil
-(* its a (string * string * (string * string) list) list storing 
-   (source(title), target(title), attributes list) *)
-     val edges = ref nil
-
-     fun isLibImport p = String.isSubstring "x-alice:" p
-
-     fun isUnsafeImport p = String.isSubstring "Unsafe" p
-
-     fun isNodeStillVisited title =
-	 List.exists (fn (t, _, _, _) => t = title) (!nodes)
-
-     fun insertNode (pathNfile, attrList) = 
-	 let
-	     val path     = OS.Path.dir pathNfile
-	     val filename = OS.Path.file pathNfile
-	     val title    = pathNfile
-	     val path' = if String.size path >= 20 andalso 
-			    not (isLibImport path orelse isUnsafeImport path)
-			 then ("..." ^ 
-			       (implode (rev 
-					 (List.take (rev (explode path), 
-						     List.length (explode path)
-						     - 3)))))
-			 else path
-	     val mult = isNodeStillVisited title
-	 in
-	     if mult
-	     then ()
-	     else nodes := (title, path', filename, attrList) :: !nodes;
-	     (title, mult)
-	 end
-	 
-     fun insertEdge (source, target, attrList) = 
-	 if List.exists (fn (s, t, _) => s = source andalso 
-					 t = target) (!edges)
-	 then ()
-	 else edges := (source, target, attrList) :: !edges
-
-end
-
-fun isImport s = String.isSubstring "import" s
-	 
 fun isEndOfHeader s = 
     (String.isSubstring "structure" s orelse
      String.isSubstring "signature" s orelse
@@ -90,7 +47,7 @@ fun getImports (instr, xs : string list) =
 	in
 	    if isEndOfHeader l
 	    then (TextIO.closeIn instr; xs)
-	    else if isImport l
+	    else if Tree.isImport l
 	         then let
 		         val p = getPath (instr, explode l)
 		      in 
@@ -126,7 +83,7 @@ fun searchForFile (d, f) =
     end
 
 
-fun buildTree (p, outStr, parent) =
+fun tree' (p, switch, regex, outStr, parent) =
     let
 	val path = if OS.Path.isAbsolute p
 		   then OS.Path.dir p
@@ -136,148 +93,68 @@ fun buildTree (p, outStr, parent) =
 	val instr = TextIO.openIn p
 	val imp = rev (getImports (instr, nil))
 
-	fun buildTree' im = 
-	    if Tree.isLibImport im 
-	    then let
-		    val (title, _) = Tree.insertNode 
-					 (OS.Path.mkCanonical im, 
-					  [("color", "green")])
-		in
-		    if parent <> "" 
-		    then Tree.insertEdge (parent, title, [])
-		    else  ()
-                end
-	    else if Tree.isUnsafeImport im
-	         then let
+	fun tree'' im = 
+	    if (switch andalso Tree.isRegExImport (regex, im)) orelse
+	       (not (switch orelse (Tree.isRegExImport (regex, im))))
+	    then 
+		if Tree.isLibImport im 
+		then let
+			val (title, _) = Tree.insertNode 
+					     (OS.Path.mkCanonical im, 
+					      [("color", "green")])
+		    in
+			if parent <> "" 
+			then Tree.insertEdge (parent, title, [])
+			else  ()
+		    end
+		else if Tree.isUnsafeImport im
+	        then let
 		        val (title, _) = Tree.insertNode 
-					 (OS.Path.mkCanonical im, 
-					  [("color", "yellow")])
-		      in 
+					     (OS.Path.mkCanonical im, 
+					      [("color", "yellow")])
+		    in 
 		        if parent <> "" 
 			then Tree.insertEdge (parent, title, [])
 			else  ()
-                      end
-	    else let
-		    val path'  = OS.Path.mkCanonical (path ^ "/" ^ im ^ ".aml")
-		    val path'' = OS.Path.mkCanonical (path ^ "/" ^ im)
-		    val (title, mult)  = Tree.insertNode 
-					     (path'', [("color", if parent = ""
-								 then ("red")
-								 else ("blue"))])
-		in
-		    (* TODO: don't read files more than once *)
-		    if not mult
-	            then (if parent <> "" 
-			  then Tree.insertEdge (parent, title, [])
-			  else  ();
-			  buildTree (path', outStr, title)
-			  handle IO.Io _ => 
-				 let
-				     val x = searchForFile (OS.Path.dir path'',
-					     	           OS.Path.file path'')
-				 in
-				     if Option.isNone x
-				     then ()
-				     else buildTree (valOf x, outStr, title)
-				 end)
-		    else Tree.insertEdge (parent, title, []) (* don't read the file twice *)
-		end
+		    end
+		else let
+			val path'  = OS.Path.mkCanonical (path ^ "/" ^ im ^ 
+							  ".aml")
+			val path'' = OS.Path.mkCanonical (path ^ "/" ^ im)
+			val (title, mult)  = Tree.insertNode 
+						 (path'', [("color", 
+							    if parent = ""
+							    then ("red")
+							    else ("blue"))])
+		    in
+			if not mult
+			then (if parent <> "" 
+			      then Tree.insertEdge (parent, title, [])
+			      else  ();
+			      tree' (path', switch, regex, outStr, title)
+			      handle IO.Io _ => 
+				     let
+				    val x = searchForFile (OS.Path.dir path'',
+					     		   OS.Path.file path'')
+				     in
+					 if Option.isNone x
+					 then ()
+					 else tree' (valOf x, switch, regex, 
+						     outStr, title)
+				     end)
+			else Tree.insertEdge (parent, title, []) 
+		    end
+	    else ()
     in
-        List.app buildTree' imp
+        List.app tree'' imp
     end
 
-fun build (p, outStr) = 
+fun tree (inFile, switch, regex, outStr, parent) = 
     let
-	val path = if OS.Path.isAbsolute p
-		   then OS.Path.dir p
-		   else OS.Path.mkCanonical 
-			  (OS.Path.dir ((OS.FileSys.getDir ()) ^ "\\" ^ p))
-	val file = OS.Path.file p
-	val (title, _) = Tree.insertNode (OS.Path.mkCanonical (path ^ "/" ^ file),
-					  [("color", "red")]);
+	val (title, _) = Tree.insertNode (parent, [("color", "red")])
     in
-	buildTree (p, outStr, title)
+	tree' (inFile, switch, regex, outStr, title);
+	(!Tree.nodes, !Tree.edges)
     end
 
-fun writeFile stream =
-    let
-	val nodes = !Tree.nodes
-	val edges = !Tree.edges
-	fun node (t, p, f, a) =
-	    (TextIO.output (stream, 
-			    "node: { title: \"" ^ t ^ "\" label: \"" ^ p ^ 
-			    "\\n" ^ f ^ "\" "); 
-	     List.app (fn (a, b) => TextIO.output (stream, a ^ ": " ^ 
-							   b ^ " ")) a;
-	     TextIO.output (stream, "}\n"))
-
-	fun edge (s, t, a)    =
-	    (TextIO.output (stream, 
-			    "edge: { source: \"" ^ s ^ "\" target: \"" ^ 
-			    t ^ "\" "); 
-	     List.app (fn (a, b) => TextIO.output (stream, a ^ ": " ^ 
-							   b ^ " ")) a;
-	     TextIO.output (stream, "}\n"))
-    in
-	List.app node nodes;
-	TextIO.output (stream, "\n\n");
-	List.app edge edges;
-	print "\n\ndone.\n"
-    end
-
-val head = 
-    "// Alice Dependence Graph           //\n" ^ 
-    "//                                  //\n" ^ 
-    "// Author: Sebastian Germesin       //\n" ^ 
-    "//                                  //\n" ^
-    "// eMail: germi@ps.uni-sb.de        //\n" ^ 
-    "//                                  //\n" ^
-    "//////////////////////////////////////\n" ^
-    "//\n" ^ 
-    "//\n" ^ 
-    "// written in GDL (Graph Description Language)" ^
-    "// Annotations:\n" ^
-    "//\n" ^ 
-    "// for looking the graph:\n" ^
-    "//     use http://www.absint.com/aisee/download/index_de.htm\n" ^
-    "//\n" ^
-    "// red box    with black border = main file\n" ^
-    "// green box  with black border = built files\n" ^
-    "// blue box   with black border = alice-lib files\n" ^
-    "// yellow box with black border = unsafe files\n\n\n" ^
-    "graph: {title: \"Alice Dependence Graph\"\n" ^
-    "        layoutalgorithm  : dfs\n" ^
-    "        node.textcolor   : black\n" ^
-    "        node.fontname    : \"helvB08\"\n" ^ 
-    "        node.height      : 28\n" ^
-    "        node.borderwidth : 2\n" ^
-    "        edge.color       : 31\n" ^
-    "        splines          : yes\n" ^
-    "        portsharing      : yes\n\n\n\n"
-
-val usage = "\nusage: \nalicerun depend <input_filename> " ^ 
-	    "[<output_filename>]\n"
-
-fun start (inFile, outFile) = 
-    let
-	val output = TextIO.openOut (outFile ^ ".adg")
-    in 
-	TextIO.output (TextIO.stdOut, "input  file: " ^ inFile ^ "\n");
-	TextIO.output (TextIO.stdOut, "output file: " ^ outFile ^ ".adg\n");
-	TextIO.output (output, head);
-	build (inFile, output);
-	writeFile output;
-	TextIO.output (output, "\n}");
-	TextIO.closeOut output;
-	OS.Process.exit OS.Process.success
-    end
-
-
-val _  = case CommandLine.arguments () of
-	         []           => (TextIO.output (TextIO.stdErr, usage);
-				  OS.Process.exit OS.Process.success)
-	       | [x]          => start (x, "output") 
-	       | [x,   y]     => start (x, y)
-	       |   _          => TextIO.output (TextIO.stdErr, usage)
-			    
-
+end
