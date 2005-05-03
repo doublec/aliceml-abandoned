@@ -918,12 +918,6 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkMenuItem" id="separator1">
-	      <property name="visible">True</property>
-	    </widget>
-	  </child>
-
-	  <child>
 	    <widget class="GtkMenuItem" id="menuitem10">
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">_Help</property>
