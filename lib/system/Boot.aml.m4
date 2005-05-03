@@ -38,16 +38,16 @@ local
 		   | Component.Failure (url, Component.Eval exn) =>
 		     TextIO.output (TextIO.stdErr,
 			 "uncaught exception " ^ General.exnName exn ^
-			 " while evaluating " ^ Url.toString url ^ "\n")
+			 " while evaluating " ^ Url.toStringRaw url ^ "\n")
 		   | Component.Failure (_, Component.Mismatch
 					   {component, request, cause}) =>
 		     let
 			 val s = "failure type-checking " ^
-				 Url.toString component ^
+				 Url.toStringRaw component ^
 				 (case request of
 				      NONE => "\n"
 				    | SOME url => "\nas requested by " ^
-						  Url.toString url ^ "\n") ^
+						  Url.toStringRaw url ^ "\n") ^
 				 "Reason:"
 		     in
 			 PrettyPrint.output
@@ -58,15 +58,15 @@ local
 		     end
 		   | Component.Failure (url, IO.Io _) =>
 		     TextIO.output (TextIO.stdErr,
-			 "failure loading " ^  Url.toString url ^ "\n")
+			 "failure loading " ^  Url.toStringRaw url ^ "\n")
 		   | Component.Failure (url, Component.Internal exn) =>
 		     TextIO.output (TextIO.stdErr,
 			 "internal exception " ^ General.exnName exn ^
-			 " while linking " ^ Url.toString url ^ "\n")
+			 " while linking " ^ Url.toStringRaw url ^ "\n")
 		   | Component.Failure (url, exn) =>
 		     TextIO.output (TextIO.stdErr,
 			 "unknown failure " ^ General.exnName exn ^
-			 " while linking " ^ Url.toString url ^ "\n")
+			 " while linking " ^ Url.toStringRaw url ^ "\n")
 		   | Assert (file, line) =>
 		     TextIO.output (TextIO.stdErr,
 			 "internal assertion failure at " ^ file ^ ":" ^

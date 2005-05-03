@@ -138,8 +138,7 @@ struct
 	    then String.substring(s, 0, 2)
 	    else ""
 
-	fun validVolume{isAbs, vol}	= getVolume vol = vol
-	  | validVolume _		= false
+	fun validVolume{isAbs, vol} = getVolume vol = vol
 
 	fun fromString s =
 	    let
@@ -200,14 +199,10 @@ struct
 	fun joinDirFile{dir, file} =
 	    let
 		val {isAbs, vol, arcs} = fromString dir
+		val arcs = if List.null arcs andalso file = "" then []
+			   else arcs@[file]
 	    in
-		case splitLast arcs
-		  of SOME(arcs', "") =>
-		     toString{isAbs, vol, arcs=arcs'@[file]}
-		   | SOME(arcs', ".") =>
-		     toString{isAbs, vol, arcs=arcs'@[file]}
-		   | _ =>
-		     toString{isAbs, vol, arcs=arcs@[file]}
+		toString{isAbs, vol, arcs}
 	    end
 
 	fun splitArcBaseExt arc =
@@ -288,8 +283,8 @@ struct
 	    case (fromString s1, fromString s2)
 	     of (_, {isAbs=true, ...}) => raise Path
 	      | ({isAbs, vol=vol1, arcs=arcs1}, {vol=vol2, arcs=arcs2, ...}) =>
-		if vol2 = "" orelse mkCanonical vol1 = mkCanonical vol2
-	        then toString{isAbs=isAbs, vol=vol1, arcs=concatArcs(arcs1, arcs2)}
+		if vol2 = "" orelse mkCanonicalVol vol1 = mkCanonicalVol vol2
+		then toString{isAbs, vol=vol1, arcs=concatArcs(arcs1, arcs2)}
 		else raise Path
 
 	fun mkAbsolute{path, relativeTo} =
@@ -311,7 +306,6 @@ struct
 		val {isAbs=isAbs2, vol=vol2, arcs=arcs2} = fromString abs
 		val vol1  = mkCanonicalVol vol1
 		val arcs1 = case arcs1 of [""] => nil | _ => arcs1
-		val arcs2 = case arcs2 of [""] => nil | _ => arcs2
 	    in
 		if Bool.not isAbs1 andalso isAbs2 then
 		    path

@@ -1941,7 +1941,7 @@ functor MkValuePropagationPhase(val isCross: bool
 			    (TextIO.output (TextIO.stdErr,
 					    "warning: could not load \
 					    \compile-time import " ^
-					    Url.toString url ^ "\n");
+					    Url.toStringRaw url ^ "\n");
 			     UnknownVal)
 	    in
 		declare (env, IdDef id, (value, true))

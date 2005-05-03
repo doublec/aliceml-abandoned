@@ -305,7 +305,7 @@ struct
 	let
 	    val (ranns',rea,b) = closeAnns'(desc, ranns)
 (*DEBUG
-val _=TextIO.print("### checking closed imports for \"" ^ Url.toString url ^ "\"\n")
+val _=TextIO.print("### checking closed imports for \"" ^ Url.toStringRaw url ^ "\"\n")
 *)
 	    val region = #region i
 	    val j'   = Inf.realise(rea, Inf.sign(#sign i))
@@ -319,7 +319,7 @@ val _=TextIO.print("### checking closed imports for \"" ^ Url.toString url ^ "\"
 	let
 	    val (ranns',rea,b) = closeAnns'(desc, ranns)
 (*DEBUG
-val _=TextIO.print("### checking imports for \"" ^ Url.toString url ^ "\"\n")
+val _=TextIO.print("### checking imports for \"" ^ Url.toStringRaw url ^ "\"\n")
 *)
 	    val _           = checkExportPaths(#region i, url, #sign i)
 	    val imports     = loadImports(desc, url)
@@ -379,7 +379,7 @@ val _=TextIO.print("\n")
 	let
 	    val (ranns',rea,b) = closeAnns'(desc, ranns)
 (*DEBUG
-val _=TextIO.print("### checking static \"" ^ Url.toString url ^ "\"\n")
+val _=TextIO.print("### checking static \"" ^ Url.toStringRaw url ^ "\"\n")
 *)
 	    val region         = #region i
 

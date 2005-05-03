@@ -30,6 +30,7 @@ Compiler:
 * Produce proper error messages for out-of-range literals.
 * Fixed border case where lexer went into infinite loop for some inputs only
   consisting of one token.
+* Don't use encoded URLs in error messages.
 
 Linker:
 

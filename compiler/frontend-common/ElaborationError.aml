@@ -159,7 +159,9 @@ struct
 
   (* Pretty printing *)
 
-    fun ppQuoted s	= "`" ^ s ^ "'"
+    fun ppUrl u = Url.toStringRaw u
+
+    fun ppQuoted s = "`" ^ s ^ "'"
 
     fun ppLab'(AbstractGrammar.Lab(_,l)) = Label.toString l
 
@@ -487,59 +489,59 @@ struct
       | ppError(ImplicitImpHiddenTyp(url,p)) =
 	vbox(
 	    textpar["implicit","import","signature","for","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl url ^ "\"")) ^/^
 	    textpar["refers","to","inaccessible"] ^^
 	    indent(text "type " ^^ PPPath.ppPath p)
 	)
       | ppError(ImplicitImpHiddenMod(url,p)) =
 	vbox(
 	    textpar["implicit","import","signature","for","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl url ^ "\"")) ^/^
 	    textpar["refers","to","inaccessible"] ^^
 	    indent(text "structure " ^^ PPPath.ppPath p)
 	)
       | ppError(ImplicitImpHiddenInf(url,p)) =
 	vbox(
 	    textpar["implicit","import","signature","for","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl url ^ "\"")) ^/^
 	    textpar["refers","to","inaccessible"] ^^
 	    indent(text "signature " ^^ PPPath.ppPath p)
 	)
       | ppError(ImplicitImpHiddenTransTyp(url,p,viaUrl)) =
 	vbox(
 	    textpar["implicit","import","signature","for","component"] ^^
-	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl viaUrl ^ "\"")) ^/^
 	    textpar["refers","to","inaccessible"] ^^
 	    indent(text "type " ^^ PPPath.ppPath p) ^/^
 	    textpar["which","is","stemming","from","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\""))
+	    indent(text("\"" ^ ppUrl url ^ "\""))
 	)
       | ppError(ImplicitImpHiddenTransMod(url,p,viaUrl)) =
 	vbox(
 	    textpar["implicit","import","signature","for","component"] ^^
-	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl viaUrl ^ "\"")) ^/^
 	    textpar["refers","to","inaccessible"] ^^
 	    indent(text "structure " ^^ PPPath.ppPath p) ^/^
 	    textpar["which","is","stemming","from","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\""))
+	    indent(text("\"" ^ ppUrl url ^ "\""))
 	)
       | ppError(ImplicitImpHiddenTransInf(url,p,viaUrl)) =
 	vbox(
 	    textpar["implicit","import","signature","for","component"] ^^
-	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl viaUrl ^ "\"")) ^/^
 	    textpar["refers","to","inaccessible"] ^^
 	    indent(text "signature " ^^ PPPath.ppPath p) ^/^
 	    textpar["which","is","stemming","from","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\""))
+	    indent(text("\"" ^ ppUrl url ^ "\""))
 	)
       | ppError(ImplicitImpInconsistent(url,p,viaUrl)) =
 	vbox(
 	    textpar["implicit","import","signature","for","component"] ^/^
-	    indent(text("\"" ^ Url.toString viaUrl ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl viaUrl ^ "\"")) ^/^
 	    textpar["refers","to"] ^^
 	    indent(text "structure " ^^ PPPath.ppPath p) ^/^
 	    textpar["which","is","stemming","from","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl url ^ "\"")) ^/^
 	    textpar["but","is","no","longer","exported","by","it",
 		    "(please","try","recompiling","the","former","component)"]
 	)
@@ -565,20 +567,20 @@ struct
 	    textpar["inserting","import","for"] ^^
 	    indent(text "type " ^^ PPPath.ppPath p) ^/^
 	    textpar["from","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl url ^ "\"")) ^/^
 	    textpar["referred","to","by","implicit","import","signature","for",
 		    "component"] ^^
-	    indent(text("\"" ^ Url.toString viaUrl ^ "\""))
+	    indent(text("\"" ^ ppUrl viaUrl ^ "\""))
 	)
       | ppWarning(InfImpInserted(url,p,viaUrl)) =
 	vbox(
 	    textpar["inserting","import","for"] ^^
 	    indent(text "signature " ^^ PPPath.ppPath p) ^/^
 	    textpar["from","component"] ^^
-	    indent(text("\"" ^ Url.toString url ^ "\"")) ^/^
+	    indent(text("\"" ^ ppUrl url ^ "\"")) ^/^
 	    textpar["referred","to","by","implicit","import","signature","for",
 		    "component"] ^^
-	    indent(text("\"" ^ Url.toString viaUrl ^ "\""))
+	    indent(text("\"" ^ ppUrl viaUrl ^ "\""))
 	)
       (* Exports *)
       | ppWarning(ExportNotGeneralized(x,t)) =

@@ -531,7 +531,7 @@ end
 	let
 	    val file = case Source.sourceUrl desc
 			of NONE     => ""
-			 | SOME url => Url.toString url
+			 | SOME url => Url.toStringRaw url
 	in
 	    STRINGAtExp(I, file)
 	end

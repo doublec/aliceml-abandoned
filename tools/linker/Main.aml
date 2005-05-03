@@ -94,27 +94,27 @@ structure Main :> MAIN =
 	    end
 	    handle Link.ExcludedRoot url =>
 		       error ("cannot include root component\n\
-			      \   " ^ Url.toString url ^ "\n")
+			      \   " ^ Url.toStringRaw url ^ "\n")
 		 | Link.Mismatch (url, url', _) =>
 		       error ("signature of component\n\
-			      \   " ^ Url.toString url ^ "\n\
+			      \   " ^ Url.toStringRaw url ^ "\n\
 			      \does not match import requirement of component\n\
-			      \   " ^ Url.toString url' ^ "\n\
+			      \   " ^ Url.toStringRaw url' ^ "\n\
 			      \Try recompiling the latter.\n")
 		 | Link.Cycle urls =>
 		       error ("components have cyclic inter-dependencies:\n" ^
 			      String.concat (List.map (fn url =>
-				  "   " ^ Url.toString url ^ "\n") urls))
+				  "   " ^ Url.toStringRaw url ^ "\n") urls))
 		 | Link.Rewrite (url1, url2, url) =>
 		       error ("rewrites ambiguates urls\n\
-			      \   " ^ Url.toString url1 ^ "\n\
+			      \   " ^ Url.toStringRaw url1 ^ "\n\
 			      \and\n\
-			      \   " ^ Url.toString url2 ^ "\n\
+			      \   " ^ Url.toStringRaw url2 ^ "\n\
 			      \to\n\
-			      \   " ^ Url.toString url ^ "\n")
+			      \   " ^ Url.toStringRaw url ^ "\n")
 		 | Link.Io (url, _) =>
 		       error ("could not load component\n\
-			      \   " ^ Url.toString url ^ "\n")
+			      \   " ^ Url.toStringRaw url ^ "\n")
 
 	fun startDumpOnly root =
 	    (case MyComponent.load (Url.fromString root) of

@@ -149,19 +149,19 @@ struct
 		    TextIO.output (errStream,
 				   "Uncaught exception " ^
 				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toString url)
+				   (if String.isSuffix "/" (Url.toStringRaw url)
 				    then "\n"
 				    else " while evaluating \n   " ^
-					 Url.toString url ^ "\n"))
+					 Url.toStringRaw url ^ "\n"))
 	      | Component.Failure (_, Component.Mismatch
 				     {component, request, cause}) =>
 		let
 		    val s = "Failure type-checking \n   " ^
-			    Url.toString component ^
+			    Url.toStringRaw component ^
 			    (case request of
 				 NONE => "\n"
 			       | SOME url => "\nas requested by \n   " ^
-					     Url.toString url ^ "\nbecause")
+					     Url.toStringRaw url ^ "\nbecause")
 		in
 		   PrettyPrint.output
 		   (errStream,
@@ -172,23 +172,23 @@ struct
 	      | Component.Failure (url, IO.Io _) =>
 		    TextIO.output (errStream,
 				   "Failure loading \n   " ^
-				   Url.toString url ^ "\n")
+				   Url.toStringRaw url ^ "\n")
 	      | Component.Failure (url, Component.Internal exn) =>
 		    TextIO.output (errStream,
 				   "Internal exception " ^
 				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toString url)
+				   (if String.isSuffix "/" (Url.toStringRaw url)
 				    then "\n"
 				    else " while linking \n   " ^
-					 Url.toString url ^ "\n"))
+					 Url.toStringRaw url ^ "\n"))
 	      | Component.Failure (url, exn) =>
 		    TextIO.output (errStream,
 				   "Unknown failure " ^
 				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toString url)
+				   (if String.isSuffix "/" (Url.toStringRaw url)
 				    then "\n"
 				    else " while linking \n   " ^
-					 Url.toString url ^ "\n"))
+					 Url.toStringRaw url ^ "\n"))
 	      | Assert (file, line) =>
 		    TextIO.output (errStream,
 				   "Internal assertion failure at " ^

@@ -53,7 +53,7 @@ struct
 	    ((NONE | SOME "file"), NONE) =>
 	    let
 		val cwd  = OS.FileSys.getDir()
-		val file = Url.toString(Url.setScheme(url, NONE))
+		val file = Url.toLocalFile url
 		val file' = if OS.Path.getVolume file = ""
 			    then OS.Path.getVolume cwd ^ file else file
 	    in
@@ -62,7 +62,7 @@ struct
 		handle OS.Path.Path => file
 	    end
 	  | _ =>
-	    Url.toString url
+	    Url.toStringRaw url
 
     fun print(reg, doc) =
 	output(outstream,

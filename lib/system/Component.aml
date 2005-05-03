@@ -188,7 +188,7 @@ struct
 
 	fun typeCheck (inf, rea, importInf, mod, url, baseUrlOpt) : mod =
 	    let
-		val url' = Url.toString url
+		val url' = Url.toStringRaw url
 		val baseUrlOpt' = Option.map Url.toString baseUrlOpt
 		val message = url' ^ (case baseUrlOpt' of
 					  SOME s => " imported by " ^ s
@@ -222,7 +222,7 @@ struct
 		   | Failure (url', e) =>
 		     (trace (!logStream, "exception " ^ exnName e ^
 					 " propagated from " ^
-					 Url.toString url' ^
+					 Url.toStringRaw url' ^
 					 " during type-checking");
 		      reraiseAs (packet, Failure (url, e)))
 		   | e =>
@@ -264,8 +264,8 @@ struct
 		    NONE => ()
 		  | SOME inf' => DynMatch.matchWith (rea, mod', inf');
 (*DEBUG
-trace (!logStream, "considering import " ^ Url.toString url ^ ":\n" ^ infToString importInf);
-trace (!logStream, "extended realisation after considering import " ^ Url.toString url ^ ":" ^
+trace (!logStream, "considering import " ^ Url.toStringRaw url ^ ":\n" ^ infToString importInf);
+trace (!logStream, "extended realisation after considering import " ^ Url.toStringRaw url ^ ":" ^
 	 PathMap.foldi (fn (path, typ, s) => "\n" ^ pathToString path ^ " -> _" ^ s)
 	 (PathMap.foldi (fn (path, inf, s) => "\n" ^ pathToString path ^ " -> _" ^ s)
 	  "" (#inf_rea rea)) (#typ_rea rea));
@@ -286,14 +286,14 @@ trace (!logStream, "extended realisation after considering import " ^ Url.toStri
 		    end
 		val rea = Inf.rea ()
 (*DEBUG
-val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
+val _ = trace (!logStream, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 *)
 		val imports' =
 		    Vector.map (fn (importUrlS, importInf) =>
 				   typedLink (resolve importUrlS, rea,
 					      importInf, SOME baseUrl))
 			       imports
-		val _ = trace (!logStream, "evaluating " ^ Url.toString baseUrl)
+		val _ = trace (!logStream, "evaluating " ^ Url.toStringRaw baseUrl)
 		val mod = Exn.catch
 			  (fn packet =>
 			   case Exn.fromPacket packet of
@@ -301,10 +301,10 @@ val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
 			    | e =>
 			      (trace (!logStream,
 				      "evaluation failed in " ^
-				      Url.toString baseUrl);
+				      Url.toStringRaw baseUrl);
 			       reraiseAs (packet, Failure (baseUrl, Eval e))))
 			  (fn _ => body imports')
-		val _ = trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
+		val _ = trace (!logStream, "evaluated  " ^ Url.toStringRaw baseUrl)
 		val dynInf =
 		    case inf of
 			NONE => NONE

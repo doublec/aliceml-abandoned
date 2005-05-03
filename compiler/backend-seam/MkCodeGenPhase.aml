@@ -848,7 +848,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	fun urlToString url =
 	    case (Url.getScheme url, Url.getAuthority url) of
 		((NONE | SOME "file"), NONE) =>
-		OS.Path.mkRelative{path = Url.toString(Url.setScheme(url, NONE)),
+		OS.Path.mkRelative{path = Url.toLocalFile url,
 				   relativeTo = OS.FileSys.getDir()}
 	      | _ => Url.toString url
 

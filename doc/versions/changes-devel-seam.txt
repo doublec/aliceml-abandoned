@@ -6,6 +6,7 @@ Runtime System:
 
 Compiler:
 
+* [CHG] Don't use encoded URLs in error messages.
 * [FIX] Under Windows, outputting error messages for files compiled on
         drives other than the current didn't work.
 * [FIX] Fixed border case where lexer went into infinite loop for some inputs

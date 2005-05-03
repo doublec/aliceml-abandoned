@@ -73,7 +73,7 @@ struct
     fun ppStamp z		= text(Stamp.toString z)
     fun ppBool b		= text(Bool.toString b)
     fun ppString s		= text("\"" ^ s ^ "\"")
-    fun ppUrl u			= text("\"" ^ Url.toString u ^ "\"")
+    fun ppUrl u			= text("\"" ^ Url.toStringRaw u ^ "\"")
 
     fun ppOption ppX (NONE)	= text "[]"
       | ppOption ppX (SOME x)	= ppX x
