@@ -74,7 +74,8 @@ fun searchForFile (d, f) =
 		else if String.isSubstring f (valOf file) andalso 
 			String.isSuffix ".aml" (valOf file)
 		     then (TextIO.output (TextIO.stdOut, "\tfound file: " ^
-							 d ^ "/" ^ (valOf file) ^ "\n");
+							 d ^ "/" ^ 
+							 (valOf file) ^ "\n");
 			   SOME (d ^ "/" ^ (valOf file)))
 	             else search' dirStr
 	    end
@@ -93,58 +94,81 @@ fun tree' (p, switch, regex, outStr, parent) =
 	val instr = TextIO.openIn p
 	val imp = rev (getImports (instr, nil))
 
+	fun insertWORek (im, attrs) = 
+	    let
+		val (title, _)  = Tree.insertNode (im, attrs)
+	    in
+		if parent <> "" 
+		then Tree.insertEdge (parent, title, [])
+		else  ()
+	    end
+
+	fun insertWRek (im, attrs) = 
+	    let
+		val path'  = OS.Path.mkCanonical (path ^ "/" ^ im ^ 
+						  ".aml")
+		val path'' = OS.Path.mkCanonical (path ^ "/" ^ im)
+			     
+		val (title, mult)  = Tree.insertNode (path'', attrs)
+	    in
+		if mult
+		then Tree.insertEdge (parent, title, [])
+		else (if parent <> "" 
+		      then Tree.insertEdge (parent, title, [])
+		      else  ();
+		      tree' (path', switch, regex, outStr, title)
+		         handle IO.Io _ => 
+			     let
+				 val x = searchForFile (OS.Path.dir path'',
+					     		OS.Path.file path'')
+			     in
+				 if Option.isNone x
+				 then ()
+				 else tree' (valOf x, switch, regex, 
+					     outStr, title)
+			     end)
+	    end
+
+	fun rekWOinsert im = 
+	    let
+		val path'  = OS.Path.mkCanonical (path ^ "/" ^ im ^ 
+						  ".aml")
+		val path'' = OS.Path.mkCanonical (path ^ "/" ^ im)
+	    in
+		if not (Tree.isLibImport im orelse Tree.isUnsafeImport im)
+		then tree' (path', switch, regex, outStr, parent)
+		         handle IO.Io _ => 
+			     let
+				 val x = searchForFile (OS.Path.dir path'',
+					     		OS.Path.file path'')
+			     in
+				 if Option.isNone x
+				 then ()
+				 else tree' (valOf x, switch, regex, 
+					     outStr, parent)
+			     end
+		else ()
+	    end
+
 	fun tree'' im = 
-	    if (switch andalso Tree.isRegExImport (regex, im)) orelse
-	       (not (switch orelse (Tree.isRegExImport (regex, im))))
-	    then 
-		if Tree.isLibImport im 
-		then let
-			val (title, _) = Tree.insertNode 
-					     (OS.Path.mkCanonical im, 
-					      [("color", "green")])
-		    in
-			if parent <> "" 
-			then Tree.insertEdge (parent, title, [])
-			else  ()
-		    end
-		else if Tree.isUnsafeImport im
-	        then let
-		        val (title, _) = Tree.insertNode 
-					     (OS.Path.mkCanonical im, 
-					      [("color", "yellow")])
-		    in 
-		        if parent <> "" 
-			then Tree.insertEdge (parent, title, [])
-			else  ()
-		    end
-		else let
-			val path'  = OS.Path.mkCanonical (path ^ "/" ^ im ^ 
-							  ".aml")
-			val path'' = OS.Path.mkCanonical (path ^ "/" ^ im)
-			val (title, mult)  = Tree.insertNode 
-						 (path'', [("color", 
-							    if parent = ""
-							    then ("red")
-							    else ("blue"))])
-		    in
-			if not mult
-			then (if parent <> "" 
-			      then Tree.insertEdge (parent, title, [])
-			      else  ();
-			      tree' (path', switch, regex, outStr, title)
-			      handle IO.Io _ => 
-				     let
-				    val x = searchForFile (OS.Path.dir path'',
-					     		   OS.Path.file path'')
-				     in
-					 if Option.isNone x
-					 then ()
-					 else tree' (valOf x, switch, regex, 
-						     outStr, title)
-				     end)
-			else Tree.insertEdge (parent, title, []) 
-		    end
-	    else ()
+	    let
+		val path'  = if Tree.isLibImport im orelse
+				Tree.isUnsafeImport im 
+			     then im
+			     else OS.Path.mkCanonical (path ^ "/" ^ im ^ 
+						       ".aml")
+	    in
+		if (switch andalso Tree.isRegExImport (regex, path')) orelse
+		   (not switch andalso not (Tree.isRegExImport (regex, path')))
+		then rekWOinsert im
+		else if Tree.isLibImport im 
+		     then insertWORek (im, [("color", "green")])
+		     else if Tree.isUnsafeImport im
+		          then insertWORek (im, [("color", "yellow")])
+		          else insertWRek (im, [("color", if parent = ""
+							  then "red"
+							  else "blue")])
+	    end
     in
         List.app tree'' imp
     end

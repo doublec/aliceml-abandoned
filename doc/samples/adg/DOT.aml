@@ -20,20 +20,12 @@ struct
 	       
     val program = "http://www.graphviz.org"
 
-    val header = "digraph adg {ratio = fill;\n" ^
-		 "node [style=filled shape=record];\n\n\n"
+    val header = "digraph adg {ratio = \"1,1\";\n" ^
+		 "             node [style=filled shape=record];\n\n\n"
 
     val fileEnding = ".dot"
 
     exception UnknownColor
-
-    fun convertColor s = 
-	case s of
-	    "red"    => "1.000 0.000 0.000"
-	  | "blue"   => "0.000 0.000 1.000"
-	  | "yellow" => "1.000 1.000 0.000"
-	  | "green"  => "0.000 1.000 0.000"
-	  |    _     => raise UnknownColor
 
     fun writeFile (nodes, edges, stream) =
 	let

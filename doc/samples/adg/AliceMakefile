@@ -3,6 +3,15 @@ ifndef SOURCES
 endif
 export SOURCES
 
+ifndef BACKEND
+  BACKEND := dot
+endif
+export BACKEND
+
+ifndef M4
+    M4 := m4 -D${BACKEND}
+endif
+export M4
 
 ifndef ROOT
   ROOT := $(basename $(firstword $(SOURCES)))
@@ -25,7 +34,7 @@ endif
 export ALICERUN
 
 ifndef ALICEC
-  ALICEC := alicec
+  ALICEC := alicec --no-warn-conventions
 endif
 export ALICEC
 
@@ -42,15 +51,6 @@ ifndef ALICEDEP
   ALICEDEP := alicedep
 endif
 export ALICEDEP
-
-ifndef M4
-  ifeq (${EXT},alc)
-    M4 := m4 -DGTK2
-  else
-    M4 := m4
-  endif
-endif
-export M4
 
 .PHONY: .DELETE_ON_ERROR all components library depend clean
 .DELETE_ON_ERROR:

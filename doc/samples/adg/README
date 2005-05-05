@@ -1,15 +1,15 @@
-1) alicec depend.aml
+1) make 
 
-2) alicerun depend <inputFile> [<outputFile>]
-	-> will go through <inputFile> and makes {output.adg, <outputFile>.adg}
+2) s. examples
 
-3) visit the built file with GDL-Viewer
-	(get it from http://www.absint.com/aisee/download/index_de.htm)
+3) visit the built file with any viewer descripted in output file
 
 
 examples:
 
-	alicerun depend ../snake/client/ClientMain.aml
-	alicerun depend ../snake/client/ClientMain.aml snake_out 
+	alicerun Main ../snake/client/ClientMain.aml
+	alicerun Main ../snake/client/ClientMain.aml snake_out 
+	alicerun Main ../snake/client/ClientMain.aml -no <regex>
+	alicerun Main ../snake/client/ClientMain.aml -only <regex>
 
 

@@ -9,8 +9,11 @@
 *
 *)
 
-import structure Backend from "GDL"
-import structure Backend from "DOT"
+changequote([[,]])
+
+ifdef([[gdl]],[[import structure Backend from "GDL"]])
+ifdef([[dot]],[[import structure Backend from "DOT"]],
+[[import structure Backend from "DOT"]])
 
 
 val head = 
@@ -36,7 +39,8 @@ val head =
     Backend.header ^ 
     "\n\n\n\n"
 
-val usage = "\nusage: \nalicerun depend <input_filename> " ^ 
+val usage = "unrecognized option\n\n" ^ 
+	    "Usage: \nalicerun Main <input_filename> " ^ 
 	    "[-{no, only} regex] [<output_filename>]\n"
 
 fun start (inFile, switch, regex, outFile) = 
@@ -67,9 +71,9 @@ val _  = case CommandLine.arguments () of
 	       (* TODO: fehlerquellen ausmerzen (s. usage) *)
 	       | [a]                => start (a, false, "", "output")
  	       | [a,   d]           => start (a, false, "", d)
-	       | [a, "-no", c]      => start (a, false, c, "output")
-	       | [a, "-only", c]    => start (a, true, c, "output")
-	       | [a, "-no", c, d]   => start (a, false, c, d)
-	       | [a, "-only", c, d] => start (a, true, c, d)
+	       | [a, "-no", c]      => start (a, true, c, "output")
+	       | [a, "-only", c]    => start (a, false, c, "output")
+	       | [a, "-no", c, d]   => start (a, true, c, d)
+	       | [a, "-only", c, d] => start (a, false, c, d)
 	       |   _                => TextIO.output (TextIO.stdErr, usage)
 
