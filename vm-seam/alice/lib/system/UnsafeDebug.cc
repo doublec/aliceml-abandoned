@@ -34,10 +34,16 @@ DEFINE1(UnsafeDebug_disassemble) {
   if (b->GetInterpreter() == AbstractCodeInterpreter::self) {
     AliceConcreteCode *acc = AliceConcreteCode::FromWord(cc);
     acc->Disassemble(stderr);
-  } else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
+  } 
+#if HAVE_LIGHTNING
+  else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
     NativeConcreteCode *acc = NativeConcreteCode::FromWord(cc);
     acc->Disassemble(stderr);
   }
+#endif
+  else 
+    Error("UnsafeDebug_disassemble: unkown code interpreter found");
+  
   RETURN_UNIT;
 } END
 
