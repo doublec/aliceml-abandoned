@@ -11,7 +11,7 @@ class IntVar {
   int min(void); int_getMin;
   int max(void); int_getMax;
   int med(void); int_getMed;
-  VarRanges<IntVar> ranges(void); int_getRanges;
+//  ViewRanges<IntView> ranges(void); int_getRanges;
   int size(void); int_getDomainSize;
   bool range(void); int_isRange;
   bool assigned(void); int_isAssigned;
@@ -90,7 +90,7 @@ void min(const IntVarArgs&, IntVar); int_min;
 void max(const IntVarArgs&, IntVar); int_max;
 void abs(IntVar, IntVar, ConLevel); int_abs;
 void mult(IntVar, IntVar, IntVar, ConLevel); int_mult;
-void pow(IntVar, IntVar, IntVar, ConLevel); int_power;
+//void pow(IntVar, IntVar, IntVar, ConLevel); int_power;
 
 // Value assignment
 

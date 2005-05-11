@@ -31,8 +31,8 @@ int GecodeSpace::new_boolvar(void) {
   }
 
   BoolVarArray tmp(this,1);
-
-  IntVar i(tmp[0].core());
+  IntView iv(tmp[0]);
+  IntVar i(iv);
   is[noOfIntVars] = i;
 
   noOfIntVars++;

@@ -133,7 +133,7 @@ struct
    val max = UnsafeGecode.int_max
    val abs = UnsafeGecode.int_abs
    val mult = UnsafeGecode.int_mult
-   val power = UnsafeGecode.int_power
+(*   val power = UnsafeGecode.int_power*)
 
    val branch = UnsafeGecode.int_branch
 

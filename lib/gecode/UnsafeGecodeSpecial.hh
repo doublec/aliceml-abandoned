@@ -392,5 +392,29 @@ DEFINE1(fail) {
   RETURN_UNIT;
 } END
 
+DEFINE2(int_getRanges) {
+  DBGMSG("int_getRanges");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  DECLARE_INTVAR(var1, s, stamp, pstamp, x1);
+  unsigned int retIterSize = 0;
+  IntView iv(var1);
+  for(ViewRanges<IntView> iters(iv);
+      iters(); ++iters) retIterSize++;
+  ViewRanges<IntView> ret(var1);
+  Vector *vret = Vector::New(retIterSize);
+  if(retIterSize>0) {
+    u_int count = 0;
+    for (; ret(); ++ret) {
+      Tuple *t = Tuple::New(2);
+      t->Init(0, Store::IntToWord(ret.min()));
+      t->Init(1, Store::IntToWord(ret.max()));
+      vret->Init(count, t->ToWord());
+      count++;
+    }
+  }
+  RETURN(vret->ToWord());
+} END
+
 using namespace Iter::Ranges;
 using namespace Set;

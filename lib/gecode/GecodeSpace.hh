@@ -21,8 +21,10 @@
   IntVarArgs a(vars.size());                                   \
 { int s = vars.size(); for (int i=s; i--;) a[i] = is[vars[i]]; }
 
-#define intvar2boolvar(b, intvar)        \
-  BoolVar b(intvar.core());
+#define intvar2boolvar(b, intvar)		\
+  IntView iv(intvar);				\
+  BoolView bv(iv);				\
+  BoolVar b(bv);
 
 #define makeboolvarargs(a,vars)           \
   BoolVarArgs a(vars.size());             \

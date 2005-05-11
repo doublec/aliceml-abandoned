@@ -27,7 +27,7 @@ structure Generator =
             "  int noOfPairs"^n^" = v"^n^"->GetLength();\n" ^
             "  int pairs"^n^"[noOfPairs"^n^"][2];\n\n" ^
             "  int lastMax = IntegerSet::SMALLEST_ELEMENT-1;\n" ^
-            "  for (int j=noOfPairs"^n^"; j--;) {\n" ^
+            "  for (int j=0; j<noOfPairs"^n^"; j++) {\n" ^
             "    DECLARE_TUPLE(tmp, v"^n^"->Sub(j));\n" ^
             "    DECLARE_INT(tmp0, tmp->Sel(0));\n" ^
             "    DECLARE_INT(tmp1, tmp->Sel(1));\n" ^
@@ -369,7 +369,8 @@ structure Generator =
                Fun ("clone", 1, [Space], Space, "clone"),
                Fun ("discard", 1, [Space], Void, "discard"),
                Fun ("alive", 1, [Space], Bool, "alive"),
-               Fun ("fail", 1, [Space], Void, "fail")
+               Fun ("fail", 1, [Space], Void, "fail"),
+               Fun ("int_getRanges", 1, [Space,Var IntVar], Iterator "blub", "int_getRanges")
                ]
           val f = TextIO.openOut ("UnsafeGecode.cc")
           val asig = TextIO.openOut ("UnsafeGecode.asig")

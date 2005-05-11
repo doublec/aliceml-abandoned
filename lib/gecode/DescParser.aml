@@ -44,7 +44,7 @@ struct
     | parseArg "BvarSel" = BvarSel
     | parseArg "SetBvalSel" = SetBvalSel
     | parseArg "SetBvarSel" = SetBvarSel
-    | parseArg (s as ("VarRanges<IntVar>" |
+    | parseArg (s as ("ViewRanges<IntView>" |
                          "LubIter<SetVar>" |
                          "GlbIter<SetVar>" |
                          "UnknownIter<SetVar>" |

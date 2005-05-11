@@ -129,7 +129,7 @@ sig
     val max : space * intvar vector * intvar -> unit
     val abs : space * intvar * intvar * conlevel -> unit
     val mult: space * intvar * intvar * intvar * conlevel -> unit
-    val power: space * intvar * intvar * intvar * conlevel -> unit
+(*    val power: space * intvar * intvar * intvar * conlevel -> unit*)
 
     structure Reified :
 	sig
