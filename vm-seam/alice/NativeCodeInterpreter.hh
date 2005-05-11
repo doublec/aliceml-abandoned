@@ -24,11 +24,12 @@
 typedef Worker::Result (*native_fun)();
 
 class AliceDll NativeCodeInterpreter : public Interpreter {
+private:
+  // NativeCodeInterpreter Constructor
+  NativeCodeInterpreter() : Interpreter() {}
 public:
   // Exported NativeCodeInterpreter Instance
   static NativeCodeInterpreter *self;
-  // NativeCodeInterpreter Constructor
-  NativeCodeInterpreter() : Interpreter() {}
   // NativeCodeInterpreter Static Constructor
   static void Init();
   static u_int GetInArity(TagVal *abstractCode);
