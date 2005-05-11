@@ -174,11 +174,13 @@ structure MainWindow :> MAINWINDOW =
                          curInspAction=ref "",
                          refreshAfter=ref 1,
                          breakAfter=ref 0,
+                         breakAfterNodes=ref 0,
                          hideFailed=ref true,
                          zoomFollows=ref false,
                          cancelSearch=ref false,
                          debug=ref false,
-                         status={choice=ref 0,
+                         status={all=ref 0,
+				 choice=ref 0,
                                  solved=ref 0,
                                  failed=ref 0}
 			 };

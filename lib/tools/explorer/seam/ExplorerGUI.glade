@@ -44,9 +44,22 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="cancel_search">
 		      <property name="visible">True</property>
-		      <property name="label">gtk-cancel</property>
-		      <property name="use_stock">True</property>
+		      <property name="label" translatable="yes">_Cancel</property>
+		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_cancel_search_activate" last_modification_time="Wed, 19 May 2004 07:50:56 GMT"/>
+		      <accelerator key="C" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image24">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-cancel</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
 		    </widget>
 		  </child>
 
@@ -56,9 +69,10 @@
 		      <property name="label" translatable="yes">_Reset</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_reset_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
+		      <accelerator key="R" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image7">
+			<widget class="GtkImage" id="image25">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-clear</property>
 			  <property name="icon_size">1</property>
@@ -141,10 +155,10 @@
 		      <property name="label" translatable="yes">Go to _child</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_go_to_child_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
-		      <accelerator key="Down" modifiers="0" signal="activate"/>
+		      <accelerator key="Down" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image8">
+			<widget class="GtkImage" id="image26">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-down</property>
 			  <property name="icon_size">1</property>
@@ -163,10 +177,10 @@
 		      <property name="label" translatable="yes">Go to _parent</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_go_to_parent_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
-		      <accelerator key="Up" modifiers="0" signal="activate"/>
+		      <accelerator key="Up" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image9">
+			<widget class="GtkImage" id="image27">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-up</property>
 			  <property name="icon_size">1</property>
@@ -185,10 +199,10 @@
 		      <property name="label" translatable="yes">Go to _left sibling</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_go_to_left_sibling_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
-		      <accelerator key="Left" modifiers="0" signal="activate"/>
+		      <accelerator key="Left" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image10">
+			<widget class="GtkImage" id="image28">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-back</property>
 			  <property name="icon_size">1</property>
@@ -207,10 +221,10 @@
 		      <property name="label" translatable="yes">Go to _right sibling</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_go_to_right_sibling_activate" last_modification_time="Wed, 16 Mar 2005 12:54:29 GMT"/>
-		      <accelerator key="Right" modifiers="0" signal="activate"/>
+		      <accelerator key="Right" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image11">
+			<widget class="GtkImage" id="image29">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-go-forward</property>
 			  <property name="icon_size">1</property>
@@ -327,7 +341,7 @@
 		      <signal name="activate" handler="on_about_activate" last_modification_time="Tue, 11 May 2004 15:53:56 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image12">
+			<widget class="GtkImage" id="image30">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-dialog-info</property>
 			  <property name="icon_size">1</property>

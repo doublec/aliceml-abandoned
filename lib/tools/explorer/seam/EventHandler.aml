@@ -305,6 +305,15 @@ structure EventHandler =
   fun saveHandler (serve, state : Types.explorer_state option ref) _ =
       serve (fn () => SaveWindow.newSaveWindow(serve, state))
 
+  fun findNonFailure(parent, node, index, max, dir) =
+      if index=max orelse index= ~1 then node else
+	  let val newNode = ExplorerNode.getChild parent index in
+	      case ExplorerNode.curNodeStatus newNode of
+		  Types.FAILED => findNonFailure(parent,node,
+						 dir(index,1),max,dir)
+		| _ => newNode
+	  end
+
   fun goToChild (serve,state) _ = 
       serve (fn () =>
                 case !state of
@@ -312,7 +321,8 @@ structure EventHandler =
                           ...} =>
 		    if TreeNode.noOfChildren cn>0 then
 			let
-			    val n = ExplorerNode.getChild cn 0
+			    val n = findNonFailure(cn, ExplorerNode.getChild cn 0,
+						   0, TreeNode.noOfChildren cn, op+)
 			    val (x,y) = TreeNode.getCenter n
 			in
 			    case ExplorerNode.curNodeStatus n of
@@ -352,7 +362,10 @@ structure EventHandler =
 		       | SOME n =>
 			     if TreeNode.noOfChildren n>ExplorerNode.getAlternative cn+1 then
 				 let
-				     val n = ExplorerNode.getChild n (ExplorerNode.getAlternative cn+1)
+				     val n = findNonFailure(n,cn,
+							    ExplorerNode.getAlternative cn+1,
+							    TreeNode.noOfChildren n,
+							    op+)
 				     val (x,y) = TreeNode.getCenter n
 				 in
 				     case ExplorerNode.curNodeStatus n of
@@ -375,7 +388,10 @@ structure EventHandler =
 		       | SOME n =>
 			     if ExplorerNode.getAlternative cn>0 then
 				 let
-				     val n = ExplorerNode.getChild n (ExplorerNode.getAlternative cn-1)
+				     val n = findNonFailure(n,cn,
+							    ExplorerNode.getAlternative cn-1,
+							    TreeNode.noOfChildren n,
+							    op-)
 				     val (x,y) = TreeNode.getCenter n
 				 in
 				     case ExplorerNode.curNodeStatus n of

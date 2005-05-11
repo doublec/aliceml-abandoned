@@ -54,11 +54,13 @@ structure Types =
                          curInspAction : string ref,
                          refreshAfter : int ref,
                          breakAfter : int ref,
+                         breakAfterNodes : int ref,
                          hideFailed : bool ref,
                          zoomFollows : bool ref,
                          cancelSearch : bool ref,
                          debug : bool ref,
-                         status : {choice : int ref,
+                         status : {all : int ref,
+				   choice : int ref,
                                    failed : int ref,
                                    solved : int ref } }
 
@@ -96,28 +98,10 @@ structure Types =
       (!choice,!failed,!solved)
     | getSearchState _ = raise Empty
 
-  fun resetSearchState (ref (SOME ({status={choice,failed,solved,...},...}:
+  fun resetSearchState (ref (SOME ({status={choice,failed,solved,all},...}:
                                    explorer_state))) =
-      (choice := 0; failed := 0; solved := 0)
+      (all := 0; choice := 0; failed := 0; solved := 0)
     | resetSearchState _ = ()
-
-  fun addChoice (ref (SOME ({status={choice,...},...}:
-                            explorer_state))) =
-      (choice := (!choice) + 1)
-    | addChoice _ = ()
-
-  fun addFailed (ref (SOME ({status={failed,...},...}:
-                            explorer_state))) =
-      (failed := (!failed) + 1)
-    | addFailed _ = ()
-
-  fun addSolved (ref (SOME ({status={solved,...},
-			     tree={bestSpace,constrain,...},...}:
-                            explorer_state)), s) =
-      (solved := (!solved) + 1;
-       case !constrain of NONE => ()
-	 | SOME c => bestSpace := SOME s)
-    | addSolved _ = ()
 
   fun cancelSearch (ref (SOME ({cancelSearch=cs,...}:
                                explorer_state))) =
@@ -129,10 +113,47 @@ structure Types =
       cs := true
     | setCancelSearch _ = ()
 
-  fun resetCancelSearch (ref (SOME ({cancelSearch=cs,...}:
+  fun resetCancelSearch (ref (SOME ({cancelSearch=cs,status={all,...},...}:
                                explorer_state))) =
-      cs := false
+      (cs := false;
+       all := 0)
     | resetCancelSearch _ = ()
+
+  fun addChoice (state as ref (SOME ({status={all,choice,failed,solved},
+			     breakAfterNodes,...}:
+                            explorer_state))) =
+      (choice := (!choice) + 1;
+       all := (!all) + 1;
+       if !breakAfterNodes>0 andalso
+	   (!all) >= (!breakAfterNodes) then
+	   setCancelSearch state else ()
+       )
+    | addChoice _ = ()
+
+  fun addFailed (state as ref (SOME ({status={all,choice,failed,solved},
+			     breakAfterNodes,...}:
+                            explorer_state))) =
+      (failed := (!failed) + 1;
+       all := (!all) + 1;
+       if !breakAfterNodes>0 andalso
+	   (!all) >= (!breakAfterNodes) then
+	   setCancelSearch state else ()
+       )
+    | addFailed _ = ()
+
+  fun addSolved (state as ref (SOME ({status={all,choice,failed,solved},
+			     breakAfterNodes,
+			     tree={bestSpace,constrain,...},...}:
+                            explorer_state)), s) =
+      (solved := (!solved) + 1;
+       (case !constrain of NONE => ()
+                         | SOME c => bestSpace := SOME s);
+       all := (!all) + 1;
+       if !breakAfterNodes>0 andalso
+	   (!all) >= (!breakAfterNodes) then
+	   setCancelSearch state else ()
+       )
+    | addSolved _ = ()
 
   fun getHideFailed (ref (SOME {hideFailed=ref hideFailed,...}:
                           explorer_state option)) = hideFailed
