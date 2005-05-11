@@ -58,167 +58,94 @@
 
   <PRE>
 signature FD =
-sig
-    type space
-    type intvar
-    type boolvar
-
-    exception NotAssigned
-		       
-    type domain = (int*int) vector
-    exception InvalidDomain
-    (* Exception thrown by all domain tells *)
-    (* if something that is no proper domain is used *)
-
-    val domainFromList : int list -> domain
-
-    (* Allocation of finite domain variables *)
-    val intvar :  space * domain -> intvar
-    val intvarVec :  space * int * domain -> intvar vector
-    val range :  space * (int * int) -> intvar
-    val rangeVec :  space * int * (int * int) -> intvar vector
-
-    (* Allocation of boolean (0/1) finite domain variables *)
-    val boolvar :  space -> boolvar
-    val boolvarVec :  space * int -> boolvar vector
-
-    (* Constraining an intvar to a boolvar *)
-
-    val intvar2boolvar : space * intvar -> boolvar
-    val boolvar2intvar : space * boolvar -> intlvar
-    
-    (* Value assignment *)
-
-    datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
-
-    val assign : space * intvar vector * avalsel -> unit
-
-    (* Domain constraints *)
-    val dom :  space * intvar * (int * int) vector -> unit
-
-
-    (* debugging *)
-    (*val varStamp : intvar -> int*)
-
-    (* *********** *)
-    (* PROPAGATORS *)
-    (* *********** *)
-
-    (* Relations *)
-
-    datatype relation =
-	     EQ (* Equality         == *)
-	   | NQ (* Disequality      != *)
-	   | LQ (* Less or equal    &lt;= *)
-	   | LE (* Less             &lt;  *)
-	   | GQ (* Greater or equal >= *)
-	   | GR (* Greater          >  *)
-	     
-    datatype conlevel = 
-	     BND | DEF | DOM | VAL
-
-    val rel  :  space * intvar * relation * intvar -> unit
-    val relI :  space * intvar * relation * int -> unit
-
-    val equal  : space * intvar * intvar * conlevel -> unit
-    val equalV : space * intvar vector * conlevel -> unit
-
-    (* Distinct constraints *)
-    val distinct : space * intvar vector * conlevel -> unit
-    val distinctOffset : space * (int * intvar) vector *
-			 conlevel -> unit
-
-    (* Counting constraints *)
-    val countII : space * intvar vector * relation *
-		  int * relation * int -> unit
-    val countVI : space * intvar vector * relation *
-		 intvar * relation * int -> unit
-    val countIV : space * intvar vector * relation *
-		  int * relation * intvar -> unit
-    val countVV : space * intvar vector * relation *
-		 intvar * relation * intvar -> unit
-
-    (* Access constraints *)
-    val element : space * intvar vector * intvar *
-		 intvar -> unit
-    val elementI : space * int vector * intvar *
-		  intvar -> unit
-    val lex : space * intvar vector * relation *
-	     intvar vector -> unit
-			       
-    (* Boolean constraints *)			     
-    val nega  : space * boolvar * boolvar -> unit
-    val conj  : space * boolvar * boolvar * boolvar -> unit
-    val disj  : space * boolvar * boolvar * boolvar -> unit
-    val impl  : space * boolvar * boolvar * boolvar -> unit
-    val equi  : space * boolvar * boolvar * boolvar -> unit
-    val exor  : space * boolvar * boolvar * boolvar -> unit
-    val conjV : space * boolvar vector * boolvar -> unit
-    val disjV : space * boolvar vector * boolvar -> unit
-
-    (* Linear equations *)
-    val linear : space * (int * intvar) vector * relation *
-		 int * conlevel -> unit
-
-    (* Arithmetic constraints *)					
-    val min : space * intvar vector * intvar -> unit
-    val max : space * intvar vector * intvar -> unit
-    val abs : space * intvar * intvar * conlevel -> unit
-    val mult: space * intvar * intvar * intvar -> unit
-
-    structure Reified :
-	sig
-	    val intvar : space * domain * boolvar -> intvar
-	    val intvarVec : space * int * domain * boolvar ->
-			    intvar vector
-	    val dom : space * intvar * (int * int) vector *
-		      boolvar -> unit
-	    val rel : space * intvar * relation * intvar *
-		      boolvar -> unit
-	    val relI : space * intvar * relation * int *
-		       boolvar -> unit
-	    val linear : space * (int * intvar) vector * relation *
-			 int * boolvar * conlevel -> unit
-	end
-
-    structure Reflect :
-	sig
-	    val min : space * intvar -> int
-	    val max : space * intvar -> int
+   sig
+      type space
+      type intvar
+      type boolvar
+      exception NotAssigned
+      type domain = (int * int) vector
+      exception InvalidDomain
+      val domainFromList : int list -> domain
+      val intvar : space * domain -> intvar
+      val intvarVec : space * int * domain -> intvar vector
+      val range : space * (int * int) -> intvar
+      val rangeVec : space * int * (int * int) -> intvar vector
+      val boolvar : space -> boolvar
+      val boolvarVec : space * int -> boolvar vector
+      val intvar2boolvar : space * intvar -> boolvar
+      val boolvar2intvar : boolvar -> intvar
+      datatype avalsel = AVAL_MAX | AVAL_MED | AVAL_MIN
+      val assign : space * intvar vector * avalsel -> unit
+      val dom : space * intvar * domain -> unit
+      datatype relation = EQ | GQ | GR | LE | LQ | NQ
+      datatype conlevel = BND | DEF | DOM | VAL
+      val rel : space * intvar * relation * intvar -> unit
+      val relI : space * intvar * relation * int -> unit
+      val equal : space * intvar * intvar * conlevel -> unit
+      val equalV : space * intvar vector * conlevel -> unit
+      val distinct : space * intvar vector * conlevel -> unit
+      val distinctOffset : space * (int * intvar) vector * conlevel -> unit
+      val sortedness : space * intvar vector * intvar vector * conlevel -> unit
+      val permsort :
+         space * intvar vector * intvar vector * intvar vector * conlevel ->
+            unit
+      val gcc :
+         space * intvar vector * int vector * int vector * conlevel -> unit
+      val countII :
+         space * intvar vector * relation * int * relation * int -> unit
+      val countVI :
+         space * intvar vector * relation * intvar * relation * int -> unit
+      val countIV :
+         space * intvar vector * relation * int * relation * intvar -> unit
+      val countVV :
+         space * intvar vector * relation * intvar * relation * intvar -> unit
+      val element : space * intvar vector * intvar * intvar -> unit
+      val elementI : space * int vector * intvar * intvar -> unit
+      val lex : space * intvar vector * relation * intvar vector -> unit
+      val nega : space * boolvar * boolvar -> unit
+      val conj : space * boolvar * boolvar * boolvar -> unit
+      val disj : space * boolvar * boolvar * boolvar -> unit
+      val impl : space * boolvar * boolvar * boolvar -> unit
+      val equi : space * boolvar * boolvar * boolvar -> unit
+      val exor : space * boolvar * boolvar * boolvar -> unit
+      val conjV : space * boolvar vector * boolvar -> unit
+      val disjV : space * boolvar vector * boolvar -> unit
+      val linear :
+         space * (int * intvar) vector * relation * int * conlevel -> unit
+      val min : space * intvar vector * intvar -> unit
+      val max : space * intvar vector * intvar -> unit
+      val abs : space * intvar * intvar * conlevel -> unit
+      val mult : space * intvar * intvar * intvar * conlevel -> unit
+      val power : space * intvar * intvar * intvar * conlevel -> unit
+      structure Reified :
+         sig
+            val intvar : space * domain * boolvar -> intvar
+            val intvarVec : space * int * domain * boolvar -> intvar vector
+            val dom : space * intvar * domain * boolvar -> unit
+            val rel : space * intvar * relation * intvar * boolvar -> unit
+            val relI : space * intvar * relation * int * boolvar -> unit
+            val linear :
+               space * (int * intvar) vector * relation * int * boolvar *
+                  conlevel -> unit
+         end
+      structure Reflect :
+         sig
+            val min : space * intvar -> int
+            val max : space * intvar -> int
             val med : space * intvar -> int
-	    val value : space * intvar -> int (* NotAssigned *)
-	    val boolVal : space * boolvar -> bool (* NotAssigned *)
-	    val boolvar2intvar : boolvar -> intvar
-	    val size : space * intvar -> int
-	    val dom : space * intvar -> domain
+            val value : space * intvar -> int
+            val boolVal : space * boolvar -> bool
+            val size : space * intvar -> int
+            val dom : space * intvar -> domain
             val assigned : space * intvar -> bool
             val range : space * intvar -> bool
-	end
-						  
-    (* Branching strategies *)
-
-    datatype b_var_sel =
-	     B_DEGREE_MAX
-	   | B_DEGREE_MIN
-	   | B_MAX_MAX
-	   | B_MAX_MIN
-	   | B_MIN_MAX
-	   | B_MIN_MIN
-	   | B_NONE
-	   | B_SIZE_MAX
-	   | B_SIZE_MIN
-	     
-    datatype b_val_sel =
-	     B_MAX
-	   | B_MED
-	   | B_MIN
-	   | B_SPLIT_MAX
-	   | B_SPLIT_MIN
-
-    val branch : space * intvar vector * b_var_sel *
-		 b_val_sel -> unit
-
-end</PRE>
+         end
+      datatype b_var_sel =
+         B_DEGREE_MAX | B_DEGREE_MIN | B_MAX_MAX | B_MAX_MIN | B_MIN_MAX |
+         B_MIN_MIN | B_NONE | B_SIZE_MAX | B_SIZE_MIN
+      datatype b_val_sel = B_MAX | B_MED | B_MIN | B_SPLIT_MAX | B_SPLIT_MIN
+      val branch : space * intvar vector * b_var_sel * b_val_sel -> unit
+   end</PRE>
 
 <?php section("description", "description"); ?>
 
@@ -340,7 +267,7 @@ end</PRE>
     </P></DD>
 
     <DT>
-      <TT>boolvar2intvar (<I>s, b</I>)</TT>
+      <TT>boolvar2intvar <I>b</I></TT>
     </DT>
     <DD>
       <P> Returns an intvar in the 0-1 range tied to <I>b</I> with the mapping 0:false, 1:true.
@@ -365,11 +292,11 @@ end</PRE>
     </P></DD>
 
     <DT>
-      <TT>dom (<I>s, x, (min,max)</I>)</TT>
+      <TT>dom (<I>s, x, d</I>)</TT>
     </DT>
     <DD>
       <P> Constrains <I>x</I> in <I>s</I> 
-      to the range <I>(min,max)</I>.
+      to the domain <I>d</I>.
     </P></DD>
 
     <DT>
@@ -382,7 +309,7 @@ end</PRE>
       <TT>LQ</TT>: Less or equal.<BR>
       <TT>LE</TT>: Less.<BR>
       <TT>GQ</TT>: Greater or equal.<BR>
-      <TT>GE</TT>: Greater.
+      <TT>GR</TT>: Greater.
     </P></DD>
 
     <DT>
@@ -444,9 +371,37 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> for the following:
-      Consider the elements of <I>v</I> to denote fixed length intervals.
-      The variable provides the smallest element of the interval, 
-      the integer provides the length. These intervals can not overlap.
+      For all <I>(ci,xi)</I> and <I>(cj,xj)</I>, xi+ci != xj+cj.
+    </P></DD>
+
+    <DT>
+      <TT>sortedness (<I>s, xs, ys, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> that states that the
+      <I>ys</I> are the sorted <I>xs</I>.
+    </P></DD>
+
+    <DT>
+      <TT>permsort (<I>s, xs, ys, zs, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> that states that the
+      <I>ys</I> are the sorted <I>xs</I>, and the <I>zs</I> are the
+      corresponding permutation.
+    </P></DD>
+
+    <DT>
+      <TT>gcc (<I>s, xs, ls, us, level</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> for the global cardinality
+      constraint. This constraint generalises the distinct constraint
+      in that it gives lower and upper bounds on the number of times a
+      certain value may occur. The <I>ls</I> give the lower bounds, so
+      e.g. <I>ls</I>=#[1,3,1,0] says that the 0 must occur at least
+      once, the 1 at least 3 times, the 2 at least once, and the 3 may
+      not occur at all. The <I>us</I> are the corresponding upper bounds.
     </P></DD>
 
     <DT>
@@ -496,7 +451,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring 
-      <I>b1</I> is the conjunction of <I>b2</I> and <I>b3</I>
+      <I>b3</I> is the conjunction of <I>b1</I> and <I>b2</I>
     </P></DD>
 
     <DT>
@@ -504,7 +459,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring 
-      <I>b1</I> is the disjunction of <I>b2</I> and <I>b3</I>
+      <I>b3</I> is the disjunction of <I>b1</I> and <I>b2</I>
     </P></DD>
 
     <DT>
@@ -512,7 +467,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring 
-      <I>b1</I> is the implication from <I>b2</I> to <I>b3</I>
+      <I>b3</I> is the implication from <I>b1</I> to <I>b2</I>
     </P></DD>
 
     <DT>
@@ -520,7 +475,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring 
-      <I>b1</I> is the equivalence of <I>b2</I> and <I>b3</I>
+      <I>b3</I> is the equivalence of <I>b1</I> and <I>b2</I>
     </P></DD>
 
     <DT>
@@ -528,7 +483,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring 
-      <I>b1</I> is the non-equality of <I>b2</I> and <I>b3</I>
+      <I>b3</I> is the non-equality of <I>b1</I> and <I>b2</I>
     </P></DD>
 
     <DT>
@@ -577,7 +532,7 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring
-      <I>x</I> is equal to the absolute value of <I>y</I>.
+      <I>y</I> is equal to the absolute value of <I>x</I>.
     </P></DD>
 
     <DT>
@@ -586,6 +541,14 @@ end</PRE>
     <DD>
       <P> Creates a propagator in <I>s</I> ensuring
       <I>z</I> is equal to <I>x</I> times <I>y</I>.
+    </P></DD>
+
+    <DT>
+      <TT>power (<I>s, x, y, z</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a propagator in <I>s</I> ensuring
+      <I>z</I> is equal to <I>x</I> to the power of <I>y</I>.
     </P></DD>
 
     <DT>
@@ -661,7 +624,7 @@ end</PRE>
     </P></DD>
 
     <DT>
-      <TT>Reflect.value (<I>s, b</I>)</TT>
+      <TT>Reflect.boolVal (<I>s, b</I>)</TT>
     </DT>
     <DD>
       <P> Returns the value <I>b</I> takes in <I>s</I>. Throws NotAssigned if <I>b</I> is not determined.
@@ -671,7 +634,7 @@ end</PRE>
       <TT>Reflect.size (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P> Returns the number of the possible values <I>x</I> may take in <I>s</I>.
+      <P> Returns the number of possible values <I>x</I> may take in <I>s</I>.
     </P></DD>
 
     <DT>
