@@ -1624,10 +1624,15 @@ SEND + MORE = MONEY</PRE>
 <P>is satisfied. The unique solution of the problem is <TT>9567 + 1085 =
 10652</TT>.</P>
 
-<P>Using Alice, the problem can be solved as follows. First, we have to define
-a so-called <I>script</I> that encodes the problem:</P>
+<P>Using Alice, the problem can be solved as follows. First, we have
+to import the constraint library and define a so-called <I>script</I>
+that encodes the problem:</P>
 
 <PRE class=code>
+import structure FD     from "x-alice:/lib/gecode/FD"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+open Linear
+
 fun money sp =
 let
     val v as #[S,E,N,D,M,O,R,Y] = fdtermVec (sp, 8, [0`#9])
@@ -1658,8 +1663,9 @@ Tutorial</A> for a more detailed explanation of the basic concepts.</P>
 predefined search engines can be used:</P>
 
 <PRE class=code>
+import structure Search from "x-alice:/lib/gecode/Search"
 Search.searchAll money
-<I><SMALL>### loaded signature from x-alice:/lib/gecode/Search
+<I><SMALL>
 val it :
    Space.space list *
       {D : term, E : term, M : term, N : term, O : term, R : term, S : term,
@@ -1692,6 +1698,8 @@ href="library/explorer.html"><EM>Explorer</EM></A> instead of offline <TT>Search
 <?php } ?>
 
 <PRE class=code>
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+
 Explorer.exploreAll money
 <I><SMALL>val it : unit = ()</SMALL></I></PRE>
 
