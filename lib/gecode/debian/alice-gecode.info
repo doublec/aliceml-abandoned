@@ -1,13 +1,13 @@
 Package: alice-gecode
 Version: 1.1
-Revision: 1
-Source: http://www.ps.uni-sb.de/alice/download/%n-%v.tar.gz
+Revision: 2
+Source: http://www.ps.uni-sb.de/alice/download/sources/%n-%v.tar.gz
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
 HomePage: http://www.ps.uni-sb.de/alice
 License: BSD
 Description: Alice Language Layer, Gecode binding
 Source-MD5: INSERTMD5HERE
-Depends: alice (= %v-%r)
+Depends: alice (>= %v-%r)
 BuildDepends: gecode
 CompileScript: make compiledll GECODEDIR=%p
 InstallScript: make installdll INSTALLDIR=%i/share/alice/lib/gecode
