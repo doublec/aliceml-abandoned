@@ -33,8 +33,12 @@ Basis Library:
 
 Constraint Library:
 
-* [FIX] Explorer: status bar is now reset upon each new search;
-        branch-and-bound works properly for more than one search.
+* [FIX] Documentation is in sync with the library again
+* [FIX] Explorer: status bar is now reset upon each new search.
+        Branch-and-bound works properly for more than one search.
+	Keyboard navigation through the search tree works better.
+	Added option to stop search after the tree has reached a
+	certain size.
 
 Other Libraries:
 
