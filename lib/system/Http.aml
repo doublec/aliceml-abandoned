@@ -16,7 +16,6 @@ import structure Socket       from "Socket"
 import structure IO           from "IO"
 import signature HTTP         from "HTTP-sig"
 
-import "TextIO"
 structure Http :> HTTP =
     struct
 	structure StringMap = MkHashImpMap(String)
