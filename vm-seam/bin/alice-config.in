@@ -87,6 +87,7 @@ usage () {
     echo "  --alicelibdir    [$pkgdatadir/lib]                       " >&2
     echo "  --alicetoolsdir  [$pkgdatadir/tools]                     " >&2
     echo "  --alicebindir    [$exec_prefix/bin]                      " >&2
+    echo "  --alicedll       [$seamlibdir/alice.dll]                 " >&2
     exit 2
 }
 
@@ -106,6 +107,7 @@ while test $# -gt 0; do
         --alicelibdir)  echo "$pkgdatadir/lib" ;;
         --alicetoolsdir)  echo "$pkgdatadir/tools" ;;
 	--alicebindir) echo "$exec_prefix/bin" ;;
+        --alicedll)    echo "$seamlibdir/alice.dll" ;;
         *)         usage ;;
         esac
 

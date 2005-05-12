@@ -27,6 +27,7 @@ TARGETS = SQLite.alc SQLITE-sig.alc
 
 EXTRA_LIBS = `pkg-config --libs sqlite3`
 EXTRA_INCLUDES = `pkg-config --cflags sqlite3`
+ALICEDLL = `alice-config --alicedll`
 
 VERSION = 1.1
 DISTFILES = $(SOURCES) Makefile debian
@@ -44,7 +45,7 @@ compilealice: $(TARGETS)
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) $(EXTRA_LIBS) -o $@
+	alicetool -v link $(ALICEDLL) $(LDFLAGS) $(SOURCES:%.cc=%.o) $(EXTRA_LIBS) -o $@
 
 %.alc: %.aml
 	alicec -c $< -o $@

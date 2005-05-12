@@ -55,6 +55,8 @@ GECODEOBJ = -lgecodeset -lgecodeint -lgecodekernel
 CPPFLAGS = -I$(GECODEDIR)/include/gecode
 LDFLAGS = -L$(GECODEDIR)/lib/gecode
 
+ALICEDLL = `alice-config --alicedll` 
+
 MY_CXXFLAGS=-O3 -finline-limit=3000 -DNDEBUG -pipe -DHAVE_CONFIG_H
 
 #MY_CXXFLAGS=-ggdb -pipe -DHAVE_CONFIG_H
@@ -76,8 +78,18 @@ Generator.alc: DescParser.alc
 	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) $(MY_CXXFLAGS) \
 	$(CPPFLAGS) -c  $< -o $@
 
+
+# this (the use of ALICEDLL) is an ugly hack around
+# a linking problem which occurs on some linuxes
+# (Debian at least)
+# It should work like this:
+# %.dll: %.o
+#	$(ALICETOOL) -v link $< -o $@ \
+#	...
+
+
 %.dll: %.o
-	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) \
+	alicetool -v link $(ALICEDLL) $(LDFLAGS) $(SOURCES:%.cc=%.o) \
 	$(GECODEOBJ) $(EXTRA_LIBS) -o $@
 
 %.alc: %.aml

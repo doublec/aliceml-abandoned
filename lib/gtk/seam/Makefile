@@ -77,7 +77,7 @@ ALICEDEP = alicedep
 INSTALL = ./myinstall -v -m 644
 
 INSTALLDIR = `alice-config --alicelibdir`/gtk
-ALICEDLL=$(shell ./getalicedll.sh) 
+ALICEDLL=`alice-config --alicedll`
 DISTFILES = $(CPPSOURCES) Makefile debian platform.sh \
 	MyNativeAuthoring.hh NativeUtils.hh NativeGdkSpecial.hh \
 	NativeGnomeCanvasSpecial.hh NativeGtkSpecial.hh \
@@ -136,8 +136,8 @@ compilealice: $(ALICEOBJECTS)
 # It should work like this:
 # %.dll: %.o
 #	$(ALICETOOL) -v link $< -o $@ \
-#	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
-
+#	...
+#
 %.dll: %.o
 	$(ALICETOOL) -v link $(ALICEDLL) $< -o $@ \
 	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`

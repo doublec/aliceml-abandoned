@@ -12,6 +12,8 @@ SOURCES = \
 
 TARGETS = Regex.alc
 
+ALICEDLL = `alice-config --alicedll`
+
 EXTRA_LIBS = 
 EXTRA_INCLUDES = 
 
@@ -25,7 +27,7 @@ all: $(NATIVES:%=%.dll) $(TARGETS)
 	-c  $< -o $@
 
 %.dll: %.o
-	$(ALICETOOL) link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	$(ALICETOOL) link $(ALICEDLL) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
 %.alc: %.aml
 	alicec -z $< -o $@
