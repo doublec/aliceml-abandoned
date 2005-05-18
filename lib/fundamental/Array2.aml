@@ -165,7 +165,8 @@ local
 				   end
 
 	   fun tabulate trv (rows, cols, f) =
-	       if rows = 0 orelse cols = 0 then
+               if rows < 0 orelse cols < 0 then raise General.Size
+               else if rows = 0 orelse cols = 0 then
 		   array (rows, cols, dummy ())
 	       else
 		   let val v = Array.array (rows * cols, f (0, 0))
