@@ -265,8 +265,10 @@ struct
 	  textpar["label",ppLab l,"is","not","contained","in","type"]
       | ppError(TagExpArgMismatch ue | ConExpArgMismatch ue) =
 	ppTypMismatch4(
-	  textpar["constructor","argument","type","mismatch:"],
-	  textpar["does","not","match","argument","type"], unstrict ue)
+	  textpar["mismatch","on","constructor","application:",
+		  "expression","type"],
+	  textpar["does","not","match","constructor's","argument","type"],
+	  unstrict ue)
       | ppError(ConExpConMismatch ue) =
 	ppTypMismatch2(
 	  textpar["applied","value","is","not","a","constructor","function:"],
@@ -275,20 +277,20 @@ struct
 	ppRollTypMismatch ue
       | ppError(UpdExpMismatch ue) =
 	ppTypMismatch4(
-	  textpar["mismatch","on","record","update:"],
-	  textpar["does","not","match","type"], ue)
+	  textpar["mismatch","on","record","update:","expression","type"],
+	  textpar["does","not","match","field","type"], ue)
       | ppError(SelExpMismatch ue) =
 	ppTypMismatch2(
-	  textpar["selection","type","mismatch:"],
-	  textpar["does","not","match","record","type"], ue)
+	  textpar["mismatch","on","selection:","expression","type"],
+	  textpar["does","not","match","selector's","argument","type"], ue)
       | ppError(AppExpFunMismatch ue) =
 	ppTypMismatch2(
 	  textpar["applied","value","is","not","a","function:"],
 	  textpar["does","not","match","function","type"], ue)
       | ppError(AppExpArgMismatch ue) =
 	ppTypMismatch4(
-	  textpar["argument","type","mismatch:"],
-	  textpar["does","not","match","argument","type"], ue)
+	  textpar["mismatch","on","application:","expression","type"],
+	  textpar["does","not","match","function's","argument","type"], ue)
       | ppError(AndExpMismatch ue) =
 	ppTypMismatch2(
 	  textpar["operand","of","`andalso'","is","not","a","boolean:"],
