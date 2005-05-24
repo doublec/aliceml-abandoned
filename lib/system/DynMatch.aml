@@ -77,7 +77,7 @@ struct
 		val l = trInfLab(Path.toLab p)
 		val j = lazy UnsafeValue.projPoly(m,l)
 	    in
-		PathMap.insert(#typ_rea rea, p, j);
+		PathMap.insert(#inf_rea rea, p, j);
 		matchSig(rea, m, items)
 	    end
 	  | Inf.HiddenItem _ => raise Hidden
