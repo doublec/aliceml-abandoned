@@ -118,8 +118,8 @@ sig
 
     val inspect :	inf -> desc
 
-    val isTop :		inf -> bool			(* modulo subtyping...*)
-    val isCon :		inf -> bool
+    val isTop :		inf -> bool
+    val isCon :		inf -> bool			(* modulo subtyping...*)
     val isSig :		inf -> bool
     val isArrow :	inf -> bool
     val isExist :	inf -> bool

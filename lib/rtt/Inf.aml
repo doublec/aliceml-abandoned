@@ -313,6 +313,7 @@ struct
     val narrowFwd 		= ref(dummy : inf * inf -> inf)
     val narrowModFwd 		= ref(dummy : mod * inf -> mod)
     val realiseFwd		= ref(dummy : rea * inf -> inf)
+    val realiseInstFwd		= ref(dummy : rea * inf -> inf)
     val realiseKindFwd		= ref(dummy : rea * kind -> kind)
     val replaceNarrowedFwd	= ref(dummy : path * inf * inf -> inf)
     val matchFwd		= ref(dummy : inf * inf -> rea)
@@ -327,6 +328,7 @@ struct
     fun narrow(j1,j2)		= !narrowFwd(j1,j2)
     fun narrowMod(m,j)		= !narrowModFwd(m,j)
     fun realise(rea,j)		= !realiseFwd(rea,j)
+    fun realiseInst(rea,j)	= !realiseInstFwd(rea,j)
     fun realiseKind(rea,k)	= !realiseKindFwd(rea,k)
     fun replaceNarrowed(p,j,j')	= !replaceNarrowedFwd(p,j,j')
     fun match(j1,j2)		= !matchFwd(j1,j2)
@@ -653,9 +655,9 @@ struct
 
     fun isTop j =
 	case content j
-	  of (TOP | SIG _ | FUN _)				=> true
-	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isTop j2
-	   | (CON _ | LAMBDA _ | APPLY _)			=> false
+	  of TOP						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2))			=> isTop j2
+	   | (SIG _ | FUN _ | CON _ | THAT _ | LAMBDA _ | APPLY _) => false
     fun isSig j =
 	case content j
 	  of SIG _						=> true
@@ -812,7 +814,7 @@ struct
 		val _   = PathMap.insertDisjoint(#mod_rea rea,
 						 p, narrowMod(m,j1))
 (*DEBUG*)handle e => raise e
-		val j2' = realise(rea,j2)
+		val j2' = realiseInst(rea,j2)
 	    in
 		case jo of NONE     => j2'
 			 | SOME j'' => abbrev'(apply'(j'',m), j2')
@@ -1729,6 +1731,13 @@ TextIO.print "\n";
 
     and realise(rea, j) =
 	if isEmptyRea rea then j else
+	build({inf  = Map.map(),
+	       kind = KindMap.map(),
+	       typ  = Type.realiseStart(),
+	       rea  = rea,
+	       inst = NoInst LeftSingleton}, j)
+
+    and realiseInst(rea, j) =
 	build({inf  = Map.map(),
 	       kind = KindMap.map(),
 	       typ  = Type.realiseStart(),
@@ -2664,6 +2673,7 @@ TextIO.print "\n";
     val _ = narrowFwd          := narrow
     val _ = narrowModFwd       := narrowMod
     val _ = realiseFwd         := realise
+    val _ = realiseInstFwd     := realiseInst
     val _ = realiseKindFwd     := realiseKind
     val _ = replaceNarrowedFwd := replaceNarrowed
     val _ = matchFwd           := match
