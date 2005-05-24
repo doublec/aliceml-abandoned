@@ -23,7 +23,12 @@ import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig
 import structure Component          from "../../lib/system/Component"
 import structure Store              from "../../lib/system/Store"
 import structure MkHashImpMap       from "../../lib/data/MkHashImpMap"
+
 import structure Inf                from "../../lib/rtt/Inf"
+import structure Type               from "../../lib/rtt/Type"
+import structure Path               from "../../lib/rtt/Path"
+import structure Label              from "../../lib/rtt/Label"
+import structure PathMap            from "../../lib/rtt/PathMap"
 
 import structure Crash              from "../infrastructure/Crash"
 import structure Source             from "../infrastructure/Source"
@@ -35,6 +40,7 @@ import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 (*DEBUG*)
 import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 import structure PPInf from "../../lib/rtt/PPInf"
+import structure PPPath from "../../lib/rtt/PPPath"
 
 structure InfLoader = struct type t = Source.desc * Url.t -> Inf.sign end
 structure ModLoader = struct type t = Source.desc * Url.t -> Reflect.module end
@@ -221,7 +227,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				  " does not contain a proper\
 				  \ signature declaration")
 		in
-		    {export = export', imports = imports}
+		    {isRealised = false, export = export', imports = imports}
 		end
 	in
 	    fun compileSign filename = processFile compileSign' (filename, NONE)
@@ -240,13 +246,14 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				else component
 			in
 			    Component.save (outFilename, component);
-			    {export = valOf (Component.inf component),
+			    {isRealised = true,
+			     export = valOf (Component.inf component),
 			     imports = Vector.map (Pair.mapSnd valOf)
 				       (Component.imports component)}
 			end
 		  | (_, Target.FOREIGN {save, inf}) =>
 			(save outFilename;
-			 {export = inf, imports = #[]}) (*--** *)
+			 {isRealised = true, export = inf, imports = #[]}) (*--** *)
 
 	    val fileStack: string list ref = ref nil
 	in
@@ -315,8 +322,13 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	 *                  else A without the component extension
 	 *)
 
+	exception Inconsistency of Url.t * Url.t
+
 	structure UrlMap = MkHashImpMap(Url)
-	type import_entry = {export: Inf.t, imports: (Url.t * Inf.t) vector}
+	type import_entry =
+	    {export: Inf.t,
+	     imports: (Url.t * Inf.t) vector,
+	     isRealised: bool}
 
 	val importTable: import_entry UrlMap.t = UrlMap.map ()
 
@@ -324,36 +336,66 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    let
 		val component = ComponentManager.load url
 		val dummyInf = Inf.sign (Inf.emptySig ())
+		val s = Url.toStringRaw url
 	    in
-		{export = valOf (Component.inf component),
+		{isRealised = String.isPrefix "x-alice:/lib/fundamental/" s
+		       orelse String.isSuffix "/lib/fundamental/Pervasive" s,
+		 export = valOf (Component.inf component),
 		 imports = Vector.map (fn (url, infOpt) =>
 				       (url, Option.getOpt (infOpt, dummyInf)))
 				      (Component.imports component)}
 	    end
 
-	fun acquireInfs (desc, url) =
+	val buildReaFwd : (Url.t * (Url.t * Inf.t) vector * Inf.t -> Inf.rea) ref =
+	    ref (fn _ => raise Fail "buildRea")
+
+	fun acquireInfs (baseUrlOpt, url, realised) =
 	    let
 		val url' =
-		    case Source.anyUrl desc of
+		    case baseUrlOpt of
 			SOME base => Url.resolve base url
 		      | NONE => resolveWrtCwd url
+		val ceilUrl = urlCeil url'
+		val infs as {isRealised, export, imports} =
+		    case UrlMap.lookup (importTable, ceilUrl) of
+			SOME infs => infs
+		      | NONE =>
+			let
+			    val infs =
+				(loadInfs url'
+				 before
+				 trace ("loaded signature from " ^
+					Url.toStringRaw url'))
+				handle ( Component.Failure (_, exn as IO.Io _)
+				       | exn as Option.Option ) =>
+				    acquireFromSigFile (url', exn)
+			in
+			    UrlMap.insert (importTable, ceilUrl, infs);
+			    infs
+			end
 	    in
-		case UrlMap.lookup (importTable, urlCeil url') of
-		    SOME infs => infs
-		  | NONE =>
-		    let
-			val infs =
-			    (loadInfs url'
-			     before
-			     trace ("loaded signature from " ^
-				    Url.toStringRaw url'))
-			    handle ( Component.Failure (_, exn as IO.Io _)
-				   | exn as Option.Option ) =>
-				acquireFromSigFile (url', exn)
-		    in
-			UrlMap.insert (importTable, urlCeil url', infs);
-			infs
-		    end
+		if isRealised orelse not realised then infs else
+		let
+		    val _ = trace ("computing up-to-date signature of " ^
+				   Url.toStringRaw url')
+		    val rea = !buildReaFwd (url', imports, export)
+		    val export' = Inf.realise(rea, export)
+		    val imports' =
+			Vector.map (fn (u,j) => (u, Inf.realise (rea, j))) imports
+		    val infs' =
+			{isRealised=true, export=export', imports=imports'}
+		in
+		    trace ("gathered up-to-date signature of " ^
+			   Url.toStringRaw url');
+		    UrlMap.insert (importTable, ceilUrl, infs');
+		    infs'
+		end
+		handle Inconsistency (baseUrl, url) =>
+		    error ("inconsistent assumptions in component\n   " ^
+			   Url.toStringRaw baseUrl ^
+			   "\nabout signature of its import component\n   " ^
+			   Url.toStringRaw url ^
+			   "\nPlease try to recompile the former!")
 	    end
 	and acquireFromSigFile (url, exn) =
 	    let
@@ -396,20 +438,20 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    end
 
 	fun acquireSig (desc, url) =
-(*
-	    Inf.asSig (#export (acquireInfs (desc, url)))
-*)
-let val j = #export (acquireInfs (desc, url))
-in Inf.asSig j
-	    handle Inf.Interface =>
+	    let
+		val {export, ...} = acquireInfs (Source.anyUrl desc, url, true)
+	    in
+		Inf.asSig export handle Inf.Interface =>
 (*DEBUG*)
-(PrettyPrint.output(errOut, PPInf.ppInf j,79);
+(PrettyPrint.output(errOut, PPInf.ppInf export,79);
 TextIO.print"\n";
-		error ("higher-order content found in " ^ Url.toStringRaw url)
-) end
+		    error ("higher-order content found in " ^ Url.toStringRaw url)
+)
+	    end
+
 	fun acquireImports (desc, url) =
 	    Vector.map (Pair.mapSnd Inf.asSig)
-		       (#imports (acquireInfs (desc, url)))
+		       (#imports (acquireInfs (Source.anyUrl desc, url, true)))
 	    handle Inf.Interface =>
 		error ("higher-order import found in " ^ Url.toStringRaw url)
 
@@ -441,4 +483,123 @@ TextIO.print"\n";
 	    fun compileString (context, sourceText) =
 		processString (compile' context) sourceText
 	end
+
+	(*
+	 * Realisation of types transitively imported. This is necessary to
+	 * make diamond imports check correctly, even when both intermediate
+	 * components have been compiled against different versions of the
+	 * root component!
+	 *
+	 * In general, realisation with concrete types requires transitive
+	 * realisation, which compromises separate compilation. We hence
+	 * avoid transitive realisation unless we see a concrete type, in which
+	 * case we realise recursively and restart.
+	 *)
+
+	fun extractMods(s, ps) =
+	    case Vector.foldr
+		    (fn (p, ([],js')) => ([], Inf.top()::js')
+		      | (p, (its as it::its', js')) =>
+			let
+			    val (p',j') = Inf.asModItem it
+			in
+			    if Path.equal(p,p')
+			    then (its', j'::js')
+			    else (its, Inf.top()::js')
+			end
+		    ) (Inf.items s, []) ps
+	     of ([], js) => Vector.fromList js
+	      | _ => raise Crash.Crash "RecursiveCompiler.extractMods"
+
+
+	fun thinImports(js, j) =
+	    let
+		val s  = Inf.emptySig()
+		val ps = Vector.mapi (fn(i,j) =>
+			    let val p = Path.fromLab(Label.fromInt i)
+			    in
+				Inf.extendMod(s,p,j); p
+			    end) js
+		val j' = Inf.exist(Path.invent(), Inf.sign s,
+				   Inf.arrow(Path.invent(), j, Inf.top()))
+	    in
+		case Inf.inspect j'
+		 of Inf.Exist(_,j'',_) => extractMods(Inf.asSig j'', ps)
+		  | _ => Vector.map (Inf.top o ignore) js
+	    end
+
+	exception Concrete
+
+	fun buildReaInf(realised, rea : Inf.rea, j, j') =
+	    case Inf.inspect j
+	     of Inf.Sig s => buildReaSig(realised, rea, Inf.items s, Inf.asSig j')
+	      | (Inf.Top | Inf.Con _ | Inf.Apply _ | Inf.Arrow _ | Inf.Sing _) => ()
+	      | Inf.Exist _ => raise Crash.Crash "RecursiveCompiler.buildReaInf"
+	      | Inf.Lambda _ => raise Inf.Interface
+
+	and buildReaSig(realised, rea, [], s') = ()
+	  | buildReaSig(realised, rea, item::items, s') =
+	    case Inf.inspectItem item
+	     of (Inf.FixItem _ | Inf.ValItem _) =>
+	            buildReaSig(realised, rea, items, s')
+	      | Inf.TypItem(p,k) =>
+		if Type.isSingKind k then buildReaSig(realised, rea, items, s') else
+		let
+		    val l = Path.toLab p
+		    val k = Inf.lookupTyp(s',l)
+		in
+		    if Type.isSingKind k andalso not realised then
+			raise Concrete
+		    else if Path.equal(p, Inf.pathTyp(s',l)) then
+			() (* optimise realisation *)
+		    else
+			PathMap.insert(#typ_rea rea, p, Inf.lookupTyp'(s',l));
+		    buildReaSig(realised, rea, items, s')
+		end
+	      | Inf.ModItem(p,j) =>
+		let
+		    val j' = Inf.lookupMod(s', Path.toLab p)
+		in
+		    buildReaInf(realised, rea, j, j');
+		    buildReaSig(realised, rea, items, s')
+		end
+	      | Inf.InfItem(p,k) =>
+		if Inf.isSingKind k then buildReaSig(realised, rea, items, s') else
+		let
+		    val l = Path.toLab p
+		    val k = Inf.lookupInf(s',l)
+		in
+		    if Inf.isSingKind k andalso not realised then
+			raise Concrete
+		    else if Path.equal(p, Inf.pathInf(s',l)) then
+			() (* optimise realisation *)
+		    else
+			PathMap.insert(#inf_rea rea, p, Inf.lookupInf'(s',l));
+		    buildReaSig(realised, rea, items, s')
+		end
+	      | Inf.HiddenItem _ =>
+		raise Crash.Crash "RecursiveCompiler.buildReaSig"
+
+	fun buildRea(url, imports, export) =
+	    let
+		val (urls,js) = VectorPair.unzip imports
+		val js'       = thinImports(js, export)
+		val rea       = Inf.rea()
+	    in
+		VectorPair.app (fn(url',j) =>
+		    if Inf.isTop j then () else
+		    buildImportRea(false, rea, url, url', Inf.realise(rea,j))
+		) (urls,js');
+		rea
+	    end
+	and buildImportRea(realised, rea, baseUrl, url, j) =
+	    let
+		val j' = #export (acquireInfs (SOME baseUrl, url, realised))
+	    in
+		buildReaInf(realised, rea, j, j')
+		handle Inf.Interface => raise Inconsistency (baseUrl, url)
+		     | Concrete => buildImportRea(true, rea, baseUrl, url, j)
+	    end
+
+	val _ = buildReaFwd := buildRea
     end
