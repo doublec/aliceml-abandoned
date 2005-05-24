@@ -209,6 +209,7 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
     wBufferString = buffer->ToWord();
     goto retry;
   }
+  buffer[0] = tolower(buffer[0]);
 #else
   if (getcwd((char *) buffer->GetValue(), size) == NULL) {
     if (errno != ERANGE) RAISE_SYS_ERR();
