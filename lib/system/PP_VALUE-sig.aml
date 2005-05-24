@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2004
+ *   Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -11,7 +11,6 @@
  *)
 
 import structure PrettyPrint from "../utility/PrettyPrint"
-import structure Path        from "../rtt/Path"
 import structure Type        from "../rtt/Type"
 
 signature PP_VALUE =
