@@ -21,8 +21,9 @@ Compiler:
 * Inaccessible types occuring in inferred /import/ signatures are now an error.
 * To accommodate with the new dynamic import typing, the compiler now closes
   over all implicit import signatures, by potentially inserting additional
-  imports for abstract types and signatures imported transitively. Optional
-  warnings for added imports (switch --warn-added-imports).
+  imports for abstract types and signatures imported transitively. Transitive
+  components must be present for compilation. Optional warnings for added
+  imports (switch --warn-added-imports).
 * Support for giving multiple source files on command line.
 * Import URLs are now resolved relative to the out-file location when compiling,
   allowing proper separation of source and build directories.

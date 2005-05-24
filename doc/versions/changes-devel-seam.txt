@@ -6,7 +6,10 @@ Runtime System:
 
 Compiler:
 
-* [CHG] Don't use encoded URLs in error messages.
+* [CHG] Improved some error messages.
+* [FIX] Make type-checking work properly in the presence of diamond import of
+        abstract types through components compiled against different versions
+        of the type. This requires indirectly imported component to be present.
 * [FIX] Under Windows, outputting error messages for files compiled on
         drives other than the current didn't work.
 * [FIX] Fixed border case where lexer went into infinite loop for some inputs
@@ -22,7 +25,7 @@ Interactive Toplevel:
 
 Basis Library:
 
-* [NEW] Print: added depth and width to control printing bounds (these also
+* [NEW] Print: added depth and width to control printing bounds (also
         control output of the toplevel); renamed printWidth to layoutWidth;
         more exceptions recognized by printer.
 * [FIX] Substring: fixed isSuffix.
@@ -33,12 +36,9 @@ Basis Library:
 
 Constraint Library:
 
-* [FIX] Documentation is in sync with the library again
-* [FIX] Explorer: status bar is now reset upon each new search.
-        Branch-and-bound works properly for more than one search.
-	Keyboard navigation through the search tree works better.
-	Added option to stop search after the tree has reached a
-	certain size.
+* [NEW] Explorer: option to stop search after tree has reached a certain size.
+* [FIX] Explorer: status bar is now reset upon each new search; branch-and-bound         works properly for more than one search; improved keyboard navigation.
+* [FIX] Documentation is in sync with the library again.
 
 Other Libraries:
 
