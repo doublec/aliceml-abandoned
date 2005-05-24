@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure TextIO              from "../../lib/system/TextIO"
 import structure Component           from "../../lib/system/Component"
 import structure ComponentManager    from "../../lib/system/ComponentManager"
 import structure MkSwitches          from "../infrastructure/MkSwitches"
