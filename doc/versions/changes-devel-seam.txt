@@ -20,8 +20,8 @@ Interactive Toplevel:
 * [NEW] GUI I/O pane can be cleared via menu.
 * [NEW] Nesting depth and width printing limits are now configurable.
 * [NEW] Most library exceptions recognized by printer.
+* [FIX] Miscellaneous usability improvements, tweaks and fixes in GUI.
 * [FIX] Jump-to-error works with Windows paths containing volumes.
-* [FIX] Miscellaneous usability fixes and tweaks in GUI.
 
 Basis Library:
 

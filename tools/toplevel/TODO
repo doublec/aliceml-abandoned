@@ -3,8 +3,6 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* load error should allow choice for new file or abort
-* ignore missing files from previous session
 * search/goto dialogs should always be raised and moved to mouse position
 * aliceglade ignores packing flags
   (manually replace alignment21's first Gtk.FILL by Gtk.EXPAND for text fields

@@ -234,6 +234,8 @@ structure GuiMain =
 		 ()
 	     end
 
+	datatype open_mode = datatype Buffer.load_mode
+
         fun new' file =
             let
 		val _ = Gtk.signalHandlerBlock(Gui.notebook1,
@@ -241,7 +243,7 @@ structure GuiMain =
                 val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
                                                     id=(!numberOfPages),
                                                     file=file,
-                                                    loadFile=false}
+                                                    mode=NEW}
             in
                 Gtk.widgetGrabFocus (view);
                 Gtk.signalConnect(buf, "mark-set", markSet);
@@ -257,7 +259,7 @@ structure GuiMain =
             end
         fun new() = new' NONE
 
-        fun openGivenFile f =
+        fun openGivenFile mode f =
 	    let
 	        val (buf,id) = Buffer.getBufferByName
 		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
@@ -271,7 +273,7 @@ structure GuiMain =
 		    val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						    notebookSwitchEventId)
                     val {buf,view,highlight,...} =
-                        Buffer.buffer {notebook=Gui.notebook1, loadFile=true,
+                        Buffer.buffer {notebook=Gui.notebook1, mode,
                                        id=(!numberOfPages), file=SOME file}
                 in
                     Gtk.signalConnect(buf, "mark-set", markSet);
@@ -286,7 +288,10 @@ structure GuiMain =
 		    Promise.fulfill(!highlight, SOME 0);
                     checkNotebookSize()
                 end
+		handle Buffer.Abort{quit} =>
+		    if quit then OS.Process.exit OS.Process.success else ()
 	    end
+	    finally Gtk.signalHandlerUnblock(Gui.notebook1, notebookSwitchEventId)
 
 	fun openFile () =
 	    let
@@ -299,7 +304,7 @@ structure GuiMain =
 	    in
 		case FileDialog.openFile("Open file", file) of
 		    NONE => ()
-		  | SOME f => openGivenFile f
+		  | SOME f => openGivenFile EXPLICIT f
 	    end
        
 
@@ -839,7 +844,7 @@ structure GuiMain =
 	fun initDone () =
 	    (Gtk.textViewSetEditable(Gui.compilerout, true);
 	     Gtk.widgetSetSensitive(Gui.feed1, true);
-	     app openGivenFile (Config.loadOpenFiles ()))
+	     app (openGivenFile SESSION) (Config.loadOpenFiles ()))
 
 	fun preferences () = 
 	    Preferences.showDialog()

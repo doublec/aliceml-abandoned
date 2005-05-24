@@ -419,8 +419,33 @@ structure Buffer =
 	  Map.exists (fn {buf,...} => Gtk.textBufferGetModified buf)
 	  bufferMap
 
-      fun buffer {notebook,id,file,loadFile} =
+      exception Abort of {quit:bool}
+
+      datatype load_mode = NEW | EXPLICIT | COMMANDLINE | SESSION
+
+      fun buffer {notebook,id,file,mode} =
           let
+	      val file = Option.map
+		  (fn f => OS.Path.mkAbsolute {path=f, relativeTo=OS.FileSys.getDir()})
+		  file
+
+	      val text = if mode = NEW then "" else
+                  case file of NONE => ""
+                             | SOME f =>
+		  let
+		      val fileD = TextIO.openIn f
+		  in
+		      Gtk.latin1ToUtf8(TextIO.inputAll fileD)
+		      before TextIO.closeIn fileD
+		  end
+		  handle IO.Io _ =>
+		    if mode = SESSION then raise Abort{quit=false} else
+		    case FileDialog.fileNotFound(mode=COMMANDLINE, f) of
+		       Gtk.RESPONSE_OK => ""
+		     | Gtk.RESPONSE_CANCEL => raise Abort{quit=false}
+		     | Gtk.RESPONSE_CLOSE => raise Abort{quit=true}
+		     | _ => ""
+
               val fileName = Option.getOpt(file, "New file "^Int.toString id)
               val scrolledwindow2_xa = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
               val scrolledwindow2_ya = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
@@ -449,10 +474,6 @@ structure Buffer =
               val _ = Gtk.notebookSetCurrentPage(notebook, page)
               val _ = Gtk.widgetModifyFont(newSource, !stdFont)
 
-	      val file = Option.map
-		  (fn f => OS.Path.mkAbsolute {path=f, relativeTo=OS.FileSys.getDir()})
-		  file
-
 	      val highlightActive =
 		  case file of
 		      NONE => true
@@ -470,28 +491,16 @@ structure Buffer =
 			 highlightActive = ref highlightActive,
 			 highlight=ref(Promise.promise())}
           in
-              if loadFile then
-              case file of NONE => ()
-                         | SOME f =>
-		  let
-		      val fileD = TextIO.openIn f
-		      val text = TextIO.inputAll fileD
-		      val text = Gtk.latin1ToUtf8 text
-		      val _ = TextIO.closeIn fileD
-		  in
-		      Lock.sync Gtk.lock
-		      (fn () =>
-		       let
-			   val iter = Gtk.textIterNew()
-		       in
-			   Gtk.textBufferSetText(buf, text, ~1);
-			   Gtk.textBufferSetModified(buf, false);
-			   Gtk.textBufferGetStartIter(buf, iter);
-			   Gtk.textBufferPlaceCursor(buf, iter)
-		       end) ()
-		    end
-		handle IO.Io _ => FileDialog.message ("I/O error: Could not open file " ^ f)
-              else ();
+	      Lock.sync Gtk.lock
+	      (fn () =>
+	       let
+		   val iter = Gtk.textIterNew()
+	       in
+		   Gtk.textBufferSetText(buf, text, ~1);
+		   Gtk.textBufferSetModified(buf, false);
+		   Gtk.textBufferGetStartIter(buf, iter);
+		   Gtk.textBufferPlaceCursor(buf, iter)
+	       end) ();
               Gtk.signalConnect(buf, "modified-changed", modifiedChanged id);
               Gtk.textBufferConnectSpecialSignals buf;
               Gtk.signalConnect(buf, "delete-text", deleteText id);

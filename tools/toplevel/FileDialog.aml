@@ -78,6 +78,27 @@ structure FileDialog =
 			Gtk.windowSetModal(dia, false))
             end
 
+        fun fileNotFound (startup,filename) =
+            let
+                val dia = Gui.file_not_found_dialog
+            in
+		Gtk.widgetSetSensitive(Gui.file_not_found_quit_button,
+				       startup);
+		Gtk.labelSetText(Gui.could_not_load_label,
+				 "Could not load file '"^filename^"'.");
+		Gtk.dialogSetDefaultResponse(dia,
+					     Gtk.GtkResponseTypeToInt
+					     Gtk.RESPONSE_OK);
+                (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
+                Gtk.widgetShowAll dia;
+		Gtk.widgetMap dia;
+		Gtk.windowSetModal(dia, true);
+		Gtk.IntToGtkResponseType (Gtk.dialogRun dia)
+		before (Gtk.widgetUnmap dia;
+			Gtk.windowSetModal(dia, false))
+            end
+
         fun message msg =
             let
                 val msgDia =
