@@ -1304,7 +1304,7 @@ prInf "s2" j;
       | elabMod(E, po, I.SelMod(i, modlab, mod)) =
 	let
 	    val (l,modlab') = elabLab(E, modlab)
-	    val (j1,mod')   = elabMod(E, NONE, mod)
+	    val (j1,mod')   = elabMod(E, po, mod)
 	    val  s          = Inf.asSig j1 handle Inf.Interface =>
 				error(I.infoMod mod, E.SelModInf j1)
 	    val  j          = Inf.sing(Inf.lookupMod'(s, l))
@@ -1592,16 +1592,13 @@ TextIO.print "\n";
 	    val (j1,inf')   = elabInf(E, NONE, inf)
 	    val (m2,mod')   = elabMod'(E, mod)
 	    val (p2,j2)     = Inf.asMod m2
-	    val (p,j11,j12) = Inf.asLambda j1 handle Inf.Interface =>
+	    val (p,j11,k12) = Inf.asDepKind(Inf.kind j1) handle Inf.Interface =>
 				error(I.infoMod mod, E.AppInfFunMismatch j1)
 	    val  _          = Type.enterLevel()
-	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
+	    val  _          = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
 				error(i, E.AppInfArgMismatch mismatch)
 	    val  _          = Type.exitLevel()
-	    val  _          = PathMap.insertDisjoint(#mod_rea rea, p,
-						     Inf.narrowMod(m2,j11))
-(*DEBUG*) handle e => raise e
-	    val  j'         = Inf.realise(rea, j12)
+	    val  j'         = Inf.apply(j1,m2)
 	    val  j          = case po of NONE   => j'
 				       | SOME p => #1(Inf.instance(p,j'))
 	in
