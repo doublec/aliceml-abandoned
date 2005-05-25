@@ -16,7 +16,6 @@ Bugs:
 
 Missing Features:
 
-* configurable session management
 * completion
 * detect file changes
 * bookmarks?

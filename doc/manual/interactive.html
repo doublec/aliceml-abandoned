@@ -139,6 +139,13 @@ default when Alice is started from the system's graphical interface - e.g. the S
 <P>By selecting <I>Compile</I> (Ctrl-K) from the <I>File</I> menu, the currently edited file can be compiled to a stand-alone component on disk. Eventual error messages will be printed on the interaction pane. Like with feeding, <I>Jump-to-Error</I> can be used to select the error region in case of an error.</P>
 
 
+<?php subsection("gui-session", "Session Management") ?>
+
+<P>The GUI provides for simple session management: on startup, previously open files are re-opened, and the input history for the interaction pane is restored.</P>
+
+<P>When &lt;<I>input files</I>&gt; are given on the command line, these are loaded instead. Loading of files from the previous session can also be suppressed by providing the pseudo file name "<TT>-</TT>" as a command argument.</P>
+
+
 <?php section("options", "options") ?>
 
 <DL>

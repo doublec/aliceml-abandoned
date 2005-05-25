@@ -27,6 +27,8 @@ import structure Preferences from "Preferences"
 
 structure GuiMain =
     struct
+	val reallyQuit = ref false
+
         (* Buffers *)
 
         val clipboard = Gtk.clipboardGet(Gdk.atomIntern("PRIMARY", false))
@@ -289,7 +291,8 @@ structure GuiMain =
                     checkNotebookSize()
                 end
 		handle Buffer.Abort{quit} =>
-		    if quit then OS.Process.exit OS.Process.success else ()
+		    if quit then (reallyQuit := true;
+				  OS.Process.exit OS.Process.success) else ()
 	    end
 	    finally Gtk.signalHandlerUnblock(Gui.notebook1, notebookSwitchEventId)
 
@@ -794,7 +797,6 @@ structure GuiMain =
 		    (id, Gtk.checkMenuItemGetActive Gui.syntax_colouring)
 
 
-	val reallyQuit = ref false
 	fun doQuit () = (Config.saveHistory (History.get(),
 					     Buffer.getFileNames());
 			 reallyQuit := true;
@@ -841,9 +843,10 @@ structure GuiMain =
              Gtk.widgetGrabFocus (Gui.compilerout);
 	     OS.Process.atExit (fn () => quit' false))
 
-	fun initDone () =
+	fun initDone loadSession =
 	    (Gtk.textViewSetEditable(Gui.compilerout, true);
 	     Gtk.widgetSetSensitive(Gui.feed1, true);
+	     if not loadSession then () else
 	     app (openGivenFile SESSION) (Config.loadOpenFiles ()))
 
 	fun preferences () = 
