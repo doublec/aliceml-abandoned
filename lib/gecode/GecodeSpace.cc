@@ -31,7 +31,7 @@ int GecodeSpace::new_boolvar(void) {
   }
 
   BoolVarArray tmp(this,1);
-  IntView iv(tmp[0]);
+  Int::IntView iv(tmp[0]);
   IntVar i(iv);
   is[noOfIntVars] = i;
 

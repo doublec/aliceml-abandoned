@@ -398,10 +398,10 @@ DEFINE2(int_getRanges) {
   CHECK_SPACE(s);
   DECLARE_INTVAR(var1, s, stamp, pstamp, x1);
   unsigned int retIterSize = 0;
-  IntView iv(var1);
-  for(ViewRanges<IntView> iters(iv);
+  Int::IntView iv(var1);
+  for(Int::ViewRanges<Int::IntView> iters(iv);
       iters(); ++iters) retIterSize++;
-  ViewRanges<IntView> ret(var1);
+  Int::ViewRanges<Int::IntView> ret(var1);
   Vector *vret = Vector::New(retIterSize);
   if(retIterSize>0) {
     u_int count = 0;
