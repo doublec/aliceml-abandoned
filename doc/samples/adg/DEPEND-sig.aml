@@ -1,0 +1,20 @@
+(* ADG 1.0 - Alice Dependence Graph
+*
+*  Author: Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+
+signature DEPEND =
+sig
+
+    val tree : string * (bool * string) list * TextIO.outstream * string -> 
+	           (string * string * string * (string * string) list) list *
+		   (string * string * (string * string) list) list
+									    
+end
