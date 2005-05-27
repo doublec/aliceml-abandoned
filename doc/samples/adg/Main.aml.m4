@@ -11,8 +11,7 @@
 
 changequote([[,]])
 
-ifdef([[gdl]],[[import structure Backend from "GDL"]])
-ifdef([[dot]],[[import structure Backend from "DOT"]],
+ifdef([[gdl]],[[import structure Backend from "GDL"]],
 [[import structure Backend from "DOT"]])
 
 
@@ -40,40 +39,47 @@ val head =
     "\n\n\n\n"
 
 val usage = "unrecognized option\n\n" ^ 
-	    "Usage: \nalicerun Main <input_filename> " ^ 
-	    "[-{no, only} regex] [<output_filename>]\n"
+	    "Usage: \nalicerun Main <input_filename> " ^
+	    "(-{include, exclude} regex)* \n" ^ 
+	    "              [-out <output_filename>]\n"
 
-fun start (inFile, switch, regex, outFile) = 
+fun printCluding [] = ()
+  | printCluding ((true, x) :: xs)  = 
+		  (TextIO.output (TextIO.stdOut, 
+				  "including files matching " ^ x ^ "\n");
+		   printCluding xs)
+  | printCluding ((false, x) :: xs) = 
+		  (TextIO.output (TextIO.stdOut, 
+				  "excluding files matching " ^ x ^ "\n");
+		   printCluding xs)
+
+fun start (inFile, regex, outFile) = 
     let
 	val outStream = TextIO.openOut (outFile ^ Backend.fileEnding)
     in 
 	TextIO.output (TextIO.stdOut, "input  file: " ^ inFile ^ "\n");
 	TextIO.output (TextIO.stdOut, "output file: " ^ outFile ^ 
 				      Backend.fileEnding ^ "\n");
-	if switch 
-	then TextIO.output (TextIO.stdOut, "only recognizing files with" ^
-					   " regex: " ^ regex ^ "\n")
-	else if regex <> ""
-	     then TextIO.output (TextIO.stdOut, "ignoring files with " ^
-						"regex: " ^ regex ^ "\n")
-	     else ();
+	printCluding regex;
 	TextIO.output (outStream, head);
-	Backend.output (inFile, switch, regex, outStream);
-	TextIO.output (outStream, "\n}");
+	Backend.output (inFile, regex, outStream);
 	TextIO.closeOut outStream;
 	OS.Process.exit OS.Process.success
     end
 
+val infile  = ref ""
+val outfile = ref "output"
+val regex   = ref nil (* (bool * string) list *)
+
+fun parse       []                = start (!infile, rev (!regex), !outfile)
+  | parse ("-out" :: x :: xs)     = (outfile := x; parse xs)
+  | parse ("-include" :: x :: xs) = (regex := (true, x) :: !regex; parse xs)
+  | parse ("-exclude" :: x :: xs) = (regex := (false, x) :: !regex; parse xs)
+  | parse       _                 = (TextIO.output (TextIO.stdErr, usage);
+				     OS.Process.exit OS.Process.failure)
 
 val _  = case CommandLine.arguments () of
-	         []           => (TextIO.output (TextIO.stdErr, usage);
-				  OS.Process.exit OS.Process.success)
-	       (* TODO: fehlerquellen ausmerzen (s. usage) *)
-	       | [a]                => start (a, false, "", "output")
- 	       | [a,   d]           => start (a, false, "", d)
-	       | [a, "-no", c]      => start (a, true, c, "output")
-	       | [a, "-only", c]    => start (a, false, c, "output")
-	       | [a, "-no", c, d]   => start (a, true, c, d)
-	       | [a, "-only", c, d] => start (a, false, c, d)
-	       |   _                => TextIO.output (TextIO.stdErr, usage)
+	         []        => (TextIO.output (TextIO.stdErr, usage);
+			       OS.Process.exit OS.Process.failure)
+	       | (x :: xs) => (infile := x; parse xs) 
 

@@ -10,9 +10,8 @@
 *)
 
 import signature TREE  from "TREE-sig"
-(*
 import structure Regex from "x-alice:/lib/regex/Regex"
-*)
+
 
 structure Tree :> TREE =
 struct
@@ -22,7 +21,8 @@ struct
 (* its storing (source(title), target(title), attributes list) *)
      val edges = ref nil
 
-     fun isRegExImport (r, p) = String.isSubstring r p (* Option.isSome (Regex r p) *)
+     fun isRegExImport (r, p) = Option.isSome (Regex.match r p)
+		             (* String.isSubstring r p *)
 
      fun isImport s = isRegExImport ("import", s)
 	 

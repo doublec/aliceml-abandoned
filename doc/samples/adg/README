@@ -9,7 +9,8 @@ examples:
 
 	alicerun Main ../snake/client/ClientMain.aml
 	alicerun Main ../snake/client/ClientMain.aml snake_out 
-	alicerun Main ../snake/client/ClientMain.aml -no <regex>
-	alicerun Main ../snake/client/ClientMain.aml -only <regex>
+	alicerun Main ../snake/client/ClientMain.aml -exclude <regex>
+	alicerun Main ../snake/client/ClientMain.aml -include <regex>
+	alicerun Main ../snake/client/ClientMain.aml -include <regex1> -exclude <regex2> -include <regex3> -include <regex4> -exclude <regex5> snake_out
 
 

@@ -21,6 +21,6 @@ sig
 
     val fileEnding : string
 
-    val output : string * bool * string * TextIO.outstream -> unit
+    val output : string * (bool * string) list * TextIO.outstream -> unit
 
 end

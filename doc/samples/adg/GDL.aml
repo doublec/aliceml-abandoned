@@ -53,11 +53,12 @@ struct
 	    List.app node nodes;
 	    TextIO.output (stream, "\n\n");
 	    List.app edge edges;
-	    print "\n\ndone.\n"
+	    TextIO.output (stream, "\n}");
+	    TextIO.output (TextIO.stdOut, "\n\ndone.\n")
 	end 
 	
 
-    fun output (inFile, switch, regex, stream) = 
+    fun output (inFile, regex, stream) = 
 	let
 	    val path = if OS.Path.isAbsolute inFile
 		       then OS.Path.dir inFile
@@ -66,7 +67,8 @@ struct
 					      inFile))
 	    val file = OS.Path.file inFile
 	    val parent = OS.Path.mkCanonical (path ^ "/" ^ file)
-	    val (nodes, edges) = Depend.tree (inFile, switch, regex, stream, parent)
+	    val (nodes, edges) = 
+		           Depend.tree (inFile, regex, stream, parent)
 	in
 	    writeFile (nodes, edges, stream)
 	end

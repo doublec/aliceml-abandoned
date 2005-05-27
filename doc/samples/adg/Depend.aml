@@ -9,9 +9,10 @@
 *
 *)
 
+import signature DEPEND from "DEPEND-sig"
 import structure Tree from "Tree"
 
-structure Depend =
+structure Depend :> DEPEND =
 struct
 
 fun isEndOfHeader s = 
@@ -20,7 +21,7 @@ fun isEndOfHeader s =
      String.isSubstring "functor"   s orelse
      String.isSubstring "val"       s orelse
      String.isSubstring "fun"       s) andalso
-    (not (String.isSubstring "import " s))
+    (not (String.isSubstring "import" s))
 
 
 fun getPath' (str, i) = if i > String.size str 
@@ -37,6 +38,14 @@ fun getPath (instr, nil)     =
                if x = #"\"" 
 	       then implode (List.take (xs, getPath' (implode xs, 0)))
 	       else getPath (instr, xs)
+
+(* idee um die kommentare auszublenden:
+
+    lies klammer + stern => kommentar, ignoriere alles bis stern + klammer
+                            && teste, ob in rest-zeile noch ein import kommt
+    lies import          => lies bis zu 2. ", teste rest-zeile auf 
+			    klammer + stern 
+*)
 
 fun getImports (instr, xs : string list) = 
     if TextIO.endOfStream instr
@@ -69,7 +78,7 @@ fun searchForFile (d, f) =
 	    in
 		if Option.isNone file 
 		then (OS.FileSys.closeDir dirStr;
-		      TextIO.output (TextIO.stdErr, "\tcould not find file!\n");
+		     TextIO.output (TextIO.stdErr, "\tcould not find file!\n");
 		      NONE)
 		else if String.isSubstring f (valOf file) andalso 
 			String.isSuffix ".aml" (valOf file)
@@ -84,7 +93,7 @@ fun searchForFile (d, f) =
     end
 
 
-fun tree' (p, switch, regex, outStr, parent) =
+fun tree' (p, regex, outStr, parent) =
     let
 	val path = if OS.Path.isAbsolute p
 		   then OS.Path.dir p
@@ -116,7 +125,7 @@ fun tree' (p, switch, regex, outStr, parent) =
 		else (if parent <> "" 
 		      then Tree.insertEdge (parent, title, [])
 		      else  ();
-		      tree' (path', switch, regex, outStr, title)
+		      tree' (path', regex, outStr, title)
 		         handle IO.Io _ => 
 			     let
 				 val x = searchForFile (OS.Path.dir path'',
@@ -124,31 +133,14 @@ fun tree' (p, switch, regex, outStr, parent) =
 			     in
 				 if Option.isNone x
 				 then ()
-				 else tree' (valOf x, switch, regex, 
-					     outStr, title)
+				 else tree' (valOf x, regex, outStr, title)
 			     end)
 	    end
 
-	fun rekWOinsert im = 
-	    let
-		val path'  = OS.Path.mkCanonical (path ^ "/" ^ im ^ 
-						  ".aml")
-		val path'' = OS.Path.mkCanonical (path ^ "/" ^ im)
-	    in
-		if not (Tree.isLibImport im orelse Tree.isUnsafeImport im)
-		then tree' (path', switch, regex, outStr, parent)
-		         handle IO.Io _ => 
-			     let
-				 val x = searchForFile (OS.Path.dir path'',
-					     		OS.Path.file path'')
-			     in
-				 if Option.isNone x
-				 then ()
-				 else tree' (valOf x, switch, regex, 
-					     outStr, parent)
-			     end
-		else ()
-	    end
+	fun testCluding path' = 
+	    List.exists (fn (true, x)  => Tree.isRegExImport (x, path')
+			  | (false, x) => not (Tree.isRegExImport (x, path'))
+			) regex
 
 	fun tree'' im = 
 	    let
@@ -158,26 +150,23 @@ fun tree' (p, switch, regex, outStr, parent) =
 			     else OS.Path.mkCanonical (path ^ "/" ^ im ^ 
 						       ".aml")
 	    in
-		if (switch andalso Tree.isRegExImport (regex, path')) orelse
-		   (not switch andalso not (Tree.isRegExImport (regex, path')))
-		then rekWOinsert im
+		if not ((testCluding path') orelse (List.null regex))
+		then ()
 		else if Tree.isLibImport im 
 		     then insertWORek (im, [("color", "green")])
 		     else if Tree.isUnsafeImport im
-		          then insertWORek (im, [("color", "yellow")])
-		          else insertWRek (im, [("color", if parent = ""
-							  then "red"
-							  else "blue")])
+		          then insertWORek (im, [("color", "red")])
+		          else insertWRek (im, [("color", "lightblue")])
 	    end
     in
         List.app tree'' imp
     end
 
-fun tree (inFile, switch, regex, outStr, parent) = 
+fun tree (inFile, regex, outStr, parent) = 
     let
-	val (title, _) = Tree.insertNode (parent, [("color", "red")])
+	val (title, _) = Tree.insertNode (parent, [("color", "lightblue")])
     in
-	tree' (inFile, switch, regex, outStr, title);
+	tree' (inFile, regex, outStr, title);
 	(!Tree.nodes, !Tree.edges)
     end
 
