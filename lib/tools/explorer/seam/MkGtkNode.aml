@@ -10,15 +10,21 @@
  *   $Revision$
  *)
 
-import structure TreeNode    from "TreeNode"
+import functor MkTreeNode    from "MkTreeNode"
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
 import structure Gdk         from "x-alice:/lib/gtk/Gdk"
 import structure Canvas from "x-alice:/lib/gtk/Canvas"
+import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
 
-import structure Types       from "Types"
+import functor MkTypes       from "MkTypes"
 
-structure GtkNode =
+functor MkGtkNode(Space : SPACE) =
 struct
+
+  local
+  structure TreeNode = MkTreeNode(Space)
+  structure Types = MkTypes(Space)
+  in
   val map   = Gdk.colormapGetSystem ()
   val black = Gdk.colorNew(0,0,0)
   val blue  = Gdk.colorNew(100*256,112*256,255*256)
@@ -253,16 +259,16 @@ struct
               if hidden then ((itr myX)*scale,(itr (myY-t))*scale)
 	      else
                   case myStatus of
-		      TreeNode.FAILED => ((itr myX)*scale,(itr (myY-s))*scale)
-		    | TreeNode.SOLVED => ((itr myX)*scale,(itr (myY-t))*scale)
-		    | TreeNode.CHOICE _ => ((itr myX)*scale,(itr (myY-t))*scale)
-		    | TreeNode.UNKNOWN => ((itr myX)*scale,(itr (myY-t))*scale)
+		      Types.FAILED => ((itr myX)*scale,(itr (myY-s))*scale)
+		    | Types.SOLVED => ((itr myX)*scale,(itr (myY-t))*scale)
+		    | Types.CHOICE _ => ((itr myX)*scale,(itr (myY-t))*scale)
+		    | Types.UNKNOWN => ((itr myX)*scale,(itr (myY-t))*scale)
 	  val (x2, y2) =
               case parentStatus of
-		  TreeNode.FAILED => ((itr momX)*scale,(itr (momY+s))*scale)
-		| TreeNode.SOLVED => ((itr momX)*scale,(itr (momY+t))*scale)
-		| TreeNode.CHOICE _ => ((itr momX)*scale,(itr (momY+t))*scale)
-		| TreeNode.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
+		  Types.FAILED => ((itr momX)*scale,(itr (momY+s))*scale)
+		| Types.SOLVED => ((itr momX)*scale,(itr (momY+t))*scale)
+		| Types.CHOICE _ => ((itr momX)*scale,(itr (momY+t))*scale)
+		| Types.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
 
 	  val points = [Real.round x1,Real.round y1,
                         Real.round x2,Real.round y2]
@@ -288,10 +294,10 @@ struct
 	  val realY = (itr y)*scale
 	  val draw = if hidden then drawHidden (openChildren, hasSolBelow)
 		     else case status of
-			      TreeNode.FAILED => drawFailedNode
-			    | TreeNode.SOLVED => drawSuccNode
-			    | TreeNode.CHOICE _ => drawChoiceNode
-			    | TreeNode.UNKNOWN => drawUnknownNode
+			      Types.FAILED => drawFailedNode
+			    | Types.SOLVED => drawSuccNode
+			    | Types.CHOICE _ => drawChoiceNode
+			    | Types.UNKNOWN => drawUnknownNode
       in
 	  draw (group, shadow, scale, Real.round realX, Real.round realY)
       end
@@ -302,11 +308,11 @@ struct
                      ...}
 	   : Types.explorer_state,
 	   momX, momY,
-	   TreeNode.N({offset=offset,status=ref status,
-                       hidden=ref hidden,dirty=dirty,
-		       vNode=vNode,connection=connection,
-                       openChildren,hasSolBelow,...},
-		      ref parent, ref children)) =
+	   Types.N({offset=offset,status=ref status,
+                    hidden=ref hidden,dirty=dirty,
+		    vNode=vNode,connection=connection,
+                    openChildren,hasSolBelow,...},
+		   ref parent, ref children)) =
 	  let
 	      val myX = momX+(!offset)
 	      val myY = momY+TreeNode.verSpaceI
@@ -330,10 +336,10 @@ struct
                                actionGroup=actionGroup,scale=scale,...},
                           ...}
 	        : Types.explorer_state)
-	       (TreeNode.N({offset=offset,status=ref status,
-                            hidden=ref hidden,dirty=dirty,
-		            vNode=vNode,connection=connection,...},
-		           ref parent, ref children)) =
+	       (Types.N({offset=offset,status=ref status,
+                         hidden=ref hidden,dirty=dirty,
+		         vNode=vNode,connection=connection,...},
+		        ref parent, ref children)) =
                case !vNode of
                    SOME v =>
                    let
@@ -360,10 +366,10 @@ struct
                      ...}
 	   : Types.explorer_state,
 	   myX, myY,
-	   TreeNode.N({offset=offset,status=ref status,
-                       hidden=ref hidden,dirty=dirty,
-		       vNode=vNode,connection=connection,...},
-		      ref parent, ref children)) =
+	   Types.N({offset=offset,status=ref status,
+                    hidden=ref hidden,dirty=dirty,
+		    vNode=vNode,connection=connection,...},
+		   ref parent, ref children)) =
 	  let
 	      val myX = myX+3*256
 	      val myY = myY+3*256
@@ -415,5 +421,5 @@ struct
       in
 	  (findX, depth)
       end
-
+  end
 end

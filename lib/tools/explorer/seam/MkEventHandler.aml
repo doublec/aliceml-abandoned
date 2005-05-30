@@ -10,28 +10,40 @@
  *   $Revision$
  *)
 
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
+
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
 import structure Gdk            from "x-alice:/lib/gtk/Gdk"
 import structure Canvas    from "x-alice:/lib/gtk/Canvas"
 
-import structure Types          from "Types"
+import functor   MkTypes          from "MkTypes"
 import structure Defaults       from "Defaults"
-import structure TreeNode       from "TreeNode"
-import structure VisualNode     from "VisualNode"
-import structure GtkNode        from "GtkNode"
-import structure ExplorerNode   from "ExplorerNode"
-import structure ExplorerSearch from "ExplorerSearch"
-import structure OptionsWindow  from "OptionsWindow"
+import functor MkTreeNode       from "MkTreeNode"
+import functor MkVisualNode     from "MkVisualNode"
+import functor MkGtkNode        from "MkGtkNode"
+import functor MkExplorerNode   from "MkExplorerNode"
+import functor MkExplorerSearch from "MkExplorerSearch"
+import functor MkOptionsWindow  from "MkOptionsWindow"
 import structure ExplorerGUI    from "ExplorerGUI"
-import structure SaveWindow     from "SaveWindow"
+import functor MkSaveWindow     from "MkSaveWindow"
 
-import structure MenuManager    from "MenuManager"
+import functor MkMenuManager    from "MkMenuManager"
 
-structure EventHandler =
+functor MkEventHandler(Space : SPACE) =
   struct
 
+  local
+  structure Types = MkTypes(Space)
+  structure TreeNode = MkTreeNode(Space)
+  structure VisualNode = MkVisualNode(Space)
+  structure GtkNode = MkGtkNode(Space)
+  structure ExplorerNode = MkExplorerNode(Space)
+  structure ExplorerSearch = MkExplorerSearch(Space)
+  structure OptionsWindow = MkOptionsWindow(Space)
+  structure SaveWindow = MkSaveWindow(Space)
+  structure MenuManager = MkMenuManager(Space)
   open Types           
-          
+  in          
   fun nodeEvent (st, serve) event =
       case (!st) of
 	  SOME(state as ({gtk={canvas,scale,...},
@@ -404,4 +416,5 @@ structure EventHandler =
 			     else ())
                   | _ => ())
 
+  end
 end

@@ -10,15 +10,21 @@
  *   $Revision$
  *)
 
+import signature SPACE          from "x-alice:/lib/gecode/SPACE-sig"
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
-import structure ExplorerNode   from "ExplorerNode"
-import structure TreeNode       from "TreeNode"
-import structure Types          from "Types"
+import functor MkExplorerNode from "MkExplorerNode"
+import functor MkTreeNode     from "MkTreeNode"
+import functor MkTypes        from "MkTypes"
 import structure ExplorerGUI    from "ExplorerGUI"
 
-structure MenuManager =
+functor MkMenuManager(Space : SPACE) =
   struct
-
+  local
+  structure TreeNode = MkTreeNode(Space)
+  structure ExplorerNode = MkExplorerNode(Space)
+  structure Types = MkTypes(Space)
+  in
+             
   fun switchItems(onitems, offitems, activate) =
       (app (fn i => Gtk.widgetSetSensitive(i, activate)) onitems;
        app (fn i => Gtk.widgetSetSensitive(i, not activate)) offitems)
@@ -71,4 +77,6 @@ structure MenuManager =
           Gtk.labelSetText(ExplorerGUI.noOfSolved,
                            Int.toString solved)
       end
+
+  end
   end

@@ -11,11 +11,15 @@
  *)
 
 import structure Defaults from "Defaults"
-import structure Types    from "Types"
+import functor MkTypes    from "MkTypes"
+import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
 
-structure TreeNode =
+functor MkTreeNode (Space : SPACE) =
 struct
+   local
+   structure Types = MkTypes(Space)
    open Types
+   in
    open Defaults
 
    fun getStatus (N({status=ref status,...},_,_)) = status
@@ -239,9 +243,9 @@ struct
 
    fun toString (N({status=status, dirty=dirty,...},_,_)) =
        case (!status) of
-	   FAILED => "failed "^(if (!dirty) then "dirty" else "clean")
-	 | SOLVED => "solved "^(if (!dirty) then "dirty" else "clean")
-	 | CHOICE _ => "choice "^(if (!dirty) then "dirty" else "clean")
-	 | UNKNOWN => "unknown "^(if (!dirty) then "dirty" else "clean")
-       
+	   Types.FAILED => "failed "^(if (!dirty) then "dirty" else "clean")
+	 | Types.SOLVED => "solved "^(if (!dirty) then "dirty" else "clean")
+	 | Types.CHOICE _ => "choice "^(if (!dirty) then "dirty" else "clean")
+	 | Types.UNKNOWN => "unknown "^(if (!dirty) then "dirty" else "clean")
+   end       
 end

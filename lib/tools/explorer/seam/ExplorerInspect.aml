@@ -15,8 +15,13 @@ import structure FS               from "x-alice:/lib/gecode/FS"
 import structure Space            from "x-alice:/lib/gecode/Space"
 import structure Inspector        from "x-alice:/lib/tools/Inspector"
 
-structure ExplorerInspect =
+import signature EXPLORER_INSPECT from "EXPLORER_INSPECT-sig"
+
+structure ExplorerInspect :> EXPLORER_INSPECT 
+  where type space = Space.space =
   struct
+
+    type space = Space.space
       
     fun createFD s (depth,v,t,_,_) = 
         let

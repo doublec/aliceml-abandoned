@@ -1,8 +1,10 @@
-import structure ExplorerMain from "ExplorerMain"
+import functor MkExplorer from "LinkedMkExplorer"
 import structure Space           from "x-alice:/lib/gecode/Space"
+import structure ExplorerInspect from "ExplorerInspect"
 
 structure Explorer =
   struct
+    structure ExplorerMain = MkExplorer (Space) (ExplorerInspect)
     type explorer = ExplorerMain.explorer
     
   __overload 'a init : (Space.space -> 'a) -> explorer =

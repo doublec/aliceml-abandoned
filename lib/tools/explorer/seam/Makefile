@@ -19,34 +19,35 @@ GLADE_SOURCES = ExplorerGUI.glade
 GLADE_TARGETS = ExplorerGUI.aml ExplorerGUISignals.aml
 
 SOURCES= \
-	Explorer.aml \
-	ExplorerMain.aml \
-	ExplorerSearch.aml \
-	TreeNode.aml \
-	MainWindow.aml \
-	GtkNode.aml \
+	MkExplorer.aml \
+	MkExplorerSearch.aml \
+	MkTreeNode.aml \
+	MkMainWindow.aml \
+	MkGtkNode.aml \
 	Defaults.aml \
-	EventHandler.aml \
-	CanvasHelper.aml \
-	Types.aml \
-	VisualNode.aml \
-	Search.aml \
-	ExplorerNode.aml \
-	OptionsWindow.aml \
+	MkEventHandler.aml \
+	MkCanvasHelper.aml \
+	MkTypes.aml \
+	MkVisualNode.aml \
+	MkSearch.aml \
+	MkExplorerNode.aml \
+	MkOptionsWindow.aml \
 	ExplorerInspect.aml \
-	SaveWindow.aml \
-	MenuManager.aml \
+	MkSaveWindow.aml \
+	MkMenuManager.aml \
 	AboutDialog.aml \
 	$(GLADE_TARGETS)
 
 TARGETS= $(SOURCES:%.aml=%.alc)
 
+INSTALL_TARGETS = Explorer LinkedMkExplorer EXPLORER_INSPECT-sig
+
 .PHONY: clean all depend install
 
-all: LinkedExplorer.alc
+all: LinkedMkExplorer.alc Explorer.alc
 
-LinkedExplorer.alc: $(TARGETS)
-	alicelink -z --include ./ ./Explorer -o $@
+LinkedMkExplorer.alc: $(TARGETS)
+	alicelink -z --include ./ ./MkExplorer -o $@
 
 $(GLADE_TARGETS): $(GLADE_SOURCES)
 	aliceglade $< -o $(GLADE_SOURCES:%.glade=%)
@@ -65,8 +66,8 @@ depend: $(GLADE_TARGETS)
 	sed "/\/opt\//d" Makefile.predepend > Makefile.depend
 
 
-install: all
+install: $(INSTALL_TARGETS:%=%.alc)
 	install -d $(INSTALLTO)
-	install LinkedExplorer.alc $(INSTALLTO)/Explorer.alc
+	install $(INSTALL_TARGETS:%=%.alc) $(INSTALLTO)/
 
 -include Makefile.depend

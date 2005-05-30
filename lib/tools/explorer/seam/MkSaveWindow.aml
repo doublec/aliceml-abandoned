@@ -10,13 +10,17 @@
  *   $Revision$
  *)
 
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
 import structure Gtk   from "x-alice:/lib/gtk/Gtk"
 import structure PS from "x-alice:/lib/postscript/PS"
-import structure Types          from "Types"
+import functor MkTypes          from "MkTypes"
 
-structure SaveWindow =
+functor MkSaveWindow(Space : SPACE) =
   struct
-  
+  local
+  structure Types = MkTypes(Space)
+  in  
+
   val black = {r=0.0,g=0.0,b=0.0}
   val blue = {r=0.39,g=0.44,b=1.0}
   val white = {r=1.0,g=1.0,b=1.0}
@@ -130,4 +134,5 @@ structure SaveWindow =
           Gtk.widgetShowAll sw
       end
 
+  end
   end

@@ -12,19 +12,21 @@
 
 import structure Gtk          from "x-alice:/lib/gtk/Gtk"
 
-import structure Space        from "x-alice:/lib/gecode/Space"
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
 
 import structure Defaults     from "Defaults"
-import structure EventHandler from "EventHandler"
-import structure Types        from "Types"
-import structure CanvasHelper from "CanvasHelper"
-import structure ExplorerNode from "ExplorerNode"
+import functor MkEventHandler from "MkEventHandler"
+import functor MkTypes        from "MkTypes"
+import functor MkCanvasHelper from "MkCanvasHelper"
+import functor MkExplorerNode from "MkExplorerNode"
 
 import structure ExplorerGUI            from "ExplorerGUI"
 import structure AboutDialog            from "AboutDialog"
 import functor   ExplorerGUISignals
        signature EXPLORERGUISIGNALS_SIG from "ExplorerGUISignals"
 
+
+(*
 signature MAINWINDOW =
   sig
       val updateInspectionActionsMenu :
@@ -38,13 +40,20 @@ signature MAINWINDOW =
                          string * bool -> unit
       val setWindowTitle : string -> unit
   end
+*)
 
-structure MainWindow :> MAINWINDOW =
+functor MkMainWindow (Space : SPACE) (*:> MAINWINDOW *)=
   struct
+  
+  local
+  structure Types = MkTypes(Space)
+  structure EventHandler = MkEventHandler(Space)
+  structure CanvasHelper = MkCanvasHelper(Space)
+  structure ExplorerNode = MkExplorerNode(Space)
+  open Types
+  in
 
   val itr = Real.fromInt
-
-  open Types
 
   fun updateInspectionActionsMenu
           (actionsList, serve,
@@ -202,4 +211,6 @@ structure MainWindow :> MAINWINDOW =
 
   fun setWindowTitle title =
     Gtk.windowSetTitle(ExplorerGUI.aliceexplorer, title)
+
+  end
   end

@@ -10,16 +10,22 @@
  *   $Revision$
  *)
 
-import structure Space      from "x-alice:/lib/gecode/Space"
-import structure TreeNode   from "TreeNode"
-import structure Types      from "Types"
-import structure VisualNode from "VisualNode"
-import structure GtkNode    from "GtkNode"
+import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
+import functor MkTreeNode   from "MkTreeNode"
+import functor MkTypes      from "MkTypes"
+import functor MkVisualNode from "MkVisualNode"
+import functor MkGtkNode    from "MkGtkNode"
 
-structure ExplorerNode =
+functor MkExplorerNode (Space : SPACE) =
 struct
-    open TreeNode
+    local
+    structure TreeNode = MkTreeNode(Space)
+    structure GtkNode = MkGtkNode(Space)
+    structure VisualNode = MkVisualNode(Space)
+    structure Types = MkTypes(Space)
 
+    open TreeNode
+    in
     exception SearchDone
 
     fun createNode(state, 
@@ -33,29 +39,29 @@ struct
 			val best = Types.getBestSpace state
 		    in
 			case mom of NONE => best
-		      | SOME (N({ownBest=momBest,...},_,_)) =>
+		      | SOME (Types.N({ownBest=momBest,...},_,_)) =>
 			    if best = !momBest then NONE
 			    else best
 		    end
 	in
-        N({offset=ref 0,
-	   oldOffset=ref NONE,
-	   groupOffset=ref 0,
-	   status=ref Types.UNKNOWN,
-           openChildren=ref 0,
-	   hidden=ref false,
-	   dirty=ref true,
-	   hasSolBelow=ref false,
-	   vNode=ref NONE,
-	   space=ref NONE,
-	   ownBest=ref best,
-	   connection=ref NONE,
-	   alternative=alternative,
-	   shape =ref nil}, ref mom, ref #[])
+        Types.N({offset=ref 0,
+	         oldOffset=ref NONE,
+	         groupOffset=ref 0,
+	         status=ref Types.UNKNOWN,
+                 openChildren=ref 0,
+	         hidden=ref false,
+	         dirty=ref true,
+	         hasSolBelow=ref false,
+	         vNode=ref NONE,
+	         space=ref NONE,
+	         ownBest=ref best,
+	         connection=ref NONE,
+	         alternative=alternative,
+	         shape =ref nil}, ref mom, ref #[])
 	end
 
-    fun setMom (N(_,mom,_)) newMom = mom := newMom
-    fun decOpenChildren (N({openChildren=openChildren,space=space,...},
+    fun setMom (Types.N(_,mom,_)) newMom = mom := newMom
+    fun decOpenChildren (Types.N({openChildren=openChildren,space=space,...},
                            ref mom,_)) =
         (openChildren := !openChildren - 1;
          if !openChildren=0 then
@@ -64,23 +70,26 @@ struct
                                                        space := NONE))
                                              (!space)) mom)
          else ())
-    fun hasOpenChildren (N({openChildren=openChildren,...},_,_)) =
+    fun hasOpenChildren (Types.N({openChildren=openChildren,...},_,_)) =
         !openChildren>=1
 
-    fun setStatus (node as N({status=status,openChildren=openChildren,...},
+    fun setStatus (node as Types.N({status=status,
+                                    openChildren=openChildren,...},
                              ref mom,_)) newStatus = 
         (case newStatus of
              (Types.FAILED | Types.SOLVED) => Option.app decOpenChildren mom
            | _ => ();
          status := newStatus)
-    fun setChildren (N({openChildren=openChildren,...},_,ch)) newCh =
+    fun setChildren (Types.N({openChildren=openChildren,...},_,ch)) newCh =
         (ch := newCh;
          openChildren := Vector.length newCh)
-    fun setSpace (N({space=space,...},_,_)) newSpace = space := newSpace
+    fun setSpace (Types.N({space=space,...},_,_)) newSpace = space := newSpace
 
-    fun recomputeSpace (state,N({space=ref (SOME s),...},_,_)) = Space.clone s
+    fun recomputeSpace (state,Types.N({space=ref (SOME s),...},_,_)) =
+        Space.clone s
       | recomputeSpace (state,
-			N({alternative=i,space=space,ownBest=ownBest,...},
+			Types.N({alternative=i,space=space,
+                                 ownBest=ownBest,...},
 			  ref (SOME mom),_)) =
 	let
 	    val s = recomputeSpace(state,mom)
@@ -98,10 +107,11 @@ struct
 	end
       | recomputeSpace _ = raise Subscript
 
-    fun getSpace (state,N({space=ref (SOME s),...},_,_)) = s
+    fun getSpace (state,Types.N({space=ref (SOME s),...},_,_)) = s
       | getSpace (state,n) = recomputeSpace (state,n)
 
-    fun nodeStatus (state, node as N({status=status,ownBest=ownBest,...},_,_)) =
+    fun nodeStatus (state, node as Types.N({status=status,
+                                            ownBest=ownBest,...},_,_)) =
         case !status of Types.UNKNOWN =>
                         let
 			    val _ = (case Types.getConstrain state of
@@ -126,12 +136,12 @@ struct
                         end
                       | s => s
 
-    fun isUnknown (node as N({status=status,...},_,_)) =
+    fun isUnknown (node as Types.N({status=status,...},_,_)) =
         (!status = Types.UNKNOWN)
-    fun isHidden (node as N({hidden=hidden,...},_,_)) = !hidden
-    fun curNodeStatus (N({status=ref status,...},_,_)) = status
+    fun isHidden (node as Types.N({hidden=hidden,...},_,_)) = !hidden
+    fun curNodeStatus (Types.N({status=ref status,...},_,_)) = status
 
-    fun noOfChildren (state, node as N({status=status,...},_,ch)) =
+    fun noOfChildren (state, node as Types.N({status=status,...},_,ch)) =
         if (Types.cancelSearch state) then
            raise SearchDone
         else
@@ -149,22 +159,23 @@ struct
                                                     )
                       | _ => Vector.length (!ch)
 
-    fun getChild (node as N(_,_,ch)) n = Vector.sub(!ch, n)
-    fun getParent (N(_,p,_)) = !p
-    fun getAlternative (N({alternative,...},_,_)) = alternative
+    fun getChild (node as Types.N(_,_,ch)) n = Vector.sub(!ch, n)
+    fun getParent (Types.N(_,p,_)) = !p
+    fun getAlternative (Types.N({alternative,...},_,_)) = alternative
 
-    fun getLeftChild (node as N(_,_,ch)) =
+    fun getLeftChild (node as Types.N(_,_,ch)) =
         case !ch of #[c,_] => c
                   | _      => raise Empty
-    fun getRightChild (node as N(_,_,ch)) =
+    fun getRightChild (node as Types.N(_,_,ch)) =
         case !ch of #[_,c] => c
                   | _      => raise Empty
 
-    fun discardTree' (N({space=space,...},_,ch)) =
+    fun discardTree' (Types.N({space=space,...},_,ch)) =
         ((case !space of SOME s => Space.discard s
                        | _ => ());
          Vector.app discardTree' (!ch))
     fun discardTree node =
         (GtkNode.undrawSubtree node;
          discardTree' node)
+    end
 end

@@ -10,13 +10,19 @@
  *   $Revision$
  *)
 
-import structure TreeNode     from "TreeNode"
-import structure Types        from "Types"
-import structure ExplorerNode from "ExplorerNode"
+import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
+import functor MkTreeNode     from "MkTreeNode"
+import functor MkTypes        from "MkTypes"
+import functor MkExplorerNode from "MkExplorerNode"
 
-structure Search =
+functor MkSearch(Space : SPACE) =
 struct
+    local
+    structure TreeNode = MkTreeNode(Space)
+    structure ExplorerNode = MkExplorerNode(Space)
+    structure Types = MkTypes(Space)
     open TreeNode
+    in
 
     fun explore (node, state, callBack) =
         let
@@ -41,4 +47,6 @@ struct
         end
 
     fun step (node,state) = ignore (ExplorerNode.noOfChildren (state,node))
+
+    end
 end

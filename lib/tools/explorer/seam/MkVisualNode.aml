@@ -10,12 +10,19 @@
  *   $Revision$
  *)
 
-import structure Types    from "Types"
-import structure GtkNode  from "GtkNode"
-import structure TreeNode from "TreeNode"
+import functor MkTypes    from "MkTypes"
+import functor MkGtkNode  from "MkGtkNode"
+import functor MkTreeNode from "MkTreeNode"
+import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
 
-structure VisualNode =
+functor MkVisualNode(Space : SPACE) =
   struct
+  
+  local
+  structure TreeNode = MkTreeNode(Space)
+  structure GtkNode = MkGtkNode(Space)
+  structure Types = MkTypes(Space)
+  in
 
   fun dirtyUp (Types.N({dirty=ref true,...},_,_)) = ()
     | dirtyUp (Types.N({dirty=dirty,...},ref parent, _)) =
@@ -124,5 +131,5 @@ structure VisualNode =
 		   hidden:=true;
 		   dirtyUp v)
             | _ => ()
-
+  end
   end

@@ -10,15 +10,20 @@
  *   $Revision$
  *)
 
-import structure Search       from "Search"
-import structure Space        from "x-alice:/lib/gecode/Space"
-import structure ExplorerNode from "ExplorerNode"
-import structure MenuManager  from "MenuManager"
+import functor MkSearch       from "MkSearch"
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
+import functor MkExplorerNode from "MkExplorerNode"
+import functor MkMenuManager  from "MkMenuManager"
+import functor MkTypes        from "MkTypes"
 
-import structure Types        from "Types"
-
-structure ExplorerSearch =
+functor MkExplorerSearch (Space : SPACE) =
   struct
+  local
+  structure Types = MkTypes(Space)
+  structure Search = MkSearch(Space)
+  structure ExplorerNode = MkExplorerNode(Space)
+  structure MenuManager = MkMenuManager(Space)  
+  in
 
   fun initSearch (serve, state : Types.explorer_state option ref,
                   refresh,resetCanvas, s, better) =
@@ -134,4 +139,5 @@ structure ExplorerSearch =
 
   fun searchBest _ = ()
 
+  end
   end

@@ -10,39 +10,51 @@
  *   $Revision$
  *)
 
-import structure ExplorerSearch  from "ExplorerSearch"
-import structure MainWindow      from "MainWindow"
-import structure Space           from "x-alice:/lib/gecode/Space"
+import functor MkExplorerSearch  from "MkExplorerSearch"
+import functor MkMainWindow      from "MkMainWindow"
+import signature SPACE           from "x-alice:/lib/gecode/SPACE-sig"
 import structure Type            from "x-alice:/lib/rtt/Type"
-import structure ExplorerInspect from "ExplorerInspect"
-import structure Types           from "Types"
-import structure CanvasHelper    from "CanvasHelper"
-(*import structure Exn             from "x-alice:/lib/fundamental/Exn"*)
+import signature EXPLORER_INSPECT from "EXPLORER_INSPECT-sig"
+import functor MkTypes           from "MkTypes"
+import functor MkCanvasHelper    from "MkCanvasHelper"
 
 signature EXPLORER =
   sig
+      type space
       type explorer (*= Types.explorer_state option ref*)
       val serve : (unit -> unit) -> unit
       val initExplorer : unit -> explorer
-      val initWithSpace : Space.space * string -> explorer
-      val exploreAll : Space.space -> explorer
-      val exploreOne : Space.space -> explorer
-(*      val exploreBest : Space.space * better -> explorer*)
-      val addInfoAction : explorer * (Space.space -> unit) * string -> unit
+      val initWithSpace : space * string -> explorer
+      val exploreAll : space -> explorer
+      val exploreOne : space -> explorer
+(*      val exploreBest : space * better -> explorer*)
+      val addInfoAction : explorer * (space -> unit) * string -> unit
       val deleteInfoAction : explorer * string -> unit
 
-      val initScript' : Type.typ -> (Space.space -> 'a) -> explorer
-      val exploreAllScript' : Type.typ -> (Space.space -> 'a) -> explorer
+      val initScript' : Type.typ -> (space -> 'a) -> explorer
+      val exploreAllScript' : Type.typ -> (space -> 'a) -> explorer
       val exploreBestScript' :
 	  Type.typ ->
-	  (Space.space -> 'a * (Space.space * Space.space -> unit))
+	  (space -> 'a * (space * space -> unit))
 	  -> explorer
-      val exploreAllRoot' : Type.typ -> Space.space -> 'a -> explorer
-      val exploreOneScript' : Type.typ -> (Space.space -> 'a) -> explorer
+      val exploreAllRoot' : Type.typ -> space -> 'a -> explorer
+      val exploreOneScript' : Type.typ -> (space -> 'a) -> explorer
   end
-structure ExplorerMain :> EXPLORER =
-  struct
 
+functor MkExplorer (Space : SPACE)
+                   (ExplorerInspect : EXPLORER_INSPECT
+                                          where type space = Space.space)
+                   :> EXPLORER
+  where type space = Space.space=
+  struct
+  local
+  structure Types = MkTypes(Space)
+  structure CanvasHelper = MkCanvasHelper(Space)
+  structure MainWindow = MkMainWindow(Space)
+  structure ExplorerSearch = MkExplorerSearch(Space)
+  in
+
+  type space = Space.space
   type explorer = Types.explorer_state option ref
   
   fun newServer() = 
@@ -210,5 +222,5 @@ structure ExplorerMain :> EXPLORER =
           addInfoAction(e, ExplorerInspect.inspect t root, "default");
           e
       end
-
+  end
   end

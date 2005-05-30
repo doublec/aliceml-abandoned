@@ -1,0 +1,19 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Type from "x-alice:/lib/rtt/Type"
+
+signature EXPLORER_INSPECT =
+   sig
+       type space
+       val inspect : Type.typ -> 'a -> space -> unit
+   end

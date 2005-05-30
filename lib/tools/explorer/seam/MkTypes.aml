@@ -11,9 +11,9 @@
  *)
 
 import structure Gtk  from "x-alice:/lib/gtk/Gtk"
-import structure Space from "x-alice:/lib/gecode/Space"
+import signature SPACE from "x-alice:/lib/gecode/SPACE-sig"
 
-structure Types =
+functor MkTypes (Space : SPACE) =
   struct
 
   datatype status = FAILED | SOLVED | CHOICE of int | UNKNOWN

@@ -10,12 +10,16 @@
  *   $Revision$
  *)
 
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
 import structure Gtk   from "x-alice:/lib/gtk/Gtk"
-import structure Types from "Types"
+import functor MkTypes from "MkTypes"
 
-
-structure OptionsWindow =
+functor MkOptionsWindow(Space : SPACE) =
   struct
+    local
+    structure Types = MkTypes(Space)
+    in
+
     fun newOptionsWindow (mw, serve, state : Types.explorer_state option ref) =
         case !state of
             SOME {refreshAfter,
@@ -129,4 +133,6 @@ structure OptionsWindow =
                 configure
             end
           | _ => raise Empty
+
+    end
   end
