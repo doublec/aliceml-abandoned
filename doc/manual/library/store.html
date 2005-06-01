@@ -71,8 +71,10 @@ signature STORE =
       <PRE>
       equiv (rec x => 1::x, rec x => 1::1::x)          = true
       equiv (rec x => 1::x, 1::(rec x => 1::x))        = true
-      equiv (rec x => (ref 1)::x, rec x => (ref 1)::x) = false</PRE>
+      equiv (rec x => (ref 1)::x, rec x => (ref 1)::x) = false
       let val r = ref 1 in equiv (rec x => r::x, rec x => r::x) end = true</PRE>
+      <P><I>Note:</I> This function may internally apply <TT>minimize</TT>
+      to its arguments to detect equivalence.</P>
     </DD>
 
     <DT>
@@ -124,7 +126,7 @@ signature STORE =
       equivalence holds:
       </P>
       <PRE>
-      size <I>x</I> = (deepAwait <I>x</I>; sizeQuiet <I>x</I>)<PRE>
+      size <I>x</I> = (deepAwait <I>x</I>; sizeQuiet <I>x</I>)</PRE>
     </DD>
 
     <DT>
