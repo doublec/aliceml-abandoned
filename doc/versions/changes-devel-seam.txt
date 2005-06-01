@@ -30,6 +30,7 @@ Basis Library:
 * [NEW] Print: added depth and width to control printing bounds (also
         control output of the toplevel); renamed printWidth to layoutWidth;
         more exceptions recognized by printer.
+* [FIX] Real: fixed rem and hash.
 * [FIX] Substring: fixed isSuffix.
 * [FIX] Array2: properly treat zero-size regions.
 * [FIX] OS.Path: fixed handling of volumes in mkRelative and concat.

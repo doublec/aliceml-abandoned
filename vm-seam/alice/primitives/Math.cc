@@ -15,17 +15,17 @@
 #include <cmath>
 #include "alice/Authoring.hh"
 
-#define REAL_TO_REAL(name, op)					\
-  DEFINE1(name) {						\
-    DECLARE_REAL(real, x0);					\
-    RETURN(Real::New(op(real->GetValue()))->ToWord());		\
+#define REAL_TO_REAL(name, op)		\
+  DEFINE1(name) {			\
+    DECLARE_REAL(real, x0);		\
+    RETURN_REAL(op(real->GetValue()));	\
   } END
 
-#define REAL_REAL_TO_REAL(name, op)					   \
-  DEFINE2(name) {							   \
-    DECLARE_REAL(real1, x0);						   \
-    DECLARE_REAL(real2, x1);						   \
-    RETURN(Real::New(op(real1->GetValue(), real2->GetValue()))->ToWord()); \
+#define REAL_REAL_TO_REAL(name, op)			   \
+  DEFINE2(name) {					   \
+    DECLARE_REAL(real1, x0);				   \
+    DECLARE_REAL(real2, x1);				   \
+    RETURN_REAL(op(real1->GetValue(), real2->GetValue())); \
   } END
 
 static inline double Asinh(double x) {

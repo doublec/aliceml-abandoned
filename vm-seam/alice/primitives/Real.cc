@@ -25,11 +25,18 @@
     RETURN_REAL(op(real->GetValue()));		\
   } END
 
+#define REAL_REAL_TO_REAL(name, op)			   \
+  DEFINE2(name) {					   \
+    DECLARE_REAL(real1, x0);				   \
+    DECLARE_REAL(real2, x1);				   \
+    RETURN_REAL(op(real1->GetValue(), real2->GetValue())); \
+  } END
+
 #define REAL_TO_INT(name, op)				\
   DEFINE1(name) {					\
     DECLARE_REAL(real, x0);				\
     double value = real->GetValue();			\
-    if (/*std::*/isnan(value))					\
+    if (/*std::*/isnan(value))				\
       RAISE(PrimitiveTable::General_Domain);      	\
     double result = op(value);				\
     if (result > STATIC_CAST(double, MAX_VALID_INT) ||	\
@@ -143,7 +150,7 @@ static inline double Rint(double x) {
 
 REAL_TO_REAL(Real_realRound, Rint)
 REAL_TO_REAL(Real_realTrunc, Trunc)
-  REAL_REAL_TO_INT(Real_rem, /*std::*/fmod)
+  REAL_REAL_TO_REAL(Real_rem, /*std::*/fmod)
 REAL_TO_INT(Real_round, Rint)
 REAL_TO_INTINF(Real_largeRound, Rint)
 
