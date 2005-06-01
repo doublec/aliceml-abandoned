@@ -21,13 +21,13 @@
 	case Space.status s of
 	     Space.FAILED          => NONE
 	   | Space.SOLVED          => SOME s
-	   | Space.BRANCH(desc) =>
+	   | Space.BRANCH(2,desc) =>
 		 let
 		     val c = Space.clone s
 		 in
-		     Space.commit(s, 1, desc);
+		     Space.commit(s, 0, desc);
 		     case searchOne s of
-			  NONE   => (Space.commit(c, 2, desc); searchOne c)
+			  NONE   => (Space.commit(c, 1, desc); searchOne c)
 			| SOME s => SOME s
 		 end</PRE>
    <P>
@@ -150,7 +150,8 @@
     </DT>
     <DD>
       <P>commits to alternative <I>i</I> of <I>s</I>,
-         using branching description <I>d</I>.
+         using branching description <I>d</I>. The first alternative
+         is 0.
       </P>
       <P>Raises a runtime error if the space <I>s</I> has already been
          discarded, or description <I>d</I> is invalid for this space.
