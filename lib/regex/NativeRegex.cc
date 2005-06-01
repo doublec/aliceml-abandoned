@@ -77,7 +77,7 @@ DEFINE1(regex_regcomp) {
   regex_t *compiled = (regex_t*) malloc(sizeof(regex_t));
 
   int retval =
-    regcomp(compiled, pattern->ExportC(), 0);
+    regcomp(compiled, pattern->ExportC(), REG_EXTENDED);
 
   if (retval == 0) {
     ConcreteRepresentation *cr = ConcreteRepresentation::New(regexRepHandler, 1);
