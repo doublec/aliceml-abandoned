@@ -76,7 +76,8 @@ structure Generator =
 
   fun outputUIntArgs(n,f) =
       let val n = Int.toString n in
-          TextIO.output(f, "  DECLARE_INT(i"^n^", x"^n^");\n")
+          TextIO.output(f, "  DECLARE_INT(i"^n^", x"^n^");\n"^
+                           "  if (i"^n^"<0) RAISE(PrimitiveTable::General_Domain);\n")
       end
 
   fun outputBoolArgs(n,f) =
@@ -241,6 +242,7 @@ structure Generator =
                               "  }\n"^
                               "  RETURN(vret->ToWord());\n"
                               )
+                        | _ => raise Match (* should not occur *)
                           )
            | (SOME s, _) => raise GeneratorError ("Strange combination of class "^s^" and type detected")
                              )

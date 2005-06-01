@@ -14,8 +14,8 @@
 #ifndef __GECODESPACE_HH__
 #define __GECODESPACE_HH__
 
-#include "gecode-int.hh"
-#include "gecode-set.hh"
+#include "int.hh"
+#include "set.hh"
 
 #define makeintvarargs(a,vars)                                 \
   IntVarArgs a(vars.size());                                   \
@@ -66,14 +66,14 @@ public:
   {}
 
   explicit
-  GecodeSpace(GecodeSpace& s, bool share=true) : Space(s, share), 
-				is(s.is.copy(this)),
-                                noOfIntVars(s.noOfIntVars),
-                                intArraySize(s.intArraySize),
- 				fss(s.fss.copy(this)),
- 				noOfSetVars(s.noOfSetVars),
- 				fsArraySize(s.fsArraySize)
-  {}
+  GecodeSpace(GecodeSpace& s, bool share=true) : Space(s, share),
+                                                 noOfIntVars(s.noOfIntVars),
+                                                 noOfSetVars(s.noOfSetVars),
+                                                 intArraySize(s.intArraySize),
+                                                 fsArraySize(s.fsArraySize) {
+    is.update(this, s.is);
+    fss.update(this, s.fss);
+  }
 
   virtual Space* copy(bool share) { 
     return new GecodeSpace(*this,share); 

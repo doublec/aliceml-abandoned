@@ -11,8 +11,9 @@
  *)
 
 import structure FD        from "x-alice:/lib/gecode/FD"
-import structure Search    from "x-alice:/lib/gecode/Search"
-import structure Print     from "x-alice:/lib/system/Print"
+(*import structure Search    from "x-alice:/lib/gecode/Search"*)
+(*import structure Print     from "x-alice:/lib/system/Print"*)
+import structure Explorer from "x-alice:/lib/tools/Explorer"
 
 fun photo space =
     let
@@ -22,7 +23,19 @@ fun photo space =
 			(2,4), (3,0), (4,3),
 			(4,0), (4,1)]
 	val small = {n_names=5, n_prefs=8, prefs=s_prefs}
-	val spec = small
+
+
+	val l_prefs = #[(0,2), (0,4), (0,7), 
+                        (1,4), (1,8),
+                        (2,3), (2,4),
+                        (3,0), (3,4),
+                        (4,5), (4,0),
+                        (5,0), (5,8),
+                        (6,2), (6,7),
+                        (7,6), (7,8)]
+	val large = {n_names=9, n_prefs=17, prefs=l_prefs}
+
+	val spec = large
 	val pos = rangeVec(space,
 			   #n_names spec,
 			   (0,(#n_names spec)-1))
@@ -50,19 +63,19 @@ fun photo space =
 			    Reified.linear(space,
 				    #[(1, Vector.sub(pos, pb)),
 				      (~1, Vector.sub(pos, pa))],
-				    EQ, 1, Vector.sub(b, 0), DEF);
+				    EQ, 1, Vector.sub(b, 0), BND);
 			    Reified.linear(space,
 				    #[(1, Vector.sub(pos, pa)),
 				      (~1, Vector.sub(pos, pb))],
-				    EQ, 1, Vector.sub(b, 1), DEF);
+				    EQ, 1, Vector.sub(b, 1), BND);
 			    exor(space,
 				     Vector.sub(b, 0),
 				     Vector.sub(b, 1),
 				     Vector.sub(ful, i))
 			end) (#prefs spec);
 
-	linear(space, eq, EQ, 0, DEF);
-	distinct(space, pos, DEF);
+	linear(space, eq, EQ, 0, BND);
+	distinct(space, pos, BND);
 	rel(space, Vector.sub(pos, 0), LE,
 	    Vector.sub(pos, 1));
 	branch(space, pos, B_NONE, B_MIN);
@@ -70,8 +83,11 @@ fun photo space =
 	((pos, sat), better)
     end
 
+(*
 val (SOME (sol, (pos, sat))) = Search.searchBest photo
 val s = Vector.map (fn v => FD.Reflect.value(sol,v)) pos
 val _ = Print.printVal s
 val _ = print "\n"
 val _ = OS.Process.exit OS.Process.success
+*)
+ val _ = Explorer.exploreBest photo

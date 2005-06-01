@@ -24,8 +24,8 @@ class SetVar {
   unsigned int glbSize(void); set_getLowerBoundSize;
   unsigned int unknownSize(void); set_getUnknownSize;
   UnknownIter<SetVar> set_getUnknown(void); set_getUnknown;
-  int cardMin(void); set_getCardinalityMin;
-  int cardMax(void); set_getCardinalityMax;
+  unsigned int cardMin(void); set_getCardinalityMin;
+  unsigned int cardMax(void); set_getCardinalityMax;
   bool assigned(void); set_isAssigned;
 };
 
@@ -111,7 +111,7 @@ void minElement(SetVar, IntVar); set_min;
 void maxElement(SetVar, IntVar); set_max;
 void match(SetVar, const IntVarArgs&); set_match;
 void card(SetVar, IntVar); set_card;
-void cardRange(SetVar, int, int); set_cardRange;
+void cardRange(SetVar, unsigned int, unsigned int); set_cardRange;
 
 void superOfInter(SetVar, SetVar, SetVar); set_superOfInter;
 void subOfUnion(SetVar, SetVar, SetVar); set_subOfUnion;
