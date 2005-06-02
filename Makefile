@@ -134,6 +134,7 @@ clean-seam: clean-common
 	(cd tools/toplevel && make distclean) || exit 1
 	(cd tools/lex && make distclean) || exit 1
 	(cd tools/yacc && make distclean) || exit 1
+	(cd lib/regex && make distclean) || exit 1
 	(cd lib/sqlite && make distclean) || exit 1
 	(cd lib/xml && make distclean) || exit 1
 	(cd tools/glade && make distclean) || exit 1
@@ -238,6 +239,17 @@ libs-seam:
 	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd tools/toplevel && make depend) || exit 1 ;\
 	(cd tools/toplevel && make install) || exit 1 ;\
+	(cd lib/test && make SH_EXT=alc depend && \
+	 make SH_EXT=alc all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
+	(cd tools/yacc && make depend) || exit 1 ;\
+	(cd tools/yacc && make all && make install) || exit 1 ;\
+	(cd tools/lex && make depend) || exit 1;\
+	(cd tools/lex && make all && make install) || exit 1 ;\
+	(cd lib/regex && make install) || exit 1 ;\
+	(cd lib/sqlite && make depend) || exit 1 ;\
+	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
+	(cd lib/xml && make depend) || exit 1 ;\
+	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
 	(cd lib/gecode && make generate GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make depend GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make all install GECODEDIR=$(GECODEDIR)) || exit ;\
@@ -249,16 +261,6 @@ libs-seam:
 	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make all install) || exit 1 ;\
-	(cd lib/test && make SH_EXT=alc depend && \
-	 make SH_EXT=alc all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
-	(cd tools/yacc && make depend) || exit 1 ;\
-	(cd tools/yacc && make all && make install) || exit 1 ;\
-	(cd tools/lex && make depend) || exit 1;\
-	(cd tools/lex && make all && make install) || exit 1 ;\
-	(cd lib/sqlite && make depend) || exit 1 ;\
-	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
-	(cd lib/xml && make depend) || exit 1 ;\
-	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
 	(cd tools/glade && make depend) || exit 1 ;\
 	(cd tools/glade && make all install) || exit 1
 
