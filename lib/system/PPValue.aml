@@ -446,6 +446,50 @@ local
 	    end
 	end
 
+    fun ppArray2 t fm = 
+	let 
+	    val (_, t') = Type.asApply t
+	    val ppElem = ppVal' t' (elem fm)
+	    val maxDepth = 10
+	    val line = vbox ebreak
+	in
+	    fn x =>
+	       let
+		   val (r, c) = Array2.dimensions x
+		   val (col, doc0) = 
+		            if c <= #width fm
+			    then (c, [])
+			    else (#width fm, [ellDoc])
+
+		   fun helper i =
+		       if r = 0 andalso c = 0 then text ""
+		       else if i >= r 
+		            then if r = 0 
+				 then text (String.tabulate (c - 1, 
+							     fn _ => #","))
+				 else empty
+		            else if i = maxDepth then line ^^ text "|...|"
+		                 else
+				     let
+			       val xs = List.take (Vector.toList 
+						      (Array2.row (x, i)), col)
+			       val endTag = if i = r - 1 then "|" else "|,"
+				     in
+					 (if i = 0 then empty else line) ^^ 
+					 text "|" ^^ 
+					 (hbox (ppCommaList id 
+					        (List.map ppElem xs @ doc0)) ^^
+					       text endTag) ^^ 
+					 helper (i + 1)
+				     end
+
+	       in
+		   SOME (below (text "array2{"  ^^ 
+				     PrettyPrint.nest 7 (helper 0) ^^
+				     text "}"))
+	       end
+	end
+	    
 
   (* Other types in lib/fundamental *)
 
@@ -555,7 +599,8 @@ local
 	let
 	    structure T = Reflect.ReflectType(type t = Thread.state)
 	in
-	    SOME(ppCustom fm (text "thread", [ppVal T.x (Thread.state x)]))
+	    SOME(ppCustom fm (text "thread",
+			      [ppVal T.x (Thread.state x)]))
 	end
 
     fun ppLock t fm (x : Lock.lock) =
@@ -596,6 +641,7 @@ in
     val _ = registerTyp ppPromise
     val _ = registerTyp ppVector
     val _ = registerTyp ppArray
+    val _ = registerTyp ppArray2
     val _ = registerTyp ppVectorSlice
     val _ = registerTyp ppArraySlice
     val _ = registerTyp ppAtom
