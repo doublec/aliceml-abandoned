@@ -52,7 +52,7 @@ INSTALLFILES_0 = \
 INSTALLFILES_LIBRARY_0 = \
 	macros.php3 menu.html bg.gif \
 	index.html \
-	alt.html array.html array2.html array-slice.html atom.html \
+	alt.html array.html array2.html array-slice.html atom.html regex.html \
 	bin-io.html bool.html byte.html \
 	channel.html char.html command-line.html \
 	date.html \
