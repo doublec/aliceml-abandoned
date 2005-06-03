@@ -209,9 +209,8 @@ sig
 	  &nbsp;&nbsp;| `&lt;=&nbsp;&nbsp;of term * term<BR>
 	  &nbsp;&nbsp;| `=&nbsp;&nbsp;&nbsp;of term * term<BR>
 	  &nbsp;&nbsp;| `&lt;&gt;&nbsp;&nbsp;of term * term<BR>
-	  &nbsp;&nbsp;| `>=&nbsp;&nbsp;of term * term<BR>
-	  &nbsp;&nbsp;| `>&nbsp;&nbsp;&nbsp;of term * term<BR>
-	  &nbsp;&nbsp;| `&lt;-> of rel * term</TT>
+	  &nbsp;&nbsp;| `&gt;=&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `&gt;&nbsp;&nbsp;&nbsp;of term * term<BR>
     </DT>
     <DD>
       <P>This datatype is used to post linear equations.
@@ -229,8 +228,6 @@ sig
             <I>x</I> is greater than or equal to <I>y</I>.
         <LI><TT>`>(<I>x</I>,<I>y</I>)</TT> denotes that
             <I>x</I> is greater than <I>y</I>.
-        <LI><TT>`&lt;->(<I>e</I>,<I>c</I>)</TT> reifies
-            the equation <I>e</I> into <I>c</I>.
       </UL>
       <P></P>
     </DD>
@@ -291,8 +288,8 @@ sig
 	  &nbsp;&nbsp;| BC of bool<BR>
 	  &nbsp;&nbsp;| HOLDS of rel<BR>
 	  &nbsp;&nbsp;| `== of b_term * b_term<BR>
-	  &nbsp;&nbsp;| `-> of b_term * b_term<BR>
-	  &nbsp;&nbsp;| `<- of b_term * b_term<BR>
+	  &nbsp;&nbsp;| `-&gt; of b_term * b_term<BR>
+	  &nbsp;&nbsp;| `&lt;- of b_term * b_term<BR>
 	  &nbsp;&nbsp;| `! of b_term<BR>
 	  &nbsp;&nbsp;| `& of b_term * b_term<BR>
 	  &nbsp;&nbsp;| XOR of b_term * b_term<BR>
@@ -307,8 +304,9 @@ sig
           <I>b</I> into a term.
         <LI><TT>BC <I>c</I></TT> injects the boolean value <I>c</I>
           into a term.
-        <LI><TT>HOLDS <I>f</I></TT> denotes that the boolean term
-          <I>f</I> is true.
+        <LI><TT>HOLDS <I>f</I></TT> denotes that the term
+          <I>f</I> is true. This means that the term <I>f</I> is
+          reified to a bolean variable.
         <LI><TT>`== (<I>b1, b2</I>)</TT> denotes that the two boolean
           terms <I>b1</I> and <I>b2</I> are equivalent.
         <LI><TT>`-> (<I>b1, b2</I>)</TT> denotes that <I>b1</I>
