@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -64,7 +64,8 @@ struct
     and rev'( nil,  ys)		= ys
       | rev'(x::xs, ys)		= rev'(xs,x::ys)
 
-    fun   nil   @ ys		= ys
+    fun    xs   @ nil		= xs (* optimisation *)
+      |   nil   @ ys		= ys
       | (x::xs) @ ys		= x::(xs @ ys)
 
     fun revAppend(nil,   ys)	= ys
