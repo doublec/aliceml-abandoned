@@ -74,8 +74,9 @@
       <TT><A name="match">match</A> <I>r s</I></TT>
     </DT>
     <DD>
-      <P>returns <I>SOME m</I>if <I>r</I>matches <I>s</I> and <I>NONE</I> 
-         otherwise. It raises <I>Malformed</I> if <I>r</I> is not
+      <P>returns <I>SOME m </I>if <I>r </I>matches <I>s</I> and <I>NONE</I> 
+         otherwise. It raises <A href="#Malformed-exn"><I>Malformed</I></A> 
+	 if <I>r</I> is not
 	 a well-formed regular expression.</P>
     </DD>
 
@@ -84,7 +85,7 @@
     </DT>
     <DD>
       <P>The following equivalence holds:<BR>
-         <PRE><I>r</I> =~ <I>s</I> = Option.isSome (match <I>r s<I>)</PRE>
+         <PRE><I>r</I> =~ <I>s</I> = <A href="option.html">Option</A>.isSome (match <I>r s</I>)</PRE>
     </DD>
 
     <DT>
@@ -101,7 +102,8 @@
     </DT>
     <DD>
       <P>need a match <I>m</I> and an index <I>i</I>. 
-      It raises NoSuchGroup, if <I>i</I> >= Vector.length (groups <I>m</I>) or
+      It raises <A href="#NoSuchGroup-exn"><I>NoSuchGroup</I></A>, 
+      if <I>i</I> >= <A href="vector.html">Vector</A>.length (groups <I>m</I>) or
       <I>i</I> < 0.</P>
     </DD>
 
@@ -155,7 +157,6 @@
  <TR><TD><CENTER>[[:space:]]</CENTER></TD><TD><CENTER>Match SML #" ", #"\r", #"\n", #"\t", #"\v", #"\f"</CENTER></TD></TR>
  <TR><TD><CENTER>[[:upper:]]</CENTER></TD><TD><CENTER>Match uppercase letter</CENTER></TD></TR>
  <TR><TD><CENTER>[[:xdigit:]]</CENTER></TD><TD><CENTER>Match hexadecimal digit; same as [0-9a-fA-F]</CENTER></TD></TR>
- <TR><TD><CENTER>[[:lower:]זרו]</CENTER></TD><TD><CENTER>Match lowercase Danish letters (ISO Latin 1)</CENTER></TD></TR>
 </TABLE>
 <P>Remember that backslash (\) must be escaped as "\\" in SML strings.</P>
 
