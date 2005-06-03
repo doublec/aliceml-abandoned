@@ -20,6 +20,7 @@ Interactive Toplevel:
 * [NEW] GUI I/O pane can be cleared via menu.
 * [NEW] Nesting depth and width printing limits are now configurable.
 * [NEW] Most library exceptions recognized by printer.
+* [NEW] Print Array2.array values.
 * [CHG] Smarter handling of file loading and loading failure in Gui; when
         invoked with file arguments (or "-"), previous session is not loaded.
 * [FIX] Jump-to-error works with Windows paths containing volumes.
@@ -29,7 +30,7 @@ Basis Library:
 
 * [NEW] Print: added depth and width to control printing bounds (also
         control output of the toplevel); renamed printWidth to layoutWidth;
-        more exceptions recognized by printer.
+        more exceptions recognized by printer; print Array2.array values.
 * [FIX] Real: fixed rem and hash.
 * [FIX] Substring: fixed isSuffix.
 * [FIX] Array2: properly treat zero-size regions.

@@ -103,6 +103,7 @@ Library:
     layoutWidth.
   - Added function register for hooking user-defined printing functions.
   - Most library exceptions recognized.
+  - Print Array2.array values.
 * Config: added buildDate, version, and codename.
 * Http: ignore multiple headers; replace empty reguest URIs with "/".
 * Remote:
