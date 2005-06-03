@@ -100,7 +100,7 @@ signature STORE =
     </DD>
 
     <DT>
-      <TT>deepAwait <I>x</I></TT>
+      <TT>deepWait <I>x</I></TT>
     </DT>
     <DD>
       <P>Requests all futures in the representation of <TT><I>x</I></TT> until
@@ -126,7 +126,7 @@ signature STORE =
       equivalence holds:
       </P>
       <PRE>
-      size <I>x</I> = (deepAwait <I>x</I>; sizeQuiet <I>x</I>)</PRE>
+      size <I>x</I> = (deepWait <I>x</I>; sizeQuiet <I>x</I>)</PRE>
     </DD>
 
     <DT>
