@@ -37,13 +37,21 @@
    </P>
    <PRE>
     val s = Space.new()
-    val solution = searchOne (money s)</PRE>
+    val moremoney = money s
+    val SOME solution = searchOne s</PRE>
+
+   <P>
+     The solution is itself again a space. You can use the functions from
+     <TT>FD.Reflect</TT> together with the
+     variables in <TT>moremoney</TT> to extract the actual values from
+     the solution space.
+   </P>
 
    <P>
      More sophisticated search engines are provided by the
      structure
      <TT><A HREF="search.html">Search</A></TT>.
-    </P>
+   </P>
 
 <?php section("import", "import"); ?>
 
