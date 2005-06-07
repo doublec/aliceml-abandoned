@@ -8,10 +8,10 @@ alice_dll_SOURCES = \
 	AliceMain.cc
 
 alice_dll_LIBADD = \
-	alice/libalicebase.a \
 	alice/lib/system/libsystem.a \
 	alice/lib/utility/libutility.a \
 	alice/lib/distribution/libdistribution.a \
+	alice/libalicebase.a \
 	alice/primitives/libprimitives.a
 
 bin_SCRIPTS = \
