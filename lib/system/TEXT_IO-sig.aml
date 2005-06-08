@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,18 +21,18 @@ signature TEXT_IO =
 			      and type writer = TextPrimIO.writer
 			      and type pos = TextPrimIO.pos
 
-	type vector = StreamIO.vector
-	type elem = StreamIO.elem
+	type vector = string
+	type elem = char
 
 	type instream
 	type outstream
 
 	val openIn: string -> instream
-	val input: instream -> vector
+	val input: instream -> string
 	val input1: instream -> elem option
-	val inputN: instream * int -> vector
+	val inputN: instream * int -> string
 	val inputLine: instream -> string option
-	val inputAll: instream -> vector
+	val inputAll: instream -> string
 	val canInput: instream * int -> int option
 	val lookahead: instream -> elem option
 	val closeIn: instream -> unit
@@ -43,7 +44,7 @@ signature TEXT_IO =
 	val openOut: string -> outstream
 	val openAppend: string -> outstream
 	val openString: string -> instream
-	val output: outstream * vector -> unit
+	val output: outstream * string -> unit
 	val output1: outstream * elem -> unit
 	val outputSubstr: outstream * substring -> unit
 	val flushOut: outstream -> unit

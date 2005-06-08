@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,19 +26,19 @@ signature TEXT_STREAM_IO =
 	type out_pos
 	type writer
 
-	val input: instream -> vector * instream
+	val input: instream -> string * instream
 	val input1: instream -> (elem * instream) option
-	val inputN: instream * int -> vector * instream
-	val inputAll: instream -> vector * instream
-	val inputLine: instream -> (vector * instream) option
+	val inputN: instream * int -> string * instream
+	val inputAll: instream -> string * instream
+	val inputLine: instream -> (string * instream) option
 	val canInput: instream * int -> int option
 	val closeIn: instream -> unit
 	val endOfStream: instream -> bool
-	val mkInstream: reader * vector -> instream
-	val getReader: instream -> reader * vector
+	val mkInstream: reader * string -> instream
+	val getReader: instream -> reader * string
 (*	val filePosIn: instream -> pos *)
 
-	val output: outstream * vector -> unit
+	val output: outstream * string -> unit
 	val output1: outstream * elem -> unit
 	val outputSubstr: outstream * Substring.substring -> unit
 	val flushOut: outstream -> unit
