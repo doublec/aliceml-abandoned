@@ -1,3 +1,9 @@
+alice-xml (1.1-2) unstable; urgency=low
+
+  * Fixed wrong path in control file.
+
+ -- Guido Tack <tack@frisch.ps.uni-sb.de>  Wed, 8 Jun 2005 10:27:35 +0100
+
 alice-xml (1.1-1) unstable; urgency=low
 
   * Initial release.
