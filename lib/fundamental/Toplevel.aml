@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -96,8 +96,6 @@ struct
 
     val not		= Bool.not
 
-    val fst		= Alt.fst				(**)
-    val snd		= Alt.snd				(**)
     val isFst		= Alt.isFst				(**)
     val isSnd		= Alt.isSnd				(**)
 
