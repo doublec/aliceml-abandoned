@@ -31,6 +31,7 @@ Basis Library:
 * [NEW] Print: added depth and width to control printing bounds (also
         control output of the toplevel); renamed printWidth to layoutWidth;
         more exceptions recognized by printer; print Array2.array values.
+* [CHG] Toplevel names: removed fst and snd to avoid confusion with pairs.
 * [FIX] Real: fixed rem and hash.
 * [FIX] Substring: fixed isSuffix.
 * [FIX] Array2: properly treat zero-size regions.
@@ -49,6 +50,10 @@ Other Libraries:
 * [FIX] Inspector: fixed handling of polymorphic types; most library exceptions
         now recognized.
 * [FIX] SQLite: fixed exception generation.
+
+Platforms:
+
+* [FIX] Debian: fixed XML package.
 
 
 Alice 1.1 (Kraftwerk 'Eval Your Own' Album) - 2005/03/24
