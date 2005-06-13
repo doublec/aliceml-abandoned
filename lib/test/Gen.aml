@@ -40,7 +40,7 @@ struct
 
     fun oneOfFreq vals	    = 
 	    select (Random.int (List.foldl 
-		(fn (a, res) => res + #1 a) 0 vals), vals)
+		(fn (a, res) => res + #1 a)  1 vals), vals)
     and select (n, (i, v)::xs)	=   if n - i <= 0 then v 
 				    else select (n - i, xs)
       | select _		= raise Fail "select: should never happen"
