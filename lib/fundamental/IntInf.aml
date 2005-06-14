@@ -89,7 +89,7 @@ struct
     __primitive val andb :     int * int -> int = "IntInf.andb"
     __primitive val notb :     int -> int = "IntInf.notb"
     __primitive val << :       int * Word.word -> int = "IntInf.<<"
-    __primitive val ~>> :      int * Word.word -> int = "IntInf.<<"
+    __primitive val ~>> :      int * Word.word -> int = "IntInf.~>>"
 
     (* Formatting *)
 
