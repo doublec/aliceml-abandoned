@@ -29,6 +29,7 @@ Compiler:
   allowing proper separation of source and build directories.
 * Support for smart recompilation, taking component signatures into account.
 * Produce proper error messages for out-of-range literals.
+* Fixed bug in type variable scope resolution.
 * Fixed border case where lexer went into infinite loop for some inputs only
   consisting of one token.
 * Don't use encoded URLs in error messages.
