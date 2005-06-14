@@ -1277,7 +1277,7 @@ struct
     and trAllTy E =
 	fn WILDCARDTy(i) => []
 	 | TYVARTy(i, tyvar as TyVar(i',tyvar')) =>
-	   if Option.isSome(lookupVar(E, tyvar')) then
+	   if Option.isSome(lookupScopeVar(E, tyvar')) then
 		[]
 	   else
 	   let
@@ -1286,7 +1286,6 @@ struct
 	   in
 		[varid']
 	   end
-
 	 | TYCONTy(i, tyseq, longtycon) => trAllTySeq E tyseq
 	 | RECORDTy(i, tyrowo)   => trAllTyRowo E tyrowo
 	 | TUPLETy(i, tys)       => List.concat(List.map (trAllTy E) tys)
