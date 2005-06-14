@@ -284,9 +284,7 @@ struct
 			    in
 				(#alreadyConn serverSettingsWidget) := 
 				                               [(name, color)];
-                                print "start\n";
 				readyCB (SOME (name, color), config) 
-				before print "end\n"
 			    end
 
 		in

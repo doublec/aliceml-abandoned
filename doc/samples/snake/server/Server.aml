@@ -141,9 +141,9 @@ struct
                         val rpc     = Channel.receive chan
                        
                         fun remove (event : event, chan, num) =
-                            (print ("registering not responding client as " ^
+                            ((*print ("registering not responding client as " ^
                                         "disconnected after " ^
-                                    Int.toString num ^ " tries to talk to him\n");
+                                    Int.toString num ^ " tries to talk to him\n");*)
                              #disconnected event := true;
                              Channel.destroy chan;
                              false)
@@ -200,7 +200,7 @@ struct
                                 val ev      = #event pd
                             in
                                 if Channel.length chan > 0 then
-                                    (print ("disconnecting SLOW client " ^ Int.toString id ^ "\n");
+                                    ((*print ("disconnecting SLOW client " ^ Int.toString id ^ "\n");*)
                                      #disconnected ev := true;
                                      Channel.destroy chan)
                                 else ()
@@ -542,7 +542,7 @@ struct
                 in
                     if !gameStarted 
                         then raise P.Protocol gameStartedMsg
-                        else print "game started.\n";
+                        else ()(*print "game started.\n"*);
 
                     gameStarted := true;
                    
@@ -701,7 +701,7 @@ struct
                     else if not (!gameStarted) then
                         (* game not yet started. If this is a player
                            we must inform the others *)
-                        (print (Int.toString id ^ " disconnected\n");
+                        ((*print (Int.toString id ^ " disconnected\n");*)
                          if PState.isPlayer state then
                             invokeOnAllBut (partDescs, id, 
                                 #playerDisconnected, 

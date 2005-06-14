@@ -87,11 +87,11 @@ struct
              #deathCount info := !(#deathCount info) + 1;
              if isSome maxLives andalso 
                     ! (#deathCount info) >= valOf maxLives then
-               (#state p := BURIED (info, ref NONE);
-                print "buried\n")
+               (#state p := BURIED (info, ref NONE)(*;
+                print "buried\n"*))
              else
-               (#state p := DEAD (info, ref NONE);
-                print "died\n") )
+               (#state p := DEAD (info, ref NONE)(*;
+                print "died\n"*)) )
         |   _   => assert false
 
 

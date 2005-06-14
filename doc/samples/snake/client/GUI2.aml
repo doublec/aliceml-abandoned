@@ -430,9 +430,7 @@ struct
 	     val pr   = Promise.promise ()
 	     val s = Ref.exchange (#state gui, Promise.future pr)
 	 in
-	     print "gameStarted: 1\n";
 	     Future.await s;
-	     print "gameStarted: 2\n";
 	     case s of
 		 PLAYER_SETTINGS p => (Promise.fulfill (pr, LEVEL_RUNNING);
 				       PlayerSettings.gameStarted p;
