@@ -40,7 +40,7 @@ SOURCES= \
 
 TARGETS= $(SOURCES:%.aml=%.alc)
 
-INSTALL_TARGETS = Explorer LinkedMkExplorer EXPLORER_INSPECT-sig
+INSTALL_TARGETS = Explorer LinkedMkExplorer EXPLORER_INSPECT-sig ExplorerInspect
 
 .PHONY: clean all depend install
 
