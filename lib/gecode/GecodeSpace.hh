@@ -17,6 +17,8 @@
 #include "int.hh"
 #include "set.hh"
 
+using namespace Gecode;
+
 #define makeintvarargs(a,vars)                                 \
   IntVarArgs a(vars.size());                                   \
 { int s = vars.size(); for (int i=s; i--;) a[i] = is[vars[i]]; }
