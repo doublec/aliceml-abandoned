@@ -134,6 +134,8 @@ structure Config =
       val preferencesFile = configDir ^ "/preferences." ^ Pickle.extension
       val historyFile = configDir ^ "/history." ^ Pickle.extension
 
+      val workDir = ref (OS.FileSys.getDir ())
+
       fun init() =
 	  let
 	      structure C = unpack (Pickle.load preferencesFile) : USER_CONFIG
@@ -184,22 +186,30 @@ structure Config =
 		  val history = List.take(history, !historySize)
 				handle Subscript => history
 		  val openFiles = openFiles
+		  val workDir = !workDir
 	      end
 	  in
 	      createConfigDir ();
 	      Pickle.save(historyFile,
 			  pack C : (val history : string list
-				    val openFiles : string list))
+				    val openFiles : string list
+				    val workDir : string))
 	  end handle (OS.SysErr _ | IO.Io _) =>
 	      FileDialog.message "Could not save history."
 
      (* Restore open files *)
       fun loadOpenFiles() =
 	  let
-	      structure C = unpack Pickle.load historyFile
-	      			 : (val openFiles : string list)
+	      val p = Pickle.load historyFile
+	      structure O = unpack p : (val openFiles : string list)
 	  in
-	      C.openFiles
+	      (* unpack seperately, for backward compatibility *)
+	      let
+		 structure D = unpack p : (val workDir : string)
+	      in
+		 workDir := D.workDir
+	      end handle Package.Mismatch _ => ();
+	      O.openFiles
 	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => nil
 		| e => (TextIO.output(TextIO.stdErr,
 				    "** error loading history: uncaught \

@@ -16,6 +16,7 @@ Bugs:
 
 Missing Features:
 
+* extend `use' to support compiled components
 * completion
 * detect file changes
 * bookmarks?

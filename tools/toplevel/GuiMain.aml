@@ -300,25 +300,27 @@ structure GuiMain =
 	    let
 		val file =
 		    case getCurrentPage() of
-			NONE => ""
+			NONE => !Config.workDir
 		      | SOME id =>
 			    OS.Path.getParent
-			    (Option.getOpt(Buffer.getFileName id,""))^"/"
+			    (Option.getOpt(Buffer.getFileName id,""))
 	    in
-		case FileDialog.openFile("Open file", file) of
+		case FileDialog.openFile("Open file", file ^ "/") of
 		    NONE => ()
-		  | SOME f => openGivenFile EXPLICIT f
+		  | SOME f => (Config.workDir := OS.Path.dir f;
+			       openGivenFile EXPLICIT f)
 	    end
        
 
 	fun saveGivenFileAs id =
 	    let
 		val file =
-		    Option.getOpt(Buffer.getFileName id,"")
+		    Option.getOpt(Buffer.getFileName id, !Config.workDir^"/")
 	    in
 		case FileDialog.openFile("Save file",file) of
 		    NONE => ()
-		  | SOME f => Buffer.saveAs (id, f)
+		  | SOME f => (Config.workDir := OS.Path.dir f;
+			       Buffer.saveAs (id, f))
 	    end
         fun saveFileAs () =
             case getCurrentPage() of NONE => ()
