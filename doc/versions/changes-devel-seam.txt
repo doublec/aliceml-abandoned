@@ -24,8 +24,8 @@ Interactive Toplevel:
 * [CHG] When invoked with file arguments (or "-"), session is not reloaded.
 * [CHG] Dialogue for handling of file loading and loading failure in Gui.
 * [FIX] Jump-to-error works with Windows paths containing volumes.
-* [FIX] Miscellaneous usability improvements, tweaks and fixes in GUI
-        (including bug 138).
+* [FIX] Miscellaneous usability tweaks and fixes in GUI (including bugs 138,
+        142).
 
 Basis Library:
 
@@ -49,7 +49,7 @@ Constraint Library:
 * [FIX] Explorer: branch-and-bound works properly for more than one search.
 * [FIX] FD: fixed intvar (bug 122).
 * [FIX] Documentation is in sync with the library again (bugs 124, 125, 129,
-        131, 132).
+        131, 132, 143).
 
 Other Libraries:
 
