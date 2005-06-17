@@ -279,6 +279,13 @@ struct
 
     (* Initialization *)
 
+    val initSource = "\
+	\import \"x-alice:/lib/rtt/Label\"\
+	\import \"x-alice:/lib/rtt/Path\"\
+	\import \"x-alice:/lib/rtt/Type\"\
+	\import \"x-alice:/lib/rtt/Inf\""
+	(* avoid messages about them being loaded appearing later *)
+
     fun init () =
 	let
 	    open RecursiveCompiler.Switches
@@ -291,7 +298,8 @@ struct
 	    Language.unsafeImport := true;
 	    Promise.fulfill (initialEnvPromise,
 			     #1 (incremental' (SOME implicitImport)
-				 evalWith' (returnEvaluated, emptyEnv, "")));
+				 evalWith' (returnEvaluated, emptyEnv,
+					    initSource)));
 	    Language.unsafeImport := false;
 	    Debug.dumpPhases := dumpPhases;
 	    Global.traceComponentAccess := true

@@ -376,8 +376,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    in
 		if isRealised orelse not realised then infs else
 		let
+		    (*
 		    val _ = trace ("computing up-to-date signature of " ^
 				   Url.toStringRaw url')
+		    *)
 		    val rea = !buildReaFwd (url', imports, export)
 		    val export' = Inf.realise(rea, export)
 		    val imports' =
@@ -385,8 +387,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    val infs' =
 			{isRealised=true, export=export', imports=imports'}
 		in
+		    (*
 		    trace ("gathered up-to-date signature of " ^
 			   Url.toStringRaw url');
+		    *)
 		    UrlMap.insert (importTable, ceilUrl, infs');
 		    infs'
 		end
