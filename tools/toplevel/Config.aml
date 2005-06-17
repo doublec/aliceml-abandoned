@@ -204,11 +204,12 @@ structure Config =
 	      structure O = unpack p : (val openFiles : string list)
 	  in
 	      (* unpack seperately, for backward compatibility *)
-	      let
+	      workDir :=
+	      (let
 		 structure D = unpack p : (val workDir : string)
 	      in
-		 workDir := D.workDir
-	      end handle Package.Mismatch _ => ();
+		 D.workDir
+	      end handle Package.Mismatch _ => OS.FileSys.getHomeDir ());
 	      O.openFiles
 	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => nil
 		| e => (TextIO.output(TextIO.stdErr,
