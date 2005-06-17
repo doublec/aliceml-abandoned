@@ -302,8 +302,9 @@ structure GuiMain =
 		    case getCurrentPage() of
 			NONE => !Config.workDir
 		      | SOME id =>
-			    OS.Path.getParent
-			    (Option.getOpt(Buffer.getFileName id,""))
+		    case Buffer.getFileName id of
+			NONE => !Config.workDir
+		      | SOME f => OS.Path.getParent f
 	    in
 		case FileDialog.openFile("Open file", file ^ "/") of
 		    NONE => ()
