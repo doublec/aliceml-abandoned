@@ -59,7 +59,6 @@ struct
 	end
 
 
-(* TODO: exn Subscript raised bei leeren Arrays *)
     fun testCopy () = 
 	let
 	    fun regionToArray {base, row, col, nrows, ncols} =
@@ -84,17 +83,39 @@ struct
 		    t' (base, new_base) (0, 0)
 		end
 
+	    fun isValid (dst, nrows, ncols, dst_row, dst_col) =
+		let
+		    val (dst_r, dst_c) = Array2.dimensions dst
+		in
+		    dst_r >= dst_row + nrows andalso
+		    dst_c >= dst_col + ncols
+		end
+
 	    val xs = ref nil
 
-	    fun t' (src : int Array2.region, dst_row, dst_col) (r, c) = 
-		if r >= dst_row
-		    then ()
-		else if c = dst_col
-			 then t' (src, dst_row, dst_col) (r + 1, 0)
-		     else (xs := (r, c, Array2.sub (#base src, 
-						    #row src + r,
-						    #col src + c)) :: !xs;
-			   t' (src, dst_row, dst_col) (r, c + 1))
+	    fun t' (src : int Array2.region, dst, dst_row, dst_col) (r, c) = 
+		if isValid (dst, 
+			    if Option.isNone (#nrows src)
+			    then Array2.nRows (#base src) - (#row src)
+			    else valOf (#nrows src), 
+			    if Option.isNone (#ncols src)
+			    then Array2.nCols (#base src) - (#col src)
+			    else valOf (#ncols src), 
+			    dst_row, dst_col)
+		then 
+		    if r >= dst_row
+		    then SOME ()
+		    else if c = dst_col
+		    then t' (src, dst, dst_row, dst_col) (r + 1, 0)
+		    else (xs := (r, c, Array2.sub (#base src, 
+						   #row src + r,
+						   #col src + c)) :: !xs;
+			  t' (src, dst, dst_row, dst_col) (r, c + 1))
+		else NONE
+			  
+
+	    exception Error1
+	    exception Error2
 
 	    fun t (base, dest) = 
 		let
@@ -112,15 +133,19 @@ struct
 				  else valOf (#nrows src)
 		in
 		    xs := nil;
-		    Array2.copy {src, dst, dst_row, dst_col};
-		    t' (src2, dst_row, dst_col)  (0, 0);
-		    List.app (fn (r, c, a) => 
-			         Array2.update (dst2, r, c, a)) (!xs);
+		    (if 
+		       Option.isSome (t' (src2, dst, dst_row, dst_col)  (0, 0))
+		     then (List.app (fn (r, c, a) => 
+					Array2.update (dst2, r, c, a)) (!xs);
+			   Array2.copy {src, dst, dst_row, dst_col})
+			               handle Subscript => raise Error1
+		     else (Array2.copy {src, dst, dst_row, dst_col}; 
+		           raise Error2) handle Subscript => ());
 		    Array2.equal Array2.RowMajor 
 		                 Int.equal (dst, dst2)
 		end
 	in
-	    Gen.try 10 (Gen.pair (Gen.array2 Gen.int, Gen.array2 Gen.int))
+	    Gen.try 30 (Gen.pair (Gen.array2 Gen.int, Gen.array2 Gen.int))
                                          	    (Test.test t)
 	end
 

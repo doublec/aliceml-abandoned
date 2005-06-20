@@ -50,8 +50,8 @@ struct
 	    fun t1 i = n := i
 	    fun t2 i = n := i
 	in 
-	    (Test.test (fn x => (Alt.app (t1, t2) x; !n = fst x)) (FST 1);
-	     Test.test (fn x => (Alt.app (t1, t2) x; !n = snd x)) (SND 1))
+	    (Test.test (fn x => (Alt.app (t1, t2) x; !n = Alt.fst x)) (FST 1);
+	     Test.test (fn x => (Alt.app (t1, t2) x; !n = Alt.snd x)) (SND 1))
 	end
 
     fun testAppFst () =
@@ -60,7 +60,7 @@ struct
 	    fun t1 i = n := i
 	in
 	    (Test.test (fn x => (Alt.appFst t1 x; !n = 0)) (SND 1);
-	     Test.test (fn x => (Alt.appFst t1 x; !n = fst x)) (FST 1))
+	     Test.test (fn x => (Alt.appFst t1 x; !n = Alt.fst x)) (FST 1))
 	end
 
     fun testAppSnd () =
@@ -69,7 +69,7 @@ struct
 	    fun t1 i = n := i
 	in
 	    (Test.test (fn x => (Alt.appSnd t1 x; !n = 0)) (FST 1);
-	     Test.test (fn x => (Alt.appSnd t1 x; !n = snd x)) (SND 1))
+	     Test.test (fn x => (Alt.appSnd t1 x; !n = Alt.snd x)) (SND 1))
 	end
 
     fun testMap () =
@@ -77,8 +77,10 @@ struct
 	    val t1 = Real.fromInt
 	    val t2 = Real.round
 	in 
-	  (Test.test (fn x => Alt.map (t1, t2) x = FST (t1 (fst x))) (FST 1);
-	   Test.test (fn x => Alt.map (t1, t2) x = SND (t2 (snd x))) (SND 2.0))
+	  (Test.test (fn x => Alt.map (t1, t2) x = 
+		              FST (t1 (Alt.fst x))) (FST 1);
+	   Test.test (fn x => Alt.map (t1, t2) x = 
+			      SND (t2 (Alt.snd x))) (SND 2.0))
 	end
 		
     fun testMapFst () =

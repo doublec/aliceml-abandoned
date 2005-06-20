@@ -266,7 +266,6 @@ struct
 			  ("<<", testLeftShift),
 			  (">>", testRightShift),
 			  ("~>>", testNotRightShift),
-			  ("scan", testScan),
 			  ("+", testArithmetic),
 			  ("-", testArithmetic),
 			  ("*", testArithmetic),

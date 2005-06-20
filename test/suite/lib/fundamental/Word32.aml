@@ -108,27 +108,27 @@ struct
     fun testLeftShift () =
 	let
 	    (* i << n == (i* 2^(n))(mod (2^(wordSize))) *)
-	    fun t (i, n) = (IntInf.fromInt i * 
+	    fun t (i, n) = (i * 
 			    IntInf.pow (IntInf.fromInt 2, n)) mod p
 	in
 	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word)) 
 		    (Test.test (fn (i, n) => 
 				   wordToIntInf (LargeWord.<< (i, n)) = 
-					     t (LargeWord.toInt i, 
+					     t (LargeWord.toLargeInt i, 
 						Word.toInt n)))
 	end
 
     fun testRightShift () = 
 	let
 	    (* i >> n == floor(i / (2 ^ n)) *)
-	    fun t (i, n) =  IntInf.div (IntInf.fromInt i,
+	    fun t (i, n) =  IntInf.div (i,
 					IntInf.pow (IntInf.fromInt 2, 
 						    n))
 	in
 	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word)) 
 		    (Test.test (fn (i, n) => 
 				   wordToIntInf (LargeWord.>> (i, n)) = 
-				   t (LargeWord.toInt i, 
+				   t (LargeWord.toLargeInt i, 
 				      Word.toInt n)))
 	end
 
@@ -270,7 +270,6 @@ struct
 			       ("<<", testLeftShift),
 			       (">>", testRightShift),
 			       ("~>>", testNotRightShift),
-			       ("scan", testScan),
 			       ("+", testArithmetic),
 			       ("-", testArithmetic),
 			       ("*", testArithmetic),

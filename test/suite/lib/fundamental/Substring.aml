@@ -73,7 +73,6 @@ struct
 	end
 
     fun testEqual () =
-	(* TODO: more testcases *)
 	let
 	    fun t (s1, s2) = Substring.equal (s1, s2) =
 			     String.equal (Substring.string s1, 
@@ -155,7 +154,6 @@ struct
 	end
 
     fun testGetC () =
-	(* TODO: ???? *)
 	let
 	    fun t' (s, i, j) = 
 		if j = 0 orelse s = "" then NONE
@@ -181,14 +179,46 @@ struct
 
     fun testTriml () = 
 	let
-	    fun t (k, sub) = true (* TODO... *)
+	    fun t' (s, i, j, k) = 
+		if k < 0
+		then NONE
+		else if k > j
+	  	     then SOME (Substring.substring (s, i + j, 0))
+		     else SOME (Substring.substring (s, i + k, j - k))
+
+	    fun t (k, sub) =
+		let
+		    val (s, i, j) = Substring.base sub
+		    val r = t' (s, i, j, k)
+		in
+		    if Option.isNone r
+		    then (Substring.triml k sub; false)
+			   handle Subscript => true
+		    else Substring.triml k sub = (valOf r)
+		end
 	in
 	    Gen.try 1000 (Gen.pair (Gen.int, Gen.substring)) (Test.test t)
 	end
 
     fun testTrimr () = 
 	let
-	    fun t (k, sub) = true (* TODO... *)
+	    fun t' (s, i, j, k) = 
+		if k < 0
+		then NONE
+		else if k > j
+	  	     then SOME (Substring.substring (s, i, 0))
+		     else SOME (Substring.substring (s, i, j - k))
+
+	    fun t (k, sub) =
+		let
+		    val (s, i, j) = Substring.base sub
+		    val r = t' (s, i, j, k)
+		in
+		    if Option.isNone r
+		    then (Substring.trimr k sub; false)
+			   handle Subscript => true
+		    else Substring.trimr k sub = (valOf r)
+		end
 	in
 	    Gen.try 1000 (Gen.pair (Gen.int, Gen.substring)) (Test.test t)
 	end
@@ -242,7 +272,17 @@ struct
 
     fun testConcatWith () =
 	let
-	    fun t (s, l) = true (* TODO... *)
+	    fun t (s, l) = 
+		let
+		    val r = SOME (String.concatWith s 
+					(List.map Substring.string l))
+			     handle Size => NONE
+		in
+		    if Option.isNone r
+		    then (Substring.concatWith s l; false)
+			   handle Size => true
+		    else Substring.concatWith s l = valOf r
+		end
 
 	in
 	    Gen.try 100 (Gen.pair (Gen.string, Gen.list Gen.substring))
@@ -426,7 +466,29 @@ struct
 				         ys := nil; t x)))
 	end
 
-    fun testPosition () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testPosition () = 
+	let
+	    fun t' (s, s', i, n, m) k = 
+		if k + m > i + n
+		then (Substring.substring (s', i, n),
+		      Substring.substring (s', i + n, 0))
+		else 
+		  if Substring.string (Substring.substring (s', k, m)) = s
+		  then (Substring.substring (s', i, k - i),
+			Substring.substring (s', k, n + i - k))
+		  else t' (s, s', i, n, m) (k + 1)
+
+	    fun t (s, ss) = 
+		let
+		   val m = String.size s
+		   val (s', i, n) = Substring.base ss
+		in
+		    Substring.position s ss = t' (s, s', i, n, m) i
+		end
+	in
+	    Gen.try 100 (Gen.pair (Gen.string, Gen.substring))
+	         (Test.test t)
+	end
 	
     fun testSpan () = 
 	let
@@ -462,9 +524,33 @@ struct
 	    Gen.try 1000 Gen.substring (Test.test t)
 	end
 	
-    fun testTokens () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testTokens () = 
+	let
+	    fun t (cs, sub) = 
+		let
+		    fun f c = List.exists (fn x => x = c) cs
+		in
+		    List.map Substring.string (Substring.tokens f sub) = 
+		    String.tokens f (Substring.string sub)
+		end
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.char, 
+				   Gen.substring)) (Test.test t)
+	end
 	
-    fun testFields () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testFields () = 
+	let
+	    fun t (cs, sub) = 
+		let
+		    fun f c = List.exists (fn x => x = c) cs
+		in
+		    List.map Substring.string (Substring.fields f sub) = 
+		    String.fields f (Substring.string sub)
+		end
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.char, 
+				   Gen.substring)) (Test.test t)
+	end
 	
     fun testApp () = 
 	let
