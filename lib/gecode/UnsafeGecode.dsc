@@ -18,12 +18,12 @@ class IntVar {
 };
 
 class SetVar {
-  LubIter<SetVar> set_getUpperBound(void); set_getUpperBound;
-  GlbIter<SetVar> set_getLowerBound(void); set_getLowerBound;
+  LubRanges<SetVar> set_getUpperBound(void); set_getUpperBound;
+  GlbRanges<SetVar> set_getLowerBound(void); set_getLowerBound;
   unsigned int lubSize(void); set_getUpperBoundSize;
   unsigned int glbSize(void); set_getLowerBoundSize;
   unsigned int unknownSize(void); set_getUnknownSize;
-  UnknownIter<SetVar> set_getUnknown(void); set_getUnknown;
+  UnknownRanges<SetVar> set_getUnknown(void); set_getUnknown;
   unsigned int cardMin(void); set_getCardinalityMin;
   unsigned int cardMax(void); set_getCardinalityMax;
   bool assigned(void); set_isAssigned;
@@ -46,9 +46,6 @@ void eq(IntVar, IntVar, BoolVar, ConLevel); int_eqR;
 void distinct(const IntVarArgs&, ConLevel); int_distinct;
 void distinct(const IntArgs&, const IntVarArgs&, ConLevel); int_distinctI;
 
-// Area constraint
-void area(const IntVarArgs&, const IntArgs&, const IntVarArgs&, const IntArgs&, ConLevel); int_area;
-
 // Sortedness
 void sortedness(const IntVarArgs&, const IntVarArgs&, ConLevel); int_sortedness;
 void permsort(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, ConLevel); int_permsort;
@@ -62,10 +59,10 @@ void linear(const IntArgs&, const IntVarArgs&, RelType, int, BoolVar, ConLevel);
 
 
 // Counting constraints
-void count(const IntVarArgs&, RelType, int, RelType, int); int_countII;
-void count(const IntVarArgs&, RelType, int, RelType, IntVar); int_countIV;
-void count(const IntVarArgs&, RelType, IntVar, RelType, int); int_countVI;
-void count(const IntVarArgs&, RelType, IntVar, RelType, IntVar); int_countVV;
+void count(const IntVarArgs&, int, RelType, int); int_countII;
+void count(const IntVarArgs&, int, RelType, IntVar); int_countIV;
+void count(const IntVarArgs&, IntVar, RelType, int); int_countVI;
+void count(const IntVarArgs&, IntVar, RelType, IntVar); int_countVV;
 
 // Access constraints
 

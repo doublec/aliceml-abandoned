@@ -336,6 +336,10 @@ DEFINE1(clone) {
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
+  unsigned int dummy;
+  if (s->status(dummy) == SS_FAILED)
+    RAISE(UnsafeGecode::InvalidSpaceConstructor)  
+
   if (stamp==-1) {
     ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x0);
     cr->Replace(1, Store::IntToWord(UnsafeGecode::SpaceStamp++));
@@ -385,10 +389,7 @@ DEFINE1(fail) {
   DBGMSG("fail");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-//   if (!s->enter()) {
-//     RAISE(UnsafeGecode::InvalidSpaceConstructor);
-//   }
-  fail();
+  s->fail();
   RETURN_UNIT;
 } END
 
