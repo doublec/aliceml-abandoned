@@ -11,19 +11,18 @@ class IntVar {
   int min(void); int_getMin;
   int max(void); int_getMax;
   int med(void); int_getMed;
-//  ViewRanges<IntView> ranges(void); int_getRanges;
   int size(void); int_getDomainSize;
   bool range(void); int_isRange;
   bool assigned(void); int_isAssigned;
 };
 
 class SetVar {
-  LubRanges<SetVar> set_getUpperBound(void); set_getUpperBound;
-  GlbRanges<SetVar> set_getLowerBound(void); set_getLowerBound;
+  SetVarLubRanges set_getUpperBound(void); set_getUpperBound;
+  SetVarGlbRanges set_getLowerBound(void); set_getLowerBound;
   unsigned int lubSize(void); set_getUpperBoundSize;
   unsigned int glbSize(void); set_getLowerBoundSize;
   unsigned int unknownSize(void); set_getUnknownSize;
-  UnknownRanges<SetVar> set_getUnknown(void); set_getUnknown;
+  SetVarUnknownRanges set_getUnknown(void); set_getUnknown;
   unsigned int cardMin(void); set_getCardinalityMin;
   unsigned int cardMax(void); set_getCardinalityMax;
   bool assigned(void); set_isAssigned;

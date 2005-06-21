@@ -92,7 +92,6 @@ struct
    val equal = UnsafeGecode.int_eq
    val equalV = UnsafeGecode.int_eqV
    val distinct = UnsafeGecode.int_distinct
-   val area = UnsafeGecode.int_area
    val sortedness = UnsafeGecode.int_sortedness
    val permsort = UnsafeGecode.int_permsort
    val gcc = UnsafeGecode.int_gcc

@@ -81,9 +81,6 @@ sig
     val distinctOffset : space * (int * intvar) vector *
 			 conlevel -> unit
 
-    (* Area constraint *)
-    val area : space * intvar vector * int vector * intvar vector * int vector * conlevel -> unit
-
     (* Sortedness constraints *)
     val sortedness : space * intvar vector * intvar vector * conlevel -> unit
     val permsort : space * intvar vector * intvar vector * intvar vector * conlevel -> unit
@@ -93,13 +90,13 @@ sig
               conlevel -> unit
 
     (* Counting constraints *)
-    val countII : space * intvar vector * relation *
+    val countII : space * intvar vector * 
 		  int * relation * int -> unit
-    val countVI : space * intvar vector * relation *
+    val countVI : space * intvar vector * 
 		 intvar * relation * int -> unit
-    val countIV : space * intvar vector * relation *
+    val countIV : space * intvar vector * 
 		  int * relation * intvar -> unit
-    val countVV : space * intvar vector * relation *
+    val countVV : space * intvar vector * 
 		 intvar * relation * intvar -> unit
 
     (* Access constraints *)

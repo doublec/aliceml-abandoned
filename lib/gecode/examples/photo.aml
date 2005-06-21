@@ -90,4 +90,4 @@ val _ = Print.printVal s
 val _ = print "\n"
 val _ = OS.Process.exit OS.Process.success
 *)
- val _ = Explorer.exploreBest photo
+(* val _ = Explorer.exploreBest photo *)
