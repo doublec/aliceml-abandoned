@@ -69,6 +69,8 @@ struct
        end
 
    fun cardRange(space,min,max,s) = UnsafeGecode.set_cardRange(space,s,min,max)
+   fun includeDom(space,s,dom) = UnsafeGecode.set_lowerBound(space,s,dom)
+   fun intersectDom(space,s,dom) = UnsafeGecode.set_upperBound(space,s,dom)
 
    val superOfInter = UnsafeGecode.set_superOfInter
    val subOfUnion = UnsafeGecode.set_subOfUnion
@@ -132,6 +134,7 @@ struct
            val setvar = UnsafeGecode.set_selectSets
 	   val union = UnsafeGecode.set_selectUnion
 	   val inter = UnsafeGecode.set_selectInter
+	   val interIn = UnsafeGecode.set_selectInterIn
            val disjoint = UnsafeGecode.set_selectDisjoint
        end
 

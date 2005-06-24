@@ -30,10 +30,12 @@ sig
     val upperBound : space * domain -> setvar
     val bounds : space * domain * domain -> setvar
 
-    (* Standard Propagators *)
+    (* Basic tells *)
+    val includeDom : space * setvar * domain -> unit
+    val intersectDom : space * setvar * domain -> unit
     val cardRange : space * int * int * setvar -> unit
-    (* val isIn : space * int * setvar -> bool *)
-
+                                            
+    (* Standard Propagators *)
     val superOfInter : space * setvar * setvar * setvar -> unit
     val subOfUnion : space * setvar * setvar * setvar -> unit
     val compl : space * setvar * setvar -> unit
@@ -92,6 +94,7 @@ sig
 	val setvar : space * setvar * setvar vector * intvar -> unit
 	val union : space * setvar * setvar vector * setvar -> unit
 	val inter : space * setvar * setvar vector * setvar -> unit
+	val interIn : space * setvar * setvar vector * setvar * domain -> unit
         val disjoint : space * setvar vector * setvar -> unit
     end
 	

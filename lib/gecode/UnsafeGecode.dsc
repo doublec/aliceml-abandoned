@@ -138,6 +138,7 @@ void subset(SetVar, SetVar, BoolVar); set_subsetR;
 
 void selectUnion(SetVar, const SetVarArgs&, SetVar); set_selectUnion;
 void selectInter(SetVar, const SetVarArgs&, SetVar); set_selectInter;
+void selectInterIn(SetVar, const SetVarArgs&, SetVar, DomSpec&); set_selectInterIn;
 void selectDisjoint(const SetVarArgs&, SetVar); set_selectDisjoint;
 void selectSets(SetVar, const SetVarArgs&, IntVar); set_selectSets;
 

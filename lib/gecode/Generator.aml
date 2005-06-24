@@ -114,7 +114,6 @@ structure Generator =
           TextIO.output(f, 
                         "  DECLARE_VECTOR(v"^n^", x"^n^");\n"^
                         "  int noOfVars"^n^" = v"^n^"->GetLength();\n"^
-                        "  if (noOfVars"^n^"==0) RETURN_UNIT;\n"^
                         "  "^typ^"VarArgs vars"^n^"(noOfVars"^n^");\n"^
                         "  for (int i=noOfVars"^n^"; i--;) {\n"^
                         "    DECLARE_"^typU^"VAR(tmp, s, stamp, pstamp, v"^n^"->Sub(i));\n"^
@@ -195,58 +194,62 @@ structure Generator =
            (case (class,outarg) of
              (NONE, Void) =>
              TextIO.output(f, 
-                           "  "^fname^"(s,"^args^");\n"^
-                           "  RETURN_UNIT;\n")
+                           "    "^fname^"(s,"^args^");\n"^
+                           "    RETURN_UNIT;\n")
            | (NONE, (Int|UInt)) =>
-             TextIO.output(f, "  RETURN_INT("^fname^"(s,"^args^"));\n")
+             TextIO.output(f, "    RETURN_INT("^fname^"(s,"^args^"));\n")
            | (NONE, Bool) =>
-             TextIO.output(f, "  RETURN_BOOL("^fname^"(s,"^args^"));\n")
+             TextIO.output(f, "    RETURN_BOOL("^fname^"(s,"^args^"));\n")
            | (SOME "Space", Var v) =>
              let val typ = case v of IntVar => "intvar"
                                    | BoolVar => "boolvar"
                                    | SetVar => "setvar"
                                    | _ => raise GeneratorError "one of intvar,boolvar,setvar expected"
              in
-                 TextIO.output(f, "  RETURN_GECODE_VAR(s->new_"^typ^"("^
+                 TextIO.output(f, "    RETURN_GECODE_VAR(s->new_"^typ^"("^
                                   args^"), stamp, pstamp);\n")
              end
            | (SOME "Space", Void) =>
-             TextIO.output(f, "  s->"^fname^"("^args^");\n"^
-                              "  RETURN_UNIT;\n")
+             TextIO.output(f, "    s->"^fname^"("^args^");\n"^
+                              "    RETURN_UNIT;\n")
            | (SOME (("IntVar"|"SetVar") as cl), typ) =>
-             (TextIO.output(f, "  DECLARE_"^toUpper cl^"(var1"^
+             (TextIO.output(f, "    DECLARE_"^toUpper cl^"(var1"^
                                ", s, stamp, pstamp, x1);\n");
               case typ of Void =>
                           TextIO.output(f, 
-                                        "  var1."^fname^"("^args^");\n"^
-                                        "  RETURN_UNIT;\n")
+                                        "    var1."^fname^"("^args^");\n"^
+                                        "    RETURN_UNIT;\n")
                         | (Int|UInt) =>
-                          TextIO.output(f, "  RETURN_INT(var1."^fname^"("^args^"));\n")
+                          TextIO.output(f, "    RETURN_INT(var1."^fname^"("^args^"));\n")
                         | Bool =>
-                          TextIO.output(f, "  RETURN_BOOL(var1."^fname^"("^args^"));\n")
+                          TextIO.output(f, "    RETURN_BOOL(var1."^fname^"("^args^"));\n")
                         | Iterator s =>
-                          TextIO.output(f, "  unsigned int retIterSize = 0;\n"^
-                                           "  for("^s^" iters(var1);\n"^
-                              "      iters(); ++iters) retIterSize++;\n"^
-                              "  "^s^" ret(var1);\n"^
-                              "  Vector *vret = Vector::New(retIterSize);\n"^
-                              "  if(retIterSize>0) {\n"^
-                              "    u_int count = 0;\n"^
-                              "    for (; ret(); ++ret) {\n"^
-                              "      Tuple *t = Tuple::New(2);\n"^
-                              "      t->Init(0, Store::IntToWord(ret.min()));\n"^
-                              "      t->Init(1, Store::IntToWord(ret.max()));\n"^
-                              "      vret->Init(count, t->ToWord());\n"^
-                              "      count++;\n"^
+                          TextIO.output(f, "    unsigned int retIterSize = 0;\n"^
+                                           "    for("^s^" iters(var1);\n"^
+                              "        iters(); ++iters) retIterSize++;\n"^
+                              "    "^s^" ret(var1);\n"^
+                              "    Vector *vret = Vector::New(retIterSize);\n"^
+                              "    if(retIterSize>0) {\n"^
+                              "      u_int count = 0;\n"^
+                              "      for (; ret(); ++ret) {\n"^
+                              "        Tuple *t = Tuple::New(2);\n"^
+                              "        t->Init(0, Store::IntToWord(ret.min()));\n"^
+                              "        t->Init(1, Store::IntToWord(ret.max()));\n"^
+                              "        vret->Init(count, t->ToWord());\n"^
+                              "        count++;\n"^
+                              "      }\n"^
                               "    }\n"^
-                              "  }\n"^
-                              "  RETURN(vret->ToWord());\n"
+                              "    RETURN(vret->ToWord());\n"
                               )
                         | _ => raise Match (* should not occur *)
                           )
            | (SOME s, _) => raise GeneratorError ("Strange combination of class "^s^" and type detected")
                              )
       end
+
+  fun outputTry f = TextIO.output(f, "  try {\n")
+  fun outputCatch f = TextIO.output(f, "  } catch (Exception e) {\n"^
+                                       "    RAISE(UnsafeGecode::InternalExceptionConstructor);\n  }\n")
 
   fun outputDesc(f, _, nil) = ()
     | outputDesc(f, class, (DECL (fname, (inargs, outarg), aliceName))::rest) =
@@ -255,7 +258,9 @@ structure Generator =
                      | _ => outputDefine(f, List.length inargs + noOfArgs class, aliceName));
        outputDeclSpace f;
        outputInArgs 1 f inargs;
+       outputTry(f);
        outputCall(f, class, fname, inargs, outarg);
+       outputCatch(f);
        outputEnd f;
        outputDesc(f, class, rest))
     | outputDesc(f, _, (CLASS (n,decls))::rest) = (outputDesc(f, SOME n, map DECL decls);
@@ -365,6 +370,7 @@ structure Generator =
                Exn "InvalidVar",
                Exn "InvalidDomain",
                Exn "Description",
+               Exn "InternalException",
                Fun ("makespace", 0, [Void], Space, "makespace"),
                Fun ("status", 1, [Space], Status, "status"),
                Fun ("description", 1, [Space], Description, "description"),

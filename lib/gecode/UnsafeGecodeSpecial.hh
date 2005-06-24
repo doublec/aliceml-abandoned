@@ -140,6 +140,7 @@ namespace UnsafeGecode {
   static word InvalidSpaceConstructor;
   static word InvalidDomainConstructor;
   static word DescriptionConstructor;
+  static word InternalExceptionConstructor;
   static s_int SpaceStamp = 0;
 
 const BvarSel int2bvarsel[] =
@@ -261,6 +262,11 @@ void init() {
     UniqueConstructor::New("Description",
 			   "UnsafeGecode.Description")->ToWord();
   RootSet::Add(DescriptionConstructor);
+
+  InternalExceptionConstructor =
+    UniqueConstructor::New("InternalException",
+			   "UnsafeGecode.InternalException")->ToWord();
+  RootSet::Add(InternalExceptionConstructor);
 }
 
 }
