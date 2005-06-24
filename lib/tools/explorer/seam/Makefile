@@ -36,6 +36,7 @@ SOURCES= \
 	MkSaveWindow.aml \
 	MkMenuManager.aml \
 	AboutDialog.aml \
+	EXPLORER_INSPECT-sig.aml \
 	$(GLADE_TARGETS)
 
 TARGETS= $(SOURCES:%.aml=%.alc)
@@ -57,6 +58,8 @@ $(GLADE_TARGETS): $(GLADE_SOURCES)
 
 clean:
 	rm -f $(TARGETS)
+	rm -f Explorer.alc
+	rm -f LinkedMkExplorer.alc
 
 distclean:
 	rm -f $(TARGETS) $(GLADE_TARGETS)
