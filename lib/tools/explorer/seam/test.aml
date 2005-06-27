@@ -115,4 +115,5 @@ fun photo space =
     end
 
 (*val _ = Explorer.init (queens 32 FD.BND)*)
-val _ = Explorer.exploreBest photo
+(*val _ = Explorer.exploreBest photo*)
+val _ = Explorer.exploreAll (money FD.BND)

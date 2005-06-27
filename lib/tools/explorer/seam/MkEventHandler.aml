@@ -125,8 +125,8 @@ functor MkEventHandler(Space : SPACE) =
 	  val yDim   = Real.round((itr((depth+1)*TreeNode.verSpaceI) *
 				   TreeNode.defScale))
       in
-	  Canvas.setScrollRegion(canvas, itr xMin, 0.0,
-				      itr xMax, Real.fromInt yDim)
+	  Canvas.setScrollRegion(canvas, (itr xMin) - 30.0, 0.0,
+				      (itr xMax) + 30.0, Real.fromInt yDim)
       end
     | setBBox _ = ()
 
