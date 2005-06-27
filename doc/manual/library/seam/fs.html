@@ -51,9 +51,12 @@ sig
     val upperBound : space * domain -> setvar
     val bounds : space * domain * domain -> setvar
 
-    (* Standard Propagators *)
+    (* Basic tells *)
+    val includeDom : space * setvar * domain -> unit
+    val intersectDom : space * setvar * domain -> unit
     val cardRange : space * int * int * setvar -> unit
 
+    (* Standard Propagators *)
     val superOfInter : space * setvar * setvar * setvar -> unit
     val subOfUnion : space * setvar * setvar * setvar -> unit
     val compl : space * setvar * setvar -> unit
@@ -105,6 +108,7 @@ sig
 	val setvar : space * setvar * setvar vector * intvar -> unit
 	val union : space * setvar * setvar vector * setvar -> unit
 	val inter : space * setvar * setvar vector * setvar -> unit
+	val interIn : space * setvar * setvar vector * setvar * domain -> unit
         val disjoint : space * setvar vector * setvar -> unit
     end
 	
@@ -241,6 +245,22 @@ end
       of <I>dom2</I>.
     </P></DD>
 
+
+    <DT>
+      <TT>includeDom (<I>s,x,d</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>x</I> in <I>s</I> to contain at least the
+      elements in <I>d</I>.
+    </P></DD>
+
+    <DT>
+      <TT>intersectDom (<I>s,x,d</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>x</I> in <I>s</I> to contain at most the
+      elements in <I>d</I>.
+    </P></DD>
 
     <DT>
       <TT>cardRange (<I>s,min,max,x</I>)</TT>
@@ -590,7 +610,20 @@ end
       the intersection of the sets in <I>v</I> indexed by all elements
       of <I>y</I> is <I>x</I>.
       <I>y</I> is constrained to contain nothing outside the range of
-      valid indexes for <I>v</I>.
+      valid indexes for <I>v</I>. If <I>y</I> is the empty set,
+      <I>x</I> is constrained to be the universe.
+    </P></DD>
+
+    <DT>
+      <TT>Selection.interIn (<I>s, x, v, y, d</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> ensuring
+      the intersection of the sets in <I>v</I> indexed by all elements
+      of <I>y</I> is <I>x</I>.
+      <I>y</I> is constrained to contain nothing outside the range of
+      valid indexes for <I>v</I>. If <I>y</I> is the empty set,
+      <I>x</I> is constrained to be the universe, given as <I>d</I>.
     </P></DD>
 
     <DT>

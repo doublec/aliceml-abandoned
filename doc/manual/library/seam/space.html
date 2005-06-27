@@ -69,6 +69,7 @@
 	exception InvalidSpace
 	exception InvalidVar
 	exception Description
+	exception InternalException
 
 	datatype status = BRANCH of int * description | FAILED | SOLVED
 	val new         : unit -> space
@@ -137,7 +138,7 @@
          the number of alternatives and <I>d</I> is an abstract
          description of the choice.
       </P>
-      <P>Raises a runtime error if the space <I>s</I> has already been
+      <P>Raises <TT>InvalidSpace</TT> if the space <I>s</I> has already been
          discarded.
       </P>
     </DD>
@@ -148,7 +149,7 @@
     <DD>
       <P>returns a new space which is a copy of <I>s</I>. 
       </P>
-      <P>Raises a runtime error if the space <I>s</I> has already been
+      <P>Raises <TT>InvalidSpace</TT> if the space <I>s</I> has already been
          discarded.
       </P>
     </DD>
@@ -161,8 +162,9 @@
          using branching description <I>d</I>. The first alternative
          is 0.
       </P>
-      <P>Raises a runtime error if the space <I>s</I> has already been
-         discarded, or description <I>d</I> is invalid for this space.
+      <P>Raises <TT>InvalidSpace</TT> if the space <I>s</I> has already been
+         discarded, or <TT>Description</TT> if <I>d</I> is invalid for
+         this space.
       </P>
     </DD>
 
