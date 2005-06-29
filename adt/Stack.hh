@@ -180,7 +180,7 @@ public:
     // Assert(top >= 0);
     Assert(a->GetLabel() == MIN_DATA_LABEL);
     word value = a->GetArg(top);
-    a->InitArg(top, 0);
+    a->InitArg(top, STATIC_CAST(s_int, 0));
     SetTop(top);
     return value;
   }
@@ -196,7 +196,7 @@ public:
     newmax = ((newmax <= max) ? newmax : max);
 
     for (u_int i = top; i < newmax; i++) {
-      a->InitArg(i, 0);
+      a->InitArg(i, STATIC_CAST(s_int, 0));
     }
     HeaderOp::EncodeSize(a, newmax);
   }
@@ -204,7 +204,7 @@ public:
     Block *p = Store::AllocMutableBlock(STACK_LABEL, SIZE);
     Block *a = Store::AllocMutableBlock(MIN_DATA_LABEL, s);
     
-    p->InitArg(TOP_POS, 0);
+    p->InitArg(TOP_POS, STATIC_CAST(s_int, 0));
     p->InitArg(ARR_POS, a->ToWord());
 
     return (Stack *) p;

@@ -75,7 +75,7 @@ public:
     
     SetCounter(0);
     for (u_int i = size; i--;)
-      arr->InitArg(i, 0);
+      arr->InitArg(i, STATIC_CAST(s_int, 0));
   }
 
   bool IsEmpty() {

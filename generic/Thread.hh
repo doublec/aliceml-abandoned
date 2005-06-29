@@ -48,13 +48,13 @@ private:
 
   void SetState(state s) {
     ReplaceArg(STATE_POS, s);
-    ReplaceArg(FUTURE_POS, 0);
+    ReplaceArg(FUTURE_POS, STATIC_CAST(s_int, 0));
   }
   void Suspend() {
-    ReplaceArg(IS_SUSPENDED_POS, true);
+    ReplaceArg(IS_SUSPENDED_POS, STATIC_CAST(s_int, true));
   }
   void Resume() {
-    ReplaceArg(IS_SUSPENDED_POS, false);
+    ReplaceArg(IS_SUSPENDED_POS, STATIC_CAST(s_int, false));
   }
 public:
   using Block::ToWord;
@@ -64,15 +64,15 @@ public:
     Block *b = Store::AllocMutableBlock(THREAD_LABEL, SIZE);
     b->InitArg(PRIORITY_POS, NORMAL);
     b->InitArg(STATE_POS, RUNNABLE);
-    b->InitArg(IS_SUSPENDED_POS, false);
+    b->InitArg(IS_SUSPENDED_POS, STATIC_CAST(s_int, false));
     b->InitArg(TASK_STACK_POS, TaskStack::New()->ToWord());
     b->InitArg(NARGS_POS, nArgs);
     b->InitArg(ARGS_POS, args);
-    b->InitArg(FUTURE_POS, 0);
+    b->InitArg(FUTURE_POS, STATIC_CAST(s_int, 0));
     DynamicBlock *exnHandlerStack =
       Store::AllocDynamicBlock(INITIAL_HANDLERS_SIZE, 2);
     // to be done: this belongs to TaskStack
-    exnHandlerStack->InitArg(0, 0);
+    exnHandlerStack->InitArg(0, STATIC_CAST(s_int, 0));
     exnHandlerStack->InitArg(1, Store::IntToWord(0));
     b->InitArg(EXN_HANDLER_STACK_POS, exnHandlerStack->ToWord());
 #if DEBUGGER
@@ -114,7 +114,7 @@ public:
   TaskStack *GetTaskStack() {
     TaskStack *taskStack = TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
 #ifdef DEBUG_CHECK
-    ReplaceArg(TASK_STACK_POS, 0);
+    ReplaceArg(TASK_STACK_POS, STATIC_CAST(s_int, 0));
 #endif
     return taskStack;
   }
@@ -161,7 +161,7 @@ public:
     return GetArg(FUTURE_POS);
   }
   void Wakeup() {
-    ReplaceArg(FUTURE_POS, 0);
+    ReplaceArg(FUTURE_POS, STATIC_CAST(s_int, 0));
     SetState(RUNNABLE);
 #if DEBUGGER
     if(GetDebugMode() == DEBUG) {

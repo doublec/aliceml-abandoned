@@ -33,7 +33,7 @@ public:
 
   static PartitionSeen *New() {
     Block *p = Store::AllocMutableBlock(SEEN_LABEL, SIZE);
-    p->InitArg(COUNTER_POS, 0);
+    p->InitArg(COUNTER_POS, STATIC_CAST(s_int, 0));
     p->InitArg(TABLE_POS, Map::New(initialSize)->ToWord());
     return STATIC_CAST(PartitionSeen *, p);
   }

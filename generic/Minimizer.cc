@@ -291,9 +291,9 @@ int PNode::compareChildren(::Block *v, ::Block *w) {
   // This comparison only looks for integers as children
   u_int vs = v->GetSize();
   
-  for (int i=vs; i--; ) {
-    int cv = Store::WordToInt(v->GetArg(i));
-    int cw = Store::WordToInt(w->GetArg(i));
+  for (u_int i=vs; i--; ) {
+    s_int cv = Store::WordToInt(v->GetArg(i));
+    s_int cw = Store::WordToInt(w->GetArg(i));
 
     if (cv != INVALID_INT && cw != INVALID_INT) {
       if (cv<cw) return -1;
@@ -309,8 +309,8 @@ int PNode::compareChildren(::Block *v, ::Block *w) {
 
 int PNode::compareChunks(Chunk *c1, Chunk *c2) {
   // lexicographic ordering by size and then std::memcmp
-  int size1 = c1->GetSize();
-  int size2 = c2->GetSize();
+  u_int size1 = c1->GetSize();
+  u_int size2 = c2->GetSize();
   if (size1<size2) return -1;
   if (size1>size2) return 1;
   u_char *c1c = reinterpret_cast<u_char *>(c1->GetBase());
@@ -503,7 +503,7 @@ void DynNodeArray::sort(DynamicArray *a, DynamicArray *lua, int l, int r) {
 DynNodeArray *DynNodeArray::New(int initialSize) {
   Block *p = Store::AllocMutableBlock(DYNNODEARRAY_LABEL, SIZE);
   
-  p->InitArg(COUNT_POS, 0);
+  p->InitArg(COUNT_POS, STATIC_CAST(s_int, 0));
   p->InitArg(ARRAY_POS, DynamicArray::New(initialSize)->ToWord());
   p->InitArg(LUA_ARRAY_POS, DynamicArray::New(initialSize)->ToWord());
   return STATIC_CAST(DynNodeArray *, p);
@@ -706,7 +706,7 @@ Partition *Partition::New() {
   b->InitArg(NA_POS, DynNodeArray::New(100)->ToWord());
   b->InitArg(BA_POS, DynamicArray::New(100)->ToWord());
   b->InitArg(TO_DO_POS, 1); /* nil */
-  b->InitArg(BLOCK_COUNT_POS, 0);
+  b->InitArg(BLOCK_COUNT_POS, STATIC_CAST(s_int, 0));
   return STATIC_CAST(Partition *, b);    
 }
 

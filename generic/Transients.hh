@@ -42,7 +42,7 @@ public:
   // Future Constructor
   static Future *New() {
     Transient *transient = Store::AllocTransient(FUTURE_LABEL);
-    transient->InitArg(0); // empty wait queue
+    transient->InitArg(STATIC_CAST(s_int, 0)); // empty wait queue
     return STATIC_CAST(Future *, transient);
   }
 
@@ -79,7 +79,7 @@ public:
   // Hole Constructor
   static Hole *New() {
     Transient *transient = Store::AllocTransient(HOLE_LABEL);
-    transient->InitArg(0); // no associated future
+    transient->InitArg(STATIC_CAST(s_int, 0)); // no associated future
     return STATIC_CAST(Hole *, transient);
   }
 

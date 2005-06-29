@@ -96,9 +96,9 @@ private:
   static InputStream *New(IN_STREAM_TYPE type, u_int size) {
     InputStream *is =
       (InputStream *) Store::AllocMutableBlock((BlockLabel) type, size);
-    is->InitArg(HD_POS, 0);
-    is->InitArg(RD_POS, 0);
-    is->InitArg(EOB_POS, false);
+    is->InitArg(HD_POS, STATIC_CAST(s_int, 0));
+    is->InitArg(RD_POS, STATIC_CAST(s_int, 0));
+    is->InitArg(EOB_POS, STATIC_CAST(s_int, false));
     return is;
   }
 public:
@@ -118,7 +118,7 @@ public:
 	Store::AllocMutableChunk(READ_BUFFER_SIZE + READ_BUFFER_OVERSHOOT);
       is->InitArg(BUFFER_POS, buffer->ToWord());
     }
-    is->InitArg(TL_POS, 0);
+    is->InitArg(TL_POS, STATIC_CAST(s_int, 0));
     is->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(is->ToWord()));
     return is;
   }
