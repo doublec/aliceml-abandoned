@@ -32,7 +32,7 @@ public:
 
   static SizeWorkerSeen *New() {
     Block *p = Store::AllocMutableBlock(SEEN_LABEL, SIZE);
-    p->InitArg(COUNTER_POS, 0);
+    p->InitArg(COUNTER_POS, STATIC_CAST(s_int, 0));
     p->InitArg(TABLE_POS, Map::New(initialSize)->ToWord());
     return STATIC_CAST(SizeWorkerSeen *, p);
   }
@@ -199,7 +199,7 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
     }
   }
   
-  int i = Store::WordToInt(x0);
+  s_int i = Store::WordToInt(x0);
   if (i!=INVALID_INT) {
     Scheduler::PopFrame(frame->GetSize());
     SIZEWORKERCONTINUE();

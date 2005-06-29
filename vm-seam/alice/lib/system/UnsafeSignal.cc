@@ -92,7 +92,7 @@ public:
   static SignalTranslationFrame *New(Interpreter *interpreter, word wClosure) {
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(CLOSURE_POS, wClosure);
-    frame->InitArg(RE_ENTER_POS, 0);
+    frame->InitArg(RE_ENTER_POS, STATIC_CAST(s_int, 0));
     return STATIC_CAST(SignalTranslationFrame *, frame);
   }
 };

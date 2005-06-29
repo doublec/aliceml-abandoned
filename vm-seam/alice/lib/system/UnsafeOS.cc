@@ -336,7 +336,7 @@ DEFINE1(UnsafeOS_FileSys_modTime) {
   struct stat info;
   Interruptible(res, stat(name->ExportC(), &info));
   if (res) RAISE_SYS_ERR();
-  BigInt *b = BigInt::New((unsigned int)info.st_mtime);
+  BigInt *b = BigInt::New((u_int)info.st_mtime);
   mpz_mul_ui(b->big(), b->big(), 1000);
   RETURN_INTINF(b);
 #endif

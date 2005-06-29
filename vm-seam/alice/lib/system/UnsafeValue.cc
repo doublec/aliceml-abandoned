@@ -45,7 +45,7 @@ public:
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(FUTURE_POS, future);
     frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(AGAIN_POS, false);
+    frame->InitArg(AGAIN_POS, STATIC_CAST(s_int, false));
     return STATIC_CAST(RequestFrame *, frame);
   }
 

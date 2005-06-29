@@ -32,10 +32,10 @@
 //--** ops implementable more efficiently directly on tagged representation
 
 #define NONBITS (STORE_WORD_WIDTH - WORD_PRECISION)
-#define NONBITS_EXP (1 << NONBITS)
+#define NONBITS_EXP (STATIC_CAST(u_int, 1) << NONBITS)
 
 #define STANDARD_WORD_NONBITS (STORE_WORD_WIDTH - STANDARD_WORD_PRECISION)
-#define STANDARD_WORD_NONBITS_EXP (1 << STANDARD_WORD_NONBITS)
+#define STANDARD_WORD_NONBITS_EXP (STATIC_CAST(u_int, 1) << STANDARD_WORD_NONBITS)
 
 #define DECLARE_WORDN(w, x, n)						\
   u_int w = Store::WordToInt(x);					\

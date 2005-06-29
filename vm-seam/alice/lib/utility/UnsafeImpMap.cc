@@ -33,12 +33,12 @@ public:
     Block *b = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
     b->InitArg(KEY_POS, key);
     b->InitArg(VALUE_POS, value);
-    b->InitArg(PREV_POS, 0);
+    b->InitArg(PREV_POS, STATIC_CAST(s_int, 0));
     if (next != INVALID_POINTER) {
       b->InitArg(NEXT_POS, next->ToWord());
       next->ReplaceArg(PREV_POS, b->ToWord());
     } else
-      b->InitArg(NEXT_POS, 0);
+      b->InitArg(NEXT_POS, STATIC_CAST(s_int, 0));
     return STATIC_CAST(ImpMapEntry *, b);
   }
   static ImpMapEntry *FromWordDirect(word w) {
@@ -100,7 +100,7 @@ public:
   static ImpMap *New() {
     Block *b = Store::AllocMutableBlock(IMPMAP_LABEL, SIZE);
     b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
-    b->InitArg(HEAD_POS, 0);
+    b->InitArg(HEAD_POS, STATIC_CAST(s_int, 0));
     return STATIC_CAST(ImpMap *, b);
   }
   static ImpMap *FromWord(word x) {
@@ -132,7 +132,7 @@ public:
   }
   void RemoveAll() {
     GetHashTable()->Clear();
-    ReplaceArg(HEAD_POS, 0);
+    ReplaceArg(HEAD_POS, STATIC_CAST(s_int, 0));
   }
   ImpMapEntry *LookupEntry(word key) {
     Map *hashTable = GetHashTable();

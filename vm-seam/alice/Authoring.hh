@@ -118,7 +118,7 @@
 
 #define RETURN_INTINF(i)                        \
 {                                               \
-  int j = i->toInt();                           \
+  s_int j = i->toInt();                         \
   if (j != INVALID_INT) {                       \
     i->destroy(); RETURN_INT(j);                \
   }                                             \

@@ -30,12 +30,12 @@ public:
     Block *b = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
     b->InitArg(KEY_POS, key->ToWord());
     b->InitArg(VALUE_POS, value);
-    b->InitArg(PREV_POS, 0);
+    b->InitArg(PREV_POS, STATIC_CAST(s_int, 0));
     if (next != INVALID_POINTER) {
       b->InitArg(NEXT_POS, next->ToWord());
       next->ReplaceArg(PREV_POS, b->ToWord());
     } else
-      b->InitArg(NEXT_POS, 0);
+      b->InitArg(NEXT_POS, STATIC_CAST(s_int, 0));
     return STATIC_CAST(CellMapEntry *, b);
   }
   static CellMapEntry *FromWordDirect(word w) {
@@ -97,7 +97,7 @@ public:
   static CellMap *New() {
     Block *b = Store::AllocMutableBlock(CELLMAP_LABEL, SIZE);
     b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
-    b->InitArg(HEAD_POS, 0);
+    b->InitArg(HEAD_POS, STATIC_CAST(s_int, 0));
     return STATIC_CAST(CellMap *, b);
   }
   static CellMap *FromWord(word x) {
@@ -131,7 +131,7 @@ public:
   }
   void RemoveAll() {
     GetHashTable()->Clear();
-    ReplaceArg(HEAD_POS, 0);
+    ReplaceArg(HEAD_POS, STATIC_CAST(s_int, 0));
   }
   CellMapEntry *LookupEntry(Cell *key) {
     word wKey = key->ToWord();

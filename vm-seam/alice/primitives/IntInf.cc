@@ -115,7 +115,7 @@ void GMPFinalizationSet::Finalize(word value) {
 #define RETURN_INTINF2(i, j)                                    \
 {                                                               \
   word res1, res2;                                              \
-  int ii = i->toInt();                                          \
+  s_int ii = i->toInt();                                        \
   if (ii != INVALID_INT) {                                      \
     res1 = Store::IntToWord(ii);                                \
     i->destroy();                                               \
@@ -126,7 +126,7 @@ void GMPFinalizationSet::Finalize(word value) {
     res1 = cr->ToWord();                                        \
     PrimitiveTable::gmpFinalizationSet->Register(res1);         \
   }                                                             \
-  int jj = j->toInt();                                          \
+  s_int jj = j->toInt();                                        \
   if (jj != INVALID_INT) {                                      \
     res2 = Store::IntToWord(jj);                                \
     j->destroy();                                               \
@@ -147,7 +147,7 @@ DEFINE1(IntInf_fromInt) {
 
 DEFINE1(IntInf_toInt) {
   if (Store::WordToTransient(x0) != INVALID_POINTER) { REQUEST(x0); }
-  int i = Store::WordToInt(x0);
+  s_int i = Store::WordToInt(x0);
   if ( i != INVALID_INT)
     { RETURN_INT(i); }
   RAISE(PrimitiveTable::General_Overflow);
@@ -162,7 +162,7 @@ DEFINE1(IntInf_ ## op) {                                \
     BigInt *res = i->bigop();                           \
     RETURN_INTINF(res);                                 \
   } else {                                              \
-    int res = smallop(i);                               \
+    s_int res = smallop(i);                             \
     if (res>=MIN_VALID_INT && res <= MAX_VALID_INT) {   \
       RETURN_INT(res); }                                \
     MK_INTINF(w, BigInt::New(res));                     \
@@ -238,7 +238,7 @@ DEFINE2(IntInf_ ## op) {                                \
         { BigInt *res = b->inversebigop(-i);            \
           RETURN_INTINF(res); }                         \
   } else {                                              \
-    int res = i smallop j;                              \
+    s_int res = i smallop j;                            \
     if (res>=MIN_VALID_INT && res <= MAX_VALID_INT) {   \
       RETURN_INT(res); }                                \
     MK_INTINF(w, BigInt::New(res));                     \
@@ -288,7 +288,7 @@ DEFINE2(IntInf_opmul) {
       BigInt *ret = a->mul(j);
       RETURN_INTINF(ret);
     } else {
-      int res = i * j;
+      s_int res = i * j;
       RETURN_INT(res);
     }
   }  
@@ -364,7 +364,7 @@ MKOP2(opgreaterEq, greaterEq, lessEq, >=);
 DEFINE2(IntInf_compare) {
   TEST_INTINF(i, x0);
   TEST_INTINF(j, x1);
-  int res;
+  s_int res;
   if (i==INVALID_INT) {
     DECLARE_INTINF(a, x0);
     if (j==INVALID_INT) {
@@ -437,7 +437,7 @@ DEFINE1(IntInf_log2) {
     RAISE(PrimitiveTable::General_Domain);
   }
   
-  unsigned long int l = i->log2();
+  u_int l = i->log2();
   DISCARD_PROMOTED(i, flag);
 
   if (l>MAX_VALID_INT)
@@ -485,7 +485,7 @@ static word BigIntegerHandler(word x) {
       mpz_neg(b->big(), b->big());
     }
 
-    int ii=b->toInt();
+    s_int ii=b->toInt();
     if (ii != INVALID_INT) {
       b->destroy();
       return Store::IntToWord(ii);

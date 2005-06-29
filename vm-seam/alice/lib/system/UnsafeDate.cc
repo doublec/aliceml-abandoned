@@ -129,7 +129,7 @@ DEFINE2(UnsafeDate_fmt) {
     } else if (size == 0 && !strcmp(fmt->ExportC (), "%p")) {
         // educated guess: if size = 0 resulting string
         // might be empty iff fmt = "%p" (AM|PM)
-        RETURN(String::New (0U)->ToWord ());
+        RETURN(String::New (STATIC_CAST(u_int, 0))->ToWord ());
     } else {
         RAISE_DATE;
     }

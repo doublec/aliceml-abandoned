@@ -79,6 +79,7 @@ AC_CHECK_SIZEOF(long)
 # checks for compiler characteristics
 
 AC_SEAM_CHECK_DECLSPEC
+AC_SEAM_CHECK_CXXFLAG(-fPIC)
 
 # checks for library functions
 

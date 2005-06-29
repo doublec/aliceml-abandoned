@@ -26,7 +26,7 @@
 
 class Transform;
 
-inline int mydiv(signed int a, signed int b) {
+inline s_int mydiv(s_int a, s_int b) {
   // This function is only here to bypass a constant folding bug in g++.
   // If we define RETURN_WORD as
   //   RETURN_INT(STATIC_CAST(s_int, (w) * NONBITS_EXP) / NONBITS_EXP)
@@ -504,13 +504,13 @@ public:
     mpz_init_set(big, old->big());
     return STATIC_CAST(BigInt *, c);
   }
-  static BigInt *New(int i) {
+  static BigInt *New(s_int i) {
     Chunk *c = Store::AllocChunk(SIZE);
     MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
     mpz_init_set_si(big, i);
     return STATIC_CAST(BigInt *, c);
   }
-  static BigInt *New(unsigned int i) {
+  static BigInt *New(u_int i) {
     Chunk *c = Store::AllocChunk(SIZE);
     MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
     mpz_init_set_ui(big, i);
