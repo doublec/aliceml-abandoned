@@ -1218,7 +1218,8 @@ word NativeCodeJitter::CompileContinuation(TagVal *idDefsInstrOpt,
   word contPC        = Store::IntToWord(GetRelativePC());
   Vector *idDefs     = Vector::FromWordDirect(idDefsInstr->Sel(0));
   u_int calleeArity  = GetInArity(idDefs);
-  if (calleeArity != outArity)
+  if (calleeArity != outArity || 
+      (outArity >= Scheduler::maxArgs && calleeArity != 1))
     CompileCCC(calleeArity);
   StoreResults(calleeArity, idDefs);
   CompileBranch(TagVal::FromWordDirect(idDefsInstr->Sel(1)), nLocals);
