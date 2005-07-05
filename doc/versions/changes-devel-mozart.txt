@@ -30,6 +30,7 @@ Compiler:
 * Support for smart recompilation, taking component signatures into account.
 * Produce proper error messages for out-of-range literals.
 * Fixed bug in type variable scope resolution.
+* Fixed bug that allowed non-value expressions and unsound typing in val rec.
 * Fixed border case where lexer went into infinite loop for some inputs only
   consisting of one token.
 * Don't use encoded URLs in error messages.

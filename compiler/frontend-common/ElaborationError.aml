@@ -113,6 +113,7 @@ struct
 	| ValDecMismatch	of typ_mismatch
 	| ValDecUnclosed	of typ
 	| ValDecLift		of valid * var
+	| RecValDecNonValue
 	(* Long ids *)
 	| ModlongidInf		of modlongid * inf
 	(* Modules *)
@@ -438,6 +439,9 @@ struct
 	  textpar["could not generalize","type","of",ppId x,
 	      "due","to","value","restriction",
 	      "although","it","contains","explicit","type","variables"]
+      | ppError(RecValDecNonValue) =
+	  textpar["recursive","declaration's","right-hand","side","is","not",
+		  "a","value"]
       (* Modules *)
       | ppError(ModlongidInf(y,j)) =
 	vbox(

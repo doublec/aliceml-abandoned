@@ -1952,6 +1952,8 @@ prInf "j'" j';
 	    val  _        = r := tpats'
 	    val  _        = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				error(i, E.ValDecMismatch(t1, t2, t3, t4))
+	    val  _        = if I.isValue exp then () else
+				error(I.infoExp exp, E.RecValDecNonValue)
 	in
 	    ( O.ValDec(nonInfo(i), pat', exp'), [] )
 	end

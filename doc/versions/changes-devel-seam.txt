@@ -11,6 +11,7 @@ Compiler:
         abstract types through components compiled against different versions
         of the type. This requires indirectly imported component to be present.
 * [FIX] Fixed bug in type variable scope resolution (bug 140).
+* [FIX] Fixed bug allowing non-value expressions and unsound typing in val rec.
 * [FIX] Under Windows, outputting error messages for files compiled on
         drives other than the current didn't work.
 * [FIX] Fixed border case where lexer went into infinite loop for some inputs
@@ -27,18 +28,18 @@ Interactive Toplevel:
 * [FIX] Miscellaneous usability tweaks and fixes in GUI (including bugs 138,
         142).
 
-Basis Library:
+Basic Library:
 
-* [NEW] Print: added depth and width to control printing bounds (also
-        control output of the toplevel); renamed printWidth to layoutWidth.
+* [NEW] Print: added `depth' and `width' to control printing bounds (also
+        control output of the toplevel); renamed `printWidth' to `layoutWidth'.
 * [NEW] Print: Array2.array and most library exceptions recognized by printer.
-* [CHG] Toplevel names: removed fst and snd to avoid confusion with pairs.
-* [FIX] IntInf: fixed ~>>.
-* [FIX] Real: fixed rem and hash.
-* [FIX] Substring: fixed isSuffix.
+* [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
+* [FIX] IntInf: fixed `~>>'.
+* [FIX] Real: fixed `rem' and `hash'.
+* [FIX] Substring: fixed `isSuffix'.
 * [FIX] Array2: properly treat zero-size regions (bug 127).
-* [FIX] OS.Path: fixed handling of volumes in mkRelative and concat.
-* [FIX] TextIO: closing stdIn now works on Windows.
+* [FIX] OS.Path: fixed handling of volumes in `mkRelative' and `concat'.
+* [FIX] TextIO: closing `stdIn' now works on Windows.
 * [FIX] ComponentManager: loading components via HTTP was broken (bug 120).
 
 Constraint Library:
@@ -47,9 +48,11 @@ Constraint Library:
 * [NEW] Explorer: option to stop search after tree has reached a certain size.
 * [FIX] Explorer: status bar is now reset upon each new search.
 * [FIX] Explorer: branch-and-bound works properly for more than one search.
-* [FIX] FD: fixed intvar (bug 122).
+* [FIX] Lots and lots of fixes in the Gecode implementation.
+* [FIX] Space: fixed crash in `fail', and `clone' on a failed space.
+* [FIX] FD: fixed `intvar' (bug 122).
 * [FIX] Documentation is in sync with the library again (bugs 124, 125, 129,
-        131, 132, 143).
+        131, 132, 143, 144).
 
 Other Libraries:
 

@@ -90,6 +90,7 @@ sig
 	| ValDecMismatch	of typ_mismatch
 	| ValDecUnclosed	of typ
 	| ValDecLift		of valid * var
+	| RecValDecNonValue
 	(* Long ids *)
 	| ModlongidInf		of modlongid * inf
 	(* Modules *)
