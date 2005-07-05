@@ -91,10 +91,10 @@ sig
     end
 
     structure Selection : sig
-	val setvar : space * setvar * setvar vector * intvar -> unit
-	val union : space * setvar * setvar vector * setvar -> unit
-	val inter : space * setvar * setvar vector * setvar -> unit
-	val interIn : space * setvar * setvar vector * setvar * domain -> unit
+	val setvar : space * setvar vector * intvar * setvar -> unit
+	val union : space * setvar vector * setvar * setvar -> unit
+	val inter : space * setvar vector * setvar * setvar -> unit
+	val interIn : space * setvar vector * setvar * setvar * domain -> unit
         val disjoint : space * setvar vector * setvar -> unit
     end
 	

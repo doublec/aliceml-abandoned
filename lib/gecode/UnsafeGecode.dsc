@@ -106,8 +106,8 @@ void the(SetVar, IntVar); set_the;
 void minElement(SetVar, IntVar); set_min;
 void maxElement(SetVar, IntVar); set_max;
 void match(SetVar, const IntVarArgs&); set_match;
-void card(SetVar, IntVar); set_card;
-void cardRange(SetVar, unsigned int, unsigned int); set_cardRange;
+void cardinality(SetVar, IntVar); set_card;
+void cardinality(SetVar, unsigned int, unsigned int); set_cardRange;
 
 void superOfInter(SetVar, SetVar, SetVar); set_superOfInter;
 void subOfUnion(SetVar, SetVar, SetVar); set_subOfUnion;
@@ -136,11 +136,11 @@ void include(SetVar, int, BoolVar); set_includeRI;
 void equal(SetVar, SetVar, BoolVar); set_equalR;
 void subset(SetVar, SetVar, BoolVar); set_subsetR;
 
-void selectUnion(SetVar, const SetVarArgs&, SetVar); set_selectUnion;
-void selectInter(SetVar, const SetVarArgs&, SetVar); set_selectInter;
-void selectInterIn(SetVar, const SetVarArgs&, SetVar, DomSpec&); set_selectInterIn;
+void selectUnion(const SetVarArgs&, SetVar, SetVar); set_selectUnion;
+void selectInter(const SetVarArgs&, SetVar, SetVar); set_selectInter;
+void selectInterIn(const SetVarArgs&, SetVar, SetVar, DomSpec&); set_selectInterIn;
 void selectDisjoint(const SetVarArgs&, SetVar); set_selectDisjoint;
-void selectSets(SetVar, const SetVarArgs&, IntVar); set_selectSets;
+void selectSets(const SetVarArgs&, IntVar, SetVar); set_selectSets;
 
 void branch(const SetVarArgs&, SetBvarSel, SetBvalSel); set_branch;
 void branch(const SetVarArgs&, SetBvarSel, SetBvalSel, int); set_randomBranch;
