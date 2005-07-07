@@ -378,7 +378,7 @@ structure Generator =
                Fun ("discard", 1, [Space], Void, "discard"),
                Fun ("alive", 1, [Space], Bool, "alive"),
                Fun ("fail", 1, [Space], Void, "fail"),
-               Fun ("int_getRanges", 1, [Space,Var IntVar], Iterator "blub", "int_getRanges")
+               Fun ("int_getRanges", 2, [Space,Var IntVar], Iterator "blub", "int_getRanges")
                ]
           val f = TextIO.openOut ("UnsafeGecode.cc")
           val asig = TextIO.openOut ("UnsafeGecode.asig")
