@@ -745,7 +745,7 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeCore", "signalConnect", 
 		 NativeCore_signalConnect, 3);
   INIT_STRUCTURE(record, "NativeCore", "signalDisconnect", 
-		 NativeCore_signalDisconnect, 3);
+		 NativeCore_signalDisconnect, 2);
   INIT_STRUCTURE(record, "NativeCore", "getEventStream", 
 		 NativeCore_getEventStream, 1);
 
