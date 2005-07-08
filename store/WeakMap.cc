@@ -18,3 +18,5 @@
 #include "store/BaseMap.cc"
 
 template class BaseMap<TokenKey>;
+
+void Finalization::Finalize(word value) {}

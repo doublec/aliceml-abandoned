@@ -31,7 +31,7 @@ public:
 
 class SeamDll Finalization {
 public:
-  virtual void Finalize(word value) = 0;
+  virtual void Finalize(word value);
 };
 
 class SeamDll WeakMap : public BaseMap<TokenKey> {
