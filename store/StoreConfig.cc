@@ -71,7 +71,7 @@ static floatEndianness CheckDoubleEndianness() {
 static unsigned long ComputeMask(int pos, int width) {
   unsigned long mask = 0;
 
-  for (long i = 0; i < width; i++) {
+  for (unsigned long i = 0; i < width; i++) {
     mask += (1lu << (pos + i));
   }
 
