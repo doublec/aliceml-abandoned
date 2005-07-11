@@ -211,7 +211,8 @@ struct
       in
 	if my >= y1 andalso my <= y2 then
           if mx >= x1 andalso mx <= x2
-            then Selection.infoAt (sontree, mx - x1, my - y1, glob)
+            then if Selection.isCtrl () then Common.inspect sontree
+		 else Selection.infoAt (sontree, mx - x1, my - y1, glob)
           else MainWindow.setStatus "Not in the entry (H)."
 	else infoEntryAt (mx, my, !tail, glob)
       end

@@ -1,4 +1,5 @@
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
 import structure Common        from "../Common"
 import structure AbsTree       from "../AbsTree"
 import structure GrTypes       from "GrTypes"
@@ -25,8 +26,20 @@ struct
 
   fun getListInfo abstree =
       case abstree of 
-	(AbsTree.Simple _) => (emptyArray, true)
-      | (AbsTree.Container _) => getListArray (abstree, false)
+	(AbsTree.Simple _) => (emptyArray, true) (* It is the empty list. *)
+      | (AbsTree.Container {desc, limit, kids}) =>
+	(case desc of
+             AbsTree.Value (tt, vv, (AbsTree.Future _) as ff) =>
+	         (* Tail replaced by a future. *)
+	         let val desc     = AbsTree.ListTail (tt, Reflect.reify vv, ff)
+		     val abstree' = AbsTree.Container {desc, limit, kids}
+		 in
+	             (Array.array (1, abstree'), false)
+		 end
+	   | AbsTree.Value _ => (kids, false) (* It is an uncomplete list. *)
+           | _ => assert false)
+	
+      (* Then it must be a complete list with brackets. *)
       | (AbsTree.Concat {tree, ...}) => getListArray (tree, true)
       | _ => assert false
 
@@ -207,8 +220,7 @@ struct
             if complete
               then (addOpenBracket (parent, group) ;
                     updSeparators(parent, index, listSize = 0, depth, lastSuf))
-              else ()
-
+            else ()
 	  end
 
 	| _ => assert false)

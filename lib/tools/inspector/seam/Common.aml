@@ -111,5 +111,11 @@ struct
       if length >= max then max else
       case l of [] => length
 	      | _ :: xs => getMaxListLength (xs, length + 1, max)
-			   
+
+
+  val inspectItemPromise = Promise.promise ()
+  val inspectItem = Promise.future inspectItemPromise
+  fun inspectVal ty x = inspectItem (Value (ty, Reflect.reflect x))
+  __overload 'a inspect : 'a -> unit = inspectVal
+
 end

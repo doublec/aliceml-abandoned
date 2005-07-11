@@ -52,6 +52,8 @@ struct
   fun inspectVal ty x = inspectItem (Common.Value (ty, Reflect.reflect x))
   __overload 'a inspect : 'a -> unit = inspectVal
 
+  val _ = Promise.fulfill (Common.inspectItemPromise, inspectItem)
+
   functor Inspect (A : (signature S structure X : S)) : any =
     let
       structure I = Reflect.ReflectSig A (* Does reflect the signature A.S *)

@@ -5,6 +5,8 @@ import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 
 fun waitLine () = TextIO.inputLine TextIO.stdIn
 
+fun waitfor n = Thread.sleep (Time.fromMilliseconds (LargeInt.fromInt n))
+
 val _ = Inspector.inspect ()
 
 val r1 = ref 5
@@ -24,8 +26,18 @@ datatype tree =
   A | B | C of int * int | D of string list
 | E of int * tree * tree | FisALabelLongerThanOtherLabels of tree list ref
 
-fun longlist (n, l) = if n = 0 then l else longlist (n-1, n :: l)
+fun longlist (n, l) = if n = 0 then l else longlist (n-1, lazy (n :: l))
 fun listn n = longlist (n, [])
+
+
+fun lazy longtest n acc = 
+	if n<=0 then acc 
+	else longtest (n-1) (longtest (n-1) (n::acc)) 
+val z = longtest 4 nil
+val _ = Inspector.inspect z
+val _ = Inspector.inspect z
+val _ = waitLine ()
+
 
 
 
@@ -196,6 +208,7 @@ val _ =
    print "Wait a few seconds, then press enter repeatedly to proceed.\n" ;
    Inspector.inspect (100, 999) ; waitLine () ;
    Inspector.inspect (Atom.atom "Foo") ; waitLine () ;
+   Inspector.inspect lyy ;
    ())
 
 signature COMPLEX =

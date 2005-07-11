@@ -96,6 +96,7 @@ fun isLazy tree = case getDesc tree of
 		  | Value _  => false
 		  | Module _ => false
 
+(* Tells is the argument is a (boxed) future. *)
 fun isFuture (Simple {desc = NestedRow _, parent, ...}) =
      (case getDesc parent of
         NestedRow _ => false
