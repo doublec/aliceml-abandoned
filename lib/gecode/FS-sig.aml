@@ -84,7 +84,7 @@ sig
     structure Reified : sig
 	val isIn : space * setvar * int * boolvar -> unit
 	val areIn : space * (boolvar * int) vector * setvar -> unit
-	val incl : space * intvar * setvar * boolvar -> unit
+	val incl : space * setvar * intvar * boolvar -> unit
 	val equal : space * setvar * setvar * boolvar -> unit
         val subset : space * setvar * setvar * boolvar -> unit
 (*	val partition : setvar list * int list * setvar * bin list -> unit *)
