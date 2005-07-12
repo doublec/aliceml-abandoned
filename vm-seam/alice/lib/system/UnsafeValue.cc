@@ -39,13 +39,12 @@ public:
 
 class RequestFrame: public StackFrame {
 protected:
-  enum { FUTURE_POS, CLOSURE_POS, AGAIN_POS, SIZE };
+  enum { FUTURE_POS, CLOSURE_POS, SIZE };
 public:
   static RequestFrame *New(Interpreter *interpreter, word future, word closure) {
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(FUTURE_POS, future);
     frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(AGAIN_POS, STATIC_CAST(s_int, false));
     return STATIC_CAST(RequestFrame *, frame);
   }
 
@@ -58,12 +57,6 @@ public:
   }
   word GetClosure() {
     return StackFrame::GetArg(CLOSURE_POS);
-  }
-  bool GetAgain() {
-    return Store::DirectWordToInt(StackFrame::GetArg(AGAIN_POS));
-  }
-  void SetAgain() {
-    StackFrame::ReplaceArg(AGAIN_POS, true);
   }
 };
 
@@ -78,19 +71,14 @@ u_int RequestInterpreter::GetFrameSize(StackFrame *sFrame) {
 Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
   RequestFrame *frame = STATIC_CAST(RequestFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  if (frame->GetAgain()) {
-    Construct(); // TODO: Is this really necessary?
-    Future *future = frame->GetFuture();
-    future->ScheduleWaitingThreads();
-    future->Become(REF_LABEL, Store::IntToWord(0));
-    Scheduler::PopFrame(frame->GetSize());
-    return Worker::CONTINUE;
-  } else {
-    frame->SetAgain();
-    Scheduler::SetNArgs(1);
-    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
-    return Scheduler::PushCall(frame->GetClosure());
-  }
+  Construct(); // TODO: Is this really necessary?
+  Future *future = frame->GetFuture();
+  future->ScheduleWaitingThreads();
+  future->Become(REF_LABEL, Store::IntToWord(0));
+  Scheduler::PopFrame(frame->GetSize());
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, Store::IntToWord(0));
+  return Scheduler::PushCall(frame->GetClosure());
 }
 
 u_int RequestInterpreter::GetInArity(ConcreteCode *) {
