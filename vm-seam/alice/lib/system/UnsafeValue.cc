@@ -164,42 +164,33 @@ DEFINE3(UnsafeValue_proj) {
 } END
 
 DEFINE2(UnsafeValue_tag) {
-  DECLARE_VECTOR(labels, x1);
-  if (Alice::IsBigTagVal(labels->GetLength())) {
-    BigTagVal *bigTagVal = BigTagVal::FromWord(x0);
-    if (bigTagVal != INVALID_POINTER)
-      RETURN_INT(bigTagVal->GetTag());
-  } else {
-    TagVal *tagVal = TagVal::FromWord(x0);
-    if (tagVal != INVALID_POINTER)
-      RETURN_INT(tagVal->GetTag());
-  }
   s_int i = Store::WordToInt(x0);
-  if (i == INVALID_INT) REQUEST(x0);
-  RETURN_INT(i);
+  if (i != INVALID_INT) RETURN(x0);
+  DECLARE_BLOCK(block, x0);
+  if (block->GetLabel() == Alice::BIG_TAG) {
+    RETURN_INT(BigTagVal::FromWord(x0)->GetTag());
+  } else {
+    RETURN_INT(TagVal::FromWord(x0)->GetTag());
+  }
 } END
 
 DEFINE3(UnsafeValue_projTagged) {
-  DECLARE_VECTOR(labels, x1);
+  DECLARE_BLOCK(block, x0);
   DECLARE_INT(i, x2);
-  if (Alice::IsBigTagVal(labels->GetLength())) {
-    DECLARE_BIGTAGVAL(bigTagVal, x0);
-    RETURN(bigTagVal->Sel(i));
+  if (block->GetLabel() == Alice::BIG_TAG) {
+    RETURN(BigTagVal::FromWord(x0)->Sel(i));
   } else {
-    DECLARE_TAGVAL(tagVal, x0);
-    RETURN(tagVal->Sel(i));
+    RETURN(TagVal::FromWord(x0)->Sel(i));
   }
 } END
 
 DEFINE3(UnsafeValue_projTaggedTuple) {
-  DECLARE_INT(length, x1);
+  DECLARE_BLOCK(block, x0);
   DECLARE_INT(i, x2);
-  if (Alice::IsBigTagVal(length)) {
-    DECLARE_BIGTAGVAL(bigTagVal, x0);
-    RETURN(bigTagVal->Sel(i));
+  if (block->GetLabel() == Alice::BIG_TAG) {
+    RETURN(BigTagVal::FromWord(x0)->Sel(i));
   } else {
-    DECLARE_TAGVAL(tagVal, x0);
-    RETURN(tagVal->Sel(i));
+    RETURN(TagVal::FromWord(x0)->Sel(i));
   }
 } END
 

@@ -27,6 +27,8 @@ Interactive Toplevel:
 * [FIX] Jump-to-error works with Windows paths containing volumes.
 * [FIX] Miscellaneous usability tweaks and fixes in GUI (including bugs 138,
         142).
+* [FIX] Fixed pretty-printing of values of datatypes with more than 100
+        constructors.
 
 Basic Library:
 
@@ -58,6 +60,7 @@ Other Libraries:
 
 * [NEW] Inspector: most library exceptions now recognized.
 * [FIX] Inspector: fixed handling of polymorphic types (bug 121).
+* [FIX] Inspector: fixed updating of futures as list tails (bug 149).
 * [FIX] SQLite: fixed exception generation.
 
 Platforms:
