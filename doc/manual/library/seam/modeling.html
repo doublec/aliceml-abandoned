@@ -193,11 +193,11 @@ sig
         <LI><TT>FD <I>x</I></TT> injects the finite domain
             variable <I>x</I> into a term.
         <LI><TT>` <I>i</I></TT> injects a integer value <I>i</I> into a term.
-        <LI><TT>`+(<I>x</I>,<I>y</I>)</TT> denotes the sum
+        <LI><TT><I>x</I> `+ <I>y</I></TT> denotes the sum
             of <I>x</I> and <I>y</I>.
-        <LI><TT>`-(<I>x</I>,<I>y</I>)</TT> denotes
+        <LI><TT><I>x</I> `- <I>y</I></TT> denotes
             the difference of <I>x</I> and <I>y</I>.
-        <LI><TT>`*(<I>x</I>,<I>y</I>)</TT> denotes the
+        <LI><TT><I>x</I> `* <I>y</I></TT> denotes the
             product of <I>x</I> and <I>y</I>.
       </UL>
       <P></P>
@@ -210,23 +210,23 @@ sig
 	  &nbsp;&nbsp;| `=&nbsp;&nbsp;&nbsp;of term * term<BR>
 	  &nbsp;&nbsp;| `&lt;&gt;&nbsp;&nbsp;of term * term<BR>
 	  &nbsp;&nbsp;| `&gt;=&nbsp;&nbsp;of term * term<BR>
-	  &nbsp;&nbsp;| `&gt;&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `&gt;&nbsp;&nbsp;&nbsp;of term * term<BR></TT>
     </DT>
     <DD>
       <P>This datatype is used to post linear equations.
       </P>
       <UL>
-        <LI><TT>`&lt;(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT><I>x</I> `&lt; <I>y</I></TT> denotes that
             <I>x</I> is less than <I>y</I>.
-        <LI><TT>`&lt;=(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT><I>x</I> `&lt;= <I>y</I></TT> denotes that
             <I>x</I> is less than or equal to <I>y</I>.
-        <LI><TT>`=(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT><I>x</I> `= <I>y</I></TT> denotes that
             <I>x</I> equals <I>y</I>.
-        <LI><TT>`&lt;&gt;(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT><I>x</I> `&lt;&gt; <I>y</I></TT> denotes that
             <I>x</I> is not equal to <I>y</I>.
-        <LI><TT>`>=(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT><I>x</I> `>= <I>y</I></TT> denotes that
             <I>x</I> is greater than or equal to <I>y</I>.
-        <LI><TT>`>(<I>x</I>,<I>y</I>)</TT> denotes that
+        <LI><TT><I>x</I> `> <I>y</I></TT> denotes that
             <I>x</I> is greater than <I>y</I>.
       </UL>
       <P></P>
@@ -307,18 +307,18 @@ sig
         <LI><TT>HOLDS <I>f</I></TT> denotes that the term
           <I>f</I> is true. This means that the term <I>f</I> is
           reified to a bolean variable.
-        <LI><TT>`== (<I>b1, b2</I>)</TT> denotes that the two boolean
+        <LI><TT><I>b1</I> `== <I>b2</I></TT> denotes that the two boolean
           terms <I>b1</I> and <I>b2</I> are equivalent.
-        <LI><TT>`-> (<I>b1, b2</I>)</TT> denotes that <I>b1</I>
+        <LI><TT><I>b1</I> `-> <I>b2</I></TT> denotes that <I>b1</I>
           implies <I>b2</I>.
-        <LI><TT>`-> (<I>b1, b2</I>)</TT> denotes that <I>b2</I>
+        <LI><TT><I>b1</I> `<- <I>b2</I></TT> denotes that <I>b2</I>
           implies <I>b1</I>.
         <LI><TT>`! <I>b</I></TT> denotes the negation of <I>b</I>.
-        <LI><TT>`& (<I>b1, b2</I>)</TT> denotes the conjunction of <I>b1</I>
+        <LI><TT><I>b1</I> `& <I>b2</I></TT> denotes the conjunction of <I>b1</I>
           and<I>b2</I>.
-        <LI><TT>XOR (<I>b1, b2</I>)</TT> denotes the exclusive
+        <LI><TT><I>b1</I> XOR <I>b2</I></TT> denotes the exclusive
           disjunction of <I>b1</I> and<I>b2</I>.
-        <LI><TT>`| (<I>b1, b2</I>)</TT> denotes the disjunction of <I>b1</I>
+        <LI><TT><I>b1</I> `| <I>b2</I></TT> denotes the disjunction of <I>b1</I>
           and<I>b2</I>.
       </UL>
       <P></P>
