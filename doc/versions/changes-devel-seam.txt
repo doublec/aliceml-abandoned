@@ -37,7 +37,7 @@ Basic Library:
 * [NEW] Print: Array2.array and most library exceptions recognized by printer.
 * [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
 * [FIX] IntInf: fixed `~>>'.
-* [FIX] Real: fixed `rem' and `hash'.
+* [FIX] Real: fixed `rem' and `hash'; fixed isFinite and isNormal for NaN.
 * [FIX] Substring: fixed `isSuffix'.
 * [FIX] Array2: properly treat zero-size regions (bug 127).
 * [FIX] OS.Path: fixed handling of volumes in `mkRelative' and `concat'.

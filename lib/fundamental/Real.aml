@@ -77,8 +77,8 @@ struct
 
     fun isNan x				= compareReal(x, x) =
 	                                  IEEEReal.UNORDERED
-    fun isFinite x			= abs x != 1.0/0.0
-    fun isNormal x			= isFinite x andalso abs x != 0.0
+    fun isFinite x			= abs x <> 1.0/0.0
+    fun isNormal x			= isFinite x andalso abs x <> 0.0
 
     fun sign x where (x > 0.0)		= 1
       | sign x where (x < 0.0)		= ~1
