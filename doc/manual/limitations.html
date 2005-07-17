@@ -46,8 +46,9 @@ the Alice system.</P>
   <?php } ?>
 
   <DT>Signature inclusion</DT>
-  <DD><P>Signatures containing <TT>include</TT> specifications cannot be
-      handled.</P>
+  <DD><P>Scoping of <TT>include</TT> specifications in signatures is not
+      accurate: the included signature expression cannot refer to entities
+      of the surrounding signature.</P>
   </DD>
 
   <DT>Datatype replication</DT>

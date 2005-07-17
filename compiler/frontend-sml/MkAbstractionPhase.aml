@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -2533,6 +2533,19 @@ struct
 
   (* Signatures and specifications *)
 
+    (* hack for at least having limited treatment of include *)
+    and extractIncludes(INCLUDESpec(i, sigexp)) =
+	    ( [sigexp], EMPTYSpec(i) )
+      | extractIncludes(SEQSpec(i, spec1, spec2)) =
+	let
+	    val (sigexps1,spec1') = extractIncludes spec1
+	    val (sigexps2,spec2') = extractIncludes spec2
+	in
+	    ( sigexps1@sigexps2, SEQSpec(i, spec1', spec2') )
+	end
+      | extractIncludes spec =
+	    ( [], spec )
+
     and trAtSigExp E =
 	fn ANYAtSigExp(i) =>
 	   let
@@ -2545,11 +2558,22 @@ struct
 	   let
 		val _      = insertScope E
 		val _      = insertSelf E
+		val (sigexps,spec) = extractIncludes spec
 		val specs' = trSpec E spec
 		val E'     = splitScope E
 		val F      = PLAIN E'
 	   in
+(*
 		( O.SigInf(i, specs'), F )
+*)
+	        List.foldr (fn(sigexp,(inf'',F')) =>
+			    let
+				val (inf',F) = trSigExp E sigexp
+				val _ = BindEnv.composeEnvFn(F,F')
+			    in
+				( O.InterInf(i, inf', inf''), F )
+			    end)
+			   (O.SigInf(i, specs'), F) sigexps
 	   end
 
 	 | LONGSIGIDAtSigExp(i, sigid) =>
@@ -2603,7 +2627,6 @@ struct
 	   in
 		( O.InterInf(i, inf1', inf2'), F1 )
 	   end
-
 
     and trSpec  E spec = Vector.rev(Vector.fromList(trSpec' (E,[]) spec))
     and trSpec'(E,acc) =

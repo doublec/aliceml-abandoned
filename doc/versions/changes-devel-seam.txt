@@ -6,6 +6,7 @@ Runtime System:
 
 Compiler:
 
+* [NEW] Implemented signature inclusion (still with restrictions).
 * [CHG] Improved some error messages.
 * [FIX] Make type-checking work properly in the presence of diamond import of
         abstract types through components compiled against different versions
