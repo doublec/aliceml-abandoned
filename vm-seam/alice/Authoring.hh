@@ -136,13 +136,17 @@
     char *from = c->GetBase();                            \
     std::memcpy(to,from,sizeof(word));         }  
 
+inline
+word Word32ToWord(u_int w) {
+  u_int ww = w;
+  Chunk *c = Store::AllocChunk(sizeof(word));
+  char *to = c->GetBase();
+  char *from = reinterpret_cast<char *>(&ww);
+  std::memcpy(to, from, sizeof(word));
+  return c->ToWord();
+}
+
 #define RETURN_WORD32(w)                                 \
-    {                                                     \
-    u_int ww = w;\
-    Chunk *c = Store::AllocChunk(sizeof(word));          \
-    char *to = c->GetBase();                         \
-    char *from = reinterpret_cast<char *>(&ww);           \
-    std::memcpy(to, from, sizeof(word));                 \
-    RETURN(c->ToWord());     }
+  RETURN(Word32ToWord(w));
 
 #endif
