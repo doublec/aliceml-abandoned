@@ -183,6 +183,8 @@ struct
       | fromWord (ELLIPSES true)      = ("DECLARE_ELLIPSES", nil)
       | fromWord (ELLIPSES false)     = ("DECLARE_VALIST", nil)
       | fromWord BOOL                 = ("DECLARE_BOOL", nil)
+      | fromWord (POINTER (_, STRUCTREF "_GdkAtom"))
+	                              = ("DECLARE_WORD32", nil)
       | fromWord (POINTER _)          = ("DECLARE_OBJECT", nil)
       | fromWord (STRING _)           = ("DECLARE_CSTRING", nil)
       | fromWord (ARRAY (_,t))        = ("DECLARE_CARRAY",
@@ -197,6 +199,8 @@ struct
     fun toWord (NUMERIC(_,false,_))      = ("INT_TO_WORD", nil)
       | toWord (NUMERIC(_,true ,_))      = ("REAL_TO_WORD", nil)
       | toWord BOOL                      = ("BOOL_TO_WORD", nil)
+      | toWord (POINTER (_, STRUCTREF "_GdkAtom"))
+	                              = ("ATOM_TO_WORD", nil)
       | toWord (POINTER (c, t))          = ("OBJECT_TO_WORD", [getTypeInfo t])
       | toWord (STRING _)                = ("STRING_TO_WORD", nil)
       | toWord (LIST("GList",STRING _))  = ("GLIST_STRING_TO_WORD", nil)

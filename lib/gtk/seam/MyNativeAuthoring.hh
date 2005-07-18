@@ -280,4 +280,5 @@
     String::New(reinterpret_cast<const char *>(s))->ToWord() :	\
     String::New(static_cast<u_int>(0))->ToWord())
 #define UNMANAGED_POINTER_TO_WORD(p) Store::UnmanagedPointerToWord(p)
+#define ATOM_TO_WORD(a) Word32ToWord((u_int) a)
 #endif
