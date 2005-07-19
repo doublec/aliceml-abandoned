@@ -105,10 +105,10 @@ sig
     end
 
     structure Selection : sig
-	val setvar : space * setvar * setvar vector * intvar -> unit
-	val union : space * setvar * setvar vector * setvar -> unit
-	val inter : space * setvar * setvar vector * setvar -> unit
-	val interIn : space * setvar * setvar vector * setvar * domain -> unit
+	val setvar : space * setvar vector * intvar * setvar -> unit
+	val union : space * setvar vector * setvar * setvar -> unit
+	val inter : space * setvar vector * setvar * setvar -> unit
+	val interIn : space * setvar vector * setvar * setvar * domain -> unit
         val disjoint : space * setvar vector * setvar -> unit
     end
 	
@@ -152,7 +152,7 @@ end
       <TT>type space</TT>
     </DT>
     <DD>
-      <P>The type of first class comutational spaces. Usually equal to <TT>SPACE.space</TT>.
+      <P>The type of first class comutational spaces. Usually equal to <TT>Space.space</TT>.
     </P></DD>
 
     <DT
@@ -275,7 +275,7 @@ end
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be a superset of the intersection of <I>y</I> and <I>z</I>.
+	  constrain <I>z</I> to be a superset of the intersection of <I>x</I> and <I>y</I>.
     </P></DD>
 
    <DT>
@@ -283,8 +283,8 @@ end
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be a subset of the union of <I>y</I>
-	  and <I>z</I>.
+	  constrain <I>z</I> to be a subset of the union of <I>x</I>
+	  and <I>y</I>.
     </P></DD>
 
     <DT>
@@ -301,7 +301,7 @@ end
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> so that
-      <I>x</I> is <I>y</I> minus <I>z</I>.
+      <I>z</I> is <I>x</I> minus <I>y</I>.
     </P></DD>
 
    <DT>
@@ -309,15 +309,15 @@ end
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the intersection of <I>y</I> and <I>z</I>.
+	  constrain <I>z</I> to be the intersection of <I>x</I> and <I>y</I>.
     </P></DD>
 
    <DT>
-      <TT>intersectN (<I>s, x, v</I>)</TT>
+      <TT>intersectN (<I>s, xs, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the intersection of all <I>vi</I>.
+	  constrain <I>y</I> to be the intersection of all <I>xs</I>.
     </P></DD>
 
    <DT>
@@ -325,18 +325,18 @@ end
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the union of <I>y</I> and <I>z</I>.
+	  constrain <I>z</I> to be the union of <I>x</I> and <I>y</I>.
     </P></DD>
 
    <DT>
-      <TT>unionN (<I>s, x, v</I>)</TT>
+      <TT>unionN (<I>s, xs, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the union of all <I>vi</I>.
+	  constrain <I>y</I> to be the union of all <I>xs</I>.
     </P></DD>
 
-	<DT>
+    <DT>
       <TT>subset (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
@@ -344,8 +344,8 @@ end
 	  constrain <I>x</I> to be a subset of <I>y</I>.
     </P></DD>
 
-	<DT>
-      <TT>NoSubset (<I>s, x, y</I>)</TT>
+    <DT>
+      <TT>noSubset (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
@@ -354,7 +354,7 @@ end
 	  present in <I>y</I>.
     </P></DD>
 
-	<DT>
+    <DT>
       <TT>disjoint (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
@@ -362,7 +362,7 @@ end
 	  constrain <I>x</I> and <I>y</I> to have no common element.
     </P></DD>
 
-	<DT>
+    <DT>
       <TT>distinct (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
@@ -371,12 +371,12 @@ end
 	  in at least one element.
     </P></DD>
 
-	<DT>
-      <TT>distinctN (<I>s, v</I>)</TT>
+    <DT>
+      <TT>distinctN (<I>s, xs</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-		say no two sets in <I>v</I> can be the same.
+		say no two sets in <I>xs</I> can be the same.
     </P></DD>
 
    <DT>
@@ -384,20 +384,20 @@ end
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the disjoint union of <I>y</I> and
-	  <I>z</I>.
+	  constrain <I>z</I> to be the disjoint union of <I>x</I> and
+	  <I>y</I>.
     </P></DD>
 
    <DT>
-      <TT>partitionN (<I>s, x, v</I>)</TT>
+      <TT>partitionN (<I>s, xs, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the disjoint union of all
-	  <I>vi</I>
+	  constrain <I>y</I> to be the disjoint union of all
+	  <I>xs</I>
     </P></DD>
 
-	<DT>
+    <DT>
       <TT>equals (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
@@ -405,7 +405,7 @@ end
 	  constrain <I>x</I> and <I>y</I> to be the same set.
     </P></DD>
 
-	<DT>
+    <DT>
       <TT>convex (<I>s, x</I>)</TT>
     </DT>
     <DD>
@@ -414,34 +414,35 @@ end
 	  containing all integers between its smallest and largest element.
     </P></DD>
 
-	<DT>
+    <DT>
       <TT>convexHull (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the convex hull of <I>y</I>. 
-	  Simply put, <I>x</I> has the same smallest and largest
-	  element as <I>y</I>,
+	  constrain <I>y</I> to be the convex hull of <I>x</I>. 
+	  Simply put, <I>y</I> has the same smallest and largest
+	  element as <I>x</I>,
 	  but also contains all integers in between.
     </P></DD>
 
-   <DT>
-      <TT>seq (<I>s, v</I>)</TT>
+    <DT>
+      <TT>seq (<I>s, xs</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain the largest element of <I>v[i]</I> to be 
-	  smaller than the smallest element of <I>v[i+1]</I>.
+	  constrain the largest element of <I>xs[i]</I> to be 
+	  smaller than the smallest element of <I>xs[i+1]</I>.
     </P></DD>
 
    <DT>
-      <TT>seqU (<I>s, x, v</I>)</TT>
+      <TT>seqU (<I>s, xs, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be the union of all <I>vi</I>, 
-	  while <I>v</I> is a seqence as defined above. 
-	  This is a special case of the partitionN constraint.	  
+	  constrain <I>y</I> to be the union of all <I>xs</I>, 
+	  while <I>xs</I> is a seqence as defined above for the
+	  <TT>seq</TT> constraint. 
+	  This is a special case of the <TT>partitionN</TT> constraint.	  
     </P></DD>
 
     <DT>
@@ -517,27 +518,27 @@ end
     </P></DD>
 
     <DT>
-      <TT>Int.match (<I>s, x, v</I>)</TT>
+      <TT>Int.match (<I>s, x, ys</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>v</I> is the ordered vector of all elements of <I>x</I>.
+	  <I>ys</I> is the ordered vector of all elements of <I>x</I>.
     </P></DD>
 
     <DT>
-      <TT>Int.minN (<I>s, x, v</I>)</TT>
+      <TT>Int.minN (<I>s, x, ys</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>v</I> is the ordered vector of the smallest elements of <I>x</I>.
+	  <I>ys</I> is the ordered vector of the smallest elements of <I>x</I>.
     </P></DD>
 
     <DT>
-      <TT>Int.maxN (<I>s, x, v</I>)</TT>
+      <TT>Int.maxN (<I>s, x, ys</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>v</I> is the ordered vector of the largest elements of <I>x</I>.
+	  <I>ys</I> is the ordered vector of the largest elements of <I>x</I>.
     </P></DD>
 
 
@@ -583,7 +584,7 @@ end
     </P></DD>
 
     <DT>
-      <TT>Selection.setvar (<I>s, x, v, y</I>)</TT>
+      <TT>Selection.setvar (<I>s, v, y, x</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> ensuring
@@ -592,7 +593,7 @@ end
     </P></DD>
 
     <DT>
-      <TT>Selection.union (<I>s, x, v, y</I>)</TT>
+      <TT>Selection.union (<I>s, v, y, x</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> ensuring
@@ -603,7 +604,7 @@ end
     </P></DD>
 
     <DT>
-      <TT>Selection.inter (<I>s, x, v, y</I>)</TT>
+      <TT>Selection.inter (<I>s, v, y, x</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> ensuring
@@ -615,7 +616,7 @@ end
     </P></DD>
 
     <DT>
-      <TT>Selection.interIn (<I>s, x, v, y, d</I>)</TT>
+      <TT>Selection.interIn (<I>s, v, y, x, d</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> ensuring
