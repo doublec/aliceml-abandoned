@@ -15,6 +15,7 @@ import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
 import functor MkExplorerNode from "MkExplorerNode"
 import functor MkMenuManager  from "MkMenuManager"
 import functor MkTypes        from "MkTypes"
+import structure Defaults   from "Defaults"
 
 functor MkExplorerSearch (Space : SPACE) =
   struct
@@ -71,15 +72,15 @@ functor MkExplorerSearch (Space : SPACE) =
 
   fun searchFrom (serve, state : Types.explorer_state option ref,
                   callBack, refresh, node) =
-      (Search.explore (node, state, callBack)
-       handle ExplorerNode.SearchDone => ();
+      (((Search.explore (node, state, callBack))
+	handle Defaults.SearchDone => ());
        Option.app MenuManager.updateMenus (Types.getCurrentNode state);
        refresh (serve, state))
 
   fun stepFrom (serve, state : Types.explorer_state option ref,
                   refresh, node) =
       (Search.step (node, state)
-       handle ExplorerNode.SearchDone => ();
+       handle Defaults.SearchDone => ();
        Option.app MenuManager.updateMenus (Types.getCurrentNode state);
        refresh (serve, state))
 
@@ -101,7 +102,7 @@ functor MkExplorerSearch (Space : SPACE) =
                                 if breakAfter > 0 then
                                     (found := (!found) + 1;
                                      if (!found) >= breakAfter then
-                                         raise ExplorerNode.SearchDone
+                                         raise Defaults.SearchDone
                                      else ())
                                 else ())
               val fromNode = Option.getOpt(root, tree)

@@ -33,5 +33,7 @@ structure Defaults =
     val hiddenHalfWidthI = halfHorSpaceI
                            
     val maxExtent = 2.0 * floatScaleBase
-                    
+
+    exception SearchDone
+
   end
