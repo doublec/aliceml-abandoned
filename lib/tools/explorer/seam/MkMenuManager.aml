@@ -10,73 +10,88 @@
  *   $Revision$
  *)
 
-import signature SPACE          from "x-alice:/lib/gecode/SPACE-sig"
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
-import functor MkExplorerNode from "MkExplorerNode"
-import functor MkTreeNode     from "MkTreeNode"
-import functor MkTypes        from "MkTypes"
 import structure ExplorerGUI    from "ExplorerGUI"
 
-functor MkMenuManager(Space : SPACE) =
+import signature SPACE          from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature TREE_NODE     from "TREE_NODE-sig"
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+
+import signature MENU_MANAGER  from "MENU_MANAGER-sig"
+
+functor MkMenuManager (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (TreeNode : TREE_NODE
+     where type tree = Types.tree
+     where type status = Types.status)
+    (ExplorerNode : EXPLORER_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space
+     where type status = Types.status)
+    :
+    MENU_MANAGER
+    where type tree = Types.tree
+    where type explorer_state = Types.explorer_state
+    =
   struct
-  local
-  structure TreeNode = MkTreeNode(Space)
-  structure ExplorerNode = MkExplorerNode(Space)
-  structure Types = MkTypes(Space)
-  in
-             
-  fun switchItems(onitems, offitems, activate) =
-      (app (fn i => Gtk.widgetSetSensitive(i, activate)) onitems;
-       app (fn i => Gtk.widgetSetSensitive(i, not activate)) offitems)
+    
+      type tree = Types.tree
+      type explorer_state = Types.explorer_state
 
-  fun updateMenus n =
-      (switchItems([ExplorerGUI.next_solution,
-		    ExplorerGUI.next_n_solutions,
-		    ExplorerGUI.all_solutions], nil,
-		   not (ExplorerNode.isHidden n) andalso
-		   (ExplorerNode.hasOpenChildren n orelse
-		    ExplorerNode.isUnknown n));
-       switchItems([ExplorerGUI.one_step],
-		   [ExplorerGUI.hidenodes,
-		    ExplorerGUI.unhide_all,
-		    ExplorerGUI.hide_failed],
-		   ExplorerNode.isUnknown n);
-       switchItems([ExplorerGUI.go_to_child],nil,
-		   TreeNode.noOfChildren n > 0);
-       switchItems([ExplorerGUI.go_to_child],nil,
-		   TreeNode.noOfChildren n > 0);
-       switchItems([ExplorerGUI.go_to_parent],nil,
-		   isSome(ExplorerNode.getParent n));
-       switchItems([ExplorerGUI.go_to_right_sibling],nil,
-		   case ExplorerNode.getParent n of
-		       NONE => false
-		     | SOME p => TreeNode.noOfChildren p>
-			   ExplorerNode.getAlternative n+1);
-       switchItems([ExplorerGUI.go_to_left_sibling],nil,
-		   case ExplorerNode.getParent n of
-		       NONE => false
-		     | SOME _ => ExplorerNode.getAlternative n>0)
-       )
-
-  fun startSearch() =
-      (Gtk.widgetSetSensitive(ExplorerGUI.cancel_search, true);
-       Gtk.widgetSetSensitive(ExplorerGUI.save, false))
-
-  fun finishSearch() =
-      (Gtk.widgetSetSensitive(ExplorerGUI.cancel_search, false);
-       Gtk.widgetSetSensitive(ExplorerGUI.save, true))
-
-  fun refreshStatusbar state =
-      let
-          val (choices, failed, solved) = Types.getSearchState state
-      in
-          Gtk.labelSetText(ExplorerGUI.noOfChoices,
-                           Int.toString choices);
-          Gtk.labelSetText(ExplorerGUI.noOfFailed,
-                           Int.toString failed);
-          Gtk.labelSetText(ExplorerGUI.noOfSolved,
-                           Int.toString solved)
-      end
-
-  end
+         
+      fun switchItems(onitems, offitems, activate) =
+	  (app (fn i => Gtk.widgetSetSensitive(i, activate)) onitems;
+	   app (fn i => Gtk.widgetSetSensitive(i, not activate)) offitems)
+	  
+      fun updateMenus n =
+	  (switchItems([ExplorerGUI.next_solution,
+			ExplorerGUI.next_n_solutions,
+			ExplorerGUI.all_solutions], nil,
+		       not (ExplorerNode.isHidden n) andalso
+		       (ExplorerNode.hasOpenChildren n orelse
+			ExplorerNode.isUnknown n));
+	   switchItems([ExplorerGUI.one_step],
+		       [ExplorerGUI.hidenodes,
+			ExplorerGUI.unhide_all,
+			ExplorerGUI.hide_failed],
+		       ExplorerNode.isUnknown n);
+	   switchItems([ExplorerGUI.go_to_child],nil,
+		       TreeNode.noOfChildren n > 0);
+	   switchItems([ExplorerGUI.go_to_child],nil,
+		       TreeNode.noOfChildren n > 0);
+	   switchItems([ExplorerGUI.go_to_parent],nil,
+		       isSome(ExplorerNode.getParent n));
+	   switchItems([ExplorerGUI.go_to_right_sibling],nil,
+		       case ExplorerNode.getParent n of
+			   NONE => false
+			 | SOME p => TreeNode.noOfChildren p>
+			       ExplorerNode.getAlternative n+1);
+	   switchItems([ExplorerGUI.go_to_left_sibling],nil,
+		       case ExplorerNode.getParent n of
+			   NONE => false
+			 | SOME _ => ExplorerNode.getAlternative n>0)
+	   )
+	  
+      fun startSearch() =
+	  (Gtk.widgetSetSensitive(ExplorerGUI.cancel_search, true);
+	   Gtk.widgetSetSensitive(ExplorerGUI.save, false))
+	  
+      fun finishSearch() =
+	  (Gtk.widgetSetSensitive(ExplorerGUI.cancel_search, false);
+	   Gtk.widgetSetSensitive(ExplorerGUI.save, true))
+	  
+      fun refreshStatusbar state =
+	  let
+	      val (choices, failed, solved) = Types.getSearchState state
+	  in
+	      Gtk.labelSetText(ExplorerGUI.noOfChoices,
+			       Int.toString choices);
+	      Gtk.labelSetText(ExplorerGUI.noOfFailed,
+			       Int.toString failed);
+	      Gtk.labelSetText(ExplorerGUI.noOfSolved,
+			       Int.toString solved)
+	  end
   end

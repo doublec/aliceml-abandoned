@@ -1,0 +1,36 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature EXPLORER_NODE =
+    sig
+	type tree
+	type explorer_state
+	type space
+	type status
+
+	exception SearchDone
+
+	val createNode : explorer_state option ref * tree option * int -> tree
+	val hasOpenChildren : tree -> bool
+	val setStatus : tree -> status -> unit
+	val setSpace : tree -> space option -> unit
+	val recomputeSpace : explorer_state option ref * tree -> space
+	val nodeStatus : explorer_state option ref * tree -> status
+	val isUnknown : tree -> bool
+	val isHidden : tree -> bool
+	val curNodeStatus : tree -> status
+	val noOfChildren : explorer_state option ref * tree -> int
+	val getChild : tree -> int -> tree
+	val getParent : tree -> tree option
+	val getAlternative : tree -> int
+	val discardTree : tree -> unit
+    end

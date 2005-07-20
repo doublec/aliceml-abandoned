@@ -13,8 +13,14 @@
 import structure Gtk  from "x-alice:/lib/gtk/Gtk"
 import signature SPACE from "x-alice:/lib/gecode/SPACE-sig"
 
-functor MkTypes (Space : SPACE) =
+import signature TYPES from "TYPES-sig"
+
+functor MkTypes (Space : SPACE) :
+    TYPES where type space = Space.space =
   struct
+
+      type space = Space.space
+      type object = Gtk.object
 
   datatype status = FAILED | SOLVED | CHOICE of int | UNKNOWN
   type node_info = {offset : int ref,

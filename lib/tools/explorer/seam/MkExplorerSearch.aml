@@ -10,21 +10,39 @@
  *   $Revision$
  *)
 
-import functor MkSearch       from "MkSearch"
 import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
-import functor MkExplorerNode from "MkExplorerNode"
-import functor MkMenuManager  from "MkMenuManager"
-import functor MkTypes        from "MkTypes"
-import structure Defaults   from "Defaults"
+import signature TYPES         from "TYPES-sig"
+import signature SEARCH        from "SEARCH-sig"
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+import signature MENU_MANAGER  from "MENU_MANAGER-sig"
 
-functor MkExplorerSearch (Space : SPACE) =
+import signature EXPLORER_SEARCH from "EXPLORER_SEARCH-sig"
+
+functor MkExplorerSearch (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (ExplorerNode : EXPLORER_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space
+     where type status = Types.status)
+    (MenuManager : MENU_MANAGER
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    (Search : SEARCH
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    :
+    EXPLORER_SEARCH
+    where type tree = Types.tree
+    where type explorer_state = Types.explorer_state
+    where type space = Space.space
+
+    =
   struct
-  local
-  structure Types = MkTypes(Space)
-  structure Search = MkSearch(Space)
-  structure ExplorerNode = MkExplorerNode(Space)
-  structure MenuManager = MkMenuManager(Space)  
-  in
+      type tree = Types.tree
+      type explorer_state = Types.explorer_state
+      type space = Space.space
 
   fun initSearch (serve, state : Types.explorer_state option ref,
                   refresh,resetCanvas, s, better) =
@@ -73,14 +91,14 @@ functor MkExplorerSearch (Space : SPACE) =
   fun searchFrom (serve, state : Types.explorer_state option ref,
                   callBack, refresh, node) =
       (((Search.explore (node, state, callBack))
-	handle Defaults.SearchDone => ());
+	handle ExplorerNode.SearchDone => ());
        Option.app MenuManager.updateMenus (Types.getCurrentNode state);
        refresh (serve, state))
 
   fun stepFrom (serve, state : Types.explorer_state option ref,
                   refresh, node) =
       (Search.step (node, state)
-       handle Defaults.SearchDone => ();
+       handle ExplorerNode.SearchDone => ();
        Option.app MenuManager.updateMenus (Types.getCurrentNode state);
        refresh (serve, state))
 
@@ -102,7 +120,7 @@ functor MkExplorerSearch (Space : SPACE) =
                                 if breakAfter > 0 then
                                     (found := (!found) + 1;
                                      if (!found) >= breakAfter then
-                                         raise Defaults.SearchDone
+                                         raise ExplorerNode.SearchDone
                                      else ())
                                 else ())
               val fromNode = Option.getOpt(root, tree)
@@ -138,7 +156,4 @@ functor MkExplorerSearch (Space : SPACE) =
         | _ => ()
 
 
-  fun searchBest _ = ()
-
-  end
   end

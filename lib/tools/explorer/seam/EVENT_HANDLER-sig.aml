@@ -1,0 +1,93 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+signature EVENT_HANDLER =
+    sig
+	type explorer_state
+	type tree
+	type space
+
+      val nodeEvent :
+         explorer_state option ref * ((unit -> unit) -> unit) ->
+            'a * Gtk.arg list -> unit
+
+      val destroyMainWindow :
+         ('a -> explorer_state option ref -> 'b) * 'a *
+            explorer_state option ref -> unit
+      val setBBox : explorer_state option ref * (int * int * int) -> unit
+      val zoomToFit : explorer_state option ref -> unit
+      val refresh :
+         ('a -> explorer_state option ref) * 'a * explorer_state option ref ->
+            unit
+      val refreshAfterSearch :
+         tree * ('a -> explorer_state option ref) ->
+            'a * explorer_state option ref -> unit
+      val exitHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref -> 'b) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'c -> 'a
+      val nodeHideHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'b -> 'a
+      val nodeUnhideHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'b -> 'a
+      val hideFailedHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'b -> 'a
+      val exploreOneHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            (explorer_state option ref * string * bool -> 'b) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'c -> 'a
+      val exploreAllHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            (explorer_state option ref * string * bool -> 'b) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'c -> 'a
+      val exploreNHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            (explorer_state option ref * string * bool -> 'b) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'c -> 'a
+      val exploreStepHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            (explorer_state option ref * string * bool -> 'b) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'c -> 'a
+      val resetHandler :
+         (((unit -> unit) -> 'a) -> explorer_state option ref) *
+            (((unit -> unit) -> 'a) -> explorer_state option ref -> 'b) *
+            ((unit -> unit) -> 'a) * explorer_state option ref -> 'c -> 'a
+      val selectInspectionAction :
+         ((unit -> unit) -> 'a) *
+	 explorer_state option ref -> Gtk.object * 'b -> 'a
+      val viewOptionsHandler :
+         'a * ((unit -> unit) -> unit) * explorer_state option ref -> 'b -> unit
+      val debugHandler :
+         ((unit -> unit) -> 'a) * explorer_state option ref -> 'b -> 'a
+      val zoomToFitHandler :
+         ((unit -> unit) -> 'a) * explorer_state option ref -> 'b -> 'a
+      val saveHandler :
+         ((unit -> unit) -> unit) *
+            explorer_state option ref -> 'a -> unit
+      val findNonFailure : tree * tree * int * int * (int * int -> int) -> tree
+      val goToChild :
+         ((unit -> unit) -> 'a) *
+	 explorer_state option ref -> 'b -> 'a
+      val goToParent :
+         ((unit -> unit) -> 'a) *
+	 explorer_state option ref -> 'b -> 'a
+      val goToRight :
+         ((unit -> unit) -> 'a) *
+	 explorer_state option ref -> 'b -> 'a
+      val goToLeft :
+         ((unit -> unit) -> 'a) *
+	 explorer_state option ref -> 'b -> 'a
+   end

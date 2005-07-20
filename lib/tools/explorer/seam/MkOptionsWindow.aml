@@ -12,13 +12,18 @@
 
 import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
 import structure Gtk   from "x-alice:/lib/gtk/Gtk"
-import functor MkTypes from "MkTypes"
 
-functor MkOptionsWindow(Space : SPACE) =
+import signature TYPES from "TYPES-sig"
+import signature OPTIONS_WINDOW from "OPTIONS_WINDOW-sig"
+
+functor MkOptionsWindow (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    : OPTIONS_WINDOW
+    where type explorer_state = Types.explorer_state
+    =
   struct
-    local
-    structure Types = MkTypes(Space)
-    in
+      type explorer_state = Types.explorer_state
 
     fun newOptionsWindow (mw, serve, state : Types.explorer_state option ref) =
         case !state of
@@ -135,4 +140,3 @@ functor MkOptionsWindow(Space : SPACE) =
           | _ => raise Empty
 
     end
-  end

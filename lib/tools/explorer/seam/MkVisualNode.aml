@@ -10,19 +10,30 @@
  *   $Revision$
  *)
 
-import functor MkTypes    from "MkTypes"
-import functor MkGtkNode  from "MkGtkNode"
-import functor MkTreeNode from "MkTreeNode"
 import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature TREE_NODE     from "TREE_NODE-sig"
+import signature GTK_NODE      from "GTK_NODE-sig"
 
-functor MkVisualNode(Space : SPACE) =
+import signature VISUAL_NODE   from "VISUAL_NODE-sig"
+
+functor MkVisualNode (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (TreeNode : TREE_NODE
+     where type tree = Types.tree
+     where type status = Types.status)
+    (GtkNode : GTK_NODE
+     where type explorer_state = Types.explorer_state
+     where type status = Types.status
+     where type tree = Types.tree)
+    : VISUAL_NODE
+    where type tree = Types.tree
+    where type explorer_state = Types.explorer_state
+    =
   struct
-  
-  local
-  structure TreeNode = MkTreeNode(Space)
-  structure GtkNode = MkGtkNode(Space)
-  structure Types = MkTypes(Space)
-  in
+      type tree = Types.tree
+      type explorer_state = Types.explorer_state
 
   fun dirtyUp (Types.N({dirty=ref true,...},_,_)) = ()
     | dirtyUp (Types.N({dirty=dirty,...},ref parent, _)) =
@@ -131,5 +142,4 @@ functor MkVisualNode(Space : SPACE) =
 		   hidden:=true;
 		   dirtyUp v)
             | _ => ()
-  end
   end

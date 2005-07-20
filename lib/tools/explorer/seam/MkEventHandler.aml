@@ -10,40 +10,69 @@
  *   $Revision$
  *)
 
-import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
-
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
 import structure Gdk            from "x-alice:/lib/gtk/Gdk"
 import structure Canvas    from "x-alice:/lib/gtk/Canvas"
 
-import functor   MkTypes          from "MkTypes"
 import structure Defaults       from "Defaults"
-import functor MkTreeNode       from "MkTreeNode"
-import functor MkVisualNode     from "MkVisualNode"
-import functor MkGtkNode        from "MkGtkNode"
-import functor MkExplorerNode   from "MkExplorerNode"
-import functor MkExplorerSearch from "MkExplorerSearch"
-import functor MkOptionsWindow  from "MkOptionsWindow"
 import structure ExplorerGUI    from "ExplorerGUI"
-import functor MkSaveWindow     from "MkSaveWindow"
 
-import functor MkMenuManager    from "MkMenuManager"
+import signature SPACE           from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES           from "TYPES-sig"
+import signature TREE_NODE       from "TREE_NODE-sig"
+import signature VISUAL_NODE     from "VISUAL_NODE-sig"
+import signature GTK_NODE        from "GTK_NODE-sig"
+import signature EXPLORER_NODE   from "EXPLORER_NODE-sig"
+import signature EXPLORER_SEARCH from "EXPLORER_SEARCH-sig"
+import signature OPTIONS_WINDOW  from "OPTIONS_WINDOW-sig"
+import signature SAVE_WINDOW     from "SAVE_WINDOW-sig"
+import signature MENU_MANAGER    from "MENU_MANAGER-sig"
 
-functor MkEventHandler(Space : SPACE) =
+import signature EVENT_HANDLER   from "EVENT_HANDLER-sig"
+
+functor MkEventHandler (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (TreeNode : TREE_NODE
+     where type tree = Types.tree
+     where type status = Types.status)
+    (GtkNode : GTK_NODE
+     where type explorer_state = Types.explorer_state
+     where type status = Types.status
+     where type tree = Types.tree)
+    (VisualNode : VISUAL_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    (ExplorerNode : EXPLORER_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space
+     where type status = Types.status)
+    (MenuManager : MENU_MANAGER
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    (ExplorerSearch : EXPLORER_SEARCH
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space)
+    (OptionsWindow : OPTIONS_WINDOW
+     where type explorer_state = Types.explorer_state)
+    (SaveWindow : SAVE_WINDOW
+     where type explorer_state = Types.explorer_state)
+    :
+    EVENT_HANDLER
+    where type explorer_state = Types.explorer_state
+    where type tree = Types.tree
+    where type space = Space.space
+    =
   struct
 
-  local
-  structure Types = MkTypes(Space)
-  structure TreeNode = MkTreeNode(Space)
-  structure VisualNode = MkVisualNode(Space)
-  structure GtkNode = MkGtkNode(Space)
-  structure ExplorerNode = MkExplorerNode(Space)
-  structure ExplorerSearch = MkExplorerSearch(Space)
-  structure OptionsWindow = MkOptionsWindow(Space)
-  structure SaveWindow = MkSaveWindow(Space)
-  structure MenuManager = MkMenuManager(Space)
-  open Types           
-  in          
+      type explorer_state = Types.explorer_state
+      type tree = Types.tree
+      type space = Space.space
+
+      open Types
+
   fun nodeEvent (st, serve) event =
       case (!st) of
 	  SOME(state as ({gtk={canvas,scale,...},
@@ -417,4 +446,3 @@ functor MkEventHandler(Space : SPACE) =
                   | _ => ())
 
   end
-end

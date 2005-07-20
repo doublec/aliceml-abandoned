@@ -12,46 +12,40 @@
 
 import structure Gtk          from "x-alice:/lib/gtk/Gtk"
 
-import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
-
 import structure Defaults     from "Defaults"
-import functor MkEventHandler from "MkEventHandler"
-import functor MkTypes        from "MkTypes"
-import functor MkCanvasHelper from "MkCanvasHelper"
-import functor MkExplorerNode from "MkExplorerNode"
 
 import structure ExplorerGUI            from "ExplorerGUI"
 import structure AboutDialog            from "AboutDialog"
 import functor   ExplorerGUISignals
        signature EXPLORERGUISIGNALS_SIG from "ExplorerGUISignals"
 
+import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature CANVAS_HELPER from "CANVAS_HELPER-sig"
+import signature EVENT_HANDLER from "EVENT_HANDLER-sig"
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+import signature MAIN_WINDOW   from "MAIN_WINDOW-sig"
 
-(*
-signature MAINWINDOW =
-  sig
-      val updateInspectionActionsMenu :
-          ((Space.space -> unit) * string) list * ((unit -> unit) -> unit) *
-          Types.explorer_state option ref -> unit
-      val createMainWindow : ((unit -> unit) -> unit) ->
-                             Types.explorer_state option ref
-      val refresh : ((unit -> unit) -> unit) *
-                    Types.explorer_state option ref -> unit
-      val setStatusMsg : Types.explorer_state option ref *
-                         string * bool -> unit
-      val setWindowTitle : string -> unit
-  end
-*)
-
-functor MkMainWindow (Space : SPACE) (*:> MAINWINDOW *)=
+functor MkMainWindow (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (ExplorerNode : EXPLORER_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space
+     where type status = Types.status)
+    (EventHandler : EVENT_HANDLER
+     where type explorer_state = Types.explorer_state
+     where type tree = Types.tree
+     where type space = Space.space)
+    (CanvasHelper : CANVAS_HELPER
+     where type explorer_state = Types.explorer_state)
+    :
+    MAIN_WINDOW
+    where type explorer_state = Types.explorer_state
+    =
   struct
-  
-  local
-  structure Types = MkTypes(Space)
-  structure EventHandler = MkEventHandler(Space)
-  structure CanvasHelper = MkCanvasHelper(Space)
-  structure ExplorerNode = MkExplorerNode(Space)
-  open Types
-  in
+      open Types
 
   val itr = Real.fromInt
 
@@ -212,5 +206,4 @@ functor MkMainWindow (Space : SPACE) (*:> MAINWINDOW *)=
   fun setWindowTitle title =
     Gtk.windowSetTitle(ExplorerGUI.aliceexplorer, title)
 
-  end
   end

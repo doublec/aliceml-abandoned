@@ -10,43 +10,55 @@
  *   $Revision$
  *)
 
-import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
-import functor MkTreeNode     from "MkTreeNode"
-import functor MkTypes        from "MkTypes"
-import functor MkExplorerNode from "MkExplorerNode"
+import signature SPACE         from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+import signature TREE_NODE     from "TREE_NODE-sig"
+import signature SEARCH        from "SEARCH-sig"
 
-functor MkSearch(Space : SPACE) =
-struct
-    local
-    structure TreeNode = MkTreeNode(Space)
-    structure ExplorerNode = MkExplorerNode(Space)
-    structure Types = MkTypes(Space)
-    open TreeNode
-    in
+functor MkSearch (Space : SPACE)
+                 (Types : TYPES
+		  where type space = Space.space)
+                 (TreeNode : TREE_NODE
+		  where type tree = Types.tree
+		  where type status = Types.status)
+		 (ExplorerNode : EXPLORER_NODE
+		  where type tree = Types.tree
+		  where type explorer_state = Types.explorer_state
+		  where type space = Space.space
+		  where type status = Types.status) :
+		 SEARCH where type tree = Types.tree
+		 where type explorer_state = Types.explorer_state
+		 =
+   struct
+       open TreeNode
+	   
+       type tree = Types.tree
+       type explorer_state = Types.explorer_state
 
-    fun explore (node, state, callBack) =
-        let
-            fun dfe node =
-                case ExplorerNode.noOfChildren (state, node) of
-                    0 => (case ExplorerNode.nodeStatus (state, node) of
-                              Types.SOLVED => callBack()
-                            | _ => ())
-                  | n => doDfe 0 n node
-            and doDfe m n _ where (m=n) = ()
-              | doDfe m n node =
-                let
-                    val child = (ExplorerNode.getChild node m)
-                in
-                    if ExplorerNode.isUnknown child orelse
-                       ExplorerNode.hasOpenChildren child then
-                        (dfe child; doDfe (m+1) n node)
-                    else doDfe (m+1) n node
-                end
-        in
-            dfe node
-        end
+       fun explore (node, state, callBack) =
+	   let
+	       fun dfe node =
+		   case ExplorerNode.noOfChildren (state, node) of
+		       0 => (case ExplorerNode.nodeStatus (state, node) of
+				 Types.SOLVED => callBack()
+			       | _ => ())
+		     | n => doDfe 0 n node
+	       and doDfe m n _ where (m=n) = ()
+		 | doDfe m n node =
+		   let
+		       val child = (ExplorerNode.getChild node m)
+		   in
+		       if ExplorerNode.isUnknown child orelse
+			   ExplorerNode.hasOpenChildren child then
+			   (dfe child; doDfe (m+1) n node)
+		       else doDfe (m+1) n node
+		   end
+	   in
+	       dfe node
+	   end
+       
+       fun step (node,state) = ignore (ExplorerNode.noOfChildren (state,node))
+	   
+   end
 
-    fun step (node,state) = ignore (ExplorerNode.noOfChildren (state,node))
-
-    end
-end

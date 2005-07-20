@@ -11,22 +11,43 @@
  *)
 
 import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
-import functor MkTreeNode   from "MkTreeNode"
-import functor MkTypes      from "MkTypes"
-import functor MkVisualNode from "MkVisualNode"
-import functor MkGtkNode    from "MkGtkNode"
-import structure Defaults   from "Defaults"
 
-functor MkExplorerNode (Space : SPACE) =
+import signature TYPES         from "TYPES-sig"
+import signature TREE_NODE     from "TREE_NODE-sig"
+import signature VISUAL_NODE   from "VISUAL_NODE-sig"
+import signature GTK_NODE      from "GTK_NODE-sig"
+
+import signature EXPLORER_NODE from "EXPLORER_NODE-sig"
+
+functor MkExplorerNode (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (TreeNode : TREE_NODE
+     where type tree = Types.tree
+     where type status = Types.status)
+    (GtkNode : GTK_NODE
+     where type explorer_state = Types.explorer_state
+     where type status = Types.status
+     where type tree = Types.tree)
+    (VisualNode : VISUAL_NODE
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state)
+    :
+    EXPLORER_NODE
+    where type tree = Types.tree
+    where type explorer_state = Types.explorer_state
+    where type space = Space.space
+    where type status = Types.status
+    =
 struct
-    local
-    structure TreeNode = MkTreeNode(Space)
-    structure GtkNode = MkGtkNode(Space)
-    structure VisualNode = MkVisualNode(Space)
-    structure Types = MkTypes(Space)
-
     open TreeNode
-    in
+
+    exception SearchDone
+
+    type tree = Types.tree
+    type explorer_state = Types.explorer_state
+    type space = Space.space
+    type status = Types.status
 
     fun createNode(state, 
 		   mom,
@@ -143,7 +164,7 @@ struct
 
     fun noOfChildren (state, node as Types.N({status=status,...},_,ch)) =
         if (Types.cancelSearch state) then
-           raise Defaults.SearchDone
+           raise SearchDone
         else
         case !status of Types.UNKNOWN =>
                         (VisualNode.undrawAndDirtyUp node;
@@ -163,13 +184,6 @@ struct
     fun getParent (Types.N(_,p,_)) = !p
     fun getAlternative (Types.N({alternative,...},_,_)) = alternative
 
-    fun getLeftChild (node as Types.N(_,_,ch)) =
-        case !ch of #[c,_] => c
-                  | _      => raise Empty
-    fun getRightChild (node as Types.N(_,_,ch)) =
-        case !ch of #[_,c] => c
-                  | _      => raise Empty
-
     fun discardTree' (Types.N({space=space,...},_,ch)) =
         ((case !space of SOME s => Space.discard s
                        | _ => ());
@@ -177,5 +191,5 @@ struct
     fun discardTree node =
         (GtkNode.undrawSubtree node;
          discardTree' node)
-    end
 end
+

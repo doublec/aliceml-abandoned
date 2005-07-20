@@ -1,0 +1,24 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature VISUAL_NODE =
+    sig
+	type tree
+	type explorer_state
+
+	val dirtyUp : tree -> unit
+	val undrawAndDirtyUp : tree -> unit
+	val adjust : explorer_state * tree * int * int * int * int -> unit
+	val toggleHide : explorer_state option ref -> unit
+	val unhideAll : tree -> unit
+	val hideFailed : tree -> unit
+    end

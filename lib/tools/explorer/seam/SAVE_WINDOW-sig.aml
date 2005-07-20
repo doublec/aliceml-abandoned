@@ -1,0 +1,26 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+signature SAVE_WINDOW =
+    sig
+	type explorer_state
+
+	val showErrorWindow : Gtk.object -> string -> unit
+	val okHandler :
+	    Gtk.object * ((unit -> unit) -> 'a) *
+	    explorer_state option ref -> 'b -> 'a
+	val cancelHandler : Gtk.object -> 'a -> unit
+	val newSaveWindow :
+	    ((unit -> unit) -> unit) * explorer_state option ref -> unit
+    end

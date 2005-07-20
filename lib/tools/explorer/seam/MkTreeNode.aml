@@ -11,23 +11,32 @@
  *)
 
 import structure Defaults from "Defaults"
-import functor MkTypes    from "MkTypes"
+
 import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES      from "TYPES-sig"
+import signature TREE_NODE  from "TREE_NODE-sig"
 
-functor MkTreeNode (Space : SPACE) =
+functor MkTreeNode (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    :
+    TREE_NODE
+    where type tree = Types.tree
+    where type status = Types.status
+    =
 struct
-   local
-   structure Types = MkTypes(Space)
-   open Types
-   in
-   open Defaults
+    type tree = Types.tree
+    type status = Types.status
 
-   fun getStatus (N({status=ref status,...},_,_)) = status
-   fun addChild (p as N(_, _, children), c as N(_, parent, _)) =
-       (children := Vector.fromList (c::(Vector.toList (!children)));
-	parent := SOME p)
+    open Types
+    open Defaults
 
-   fun noOfChildren (N(_,_,ref children)) = Vector.length (children)
+    fun getStatus (N({status=ref status,...},_,_)) = status
+    fun addChild (p as N(_, _, children), c as N(_, parent, _)) =
+	(children := Vector.fromList (c::(Vector.toList (!children)));
+	 parent := SOME p)
+
+    fun noOfChildren (N(_,_,ref children)) = Vector.length (children)
 
    fun setHasSolBelow (N({hasSolBelow=hasSolBelow,...},ref mom,_)) =
        if (!hasSolBelow) then ()
@@ -241,11 +250,4 @@ struct
 	   gc (node, 0, 0)
        end
 
-   fun toString (N({status=status, dirty=dirty,...},_,_)) =
-       case (!status) of
-	   Types.FAILED => "failed "^(if (!dirty) then "dirty" else "clean")
-	 | Types.SOLVED => "solved "^(if (!dirty) then "dirty" else "clean")
-	 | Types.CHOICE _ => "choice "^(if (!dirty) then "dirty" else "clean")
-	 | Types.UNKNOWN => "unknown "^(if (!dirty) then "dirty" else "clean")
    end       
-end

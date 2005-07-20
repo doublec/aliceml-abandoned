@@ -10,36 +10,25 @@
  *   $Revision$
  *)
 
-import functor MkExplorerSearch  from "MkExplorerSearch"
-import functor MkMainWindow      from "MkMainWindow"
 import signature SPACE           from "x-alice:/lib/gecode/SPACE-sig"
-import structure Type            from "x-alice:/lib/rtt/Type"
 import signature EXPLORER_INSPECT from "EXPLORER_INSPECT-sig"
+
+
 import functor MkTypes           from "MkTypes"
+import functor MkOptionsWindow   from "MkOptionsWindow"
+import functor MkSaveWindow      from "MkSaveWindow"
+import functor MkTreeNode        from "MkTreeNode"
+import functor MkGtkNode         from "MkGtkNode"
+import functor MkVisualNode      from "MkVisualNode"
+import functor MkExplorerNode    from "MkExplorerNode"
+import functor MkMenuManager     from "MkMenuManager"
+import functor MkSearch          from "MkSearch"
+import functor MkExplorerSearch  from "MkExplorerSearch"
+import functor MkEventHandler    from "MkEventHandler"
 import functor MkCanvasHelper    from "MkCanvasHelper"
+import functor MkMainWindow      from "MkMainWindow"
 
-signature EXPLORER =
-  sig
-      type space
-      type explorer (*= Types.explorer_state option ref*)
-      val serve : (unit -> unit) -> unit
-      val initExplorer : unit -> explorer
-      val initWithSpace : space * string -> explorer
-      val exploreAll : space -> explorer
-      val exploreOne : space -> explorer
-(*      val exploreBest : space * better -> explorer*)
-      val addInfoAction : explorer * (space -> unit) * string -> unit
-      val deleteInfoAction : explorer * string -> unit
-
-      val initScript' : Type.typ -> (space -> 'a) -> explorer
-      val exploreAllScript' : Type.typ -> (space -> 'a) -> explorer
-      val exploreBestScript' :
-	  Type.typ ->
-	  (space -> 'a * (space * space -> unit))
-	  -> explorer
-      val exploreAllRoot' : Type.typ -> space -> 'a -> explorer
-      val exploreOneScript' : Type.typ -> (space -> 'a) -> explorer
-  end
+import signature EXPLORER from "EXPLORER-sig"
 
 functor MkExplorer (Space : SPACE)
                    (ExplorerInspect : EXPLORER_INSPECT
@@ -48,10 +37,32 @@ functor MkExplorer (Space : SPACE)
   where type space = Space.space=
   struct
   local
-  structure Types = MkTypes(Space)
-  structure CanvasHelper = MkCanvasHelper(Space)
-  structure MainWindow = MkMainWindow(Space)
-  structure ExplorerSearch = MkExplorerSearch(Space)
+  structure Types = MkTypes (Space)
+
+  structure OptionsWindow = MkOptionsWindow (Space) (Types)
+  structure SaveWindow = MkSaveWindow (Space) (Types)
+
+  structure TreeNode = MkTreeNode (Space) (Types)
+  structure GtkNode = MkGtkNode (Space) (Types) (TreeNode)
+  structure VisualNode = MkVisualNode (Space) (Types) (TreeNode) (GtkNode)
+  structure ExplorerNode =
+      MkExplorerNode (Space) (Types) (TreeNode) (GtkNode) (VisualNode)
+  structure MenuManager = 
+      MkMenuManager (Space) (Types) (TreeNode) (ExplorerNode)
+  structure Search =
+      MkSearch (Space) (Types) (TreeNode) (ExplorerNode)
+  structure ExplorerSearch =
+      MkExplorerSearch (Space) (Types) (ExplorerNode) (MenuManager) (Search)
+  structure EventHandler =
+      MkEventHandler (Space) (Types) (TreeNode) (GtkNode) (VisualNode)
+      (ExplorerNode) (MenuManager) (ExplorerSearch)
+      (OptionsWindow) (SaveWindow) 
+  structure CanvasHelper =
+      MkCanvasHelper (Space) (Types) (GtkNode) (EventHandler)
+  structure MainWindow =
+      MkMainWindow (Space) (Types) (ExplorerNode) (EventHandler) (CanvasHelper)
+  structure ExplorerSearch =
+      MkExplorerSearch (Space) (Types) (ExplorerNode) (MenuManager) (Search)
   in
 
   type space = Space.space

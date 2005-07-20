@@ -10,150 +10,166 @@
  *   $Revision$
  *)
 
-import functor MkTreeNode    from "MkTreeNode"
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
 import structure Gdk         from "x-alice:/lib/gtk/Gdk"
 import structure Canvas from "x-alice:/lib/gtk/Canvas"
+
 import signature SPACE      from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature TREE_NODE     from "TREE_NODE-sig"
 
-import functor MkTypes       from "MkTypes"
+import signature GTK_NODE      from "GTK_NODE-sig"
 
-functor MkGtkNode(Space : SPACE) =
-struct
-
-  local
-  structure TreeNode = MkTreeNode(Space)
-  structure Types = MkTypes(Space)
-  in
-  val map   = Gdk.colormapGetSystem ()
-  val black = Gdk.colorNew(0,0,0)
-  val blue  = Gdk.colorNew(100*256,112*256,255*256)
-  val red   = Gdk.colorNew(238*256,44*256,44*256)
-  val green = Gdk.colorNew(60*256,179*256,113*256)
-  val white = Gdk.colorNew(65535, 65535, 65535)
-  val gray  = Gdk.colorNew(30000, 30000, 30000)
-  val lightgray = Gdk.colorNew(60000,60000,60000)
-  val _     = Gdk.colormapAllocColor(map, black, false, true)
-  val _     = Gdk.colormapAllocColor(map, white, false, true)
-  val _     = Gdk.colormapAllocColor(map, blue,  false, true)
-  val _     = Gdk.colormapAllocColor(map, red,   false, true)
-  val _     = Gdk.colormapAllocColor(map, green,  false, true)
-  val _     = Gdk.colormapAllocColor(map, gray,  false, true)
-
-  val succColor = green
-  val failedColor = red
-  val choiceColor = blue
-
-  val shadowColor = gray
-
-  val itr = Real.fromInt
-
-  fun makeGroup parent =
-      Canvas.itemCreate(parent,
+functor MkGtkNode (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (TreeNode : TREE_NODE
+     where type tree = Types.tree
+     where type status = Types.status)
+    :
+    GTK_NODE
+    where type explorer_state = Types.explorer_state
+    where type status = Types.status
+    where type tree = Types.tree
+    =
+   struct
+       type explorer_state = Types.explorer_state
+       type status = Types.status
+       type tree = Types.tree
+	   
+       val map   = Gdk.colormapGetSystem ()
+       val black = Gdk.colorNew(0,0,0)
+       val blue  = Gdk.colorNew(100*256,112*256,255*256)
+       val red   = Gdk.colorNew(238*256,44*256,44*256)
+       val green = Gdk.colorNew(60*256,179*256,113*256)
+       val white = Gdk.colorNew(65535, 65535, 65535)
+       val gray  = Gdk.colorNew(30000, 30000, 30000)
+       val lightgray = Gdk.colorNew(60000,60000,60000)
+       val _     = Gdk.colormapAllocColor(map, black, false, true)
+       val _     = Gdk.colormapAllocColor(map, white, false, true)
+       val _     = Gdk.colormapAllocColor(map, blue,  false, true)
+       val _     = Gdk.colormapAllocColor(map, red,   false, true)
+       val _     = Gdk.colormapAllocColor(map, green,  false, true)
+       val _     = Gdk.colormapAllocColor(map, gray,  false, true)
+	   
+       val succColor = green
+       val failedColor = red
+       val choiceColor = blue
+	   
+       val shadowColor = gray
+	   
+       val itr = Real.fromInt
+	   
+       fun makeGroup parent =
+	   Canvas.itemCreate(parent,
 			     Canvas.groupGetType(),
 			     [("x", Gtk.REAL 0.0),
 			      ("y", Gtk.REAL 0.0)])
-
-  fun drawHidden (openChildren, hasSolBelow)
-                 (group, shadow, scale, myX, myY) =
-      let
-	  val color = if shadow then shadowColor else
-                      if hasSolBelow then succColor else failedColor
-	  val outline = if shadow then shadowColor else black
-	  val width = Real.round(10.0*256.0*scale)
-	  val sHorSpace = Real.round((itr TreeNode.horSpaceI)*scale/2.0)
-	  val sVerSpace = Real.round((itr TreeNode.verSpaceI)*scale)
-	  val x0 = myX
-	  val y0 = myY - width
-	  val x1 = myX - sHorSpace
-	  val y1 = myY + sVerSpace
-	  val x2 = myX + sHorSpace
-	  val y2 = myY + sVerSpace
-	  val points = [x0,y0,x1,y1,x2,y2,x0,y0]
-      in
-          if not shadow andalso openChildren > 0 then
-              let
-                  val item = makeGroup group
-	          val width2 = Real.round(5.0*256.0*scale)
-	          val sHorSpace2 = Real.round((itr TreeNode.horSpaceI)*scale/2.0)
-	          val sVerSpace = Real.round((itr TreeNode.verSpaceI)*scale)
-	          val x02 = myX
-	          val y02 = myY + 10
-	          val x12 = myX - (sHorSpace - 5)
-	          val y12 = myY + (sVerSpace - 5)
-	          val x22 = myX + (sHorSpace - 5)
-	          val y22 = myY + (sVerSpace - 5)
-	          val points2 = [x02,y02,x12,y12,x22,y22,x02,y02]
-              in
-	          (Canvas.itemCreate(item,
-		     Canvas.polygonGetType(),
-		     [("points",
-                       Gtk.OBJECT
-		           (Canvas.makePoints points)),
-		      ("fill_color_gdk",Gtk.OBJECT color),
-		      ("outline_color_gdk",
-                       Gtk.OBJECT outline)
-		      ]
-		     ));
-	          (Canvas.itemCreate(item,
-		     Canvas.polygonGetType(),
-		     [("points",
-                       Gtk.OBJECT
-			   (Canvas.makePoints points2)),
-		      ("fill_color_gdk", Gtk.OBJECT lightgray),
-		      ("outline_color_gdk", Gtk.OBJECT black)
-		      ]
-		     ));
-                  item
-              end
-          else
-	      (Canvas.itemCreate(group,
+	   
+       fun drawHidden (openChildren, hasSolBelow)
+	   (group, shadow, scale, myX, myY) =
+	   let
+	       val color = if shadow then shadowColor else
+		   if hasSolBelow then succColor else failedColor
+	       val outline = if shadow then shadowColor else black
+	       val width = Real.round(10.0*256.0*scale)
+	       val sHorSpace = Real.round((itr TreeNode.horSpaceI)*scale/2.0)
+	       val sVerSpace = Real.round((itr TreeNode.verSpaceI)*scale)
+	       val x0 = myX
+	       val y0 = myY - width
+	       val x1 = myX - sHorSpace
+	       val y1 = myY + sVerSpace
+	       val x2 = myX + sHorSpace
+	       val y2 = myY + sVerSpace
+	       val points = [x0,y0,x1,y1,x2,y2,x0,y0]
+	   in
+	       if not shadow andalso openChildren > 0 then
+		   let
+		       val item = makeGroup group
+		       val width2 = Real.round(5.0*256.0*scale)
+		       val sHorSpace2 =
+			   Real.round((itr TreeNode.horSpaceI)*scale/2.0)
+		       val sVerSpace =
+			   Real.round((itr TreeNode.verSpaceI)*scale)
+		       val x02 = myX
+		       val y02 = myY + 10
+		       val x12 = myX - (sHorSpace - 5)
+		       val y12 = myY + (sVerSpace - 5)
+		       val x22 = myX + (sHorSpace - 5)
+		       val y22 = myY + (sVerSpace - 5)
+		       val points2 = [x02,y02,x12,y12,x22,y22,x02,y02]
+		   in
+		       (Canvas.itemCreate(item,
+					  Canvas.polygonGetType(),
+					  [("points",
+					    Gtk.OBJECT
+					    (Canvas.makePoints points)),
+					   ("fill_color_gdk",Gtk.OBJECT color),
+					   ("outline_color_gdk",
+					    Gtk.OBJECT outline)
+					   ]
+					  ));
+		       (Canvas.itemCreate(item,
+					  Canvas.polygonGetType(),
+					  [("points",
+					    Gtk.OBJECT
+					    (Canvas.makePoints points2)),
+					   ("fill_color_gdk",
+					    Gtk.OBJECT lightgray),
+					   ("outline_color_gdk",
+					    Gtk.OBJECT black)
+					   ]
+					  ));
+		       item
+		   end
+	       else
+		   (Canvas.itemCreate(group,
 				      Canvas.polygonGetType(),
 				      [("points",
-                                        Gtk.OBJECT
-		                            (Canvas.makePoints points)),
+					Gtk.OBJECT
+					(Canvas.makePoints points)),
 				       ("fill_color_gdk", Gtk.OBJECT color),
 				       ("outline_color_gdk",
-                                        Gtk.OBJECT outline)
+					Gtk.OBJECT outline)
 				       ]
 				      ))  
-      end
-
-  fun drawSuccNode (group, shadow, scale, myX, myY) =
-      let
-	  val color = if shadow then shadowColor else succColor
-	  val outline = if shadow then shadowColor else black
-	  val width = Real.round(10.0*256.0*scale)
-	  val x0 = myX - width
-	  val x1 = myX
-	  val x2 = myX + width
-	  val y0 = myY - width
-	  val y1 = myY
-	  val y2 = myY + width
-	  val points = [x0,y1,x1,y0,x2,y1,x1,y2,x0,y1,x0,y1]
-      in
-	  (Canvas.itemCreate(group,
+	   end
+       
+       fun drawSuccNode (group, shadow, scale, myX, myY) =
+	   let
+	       val color = if shadow then shadowColor else succColor
+	       val outline = if shadow then shadowColor else black
+	       val width = Real.round(10.0*256.0*scale)
+	       val x0 = myX - width
+	       val x1 = myX
+	       val x2 = myX + width
+	       val y0 = myY - width
+	       val y1 = myY
+	       val y2 = myY + width
+	       val points = [x0,y1,x1,y0,x2,y1,x1,y2,x0,y1,x0,y1]
+	   in
+	       (Canvas.itemCreate(group,
 				  Canvas.polygonGetType(),
 				  [("points",
-                                    Gtk.OBJECT
-                                        (Canvas.makePoints points)),
+				    Gtk.OBJECT
+				    (Canvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT color),
 				   ("outline_color_gdk", Gtk.OBJECT outline)
 				   ]
 				  ))	  
-      end
+	   end
 
-  fun drawFailedNode (group, shadow, scale, myX, myY) =
-      let
-	  val color = if shadow then shadowColor else failedColor
-	  val outline = if shadow then shadowColor else black
-	  val width = 7.0*256.0*scale
-	  val x1 = (itr myX) - width
-	  val y1 = (itr myY) - width
-	  val x2 = (itr myX) + width
-	  val y2 = (itr myY) + width
-      in
-	  Canvas.itemCreate(group,
+       fun drawFailedNode (group, shadow, scale, myX, myY) =
+	   let
+	       val color = if shadow then shadowColor else failedColor
+	       val outline = if shadow then shadowColor else black
+	       val width = 7.0*256.0*scale
+	       val x1 = (itr myX) - width
+	       val y1 = (itr myY) - width
+	       val x2 = (itr myX) + width
+	       val y2 = (itr myY) + width
+	   in
+	       Canvas.itemCreate(group,
 				 Canvas.rectGetType(),
 				 [("x1", Gtk.REAL x1),
 				  ("y1", Gtk.REAL y1),
@@ -162,55 +178,55 @@ struct
 				  ("fill_color_gdk", Gtk.OBJECT color),
 				  ("outline_color_gdk", Gtk.OBJECT outline)
 				  ])
-      end
-(* Alternative shape: red cross *)
-(*       let *)
-(* 	  val color = if shadow then shadowColor else failedColor *)
-(* 	  val outline = if shadow then shadowColor else black *)
-(* 	  val width = Real.round (5.0*256.0*scale) *)
-(* 	  val x1 = myX - width *)
-(* 	  val y1 = myY - width *)
-(* 	  val x2 = myX + width *)
-(* 	  val y2 = myY + width *)
+	   end
+       (* Alternative shape: red cross *)
+       (*       let *)
+       (* 	  val color = if shadow then shadowColor else failedColor *)
+       (* 	  val outline = if shadow then shadowColor else black *)
+       (* 	  val width = Real.round (5.0*256.0*scale) *)
+       (* 	  val x1 = myX - width *)
+       (* 	  val y1 = myY - width *)
+       (* 	  val x2 = myX + width *)
+       (* 	  val y2 = myY + width *)
 
-(*           val item = makeGroup group *)
-(*           val points1 = [x1,y1,x2,y2] *)
-(*           val points2 = [x2,y1,x1,y2] *)
-(*           val capStyle = Gdk.GdkCapStyleToInt Gdk.CAP_ROUND *)
-(*       in *)
-(*           Canvas.itemCreate(item, *)
-(*                                  Canvas.lineGetType(), *)
-(*                                  [("points", *)
-(*                                    Gtk.OBJECT *)
-(*                                        (Canvas.makePoints points1)), *)
-(*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
-(*                                   ("width_units", Gtk.REAL 3.0), *)
-(*                                   ("cap_style", Gtk.INT capStyle) *)
-(*                                   ]); *)
-(*           Canvas.itemCreate(item, *)
-(*                                  Canvas.lineGetType(), *)
-(*                                  [("points", *)
-(*                                    Gtk.OBJECT *)
-(*                                        (Canvas.makePoints points2)), *)
-(*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
-(*                                   ("width_units", Gtk.REAL 3.0), *)
-(*                                   ("cap_style", Gtk.INT capStyle) *)
-(*                                   ]); *)
-(*           item *)
-(*       end *)
+       (*           val item = makeGroup group *)
+       (*           val points1 = [x1,y1,x2,y2] *)
+       (*           val points2 = [x2,y1,x1,y2] *)
+       (*           val capStyle = Gdk.GdkCapStyleToInt Gdk.CAP_ROUND *)
+       (*       in *)
+       (*           Canvas.itemCreate(item, *)
+       (*                                  Canvas.lineGetType(), *)
+       (*                                  [("points", *)
+       (*                                    Gtk.OBJECT *)
+       (*                                        (Canvas.makePoints points1)), *)
+       (*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
+       (*                                   ("width_units", Gtk.REAL 3.0), *)
+       (*                                   ("cap_style", Gtk.INT capStyle) *)
+       (*                                   ]); *)
+       (*           Canvas.itemCreate(item, *)
+       (*                                  Canvas.lineGetType(), *)
+       (*                                  [("points", *)
+       (*                                    Gtk.OBJECT *)
+       (*                                        (Canvas.makePoints points2)), *)
+       (*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
+       (*                                   ("width_units", Gtk.REAL 3.0), *)
+       (*                                   ("cap_style", Gtk.INT capStyle) *)
+       (*                                   ]); *)
+       (*           item *)
+       (*       end *)
 
-  fun drawChoiceNode (group, shadow, scale, myX, myY) =
-      let
-	  val color = if shadow then shadowColor else choiceColor
-	  val outline = if shadow then shadowColor else black
-	  val scaledCircleWidth = 10.0*256.0*scale
+       fun drawChoiceNode (group, shadow, scale, myX, myY) =
+	   let
+	       val color = if shadow then shadowColor else choiceColor
+	       val outline = if shadow then shadowColor else black
+	       val scaledCircleWidth = 10.0*256.0*scale
 
-	  val x1 = (itr myX) - scaledCircleWidth
-	  val y1 = (itr myY) - scaledCircleWidth
-	  val x2 = (itr myX) + scaledCircleWidth
-	  val y2 = (itr myY) + scaledCircleWidth
-      in
-	  Canvas.itemCreate(group,
+	       val x1 = (itr myX) - scaledCircleWidth
+	       val y1 = (itr myY) - scaledCircleWidth
+	       val x2 = (itr myX) + scaledCircleWidth
+	       val y2 = (itr myY) + scaledCircleWidth
+	   in
+	       Canvas.itemCreate(group,
 				 Canvas.ellipseGetType(),
 				 [("x1", Gtk.REAL x1),
 				  ("y1", Gtk.REAL y1),
@@ -219,207 +235,211 @@ struct
 				  ("fill_color_gdk", Gtk.OBJECT color),
 				  ("outline_color_gdk", Gtk.OBJECT outline)
 				  ])
-      end
+	   end
 
-  fun drawUnknownNode (group, shadow, scale, myX, myY) =
-      let
-	  val color = if shadow then shadowColor else lightgray
-	  val outline = if shadow then shadowColor else black
-	  val width = Real.round(9.0*256.0*scale)
-	  val sHorSpace = width
-	  val sVerSpace = width
-	  val x0 = myX
-	  val y0 = myY - width - 1
-	  val x1 = myX - sHorSpace
-	  val y1 = myY + sVerSpace
-	  val x2 = myX + sHorSpace
-	  val y2 = myY + sVerSpace
-	  val points = [x0,y0,x1,y1,x2,y2,x0,y0]
-      in
-	  (Canvas.itemCreate(group,
+       fun drawUnknownNode (group, shadow, scale, myX, myY) =
+	   let
+	       val color = if shadow then shadowColor else lightgray
+	       val outline = if shadow then shadowColor else black
+	       val width = Real.round(9.0*256.0*scale)
+	       val sHorSpace = width
+	       val sVerSpace = width
+	       val x0 = myX
+	       val y0 = myY - width - 1
+	       val x1 = myX - sHorSpace
+	       val y1 = myY + sVerSpace
+	       val x2 = myX + sHorSpace
+	       val y2 = myY + sVerSpace
+	       val points = [x0,y0,x1,y1,x2,y2,x0,y0]
+	   in
+	       (Canvas.itemCreate(group,
 				  Canvas.polygonGetType(),
 				  [("points",
-                                    Gtk.OBJECT
-					(Canvas.makePoints points)),
+				    Gtk.OBJECT
+				    (Canvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT color),
 				   ("outline_color_gdk", Gtk.OBJECT outline)
 				   ]
 				  ))	  
-      end
+	   end
 
-  fun connect
-	  (state as ({gtk={rootGroup=ref rootGroup,...},...}
-                     : Types.explorer_state),
-	   hidden, myStatus, parentStatus, myX, myY, momX, momY) =
-      let
-	  val scale = TreeNode.defScale
-	  val s = 7*256
-	  val t = 10*256
-	  val (x1,y1) =
-              if hidden then ((itr myX)*scale,(itr (myY-t))*scale)
-	      else
-                  case myStatus of
-		      Types.FAILED => ((itr myX)*scale,(itr (myY-s))*scale)
-		    | Types.SOLVED => ((itr myX)*scale,(itr (myY-t))*scale)
-		    | Types.CHOICE _ => ((itr myX)*scale,(itr (myY-t))*scale)
-		    | Types.UNKNOWN => ((itr myX)*scale,(itr (myY-t))*scale)
-	  val (x2, y2) =
-              case parentStatus of
-		  Types.FAILED => ((itr momX)*scale,(itr (momY+s))*scale)
-		| Types.SOLVED => ((itr momX)*scale,(itr (momY+t))*scale)
-		| Types.CHOICE _ => ((itr momX)*scale,(itr (momY+t))*scale)
-		| Types.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
+       fun connect
+	   (state as ({gtk={rootGroup=ref rootGroup,...},...}
+		      : Types.explorer_state),
+	    hidden, myStatus, parentStatus, myX, myY, momX, momY) =
+	   let
+	       val scale = TreeNode.defScale
+	       val s = 7*256
+	       val t = 10*256
+	       val (x1,y1) =
+		   if hidden then ((itr myX)*scale,(itr (myY-t))*scale)
+		   else
+		       case myStatus of
+			   Types.FAILED => ((itr myX)*scale,
+					    (itr (myY-s))*scale)
+			 | Types.SOLVED => ((itr myX)*scale,
+					    (itr (myY-t))*scale)
+			 | Types.CHOICE _ => ((itr myX)*scale,
+					      (itr (myY-t))*scale)
+			 | Types.UNKNOWN => ((itr myX)*scale,
+					     (itr (myY-t))*scale)
+	       val (x2, y2) =
+		   case parentStatus of
+		       Types.FAILED => ((itr momX)*scale,(itr (momY+s))*scale)
+		     | Types.SOLVED => ((itr momX)*scale,(itr (momY+t))*scale)
+		     | Types.CHOICE _ => ((itr momX)*scale,
+					  (itr (momY+t))*scale)
+		     | Types.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
 
-	  val points = [Real.round x1,Real.round y1,
-                        Real.round x2,Real.round y2]
-      in
-	  (Canvas.itemCreate(rootGroup,
+	       val points = [Real.round x1,Real.round y1,
+			     Real.round x2,Real.round y2]
+	   in
+	       (Canvas.itemCreate(rootGroup,
 				  Canvas.lineGetType(),
 				  [("points",
 				    Gtk.OBJECT
-                                        (Canvas.makePoints points)),
+				    (Canvas.makePoints points)),
 				   ("fill_color_gdk", Gtk.OBJECT black),
 				   ("line_style", Gtk.INT 0),
 				   ("width_pixels", Gtk.INT 1)
 				   ]
 				  ))	  
-      end
+	   end
 
-  fun unconnect connection = Gtk.objectDestroy connection
+       fun unconnect connection = Gtk.objectDestroy connection
 
-  fun doDraw (group, shadow, scale, hidden, 
-              openChildren, hasSolBelow, status, x, y) =
-      let
-	  val realX = (itr x)*scale
-	  val realY = (itr y)*scale
-	  val draw = if hidden then drawHidden (openChildren, hasSolBelow)
-		     else case status of
+       fun doDraw (group, shadow, scale, hidden, 
+		   openChildren, hasSolBelow, status, x, y) =
+	   let
+	       val realX = (itr x)*scale
+	       val realY = (itr y)*scale
+	       val draw = if hidden then drawHidden (openChildren, hasSolBelow)
+			  else case status of
 			      Types.FAILED => drawFailedNode
 			    | Types.SOLVED => drawSuccNode
 			    | Types.CHOICE _ => drawChoiceNode
 			    | Types.UNKNOWN => drawUnknownNode
-      in
-	  draw (group, shadow, scale, Real.round realX, Real.round realY)
-      end
+	   in
+	       draw (group, shadow, scale, Real.round realX, Real.round realY)
+	   end
 
-  fun drawNode 
-	  (state as {gtk={canvas=canvas,rootGroup=rootGroup,
-                          actionGroup=actionGroup,scale=scale,...},
-                     ...}
-	   : Types.explorer_state,
-	   momX, momY,
-	   Types.N({offset=offset,status=ref status,
-                    hidden=ref hidden,dirty=dirty,
-		    vNode=vNode,connection=connection,
-                    openChildren,hasSolBelow,...},
-		   ref parent, ref children)) =
-	  let
-	      val myX = momX+(!offset)
-	      val myY = momY+TreeNode.verSpaceI
-	  in
-	      dirty := false;
-	      connection :=
-	      (Option.map(fn p =>
-			     (connect (state, hidden, status,
-				       TreeNode.getStatus p,
-				       myX, myY, momX, momY)))
-			 parent);
-	      vNode := SOME (doDraw (!actionGroup, false,
-				     TreeNode.defScale, hidden,
-                                     !openChildren, !hasSolBelow,
-                                     status, myX, myY));
-	      if hidden then ()
-	      else Vector.app (fn c => drawNode (state, myX, myY, c)) children
-	  end
+       fun drawNode 
+	   (state as {gtk={canvas=canvas,rootGroup=rootGroup,
+			   actionGroup=actionGroup,scale=scale,...},
+		      ...}
+	    : Types.explorer_state,
+	    momX, momY,
+	    Types.N({offset=offset,status=ref status,
+		     hidden=ref hidden,dirty=dirty,
+		     vNode=vNode,connection=connection,
+		     openChildren,hasSolBelow,...},
+		    ref parent, ref children)) =
+	   let
+	       val myX = momX+(!offset)
+	       val myY = momY+TreeNode.verSpaceI
+	   in
+	       dirty := false;
+	       connection :=
+	       (Option.map(fn p =>
+			   (connect (state, hidden, status,
+				     TreeNode.getStatus p,
+				     myX, myY, momX, momY)))
+		parent);
+	       vNode := SOME (doDraw (!actionGroup, false,
+				      TreeNode.defScale, hidden,
+				      !openChildren, !hasSolBelow,
+				      status, myX, myY));
+	       if hidden then ()
+	       else Vector.app (fn c => drawNode (state, myX, myY, c)) children
+	   end
 
-  fun markNode (state as {gtk={canvas=canvas,rootGroup=rootGroup,
-                               actionGroup=actionGroup,scale=scale,...},
-                          ...}
-	        : Types.explorer_state)
-	       (Types.N({offset=offset,status=ref status,
-                         hidden=ref hidden,dirty=dirty,
-		         vNode=vNode,connection=connection,...},
-		        ref parent, ref children)) =
-               case !vNode of
-                   SOME v =>
-                   let
-                       val (x1,y1,x2,y2) = Canvas.itemGetBounds v
-                   in
-	               Canvas.itemCreate(Canvas.root canvas,
-				              Canvas.ellipseGetType(),
-				              [("x1", Gtk.REAL x1),
-				               ("y1", Gtk.REAL y1),
-				               ("x2", Gtk.REAL x2),
-				               ("y2", Gtk.REAL y2),
-				               ("fill_color_gdk",
-                                                Gtk.OBJECT black),
-				               ("outline_color_gdk",
-                                                Gtk.OBJECT black)
-				               ]);
-                       ()
-                   end
-                 | NONE => ()
+       fun markNode (state as {gtk={canvas=canvas,rootGroup=rootGroup,
+				    actionGroup=actionGroup,scale=scale,...},
+			       ...}
+		     : Types.explorer_state)
+	   (Types.N({offset=offset,status=ref status,
+		     hidden=ref hidden,dirty=dirty,
+		     vNode=vNode,connection=connection,...},
+		    ref parent, ref children)) =
+	   case !vNode of
+	       SOME v =>
+		   let
+		       val (x1,y1,x2,y2) = Canvas.itemGetBounds v
+		   in
+		       Canvas.itemCreate(Canvas.root canvas,
+					 Canvas.ellipseGetType(),
+					 [("x1", Gtk.REAL x1),
+					  ("y1", Gtk.REAL y1),
+					  ("x2", Gtk.REAL x2),
+					  ("y2", Gtk.REAL y2),
+					  ("fill_color_gdk",
+					   Gtk.OBJECT black),
+					  ("outline_color_gdk",
+					   Gtk.OBJECT black)
+					  ]);
+		       ()
+		   end
+	     | NONE => ()
 
-  fun drawShadow
-	  (state as {gtk={canvas=canvas,rootGroup=rootGroup,
-                          shadowGroup=shadowGroup,scale=scale,...},
-                     ...}
-	   : Types.explorer_state,
-	   myX, myY,
-	   Types.N({offset=offset,status=ref status,
-                    hidden=ref hidden,dirty=dirty,
-		    vNode=vNode,connection=connection,...},
-		   ref parent, ref children)) =
-	  let
-	      val myX = myX+3*256
-	      val myY = myY+3*256
-	  in
-	      Gtk.objectDestroy (!shadowGroup);
-	      shadowGroup := makeGroup (!rootGroup);
-	      doDraw (!shadowGroup, true, TreeNode.defScale, hidden,
-                      0, false, status, myX, myY);
-	      Canvas.itemLowerToBottom (!shadowGroup)
-	  end
+       fun drawShadow
+	   (state as {gtk={canvas=canvas,rootGroup=rootGroup,
+			   shadowGroup=shadowGroup,scale=scale,...},
+		      ...}
+	    : Types.explorer_state,
+	    myX, myY,
+	    Types.N({offset=offset,status=ref status,
+		     hidden=ref hidden,dirty=dirty,
+		     vNode=vNode,connection=connection,...},
+		    ref parent, ref children)) =
+	   let
+	       val myX = myX+3*256
+	       val myY = myY+3*256
+	   in
+	       Gtk.objectDestroy (!shadowGroup);
+	       shadowGroup := makeGroup (!rootGroup);
+	       doDraw (!shadowGroup, true, TreeNode.defScale, hidden,
+		       0, false, status, myX, myY);
+	       Canvas.itemLowerToBottom (!shadowGroup)
+	   end
 
-  fun undrawSubtree (Types.N({vNode=vNode,connection=connection,...},
-                             _,children)) =
-      case (!vNode) of
-	  NONE => ()
-	| SOME v =>
-	  (vNode := NONE;
-	   Gtk.objectDestroy v;
-	   (case (!connection) of NONE => ()
-				| SOME c => (Gtk.objectDestroy c;
-					     connection:=NONE));
-	   Vector.app undrawSubtree (!children))
+       fun undrawSubtree (Types.N({vNode=vNode,connection=connection,...},
+				  _,children)) =
+	   case (!vNode) of
+	       NONE => ()
+	     | SOME v =>
+		   (vNode := NONE;
+		    Gtk.objectDestroy v;
+		    (case (!connection) of NONE => ()
+		  | SOME c => (Gtk.objectDestroy c;
+			       connection:=NONE));
+			 Vector.app undrawSubtree (!children))
 
-  fun moveNode ({gtk={scale=ref scale,...},...}: Types.explorer_state,
-	        v, myByX) =
-	       Canvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale,
-                                    0.0)
+       fun moveNode ({gtk={scale=ref scale,...},...}: Types.explorer_state,
+		     v, myByX) =
+	   Canvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale,
+			   0.0)
 
-  fun moveTree (state: Types.explorer_state)
-	       (Types.N({connection=connection,vNode=vNode,...},
-                        _,ref children),
-		myByX) =
-	       ((case (!vNode) of NONE => ()
-				| SOME v => moveNode (state, v, myByX));
-		(case (!connection) of NONE => ()
-				     | SOME c => moveNode (state, c, myByX));
-		Vector.app (fn k => moveTree state (k, myByX)) children)
+       fun moveTree (state: Types.explorer_state)
+	   (Types.N({connection=connection,vNode=vNode,...},
+		    _,ref children),
+	    myByX) =
+	   ((case (!vNode) of NONE => ()
+	 | SOME v => moveNode (state, v, myByX));
+		 (case (!connection) of NONE => ()
+	       | SOME c => moveNode (state, c, myByX));
+		      Vector.app (fn k => moveTree state (k, myByX)) children)
 
-  fun findByXY(canvas, scale, x, y) =
-      let
-	  val (cXI, cYI) = Canvas.w2c(canvas, x, y)
-	  val (sox1, _, _, _) = Canvas.getScrollRegion canvas
+       fun findByXY(canvas, scale, x, y) =
+	   let
+	       val (cXI, cYI) = Canvas.w2c(canvas, x, y)
+	       val (sox1, _, _, _) = Canvas.getScrollRegion canvas
 
-	  val cX = (Real.fromInt cXI)/scale
-	  val cY = (Real.fromInt cYI)
-	  val myX = cX + (sox1*256.0)
-	  val findX = Real.round(myX-11.0*256.0)
-	  val depth = Real.round(cY/(scale*38.0*256.0))-1
-      in
-	  (findX, depth)
-      end
-  end
-end
+	       val cX = (Real.fromInt cXI)/scale
+	       val cY = (Real.fromInt cYI)
+	       val myX = cX + (sox1*256.0)
+	       val findX = Real.round(myX-11.0*256.0)
+	       val depth = Real.round(cY/(scale*38.0*256.0))-1
+	   in
+	       (findX, depth)
+	   end
+   end

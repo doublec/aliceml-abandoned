@@ -10,23 +10,36 @@
  *   $Revision$
  *)
 
-import signature SPACE        from "x-alice:/lib/gecode/SPACE-sig"
 
 import structure Gtk          from "x-alice:/lib/gtk/Gtk"
 import structure Canvas  from "x-alice:/lib/gtk/Canvas"
 
-import functor MkGtkNode      from "MkGtkNode"
-import functor MkTypes        from "MkTypes"
 import structure Defaults     from "Defaults"
-import functor MkEventHandler from "MkEventHandler"
 
-functor MkCanvasHelper(Space : SPACE) =
+import signature SPACE         from "x-alice:/lib/gecode/SPACE-sig"
+import signature TYPES         from "TYPES-sig"
+import signature GTK_NODE      from "GTK_NODE-sig"
+import signature EVENT_HANDLER from "EVENT_HANDLER-sig"
+import signature CANVAS_HELPER from "CANVAS_HELPER-sig"
+
+
+functor MkCanvasHelper (Space : SPACE)
+    (Types : TYPES
+     where type space = Space.space)
+    (GtkNode : GTK_NODE
+     where type explorer_state = Types.explorer_state
+     where type status = Types.status
+     where type tree = Types.tree)
+    (EventHandler : EVENT_HANDLER
+     where type tree = Types.tree
+     where type explorer_state = Types.explorer_state
+     where type space = Space.space)
+    :
+    CANVAS_HELPER
+    where type explorer_state = Types.explorer_state
+    =
   struct
-  local
-  structure Types = MkTypes(Space)
-  structure GtkNode = MkGtkNode(Space)
-  structure EventHandler = MkEventHandler(Space)
-  in
+      type explorer_state = Types.explorer_state
 
   fun createCanvas (state, serve, xDim, yDim) =
       let
@@ -75,5 +88,4 @@ functor MkCanvasHelper(Space : SPACE) =
 		     scale := x / Defaults.floatScaleBase
 		 end))
     | scaleCanvasHandler _ _ = ()
-  end
   end
