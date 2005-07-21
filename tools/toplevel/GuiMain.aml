@@ -255,7 +255,7 @@ structure GuiMain =
                 numberOfPages := (!numberOfPages) + 1;
 		switchPage Gui.notebook1;
 		Gtk.signalHandlerUnblock(Gui.notebook1,
-					  notebookSwitchEventId);
+					 notebookSwitchEventId);
                 changeFocus (BUFFER view) ();
                 checkNotebookSize()
             end
@@ -285,8 +285,6 @@ structure GuiMain =
                     addPage(!numberOfPages);
                     numberOfPages := (!numberOfPages) + 1;
 		    switchPage Gui.notebook1;
-		    Gtk.signalHandlerUnblock(Gui.notebook1,
-					      notebookSwitchEventId);
 		    Promise.fulfill(!highlight, SOME 0);
                     checkNotebookSize()
                 end
