@@ -57,6 +57,27 @@ structure FileDialog =
 		Gtk.windowSetModal(modifiedDia, false)
             end
 
+        fun overwriteWarning(msg1,msg2,close,arg) =
+            let
+                val overwriteDia = Gui.overwrite_dialog
+            in
+		Gtk.labelSetText(Gui.overwrite_msg1, msg1);
+		Gtk.labelSetText(Gui.overwrite_msg2, msg2);
+		Gtk.dialogSetDefaultResponse(overwriteDia,
+					     Gtk.GtkResponseTypeToInt
+					     Gtk.RESPONSE_CANCEL);
+                (*Gtk.windowSetKeepAbove (overwriteDia, true); Gtk 2.4 *)
+                Gtk.windowSetPosition (overwriteDia, Gtk.WIN_POS_MOUSE);
+                Gtk.widgetShowAll overwriteDia;
+		Gtk.widgetMap overwriteDia;
+		Gtk.windowSetModal(overwriteDia, true);
+		case Gtk.IntToGtkResponseType (Gtk.dialogRun overwriteDia) of
+		    Gtk.RESPONSE_CLOSE => close arg
+		  | _ => ();
+                Gtk.widgetUnmap overwriteDia;
+		Gtk.windowSetModal(overwriteDia, false)
+            end
+
         fun quitWarning (interactive,filename) =
             let
                 val dia = Gui.save_on_quit_dialog

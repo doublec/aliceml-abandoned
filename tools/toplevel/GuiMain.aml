@@ -331,7 +331,7 @@ structure GuiMain =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
                                      if Buffer.save id then ()
-                                     else saveFileAs()
+                                     else saveGivenFileAs id
 
         (* Evaluation *)
 

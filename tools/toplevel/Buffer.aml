@@ -33,6 +33,7 @@ structure Buffer =
 
       type buffer = {id: int,
                      file: string option ref,
+		     timeStamp: Time.time ref,
                      fileLabel: Gtk.object,
                      view: Gtk.object,
                      buf: Gtk.object,
@@ -429,22 +430,24 @@ structure Buffer =
 		  (fn f => OS.Path.mkAbsolute {path=f, relativeTo=OS.FileSys.getDir()})
 		  file
 
-	      val text = if mode = NEW then "" else
-                  case file of NONE => ""
+	      val (text, timeStamp) =
+		  if mode = NEW then ("", Time.zeroTime) else
+                  case file of NONE => ("", Time.zeroTime)
                              | SOME f =>
 		  let
 		      val fileD = TextIO.openIn f
+		      val timeStamp = OS.FileSys.modTime f
 		  in
-		      Gtk.latin1ToUtf8(TextIO.inputAll fileD)
+		      (Gtk.latin1ToUtf8(TextIO.inputAll fileD), timeStamp)
 		      before TextIO.closeIn fileD
 		  end
 		  handle IO.Io _ =>
 		    if mode = SESSION then raise Abort{quit=false} else
 		    case FileDialog.fileNotFound(mode=COMMANDLINE, f) of
-		       Gtk.RESPONSE_OK => ""
+		       Gtk.RESPONSE_OK => ("", Time.zeroTime)
 		     | Gtk.RESPONSE_CANCEL => raise Abort{quit=false}
 		     | Gtk.RESPONSE_CLOSE => raise Abort{quit=true}
-		     | _ => ""
+		     | _ => ("", Time.zeroTime)
 
               val fileName = Option.getOpt(file, "New file "^Int.toString id)
               val scrolledwindow2_xa = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
@@ -484,6 +487,7 @@ structure Buffer =
 
               val ret = {id=id,file=ref file,
                          fileLabel=label1,
+			 timeStamp=ref timeStamp,
                          view=newSource,buf=buf,
                          tags=makeTags buf,
                          undo=ref [SAVE_MARKER],
@@ -530,37 +534,56 @@ structure Buffer =
 	       highlight := prom)
           end
 
+      fun maySave(f, modified, timeStamp) =
+	  let
+	      val fTimeStamp = OS.FileSys.modTime f
+		  handle OS.SysErr _ => Time.zeroTime
+	  in
+	      if Time.<(fTimeStamp, timeStamp) then
+		  modified
+	      else
+		  let
+		      val saveAnyway = ref false
+		  in
+		      FileDialog.modifiedWarning(
+                       "File modified since last saved.", 
+		       "Overwrite or cancel?", fn _ => saveAnyway := true, ());
+		      !saveAnyway
+		  end
+	  end
+
       fun save id =
           let
-              val {id,file,buf,undo,...} = Map.lookupExistent(bufferMap, id)
+              val {id,file,timeStamp,buf,undo,...} =
+		  Map.lookupExistent(bufferMap, id)
               val modified = Gtk.textBufferGetModified buf
           in
               case !file of NONE => false
                           | SOME f =>
-                            (if modified then
-                                 let
-                                     val file = TextIO.openOut f
-				     val str = Lock.sync Gtk.lock
-					 (fn () =>
-					  let
-					      val startiter = Gtk.textIterNew()
-					      val _ = Gtk.textBufferGetStartIter(buf,startiter)
-					      val enditer = Gtk.textIterNew()
-					      val _ = Gtk.textBufferGetEndIter(buf,enditer)
-					  in
-					      Gtk.textBufferGetText(buf, startiter, enditer, false)
-					  end) ()
-                                     val str = Gtk.utf8ToLatin1 str
-                                 in 
-                                     TextIO.output(file, str);
-                                     TextIO.closeOut file;
-                                     Gtk.textBufferSetModified(buf, false);
-				     setUndoSaveMarker undo
-                                 end handle IO.Io _ => FileDialog.message ("I/O error: Could not save file " ^ f)
-                             else ();
-                             true)
+	     (if maySave(f, modified, !timeStamp) then
+		  let
+		      val file = TextIO.openOut f
+		      val str = Lock.sync Gtk.lock
+			  (fn () =>
+			   let
+			       val startiter = Gtk.textIterNew()
+			       val _ = Gtk.textBufferGetStartIter(buf,startiter)
+			       val enditer = Gtk.textIterNew()
+			       val _ = Gtk.textBufferGetEndIter(buf,enditer)
+			   in
+			       Gtk.textBufferGetText(buf, startiter, enditer, false)
+			   end) ()
+		      val str = Gtk.utf8ToLatin1 str
+		  in 
+		      TextIO.output(file, str);
+		      TextIO.closeOut file;
+		      Gtk.textBufferSetModified(buf, false);
+		      setUndoSaveMarker undo
+		  end handle IO.Io _ => FileDialog.message ("I/O error: Could not save file " ^ f)
+	      else ();
+		  true)
           end
-
+		  
       fun saveAs (id, fileName) =
           let
               val {id,file,fileLabel,buf,...} = Map.lookupExistent(bufferMap, id)
@@ -569,7 +592,7 @@ structure Buffer =
               Gtk.labelSetText(fileLabel, shortName fileName);
               Gtk.textBufferSetModified(buf, true);
               save id;
-              ()
+	      ()
           end
 
       fun match (iter, back, txt, i, caseSensitive) =
