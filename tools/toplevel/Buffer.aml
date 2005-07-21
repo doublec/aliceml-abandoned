@@ -546,7 +546,7 @@ structure Buffer =
 		      val saveAnyway = ref false
 		  in
 		      FileDialog.overwriteWarning(
-                       "File modified since last saved.", 
+                       "File exists or was modified on disk.",
 		       "Overwrite or cancel?", fn _ => saveAnyway := true, ());
 		      !saveAnyway
 		  end
@@ -577,6 +577,7 @@ structure Buffer =
 		  in 
 		      TextIO.output(file, str);
 		      TextIO.closeOut file;
+		      timeStamp := OS.FileSys.modTime f;
 		      Gtk.textBufferSetModified(buf, false);
 		      setUndoSaveMarker undo
 		  end handle IO.Io _ => FileDialog.message ("I/O error: Could not save file " ^ f)
