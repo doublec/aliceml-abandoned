@@ -539,13 +539,13 @@ structure Buffer =
 	      val fTimeStamp = OS.FileSys.modTime f
 		  handle OS.SysErr _ => Time.zeroTime
 	  in
-	      if Time.<(fTimeStamp, timeStamp) then
+	      if Time.equal(fTimeStamp, timeStamp) then
 		  modified
 	      else
 		  let
 		      val saveAnyway = ref false
 		  in
-		      FileDialog.modifiedWarning(
+		      FileDialog.overwriteWarning(
                        "File modified since last saved.", 
 		       "Overwrite or cancel?", fn _ => saveAnyway := true, ());
 		      !saveAnyway
