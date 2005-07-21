@@ -22,8 +22,8 @@ signature EXPLORER_NODE =
 	val createNode : explorer_state option ref * tree option * int -> tree
 	val hasOpenChildren : tree -> bool
 	val setStatus : tree -> status -> unit
-	val setSpace : tree -> space option -> unit
-	val recomputeSpace : explorer_state option ref * tree -> space
+	val setRoot : tree -> space option -> unit
+	val getClone : explorer_state option ref * tree -> space
 	val nodeStatus : explorer_state option ref * tree -> status
 	val isUnknown : tree -> bool
 	val isHidden : tree -> bool

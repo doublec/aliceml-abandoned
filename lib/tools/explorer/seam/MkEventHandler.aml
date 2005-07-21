@@ -121,7 +121,7 @@ functor MkEventHandler (Space : SPACE)
                               List.app
                                   (fn (i,s) => 
                                     if s= !curInspAction then
-                                      i (ExplorerNode.recomputeSpace(st, n))
+                                      i (ExplorerNode.getClone(st, n))
 				    else ()) (!inspect))
 		     end
 		   | _ => ())
@@ -326,19 +326,20 @@ functor MkEventHandler (Space : SPACE)
 
   fun viewOptionsHandler (mw, serve, state) _ =
       let
-          val configure = OptionsWindow.newOptionsWindow (mw, serve, state)
+          val configure = OptionsWindow.newViewOptionsWindow (mw, serve, state)
       in
           Gtk.windowSetPosition(configure, Gtk.WIN_POS_MOUSE);
           Gtk.widgetShowAll configure
       end
 
-  fun debugHandler (serve, state) _ =
-      serve (fn () =>
-                case !state of
-                    SOME {debug=debug,...} =>
-                    Types.setDebug state (not (!debug))
-                  | NONE => ())
-
+  fun searchOptionsHandler (mw, serve, state) _ =
+      let
+          val configure = OptionsWindow.newSearchOptionsWindow
+	      (mw, serve, state)
+      in
+          Gtk.windowSetPosition(configure, Gtk.WIN_POS_MOUSE);
+          Gtk.widgetShowAll configure
+      end
 
   fun zoomToFitHandler (serve, state : Types.explorer_state option ref) _ =
       serve (fn () => zoomToFit state)

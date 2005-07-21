@@ -75,13 +75,14 @@ struct
 	         hasSolBelow=ref false,
 	         vNode=ref NONE,
 	         space=ref NONE,
+	         clone=ref NONE,
+		 dist=ref ((Option.getOpt(Option.map Types.getDist mom, 0))+1),
 	         ownBest=ref best,
 	         connection=ref NONE,
 	         alternative=alternative,
 	         shape =ref nil}, ref mom, ref #[])
 	end
 
-    fun setMom (Types.N(_,mom,_)) newMom = mom := newMom
     fun decOpenChildren (Types.N({openChildren=openChildren,space=space,...},
                            ref mom,_)) =
         (openChildren := !openChildren - 1;
@@ -104,32 +105,76 @@ struct
     fun setChildren (Types.N({openChildren=openChildren,...},_,ch)) newCh =
         (ch := newCh;
          openChildren := Vector.length newCh)
-    fun setSpace (Types.N({space=space,...},_,_)) newSpace = space := newSpace
+    fun setRoot (Types.N({clone,space,...},mom,_)) newSpace =
+	(assert(!mom=NONE);
+	 space := newSpace;
+	 Option.app (fn s => clone := SOME (Space.clone s)) newSpace)
 
-    fun recomputeSpace (state,Types.N({space=ref (SOME s),...},_,_)) =
+
+    fun doCommits(state,s,i,best) =
+	case Space.status s of
+            Space.BRANCH (_,desc) =>
+		(Space.commit(s, i, desc);
+		 (case Types.getConstrain state of
+		      NONE => ()
+		    | SOME c => Option.app (fn b => c(s, b)) best);
+		 Space.status s)
+          | _ => assert false
+
+    fun recomputeSpace (state,Types.N({clone=ref (SOME s),...},_,_)) =
         Space.clone s
       | recomputeSpace (state,
 			Types.N({alternative=i,space=space,
                                  ownBest=ownBest,...},
-			  ref (SOME mom),_)) =
+				ref (SOME mom),_)) =
 	let
 	    val s = recomputeSpace(state,mom)
 	in
-          case Space.status s of
-            Space.BRANCH (_,desc) =>
-              (Space.commit(s, i, desc);
-	       (case Types.getConstrain state of
-		    NONE => ()
-		  | SOME c => Option.app (fn b => c(s, b)) (!ownBest));
-               Space.status s;
-               space := SOME s;
-               s)
-          | _ => assert false
+	    doCommits(state, s, i, !ownBest);
+	    s
 	end
       | recomputeSpace _ = raise Subscript
 
-    fun getSpace (state,Types.N({space=ref (SOME s),...},_,_)) = s
-      | getSpace (state,n) = recomputeSpace (state,n)
+    fun acquireSpace (state,node as Types.N({space,clone,
+					     alternative,ownBest,dist,
+					     ...},
+					    ref (SOME mom),_)) =
+	((case mom of Types.N({space=ref (SOME momSpace) as momSpaceR,
+			       ...}, _,_) =>
+	      (doCommits(state, momSpace, alternative, !ownBest);
+	       space := SOME momSpace;
+	       momSpaceR := NONE)
+			     | _ =>
+	      space := SOME (recomputeSpace(state, node)));
+	  let
+	      val s = valOf (!space)
+	      val mrd = Types.getMrd state
+	  in
+	      if !dist >= mrd andalso mrd > 0 andalso
+		  not (Space.status s = Space.FAILED) then
+		  (clone := SOME (Space.clone s);
+		   dist := 0)
+	      else ();
+	      s
+	  end)
+      | acquireSpace _ = assert(false)
+
+    fun getSpace (state,node as Types.N({space,clone,...},_,_)) =
+	case !space of
+	    SOME s => s
+	  | NONE => (case !clone of
+			 SOME c =>
+			     let
+				 val s = Space.clone c
+			     in
+				 space := SOME s;
+				 s
+			     end
+		       | NONE =>
+			     acquireSpace (state, node))
+
+    fun getClone (state, node) =
+	Space.clone (getSpace (state, node))
 
     fun nodeStatus (state, node as Types.N({status=status,
                                             ownBest=ownBest,...},_,_)) =

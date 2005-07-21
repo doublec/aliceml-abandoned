@@ -24,13 +24,14 @@ signature TYPES =
 	     offset : int ref, oldOffset : int option ref,
 	     openChildren : int ref,
 	     ownBest : space option ref, shape : (int * int) list ref,
-	     space : space option ref, status : status ref,
+	     space : space option ref, clone : space option ref,
+	     dist : int ref,
+	     status : status ref,
 	     vNode : Gtk.object option ref}
 	datatype tree = N of node_info * tree option ref * tree vector ref
 	type explorer_state =
 	    {breakAfter : int ref, breakAfterNodes : int ref,
 	     cancelSearch : bool ref, curInspAction : string ref,
-	     debug : bool ref,
 	     gtk :
              {actionGroup : Gtk.object ref, actionHandler : int ref,
               canvas : Gtk.object, contextId : int ref,
@@ -48,12 +49,11 @@ signature TYPES =
              {bestSpace : space option ref,
               constrain : (space * space -> unit) option ref,
               currentNode : tree option ref, rootSpace : space option ref,
-              tree : tree ref}, zoomFollows : bool ref}
+              tree : tree ref, mrd : int ref},
+	     zoomFollows : bool ref}
 	val setTree : explorer_state option ref -> tree -> unit
 	val getTree : explorer_state option ref -> tree
 	val getCurrentNode : explorer_state option ref -> tree option
-	val debug : explorer_state option ref -> bool
-	val setDebug : explorer_state option ref -> bool -> unit
 	val getBestSpace : explorer_state option ref -> space option
 	val getConstrain :
 	    explorer_state option ref -> (space * space -> unit) option
@@ -69,4 +69,6 @@ signature TYPES =
 	val setHideFailed : explorer_state option ref -> bool -> unit
 	val getZoomFollows : explorer_state option ref -> bool
 	val setZoomFollows : explorer_state option ref -> bool -> unit
+	val getDist : tree -> int
+	val getMrd : explorer_state option ref -> int
     end

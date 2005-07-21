@@ -59,7 +59,7 @@ functor MkExplorerSearch (Space : SPACE)
 		constrain := better;
                 bestSpace := NONE;
                 currentNode := SOME (!tree);
-                ExplorerNode.setSpace (!tree) NONE;
+                ExplorerNode.setRoot (!tree) NONE;
                 MenuManager.updateMenus (!tree);
                 MenuManager.finishSearch();
                 refresh (serve, state))
@@ -83,7 +83,7 @@ functor MkExplorerSearch (Space : SPACE)
                    currentNode := SOME (!tree);
                    MenuManager.updateMenus (!tree);
                    MenuManager.finishSearch();
-                   ExplorerNode.setSpace (!tree) (SOME s');
+                   ExplorerNode.setRoot (!tree) (SOME s');
                    refresh (serve, state))
                 | _ => ()
           end

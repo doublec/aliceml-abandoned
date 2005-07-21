@@ -29,6 +29,7 @@ signature EXPLORERGUISIGNALS_SIG =
     val on_all_solutions_activate : Gtk.callback_function
     val on_one_step_activate : Gtk.callback_function
     val on_view_activate : Gtk.callback_function
+    val on_search_activate : Gtk.callback_function
     val on_about_activate : Gtk.callback_function
     val on_zoom_to_fit_clicked : Gtk.callback_function
     val on_scale_value_changed : Gtk.callback_function
@@ -52,6 +53,7 @@ functor ExplorerGUISignals(structure S : EXPLORERGUISIGNALS_SIG) =
     val all_solutions_on_all_solutions_activate = Gtk.signalConnect(ExplorerGUI.all_solutions, "activate",S.on_all_solutions_activate)
     val one_step_on_one_step_activate = Gtk.signalConnect(ExplorerGUI.one_step, "activate",S.on_one_step_activate)
     val view1_on_view_activate = Gtk.signalConnect(ExplorerGUI.view1, "activate",S.on_view_activate)
+    val search1_on_search_activate = Gtk.signalConnect(ExplorerGUI.search1, "activate",S.on_search_activate)
     val about_on_about_activate = Gtk.signalConnect(ExplorerGUI.about, "activate",S.on_about_activate)
     val zoomToFit_on_zoom_to_fit_clicked = Gtk.signalConnect(ExplorerGUI.zoomToFit, "clicked",S.on_zoom_to_fit_clicked)
     val scale_on_scale_value_changed = Gtk.signalConnect(ExplorerGUI.scale, "value_changed",S.on_scale_value_changed)

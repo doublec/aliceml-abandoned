@@ -137,7 +137,8 @@ functor MkMainWindow (Space : SPACE)
                       (createMainWindow, setStatusMsg, serve, state)
               val on_view_activate =
                   EventHandler.viewOptionsHandler (w, serve, state)
-              val on_debug_activate = EventHandler.debugHandler (serve, state)
+              val on_search_activate =
+                  EventHandler.searchOptionsHandler (w, serve, state)
               fun on_about_activate _ = AboutDialog.openDialog()
               val on_zoom_to_fit_clicked =
                   EventHandler.zoomToFitHandler (serve, state)
@@ -172,7 +173,8 @@ functor MkMainWindow (Space : SPACE)
                                rootSpace=ref NONE,
 			       bestSpace=ref NONE,
 			       constrain=ref NONE,
-			       currentNode=ref NONE},
+			       currentNode=ref NONE,
+			       mrd = ref 5},
 			 inspect=ref nil,
                          curInspAction=ref "",
                          refreshAfter=ref 20,
@@ -181,7 +183,6 @@ functor MkMainWindow (Space : SPACE)
                          hideFailed=ref true,
                          zoomFollows=ref false,
                          cancelSearch=ref false,
-                         debug=ref false,
                          status={all=ref 0,
 				 choice=ref 0,
                                  solved=ref 0,

@@ -34,11 +34,15 @@ functor MkTypes (Space : SPACE) :
 		    shape : (int * int) list ref,
 		    vNode : Gtk.object option ref,
 		    space : Space.space option ref,
+		    clone : Space.space option ref,
+		    dist : int ref,
 		    ownBest : Space.space option ref,
 		    alternative : int,
 		    connection : Gtk.object option ref}
 		   
   datatype tree = N of node_info * tree option ref * tree vector ref
+
+  fun getDist (N ({dist,...},_,_)) = !dist
 
   type explorer_state = {gtk : {canvas : Gtk.object,
                                 rootGroup : Gtk.object ref,
@@ -55,7 +59,8 @@ functor MkTypes (Space : SPACE) :
 				 bestSpace : Space.space option ref,
 				 constrain : (Space.space * Space.space -> 
 					      unit) option ref,
-			         currentNode : tree option ref},
+			         currentNode : tree option ref,
+				 mrd : int ref},
 			 inspect : ((Space.space -> unit) * string) list ref,
                          curInspAction : string ref,
                          refreshAfter : int ref,
@@ -64,7 +69,6 @@ functor MkTypes (Space : SPACE) :
                          hideFailed : bool ref,
                          zoomFollows : bool ref,
                          cancelSearch : bool ref,
-                         debug : bool ref,
                          status : {all : int ref,
 				   choice : int ref,
                                    failed : int ref,
@@ -82,13 +86,6 @@ functor MkTypes (Space : SPACE) :
   fun getCurrentNode (ref (SOME ({tree={currentNode,...},...}:
                                  explorer_state))) = !currentNode
     | getCurrentNode _ = raise Empty
-
-  fun debug (ref (SOME ({debug=debug,...}: explorer_state))) = !debug
-    | debug _ = false
-
-  fun setDebug (ref (SOME ({debug=debug,...}: explorer_state))) flag =
-      debug:=flag
-    | setDebug _ _ = ()
 
   fun getBestSpace (ref (SOME ({tree={bestSpace,...},...}:
 			       explorer_state))) = !bestSpace
@@ -176,5 +173,9 @@ functor MkTypes (Space : SPACE) :
   fun setZoomFollows (ref (SOME {zoomFollows=zoomFollows,...}:
                           explorer_state option)) zf = zoomFollows:=zf
     | setZoomFollows _ _ = ()
+
+  fun getMrd (ref (SOME {tree={mrd=ref mrd,...},...}:
+                          explorer_state option)) = mrd
+    | getMrd _ = assert false
 
   end

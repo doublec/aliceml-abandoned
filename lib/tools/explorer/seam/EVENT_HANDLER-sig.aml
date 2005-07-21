@@ -70,8 +70,8 @@ signature EVENT_HANDLER =
 	 explorer_state option ref -> Gtk.object * 'b -> 'a
       val viewOptionsHandler :
          'a * ((unit -> unit) -> unit) * explorer_state option ref -> 'b -> unit
-      val debugHandler :
-         ((unit -> unit) -> 'a) * explorer_state option ref -> 'b -> 'a
+      val searchOptionsHandler :
+         'a * ((unit -> unit) -> unit) * explorer_state option ref -> 'b -> unit
       val zoomToFitHandler :
          ((unit -> unit) -> 'a) * explorer_state option ref -> 'b -> 'a
       val saveHandler :

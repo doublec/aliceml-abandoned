@@ -16,7 +16,11 @@ signature OPTIONS_WINDOW =
     sig
 	type explorer_state
 
-	val newOptionsWindow :
+	val newViewOptionsWindow :
+	    'a * ((unit -> unit) -> unit) * 
+	    explorer_state option ref -> Gtk.object
+
+	val newSearchOptionsWindow :
 	    'a * ((unit -> unit) -> unit) * 
 	    explorer_state option ref -> Gtk.object
     end
