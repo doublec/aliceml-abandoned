@@ -20,11 +20,6 @@
     return Worker::CONTINUE;			\
 }
 
-#define SIZEWORKER_CHECKDONE() {		\
-  if (frame->IsRoot())				\
-    SizeWorkerArgs::ClipForReturn();            \
-}
-
 class SizeWorkerSeen: private Block {
 private:
   static const BlockLabel SEEN_LABEL = MIN_DATA_LABEL;
@@ -66,7 +61,6 @@ public:
 class SizeWorkerArgs {
 private:
   enum { BYNEEDS_POS, FUTURES_POS, NODES_POS, TRANSIENTS_POS, WORDS_POS,
-	 RETURN_SIZE=WORDS_POS,
          SEEN_POS, REQ_POS, SIZE };
 public:
   static void New(SizeWorkerSeen *seen, bool request) {
@@ -116,7 +110,7 @@ public:
     Scheduler::SetCurrentArg(WORDS_POS, Store::IntToWord(GetSize()+s));
   }
   static void ClipForReturn() {
-    Scheduler::SetNArgs(RETURN_SIZE);
+    Scheduler::SetNArgs(WORDS_POS+1);
   }
 
 };
@@ -124,13 +118,12 @@ public:
 
 class SizeWorkerFrame: private StackFrame {
 private:
-  enum { DATA_POS, ROOT_POS, SIZE };
+  enum { DATA_POS, SIZE };
 public:
 
-  static SizeWorkerFrame *New(Worker *worker, word data, bool root=false) {
+  static SizeWorkerFrame *New(Worker *worker, word data) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(DATA_POS, data);
-    frame->InitArg(ROOT_POS, root ? 1 : 0);
     return STATIC_CAST(SizeWorkerFrame *, frame);
   }
 
@@ -142,9 +135,6 @@ public:
     return StackFrame::GetArg(DATA_POS);
   }
 
-  bool IsRoot() {
-    return Store::DirectWordToInt(StackFrame::GetArg(ROOT_POS));
-  }
 };
 
 class  SizeWorker: public Worker {
@@ -159,7 +149,6 @@ public:
   }
   // Frame Handling
   static void PushFrame(word data);
-  static void PushRootFrame(word data);
   virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame);
@@ -172,10 +161,6 @@ SizeWorker *SizeWorker::self;
 
 void SizeWorker::PushFrame(word data) {
   SizeWorkerFrame::New(self, data);
-}
-
-void SizeWorker::PushRootFrame(word data) {
-  SizeWorkerFrame::New(self, data, true);
 }
 
 u_int SizeWorker::GetFrameSize(StackFrame *sFrame) {
@@ -221,7 +206,6 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
   s_int i = Store::WordToInt(x0);
   if (i!=INVALID_INT) {
     Scheduler::PopFrame(frame->GetSize());
-    SIZEWORKER_CHECKDONE();
     SIZEWORKERCONTINUE();
   }
 
@@ -243,8 +227,6 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
       // Chunks look like blocks but don't have children! ;-)
       break;
     default:
-      if (size==0)
-	SIZEWORKER_CHECKDONE();
       Scheduler::PopFrame(frame->GetSize());
       for (u_int i = size; i--; ) {
 	SizeWorker::PushFrame(b->GetArg(i));
@@ -252,7 +234,6 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
       SIZEWORKERCONTINUE();
     }
   }
-  SIZEWORKER_CHECKDONE();
   Scheduler::PopFrame(frame->GetSize());
   SIZEWORKERCONTINUE();
 }
@@ -265,11 +246,71 @@ void SizeWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "SizeWorker Task\n");
 }
 
+
+class  ReturnSizeWorker: public Worker {
+private:
+  static ReturnSizeWorker *self;
+  // PicklingWorker Constructor
+  ReturnSizeWorker(): Worker() {}
+public:
+  // PicklingWorker Static Constructor
+  static void Init() {
+    self = new ReturnSizeWorker();
+  }
+  // Frame Handling
+  static void PushFrame();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  // Execution
+  virtual Result Run(StackFrame *sFrame);
+  // Debugging
+  virtual const char *Identify();
+  virtual void DumpFrame(StackFrame *);
+};
+
+ReturnSizeWorker *ReturnSizeWorker::self;
+
+void ReturnSizeWorker::PushFrame() {
+  NEW_STACK_FRAME(frame, self, 0);
+}
+
+u_int ReturnSizeWorker::GetFrameSize(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+  return sFrame->GetSize();
+}
+
+Worker::Result ReturnSizeWorker::Run(StackFrame *sFrame) {
+  fprintf(stderr, "Returning from SizeWorker\n");
+  DumpCurrentTaskStack();
+  fprintf(stderr, "\tnArgs: %d\n", Scheduler::GetNArgs());
+  Scheduler::PopFrame(sFrame->GetSize());
+  SizeWorkerArgs::ClipForReturn();
+  fprintf(stderr, "\tpopped frame\n");
+  DumpCurrentTaskStack();
+  fprintf(stderr, "\tnArgs: %d\n", Scheduler::GetNArgs());
+  Tuple *t = Tuple::New(5);
+  t->Init(0, Scheduler::GetCurrentArg(0));
+  t->Init(1, Scheduler::GetCurrentArg(1));
+  t->Init(2, Scheduler::GetCurrentArg(2));
+  t->Init(3, Scheduler::GetCurrentArg(3));
+  t->Init(4, Scheduler::GetCurrentArg(4));
+  Scheduler::SetNArgs(1);
+  RETURN1(t->ToWord());
+}
+
+const char *ReturnSizeWorker::Identify() {
+  return "ReturnSizeWorker";
+}
+
+void ReturnSizeWorker::DumpFrame(StackFrame *) {
+  std::fprintf(stderr, "ReturnSizeWorker Task\n");
+}
+
 class StoreSize {
 public:
   static Worker::Result Compute(word x, bool request) {
-    Scheduler::PopFrame();
-    SizeWorker::PushRootFrame(x);
+    POP_PRIM_SELF();
+    ReturnSizeWorker::PushFrame();
+    SizeWorker::PushFrame(x);
     SizeWorkerArgs::New(SizeWorkerSeen::New(), request);
     return Worker::CONTINUE;
   }
@@ -313,6 +354,7 @@ DEFINE1(UnsafeStore_minimize) {
 
 AliceDll word UnsafeStore() {
   SizeWorker::Init();
+  ReturnSizeWorker::Init();
   Record *record = Record::New(6);
 
   INIT_STRUCTURE(record, "UnsafeStore", "size",
