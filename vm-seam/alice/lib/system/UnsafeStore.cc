@@ -20,6 +20,11 @@
     return Worker::CONTINUE;			\
 }
 
+#define SIZEWORKER_CHECKDONE() {		\
+  if (frame->IsRoot())				\
+    SizeWorkerArgs::ClipForReturn();            \
+}
+
 class SizeWorkerSeen: private Block {
 private:
   static const BlockLabel SEEN_LABEL = MIN_DATA_LABEL;
@@ -61,6 +66,7 @@ public:
 class SizeWorkerArgs {
 private:
   enum { BYNEEDS_POS, FUTURES_POS, NODES_POS, TRANSIENTS_POS, WORDS_POS,
+	 RETURN_SIZE=WORDS_POS,
          SEEN_POS, REQ_POS, SIZE };
 public:
   static void New(SizeWorkerSeen *seen, bool request) {
@@ -109,18 +115,22 @@ public:
   static void AddSize(u_int s) {
     Scheduler::SetCurrentArg(WORDS_POS, Store::IntToWord(GetSize()+s));
   }
+  static void ClipForReturn() {
+    Scheduler::SetNArgs(RETURN_SIZE);
+  }
 
 };
 
 
 class SizeWorkerFrame: private StackFrame {
 private:
-  enum { DATA_POS, SIZE };
+  enum { DATA_POS, ROOT_POS, SIZE };
 public:
 
-  static SizeWorkerFrame *New(Worker *worker, word data) {
+  static SizeWorkerFrame *New(Worker *worker, word data, bool root=false) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(DATA_POS, data);
+    frame->InitArg(ROOT_POS, root ? 1 : 0);
     return STATIC_CAST(SizeWorkerFrame *, frame);
   }
 
@@ -130,6 +140,10 @@ public:
 
   word GetData() {
     return StackFrame::GetArg(DATA_POS);
+  }
+
+  bool IsRoot() {
+    return Store::DirectWordToInt(StackFrame::GetArg(ROOT_POS));
   }
 };
 
@@ -145,6 +159,7 @@ public:
   }
   // Frame Handling
   static void PushFrame(word data);
+  static void PushRootFrame(word data);
   virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame);
@@ -157,6 +172,10 @@ SizeWorker *SizeWorker::self;
 
 void SizeWorker::PushFrame(word data) {
   SizeWorkerFrame::New(self, data);
+}
+
+void SizeWorker::PushRootFrame(word data) {
+  SizeWorkerFrame::New(self, data, true);
 }
 
 u_int SizeWorker::GetFrameSize(StackFrame *sFrame) {
@@ -202,6 +221,7 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
   s_int i = Store::WordToInt(x0);
   if (i!=INVALID_INT) {
     Scheduler::PopFrame(frame->GetSize());
+    SIZEWORKER_CHECKDONE();
     SIZEWORKERCONTINUE();
   }
 
@@ -223,6 +243,8 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
       // Chunks look like blocks but don't have children! ;-)
       break;
     default:
+      if (size==0)
+	SIZEWORKER_CHECKDONE();
       Scheduler::PopFrame(frame->GetSize());
       for (u_int i = size; i--; ) {
 	SizeWorker::PushFrame(b->GetArg(i));
@@ -230,6 +252,7 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
       SIZEWORKERCONTINUE();
     }
   }
+  SIZEWORKER_CHECKDONE();
   Scheduler::PopFrame(frame->GetSize());
   SIZEWORKERCONTINUE();
 }
@@ -246,7 +269,7 @@ class StoreSize {
 public:
   static Worker::Result Compute(word x, bool request) {
     Scheduler::PopFrame();
-    SizeWorker::PushFrame(x);
+    SizeWorker::PushRootFrame(x);
     SizeWorkerArgs::New(SizeWorkerSeen::New(), request);
     return Worker::CONTINUE;
   }
