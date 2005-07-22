@@ -46,9 +46,10 @@ the Alice system.</P>
   <?php } ?>
 
   <DT>Signature inclusion</DT>
-  <DD><P>Scoping of <TT>include</TT> specifications in signatures is not
-      accurate: the included signature expression cannot refer to entities
-      of the surrounding signature.</P>
+  <DD><P>Scoping of <TT>include</TT> specifications in signatures is limited:
+      the included signature expression cannot refer to entities
+      of the surrounding signature, nor can subsequent specifications refer
+      to entities defined by the included signature.</P>
   </DD>
 
   <DT>Datatype replication</DT>
