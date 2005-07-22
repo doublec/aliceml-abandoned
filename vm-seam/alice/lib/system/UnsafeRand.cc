@@ -14,7 +14,8 @@
 #include "alice/Authoring.hh"
 
 DEFINE0(UnsafeRand_rand) {
-  RETURN_INT(rand());
+  int rnd = (int) ( ((double)MAX_VALID_INT)*rand()/(RAND_MAX+1.0));
+  RETURN_INT(rnd);
 } END
 
 DEFINE1(UnsafeRand_srand) {
