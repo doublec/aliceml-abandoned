@@ -19,8 +19,7 @@
   if (PointerOp::IsTransient(value)) {					\
     REQUEST(value);							\
   }									\
-  Assert(Store::DirectWordToBlock(value) != INVALID_POINTER);		\
-  Assert(Store::DirectWordToBlock(value)->GetLabel() == Alice::Cell);
+  Assert(Store::DirectWordToBlock(value) != INVALID_POINTER);
 
 //
 // UnsafeMapHandler
