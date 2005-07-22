@@ -359,6 +359,8 @@ class AliceDll Word8Array: private Chunk {
 public:
   static const u_int maxLen = String::maxSize;
 
+  static const s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
+
   using Chunk::ToWord;
 
   static Word8Array *New(u_int length) {
@@ -387,11 +389,12 @@ public:
   void Update(u_int index, word value) {
     Init(index, value);
   }
-  word Sub(u_int index) {
-//     s_int i = GetValue()[index];
-//     s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
-//     return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
+  word SubNoX(u_int index) {
     return Store::IntToWord(GetValue()[index]);
+  }
+  word Sub(u_int index) {
+    s_int i = GetValue()[index];
+    return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
   }
 };
 
@@ -425,11 +428,13 @@ public:
     // This is only meant to be called by Vector.tabulate
     Init(index, value);
   }
-  word Sub(u_int index) {
-//     s_int i = GetValue()[index];
-//     s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
-//     return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
+  word SubNoX(u_int index) {
     return Store::IntToWord(GetValue()[index]);
+  }
+  word Sub(u_int index) {
+    s_int i = GetValue()[index];
+    return Store::IntToWord(mydiv(i * Word8Array::nonbits_exp,
+				  Word8Array::nonbits_exp));
   }
 };
 
