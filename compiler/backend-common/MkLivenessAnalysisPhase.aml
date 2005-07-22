@@ -120,13 +120,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 
 	(* Main liveness analysis *)
 
-	fun difference (set1, set2) =
-	    Vector.fromList
-		(IdSet.fold (fn (id, rest) =>
-				if IdSet.member (set2, id) then rest
-				else id::rest) nil set1)
-
-	fun difference' (set1, set2, dontKill) =
+	fun difference (set1, set2, dontKill) =
 	    Vector.fromList
 		(IdSet.fold (fn (id, rest) =>
 				if IdSet.member (set2, id) then rest
@@ -438,7 +432,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val (elseBody, use) = laBody (elseBody, shared, dontKill)
 		val elseUse = IdSet.clone use
 		val tests = laTests (tests, use, shared, dontKill)
-		val elseBody = lastUse (difference (use, elseUse), elseBody)
+		val elseBody = lastUse (difference (use, elseUse, dontKill),
+					elseBody)
 		val idRef = laIdRef (idRef, use, dontKill)
 	    in
 		([TestStm (info, idRef, tests, elseBody)], use)
@@ -488,7 +483,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val tests =
 		    Vector.map (fn (lit, body, use') =>
 				   (lit,
-				    lastUse (difference (use, use'), body)))
+				    lastUse (difference (use, use', dontKill),
+					     body)))
 			       testUseVec
 	    in
 		LitTests tests
@@ -509,7 +505,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val tests =
 		    Vector.map (fn (n, idDefArgs, body, use') =>
 				   (n, idDefArgs,
-				    lastUse (difference (use, use'), body)))
+				    lastUse (difference (use, use', dontKill),
+					     body)))
 			       testUseVec
 	    in
 		TagTests (labels, tests)
@@ -531,7 +528,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val tests =
 		    Vector.map (fn (idRef, idDefArgs, body, use') =>
 				   (idRef, idDefArgs,
-				    lastUse (difference (use, use'), body)))
+				    lastUse (difference (use, use', dontKill),
+					     body)))
 			       testUseVec
 	    in
 		ConTests tests
@@ -551,7 +549,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val tests =
 		    Vector.map (fn (idDefs, body, use') =>
 				   (idDefs,
-				    lastUse (difference (use, use'), body)))
+				    lastUse (difference (use, use', dontKill),
+					     body)))
 			       testUseVec
 	    in
 		VecTests tests
@@ -609,7 +608,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    let
 		val (body, use') = laBody (body, StampMap.map (), IdSet.set ())
 		val idDefArgs = laIdDefArgs (idDefArgs, use')
-		val lastUses = difference' (use', use, dontKill)
+		val lastUses = difference (use', use, dontKill)
 	    in
 		IdSet.union (use, use');
  		(lastUses,
