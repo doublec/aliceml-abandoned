@@ -85,6 +85,7 @@ signature UNSAFE_IO_DESC_COMPONENT =
 		val openIn: string -> 'reader_iodesc
 		val openOut: string -> 'writer_iodesc
 		val openAppend: string -> 'writer_iodesc
+		val openOverwrite: string -> 'writer_iodesc
 
 		(* Creating pipe iodescs *)
 (*

@@ -1,52 +1,36 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature STREAM_IO from "STREAM_IO-sig"
+import structure BinPrimIO from "BinPrimIO"
+import signature IMPERATIVE_IO from "IMPERATIVE_IO-sig"
 
 signature BIN_IO =
     sig
-	structure StreamIO: STREAM_IO
-	    where type vector = Word8Vector.vector
-	      and type elem = Word8.word
-	      and type pos = Position.int
-
-	type vector = StreamIO.vector
-	type elem = StreamIO.elem
+	include IMPERATIVE_IO
+	    where type StreamIO.vector = BinPrimIO.vector
+	      and type StreamIO.elem   = BinPrimIO.elem
+	      and type StreamIO.pos    = BinPrimIO.pos
+	      and type StreamIO.reader = BinPrimIO.reader
+	      and type StreamIO.writer = BinPrimIO.writer
 
 	type instream
 	type outstream
 
 	val openIn: string -> instream
-	val input: instream -> vector
-	val input1: instream -> elem option
-	val inputN: instream * int -> vector
-	val inputAll: instream -> vector
-	val canInput: instream * int -> int option
-	val lookahead: instream -> elem option
-	val closeIn: instream -> unit
-	val endOfStream: instream -> bool
-	val mkInstream: StreamIO.instream -> instream
-	val getInstream: instream -> StreamIO.instream
-	val setInstream: instream * StreamIO.instream -> unit
-
 	val openOut: string -> outstream
 	val openAppend: string -> outstream
-	val output: outstream * vector -> unit
-	val output1: outstream * elem -> unit
-	val flushOut: outstream -> unit
-	val closeOut: outstream -> unit
-	val mkOutstream: StreamIO.outstream -> outstream
-	val getOutstream: outstream -> StreamIO.outstream
-	val setOutstream: outstream * StreamIO.outstream -> unit
-	val getPosOut: outstream -> StreamIO.out_pos
-	val setPosOut: outstream * StreamIO.out_pos -> unit
+	val openOverwrite: string -> outstream
+
+	val seekIn: instream * Position.int -> unit
+	val seekOut: outstream * Position.int -> unit
     end

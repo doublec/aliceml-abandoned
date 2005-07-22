@@ -186,4 +186,5 @@ structure IODesc :> IO_DESC =
 	fun openIn name = mkReader (UnsafeIODesc.openIn name)
 	fun openOut name = mkWriter (UnsafeIODesc.openOut name)
 	fun openAppend name = mkWriter (UnsafeIODesc.openAppend name)
+	fun openOverwrite name = mkWriter (UnsafeIODesc.openOverwrite name)
     end

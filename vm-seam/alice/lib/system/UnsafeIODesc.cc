@@ -345,6 +345,21 @@ DEFINE1(UnsafeIODesc_openAppend) {
 #endif
 } END
 
+DEFINE1(UnsafeIODesc_openOverwrite) {
+  DECLARE_STRING(name, x0);
+#if USE_WINSOCK
+  HANDLE hFile = CreateFile(name->ExportC(), GENERIC_WRITE, 0,
+			    NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
+  RETURN(IODesc::NewFromHandle(IODesc::DIR_WRITER, name, hFile)->ToWord());
+#else
+  int fd = open(name->ExportC(), O_WRONLY | O_CREAT | O_NONBLOCK,
+		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+  if (fd == -1) RAISE_SYS_ERR();
+  RETURN(IODesc::NewFromFD(IODesc::DIR_WRITER, name, fd)->ToWord());
+#endif
+} END
+
 AliceDll word UnsafeIODesc() {
   SysErrConstructor =
     UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
@@ -353,7 +368,7 @@ AliceDll word UnsafeIODesc() {
     UniqueConstructor::New("ClosedStream", "IO.ClosedStream")->ToWord();
   RootSet::Add(ClosedStreamConstructor);
 
-  Record *record = Record::New(32);
+  Record *record = Record::New(33);
   record->Init("'ClosedStream", ClosedStreamConstructor);
   record->Init("ClosedStream", ClosedStreamConstructor);
   // common operations supported by all readers/writers
@@ -420,6 +435,8 @@ AliceDll word UnsafeIODesc() {
 		 UnsafeIODesc_openOut, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "openAppend",
 		 UnsafeIODesc_openAppend, 1);
+  INIT_STRUCTURE(record, "UnsafeIODesc", "openOverwrite",
+		 UnsafeIODesc_openOverwrite, 1);
 
   //--** creating pipe iodescs
 

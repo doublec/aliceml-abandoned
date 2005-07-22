@@ -39,38 +39,77 @@
 	type instream
 	type outstream
 
-	val openIn :       string -> instream
-	val input :        instream -> vector
-	val input1 :       instream -> elem option
-	val inputN :       instream * int -> vector
-	val inputAll :     instream -> vector
-	val canInput :     instream * int -> int option
-	val lookahead :    instream -> elem option
-	val closeIn :      instream -> unit
-	val endOfStream :  instream -> bool
-	val mkInstream :   StreamIO.instream -> instream
-	val getInstream :  instream -> StreamIO.instream
-	val setInstream :  instream * StreamIO.instream -> unit
+	val openIn :        string -> instream
+	val input :         instream -> vector
+	val input1 :        instream -> elem option
+	val inputN :        instream * int -> vector
+	val inputAll :      instream -> vector
+	val seekIn :        instream * StreamIO.pos -> unit
+	val canInput :      instream * int -> int option
+	val lookahead :     instream -> elem option
+	val closeIn :       instream -> unit
+	val endOfStream :   instream -> bool
+	val mkInstream :    StreamIO.instream -> instream
+	val getInstream :   instream -> StreamIO.instream
+	val setInstream :   instream * StreamIO.instream -> unit
 
-	val openOut :      string -> outstream
-	val openAppend :   string -> outstream
-	val output :       outstream * vector -> unit
-	val output1 :      outstream * elem -> unit
-	val flushOut :     outstream -> unit
-	val closeOut :     outstream -> unit
-	val mkOutstream :  StreamIO.outstream -> outstream
-	val getOutstream : outstream -> StreamIO.outstream
-	val setOutstream : outstream * StreamIO.outstream -> unit
-	val getPosOut :    outstream -> StreamIO.out_pos
-	val setPosOut :    outstream * StreamIO.out_pos -> unit
+	val openOut :       string -> outstream
+	val openAppend :    string -> outstream
+	val openOverwrite : string -> outstream
+	val output :        outstream * vector -> unit
+	val output1 :       outstream * elem -> unit
+	val flushOut :      outstream -> unit
+	val seekOut :       outstream * StreamIO.pos -> unit
+	val closeOut :      outstream -> unit
+	val mkOutstream :   StreamIO.outstream -> outstream
+	val getOutstream :  outstream -> StreamIO.outstream
+	val setOutstream :  outstream * StreamIO.outstream -> unit
+	val getPosOut :     outstream -> StreamIO.out_pos
+	val setPosOut :     outstream * StreamIO.out_pos -> unit
     end
   </PRE>
 
 <?php section("description", "description") ?>
 
   <P>
-    Like the Standard ML Basis'
+    Items not described here are like in the Standard ML Basis'
     <A href="http://www.standardml.org/Basis/bin-io.html"><TT>BinIO</TT></A> structure.
   </P>
+
+  <DL>
+    <DT>
+      <TT>openOverwrite <I>name</I></TT>
+    </DT>
+    <DD>
+      <P>Opens the file <TT><I>name</I></TT> for writing. Like
+      <TT>openOut</TT>, except that the file is <I>not</I> truncated.</P>
+    </DD>
+
+    <DT>
+      <TT>seekIn (<I>is</I>, <I>pos</I>)</TT>
+    </DT>
+    <DD>
+      <P>Sets the absolute position of the stream <TT><I>is</I></TT> to
+      <TT><I>pos</I></TT> by applying <TT>setPos</TT> on the underlying reader.
+      Raises <TT>IO.RandomAccessNotSupported</TT> if the reader does not support
+      positioning. Note that this function extracts the reader from the
+      underlying functional stream, which truncates the stream. The imperative
+      stream is then redirected to a new functional stream reconstructed from
+      the reader.</P>
+    </DD>
+
+    <DT>
+      <TT>seekOut (<I>os</I>, <I>pos</I>)</TT>
+    </DT>
+    <DD>
+      <P>Sets the absolute position of the stream <TT><I>os</I></TT> to
+      <TT><I>pos</I></TT> by applying <TT>setPos</TT> on the underlying writer.
+      Raises <TT>IO.RandomAccessNotSupported</TT> if the writer does not support
+      positioning. Note that this function extracts the writer from the
+      underlying functional stream, which terminates the stream. The imperative
+      stream is then redirected to a new functional stream reconstructed from
+      the writer.</P>
+    </DD>
+  </DL>
 
 <?php footing() ?>

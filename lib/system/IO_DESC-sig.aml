@@ -57,4 +57,5 @@ signature IO_DESC =
 	val openIn: string -> ('v, 'a, 'vsl, 'asl, 'pos) reader
 	val openOut: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
 	val openAppend: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
+	val openOverwrite: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
     end

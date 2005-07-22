@@ -249,4 +249,16 @@ define
 				   'SOME'({ByteString.make I})))} unit
 		  end
 	       end)
+	    'openOverwrite':
+	       fun {$ Name}
+		  try
+		     {New Desc init({OS.open Name
+				     ['O_WRONLY' 'O_CREAT'
+				      'O_NONBLOCK'] AllPerm} Name writer)}
+		  catch system(os(_ _ I Text) ...) then
+		     {Exception.raiseError
+		      alice(SysErr({ByteString.make Text}
+				   'SOME'({ByteString.make I})))} unit
+		  end
+	       end)
 end

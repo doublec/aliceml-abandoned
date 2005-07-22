@@ -19,7 +19,7 @@ signature TEXT_IO =
 	structure StreamIO: TEXT_STREAM_IO
 			    where type reader = TextPrimIO.reader
 			      and type writer = TextPrimIO.writer
-			      and type pos = TextPrimIO.pos
+			      and type pos    = TextPrimIO.pos
 
 	type vector = string
 	type elem = char
