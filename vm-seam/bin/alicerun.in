@@ -2,9 +2,11 @@
 #
 # Author:
 #   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+#   Guido Tack <tack@ps.uni-sb.de>
 #
 # Copyright:
 #   Marco Kuhlmann, 2003
+#   Guido Tack, 2005
 #
 # Last Change:
 #   $Date$
@@ -75,8 +77,8 @@ export ALICE_HOME ALICE_LOAD
 case ${ALICE_C_DEBUGGER} in
     gdb*)
         ## To use the debugger on Unix:
-        : ${ALICE_C_DEBUG_TTY=$(basename $(tty))}
-        (echo "break Base.cc:22"; echo "tty /dev/pts/$ALICE_C_DEBUG_TTY"; echo run "${ALICE_DLL_PATH}"alice "$@"; cat) |
+        : ${ALICE_C_DEBUG_TTY=$(tty)}
+        (echo "break Base.cc:22"; echo "tty $ALICE_C_DEBUG_TTY"; echo run "${ALICE_DLL_PATH}"alice "$@"; cat) |
         exec gdb seam
         ;;
     ddd*)
