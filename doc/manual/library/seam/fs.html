@@ -72,7 +72,7 @@ sig
     val distinctN : space * setvar vector -> unit
     val partition : space * setvar * setvar * setvar -> unit
     val partitionN : space * setvar vector * setvar -> unit
-    val equals : space * setvar * setvar -> unit
+    val equal : space * setvar * setvar -> unit
     val convex : space * setvar -> unit
     val convexHull : space * setvar * setvar -> unit
     val seq : space * setvar vector -> unit
@@ -398,7 +398,7 @@ end
     </P></DD>
 
     <DT>
-      <TT>equals (<I>s, x, y</I>)</TT>
+      <TT>equal (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
