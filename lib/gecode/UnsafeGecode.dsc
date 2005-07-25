@@ -117,7 +117,7 @@ void noSubset(SetVar, SetVar); set_nosubset;
 void disjoint(SetVar, SetVar); set_disjoint;
 void distinct(SetVar, SetVar); set_distinct;
 void distinct(const SetVarArgs&); set_distinctn;
-void equals(SetVar, SetVar); set_equals;
+void equal(SetVar, SetVar); set_equal;
 void convex(SetVar); set_convex;
 void convexHull(SetVar, SetVar); set_convexHull;
 void fsunion(SetVar, SetVar, SetVar); set_union;

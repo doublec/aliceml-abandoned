@@ -89,7 +89,7 @@ struct
    val distinctN = UnsafeGecode.set_distinctn
    val partition = UnsafeGecode.set_partition
    val partitionN = UnsafeGecode.set_partitionn
-   val equals = UnsafeGecode.set_equals
+   val equal = UnsafeGecode.set_equal
    val convex = UnsafeGecode.set_convex
    val convexHull = UnsafeGecode.set_convexHull
    val seq = UnsafeGecode.set_seq
