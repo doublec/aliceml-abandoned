@@ -262,6 +262,7 @@ structure Resolver: RESOLVER =
 	datatype result =
 	    FILE of string
 	  | STRING of string
+	  | DELEGATE of Url.t
 
 	type resolver = { name: string,
 			  handlers: Handler.t list,
@@ -292,10 +293,10 @@ structure Resolver: RESOLVER =
 	  | exists (resolver as {memoizeMap = NONE, ...}, url) =
 	    exists' (resolver, url)
 	and exists' (resolver as {name, ...}, url) =
-	    case Url.getScheme url of
-		SOME "x-oz" => (*--** hack for Alice-on-Mozart *)
+	    case (Url.getScheme url, ""(*dummy to emulate guard*)) of
+		(SOME "x-oz", _) => (*--** hack for Alice-on-Mozart *)
 		    SOME (FILE (Url.toStringRaw url))
-	      | SOME "http" =>
+	      | (SOME "http", _) =>
 		    (let
 			 val response = HttpClient.get url
 		     in
@@ -305,16 +306,25 @@ structure Resolver: RESOLVER =
 			      SOME (STRING (#body response)))
 			 else NONE
 		     end handle _ => NONE)
-	      | _ =>
-		    (let
-			 val s = Url.toLocalFile url
-		     in
-			 if OS.FileSys.isDir s then NONE
-			 else
-			     (trace ("[" ^ name ^ "] ...localize succeeded (" ^
-				     s ^ ")\n");
-			      SOME (FILE s))
-		     end handle (Url.NotLocal | OS.SysErr _) => NONE)
+	      | ((SOME scheme, _) | (NONE, scheme)) =>
+		    if String.isPrefix "delegate-" scheme then
+			let
+			    val scheme' =
+				String.extract (scheme, size "delegate-", NONE)
+			in
+			    SOME (DELEGATE (Url.setScheme (url, SOME scheme')))
+			end
+		    else
+			(let
+			     val s = Url.toLocalFile url
+			 in
+			     if OS.FileSys.isDir s then NONE
+			     else
+				 (trace ("[" ^ name ^
+					 "] ...localize succeeded (" ^
+					 s ^ ")\n");
+				  SOME (FILE s))
+			 end handle (Url.NotLocal | OS.SysErr _) => NONE)
 
 	fun localize (resolver as {name, handlers, ...}) url =
 	    let

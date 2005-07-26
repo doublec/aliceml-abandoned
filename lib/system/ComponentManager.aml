@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Component from "Component"
+import structure PrimalManager from "Component"
 
-structure ComponentManager =
-    Component.MkManager(val resolver = Component.defaultResolver)
+structure ComponentManager = PrimalManager

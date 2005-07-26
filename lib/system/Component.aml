@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,8 +29,8 @@ import structure UrlMap            from "UrlMap"
 import signature COMPONENT         from "COMPONENT-sig"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 
-
-structure Component : COMPONENT =
+local
+structure Component' =
 struct
     nonfix mod
     type inf = Inf.t option
@@ -59,19 +59,22 @@ struct
 
     val extension = UnsafeComponent.extension
 
-    fun trace (NONE, s)   = ()
-      | trace (SOME f, s) =
-	(TextIO.output (f, "[component manager] " ^ s ^ "\n");
-	 TextIO.flushOut f)
+    fun trace (logger, id, s) =
+	logger ("[component manager " ^ Int.toString id ^ "] " ^ s ^ "\n")
 
     val defaultLogStream =
 	Option.map (fn "" => TextIO.stdErr
 		     | s  => TextIO.openOut s handle IO.Io _ =>
-			     (trace (SOME TextIO.stdErr,
+			     (trace (fn s => TextIO.output(TextIO.stdErr, s), 0,
 				     "warning: could not open log file " ^ s ^
 				     ", falling back to stderr");
 			      TextIO.stdErr))
 		   (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
+
+    fun defaultLogger s =
+	case defaultLogStream of
+	    NONE => ()
+	  | SOME f => (TextIO.output (f, s); TextIO.flushOut f)
 
     fun createEvaluated (mod, inf) = cast (EVALUATED {inf, mod}) : component
     fun createUnevaluated (imports, body, inf) =
@@ -98,30 +101,71 @@ struct
 	    (val component = createUnevaluated (imports, body, SOME Sig.x))
 	end
 
+    val primalHandlers =
+	case OS.Process.getEnv "ALICE_LOAD" of
+	    SOME s => Resolver.Handler.parse s
+	  | NONE => [Resolver.Handler.default]
+
+    val primalResolver =
+	    Resolver.resolver {name = "load", handlers = primalHandlers,
+			       memoize = true}
+
     val defaultResolver =
 	let
 	    val handlers =
-		case OS.Process.getEnv "ALICE_LOAD" of
-		    SOME s => Resolver.Handler.parse s
-		  | NONE => [Resolver.Handler.default]
+		Resolver.Handler.prefix ("x-alice:", "delegate-x-alice:")
+		::primalHandlers
 	in
 	    Resolver.resolver {name = "load", handlers, memoize = true}
 	end
 
-    fun load' (logStream, resolver) url =
+    fun safeUrl s = String.isPrefix "lib/fundamental/" s orelse
+		    String.isPrefix "lib/rtt/" s
+
+    type initial_table = (string * inf * mod) vector
+    val primalTable = lazy UnsafeComponent.getInitialTable ()
+    val defaultTable =
+	lazy Vector.fromList (List.filter (fn (s, inf, mod) => safeUrl s)
+					  (Vector.toList primalTable))
+
+    val natives: component UrlMap.t =
+	lazy UrlMap.map (
+		Vector.fromList (
+		    List.mapPartial
+		    (fn (s, NONE, mod) =>
+			    (SOME (Url.fromString ("x-alice:/" ^ s),
+			     cast (EVALUATED {mod, inf=NONE})))
+		      | _ => NONE) (Vector.toList primalTable)))
+
+    fun load' (logger, id, resolver, delegate) url =
 	case Resolver.localize resolver url of
 	    SOME (Resolver.FILE name) =>
 		(UnsafeComponent.load name
 		 handle UnsafeComponent.CorruptInternal =>
-		     UnsafeComponent.linkNative name
-		     handle cause as UnsafeComponent.Native msg =>
-			    (trace (logStream, "linkNative: " ^ msg);
-			     raise IO.Io {name, function = "load", cause})
-			  | UnsafeComponent.CorruptInternal =>
-			    (trace (logStream,
-				    "linkNative: could not resolve symbol");
-			     raise IO.Io {name, function = "load",
-					  cause = Corrupt}))
+		 case UrlMap.lookupNew (natives, Url.fromString name) of
+		     UrlMap.EXISTING component => component
+		   | UrlMap.NEW p =>
+		     let
+			 val component = UnsafeComponent.linkNative name
+		     in
+			 Promise.fulfill (p, component); component
+		     end
+		     handle cause' =>
+			let
+			    val (cause, msg) =
+				case cause' of
+				    UnsafeComponent.Native msg =>
+					(cause', msg)
+				  | UnsafeComponent.CorruptInternal =>
+					(Corrupt, "could not resolve symbol")
+				  | _ =>
+					(cause',
+					 "internal exception "^ Exn.name cause')
+			     val exn = IO.Io {name, function = "load", cause}
+			in
+			     trace (logger, id, "link native " ^ msg);
+			     Promise.fail (p, exn); raise exn
+			end)
 	  | SOME (Resolver.STRING string) =>
 		(UnsafeComponent.unpack_ (UnsafeComponent.unzip string)
 		 handle (UnsafeComponent.CorruptInternal | UnsafeComponent.Corrupt) =>
@@ -130,10 +174,47 @@ struct
 		      | cause =>
 			    raise IO.Io {name = Url.toStringRaw url,
 					 function = "load", cause})
+	  | SOME (Resolver.DELEGATE url') => delegate (logger, id, url)
 	  | NONE => raise IO.Io {name = Url.toStringRaw url,
 				 function = "load", cause = NotFound}
 
-    val load = load' (defaultLogStream, defaultResolver)
+    val defaultLoadPromise = Promise.promise ()
+    val defaultLinkPromise = Promise.promise ()
+    val defaultLoad = Promise.future defaultLoadPromise
+    val defaultLink = Promise.future defaultLinkPromise
+
+    fun loadDelegate (logger, id, url) =
+	(trace (logger, id, "delegate load " ^ Url.toStringRaw url);
+	 defaultLoad url before
+	 trace (logger, id, "inherited back " ^ Url.toStringRaw url)
+	 handle Failure (_, e) =>
+	    (trace (logger, id, "delegation failed with exception " ^
+				Exn.name e ^ " for " ^ Url.toStringRaw url);
+	     raise IO.Io {name = Url.toStringRaw url,
+			  function = "load", cause = e}))
+
+    fun linkDelegate (logger, id, url) =
+	(trace (logger, id, "delegate link " ^ Url.toStringRaw url);
+	 fromPackage (defaultLink url) before
+	 trace (logger, id, "inherited back " ^ Url.toStringRaw url)
+	 handle Failure (_, e) =>
+	    case UrlMap.lookup (natives, url) of
+		SOME component => (* pervasive component *)
+		    (trace (logger, id, "inherited back native " ^
+					Url.toStringRaw url);
+		     component)
+	      | NONE =>
+		    (trace (logger, id, "delegation failed with exception " ^
+			     Exn.name e ^ " for " ^ Url.toStringRaw url);
+		     raise IO.Io {name = Url.toStringRaw url,
+				  function = "load", cause = e}))
+
+    fun noDelegate (logger, id, url) =
+	(trace (logger, id, "delegate failed " ^ Url.toStringRaw url);
+	 raise IO.Io {name = Url.toStringRaw url,
+		      function = "load", cause = NotFound})
+
+    val load = load' (defaultLogger, 0, defaultResolver, noDelegate)
 
     fun save (name, component) =
 	UnsafeComponent.save (name, component)
@@ -150,33 +231,39 @@ struct
 	Vector.map (Pair.mapFst Url.fromString) imports
       | imports' (EVALUATED _) = #[]
 
-    val initialTable = lazy UnsafeComponent.getInitialTable ()
 
-    functor MkManager (val resolver: Resolver.t) : COMPONENT_MANAGER =
+    signature MANAGER_CONFIG = (val initialTable : initial_table
+				val resolver : Resolver.t)
+
+    val idCounter = ref 1
+
+    functor MkManager'' (Config: MANAGER_CONFIG) =
     struct
 	(*--** should query and fragment be rejected instead of ignored? *)
-	type outstream = TextIO.outstream
+
+	val id = !idCounter before idCounter := !idCounter+1
 
 	exception Conflict
 
-	val logStream = ref defaultLogStream
+	val logger = ref defaultLogger
 
 	val map: (mod * inf) UrlMap.t =
 	    lazy UrlMap.map (Vector.map (fn (s, inf, mod) =>
 					 (Url.fromString ("x-alice:/" ^ s),
 					  (mod, inf)))
-			     initialTable)
+
+			     Config.initialTable)
 
 	fun matchWith (rea, SOME inf, SOME importInf) =
 	    Inf.matchWith (rea, inf, importInf)
 	  | matchWith (rea, NONE, SOME _) =
-	    trace (!logStream,
+	    trace (!logger, id,
 		   "warning: no export signature, accepted unchecked")
 	  | matchWith (rea, SOME _, NONE) =
-	    trace (!logStream,
+	    trace (!logger, id,
 		   "warning: no import signature, accepted unchecked")
 	  | matchWith (rea, NONE, NONE) =
-	    trace (!logStream,
+	    trace (!logger, id,
 		   "warning: no import/export signatures, accepted unchecked")
 
 	fun pathToString path = PrettyPrint.toString (PPPath.ppPath path, 10000)
@@ -194,50 +281,53 @@ struct
 					  SOME s => " imported by " ^ s
 					| NONE => " linked explicitly")
 	    in
-		trace (!logStream, "type-checking " ^ message);
+		trace (!logger, id, "type-checking " ^ message);
 		Exn.catch
 		  (fn packet =>
 		   case Exn.fromPacket packet of
 		     Inf.Mismatch m =>
-		     (trace (!logStream, "type-checking failed");
-		      trace (!logStream, "signature expected" ^
-					 (case baseUrlOpt' of
-					      NONE => ""
-					    | SOME s => " by " ^ s) ^
-			    		 ":\n" ^ infToString importInf);
-		      trace (!logStream, "signature found in " ^ url' ^
-					 ":\n" ^ infToString inf);
-		      trace (!logStream, "under realisation\n" ^
-					 PathMap.foldi (fn (path, typ, s) =>
-					     pathToString path ^ " -> " ^
-					     typToString typ ^ "\n" ^ s)
-					 (PathMap.foldi (fn (path, inf, s) =>
-					     pathToString path ^ " ->\n" ^
-					     infToString (SOME inf)^ "\n" ^ s)
-					  "" (#inf_rea rea)) (#typ_rea rea));
+		     (trace (!logger, id, "type-checking failed");
+		      trace (!logger, id, "signature expected" ^
+					  (case baseUrlOpt' of
+					       NONE => ""
+					     | SOME s => " by " ^ s) ^
+			    		  ":\n" ^ infToString importInf);
+		      trace (!logger, id, "signature found in " ^ url' ^
+					  ":\n" ^ infToString inf);
+		      trace (!logger, id, "under realisation\n" ^
+					  PathMap.foldi (fn (path, typ, s) =>
+					      pathToString path ^ " -> " ^
+					      typToString typ ^ "\n" ^ s)
+					  (PathMap.foldi (fn (path, inf, s) =>
+					      pathToString path ^ " ->\n" ^
+					      infToString (SOME inf)^ "\n" ^ s)
+					   "" (#inf_rea rea)) (#typ_rea rea));
 		      reraiseAs
 		      (packet, Failure (url, Mismatch {component = url,
 						       request = baseUrlOpt,
 						       cause = m})))
 		   | Failure (url', e) =>
-		     (trace (!logStream, "exception " ^ exnName e ^
-					 " propagated from " ^
-					 Url.toStringRaw url' ^
-					 " during type-checking");
+		     (trace (!logger, id, "exception " ^ exnName e ^
+					  " propagated from " ^
+					      Url.toStringRaw url' ^
+					      " during type-checking");
 		      reraiseAs (packet, Failure (url, e)))
 		   | e =>
-		     (trace (!logStream, "internal exception " ^ exnName e ^
-					 " during type-checking");
+		     (trace (!logger, id, "internal exception " ^ exnName e ^
+					      " during type-checking");
 		      reraiseAs (packet, Failure (url, Internal e))))
 		  (fn _ => matchWith (rea, inf, importInf));
-		trace (!logStream, "type-checked  " ^ message);
+		trace (!logger, id, "type-checked  " ^ message);
 		mod
 	    end
 
-	fun load url =
+	fun load'' (url, delegate) =
 	    Exn.catch (fn packet =>
 			reraiseAs (packet, Failure(url, Exn.fromPacket packet)))
-		      (fn _ => 	load' (!logStream, resolver) url)
+		      (fn _ => 	load' (!logger, id, Config.resolver, delegate)
+				      url)
+
+	fun load url = load'' (url, loadDelegate)
 
 	fun lazyLink url : mod * inf =
 	    let
@@ -246,7 +336,8 @@ struct
 			UrlMap.EXISTING entry => entry
 		      | UrlMap.NEW p =>
 			    let
-				val entry = lazy eval' (url, load url)
+				val entry =
+				    lazy eval' (url, load'' (url, linkDelegate))
 			    in
 				Promise.fulfill (p, entry); entry
 			    end
@@ -264,8 +355,8 @@ struct
 		    NONE => ()
 		  | SOME inf' => DynMatch.matchWith (rea, mod', inf');
 (*DEBUG
-trace (!logStream, "considering import " ^ Url.toStringRaw url ^ ":\n" ^ infToString importInf);
-trace (!logStream, "extended realisation after considering import " ^ Url.toStringRaw url ^ ":" ^
+trace (!logger, id, "considering import " ^ Url.toStringRaw url ^ ":\n" ^ infToString importInf);
+trace (!logger, id, "extended realisation after considering import " ^ Url.toStringRaw url ^ ":" ^
 	 PathMap.foldi (fn (path, typ, s) => "\n" ^ pathToString path ^ " -> _" ^ s)
 	 (PathMap.foldi (fn (path, inf, s) => "\n" ^ pathToString path ^ " -> _" ^ s)
 	  "" (#inf_rea rea)) (#typ_rea rea));
@@ -286,25 +377,27 @@ trace (!logStream, "extended realisation after considering import " ^ Url.toStri
 		    end
 		val rea = Inf.rea ()
 (*DEBUG
-val _ = trace (!logStream, "linking " ^ Url.toStringRaw baseUrl ^ "...")
+val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 *)
 		val imports' =
 		    Vector.map (fn (importUrlS, importInf) =>
 				   typedLink (resolve importUrlS, rea,
 					      importInf, SOME baseUrl))
 			       imports
-		val _ = trace (!logStream, "evaluating " ^ Url.toStringRaw baseUrl)
+		val _ = trace (!logger, id,
+			       "evaluating " ^ Url.toStringRaw baseUrl)
 		val mod = Exn.catch
 			  (fn packet =>
 			   case Exn.fromPacket packet of
 			      Failure _ => Exn.reraise packet
 			    | e =>
-			      (trace (!logStream,
+			      (trace (!logger, id,
 				      "evaluation failed in " ^
 				      Url.toStringRaw baseUrl);
 			       reraiseAs (packet, Failure (baseUrl, Eval e))))
 			  (fn _ => body imports')
-		val _ = trace (!logStream, "evaluated  " ^ Url.toStringRaw baseUrl)
+		val _ = trace (!logger, id,
+			       "evaluated  " ^ Url.toStringRaw baseUrl)
 		val dynInf =
 		    case inf of
 			NONE => NONE
@@ -336,6 +429,7 @@ val _ = trace (!logStream, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 
 	fun link url =
 	    let
+		val _ = trace (!logger, id, "link " ^ Url.toStringRaw url)
 		val (mod, inf) = lazyLink (validate url)
 	    in
 		case inf of
@@ -343,10 +437,17 @@ val _ = trace (!logStream, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 		  | NONE => raise Failure (url, Internal Corrupt)
 	    end
 
-	fun enter (url', component) withval url = validate url' end =
-	    case UrlMap.lookupNew (map, url) of
-		UrlMap.EXISTING _ => raise Conflict
-	      | UrlMap.NEW p => Promise.fulfill (p, lazy eval' (url, component))
+	fun enter (url', component) =
+	    let
+		val url = validate url'
+	    in
+		case UrlMap.lookupNew (map, url) of
+		    UrlMap.EXISTING _ => raise Conflict
+		  | UrlMap.NEW p =>
+			Promise.fulfill (p, lazy eval' (url, component))
+			before trace (!logger, id,
+				      "entered " ^ Url.toStringRaw url)
+	    end
 
 	fun lookup url =
 	    case UrlMap.lookup (map, validate url) of
@@ -379,5 +480,37 @@ val _ = trace (!logStream, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 	    (val _ = enter (url, fromPackage (pack X : S)))
     end
 
+    val url = Url.fromString "x-alice:/lib/system/Component"
+    val managerUrl = Url.fromString "x-alice:/lib/system/ComponentManager"
 
+    functor MkManager' (Config : MANAGER_CONFIG) : COMPONENT_MANAGER =
+    let
+	structure Manager = MkManager'' Config
+	val self =
+	    fromPackage (pack (structure ComponentManager = Manager)
+			    : (structure ComponentManager : COMPONENT_MANAGER))
+	val _ = Manager.enter (managerUrl, self)
+    in
+	Manager
+    end
+
+    functor MkManager (val resolver : Resolver.t) =
+	MkManager' (val resolver = resolver val initialTable = defaultTable)
+end
+in
+    structure Component : COMPONENT = Component'
+    structure PrimalManager =
+	Component'.MkManager' (val resolver = Component'.primalResolver
+			       val initialTable = Component'.primalTable)
+    val _ =
+	let
+	    val self = pack (structure Component = Component
+			     structure PrimalManager = PrimalManager)
+			  : (structure Component : COMPONENT
+			     structure PrimalManager : COMPONENT_MANAGER)
+	in
+	    PrimalManager.enter (Component'.url, Component.fromPackage self)
+	end
+    val _ = Promise.fulfill (Component'.defaultLoadPromise, PrimalManager.load)
+    val _ = Promise.fulfill (Component'.defaultLinkPromise, PrimalManager.link)
 end

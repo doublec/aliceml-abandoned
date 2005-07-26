@@ -18,11 +18,9 @@ local
 in
     signature COMPONENT_MANAGER =
     sig
-	type outstream
-
 	exception Conflict
 
-	val logStream: outstream option ref
+	val logger: (string -> unit) ref
 
 	val load: Url.t -> component                (* Component.Failure *)
 	val eval: Url.t * component -> package      (* Component.Failure *)

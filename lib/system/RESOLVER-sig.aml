@@ -23,6 +23,7 @@ signature RESOLVER =
 	datatype result =
 	    FILE of string
 	  | STRING of string
+	  | DELEGATE of Url.t
 
 	val resolver: {name: string, handlers: Handler.t list,
 		       memoize: bool} -> resolver
