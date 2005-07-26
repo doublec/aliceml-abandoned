@@ -1,54 +1,70 @@
 Runtime System:
 
+* [FIX] Custom component managers can no longer be bypassed by importing global
+        ComponentManager explicitly.
 * [FIX] Importing from HTTP was broken (bug 120).
+* [FIX] Native components (DLLs) are now loaded only once, even with multiple
+        component managers.
 * [FIX] VM no longer goes into busy loop when stdIn has been closed and no
         thread is runnable.
 
 Compiler:
 
-* [NEW] Implemented signature inclusion (still with restrictions).
-* [CHG] Improved some error messages.
+* [NEW] Implemented limited form of signature inclusion (bug 151).
 * [FIX] Make type-checking work properly in the presence of diamond import of
         abstract types through components compiled against different versions
         of the type. This requires indirectly imported component to be present.
 * [FIX] Fixed bug in type variable scope resolution (bug 140).
 * [FIX] Fixed bug allowing non-value expressions and unsound typing in val rec.
+* [FIX] Fixed bug in liveness analysis that broke exception handlers (bug 123).
 * [FIX] Under Windows, outputting error messages for files compiled on
-        drives other than the current didn't work.
+        drives other than the current didn't work; improved some messages.
 * [FIX] Fixed border case where lexer went into infinite loop for some inputs
         only consisting of one token.
 
 Interactive Toplevel:
 
+* [NEW] Better handling of file loading and loading failure in Gui (including
+        bugs 138, 142).
+* [NEW] Check file for external changes before saving.
+* [NEW] Reset now also clears component manager thanks to whole session being
+        executed in a sandbox; global function `reset' for reset in text mode.
 * [NEW] GUI I/O pane can be cleared via menu.
 * [NEW] Nesting depth and width printing limits are now configurable.
 * [NEW] Array2.array and most library exceptions recognized by printer.
-* [CHG] When invoked with file arguments (or "-"), session is not reloaded.
-* [CHG] Dialogue for handling of file loading and loading failure in Gui.
+* [CHG] When invoked with file arguments (or "-"), old session is not reloaded.
+* [FIX] Miscellaneous usability tweaks and fixes in GUI.
 * [FIX] Jump-to-error works with Windows paths containing volumes.
-* [FIX] Miscellaneous usability tweaks and fixes in GUI (including bugs 138,
-        142).
 * [FIX] Fixed pretty-printing of values of datatypes with more than 100
         constructors.
 
 Basic Library:
 
+* [NEW] BinIO: added `openOverwrite', `seekIn', `seekOut'.
 * [NEW] Print: added `depth' and `width' to control printing bounds (also
         control output of the toplevel); renamed `printWidth' to `layoutWidth'.
 * [NEW] Print: Array2.array and most library exceptions recognized by printer.
+* [NEW] Resolver, ComponentManager: added delegation.
 * [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
+* [CHG] ComponentManager: replaced `logStream' by `logger' function, to avoid
+        type dependencies; log now contains manager's id.
 * [FIX] IntInf: fixed `~>>'.
 * [FIX] Real: fixed `rem' and `hash'; fixed isFinite and isNormal for NaN.
 * [FIX] Substring: fixed `isSuffix'.
+* [FIX] Word8{Vector,Array}: result from `sub' was broken when >= 128 (bug 119).
 * [FIX] Array2: properly treat zero-size regions (bug 127).
 * [FIX] OS.Path: fixed handling of volumes in `mkRelative' and `concat'.
 * [FIX] TextIO: closing `stdIn' now works on Windows.
+* [FIX] BinIO: added missing type sharing with BinPrimIO.{reader,writer}.
 * [FIX] ComponentManager: loading components via HTTP was broken (bug 120).
+* [FIX] Store: fixed crash with `futures' function (bug 146).
 
 Constraint Library:
 
-* [NEW] Explorer: improved keyboard navigation.
+* [CHG] General overhaul of interface, particularly for finite sets in FS.
+* [NEW] Explorer: recomputation depth can now be configured.
 * [NEW] Explorer: option to stop search after tree has reached a certain size.
+* [NEW] Explorer: improved keyboard navigation.
 * [FIX] Explorer: status bar is now reset upon each new search.
 * [FIX] Explorer: branch-and-bound works properly for more than one search.
 * [FIX] Lots and lots of fixes in the Gecode implementation.
@@ -56,6 +72,11 @@ Constraint Library:
 * [FIX] FD: fixed `intvar' (bug 122).
 * [FIX] Documentation is in sync with the library again (bugs 124, 125, 129,
         131, 132, 143, 144).
+
+Gtk Library:
+
+* [FIX] Fixed representation of GdkAtoms, which could cause assertion failures
+        on some platforms (bug 145).
 
 Other Libraries:
 

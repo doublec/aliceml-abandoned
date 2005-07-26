@@ -14,7 +14,7 @@ Language:
 
 Compiler:
 
-* Signature inclusion has been implemented (still with restrictions).
+* Signature inclusion has been implemented in limited form.
 * Dynamic sealing has been implemented.
 * Warn about unused imports (switch --(no-)warn-unused-imports).
 * Warn about inaccessible type and signature names appearing in inferred
@@ -32,6 +32,7 @@ Compiler:
 * Produce proper error messages for out-of-range literals.
 * Fixed bug in type variable scope resolution.
 * Fixed bug that allowed non-value expressions and unsound typing in val rec.
+* Fixed bug in liveness analysis that could break exception handlers.
 * Fixed border case where lexer went into infinite loop for some inputs only
   consisting of one token.
 * Don't use encoded URLs in error messages.
@@ -62,9 +63,10 @@ Library:
   - Functions eval and link return packages now.
   - Link and link are no longer lazy.
   - Removed start (equivalent to ignore o link).
-  - logStream reference to configure trace destinations. Preconfigurable
+  - logger reference to configure trace destinations. Preconfigurable
     through value of ALICE_TRACE_COMPONENT.
   - Trace messages are more informative, particularly wrt signature mismatches.
+* Resolver, ComponentManager: added delegation.
 * Toplevel: Future.await is now available unqualified; fst and snd no longer.
 * Word[N]: fixed compare.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
@@ -99,6 +101,8 @@ Library:
 * Package: deleted separate val_package type.
 * TextIO, StreamIO: fixed buffering of TTY output.
 * TextIO: implemented CR/NL translation properly.
+* BinIO: added openOverwrite and seek{In,Out}.
+* BinIO: added missing type sharing with BinPrimIO.{reader,writer}.
 * PrimIO: new functions openVectorList{Rd,Wr}, useful for internal redirection.
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
