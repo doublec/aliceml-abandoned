@@ -242,6 +242,20 @@ DEFINE1(Array_toList) {
   RETURN(list);
 } END
 
+#if defined(YArray)
+DEFINE1(Array_toListNoX) {
+  DECLARE_XARRAY(array, x0);
+  word list = Store::IntToWord(Types::nil);
+  for (u_int i = array->GetLength(); i--; ) {
+    TagVal *cons = TagVal::New(Types::cons, 2);
+    cons->Init(0, array->SubNoX(i));
+    cons->Init(1, list);
+    list = cons->ToWord();
+  }
+  RETURN(list);
+} END
+#endif
+
 DEFINE3(Array_update) {
   DECLARE_XARRAY(array, x0);
   DECLARE_INT(index, x1);
@@ -272,7 +286,7 @@ void PrimitiveTable::XCONCAT(Register,XArray)() {
   Register(XSTRINGIFY(YArray)".maxLen", Store::IntToWord(XArray::maxLen));
   Register(XSTRINGIFY(YArray)".sub", Array_subNoX, 2);
   Register(XSTRINGIFY(YArray)".tabulate", Array_tabulate, 2);
-  Register(XSTRINGIFY(YArray)".toList", Array_toList, 1);
+  Register(XSTRINGIFY(YArray)".toList", Array_toListNoX, 1);
   Register(XSTRINGIFY(YArray)".update", Array_update, 3);
 #endif
 }
