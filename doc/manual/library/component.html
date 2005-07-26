@@ -262,10 +262,10 @@
     </DT>
     <DD>
       <P>returns a new component manager with a component table empty but
-	for the virtual machine's built-in components and those components
-	that had to be loaded to initialize the system's boot component
-	manager.  The returned component manager uses <TT><I>resolver</I></TT>
-	to locate its components.</P>
+	for the virtual machine's safe built-in components and the component
+	manager itself. The returned component manager uses
+	<TT><I>resolver</I></TT> to locate its components. Delegated requests
+	are passed on to the default manager.</P>
     </DD>
   </DL>
 

@@ -50,7 +50,7 @@
     sig
 	exception <A href="#Conflict">Conflict</A>
 
-	val <A href="#logStream">logStream</A> : TextIO.outstream option ref
+	val <A href="#logger">logger</A> : (string -> unit) ref
 
 	val <A href="#load">load</A> : <A href="url.html#t">Url.t</A> -> Component.t
 	val <A href="#eval">eval</A> : <A href="url.html#t">Url.t</A> * Component.t -> package
@@ -82,14 +82,13 @@
     </DD>
 
     <DT>
-      <TT>val <A name="logStream">logStream</A></TT>
+      <TT>val <A name="logger">logger</A></TT>
     </DT>
     <DD>
-      <P>if set to <TT>SOME</TT> <TT><I>os</I></TT>, the component manager
-        will log its activity on stream <TT><I>os</I></TT>, otherwise it
-	remains silent. The default can be configured using the
-	environment variable <TT>ALICE_TRACE_COMPONENT</TT>, see structure
-	<A href="component.html"><TT>Component</TT></A>.</P>
+      <P>set to a function that receives logging information from the component
+        manager. The default activity is <TT>ignore</TT>, but can be configured
+	using the environment variable <TT>ALICE_TRACE_COMPONENT</TT>, see
+	structure <A href="component.html"><TT>Component</TT></A>.</P>
     </DD>
 
     <DT>

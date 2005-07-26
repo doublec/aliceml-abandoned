@@ -58,9 +58,10 @@
 	datatype <A href="#result">result</A> =
 	    FILE of string
 	  | STRING of string
+	  | DELEGATE of <A href="url.html#t">Url.t</A>
 
 	val <A href="#resolver">resolver</A> : {name : string, handlers : <A href="resolver-handler.html#t">Handler.t</A> list, memoize : bool} -> resolver
-	val <A href="#localize">localize</A> : resolver -> <A href=ürl.html#t">Url.t</A> -> result option
+	val <A href="#localize">localize</A> : resolver -> <A href="url.html#t">Url.t</A> -> result option
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -115,6 +116,7 @@
     <DT>
       <TT>datatype <A name="result">result</A> = FILE of string
 	| STRING of string</TT>
+        | DELEGATE of <A href="url.html#t">Url.t</A>
     </DT>
     <DD>
       <P>The type of results of localization acts.  If localization
@@ -126,7 +128,12 @@
 	are resolved with respect to the current working directory.  If the
 	resource was found on a remote site, the resource is downloaded into
 	a string&nbsp;<TT><I>s</I></TT> and the result of the localization
-	act is <TT>STRING&nbsp;<I>s</I></TT>.</P>
+	act is <TT>STRING&nbsp;<I>s</I></TT>. If the resource shall be
+	localized by secondary resolution under URL <TT><I>url</I></TT>, then
+	<TT>DELEGATE&nbsp;<I>url</I></TT> is returned. Delegation is
+	requested by a handler rewriting a URL <TT><I>url</I></TT> to
+	<TT>delegate-<I>url</I></TT>. The <TT>delegate-<TT> prefix
+	will be removed in the result URL.</P>
     </DD>
 
     <DT>
