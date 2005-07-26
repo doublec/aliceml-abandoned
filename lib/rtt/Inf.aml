@@ -542,7 +542,9 @@ struct
     and boundPathsSig'(b,pso,s)	= List.app (boundPathsItem'(b,pso)) (items s)
     and boundPathsItem' (b,pso) (FIX _)    = ()
       | boundPathsItem' (b,pso) (VAL(l,t)) = ()
-      | boundPathsItem' (b,pso) (TYP(p,k)) = PathMap.insert(#typ b, p, (pso,k))
+      | boundPathsItem' (b,pso) (TYP(p,k)) =
+	(* Hack to create less dependencies *)
+	if Path.isPervasive p then () else PathMap.insert(#typ b, p, (pso,k))
       | boundPathsItem' (b,pso) (MOD(p,j)) =
 	(
 	    PathMap.insert(#mod b, p, (pso,j));
