@@ -90,6 +90,7 @@ DEFINE0(UnsafeComponent_getInitialTable) {
     }
     Assert(keyQueue->IsEmpty());
     result = vector->ToWord();
+    RootSet::Add(result);
   }
   RETURN(result);
 } END
