@@ -370,8 +370,7 @@ structure GuiMain =
 					      else OS.FileSys.chDir dir) srcDir;
 		       evalSignal := NONE)
 	    end
-                                | SOME _ =>
-                                  FileDialog.message "Still evaluating."
+          | SOME _ => FileDialog.message "Still evaluating."
 
         fun feedFile() =
             (* FIXME: race condition, use promises and Ref.exchange! *)

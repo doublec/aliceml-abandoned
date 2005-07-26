@@ -17,7 +17,7 @@ import structure Component   from "x-alice:/lib/system/Component"
 import structure PPComponent from "x-alice:/lib/system/PPComponent"
 import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
-import structure Compiler    from "x-alice:/lib/system/Compiler"
+import signature COMPILER    from "x-alice:/lib/system/COMPILER-sig"
 import structure Config      from "x-alice:/lib/system/Config"
 import signature CORE_TOPLEVEL from "CORE_TOPLEVEL-sig"
 
@@ -33,7 +33,6 @@ struct
     val errStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdErr)
     val traceWidth  = ref 80
     val traceStream = TextIO.mkOutstream null
-
 
     (* Signal handling *)
 
@@ -71,195 +70,253 @@ struct
 
     (* Evaluation *)
 
-    fun trace s = TextIO.output (traceStream, "-- " ^ s ^ "\n")
+    signature EVALUATOR =
+    sig
+	val init	: unit -> unit
+	val eval	: string * signal -> unit
+	val evalFile	: string * signal -> unit
+    end
 
-    fun call prepare (env, source) =
-	Compiler.withStreams {out = SOME outStream, err = SOME errStream,
-			      trace = SOME traceStream}
-	(Compiler.withWidths {out = !outWidth, err = !errWidth,
-			      trace = !traceWidth}
-	 prepare) (env, source)
+    functor MkEvaluator (Compiler : COMPILER) : EVALUATOR =
+    struct
+	fun trace s = TextIO.output (traceStream, "-- " ^ s ^ "\n")
 
-    fun eval' (prepare, cd) (printSig, env, source, signal) =
-	(
-	    (case interruptable (signal, fn _ => call prepare (env, source))
-	     of NONE => (* interrupted *)
-		(TextIO.output (errStream, "Compilation interrupted\n"); NONE)
-	      | SOME (env', eval, inf) => (* completed or stopped *)
-	     case interruptable
-		  (signal,
-		   fn _ =>
-		   let
-		       val dir  = OS.FileSys.getDir ()
-		       val dir' = OS.Path.getParent source
-				  handle OS.Path.Path => dir
-		       val cd   = cd andalso dir' <> dir andalso
-				  case Url.getScheme (Url.fromString source)
-				   of (NONE | SOME "file") => true | _ => false
-		       val act  = if Future.isFuture signal (* not stopped *)
-				  then fn f => f ()
-				  else Future.byneed
-		   in
-		       if cd then OS.FileSys.chDir dir' else ();
-		       Exn.catch
-		       (fn packet =>
-			case Exn.fromPacket packet
-			 of Component.Failure _ => Exn.reraise packet
-			  | exn => Exn.reraise (Exn.update (packet,
-						Component.Failure
-						(Url.fromString "/",
-						 Component.Eval exn)))
-		       )
-		       (fn _ => act (#1 o Reflect.reflectPackage o eval))
-		       finally
-			   (* Hack: this fails when the code cd'ed to
-			    * its file's own directory... *)
-			   if cd andalso OS.FileSys.getDir () = dir'
-			   then OS.FileSys.chDir dir else ()
-		   end)
-	     of NONE =>
-		(TextIO.output (errStream, "Evaluation interrupted\n"); NONE)
-	      | SOME str => (* completed or stopped *)
-	     if not printSig then SOME env' else
-	     case interruptable
-		  (if Future.isFuture signal then signal else dummySignal,
-		   fn _ =>
-		   let
-		       val _   = trace "Printing..."
-		       val doc = PPComponent.ppComp (str, inf)
-		   in
-		       PrettyPrint.output (outStream, doc, !outWidth);
-		       if PrettyPrint.isEmpty doc then ()
-		       else TextIO.output (outStream, "\n")
-		   end)
-	     of NONE =>
-		(TextIO.output (errStream, "Output interrupted\n"); SOME env')
-	      | SOME () => SOME env'
+	fun call prepare (env, source) =
+	    Compiler.withStreams {out = SOME outStream, err = SOME errStream,
+				  trace = SOME traceStream}
+	    (Compiler.withWidths {out = !outWidth, err = !errWidth,
+				  trace = !traceWidth}
+	     prepare) (env, source)
+
+	fun eval' (prepare, cd) (printSig, env, source, signal) =
+	    (
+		(case interruptable (signal, fn _ => call prepare (env, source))
+		 of NONE => (* interrupted *)
+		    (TextIO.output (errStream, "Compilation interrupted\n"); NONE)
+		  | SOME (env', eval, inf) => (* completed or stopped *)
+		 case interruptable
+		      (signal,
+		       fn _ =>
+		       let
+			   val dir  = OS.FileSys.getDir ()
+			   val dir' = OS.Path.getParent source
+				      handle OS.Path.Path => dir
+			   val cd   = cd andalso dir' <> dir andalso
+				      case Url.getScheme (Url.fromString source)
+				       of (NONE | SOME "file") => true | _ => false
+			   val act  = if Future.isFuture signal (* not stopped *)
+				      then fn f => f ()
+				      else Future.byneed
+		       in
+			   if cd then OS.FileSys.chDir dir' else ();
+			   Exn.catch
+			   (fn packet =>
+			    case Exn.fromPacket packet
+			     of Component.Failure _ => Exn.reraise packet
+			      | exn => Exn.reraise (Exn.update (packet,
+						    Component.Failure
+						    (Url.fromString "/",
+						     Component.Eval exn)))
+			   )
+			   (fn _ => act (#1 o Reflect.reflectPackage o eval))
+			   finally
+			       (* Hack: this fails when the code cd'ed to
+				* its file's own directory... *)
+			       if cd andalso OS.FileSys.getDir () = dir'
+			       then OS.FileSys.chDir dir else ()
+		       end)
+		 of NONE =>
+		    (TextIO.output (errStream, "Evaluation interrupted\n"); NONE)
+		  | SOME str => (* completed or stopped *)
+		 if not printSig then SOME env' else
+		 case interruptable
+		      (if Future.isFuture signal then signal else dummySignal,
+		       fn _ =>
+		       let
+			   val _   = trace "Printing..."
+			   val doc = PPComponent.ppComp (str, inf)
+		       in
+			   PrettyPrint.output (outStream, doc, !outWidth);
+			   if PrettyPrint.isEmpty doc then ()
+			   else TextIO.output (outStream, "\n")
+		       end)
+		 of NONE =>
+		    (TextIO.output (errStream, "Output interrupted\n"); SOME env')
+		  | SOME () => SOME env'
+		)
+		finally trace "Ready"
 	    )
-	    finally trace "Ready"
-	)
-	handle exn =>
-	    (case exn
-	     of Compiler.Error => ()
-	      | Component.Failure (url, Component.Eval (Assert (file, line))) =>
-		    TextIO.output (errStream,
-				   "Assertion failure at " ^
-				   file ^ ":" ^ Int.toString line ^ "\n")
-	      | Component.Failure (url, Component.Eval exn) =>
-		    TextIO.output (errStream,
-				   "Uncaught exception " ^
-				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toStringRaw url)
-				    then "\n"
-				    else " while evaluating \n   " ^
-					 Url.toStringRaw url ^ "\n"))
-	      | Component.Failure (_, Component.Mismatch
-				     {component, request, cause}) =>
-		let
-		    val s = "Failure type-checking \n   " ^
-			    Url.toStringRaw component ^
-			    (case request of
-				 NONE => "\n"
-			       | SOME url => "\nas requested by \n   " ^
-					     Url.toStringRaw url ^ "\nbecause")
-		in
-		   PrettyPrint.output
-		   (errStream,
-		    PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
-		    !errWidth);
-		    TextIO.output (errStream, "\n")
-		end
-	      | Component.Failure (url, IO.Io _) =>
-		    TextIO.output (errStream,
-				   "Failure loading \n   " ^
-				   Url.toStringRaw url ^ "\n")
-	      | Component.Failure (url, Component.Internal exn) =>
-		    TextIO.output (errStream,
-				   "Internal exception " ^
-				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toStringRaw url)
-				    then "\n"
-				    else " while linking \n   " ^
-					 Url.toStringRaw url ^ "\n"))
-	      | Component.Failure (url, exn) =>
-		    TextIO.output (errStream,
-				   "Unknown failure " ^
-				   General.exnName exn ^
-				   (if String.isSuffix "/" (Url.toStringRaw url)
-				    then "\n"
-				    else " while linking \n   " ^
-					 Url.toStringRaw url ^ "\n"))
-	      | Assert (file, line) =>
-		    TextIO.output (errStream,
-				   "Internal assertion failure at " ^
-				   file ^ ":" ^ Int.toString line ^ "\n")
-	      | _ =>
-		    TextIO.output (errStream,
-				   "Internal exception " ^
-				   General.exnName exn ^ "\n");
-	     NONE)
+	    handle exn =>
+		(case exn
+		 of Compiler.Error => ()
+		  | Component.Failure (url, Component.Eval (Assert (file, line))) =>
+			TextIO.output (errStream,
+				       "Assertion failure at " ^
+				       file ^ ":" ^ Int.toString line ^ "\n")
+		  | Component.Failure (url, Component.Eval exn) =>
+			TextIO.output (errStream,
+				       "Uncaught exception " ^
+				       General.exnName exn ^
+				       (if String.isSuffix "/" (Url.toStringRaw url)
+					then "\n"
+					else " while evaluating \n   " ^
+					     Url.toStringRaw url ^ "\n"))
+		  | Component.Failure (_, Component.Mismatch
+					 {component, request, cause}) =>
+		    let
+			val s = "Failure type-checking \n   " ^
+				Url.toStringRaw component ^
+				(case request of
+				     NONE => "\n"
+				   | SOME url => "\nas requested by \n   " ^
+						 Url.toStringRaw url ^ "\nbecause")
+		    in
+		       PrettyPrint.output
+		       (errStream,
+			PPMismatch.ppMismatch' (PrettyPrint.text s, cause),
+			!errWidth);
+			TextIO.output (errStream, "\n")
+		    end
+		  | Component.Failure (url, IO.Io _) =>
+			TextIO.output (errStream,
+				       "Failure loading \n   " ^
+				       Url.toStringRaw url ^ "\n")
+		  | Component.Failure (url, Component.Internal exn) =>
+			TextIO.output (errStream,
+				       "Internal exception " ^
+				       General.exnName exn ^
+				       (if String.isSuffix "/" (Url.toStringRaw url)
+					then "\n"
+					else " while linking \n   " ^
+					     Url.toStringRaw url ^ "\n"))
+		  | Component.Failure (url, exn) =>
+			TextIO.output (errStream,
+				       "Unknown failure " ^
+				       General.exnName exn ^
+				       (if String.isSuffix "/" (Url.toStringRaw url)
+					then "\n"
+					else " while linking \n   " ^
+					     Url.toStringRaw url ^ "\n"))
+		  | Assert (file, line) =>
+			TextIO.output (errStream,
+				       "Internal assertion failure at " ^
+				       file ^ ":" ^ Int.toString line ^ "\n")
+		  | _ =>
+			TextIO.output (errStream,
+				       "Internal exception " ^
+				       General.exnName exn ^ "\n");
+		 NONE)
 
-    val evalString = eval' (Compiler.prepareWith, false)
-    val evalFile   = eval' (Compiler.prepareFileWith, true)
+	val evalString = eval' (Compiler.prepareWith, false)
+	val evalFile   = eval' (Compiler.prepareFileWith, true)
 
 
-    (* Initialization *)
+	(* Initialization *)
 
-    val currentEnv = ref Compiler.initialEnv
-    val firstInit  = ref true
+	val currentEnv = ref Compiler.initialEnv
 
-    val startup = "x-alice:/tools/ToplevelStartup.aml"
+	val startup = "x-alice:/tools/ToplevelStartup.aml"
+
+	fun init () =
+	    let
+		val p   = Promise.promise ()
+		val env = Ref.exchange (currentEnv, Promise.future p)
+	    in
+		await env; (* avoid deadlock *)
+		case evalFile (false, Compiler.initialEnv, startup, dummySignal)
+		 of NONE =>	raise Compiler.Error
+		  | SOME env' => Promise.fulfill (p, env')
+	    end
+
+
+	(* Evaluation *)
+
+	fun loopUses (env, signal) =
+	    let
+		val new = Promise.promise ()
+		val old = Ref.exchange (useFiles, Promise.future new)
+	    in
+		case old
+		 of file::rest =>
+		    (Promise.fulfill (new, rest);
+		     TextIO.output (outStream, "### evaluating file " ^ file ^ "\n");
+		     case evalFile (true, env, file, signal)
+		       of SOME env' => loopUses (env', signal)
+			| NONE      => (useFiles := nil; env)
+		    )
+		  | nil => (Promise.fulfill (new, nil); env)
+	    end
+
+	fun eval (source, signal) =
+	    let
+		val p   = Promise.promise ()
+		val env = Ref.exchange (currentEnv, Promise.future p)
+	    in
+		case evalString (true, env, source, signal)
+		 of NONE      => Promise.fulfill (p, env)
+		  | SOME env' => Promise.fulfill (p, loopUses (env', signal))
+	    end
+
+	fun evalFile (file, signal) =
+	    let
+		val p   = Promise.promise ()
+		val env = Ref.exchange (currentEnv, Promise.future p)
+	    in
+		useFiles := [file];
+		Promise.fulfill (p, loopUses (env, signal))
+	    end
+    end
+
+    (* Wrapping *)
+
+    val firstInit = ref true
+    val evaluator = ref (pack () : ())
+
+    fun compilerHandler url =
+	case (Url.getScheme url, Url.getPath url) of
+	    (SOME "x-alice", (["lib","system","Compiler"] | "compiler"::_)) =>
+		SOME url
+	  | (SOME "x-alice", _) =>
+		SOME (Url.setScheme (url, SOME "delegate-x-alice"))
+	  | _ => NONE
+
+    val handlers = [
+	Resolver.Handler.custom ("compiler", compilerHandler),
+	Resolver.Handler.pattern ("?{x}", "?{x}.alc"),
+	Resolver.Handler.default
+    ]
+    val resolver = Resolver.resolver {name = "toplevel", handlers, memoize = true}
 
     fun init () =
 	let
-	    val p   = Promise.promise ()
-	    val env = Ref.exchange (currentEnv, Promise.future p)
+	    structure CM = Component.MkManager (val resolver = resolver)
+	    structure CompilerComponent =
+		CM.Link (val url = Url.fromString "x-alice:/lib/system/Compiler"
+			 signature S = (structure Compiler : COMPILER))
+	    structure Evaluator = MkEvaluator CompilerComponent.Compiler
+	    val ops = pack (val use = use val reset = init)
+			 : (val use : string -> unit val reset : unit -> unit)
 	in
-	    await env; (* avoid deadlock *)
-	    case evalFile (false, Compiler.initialEnv, startup, dummySignal)
-	     of NONE =>	raise Compiler.Error
-	      | SOME env' => Promise.fulfill (p, env');
-	    if !firstInit
-	    then firstInit := false
-	    else TextIO.output (outStream, "### reset environment\n")
-	end
-
-
-    (* Evaluation *)
-
-    fun loopUses (env, signal) =
-	let
-	    val new = Promise.promise ()
-	    val old = Ref.exchange (useFiles, Promise.future new)
-	in
-	    case old
-	     of file::rest =>
-		(Promise.fulfill (new, rest);
-		TextIO.output (outStream, "### evaluating file " ^ file ^ "\n");
-		 case evalFile (true, env, file, signal)
-		   of SOME env' => loopUses (env', signal)
-		    | NONE      => (useFiles := nil; env)
-		)
-	      | nil => (Promise.fulfill (new, nil); env)
+	    if !firstInit then firstInit := false
+	    else TextIO.output (outStream, "### reset environment\n");
+	    CM.enter (Url.fromString "x-alice-toplevel:/Ops",
+		      Component.fromPackage ops);
+	    Evaluator.init ();
+	    evaluator := (pack Evaluator : EVALUATOR)
 	end
 
     fun eval (source, signal) =
 	let
-	    val p   = Promise.promise ()
-	    val env = Ref.exchange (currentEnv, Promise.future p)
+	    structure Evaluator = unpack !evaluator : EVALUATOR
 	in
-	    case evalString (true, env, source, signal)
-	     of NONE      => Promise.fulfill (p, env)
-	      | SOME env' => Promise.fulfill (p, loopUses (env', signal))
+	    Evaluator.eval (source, signal)
 	end
 
-    fun evalFile (file, signal) =
+    fun evalFile (source, signal) =
 	let
-	    val p   = Promise.promise ()
-	    val env = Ref.exchange (currentEnv, Promise.future p)
+	    structure Evaluator = unpack !evaluator : EVALUATOR
 	in
-	    useFiles := [file];
-	    Promise.fulfill (p, loopUses (env, signal))
+	    Evaluator.evalFile (source, signal)
 	end
 
 
