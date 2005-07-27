@@ -24,7 +24,7 @@ Compiler:
 
 Interactive Toplevel:
 
-* [NEW] Better handling of file loading and loading failure in Gui (including
+* [NEW] Better handling of file loading and loading failure in GUI (including
         bugs 138, 142).
 * [NEW] Check file for external changes before saving.
 * [NEW] Reset now also clears component manager thanks to whole session being
@@ -44,10 +44,10 @@ Basic Library:
 * [NEW] Print: added `depth' and `width' to control printing bounds (also
         control output of the toplevel); renamed `printWidth' to `layoutWidth'.
 * [NEW] Print: Array2.array and most library exceptions recognized by printer.
-* [NEW] Resolver, ComponentManager: added delegation.
+* [NEW] Resolver, ComponentManager: added support for delegation.
 * [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
 * [CHG] ComponentManager: replaced `logStream' by `logger' function, to avoid
-        type dependencies; log now contains manager's id.
+        type dependencies; log now contains manager's id for each message.
 * [FIX] IntInf: fixed `~>>'.
 * [FIX] Real: fixed `rem' and `hash'; fixed isFinite and isNormal for NaN.
 * [FIX] Substring: fixed `isSuffix'.
@@ -61,15 +61,15 @@ Basic Library:
 
 Constraint Library:
 
-* [CHG] General overhaul of interface, particularly for finite sets in FS.
+* [CHG] General overhaul of interface, particularly for finite sets.
 * [NEW] Explorer: recomputation depth can now be configured.
 * [NEW] Explorer: option to stop search after tree has reached a certain size.
 * [NEW] Explorer: improved keyboard navigation.
+* [FIX] Lots and lots of fixes in the Gecode implementation.
+* [FIX] FD: fixed `intvar' (bug 122).
+* [FIX] Space: fixed crash in `fail', and `clone' on a failed space.
 * [FIX] Explorer: status bar is now reset upon each new search.
 * [FIX] Explorer: branch-and-bound works properly for more than one search.
-* [FIX] Lots and lots of fixes in the Gecode implementation.
-* [FIX] Space: fixed crash in `fail', and `clone' on a failed space.
-* [FIX] FD: fixed `intvar' (bug 122).
 * [FIX] Documentation is in sync with the library again (bugs 124, 125, 129,
         131, 132, 143, 144).
 
