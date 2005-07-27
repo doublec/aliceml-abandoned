@@ -31,19 +31,85 @@
 
   <PRE>
 signature STORE =
-  sig
-      val same      : 'a * 'a -> bool
-      val equiv     : 'a * 'a -> bool
-      val minimize  : 'a -> 'a
+sig
+    val same      : 'a * 'a -> bool
+    val equiv     : 'a * 'a -> bool
+    val minimize  : 'a -> 'a
 
-      val futures   : 'a -> {total : int, concurrent : int, byneed : int}
-      val deepWait  : 'a -> {total : int, concurrent : int, byneed : int}
+    val futures   : 'a -> {total : int, concurrent : int, byneed : int}
+    val deepWait  : 'a -> {total : int, concurrent : int, byneed : int}
 
-      val size      : 'a -> {nodes : int, words : int}
-      val sizeQuiet : 'a -> {nodes : int, words : int}
+    val size      : 'a -> {nodes : int, words : int}
+    val sizeQuiet : 'a -> {nodes : int, words : int}
 
-      val collect   : int -> unit
-  end
+    val collect   : int -> unit
+
+    structure Map :
+    sig
+        type ('a,'b) map
+        type ('a,'b) t = ('a,'b) map
+
+        exception Unknown
+        exception Collision
+
+        val map            : unit -> ('a,'b) map
+        val clone          : ('a,'b) map -> ('a,'b) map
+        val fromList       : ('a * 'b) list -> ('a,'b) map
+        val fromVector     : ('a * 'b) vector -> ('a,'b) map
+        val toList         : ('a,'b) map -> ('a * 'b) list
+        val toVector       : ('a,'b) map -> ('a * 'b) vector
+
+        val insert         : ('a,'b) map * 'a * 'b -> unit
+        val insertDisjoint : ('a,'b) map * 'a * 'b -> unit
+        val insertWith     : ('b * 'b -> 'b) -> ('a,'b) map * 'a * 'b -> unit
+        val insertWithi    : ('a * 'b * 'b -> 'b) -> ('a,'b) map * 'a * 'b -> unit
+
+        val remove         : ('a,'b) map * 'a -> unit
+        val removeExistent : ('a,'b) map * 'a -> unit
+        val removeWith     : ('a -> unit) -> ('a,'b) map * 'a -> unit
+        val removeAll      : ('a,'b) map -> unit
+
+        val union          : ('a,'b) map * ('a,'b) map -> unit
+        val unionDisjoint  : ('a,'b) map * ('a,'b) map -> unit
+        val unionWith      : ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+        val unionWithi     : ('a * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+        val intersect      : ('a,'b) map * ('a,'b) map -> unit
+        val intersectWith  : ('b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+        val intersectWithi : ('a * 'b * 'b -> 'b) -> ('a,'b) map * ('a,'b) map -> unit
+
+        val difference     : ('a,'b) map * ('a,'b) map -> unit
+
+        val size           : ('a,'b) map -> int
+        val isEmpty        : ('a,'b) map -> bool
+
+        val member         : ('a,'b) map * 'a -> bool
+        val lookup         : ('a,'b) map * 'a -> 'b option
+        val lookupExistent : ('a,'b) map * 'a -> 'b
+        val choose         : ('a,'b) map -> 'b option
+        val choosei        : ('a,'b) map -> ('a * 'b) option
+
+        val equal          : ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+        val submap         : ('b * 'b -> bool) -> ('a,'b) map * ('a,'b) map -> bool
+        val disjoint       : ('a,'b) map * ('a,'b) map -> bool
+
+        val app            : ('b -> unit) -> ('a,'b) map -> unit
+        val modify         : ('b -> 'b) -> ('a,'b) map -> unit
+        val fold           : ('b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+        val all            : ('b -> bool) -> ('a,'b) map -> bool
+        val exists         : ('b -> bool) -> ('a,'b) map -> bool
+        val find           : ('b -> bool) -> ('a,'b) map -> 'b option
+        val filter         : ('b -> bool) -> ('a,'b) map -> unit
+
+        val appi           : ('a * 'b -> unit) -> ('a,'b) map -> unit
+        val modifyi        : ('a * 'b -> 'b) -> ('a,'b) map -> unit
+        val foldi          : ('a * 'b * 'c -> 'c) -> 'c -> ('a,'b) map -> 'c
+        val alli           : ('a * 'b -> bool) -> ('a,'b) map -> bool
+        val existsi        : ('a * 'b -> bool) -> ('a,'b) map -> bool
+        val findi          : ('a * 'b -> bool) -> ('a,'b) map -> ('a * 'b) option
+        val filteri        : ('a * 'b -> bool) -> ('a,'b) map -> unit
+    end
+end
   </PRE>
 
 <?php section("description", "description") ?>
@@ -136,6 +202,24 @@ signature STORE =
       <P>Triggers a garbage collection up to generation <I>gen</I> (if
       the system features a generational garbage collector).
       </P>
+    </DD>
+
+    <DT>
+      <TT>structure Map</TT>
+    </DT>
+    <DD>
+      <P>A polymorphic hash table based on physical equality. The interface to
+      this structure is similar to <A href="imp-map.html">imperative maps</A>,
+      except that the <TT>map</TT> type is fully polymorphic.
+      </P>
+      <P>Note that, since the map is based on physical equality, its
+      behaviour is implementation dependent to a certain degree. In particular,
+      there is no guarantee that seperately constructed, but structurally
+      equivalent values have separate physical representation. Also note that
+      use of the <TT>minimize</TT> function may induce additional sharing.
+      Validity of the hash table is <I>not</I> compromised by garbage
+      collection, though. Store maps are considered resources and cannot be
+      pickled.</P>
     </DD>
 
   </DL>

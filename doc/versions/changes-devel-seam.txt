@@ -40,11 +40,12 @@ Interactive Toplevel:
 
 Basic Library:
 
+* [NEW] Resolver, ComponentManager: added support for delegation.
 * [NEW] BinIO: added `openOverwrite', `seekIn', `seekOut'.
+* [NEW] Store: added polymorphic hash tables based on physical equality.
 * [NEW] Print: added `depth' and `width' to control printing bounds (also
         control output of the toplevel); renamed `printWidth' to `layoutWidth'.
 * [NEW] Print: Array2.array and most library exceptions recognized by printer.
-* [NEW] Resolver, ComponentManager: added support for delegation.
 * [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
 * [CHG] ComponentManager: replaced `logStream' by `logger' function, to avoid
         type dependencies; log now contains manager's id for each message.
