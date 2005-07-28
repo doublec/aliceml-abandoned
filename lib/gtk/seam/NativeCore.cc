@@ -17,7 +17,6 @@
 #include "Alice.hh"
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
-
 #include "ExtraMarshaller.hh"
 
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
@@ -731,9 +730,101 @@ DEFINE1(NativeCore_utf8ToLatin1) {
 } END
 
 ////////////////////////////////////////////////////////////////////////
+// propertySetting
 
+DEFINE3(NativeCore_propSetString) {
+    DECLARE_OBJECT(ob, x0);
+    DECLARE_CSTRING(name, x1);
+    DECLARE_CSTRING(str, x2);
+    GValue v;
+    g_value_init (&v, G_TYPE_STRING);
+    g_value_set_string (&v, str);
+    g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
+    RETURN_UNIT;
+} END
+
+DEFINE3(NativeCore_propSetBool) {
+    DECLARE_OBJECT(ob, x0);
+    DECLARE_CSTRING(name, x1);
+    DECLARE_BOOL(b, x2);
+    GValue v;
+    g_value_init (&v, G_TYPE_BOOLEAN);
+    g_value_set_boolean (&v, b);
+    g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
+    RETURN_UNIT;
+} END
+
+
+DEFINE3(NativeCore_propSetInt) {
+    DECLARE_OBJECT(ob, x0);
+    DECLARE_CSTRING(name, x1);
+    DECLARE_INT(b, x2);
+    GValue v;
+    g_value_init (&v, G_TYPE_INT);
+    g_value_set_int (&v, b);
+    g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
+    RETURN_UNIT;
+} END
+
+DEFINE2(NativeCore_propString) {
+    DECLARE_OBJECT(ob, x0);
+    DECLARE_CSTRING(name, x1);
+    GValue v;
+    g_value_init (&v, G_TYPE_STRING);
+    g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
+    RETURN1(String::New(g_value_get_string (&v))->ToWord ());
+} END
+
+DEFINE2(NativeCore_propInt) {
+    DECLARE_OBJECT(ob, x0);
+    DECLARE_CSTRING(name, x1);
+    GValue v;
+    g_value_init (&v, G_TYPE_INT);
+    g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
+    RETURN_INT(g_value_get_int (&v));
+} END
+
+DEFINE2(NativeCore_propBool) {
+    DECLARE_OBJECT(ob, x0);
+    DECLARE_CSTRING(name, x1);
+    GValue v;
+    g_value_init (&v, G_TYPE_BOOLEAN);
+    g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
+    RETURN_BOOL(g_value_get_boolean (&v));
+} END
+
+
+////////////////////////////////////////////////////////////////////////
+// setLogMode -- enable/disable logging
+
+static void null_log_handler (const gchar *dom, GLogLevelFlags l, const gchar *msg, 
+        gpointer d) {
+    // do nothing
+}
+
+DEFINE2(NativeCore_setLogMode) {
+    DECLARE_STRING(dom, x0);
+    DECLARE_INT(mode, x1);      // constructors of no arguments = int
+    switch (mode) {
+        case 0: // LOG_MODE_DEFAULT
+            g_log_set_handler (dom->ExportC (), (GLogLevelFlags)(G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+                    | G_LOG_FLAG_RECURSION), g_log_default_handler, NULL);
+            break;
+
+        case 1: // LOG_MODE_NULL
+            g_log_set_handler (dom->ExportC (), (GLogLevelFlags)(G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+                    | G_LOG_FLAG_RECURSION), null_log_handler, NULL);
+            break;
+
+        default:
+            Assert(false);
+    }
+    RETURN_UNIT;
+} END
+
+///////////////////////////////////////////////////////////////////////
 word InitComponent() {
-  Record *record = Record::New(18);
+  Record *record = Record::New(25);
   Init();
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
@@ -777,6 +868,24 @@ word InitComponent() {
 		 NativeCore_latin1ToUtf8, 1);
   INIT_STRUCTURE(record, "NativeCore", "utf8ToLatin1",
 		 NativeCore_utf8ToLatin1, 1);
+
+  INIT_STRUCTURE(record, "NativeCore", "setLogMode",
+                NativeCore_setLogMode, 2);
+
+  INIT_STRUCTURE(record, "NativeCore", "propSetInt",
+            NativeCore_propSetInt, 3);
+  INIT_STRUCTURE(record, "NativeCore", "propSetString",
+            NativeCore_propSetString, 3);
+  INIT_STRUCTURE(record, "NativeCore", "propSetBool",
+            NativeCore_propSetBool, 3);
+
+  INIT_STRUCTURE(record, "NativeCore", "propInt",
+            NativeCore_propInt, 2);
+  INIT_STRUCTURE(record, "NativeCore", "propString",
+            NativeCore_propString, 2);
+  INIT_STRUCTURE(record, "NativeCore", "propBool",
+            NativeCore_propBool, 2);
+
 
   RETURN_STRUCTURE("NativeCore$", record);
 }

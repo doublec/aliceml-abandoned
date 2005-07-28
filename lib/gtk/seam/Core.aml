@@ -212,4 +212,18 @@ struct
 	    spawn (listener eventStream);
 	    spawn (mainLoop initPoll)
 	end
+
+    val objectSetIntProp    = NativeCore.propSetInt
+    val objectSetStringProp = NativeCore.propSetString
+    val objectSetBoolProp   = NativeCore.propSetBool
+
+    val objectGetIntProp    = NativeCore.propInt
+    val objectGetStringProp = NativeCore.propString
+    val objectGetBoolProp   = NativeCore.propBool
+
+    datatype log_mode =
+        LOG_MODE_DEFAULT
+      | LOG_MODE_NULL
+
+    val setLogMode = NativeCore.setLogMode
 end

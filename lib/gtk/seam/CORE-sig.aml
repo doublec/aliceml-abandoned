@@ -15,6 +15,7 @@ signature CORE =
 sig
 (**)type object
 
+
     datatype event =
 	EVENT_NOTHING
       | EVENT_DELETE
@@ -117,4 +118,19 @@ sig
 
 (**)val printObject : object -> unit
 (**)val forceGC : unit -> unit
+
+    datatype log_mode =
+        LOG_MODE_DEFAULT
+      | LOG_MODE_NULL
+
+
+    val objectSetIntProp : object * string * int -> unit
+    val objectSetStringProp : object * string * string -> unit
+    val objectSetBoolProp : object * string * bool -> unit
+    
+    val objectGetIntProp : object * string -> int
+    val objectGetStringProp : object * string -> string
+    val objectGetBoolProp : object * string -> bool
+
+    val setLogMode : string * log_mode -> unit
 end

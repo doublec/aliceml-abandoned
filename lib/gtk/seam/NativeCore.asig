@@ -41,5 +41,14 @@ sig
         val latin1ToUtf8 : string -> string
         val utf8ToLatin1 : string -> string
 
+        val propSetInt : 'object * string * int -> unit
+        val propSetString : 'object * string * string -> unit
+        val propSetBool : 'object * string * bool -> unit
+
+        val propInt : 'object * string -> int
+        val propString : 'object * string -> string
+        val propBool : 'object * string -> bool
+
+        val setLogMode : string * 'log_mode -> unit
     end
 end
