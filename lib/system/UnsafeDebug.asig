@@ -28,5 +28,8 @@ signature UNSAFE_DEBUG_COMPONENT =
 
 		functor InspectType(type t): any
 		functor InspectSig(signature S): any
+
+	        val byteCompile : ('a -> 'b) -> unit
+                val lazyByteCompile : ('a -> 'b) -> unit
 	    end
     end

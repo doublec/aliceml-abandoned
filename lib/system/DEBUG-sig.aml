@@ -26,4 +26,7 @@ signature DEBUG =
 
 	functor InspectType(type t): any
 	functor InspectSig(signature S): any
+
+	val byteCompile : ('a -> 'b) -> unit
+	val lazyByteCompile : ('a -> 'b) -> unit
     end
