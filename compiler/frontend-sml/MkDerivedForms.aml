@@ -441,8 +441,8 @@ struct
     fun RECExp(I, pat, exp) =
 	let
 	    val I'      = G.infoPat pat
-	    val vid     = G.VId(I', VId.invent())
-	    val asPat   = G.ASPat(I', VIDPat(I', vid), pat)
+	    val vid     = G.VId(Source.at I', VId.invent())
+	    val asPat   = G.ASPat(I', VIDPat(Source.at I', vid), pat)
 	    val valbind = G.RECValBind(I, G.PLAINValBind(I, asPat, exp, NONE))
 	    val dec     = G.VALDec(I, G.Seq(I',[]), valbind)
 	in
@@ -451,9 +451,10 @@ struct
 
     fun WHILEExp(I, exp1, exp2) =
 	let
-	    val vid       = G.VId(I, VId.invent())
-	    val longvid   = G.SHORTLong(I, vid)
-	    val vidExp    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp, longvid))
+	    val I'        = Source.at I
+	    val vid       = G.VId(I', VId.invent())
+	    val longvid   = G.SHORTLong(I', vid)
+	    val vidExp    = G.ATEXPExp(I', G.LONGVIDAtExp(I', G.WITHOp, longvid))
 	    val unitAtExp = UNITAtExp(I)
 	    val unitExp   = G.ATEXPExp(I, unitAtExp)
 	    val callVid   = G.APPExp(I, vidExp, unitAtExp)
@@ -471,15 +472,16 @@ struct
 
     fun FINALLYExp(I, exp1, exp2) =
 	let
-	    val vid1       = G.VId(I, VId.invent())
-	    val vid2       = G.VId(I, VId.invent())
-	    val vid3       = G.VId(I, VId.invent())
-	    val longvid1   = G.SHORTLong(I, vid1)
-	    val longvid2   = G.SHORTLong(I, vid2)
-	    val longvid3   = G.SHORTLong(I, vid3)
-	    val vidExp1    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,longvid1))
-	    val vidExp2    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,longvid2))
-	    val vidExp3    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,longvid3))
+	    val I'         = Source.at I
+	    val vid1       = G.VId(I', VId.invent())
+	    val vid2       = G.VId(I', VId.invent())
+	    val vid3       = G.VId(I', VId.invent())
+	    val longvid1   = G.SHORTLong(I', vid1)
+	    val longvid2   = G.SHORTLong(I', vid2)
+	    val longvid3   = G.SHORTLong(I', vid3)
+	    val vidExp1    = G.ATEXPExp(I',G.LONGVIDAtExp(I',G.WITHOp,longvid1))
+	    val vidExp2    = G.ATEXPExp(I',G.LONGVIDAtExp(I',G.WITHOp,longvid2))
+	    val vidExp3    = G.ATEXPExp(I',G.LONGVIDAtExp(I',G.WITHOp,longvid3))
 
 	    val appExp     = G.APPExp(I, vidExp2, UNITAtExp(I))
 	    val letBody    = G.ATEXPExp(I, G.SEQAtExp(I, [appExp, vidExp1]))
@@ -512,14 +514,15 @@ end
 	let
 	    val I1     = G.infoAtStrExp atstrexp
 	    val I2     = G.infoAtSigExp atsigexp
+	    val I3     = Source.at I2
 
-	    val sigid  = G.SigId(I2, SigId.invent())
+	    val sigid  = G.SigId(I3, SigId.invent())
 	    val sigexp = G.ATSIGEXPSigExp(I2, atsigexp)
 	    val dec    = G.SIGNATUREDec(I2, G.SigBind(I2,sigid,[],sigexp, NONE))
 
-	    val atsigexp' = G.LONGSIGIDAtSigExp(I2, G.SHORTLong(I2, sigid))
+	    val atsigexp' = G.LONGSIGIDAtSigExp(I3, G.SHORTLong(I3, sigid))
 	    val strexp    = G.ATSTREXPStrExp(I1, atstrexp)
-	    val sigexp'   = G.ATSIGEXPSigExp(I2, atsigexp')
+	    val sigexp'   = G.ATSIGEXPSigExp(I3, atsigexp')
 	    val strexp'   = G.OPAQStrExp(I, strexp, sigexp')
 	    val atstrexp' = G.PARAtStrExp(I, strexp')
 	    val exp       = G.PACKExp(I, atstrexp', atsigexp')
@@ -555,10 +558,11 @@ end
 
     fun ASSERTOFDOExp(I, desc, d_opt, exp1, pat, exp2) =
 	let
+	    val I'     = Source.at I
 	    val mrule1 = G.Mrule(G.infoPat pat, pat, TRUEExp(G.infoPat pat))
-	    val mrule2 = G.Mrule(I, G.ATPATPat(I, G.WILDCARDAtPat(I)),
-				 FALSEExp(I))
-	    val match  = G.Match(I, mrule1, SOME(G.Match(I, mrule2, NONE)))
+	    val mrule2 = G.Mrule(I', G.ATPATPat(I', G.WILDCARDAtPat(I')),
+				 FALSEExp(I'))
+	    val match  = G.Match(I, mrule1, SOME(G.Match(I', mrule2, NONE)))
 	in
 	    ASSERTDOExp(I, desc, d_opt, G.CASEExp(I, exp1, match), exp2)
 	end
@@ -566,19 +570,21 @@ end
     fun ASSERTRAISEDOExp(I, desc, d_opt, exp1,
 			 pat as G.ATPATPat(I', G.WILDCARDAtPat(_)), exp2) =
 	let
-	    val seqExp = G.ATEXPExp(I, G.SEQAtExp(I, [exp1, FALSEExp(I)]))
-	    val mrule  = G.Mrule(I', pat, TRUEExp(I'))
-	    val match  = G.Match(I, mrule, NONE)
+	    val I'     = Source.at I
+	    val seqExp = G.ATEXPExp(I, G.SEQAtExp(I, [exp1, FALSEExp(I')]))
+	    val mrule  = G.Mrule(G.infoPat pat, pat, TRUEExp(I'))
+	    val match  = G.Match(G.infoPat pat, mrule, NONE)
 	in
 	    ASSERTDOExp(I, desc, d_opt, G.HANDLEExp(I, seqExp, match), exp2)
 	end
       | ASSERTRAISEDOExp(I, desc, d_opt, exp1, pat, exp2) =
 	let
-	    val seqExp = G.ATEXPExp(I, G.SEQAtExp(I, [exp1, FALSEExp(I)]))
-	    val mrule1 = G.Mrule(G.infoPat pat, pat, TRUEExp(G.infoPat pat))
-	    val mrule2 = G.Mrule(I, G.ATPATPat(I, G.WILDCARDAtPat(I)),
-				    FALSEExp(I))
-	    val match  = G.Match(I, mrule1, SOME(G.Match(I, mrule2, NONE)))
+	    val I'     = Source.at I
+	    val seqExp = G.ATEXPExp(I, G.SEQAtExp(I, [exp1, FALSEExp(I')]))
+	    val mrule1 = G.Mrule(G.infoPat pat, pat, TRUEExp(I'))
+	    val mrule2 = G.Mrule(I', G.ATPATPat(I', G.WILDCARDAtPat(I')),
+				    FALSEExp(I'))
+	    val match  = G.Match(I, mrule1, SOME(G.Match(I', mrule2, NONE)))
 	in
 	    ASSERTDOExp(I, desc, d_opt, G.HANDLEExp(I, seqExp, match), exp2)
 	end
@@ -774,7 +780,7 @@ end
 	let
 	    val I' = G.infoSpec spec
 	in
-	    G.StrPat(I, G.StrId(I, StrId.fromString ""),
+	    G.StrPat(I, G.StrId(Source.at I, StrId.fromString ""),
 		     G.ATSIGEXPSigExp(I', G.SIGAtSigExp(I', spec)))
 	end
 
@@ -1011,8 +1017,9 @@ end
 
     fun EXPProgram(I, exp, program_opt) =
 	let
-	    val longvid = G.SHORTLong(I, G.VId(I, VId.fromString "it"))
-	    val pat     = G.ATPATPat(I, G.LONGVIDAtPat(I, G.SANSOp, longvid))
+	    val I'      = Source.at I
+	    val longvid = G.SHORTLong(I', G.VId(I', VId.fromString "it"))
+	    val pat     = G.ATPATPat(I', G.LONGVIDAtPat(I', G.SANSOp, longvid))
 	    val valbind = G.PLAINValBind(I, pat, exp, NONE)
 	    val dec     = G.VALDec(I, G.Seq(I, []), valbind)
 	in

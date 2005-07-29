@@ -1664,86 +1664,91 @@ struct
 
     and trOpenDecInf (E,i) (vid', (_,inf), acc) =
 	let
+	    val i'      = Source.at i
 	    val name    = VId.toString vid'
 	    val vallab' = O.Lab(i, Label.fromString name)
 	    val fix'    = O.Fix(i, infStatusToFixity inf)
-	    val _       = insertInf(E, vid', (i,inf))
+	    val _       = insertInf(E, vid', (i',inf))
 	in
 	    O.FixDec(i, vallab', fix') :: acc
 	end
 
     and trOpenDecVal (E,i,modlongido',tycono) (vid', (_,stamp1,is), acc) =
 	let
+	    val i'         = Source.at i
 	    val name       = VId.toString vid'
 	    val stamp2     = Stamp.stamp()
-	    val valid1'    = O.Id(i, stamp1, Name.ExId name)
-	    val valid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val valid1'    = O.Id(i', stamp1, Name.ExId name)
+	    val valid2'    = O.Id(i', stamp2, Name.ExId name)
 	    val vallongid' = case modlongido'
-			       of NONE            => O.ShortId(i, valid1')
+			       of NONE            => O.ShortId(i', valid1')
 			        | SOME modlongid' =>
-				   O.LongId(i, modlongid',
-					    O.Lab(i, Label.fromString name))
+				   O.LongId(i', modlongid',
+					    O.Lab(i', Label.fromString name))
 	    val is'        = case (is, tycono)
 			       of (T(k,_,kty), SOME tycon) => T(k,tycon,kty)
 			        | _ => is
-	    val pat'       = O.VarPat(i, valid2')
-	    val exp'       = O.VarExp(i, vallongid')
-	    val _          = insertVal(E, vid', (i,stamp2,is'))
+	    val pat'       = O.VarPat(i', valid2')
+	    val exp'       = O.VarExp(i', vallongid')
+	    val _          = insertVal(E, vid', (i',stamp2,is'))
 	in
 	    O.ValDec(i, pat', exp') :: acc
 	end
 
     and trOpenDecTy (E,i,modlongido') (tycon', (_,stamp1,E'), acc) =
 	let
+	    val i'         = Source.at i
 	    val name       = TyCon.toString tycon'
 	    val stamp2     = Stamp.stamp()
-	    val typid1'    = O.Id(i, stamp1, Name.ExId name)
-	    val typid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val typid1'    = O.Id(i', stamp1, Name.ExId name)
+	    val typid2'    = O.Id(i', stamp2, Name.ExId name)
 	    val typlongid' = case modlongido'
-			       of NONE            => O.ShortId(i, typid1')
+			       of NONE            => O.ShortId(i', typid1')
 			        | SOME modlongid' =>
-				   O.LongId(i, modlongid',
-					    O.Lab(i, Label.fromString name))
+				   O.LongId(i', modlongid',
+					    O.Lab(i', Label.fromString name))
 	    val E''        = env()
 	    val _          = appiVals (fn(vid,_) =>
 				insertDisjointVal(E'',vid,
 			    	    Option.valOf(lookupVal(E,vid)))) E'
-	    val typ'       = O.ConTyp(i, typlongid')
-	    val _          = insertTy(E, tycon', (i,stamp2,E''))
+	    val typ'       = O.ConTyp(i', typlongid')
+	    val _          = insertTy(E, tycon', (i',stamp2,E''))
 	in
 	    O.TypDec(i, typid2', typ') :: acc
 	end
 
     and trOpenDecStr (E,i,modlongido') (strid', (_,stamp1,F), acc) =
 	let
+	    val i'         = Source.at i
 	    val name       = StrId.toString strid'
 	    val stamp2     = Stamp.stamp()
-	    val modid1'    = O.Id(i, stamp1, Name.ExId name)
-	    val modid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val modid1'    = O.Id(i', stamp1, Name.ExId name)
+	    val modid2'    = O.Id(i', stamp2, Name.ExId name)
 	    val modlongid' = case modlongido'
-			       of NONE            => O.ShortId(i, modid1')
+			       of NONE            => O.ShortId(i', modid1')
 			        | SOME modlongid' =>
-				   O.LongId(i, modlongid',
-					    O.Lab(i, Label.fromString name))
-	    val mod'       = O.VarMod(i, modlongid')
-	    val _          = insertStr(E, strid', (i,stamp2,F))
+				   O.LongId(i', modlongid',
+					    O.Lab(i', Label.fromString name))
+	    val mod'       = O.VarMod(i', modlongid')
+	    val _          = insertStr(E, strid', (i',stamp2,F))
 	in
 	    O.ModDec(i, modid2', mod') :: acc
 	end
 
     and trOpenDecSig (E,i,modlongido') (sigid', (_,stamp1,F), acc) =
 	let
+	    val i'         = Source.at i
 	    val name       = SigId.toString sigid'
 	    val stamp2     = Stamp.stamp()
-	    val infid1'    = O.Id(i, stamp1, Name.ExId name)
-	    val infid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val infid1'    = O.Id(i', stamp1, Name.ExId name)
+	    val infid2'    = O.Id(i', stamp2, Name.ExId name)
 	    val inflongid' = case modlongido'
-			       of NONE            => O.ShortId(i, infid1')
+			       of NONE            => O.ShortId(i', infid1')
 			        | SOME modlongid' =>
-				   O.LongId(i, modlongid',
-					    O.Lab(i, Label.fromString name))
-	    val inf'       = O.ConInf(i, inflongid')
-	    val _          = insertSig(E, sigid', (i,stamp2,F))
+				   O.LongId(i', modlongid',
+					    O.Lab(i', Label.fromString name))
+	    val inf'       = O.ConInf(i', inflongid')
+	    val _          = insertSig(E, sigid', (i',stamp2,F))
 	in
 	    O.InfDec(i, infid2', inf') :: acc
 	end
@@ -1926,7 +1931,8 @@ struct
 		    O.FunExp(i', mats')
 		else
 		    let
-			val valids'  = Vector.tabulate(arity, fn _ =>inventId i)
+			val valids'  = Vector.tabulate(arity,
+						fn _ => inventId(Source.at i))
 			val exps'    = Vector.map(fn valid' =>
 					  O.VarExp(Source.nowhere,
 					     O.ShortId(Source.nowhere, valid')))
@@ -2769,15 +2775,16 @@ struct
 
     and trOpenSpecVal (E,i,modlongido',tycon) (vid', (_,stamp1,is), acc) =
 	let
+	    val i'         = Source.at i
 	    val name       = VId.toString vid'
 	    val stamp2     = Stamp.stamp()
-	    val valid1'    = O.Id(i, stamp1, Name.ExId name)
-	    val valid2'    = O.Id(i, stamp2, Name.ExId name)
+	    val valid1'    = O.Id(i', stamp1, Name.ExId name)
+	    val valid2'    = O.Id(i', stamp2, Name.ExId name)
 	    val vallongid' = case modlongido'
-			       of NONE            => O.ShortId(i, valid1')
+			       of NONE            => O.ShortId(i', valid1')
 			        | SOME modlongid' =>
-				   O.LongId(i, modlongid',
-					    O.Lab(i, Label.fromString name))
+				   O.LongId(i', modlongid',
+					    O.Lab(i', Label.fromString name))
 	    val typ'       = O.SingTyp(i, vallongid')
 	    val is'        = case is of T(k,_,kty) => T(k,tycon,kty) | _ => is
 	    val _          = insertDisjointVal(E, vid', (i,stamp2,is'))
@@ -3213,10 +3220,11 @@ struct
 
     and trOpenImpInf (E,i) (vid', (_,inf), acc) =
 	let
+	    val i'      = Source.at i
 	    val name    = VId.toString vid'
-	    val vallab' = O.Lab(i, Label.fromString name)
+	    val vallab' = O.Lab(i', Label.fromString name)
 	    val fix'    = O.Fix(i, infStatusToFixity inf)
-	    val _       = insertDisjointInf(E, vid', (i,inf))
+	    val _       = insertDisjointInf(E, vid', (i',inf))
 			  handle CollisionInf _ =>
 				error(i, E.ImpFixDuplicate vid')
 	in
@@ -3225,10 +3233,11 @@ struct
 
     and trOpenImpVal (E,i) (vid', (_,_,is), acc) =
 	let
+	    val i'     = Source.at i
 	    val name   = VId.toString vid'
 	    val stamp  = Stamp.stamp()
-	    val valid' = O.Id(i, stamp, Name.ExId name)
-	    val _      = insertDisjointVal(E, vid', (i,stamp,is))
+	    val valid' = O.Id(i', stamp, Name.ExId name)
+	    val _      = insertDisjointVal(E, vid', (i',stamp,is))
 			 handle CollisionVal _ =>
 				error(i, E.ImpVIdDuplicate vid')
 	in
@@ -3237,14 +3246,15 @@ struct
 
     and trOpenImpTy (E,i) (tycon', (_,_,E'), acc) =
 	let
+	    val i'     = Source.at i
 	    val name   = TyCon.toString tycon'
 	    val stamp  = Stamp.stamp()
-	    val typid' = O.Id(i, stamp, Name.ExId name)
+	    val typid' = O.Id(i', stamp, Name.ExId name)
 	    val E''    = env()
 	    val _      = appiVals (fn(vid,_) =>
 			    insertDisjointVal(E'',vid,
 			    	Option.valOf(lookupVal(E,vid)))) E'
-	    val _      = insertDisjointTy(E, tycon', (i,stamp,E''))
+	    val _      = insertDisjointTy(E, tycon', (i',stamp,E''))
 			 handle CollisionTy _ =>
 				error(i, E.ImpTyConDuplicate tycon')
 	in
@@ -3253,10 +3263,11 @@ struct
 
     and trOpenImpStr (E,i) (strid', (_,_,F), acc) =
 	let
+	    val i'     = Source.at i
 	    val name   = StrId.toString strid'
 	    val stamp  = Stamp.stamp()
-	    val modid' = O.Id(i, stamp, Name.ExId name)
-	    val _      = insertDisjointStr(E, strid', (i,stamp,F))
+	    val modid' = O.Id(i', stamp, Name.ExId name)
+	    val _      = insertDisjointStr(E, strid', (i',stamp,F))
 			 handle CollisionStr _ =>
 				error(i, E.ImpStrIdDuplicate strid')
 	in
@@ -3270,10 +3281,11 @@ struct
 
     and trOpenImpSig (E,i) (sigid', (_,_,F), acc) =
 	let
+	    val i'     = Source.at i
 	    val name   = SigId.toString sigid'
 	    val stamp  = Stamp.stamp()
-	    val infid' = O.Id(i, stamp, Name.ExId name)
-	    val _      = insertDisjointSig(E, sigid', (i,stamp,F))
+	    val infid' = O.Id(i', stamp, Name.ExId name)
+	    val _      = insertDisjointSig(E, sigid', (i',stamp,F))
 			 handle CollisionSig _ =>
 				error(i, E.ImpSigIdDuplicate sigid')
 	in
