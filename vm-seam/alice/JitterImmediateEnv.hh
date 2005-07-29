@@ -15,8 +15,6 @@
 
 #include "alice/Base.hh"
 
-#if HAVE_LIGHTNING
-
 class ImmediateEnv {
 protected:
   u_int index;
@@ -53,7 +51,5 @@ public:
     return values->ToWord();
   }
 };
-
-#endif
 
 #endif

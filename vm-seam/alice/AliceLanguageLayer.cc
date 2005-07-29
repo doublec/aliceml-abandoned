@@ -24,6 +24,9 @@
 #include "alice/NativeCodeJitter.hh"
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/AliceDebuggerEvent.hh"
+#include "alice/ByteConcreteCode.hh"
+#include "alice/ByteCodeInterpreter.hh"
+#include "alice/ByteCodeJitter.hh"
 #if DEBUGGER
 #include "alice/DebugEnvironment.hh"
 #include "alice/AliceDebuggerEvent.hh"
@@ -130,6 +133,8 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
   PrimitiveTable::Init();
+  ByteCodeInterpreter::Init();
+  ByteCodeJitter::Init();
 #if HAVE_LIGHTNING
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
@@ -139,14 +144,23 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   u_int codeSizeInChunks = 50; // was 40
 #endif
   NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
-
   const char *jitMode = std::getenv("ALICE_JIT_MODE");
-  if (jitMode != NULL && !strcmp(jitMode, "0"))
-    concreteCodeConstructor = AliceConcreteCode::New;
-  else
+  if (jitMode != NULL) { 
+    if (!strcmp(jitMode,"2")) 
+      concreteCodeConstructor = ByteConcreteCode::New;
+    else if (!strcmp(jitMode, "0"))
+      concreteCodeConstructor = AliceConcreteCode::New;
+    else
+      concreteCodeConstructor = NativeConcreteCode::New;    
+  } else
     concreteCodeConstructor = NativeConcreteCode::New;
+
 #else
-  concreteCodeConstructor = AliceConcreteCode::New;
+  if (jitMode != NULL && !strcmp(jitMode, "2")) 
+    concreteCodeConstructor = ByteConcreteCode::New;
+  else
+    concreteCodeConstructor = AliceConcreteCode::New;
+
 #endif
 #if DEBUG_CHECK
   AbstractCodeFrame::Init();
@@ -158,5 +172,4 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
 #endif
   undefinedValue = Store::IntToWord(42);
   RootSet::Add(undefinedValue);
-
 }

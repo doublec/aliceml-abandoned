@@ -19,7 +19,12 @@ libalicebase_a_SOURCES = \
 	BootLinker.cc \
 	NativeConcreteCode.cc \
 	NativeCodeInterpreter.cc \
-	NativeCodeJitter.cc
+	NativeCodeJitter.cc \
+	ByteCode.cc \
+	ByteCodeBuffer.cc \
+	ByteConcreteCode.cc \
+	ByteCodeInterpreter.cc \
+	ByteCodeJitter.cc 
 
 pkginclude_HEADERS = \
 	AbstractCode.hh \
@@ -41,4 +46,12 @@ pkginclude_HEADERS = \
 	NativeCodeJitter.hh \
 	NativeConcreteCode.hh \
 	PrimitiveTable.hh \
-	Types.hh
+	Types.hh \
+	ByteCode.hh \
+	ByteCodeBuffer.hh \
+	ByteCodeAlign32.hh \
+	ByteConcreteCode.hh \
+	ByteCodeFrame.hh \
+	ByteCodeInterpreter.hh \
+	ByteCodeJitter.hh
+
