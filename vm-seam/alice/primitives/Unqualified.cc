@@ -96,11 +96,8 @@ static int Compare(word x0, word x1) {
   case CHUNK_LABEL:
     {
       if (a->IsMutable()) {
-	if (b->IsMutable()) {
-	  return (a == b);
-	} else {
-	  return 0;
-	}
+	Assert(b->IsMutable());
+	return (a == b);
       }
       Chunk *ac = STATIC_CAST(Chunk *, a);
       Chunk *bc = STATIC_CAST(Chunk *, b);
@@ -110,11 +107,8 @@ static int Compare(word x0, word x1) {
     }
   default:
     if (a->IsMutable()) {
-      if (b->IsMutable()) {
-	return (a == b);
-      } else {
-	return 0;
-      }
+      Assert(b->IsMutable());
+      return (a == b);
     }
     if (Alice::IsTag(label)) {
       goto structural_equality;
