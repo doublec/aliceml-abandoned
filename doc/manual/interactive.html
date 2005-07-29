@@ -141,6 +141,13 @@ default when Alice is started from the system's graphical interface - e.g. the S
 <P>By selecting <I>Compile</I> (Ctrl-K) from the <I>File</I> menu, the currently edited file can be compiled to a stand-alone component on disk. Eventual error messages will be printed on the interaction pane. Like with feeding, <I>Jump-to-Error</I> can be used to select the error region in case of an error.</P>
 
 
+<?php subsection("gui-annotations", "Type information") ?>
+
+<P>When feeding or compiling a buffer, the compiler collects type information about all identifiers found in the program (including type, module, or signature identifiers). This information will subsequently be displayed in the status bar whenever the cursor is positioned on an identifier in the respective buffer. In case that the information does not fit the single line of the status bar, the full information can be seen in a tooltip by moving the mouse pointer over the status bar.<P>
+
+<P>Note that partial type information is available even if compilation failed with a type error - all types derived so far are displayed. However, compilation or feeding erases all previous type information about the buffer.</P>
+
+
 <?php subsection("gui-session", "Session Management") ?>
 
 <P>The GUI provides for simple session management: on startup, previously open files are re-opened, and the input history for the interaction pane is restored.</P>

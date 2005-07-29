@@ -30,6 +30,8 @@ Compiler:
   allowing proper separation of source and build directories.
 * Support for smart recompilation, taking component signatures into account.
 * Produce proper error messages for out-of-range literals.
+* Option --annotations-file to output type information about compiled program
+  for use by external tools, e.g. smart editors.
 * Fixed bug in type variable scope resolution.
 * Fixed bug that allowed non-value expressions and unsound typing in val rec.
 * Fixed bug in liveness analysis that could break exception handlers.

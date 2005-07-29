@@ -11,6 +11,8 @@ Runtime System:
 Compiler:
 
 * [NEW] Implemented limited form of signature inclusion (bug 151).
+* [NEW] Option --annotations-file to output type information about compiled
+        program for use by external tools, e.g. smart editors.
 * [FIX] Make type-checking work properly in the presence of diamond import of
         abstract types through components compiled against different versions
         of the type. This requires indirectly imported component to be present.
@@ -24,6 +26,8 @@ Compiler:
 
 Interactive Toplevel:
 
+* [NEW] GUI now displays type information about any identifier at cursor
+        position once a file has been feeded or compiled within the toplevel.
 * [NEW] Better handling of file loading and loading failure in GUI (including
         bugs 138, 142).
 * [NEW] Check file for external changes before saving.
@@ -46,6 +50,7 @@ Basic Library:
 * [NEW] Print: added `depth' and `width' to control printing bounds (also
         control output of the toplevel); renamed `printWidth' to `layoutWidth'.
 * [NEW] Print: Array2.array and most library exceptions recognized by printer.
+* [NEW] Compiler: extended `withStreams' function for type annotations output.
 * [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
 * [CHG] ComponentManager: replaced `logStream' by `logger' function, to avoid
         type dependencies; log now contains manager's id for each message.

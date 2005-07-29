@@ -49,7 +49,8 @@
 
 	val withStreams :     {out : TextIO.outstream option,
 	                       err : TextIO.outstream option,
-	                       trace : TextIO.outstream option}
+	                       trace : TextIO.outstream option,
+	                       annot : TextIO.outstream option}
 	                       -> ('a -> 'b) -> 'a -> 'b
 	val withWidths :      {out : int, err : int, trace : int}
 	                       -> ('a -> 'b) -> 'a -> 'b
@@ -154,16 +155,17 @@
     </DD>
 
     <DT>
-      <TT>withStreams {<I>out</I>, <I>err</I>, <I>trace</I>} <I>f</I></TT>
+      <TT>withStreams {<I>out</I>, <I>err</I>, <I>trace</I>, <I>annot</I>} <I>f</I></TT>
     </DT>
     <DD>
       <P>Redirects the output produced by compilation function <TT><I>f</I></TT>.
       Error messages are written to <TT><I>err</I></TT>, logging output 
-      (such as access to components) is written to <TT><I>out</I></TT>, and
+      (such as access to components) is written to <TT><I>out</I></TT>,
       special output tracing the phases of execution is written to
-      <TT><I>trace</I></TT>. By giving <TT>NONE</TT> for any of these values
+      <TT><I>trace</I></TT>, and type annotations are written to
+      <TT><I>annot</I></TT>. By giving <TT>NONE</TT> for any of these values
       the respective output will be suppressed. Default mode of operation
-      is <TT>{err = SOME TextIO.stdErr, out = NONE, trace = NONE}</TT>.</P>
+      is <TT>{err = SOME TextIO.stdErr, out = NONE, trace = NONE, annot = NONE}</TT>.</P>
       <P>Note that the I/O produced by <I>evaluation</I> of the compiled
       component is not affected.</P>
     </DD>
@@ -215,19 +217,19 @@
     <LI>Error message redirection:
 	<PRE>
 	val f = TextIO.openOut "/tmp/log";
-	withStreams {err=SOME f, out=NONE, trace=NONE} compile s</PRE>
+	withStreams {err=SOME f, out=NONE, trace=NONE, annot=NONE} compile s</PRE>
 
     <LI>Error message redirection to an incremental list of lines:
 	<PRE>
 	val (lines,wr) = TextPrimIO.openVectorListWr ()
 	val f = TextIO.mkOutstream (TextIO.StreamIO.mkOutstream (wr, IO.LINE_BUF));
-	withStreams {err=SOME f, out=NONE, trace=NONE} compile s;
+	withStreams {err=SOME f, out=NONE, trace=NONE, annot=NONE} compile s;
 	TextIO.closeOut f</PRE>
 
     <LI>Combined message redirection and layout customization (note the
       parenthesization):
 	<PRE>
-	withStreams {err=SOME TextIO.stdOut, out=SOME TextIO.stdOut, trace=NONE}
+	withStreams {err=SOME TextIO.stdOut, out=SOME TextIO.stdOut, trace=NONE, annot=NONE}
 	    (withWidths {err=120, out=120, trace=80} compile) s</PRE>
   </UL>
 
