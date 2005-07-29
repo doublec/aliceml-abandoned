@@ -135,6 +135,7 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   PrimitiveTable::Init();
   ByteCodeInterpreter::Init();
   ByteCodeJitter::Init();
+  const char *jitMode = std::getenv("ALICE_JIT_MODE");
 #if HAVE_LIGHTNING
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
@@ -144,7 +145,6 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   u_int codeSizeInChunks = 50; // was 40
 #endif
   NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
-  const char *jitMode = std::getenv("ALICE_JIT_MODE");
   if (jitMode != NULL) { 
     if (!strcmp(jitMode,"2")) 
       concreteCodeConstructor = ByteConcreteCode::New;

@@ -86,7 +86,7 @@ class ByteCode; // forward declaration
 #ifdef THREADED
 // ensure that the lookup table is initialized
 #define ENCODE_INSTR(index,instr) \
-  WriteBuffer::SetSlot(index++,(int) ByteCode::LookupInstr(instr))
+  WriteBuffer::SetSlot(index++,(u_int) ByteCode::LookupInstr(instr))
 #else
 #define ENCODE_INSTR(index,instr)	\
   WriteBuffer::SetSlot(index++,instr)
@@ -197,7 +197,7 @@ class ByteCode; // forward declaration
 
 #ifdef THREADED
 #define REWRITE_INSTR(buffer,index,instr) {				\
-    buffer->RewriteSlot(index,(int) ByteCode::LookupInstr(instr));	\
+    buffer->RewriteSlot(index,(u_int) ByteCode::LookupInstr(instr));	\
   }
 #else
 #define REWRITE_INSTR(buffer,index,instr) {	\

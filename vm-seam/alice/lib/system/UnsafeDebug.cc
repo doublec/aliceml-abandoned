@@ -109,14 +109,14 @@ DEFINE1(UnsafeDebug_lazyByteCompile) {
     AliceConcreteCode *acc = AliceConcreteCode::FromWord(cc);
     abstractCode = acc->GetAbstractCode();
   } 
-  //#if HAVE_LIGHTNING
+#if HAVE_LIGHTNING
   else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
     Transform *transform =
       STATIC_CAST(Transform *, ncc->GetAbstractRepresentation());
     abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   }
-  //#endif
+#endif
   else if (b->GetInterpreter() == ByteCodeInterpreter::self) {
     fprintf(stderr,"byte concrete code found, nothing to be done\n");
     RETURN_UNIT;

@@ -82,10 +82,7 @@ using namespace ByteCodeInstr;
     return Worker::PREEMPT;			\
   }
 
-
 ByteCodeInterpreter *ByteCodeInterpreter::self;
-
-// registers
 
 void ByteCodeInterpreter::Init() {
   self = new ByteCodeInterpreter;

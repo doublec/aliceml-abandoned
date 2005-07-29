@@ -17,7 +17,7 @@
 #include "alice/Data.hh"
 
 #define CODE_SLOT_SIZE sizeof(word)
-#define SLOT_TO_INT(slot) (int) slot
+#define SLOT_TO_INT(slot) (u_int) slot
 #define INT_TO_SLOT(i) (slot_type) i
 
 #define MAX_SLOT 0xFFFFFFFF // ajust this const if sizeof(word) != 4
@@ -59,7 +59,7 @@ public:
     top = 0;
     return code;
   }
-  static void SetSlot(u_int index, int slot) {
+  static void SetSlot(u_int index, u_int slot) {
     if(index >= top)
       top = index+1;
     if(index+1 >= size) {
@@ -79,7 +79,7 @@ public:
   static ReadBuffer *New(Chunk *code) {
     return STATIC_CAST(ReadBuffer *, code->GetBase());
   }			     
-  void RewriteSlot(u_int index, int slot) {
+  void RewriteSlot(u_int index, u_int slot) {
     ((slot_type *) this)[index] = (slot_type) slot;
   }
   slot_type GetSlot(u_int index) {
