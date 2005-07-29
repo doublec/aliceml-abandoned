@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,6 +25,7 @@ TODO: Eliminate SingTyp in abstract grammar by proper encoding of datatypes.
 
 import structure Url               from "../../lib/system/Url"
 import structure Source            from "../infrastructure/Source"
+import structure StringMap         from "../infrastructure/StringMap"
 
 import structure Name              from "../../lib/rtt/Name"
 import structure Label             from "../../lib/rtt/Label"
@@ -42,6 +43,11 @@ import structure TypedInfo
 import structure Reflect           from "../../lib/system/Reflect"
 import functor MkRewriteImports    from "MkRewriteImports"
 
+import structure TextIO            from "../../lib/system/TextIO"
+import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
+import structure PPType            from "../../lib/rtt/PPType"
+import structure PPInf             from "../../lib/rtt/PPInf"
+
 import structure Crash             from "../infrastructure/Crash"
 import structure Error             from "../infrastructure/Error"
 import structure ElaborationError  from "ElaborationError"
@@ -51,12 +57,8 @@ import signature ELABORATION_PHASE from "ELABORATION_PHASE-sig"
 (*DEBUG
 import structure Stamp             from "../common/Stamp"
 import structure PathSet           from "../../lib/rtt/PathSet"
-import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
 import structure PPMisc            from "../../lib/rtt/PPMisc"
 import structure PPPath            from "../../lib/rtt/PPPath"
-import structure PPType            from "../../lib/rtt/PPType"
-import structure PPInf             from "../../lib/rtt/PPInf"
-import structure TextIO            from "../../lib/system/TextIO"
 *)
 
 
@@ -142,6 +144,77 @@ struct
 	 prUE' (n+1) UE)
 
     *)
+
+  (* Annotations *)
+
+    datatype annot =
+	  ValAnnot of Type.t
+	| TypAnnot of Type.t
+	| ModAnnot of Inf.t
+	| InfAnnot of Inf.t
+
+    val annots : (Source.region * annot) list ref = ref []
+
+    fun collectAnnot {vals,typs,mods,infs} (r : Source.region, annot) =
+	if #1(#1 r) = 0 then () else
+	case annot of
+	    ValAnnot t =>
+	    let
+		val s = PrettyPrint.toString(PPType.ppTyp t, 80)
+	    in
+		StringMap.insertWith op@ (vals, s, [r])
+	    end
+	  | TypAnnot t =>
+	    let
+		val t = if Type.isAbbrev t then #2(Type.asAbbrev t) else t
+		val s = PrettyPrint.toString(PPType.ppTyp t, 80)
+	    in
+		StringMap.insertWith op@ (typs, s, [r])
+	    end
+	  | ModAnnot j =>
+	    let
+		val s = PrettyPrint.toString(PPInf.ppInf j, 80)
+	    in
+		StringMap.insertWith op@ (mods, s, [r])
+	    end
+	  | InfAnnot j =>
+	   let
+		val j = if Inf.isAbbrev j then #2(Inf.asAbbrev j) else j
+		val s = PrettyPrint.toString(PPInf.ppInf j, 80)
+	    in
+		StringMap.insertWith op@ (infs, s, [r])
+	    end
+
+    fun dumpRegion r =
+	TextIO.output(Switches.Global.annotOut, " " ^ Source.regionToString r)
+
+    fun dumpSort(map, prefix) =
+	StringMap.appi (fn(s,is) => (
+	    TextIO.output(Switches.Global.annotOut, "#" ^ prefix);
+	    List.app dumpRegion is;
+	    TextIO.output(Switches.Global.annotOut, "\n");
+	    TextIO.output(Switches.Global.annotOut, s);
+	    TextIO.output(Switches.Global.annotOut, "\n")
+	)) map
+
+    fun dumpAnnots() =
+	if not(!Switches.Global.dumpAnnotations) then () else
+	let
+	    val vals = StringMap.map()
+	    val typs = StringMap.map()
+	    val mods = StringMap.map()
+	    val infs = StringMap.map()
+	in
+	    List.app (collectAnnot {vals=vals, typs=typs, mods=mods, infs=infs})
+		     (!annots);
+	    dumpSort(vals, "V");
+	    dumpSort(typs, "T");
+	    dumpSort(mods, "M");
+	    dumpSort(infs, "S");
+	    TextIO.output(Switches.Global.annotOut, "##\n");
+	    annots := []
+	end
+
 
   (* Predefined types *)
 
@@ -244,6 +317,7 @@ struct
 				 Env.lookupVal(E, stamp)
 			     in (t',qt') end
 	in
+	    annots := (i, ValAnnot qt') :: !annots;
 	    ( t', qt', O.Id(typInfo(i,qt'), stamp, name) )
 	end
 
@@ -259,6 +333,7 @@ struct
 	let
 	    val (t,qt,valid') = elabValid(E, id)
 	in
+	    annots := (i, ValAnnot qt) :: !annots;
 	    ( t, O.ShortId(typInfo(i,qt), valid') )
 	end
 
@@ -270,6 +345,7 @@ struct
 	in
 	    if not(UseEnv.isPartial use) then () else
 		UseEnv.insertVal(UseEnv.inner use, l);
+	    annots := (i, ValAnnot t) :: !annots;
 	    ( t, O.LongId(typInfo(i,t), modlongid', vallab') )
 	end
 
@@ -920,6 +996,7 @@ struct
 	    val u  = ref false
 	    val _  = Env.insertTyp(E, stamp, {id=typid, path=p, typ=t', use=u})
 	in
+	    annots := (i, TypAnnot t) :: !annots;
 	    ( t', O.Id(typInfo(i,t'), stamp, name) )
 	end
 
@@ -935,6 +1012,7 @@ struct
 	let
 	    val (t,_,typid') = elabTypid(E, typid)
 	in
+	    annots := (i, TypAnnot t) :: !annots;
 	    ( t, O.ShortId(typInfo(i,t), typid') )
 	end
 
@@ -946,6 +1024,7 @@ struct
 	in
 	    if not(UseEnv.isPartial use) then () else
 		UseEnv.insertTyp(UseEnv.inner use, l);
+	    annots := (i, TypAnnot t) :: !annots;
 	    ( t, O.LongId(typInfo(i,t), modlongid', typlab') )
 	end
 
@@ -1206,6 +1285,7 @@ prInf "j" j;
 	in
 	    (* EXPERIMENTAL: make arguments non-generative
 	    if doSingleton then () else Path.hide p; *)
+	    annots := (i, ModAnnot j) :: !annots;
 	    ( j, O.Id(infInfo(i,j'), stamp, name) )
 	end
 
@@ -1221,6 +1301,7 @@ prInf "j" j;
 	    val (j,use,modid') = elabModid(E, modid)
 	in
 	    use := UseEnv.FULL;
+	    annots := (i, ModAnnot j) :: !annots;
 	    ( j, O.ShortId(infInfo(i,j), modid') )
 	end
 
@@ -1232,6 +1313,7 @@ prInf "j" j;
 	in
 	    if not(UseEnv.isPartial use) then () else
 		UseEnv.insertMod(UseEnv.inner use, l, UseEnv.FULL);
+	    annots := (i, ModAnnot j) :: !annots;
 	    ( j, O.LongId(infInfo(i,j), modlongid', modlab') )
 	end
 
@@ -1488,6 +1570,7 @@ prInf "j" j;
 	    val u  = ref false
 	    val _  = Env.insertInf(E, stamp, {id=infid, path=p, inf=j', use=u})
 	in
+	    annots := (i, InfAnnot j) :: !annots;
 	    ( j', O.Id(infInfo(i,j'), stamp, name) )
 	end
 
@@ -1503,6 +1586,7 @@ prInf "j" j;
 	let
 	    val (j,infid') = elabInfid(E, infid)
 	in
+	    annots := (i, InfAnnot j) :: !annots;
 	    ( j, O.ShortId(infInfo(i,j), infid') )
 	end
 
@@ -1514,6 +1598,7 @@ prInf "j" j;
 	in
 	    if not(UseEnv.isPartial use) then () else
 		UseEnv.insertInf(UseEnv.inner use, l);
+	    annots := (i, InfAnnot j) :: !annots;
 	    ( j, O.LongId(infInfo(i,j), modlongid', inflab') )
 	end
 
@@ -2417,8 +2502,10 @@ prInf "j'" j';
 	let
 	    val E' = Env.clone E
 	in
+	    annots := [];
 	    (E', elabComp(E', desc, component))
+	    before dumpAnnots()
 	end
-	handle e as Error.Error _ => ( Type.resetLevel() ; raise e )
-
+	handle e as Error.Error _ =>
+	    ( Type.resetLevel() ; dumpAnnots() ; raise e )
 end

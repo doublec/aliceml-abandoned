@@ -25,7 +25,9 @@ struct
 	val errWidth				= ref 80
 	val logOut				= dupOut TextIO.stdOut
 	val logWidth				= ref 80
+	val annotOut				= dupOut TextIO.stdOut
 
+	val dumpAnnotations			= ref false
 	val minimizeComponent			= ref false
 	val recursiveCompilation		= ref false
 	val traceComponentAccess		= ref false

@@ -12,6 +12,8 @@
 
 import structure Date          from "../../lib/system/Date"
 import structure Config        from "../../lib/system/Config"
+import structure TextIO        from "../../lib/system/TextIO"
+import structure IO            from "../../lib/system/IO"
 import signature SWITCHES      from "../infrastructure/SWITCHES-sig"
 import signature OPTION_PARSER from "OPTION_PARSER-sig"
 
@@ -38,6 +40,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tCompile imported components recursively if necessary.\n\
 	    \\t--trace-component-access\n\
 	    \\t\tTrace component loads and saves by the compiler.\n\
+	    \\t--annotations-file <output file>\n\
+	    \\t\tWrite type annotations to <output file>.\n\
 	    \Warning options:\n\
 	    \\t--warn-conventions\n\
 	    \\t\tWarn about naming convention violations (default).\n\
@@ -146,6 +150,13 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	  | parse ("--implicit-import-file"::file::rest) =
 	    (Language.implicitImportFile :=
 		(if file = "-" then NONE else SOME file);
+	     parse rest)
+	  | parse ("--annotations-file"::file::rest) =
+	    (if file = "-" then Global.dumpAnnotations := false else
+	     TextIO.setOutstream(Global.annotOut,
+				 TextIO.getOutstream(TextIO.openOut file))
+	     before Global.dumpAnnotations := true
+	     handle IO.Io _ => Global.dumpAnnotations := false;
 	     parse rest)
 	  | parse (all as "--assert"::num::rest) =
 	    (case Int.fromString num of

@@ -22,7 +22,9 @@ sig
 	val errWidth :				int ref
 	val logOut :				TextIO.outstream
 	val logWidth :				int ref
+	val annotOut :				TextIO.outstream
 
+	val dumpAnnotations :			bool ref
 	val minimizeComponent :			bool ref
 	val recursiveCompilation :		bool ref
 	val traceComponentAccess :		bool ref
