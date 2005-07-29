@@ -167,7 +167,11 @@ DEFINE3(Vector_extract) {
   if (i < 0 || n < 0 || STATIC_CAST(u_int, i + n) > vector->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   XVector *newVector = XVector::New(n);
+#if REQUEST_ELEMS_INT
+  newVector->InitChunk(0, n, vector->GetValue() + i);
+#else
   for (u_int j = n; j--; ) newVector->Init(j, vector->Sub(i + j));
+#endif
   RETURN(newVector->ToWord());
 } END
 

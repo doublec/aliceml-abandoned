@@ -386,8 +386,16 @@ public:
     Assert(i >= 0 && i <= 0xFF);
     GetValue()[index] = i;
   }
+  void InitChunk(u_int index, u_int size, const u_char *chunk) {
+    Assert(index + size < GetSize());
+    u_char *base = GetValue();
+    memcpy(base + index, chunk, size);
+  }
   void Update(u_int index, word value) {
     Init(index, value);
+  }
+  void UpdateChunk(u_int index, u_int size, const u_char *chunk) {
+    InitChunk(index, size, chunk);
   }
   word SubNoX(u_int index) {
     return Store::IntToWord(GetValue()[index]);
@@ -423,6 +431,11 @@ public:
     s_int i = Store::WordToInt(value);
     Assert(i >= 0 && i <= 0xFF);
     GetValue()[index] = i;
+  }
+  void InitChunk(u_int index, u_int size, const u_char *chunk) {
+    Assert(index + size < GetSize());
+    u_char *base = GetValue();
+    memcpy(base + index, chunk, size);
   }
   void LateInit(u_int index, word value) {
     // This is only meant to be called by Vector.tabulate

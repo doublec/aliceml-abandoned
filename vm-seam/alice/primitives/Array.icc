@@ -160,7 +160,11 @@ DEFINE3(Array_extract) {
   if (i < 0 || n < 0 || STATIC_CAST(u_int, i + n) > array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   XVector *vector = XVector::New(n);
+#if REQUEST_ELEMS_INT
+  vector->InitChunk(0, n, array->GetValue() + i);
+#else
   for (u_int j = n; j--; ) vector->Init(j, array->Sub(i + j));
+#endif
   RETURN(vector->ToWord());
 } END
 
@@ -187,7 +191,11 @@ DEFINE1(Array_fromVector) {
   Assert(XArray::maxLen == XVector::maxLen);
   u_int length = vector->GetLength();
   XArray *array = XArray::New(length);
+#if REQUEST_ELEMS_INT
+  array->InitChunk(0, length, vector->GetValue());
+#else
   for (u_int i = length; i--; ) array->Init(i, vector->Sub(i));
+#endif
   RETURN(array->ToWord());
 } END
 
@@ -218,7 +226,7 @@ DEFINE2(Array_tabulate) {
   DECLARE_INT(length, x0);
   if (length == 0) {
     RETURN(XArray::New(0)->ToWord());
-  } else if (length < 0 || STATIC_CAST(u_int, length) > XVector::maxLen) {
+  } else if (length < 0 || STATIC_CAST(u_int, length) > XArray::maxLen) {
     RAISE(PrimitiveTable::General_Size);
   } else {
     word wClosure = x1;
