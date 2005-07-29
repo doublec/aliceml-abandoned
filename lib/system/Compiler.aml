@@ -31,6 +31,8 @@ struct
     val errStream = RecursiveCompiler.Switches.Global.errOut
     val traceWidth = RecursiveCompiler.Switches.Debug.dumpWidth
     val traceStream = RecursiveCompiler.Switches.Debug.dumpOut
+    val annotStream = RecursiveCompiler.Switches.Global.annotOut
+    val annotFlag = RecursiveCompiler.Switches.Global.dumpAnnotations
 
     fun trace (s, fileOpt) =
 	TextIO.output (traceStream,
@@ -243,19 +245,25 @@ struct
     fun getStream NONE     = null
       | getStream(SOME os) = TextIO.getOutstream os
 
-    fun withStreams' {out, err, trace} f x =
+    fun withStreams' {out, err, trace, annot} f x =
 	let
 	    val saveOut = TextIO.getOutstream outStream
 	    val saveErr = TextIO.getOutstream errStream
 	    val saveTrace = TextIO.getOutstream traceStream
+	    val saveAnnot = TextIO.getOutstream annotStream
+	    val saveAnnotFlag = !annotFlag
 	in
 	    TextIO.setOutstream (outStream, getStream out);
 	    TextIO.setOutstream (errStream, getStream err);
 	    TextIO.setOutstream (traceStream, getStream trace);
+	    TextIO.setOutstream (annotStream, getStream annot);
+	    annotFlag := Option.isSome annot;
 	    f x finally
 	    (TextIO.setOutstream (outStream, saveOut);
 	     TextIO.setOutstream (errStream, saveErr);
-	     TextIO.setOutstream (traceStream, saveTrace))
+	     TextIO.setOutstream (traceStream, saveTrace);
+	     TextIO.setOutstream (annotStream, saveAnnot);
+	     annotFlag := saveAnnotFlag)
 	end
 
     fun withWidths' {out, err, trace} f x =

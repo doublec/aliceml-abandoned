@@ -37,7 +37,8 @@ sig
 
     val withStreams	: {out : TextIO.outstream option,
 			   err : TextIO.outstream option,
-			   trace : TextIO.outstream option}
+			   trace : TextIO.outstream option,
+			   annot : TextIO.outstream option}
 			   -> ('a -> 'b) -> 'a -> 'b
     val withWidths	: {out : int, err : int, trace : int}
 			   -> ('a -> 'b) -> 'a -> 'b
