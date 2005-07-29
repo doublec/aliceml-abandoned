@@ -737,6 +737,7 @@ DEFINE3(NativeCore_propSetString) {
     DECLARE_CSTRING(name, x1);
     DECLARE_CSTRING(str, x2);
     GValue v;
+    memset (&v, 0, sizeof (v));
     g_value_init (&v, G_TYPE_STRING);
     g_value_set_string (&v, str);
     g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
@@ -748,6 +749,7 @@ DEFINE3(NativeCore_propSetBool) {
     DECLARE_CSTRING(name, x1);
     DECLARE_BOOL(b, x2);
     GValue v;
+    memset (&v, 0, sizeof (v));
     g_value_init (&v, G_TYPE_BOOLEAN);
     g_value_set_boolean (&v, b);
     g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
@@ -760,6 +762,7 @@ DEFINE3(NativeCore_propSetInt) {
     DECLARE_CSTRING(name, x1);
     DECLARE_INT(b, x2);
     GValue v;
+    memset (&v, 0, sizeof (v));
     g_value_init (&v, G_TYPE_INT);
     g_value_set_int (&v, b);
     g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
@@ -770,6 +773,7 @@ DEFINE2(NativeCore_propString) {
     DECLARE_OBJECT(ob, x0);
     DECLARE_CSTRING(name, x1);
     GValue v;
+    memset (&v, 0, sizeof (v));
     g_value_init (&v, G_TYPE_STRING);
     g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
     RETURN1(String::New(g_value_get_string (&v))->ToWord ());
@@ -779,6 +783,7 @@ DEFINE2(NativeCore_propInt) {
     DECLARE_OBJECT(ob, x0);
     DECLARE_CSTRING(name, x1);
     GValue v;
+    memset (&v, 0, sizeof (v));
     g_value_init (&v, G_TYPE_INT);
     g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
     RETURN_INT(g_value_get_int (&v));
@@ -788,6 +793,7 @@ DEFINE2(NativeCore_propBool) {
     DECLARE_OBJECT(ob, x0);
     DECLARE_CSTRING(name, x1);
     GValue v;
+    memset (&v, 0, sizeof (v));
     g_value_init (&v, G_TYPE_BOOLEAN);
     g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
     RETURN_BOOL(g_value_get_boolean (&v));
