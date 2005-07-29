@@ -25,4 +25,6 @@ sig
     val setErrWidth	: int -> unit
     val setErrStream	: TextIO.StreamIO.outstream -> unit
     val setTraceStream	: TextIO.StreamIO.outstream -> unit
+    val setAnnotStream	: TextIO.StreamIO.outstream -> unit
+    val setAnnotActive	: bool -> unit
 end

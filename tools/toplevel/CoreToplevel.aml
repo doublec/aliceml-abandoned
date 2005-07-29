@@ -33,6 +33,8 @@ struct
     val errStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdErr)
     val traceWidth  = ref 80
     val traceStream = TextIO.mkOutstream null
+    val annotStream = TextIO.mkOutstream null
+    val annotActive = ref false
 
     (* Signal handling *)
 
@@ -83,7 +85,9 @@ struct
 
 	fun call prepare (env, source) =
 	    Compiler.withStreams {out = SOME outStream, err = SOME errStream,
-				  trace = SOME traceStream}
+				  trace = SOME traceStream,
+				  annot = if !annotActive then SOME annotStream
+					  else NONE}
 	    (Compiler.withWidths {out = !outWidth, err = !errWidth,
 				  trace = !traceWidth}
 	     prepare) (env, source)

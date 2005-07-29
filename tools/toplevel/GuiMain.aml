@@ -13,6 +13,7 @@
 
 import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gui from "Gui"
+import structure Core from "x-alice:/lib/gtk/Core" (* property hack *)
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure OutputWriters from "OutputWriters"
@@ -23,6 +24,7 @@ import structure History from "History"
 import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure BufferHighlight from "BufferHighlight"
+import structure BufferAnnotate from "BufferAnnotate"
 import structure Preferences from "Preferences"
 
 structure GuiMain =
@@ -155,19 +157,34 @@ structure GuiMain =
 	    in ()
 	    end
 
-        fun markSet (buf,_) =
+        fun markSet id (buf,_) =
             let
                 val cursor = Gtk.textBufferGetInsert buf
-		val (line, col) = Lock.sync Gtk.lock
+		val (line, col, annot) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
 			 val iter = Gtk.textIterNew()
 			 val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
+			 val annot = ref NONE
 		     in
-			 (Buffer.getLine iter, Buffer.getColumn iter)
+			 List.app (fn tag =>
+			    let val name = Core.objectGetStringProp(tag, "name")
+			    in
+				if BufferAnnotate.isAnnotationTagName name
+				then
+				    let
+					val i = BufferAnnotate.annotationIndex name
+					val annotTags = Buffer.getAnnotTags id
+				    in
+					annot := SOME(#2(Vector.sub(!annotTags, i)))
+				    end
+				else ()
+			    end
+			 ) (Gtk.textIterGetTags iter);
+			 (Buffer.getLine iter, Buffer.getColumn iter, !annot)
 		     end) ()
             in
-                Stream.send(OutputWriters.rowCol, (line, col))
+                Stream.send(OutputWriters.rowCol, (line, col, annot))
             end
 
 	val notebookSwitchEventIdP = Promise.promise()
@@ -242,15 +259,14 @@ structure GuiMain =
             let
 		val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						notebookSwitchEventId)
-                val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
-                                                    id=(!numberOfPages),
-                                                    file=file,
-                                                    mode=NEW}
+                val id = !numberOfPages
+		val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
+                                                    id, file, mode=NEW}
             in
                 Gtk.widgetGrabFocus (view);
-                Gtk.signalConnect(buf, "mark-set", markSet);
+                Gtk.signalConnect(buf, "mark-set", markSet id);
                 Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
-                markSet (buf, nil);
+                markSet id (buf, nil);
                 addPage(!numberOfPages);
                 numberOfPages := (!numberOfPages) + 1;
 		switchPage Gui.notebook1;
@@ -274,14 +290,15 @@ structure GuiMain =
 		    val file = OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()}
 		    val _ = Gtk.signalHandlerBlock(Gui.notebook1,
 						    notebookSwitchEventId)
-                    val {buf,view,highlight,...} =
-                        Buffer.buffer {notebook=Gui.notebook1, mode,
-                                       id=(!numberOfPages), file=SOME file}
+                    val id = !numberOfPages
+		    val {buf,view,highlight,...} =
+                        Buffer.buffer {notebook=Gui.notebook1, mode, id,
+                                       file=SOME file}
                 in
-                    Gtk.signalConnect(buf, "mark-set", markSet);
+                    Gtk.signalConnect(buf, "mark-set", markSet id);
                     Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
                     Gtk.widgetGrabFocus (view);
-                    markSet (buf, nil);
+                    markSet id (buf, nil);
                     addPage(!numberOfPages);
                     numberOfPages := (!numberOfPages) + 1;
 		    switchPage Gui.notebook1;
@@ -382,6 +399,8 @@ structure GuiMain =
             let
                 val _ = saveFile ()
 		val file = Buffer.getFileName id
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
             in
                 case file of
                     NONE => ()
@@ -393,7 +412,17 @@ structure GuiMain =
                 	evalSignal := SOME signalP;
 			spawn (Evaluator.evalFile (f, signal);
                 	       evalSignal := NONE)
-		    end
+		    end;
+		let
+		    val (annotStream',entries) =
+		        BufferAnnotate.parseAnnotations annotStream
+		in
+		    Promise.fulfill(p, annotStream');
+		    Buffer.annotate(id, entries)
+		end handle BufferAnnotate.Malformed =>
+		    (Promise.fulfill(p, annotStream);
+		     TextIO.StreamIO.output(OutputWriters.compilerErr,
+					    "\nerror processing annotations\n"))
             end
 (*
             case (!curtextview) of BUFFER view =>
@@ -419,8 +448,12 @@ structure GuiMain =
 
         fun feedSelection() =
             case (!curtextview) of BUFFER view =>
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id =>
             let
                 val buf = Gtk.textViewGetBuffer view
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
 
 		val (sel, txt, line, col) =
 		    Lock.sync Gtk.lock
@@ -436,16 +469,29 @@ structure GuiMain =
 			  Buffer.getColumn startiter)
 		     end) ()
             in
-                if sel
-                then eval (true,true) (addSpace(line, col, Gtk.utf8ToLatin1 txt))
-                else ()
-            end
+                if not sel then () else
+                (eval (true,true) (addSpace(line, col, Gtk.utf8ToLatin1 txt));
+		 let
+		    val (annotStream',entries) =
+		        BufferAnnotate.parseAnnotations annotStream
+		 in
+		    Promise.fulfill(p, annotStream');
+		    Buffer.annotate(id, entries)
+		 end handle BufferAnnotate.Malformed =>
+		    (Promise.fulfill(p, annotStream);
+		     TextIO.StreamIO.output(OutputWriters.compilerErr,
+					    "\nerror processing annotations\n")))
+            end)
            | _ => ()
 
         fun feedLine() =
             case (!curtextview) of BUFFER view =>
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id =>
             let
                 val buf = Gtk.textViewGetBuffer view
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
 		    
 		val (startline, str) = Lock.sync Gtk.lock
 		    (fn () =>
@@ -461,9 +507,19 @@ structure GuiMain =
 		     end) ()
                 val str = addSpace(startline, 0, Gtk.utf8ToLatin1 str)
             in
-                eval (true, true) str
-            end
-                                 | _ => ()
+                eval (true, true) str;
+		let
+		    val (annotStream',entries) =
+		        BufferAnnotate.parseAnnotations annotStream
+		in
+		    Promise.fulfill(p, annotStream');
+		    Buffer.annotate(id, entries)
+		end handle BufferAnnotate.Malformed =>
+		    (Promise.fulfill(p, annotStream);
+		     TextIO.StreamIO.output(OutputWriters.compilerErr,
+					    "\nerror processing annotations\n"))
+            end)
+           | _ => ()
 
         fun findNextEOL iter next =
             if next iter then
@@ -528,8 +584,12 @@ structure GuiMain =
 
         fun feedRegion() =
             case (!curtextview) of BUFFER view =>
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id =>
             let
                 val buf = Gtk.textViewGetBuffer view
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
 
 		val (str, line, col) = Lock.sync Gtk.lock
 		    (fn () =>
@@ -551,8 +611,18 @@ structure GuiMain =
 
                 val str = addSpace(line, col, Gtk.utf8ToLatin1 str)
             in
-                eval (true,true) (str^"\n")
-            end
+                eval (true,true) (str^"\n");
+		let
+		    val (annotStream',entries) =
+		        BufferAnnotate.parseAnnotations annotStream
+		in
+		    Promise.fulfill(p, annotStream');
+		    Buffer.annotate(id, entries)
+		end handle BufferAnnotate.Malformed =>
+		    (Promise.fulfill(p, annotStream);
+		     TextIO.StreamIO.output(OutputWriters.compilerErr,
+					    "\nerror processing annotations\n"))
+            end)
 	  | COMPILER => OutputWriters.feedCurrentInput ()
 	  | _ => ()
 
@@ -562,10 +632,22 @@ structure GuiMain =
             let
                 val _ = saveFile ()
 		val file = Buffer.getFileName id
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
             in
                 case file of
                     NONE => ()
-                  | SOME f => Evaluator.compileFile f
+                  | SOME f => Evaluator.compileFile f;
+		let
+		    val (annotStream',entries) =
+		        BufferAnnotate.parseAnnotations annotStream
+		in
+		    Promise.fulfill(p, annotStream');
+		    Buffer.annotate(id, entries)
+		end handle BufferAnnotate.Malformed =>
+		    (Promise.fulfill(p, annotStream);
+		     TextIO.StreamIO.output(OutputWriters.compilerErr,
+					    "\nerror processing annotations\n"))
             end
 
         fun reallyClose p =
@@ -613,40 +695,20 @@ structure GuiMain =
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf, startiter)
                 val enditer = Gtk.textIterCopy startiter
-
-		exception Off
-		fun moveOffset(startiter, 0, pos) = ()
-		  | moveOffset(startiter, n, pos) =
-		    let
-			val c = Gtk.textIterGetChar startiter
-		    in
-			if c = Char.ord #"\n" then
-			    raise Off
-			else if c = Char.ord #"\t" then
-			    let
-				val tabjump = 8 - pos mod 8
-			    in
-				Gtk.textIterForwardChar startiter;
-				moveOffset(startiter, n-tabjump, pos+tabjump)
-			    end
-			else
-			    (Gtk.textIterForwardChar startiter;
-			     moveOffset(startiter, n-1, pos+1))
-		    end
             in
                 if row <= lineCount andalso
                    row' <= lineCount
                 then
                     (Gtk.textIterSetLine(startiter, row-1);
                      Gtk.textIterSetLine(enditer, row'-1);
-                     moveOffset(startiter, col, 0);
-                     moveOffset(enditer, col', 0);
+                     Buffer.moveToCol(startiter, col, 0);
+                     Buffer.moveToCol(enditer, col', 0);
                      Buffer.selectRange(buf, enditer, startiter);
 		     Buffer.scrollToCursor id;
 		     Gtk.notebookSetCurrentPage(Gui.notebook1,
 						valOf (findPage id));
                      Gtk.widgetGrabFocus (Buffer.getView id))
-                    handle Off => ()
+                    handle Buffer.Off => ()
                 else ()
             end) ()
 	    end
@@ -846,6 +908,7 @@ structure GuiMain =
 	fun initDone loadSession =
 	    (Gtk.textViewSetEditable(Gui.compilerout, true);
 	     Gtk.widgetSetSensitive(Gui.feed1, true);
+	     Evaluator.setAnnotActive true;
 	     if not loadSession then () else
 	     app (openGivenFile SESSION) (Config.loadOpenFiles ()))
 

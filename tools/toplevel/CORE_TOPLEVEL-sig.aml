@@ -25,6 +25,8 @@ sig
     val outStream	: TextIO.outstream
     val errStream	: TextIO.outstream
     val traceStream	: TextIO.outstream
+    val annotStream	: TextIO.outstream
+    val annotActive	: bool ref
 
     val banner		: string
     val bye		: string

@@ -16,6 +16,7 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure FileDialog from "FileDialog"
 import structure Config from "Config"
 import structure BufferHighlight from "BufferHighlight"
+import structure BufferAnnotate from "BufferAnnotate"
 
 structure Buffer =
    struct
@@ -38,6 +39,7 @@ structure Buffer =
                      view: Gtk.object,
                      buf: Gtk.object,
                      tags: tags,
+		     annotTags: (Gtk.object * (string * string * string)) vector ref,
                      undo: undo list ref,
                      lastSearchPos: int ref,
 		     highlightActive : bool ref,
@@ -200,6 +202,10 @@ structure Buffer =
           in
               if equal then NONE else SOME txt
           end
+
+      exception Off = BufferAnnotate.Off
+      val moveToCol = BufferAnnotate.moveToCol
+
 
       fun getColFromOffset(iter, 0, col) = col
 	| getColFromOffset(iter, offset, col) =
@@ -371,6 +377,9 @@ structure Buffer =
       fun getBuffer id =
           #buf (Map.lookupExistent(bufferMap, id))
 
+      fun getAnnotTags id =
+          #annotTags (Map.lookupExistent(bufferMap, id))
+
       fun getSyntaxHighlighting id =
           !(#highlightActive (Map.lookupExistent(bufferMap, id)))
 
@@ -395,7 +404,7 @@ structure Buffer =
 		   in
 		       Gtk.textBufferGetStartIter(buf, startiter);
 		       Gtk.textBufferGetEndIter(buf, enditer);
-		       Gtk.textBufferRemoveAllTags(buf, startiter, enditer)
+		       BufferHighlight.uncolor(buf, startiter, enditer)
 		   end) ();
 		  Promise.fulfill(!highlight, SOME 0)
 		  handle Promise.Promise => ()
@@ -490,6 +499,7 @@ structure Buffer =
 			 timeStamp=ref timeStamp,
                          view=newSource,buf=buf,
                          tags=makeTags buf,
+			 annotTags=ref #[],
                          undo=ref [SAVE_MARKER],
                          lastSearchPos=ref 0,
 			 highlightActive = ref highlightActive,
@@ -673,4 +683,20 @@ structure Buffer =
 
       fun changeColors() =
 	  Map.app (fn {buf,...} => Config.changeColors buf) bufferMap
+
+      fun annotate(id, entries) =
+	  Lock.sync Gtk.lock
+	  (fn () =>
+	  let
+	      val {buf,annotTags,...} = Map.lookupExistent(bufferMap, id)
+              val startiter = Gtk.textIterNew()
+              val enditer = Gtk.textIterNew()
+	  in
+	      Gtk.textBufferGetStartIter(buf, startiter);
+	      Gtk.textBufferGetEndIter(buf, enditer);
+	      Vector.app (fn (tag, _) =>
+	          Gtk.textBufferRemoveTag(buf, tag, startiter, enditer)
+	      ) (!annotTags);
+	      annotTags := BufferAnnotate.applyAnnots(buf, entries, !annotTags)
+	  end) ()
    end

@@ -16,6 +16,13 @@ import structure Highlight from "HighlightString"
 
 structure BufferHighlight =
    struct
+      fun uncolor(buf, startiter, enditer) =
+	  (Gtk.textBufferRemoveTagByName(buf, "plain", startiter, enditer);
+	   Gtk.textBufferRemoveTagByName(buf, "reserved", startiter, enditer);
+	   Gtk.textBufferRemoveTagByName(buf, "string", startiter, enditer);
+	   Gtk.textBufferRemoveTagByName(buf, "comment", startiter, enditer);
+	   Gtk.textBufferRemoveTagByName(buf, "error", startiter, enditer))
+
       fun colorRegion (buf, offset, removeTags, style, x, x') =
           let
               open Highlight
@@ -34,9 +41,7 @@ structure BufferHighlight =
                           | COMMENT => "comment"
                           | ERRONEOUS => "error"
           in
-	      if removeTags then
-		  Gtk.textBufferRemoveAllTags(buf, startiter, enditer)
-	      else ();
+	      if removeTags then uncolor(buf, startiter, enditer) else ();
               Gtk.textBufferApplyTagByName(buf, tag, startiter, enditer);
 	      true
           end

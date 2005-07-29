@@ -24,6 +24,8 @@ struct
     fun setOutStream os = TextIO.setOutstream (outStream, os)
     fun setErrStream os = TextIO.setOutstream (errStream, os)
     fun setTraceStream os = TextIO.setOutstream (traceStream, os)
+    fun setAnnotStream os = TextIO.setOutstream (annotStream, os)
+    fun setAnnotActive b = annotActive := b
 
     fun prompt () =
 	(TextIO.output (outStream, "> ");
@@ -31,7 +33,9 @@ struct
 
     fun compile' file =
 	Compiler.withStreams {out = SOME outStream, err = SOME errStream,
-			      trace = SOME traceStream}
+			      trace = SOME traceStream,
+			      annot = if !annotActive then SOME annotStream
+				      else NONE}
 	(Compiler.withWidths {out = !outWidth, err = !errWidth,
 			      trace = !traceWidth}
 	 Compiler.compileFile) (file, NONE)
@@ -44,18 +48,26 @@ struct
 	finally prompt ()
 
     fun init () =
-	(
+	let
+	    val annotSave = !annotActive
+	in
 	    TextIO.output (outStream, CoreToplevel.banner);
+	    annotActive := false;
 	    CoreToplevel.init ();
+	    annotActive := annotSave;
 	    prompt ()
-	)
+	end
 
     fun reset () =
-	(
+	let
+	    val annotSave = !annotActive
+	in
 	    TextIO.output (outStream, "\n");
+	    annotActive := false;
 	    CoreToplevel.init ();
+	    annotActive := annotSave;
 	    prompt ()
-	)
+	end
 
     fun eval s =
 	CoreToplevel.eval s

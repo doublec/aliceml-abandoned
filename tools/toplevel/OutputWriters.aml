@@ -72,6 +72,11 @@ structure OutputWriters =
       val compilerTrace = TextIO.StreamIO.mkOutstream (compilerTraceWriter, IO.NO_BUF)
       val _ = Evaluator.setTraceStream compilerTrace
 
+      val (annotText, compilerAnnotWriter) = TextPrimIO.openVectorListWr ()
+      val compilerAnnot = TextIO.StreamIO.mkOutstream (compilerAnnotWriter, IO.LINE_BUF)
+      val _ = Evaluator.setAnnotStream compilerAnnot
+      val annotStream = ref annotText
+
       val (rowCol, rowColText) = Stream.stream ()
 
 
@@ -130,12 +135,27 @@ structure OutputWriters =
       val _ = Gtk.statusbarPush(Gui.statusbar1,rowColId,
                                 "L 0  C 0");
 
-      fun setRowCol (row, col) =
+      val tooltips = Gtk.tooltipsNew()
+
+      fun setRowCol (row, col, annotOpt) =
           let
               val r = Int.toString row
               val c = Int.toString col
-              val msg = "L "^r^"  C "^c
+	      val annot = case annotOpt of NONE => "" | SOME(s1,s2,s3) =>
+		  s1^" "^s2^" "^Substring.string(Substring.takel (fn c=>c <> #"\n") (Substring.full s3))
+              val msg = "L "^r^"  C "^c^"    "^annot
           in
+	      case annotOpt of
+	          NONE => Gtk.tooltipsDisable tooltips
+		| SOME(_,_,s) =>
+		  let val s = if String.sub(s, String.size s-1) <> #"\n" then s
+				else String.substring(s, 0, String.size s-1)
+	          in
+		      Gtk.tooltipsForceWindow tooltips;
+		      Gtk.tooltipsSetTip(tooltips, Gui.eventbox1, s,
+			"Type information about identifier at cursor position");
+		     Gtk.tooltipsEnable tooltips
+		  end;
               (Gtk.statusbarPop(Gui.statusbar1, rowColId);
                Gtk.statusbarPush(Gui.statusbar1, rowColId, msg);
                ())

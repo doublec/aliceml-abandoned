@@ -21,6 +21,7 @@ SOURCES = \
 	Config.aml \
 	History.aml \
 	BufferHighlight.aml \
+	BufferAnnotate.aml \
 	AboutDialog.aml \
 	Preferences.aml
 
