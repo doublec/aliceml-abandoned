@@ -1,8 +1,11 @@
 TODO list for the Alice IDE
 ===========================
 
+* test annotations with multiple buffers!
+
 Bugs:
 
+* on startup, shortcuts for cycling thru buffers are disabled 
 * search/goto dialogs should always be raised and moved to mouse position
 * aliceglade ignores packing flags
   (manually replace alignment21's first Gtk.FILL by Gtk.EXPAND for text fields
@@ -18,7 +21,6 @@ Missing Features:
 
 * extend `use' to support compiled components
 * completion
-* detect file changes
 * bookmarks?
 * configure autoindent, tab expansion?
 * propagate output width on init and after resize (requires Pango binding)
