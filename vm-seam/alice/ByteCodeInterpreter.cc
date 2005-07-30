@@ -27,7 +27,7 @@
 
 using namespace ByteCodeInstr;
 
-#ifdef THREADED // is defined in ByteCodeAlign32.hh
+#ifdef THREADED // is defined in ByteCodeAlign.hh
 
 #define Case(INSTR) INSTR##LBL
 
@@ -474,22 +474,24 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      * normal primitive call
      *************************/
 
-#define SEAM_CALL_PRIM(NOA) {						\
-      PREPARE_PRIMCALL##NOA();						\
-      frame->SaveState(PC,CP,IP);					\
-      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	\
-      Worker::Result res = Primitive::Execute(interpreter);		\
-      StackFrame *newFrame = Scheduler::GetFrame();			\
-      /* test if we can skip the scheduler */				\
-      if(res == CONTINUE && !StatusWord::GetStatus()		        \
-         && newFrame->GetWorker() == this) {		                \
-	frame = (ByteCodeFrame*) newFrame;				\
-	frame->GetState(&PC,&CP,&IP);					\
-	code = frame->GetCode();					\
-	codeBuffer = ReadBuffer::New(code);				\
-	DISPATCH(PC);							\
-      }							                \
-      return res;                                                       \
+#define SEAM_CALL_PRIM(NOA) {							\
+      PREPARE_PRIMCALL##NOA();							\
+      frame->SaveState(PC,CP,IP);						\
+      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);		\
+      /*Worker::Result res = Primitive::Execute(interpreter);*/			\
+      NEW_STACK_FRAME(primFrame, interpreter, 0);				\
+      Worker::Result res = interpreter->GetCFunction()();			\
+      StackFrame *newFrame = Scheduler::GetFrame();				\
+      /* test if we can skip the scheduler */					\
+      if(res == CONTINUE && !StatusWord::GetStatus()				\
+         && newFrame->GetWorker() == this) {					\
+	frame = (ByteCodeFrame*) newFrame;					\
+	frame->GetState(&PC,&CP,&IP);						\
+	code = frame->GetCode();						\
+	codeBuffer = ReadBuffer::New(code);					\
+	DISPATCH(PC);								\
+      }										\
+      return res;								\
     }									
 
       
@@ -507,7 +509,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       PREPARE_PRIMCALL##NOA();						\
       Scheduler::PopFrame(frame->GetSize());				\
       Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	\
-      Worker::Result res = Primitive::Execute(interpreter);		\
+      /*Worker::Result res = Primitive::Execute(interpreter);*/		\
+      NEW_STACK_FRAME(primFrame, interpreter, 0);			\
+      Worker::Result res = interpreter->GetCFunction()();		\
       StackFrame *newFrame = Scheduler::GetFrame();			\
       /* test if we can skip the scheduler */				\
       if(res == CONTINUE && !StatusWord::GetStatus()			\
