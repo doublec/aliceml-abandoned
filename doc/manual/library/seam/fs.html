@@ -40,10 +40,7 @@ sig
 
     type domain = (int*int) vector
     exception InvalidDomain
-    (* Exception thrown by all domain tells *)
-    (* if something that is no proper domain is used *)
 
-    (* Allocation of finite set variables *)
     val setvar :  space  ->  setvar
     val setvarVec :  space * int ->  setvar vector
 
@@ -51,58 +48,42 @@ sig
     val upperBound : space * domain -> setvar
     val bounds : space * domain * domain -> setvar
 
-    (* Basic tells *)
-    val includeDom : space * setvar * domain -> unit
-    val intersectDom : space * setvar * domain -> unit
+    datatype intrel = EQ | NQ | LQ | LE | GQ | GR
+
+    datatype setrel = CMPL | DISJ | SEQ | SNQ | SUB | SUP
+    datatype setop = DUNION | INTER | MINUS | UNION
+
+    val dom : space * setvar * setrel * domain -> unit
+    val domR : space * setvar * setrel * domain * boolvar -> unit
     val cardRange : space * int * int * setvar -> unit
 
-    (* Standard Propagators *)
-    val superOfInter : space * setvar * setvar * setvar -> unit
-    val subOfUnion : space * setvar * setvar * setvar -> unit
-    val compl : space * setvar * setvar -> unit
-    val difference : space * setvar * setvar * setvar -> unit
-    val intersect : space * setvar * setvar * setvar -> unit
-    val intersectN : space * setvar vector * setvar -> unit
-    val union : space * setvar * setvar * setvar -> unit
-    val unionN : space * setvar vector * setvar -> unit
-    val subset : space * setvar * setvar -> unit
-    val noSubset : space * setvar * setvar -> unit
-    val disjoint : space * setvar * setvar -> unit
-    val distinct : space * setvar * setvar -> unit
-    val distinctN : space * setvar vector -> unit
-    val partition : space * setvar * setvar * setvar -> unit
-    val partitionN : space * setvar vector * setvar -> unit
-    val equal : space * setvar * setvar -> unit
+    val rel : space * setvar * setrel * setvar -> unit
+    val relR : space * setvar * setrel * setvar * boolvar -> unit
+    val relOp : space * setvar * setop * setvar * setrel * setvar -> unit
+    val relI : space * setvar * setrel * intvar -> unit
+    val relIR : space * setvar * setrel * intvar * boolvar -> unit
+    val relII : space * setvar * intrel * intvar -> unit
+    val relN : space * setvar vector * setop * setvar -> unit
+
+    val relCSS : space * domain * setop * setvar * setrel * setvar -> unit
+    val relSCS : space * setvar * setop * domain * setrel * setvar -> unit
+    val relSSC : space * setvar * setop * setvar * setrel * domain -> unit
+    val relCCS : space * domain * setop * domain * setrel * setvar -> unit
+    val relCSC : space * domain * setop * setvar * setrel * domain -> unit
+    val relSCC : space * setvar * setop * domain * setrel * domain -> unit
+
     val convex : space * setvar -> unit
     val convexHull : space * setvar * setvar -> unit
-    val seq : space * setvar vector -> unit
-    val seqU : space * setvar vector * setvar -> unit
+    val sequence : space * setvar vector -> unit
+    val sequentialUnion : space * setvar vector * setvar -> unit
 
     structure Value :
 	sig
 	    val make : space * domain -> setvar
 	    val empty : space -> setvar
 	    val single : space * int -> setvar
+	    val is : space * setvar -> bool
 	end
-
-    structure Int :
-        sig
-            val incl : space * setvar * intvar -> unit
-            val excl : space * setvar * intvar -> unit
-            val the : space * setvar * intvar -> unit
-	    val min : space * setvar * intvar -> unit
-	    val max : space * setvar * intvar -> unit
-            val card : space *  setvar * intvar -> unit
-	    val match : space * setvar * intvar vector -> unit
-	end
-
-    structure Reified : sig
-	val isIn : space * setvar * int * boolvar -> unit
-	val areIn : space * (boolvar * int) vector * setvar -> unit
-	val incl : space * intvar * setvar * boolvar -> unit
-	val equal : space * setvar * setvar * boolvar -> unit
-        val subset : space * setvar * setvar * boolvar -> unit
-    end
 
     structure Selection : sig
 	val setvar : space * setvar vector * intvar * setvar -> unit
@@ -245,21 +226,59 @@ end
       of <I>dom2</I>.
     </P></DD>
 
-
     <DT>
-      <TT>includeDom (<I>s,x,d</I>)</TT>
+      <TT>datatype intrel</TT>
     </DT>
     <DD>
-      <P> Constrains <I>x</I> in <I>s</I> to contain at least the
-      elements in <I>d</I>.
+      <P>Type to identify an arithmetic relation in constraints. This
+      is the same as FD.relation.<BR>
+      <TT>EQ</TT>: Equal.<BR>
+      <TT>NQ</TT>: Not equal.<BR>
+      <TT>LQ</TT>: Less or equal.<BR>
+      <TT>LE</TT>: Less.<BR>
+      <TT>GQ</TT>: Greater or equal.<BR>
+      <TT>GR</TT>: Greater.
     </P></DD>
 
     <DT>
-      <TT>intersectDom (<I>s,x,d</I>)</TT>
+      <TT>datatype setrel</TT>
     </DT>
     <DD>
-      <P> Constrains <I>x</I> in <I>s</I> to contain at most the
-      elements in <I>d</I>.
+      <P>Type to identify a set relation in constraints.<BR>
+      <TT>CMPL</TT>: Complement.<BR>
+      <TT>DISJ</TT>: Disjointness.<BR>
+      <TT>SEQ</TT>: Set equality.<BR>
+      <TT>SNQ</TT>: Set disequality.<BR>
+      <TT>SUB</TT>: Subset.<BR>
+      <TT>SUP</TT>: Superset.<BR>
+    </P></DD>
+
+    <DT>
+      <TT>datatype setop</TT>
+    </DT>
+    <DD>
+      <P>Type to identify a set operation in constraints.<BR>
+      <TT>DUNION</TT>: Disjoint union.<BR>
+      <TT>INTER</TT>: Intersection.<BR>
+      <TT>MINUS</TT>: Difference.<BR>
+      <TT>UNION</TT>: Union.<BR>
+    </P></DD>
+
+
+    <DT>
+      <TT>dom (<I>s,x,r,d</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>x</I> in <I>s</I> to be in relation <I>r</I>
+      with the set constant denoted by <I>d</I>.
+    </P></DD>
+
+    <DT>
+      <TT>dom (<I>s,x,r,d,b</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>b</I> to be true if and only if <I>x</I> is in
+      relation <I>r</I> with the set constant denoted by <I>d</I>.
     </P></DD>
 
     <DT>
@@ -271,138 +290,107 @@ end
     </P></DD>
 
     <DT>
-      <TT>superOfInter (<I>s, x, y, z</I>)</TT>
+      <TT>rel (<I>s, x, r, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>z</I> to be a superset of the intersection of <I>x</I> and <I>y</I>.
-    </P></DD>
-
-   <DT>
-      <TT>subOfUnion (<I>s, x, y, z</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>z</I> to be a subset of the union of <I>x</I>
-	  and <I>y</I>.
+	  constrain <I>x</I> to be in relation <Í>r</I> with <I>y</I>.
     </P></DD>
 
     <DT>
-      <TT>compl (<I>s, x, y</I>)</TT>
+      <TT>relR (<I>s, x, r, y, b</I>)</TT>
     </DT>
     <DD>
-      <P> Creates a new propagator in <I>s</I> to constrain
-      <I>x</I> and <I>y</I> to be complements using the largest set
-      representable as the universe.
+      <P> Constrains <I>b</I> to be true if and only if <I>x</I> is in
+      relation <I>r</I> with <I>y</I>.
     </P></DD>
 
     <DT>
-      <TT>difference (<I>s, x,y,z</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> so that
-      <I>z</I> is <I>x</I> minus <I>y</I>.
-    </P></DD>
-
-   <DT>
-      <TT>intersect (<I>s, x, y, z</I>)</TT>
+      <TT>relOp (<I>s, x, oper, y, r, z</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>z</I> to be the intersection of <I>x</I> and <I>y</I>.
-    </P></DD>
-
-   <DT>
-      <TT>intersectN (<I>s, xs, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>y</I> to be the intersection of all <I>xs</I>.
-    </P></DD>
-
-   <DT>
-      <TT>union (<I>s, x, y, z</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>z</I> to be the union of <I>x</I> and <I>y</I>.
-    </P></DD>
-
-   <DT>
-      <TT>unionN (<I>s, xs, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>y</I> to be the union of all <I>xs</I>.
+	constrain <I>z</I> to be in relation <Í>r</I> with
+        <I>x oper y</I>.
     </P></DD>
 
     <DT>
-      <TT>subset (<I>s, x, y</I>)</TT>
+      <TT>relI (<I>s, x, r, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> to be a subset of <I>y</I>.
+	  constrain <I>x</I> to be in relation <Í>r</I> with <I>{y}</I>.
     </P></DD>
 
     <DT>
-      <TT>noSubset (<I>s, x, y</I>)</TT>
+      <TT>relIR (<I>s, x, r, y, b</I>)</TT>
     </DT>
     <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> not to be a subset of <I>y</I>.
-	  Simply put, <I>x</I> must contain at least one element not
-	  present in <I>y</I>.
+      <P> Constrains <I>b</I> to be true if and only if <I>x</I> is in
+      relation <I>r</I> with <I>{y}</I>.
     </P></DD>
 
     <DT>
-      <TT>disjoint (<I>s, x, y</I>)</TT>
+      <TT>relII (<I>s, x, r, y, b</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> and <I>y</I> to have no common element.
+	  constrain all elements in <I>x</I> to be in
+	  relation <Í>r</I> with <I>y</I>.
     </P></DD>
 
     <DT>
-      <TT>distinct (<I>s, x, y</I>)</TT>
+      <TT>relN (<I>s, xs, oper, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> and <I>y</I> to be separate sets, differing
-	  in at least one element.
+	constrain <I>y</I> to be the result of the n-ary
+	operation <I>oper</I> on the elements of <I>xs</I>.
     </P></DD>
 
     <DT>
-      <TT>distinctN (<I>s, xs</I>)</TT>
+      <TT>relCSS (<I>s, x, oper, y, r, z</I>)</TT><BR>
+      <TT>relSCS (<I>s, x, oper, y, r, z</I>)</TT><BR>
+      etc.
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
-		say no two sets in <I>xs</I> can be the same.
-    </P></DD>
-
-   <DT>
-      <TT>partition (<I>s, x, y, z</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>z</I> to be the disjoint union of <I>x</I> and
-	  <I>y</I>.
-    </P></DD>
-
-   <DT>
-      <TT>partitionN (<I>s, xs, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>y</I> to be the disjoint union of all
-	  <I>xs</I>
+	constrain <I>z</I> to be in relation <Í>r</I> with
+        <I>x oper y</I>. Depending on which of
+        the <TT>CSS</TT>, <TT>SCS</TT> etc. is chose, one or two of
+        the <I>x,y,z</I> can be constant sets specified as domains.
     </P></DD>
 
     <DT>
-      <TT>equal (<I>s, x, y</I>)</TT>
+      <TT>minElement (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
-      <P> Creates a new propagator in <I>s</I> to
-	  constrain <I>x</I> and <I>y</I> to be the same set.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is the smallest element of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>maxElement (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is the largest element of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>cardinality (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is the number of elements (cardinality) of <I>x</I>.
+    </P></DD>
+
+    <DT>
+      <TT>match (<I>s, x, ys</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>ys</I> is the ordered vector of all elements of <I>x</I>.
     </P></DD>
 
     <DT>
@@ -426,7 +414,7 @@ end
     </P></DD>
 
     <DT>
-      <TT>seq (<I>s, xs</I>)</TT>
+      <TT>sequence (<I>s, xs</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
@@ -435,7 +423,7 @@ end
     </P></DD>
 
    <DT>
-      <TT>seqU (<I>s, xs, y</I>)</TT>
+      <TT>sequentialUnion (<I>s, xs, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
@@ -466,121 +454,6 @@ end
     <DD>
       <P> Creates a determined, single element set in <I>s</I> 
       containing the integer <I>n</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.incl (<I>s, x, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>y</I> is an element of <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.excl (<I>s, x, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>y</I> is not an element of <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.the (<I>s, x, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>y</I> is the one and only element of <I>x</I>.
-	  Constrains the cardinality of <I>x</I> to 1.
-    </P></DD>
-
-    <DT>
-      <TT>Int.min (<I>s, x, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>y</I> is the smallest element of <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.max (<I>s, x, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>y</I> is the largest element of <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.card (<I>s, x, y</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>y</I> is the number of elements (cardinality) of <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.match (<I>s, x, ys</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>ys</I> is the ordered vector of all elements of <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.minN (<I>s, x, ys</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>ys</I> is the ordered vector of the smallest elements of <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Int.maxN (<I>s, x, ys</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-	  <I>ys</I> is the ordered vector of the largest elements of <I>x</I>.
-    </P></DD>
-
-
-
-    <DT>
-      <TT>Reified.isIn (<I>s, x, y, b</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-      <I>b</I> is true if and only if <I>y</I> is an element of <I>x</I>
-    </P></DD>
-
-    <DT>
-      <TT>Reified.areIn (<I>s, v1, v2, x</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-      <I>v2i</I> is true if and only if <I>v1i</I> is an element of <I>x</I>
-    </P></DD>
-
-    <DT>
-      <TT>Reified.incl (<I>s, x, y, b</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-      <I>b</I> is true if and only if <I>y</I> is an element of <I>x</I>
-    </P></DD>
-
-    <DT>
-      <TT>Reified.equal (<I>s, x, y, b</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-      <I>b</I> is true if and only if <I>y</I> and <I>x</I> are the same set.
-    </P></DD>
-
-    <DT>
-      <TT>Reified.incl (<I>s, x, y, b</I>)</TT>
-    </DT>
-    <DD>
-      <P> Creates a new propagator in <I>s</I> ensuring
-      <I>b</I> is true if and only if <I>x</I> is a subset of <I>y</I>
     </P></DD>
 
     <DT>
