@@ -26,7 +26,7 @@
 #define __ALICE_BYTE_CODE_ALIGN32_HH__
 
 #if defined(INTERFACE)
-#pragma interface "alice/ByteCodeAlign32.hh"
+#pragma interface "alice/ByteCodeAlign.hh"
 #endif
 
 #include "alice/ByteCodeBuffer.hh"

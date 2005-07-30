@@ -18,7 +18,7 @@
 #endif
 
 #include "alice/Authoring.hh"
-#include "alice/ByteCodeAlign32.hh"
+#include "alice/ByteCodeAlign.hh"
 
 #define INSTR(instr) instr,
 

@@ -21,7 +21,7 @@
 #include "alice/AbstractCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/ByteCode.hh"
-#include "alice/ByteCodeAlign32.hh"
+#include "alice/ByteCodeAlign.hh"
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeFrame.hh"
 

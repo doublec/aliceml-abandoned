@@ -49,7 +49,7 @@ pkginclude_HEADERS = \
 	Types.hh \
 	ByteCode.hh \
 	ByteCodeBuffer.hh \
-	ByteCodeAlign32.hh \
+	ByteCodeAlign.hh \
 	ByteConcreteCode.hh \
 	ByteCodeFrame.hh \
 	ByteCodeInterpreter.hh \

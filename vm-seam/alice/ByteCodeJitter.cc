@@ -18,7 +18,7 @@
 #include "alice/ByteCodeJitter.hh"
 #include "alice/ByteConcreteCode.hh"
 #include "alice/AbstractCode.hh"
-#include "alice/ByteCodeAlign32.hh"
+#include "alice/ByteCodeAlign.hh"
 #include "alice/ByteCodeBuffer.hh"
 #include "alice/ByteCode.hh"
 
