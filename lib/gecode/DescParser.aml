@@ -4,7 +4,7 @@ struct
 
   datatype var_types = IntVar | BoolVar | SetVar | List of var_types
   datatype args =
-           Var of var_types | DomSpec | Rel | ConLevel |
+           Var of var_types | DomSpec | IntRel | SetRel | SetOp | IntConLevel |
            Int | IntArgs | UInt | Bool | Void | Iterator of string |
            AvalSel | BvarSel | BvalSel | SetBvarSel | SetBvalSel | 
            Space | Status | Description | Other of string
@@ -28,10 +28,12 @@ struct
     | parseArg "BoolVar" = Var BoolVar
     | parseArg "SetVar" = Var SetVar
     | parseArg "DomSpec&" = DomSpec
-    | parseArg "RelType" = Rel
+    | parseArg "IntRelType" = IntRel
+    | parseArg "SetRelType" = SetRel
+    | parseArg "SetOpType" = SetOp
     | parseArg "const IntVarArgs&" = Var (List IntVar)
     | parseArg "const IntArgs&" = IntArgs
-    | parseArg "ConLevel" = ConLevel
+    | parseArg "IntConLevel" = IntConLevel
     | parseArg "const BoolVarArgs&" = Var (List BoolVar)
     | parseArg "const SetVarArgs&" = Var (List SetVar)
     | parseArg "BranchingDesc*" = Description

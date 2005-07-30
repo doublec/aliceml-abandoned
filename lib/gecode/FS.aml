@@ -24,6 +24,17 @@ struct
    type intvar  = FD.intvar
    type boolvar = FD.boolvar
 
+   datatype intrel =
+       EQ (* Equality         == *)
+     | NQ (* Disequality      != *)
+     | LQ (* Less or equal    <= *)
+     | LE (* Less             <  *)
+     | GQ (* Greater or equal >= *)
+     | GR (* Greater          >  *)
+       
+   datatype setrel = CMPL | DISJ | SEQ | SNQ | SUB | SUP
+   datatype setop = DUNION | INTER | MINUS | UNION
+
    datatype fsb_var_sel =
 	    FSB_MAX_CARD
 	  | FSB_MIN_CARD
@@ -49,47 +60,44 @@ struct
        let
 	   val v = setvar space
        in
-	   UnsafeGecode.set_lowerBound(space,v,lb);
-	   UnsafeGecode.set_upperBound(space,v,ub);
+	   UnsafeGecode.set_dom(space,v,SUP,lb);
+	   UnsafeGecode.set_dom(space,v,SUB,ub);
 	   v
        end
    fun lowerBound(space,lb) =
        let
 	   val v = setvar space
        in
-	   UnsafeGecode.set_lowerBound(space,v,lb);
+	   UnsafeGecode.set_dom(space,v,SUP,lb);
 	   v
        end
    fun upperBound(space,ub) =
        let
 	   val v = setvar space
        in
-	   UnsafeGecode.set_upperBound(space,v,ub);
+	   UnsafeGecode.set_dom(space,v,SUB,ub);
 	   v
        end
 
+   val dom = UnsafeGecode.set_dom
+   val domR = UnsafeGecode.set_domR
    fun cardRange(space,min,max,s) = UnsafeGecode.set_cardRange(space,s,min,max)
-   fun includeDom(space,s,dom) = UnsafeGecode.set_lowerBound(space,s,dom)
-   fun intersectDom(space,s,dom) = UnsafeGecode.set_upperBound(space,s,dom)
 
-   val superOfInter = UnsafeGecode.set_superOfInter
-   val subOfUnion = UnsafeGecode.set_subOfUnion
-   val compl = UnsafeGecode.set_complement
+   val rel = UnsafeGecode.set_rel
+   val relR = UnsafeGecode.set_relR
+   val relOp = UnsafeGecode.set_relOp
+   val relI = UnsafeGecode.set_relI
+   val relIR = UnsafeGecode.set_relIR
+   val relII = UnsafeGecode.set_relII
+   val relN = UnsafeGecode.set_relN
 
-   val difference = UnsafeGecode.set_difference
-   val intersect = UnsafeGecode.set_intersection
-   val intersectN = UnsafeGecode.set_intersectionn
-   val union = UnsafeGecode.set_union
-   val unionN = UnsafeGecode.set_unionn
-   val subset = UnsafeGecode.set_subset
-   val noSubset = UnsafeGecode.set_nosubset
-   val disjoint = UnsafeGecode.set_disjoint
-   (*    val disjointN : space * setvar vector -> unit *)
-   val distinct = UnsafeGecode.set_distinct
-   val distinctN = UnsafeGecode.set_distinctn
-   val partition = UnsafeGecode.set_partition
-   val partitionN = UnsafeGecode.set_partitionn
-   val equal = UnsafeGecode.set_equal
+   val relCSS = UnsafeGecode.set_relCSS
+   val relSCS = UnsafeGecode.set_relSCS
+   val relSSC = UnsafeGecode.set_relSSC
+   val relCCS = UnsafeGecode.set_relCCS
+   val relCSC = UnsafeGecode.set_relCSC
+   val relSCC = UnsafeGecode.set_relSCC
+
    val convex = UnsafeGecode.set_convex
    val convexHull = UnsafeGecode.set_convexHull
    val seq = UnsafeGecode.set_seq
@@ -105,28 +113,6 @@ struct
 	  fun single(space,i) = make(space,#[(i,i)])
 (*	  val universal = UnsafeGecodeFS.universal*)
 	  val is = UnsafeGecode.set_isAssigned
-       end
-
-   structure Int =
-       struct
-          val incl  = UnsafeGecode.set_include
-          val excl  = UnsafeGecode.set_exclude
-          val the   = UnsafeGecode.set_the
-          val min   = UnsafeGecode.set_min
-          val max   = UnsafeGecode.set_max
-          val match = UnsafeGecode.set_match
-          val card  = UnsafeGecode.set_card
-       end
-
-   structure Reified =
-       struct
-          val isIn = UnsafeGecode.set_includeRI
-	  val incl = UnsafeGecode.set_includeR
-	  fun areIn(space,v,set) = Vector.app
-				       (fn (b,i) => (isIn(space,set,i,b)))
-				       v
-          val equal = UnsafeGecode.set_equalR
-          val subset = UnsafeGecode.set_subsetR
        end
 
    structure Selection =

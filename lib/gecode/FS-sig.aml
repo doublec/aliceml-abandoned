@@ -30,30 +30,38 @@ sig
     val upperBound : space * domain -> setvar
     val bounds : space * domain * domain -> setvar
 
-    (* Basic tells *)
-    val includeDom : space * setvar * domain -> unit
-    val intersectDom : space * setvar * domain -> unit
+    datatype intrel =
+	     EQ (* Equality         == *)
+	   | NQ (* Disequality      != *)
+	   | LQ (* Less or equal    <= *)
+	   | LE (* Less             <  *)
+	   | GQ (* Greater or equal >= *)
+	   | GR (* Greater          >  *)
+
+    datatype setrel = CMPL | DISJ | SEQ | SNQ | SUB | SUP
+    datatype setop = DUNION | INTER | MINUS | UNION
+
+    (* Domain constraints *)
+    val dom : space * setvar * setrel * domain -> unit
+    val domR : space * setvar * setrel * domain * boolvar -> unit
     val cardRange : space * int * int * setvar -> unit
-                                            
-    (* Standard Propagators *)
-    val superOfInter : space * setvar * setvar * setvar -> unit
-    val subOfUnion : space * setvar * setvar * setvar -> unit
-    val compl : space * setvar * setvar -> unit
-    (* val complIn : space * setvar * setvar * setvar -> unit *)
-    val difference : space * setvar * setvar * setvar -> unit
-    val intersect : space * setvar * setvar * setvar -> unit
-    val intersectN : space * setvar vector * setvar -> unit
-    val union : space * setvar * setvar * setvar -> unit
-    val unionN : space * setvar vector * setvar -> unit
-    val subset : space * setvar * setvar -> unit
-    val noSubset : space * setvar * setvar -> unit
-    val disjoint : space * setvar * setvar -> unit
-(*    val disjointN : space * setvar vector -> unit *)
-    val distinct : space * setvar * setvar -> unit
-    val distinctN : space * setvar vector -> unit
-    val partition : space * setvar * setvar * setvar -> unit
-    val partitionN : space * setvar vector * setvar -> unit
-    val equal : space * setvar * setvar -> unit
+
+    (* Relation constraints *)
+    val rel : space * setvar * setrel * setvar -> unit
+    val relR : space * setvar * setrel * setvar * boolvar -> unit
+    val relOp : space * setvar * setop * setvar * setrel * setvar -> unit
+    val relI : space * setvar * setrel * intvar -> unit
+    val relIR : space * setvar * setrel * intvar * boolvar -> unit
+    val relII : space * setvar * intrel * intvar -> unit
+    val relN : space * setvar vector * setop * setvar -> unit
+
+    val relCSS : space * domain * setop * setvar * setrel * setvar -> unit
+    val relSCS : space * setvar * setop * domain * setrel * setvar -> unit
+    val relSSC : space * setvar * setop * setvar * setrel * domain -> unit
+    val relCCS : space * domain * setop * domain * setrel * setvar -> unit
+    val relCSC : space * domain * setop * setvar * setrel * domain -> unit
+    val relSCC : space * setvar * setop * domain * setrel * domain -> unit
+
     val convex : space * setvar -> unit
     val convexHull : space * setvar * setvar -> unit
     val seq : space * setvar vector -> unit
@@ -67,28 +75,6 @@ sig
 (*	    val universal : space -> setvar*)
 	    val is : space * setvar -> bool
 	end
-
-    structure Int :
-        sig
-            val incl : space * setvar * intvar -> unit
-            val excl : space * setvar * intvar -> unit
-            val the : space * setvar * intvar -> unit
-	    val min : space * setvar * intvar -> unit
-	    val max : space * setvar * intvar -> unit
-            val card : space *  setvar * intvar -> unit
-	    val match : space * setvar * intvar vector -> unit
-(*	    val minN : setvar * intvar vector -> unit *)
-(*	    val maxN : setvar * intvar vector -> unit *)
-	end
-
-    structure Reified : sig
-	val isIn : space * setvar * int * boolvar -> unit
-	val areIn : space * (boolvar * int) vector * setvar -> unit
-	val incl : space * setvar * intvar * boolvar -> unit
-	val equal : space * setvar * setvar * boolvar -> unit
-        val subset : space * setvar * setvar * boolvar -> unit
-(*	val partition : setvar list * int list * setvar * bin list -> unit *)
-    end
 
     structure Selection : sig
 	val setvar : space * setvar vector * intvar * setvar -> unit

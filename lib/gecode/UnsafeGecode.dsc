@@ -32,42 +32,42 @@ class SetVar {
 void dom(IntVar, DomSpec&); int_dom;
 void dom(IntVar, DomSpec&, BoolVar); int_domR;
 // Propagators
-void rel(IntVar, RelType, IntVar); int_rel;
-void rel(IntVar, RelType, int); int_relI;
-void rel(IntVar, RelType, IntVar, BoolVar); int_relR;
-void rel(IntVar, RelType, int, BoolVar); int_relIR;
+void rel(IntVar, IntRelType, IntVar); int_rel;
+void rel(IntVar, IntRelType, int); int_relI;
+void rel(IntVar, IntRelType, IntVar, BoolVar); int_relR;
+void rel(IntVar, IntRelType, int, BoolVar); int_relIR;
 
-void eq(IntVar, IntVar, ConLevel); int_eq;
-void eq(const IntVarArgs&, ConLevel); int_eqV;
-void eq(IntVar, IntVar, BoolVar, ConLevel); int_eqR;
+void eq(IntVar, IntVar, IntConLevel); int_eq;
+void eq(const IntVarArgs&, IntConLevel); int_eqV;
+void eq(IntVar, IntVar, BoolVar, IntConLevel); int_eqR;
 
 // Distinct constraints
-void distinct(const IntVarArgs&, ConLevel); int_distinct;
-void distinct(const IntArgs&, const IntVarArgs&, ConLevel); int_distinctI;
+void distinct(const IntVarArgs&, IntConLevel); int_distinct;
+void distinct(const IntArgs&, const IntVarArgs&, IntConLevel); int_distinctI;
 
 // Sortedness
-void sortedness(const IntVarArgs&, const IntVarArgs&, ConLevel); int_sortedness;
-void permsort(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, ConLevel); int_permsort;
+void sortedness(const IntVarArgs&, const IntVarArgs&, IntConLevel); int_sortedness;
+void permsort(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, IntConLevel); int_permsort;
 
 // Global cardinality
-void gcc(const IntVarArgs&, const IntArgs&, const IntArgs&, ConLevel); int_gcc;
+void gcc(const IntVarArgs&, const IntArgs&, const IntArgs&, IntConLevel); int_gcc;
 
 // Linear equations
-void linear(const IntArgs&, const IntVarArgs&, RelType, int, ConLevel); int_linear;
-void linear(const IntArgs&, const IntVarArgs&, RelType, int, BoolVar, ConLevel); int_linearR;
+void linear(const IntArgs&, const IntVarArgs&, IntRelType, int, IntConLevel); int_linear;
+void linear(const IntArgs&, const IntVarArgs&, IntRelType, int, BoolVar, IntConLevel); int_linearR;
 
 
 // Counting constraints
-void count(const IntVarArgs&, int, RelType, int); int_countII;
-void count(const IntVarArgs&, int, RelType, IntVar); int_countIV;
-void count(const IntVarArgs&, IntVar, RelType, int); int_countVI;
-void count(const IntVarArgs&, IntVar, RelType, IntVar); int_countVV;
+void count(const IntVarArgs&, int, IntRelType, int); int_countII;
+void count(const IntVarArgs&, int, IntRelType, IntVar); int_countIV;
+void count(const IntVarArgs&, IntVar, IntRelType, int); int_countVI;
+void count(const IntVarArgs&, IntVar, IntRelType, IntVar); int_countVV;
 
 // Access constraints
 
 void element(const IntVarArgs&, IntVar, IntVar); int_element;
 void element(const IntArgs&, IntVar, IntVar); int_elementI;
-void lex(const IntVarArgs&, RelType, const IntVarArgs&); int_lex;
+void lex(const IntVarArgs&, IntRelType, const IntVarArgs&); int_lex;
 
 // Boolean constraints
 void bool_not(BoolVar, BoolVar); int_bool_not;
@@ -84,9 +84,9 @@ void bool_or(const BoolVarArgs&, BoolVar); int_bool_orV;
 
 void min(const IntVarArgs&, IntVar); int_min;
 void max(const IntVarArgs&, IntVar); int_max;
-void abs(IntVar, IntVar, ConLevel); int_abs;
-void mult(IntVar, IntVar, IntVar, ConLevel); int_mult;
-//void pow(IntVar, IntVar, IntVar, ConLevel); int_power;
+void abs(IntVar, IntVar, IntConLevel); int_abs;
+void mult(IntVar, IntVar, IntVar, IntConLevel); int_mult;
+//void pow(IntVar, IntVar, IntVar, IntConLevel); int_power;
 
 // Value assignment
 
@@ -97,44 +97,33 @@ void branch(const IntVarArgs&, BvarSel, BvalSel); int_branch;
 
 // Finite Set Propagators
 
-void include(SetVar, DomSpec&); set_lowerBound;
-void intersect(SetVar, DomSpec&); set_upperBound;
+void dom(SetVar, SetRelType, DomSpec&); set_dom;
+void dom(SetVar, SetRelType, DomSpec&, BoolVar); set_domR;
+void cardinality(SetVar, unsigned int, unsigned int); set_cardRange;
 
-void include(SetVar, IntVar); set_include;
-void exclude(SetVar, IntVar); set_exclude;
-void the(SetVar, IntVar); set_the;
+void rel(SetVar, SetRelType, SetVar); set_rel;
+void rel(SetVar, SetRelType, SetVar, BoolVar); set_relR;
+void rel(SetVar, SetOpType, SetVar, SetRelType, SetVar); set_relOp;
+void rel(SetVar, SetRelType, IntVar); set_relI;
+void rel(SetVar, SetRelType, IntVar, BoolVar); set_relIR;
+void rel(SetVar, IntRelType, IntVar); set_relII;
+void rel(const SetVarArgs&, SetOpType, SetVar); set_relN;
+void rel(DomSpec&, SetOpType, SetVar, SetRelType, SetVar); set_relCSS;
+void rel(SetVar, SetOpType, DomSpec&, SetRelType, SetVar); set_relSCS;
+void rel(SetVar, SetOpType, SetVar, SetRelType, DomSpec&); set_relSSC;
+void rel(DomSpec&, SetOpType, DomSpec&, SetRelType, SetVar); set_relCCS;
+void rel(DomSpec&, SetOpType, SetVar, SetRelType, DomSpec&); set_relCSC;
+void rel(SetVar, SetOpType, DomSpec&, SetRelType, DomSpec&); set_relSCC;
+
+void convex(SetVar); set_convex;
+void convexHull(SetVar, SetVar); set_convexHull;
+void sequence(const SetVarArgs&); set_seq;
+void sequentialUnion(const SetVarArgs&, SetVar); set_seqU;
+
 void minElement(SetVar, IntVar); set_min;
 void maxElement(SetVar, IntVar); set_max;
 void match(SetVar, const IntVarArgs&); set_match;
 void cardinality(SetVar, IntVar); set_card;
-void cardinality(SetVar, unsigned int, unsigned int); set_cardRange;
-
-void superOfInter(SetVar, SetVar, SetVar); set_superOfInter;
-void subOfUnion(SetVar, SetVar, SetVar); set_subOfUnion;
-
-void subset(SetVar, SetVar); set_subset;
-void noSubset(SetVar, SetVar); set_nosubset;
-void disjoint(SetVar, SetVar); set_disjoint;
-void distinct(SetVar, SetVar); set_distinct;
-void distinct(const SetVarArgs&); set_distinctn;
-void equal(SetVar, SetVar); set_equal;
-void convex(SetVar); set_convex;
-void convexHull(SetVar, SetVar); set_convexHull;
-void fsunion(SetVar, SetVar, SetVar); set_union;
-void complement(SetVar, SetVar); set_complement;
-void intersection(SetVar, SetVar, SetVar); set_intersection;
-void difference(SetVar, SetVar, SetVar); set_difference;
-void partition(SetVar, SetVar, SetVar); set_partition;
-void fsunion(const SetVarArgs&, SetVar); set_unionn;
-void intersection(const SetVarArgs&, SetVar); set_intersectionn;
-void partition(const SetVarArgs&, SetVar); set_partitionn;
-void seq(const SetVarArgs&); set_seq;
-void seqU(const SetVarArgs&, SetVar); set_seqU;
-
-void include(SetVar, IntVar, BoolVar); set_includeR;
-void include(SetVar, int, BoolVar); set_includeRI;
-void equal(SetVar, SetVar, BoolVar); set_equalR;
-void subset(SetVar, SetVar, BoolVar); set_subsetR;
 
 void selectUnion(const SetVarArgs&, SetVar, SetVar); set_selectUnion;
 void selectInter(const SetVarArgs&, SetVar, SetVar); set_selectInter;

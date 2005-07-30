@@ -26,6 +26,7 @@ structure Generator =
             "  DECLARE_VECTOR(v"^n^", x"^n^");\n" ^
             "  int noOfPairs"^n^" = v"^n^"->GetLength();\n" ^
             "  int pairs"^n^"[noOfPairs"^n^"][2];\n\n" ^
+	    "  {\n" ^
             "  int lastMax = IntegerSet::SMALLEST_ELEMENT-1;\n" ^
             "  for (int j=0; j<noOfPairs"^n^"; j++) {\n" ^
             "    DECLARE_TUPLE(tmp, v"^n^"->Sub(j));\n" ^
@@ -37,12 +38,23 @@ structure Generator =
             "    pairs"^n^"[j][0] = tmp0;\n" ^
             "    pairs"^n^"[j][1] = tmp1;\n" ^
             "  }\n" ^
+	    "  }\n" ^
             "  DomSpec ds"^n^"(pairs"^n^", noOfPairs"^n^");\n")
       end
 
-  fun outputRel(n, f) =
+  fun outputIntRel(n, f) =
       let val n = Int.toString n in
-          TextIO.output(f, "  DECLARE_INT(rel"^n^", x"^n^");\n")
+          TextIO.output(f, "  DECLARE_INT(intrel"^n^", x"^n^");\n")
+      end
+
+  fun outputSetRel(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_INT(setrel"^n^", x"^n^");\n")
+      end
+
+  fun outputSetOp(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_INT(setop"^n^", x"^n^");\n")
       end
 
   fun outputConlevel(n, f) =
@@ -128,9 +140,13 @@ structure Generator =
        outputInArgs (n+1) f ar)
     | outputInArgs n f (DomSpec::ar) =
       (outputDomSpec(n,f);outputInArgs (n+1) f ar)
-    | outputInArgs n f (Rel::ar) =
-      (outputRel(n, f); outputInArgs (n+1) f ar)
-    | outputInArgs n f (ConLevel::ar) =
+    | outputInArgs n f (IntRel::ar) =
+      (outputIntRel(n, f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (SetRel::ar) =
+      (outputSetRel(n, f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (SetOp::ar) =
+      (outputSetOp(n, f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (IntConLevel::ar) =
       (outputConlevel(n,f); outputInArgs (n+1) f ar)
     | outputInArgs n f (Int::ar) =
       (outputInt(n,f); outputInArgs (n+1) f ar)
@@ -155,8 +171,10 @@ structure Generator =
           case arg of Var (List _) => "vars"^n
                     | Var _ => "var"^n
                     | DomSpec => "ds"^n
-                    | Rel => "UnsafeGecode::int2reltype[rel"^n^"]"
-                    | ConLevel => "UnsafeGecode::int2cl[cl"^n^"]"
+                    | IntRel => "UnsafeGecode::int2intreltype[intrel"^n^"]"
+                    | SetRel => "UnsafeGecode::int2setreltype[setrel"^n^"]"
+		    | SetOp => "UnsafeGecode::int2setoptype[setop"^n^"]"
+                    | IntConLevel => "UnsafeGecode::int2cl[cl"^n^"]"
                     | Int => "i"^n
                     | UInt => "i"^n
                     | IntArgs => "args"^n
@@ -326,8 +344,10 @@ structure Generator =
     | argToType add (Var (List BoolVar)) = (addMark add)^"boolvar vector"
     | argToType add (Var (List SetVar)) = (addMark add)^"setvar vector"
     | argToType add DomSpec = (addMark add)^"domain"
-    | argToType add Rel = (addMark add)^"rel"
-    | argToType add ConLevel = (addMark add)^"conlevel"
+    | argToType add IntRel = (addMark add)^"intrel"
+    | argToType add SetRel = (addMark add)^"setrel"
+    | argToType add SetOp = (addMark add)^"setop"
+    | argToType add IntConLevel = (addMark add)^"intconlevel"
     | argToType add Int = "int"
     | argToType add IntArgs = "int vector"
     | argToType add UInt = "int"
@@ -342,7 +362,7 @@ structure Generator =
     | argToType add Space = (addMark add)^"space"
     | argToType add Status = (addMark add)^"status"
     | argToType add Description = (addMark add)^"description"
-    | argToType add (Other s) = (raise GeneratorError
+    | argToType add (Other s) = (print s;raise GeneratorError
                                            ("argToType failed: "^s))
 
   fun putStars [a] = a

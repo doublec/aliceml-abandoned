@@ -73,8 +73,8 @@ public:
                                                  noOfSetVars(s.noOfSetVars),
                                                  intArraySize(s.intArraySize),
                                                  fsArraySize(s.fsArraySize) {
-    is.update(this, s.is);
-    fss.update(this, s.fss);
+    is.update(this, s.is, share);
+    fss.update(this, s.fss, share);
   }
 
   virtual Space* copy(bool share) { 

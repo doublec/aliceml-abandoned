@@ -158,16 +158,27 @@ const BvalSel int2bvalsel[] =
     BVAL_SPLIT_MAX, BVAL_SPLIT_MIN
   };
 
-const RelType int2reltype[] =
+const IntRelType int2intreltype[] =
   {
-    REL_EQ, REL_GQ, REL_GR,
-    REL_LE, REL_LQ, REL_NQ
+    IRT_EQ, IRT_GQ, IRT_GR,
+    IRT_LE, IRT_LQ, IRT_NQ
   };
 
-const ConLevel int2cl[] =
+const SetRelType int2setreltype[] =
   {
-    CL_BND, CL_DEF, CL_DOM,
-    CL_VAL
+    SRT_CMPL, SRT_DISJ, SRT_EQ,
+    SRT_NQ, SRT_SUB, SRT_SUP
+  };
+
+const SetOpType int2setoptype[] =
+  {
+    SOT_DUNION, SOT_INTER, SOT_MINUS, SOT_UNION
+  };
+
+const IntConLevel int2cl[] =
+  {
+    ICL_BND, ICL_DEF, ICL_DOM,
+    ICL_VAL
   };
 
 const AvalSel int2avalsel[] =
