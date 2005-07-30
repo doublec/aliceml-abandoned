@@ -69,8 +69,8 @@ sig
 
     val convex : space * setvar -> unit
     val convexHull : space * setvar * setvar -> unit
-    val seq : space * setvar vector -> unit
-    val seqU : space * setvar vector * setvar -> unit
+    val sequence : space * setvar vector -> unit
+    val sequentialUnion : space * setvar vector * setvar -> unit
 
     structure Value :
 	sig
