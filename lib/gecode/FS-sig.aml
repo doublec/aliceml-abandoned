@@ -62,6 +62,11 @@ sig
     val relCSC : space * domain * setop * setvar * setrel * domain -> unit
     val relSCC : space * setvar * setop * domain * setrel * domain -> unit
 
+    val cardinality : space * setvar * intvar -> unit
+    val maxElement : space * setvar * intvar -> unit
+    val minElement : space * setvar * intvar -> unit
+    val match : space * setvar * intvar vector -> unit
+
     val convex : space * setvar -> unit
     val convexHull : space * setvar * setvar -> unit
     val seq : space * setvar vector -> unit

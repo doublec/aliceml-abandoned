@@ -123,7 +123,7 @@ void sequentialUnion(const SetVarArgs&, SetVar); set_seqU;
 void minElement(SetVar, IntVar); set_min;
 void maxElement(SetVar, IntVar); set_max;
 void match(SetVar, const IntVarArgs&); set_match;
-void cardinality(SetVar, IntVar); set_card;
+void cardinality(SetVar, IntVar); set_cardinality;
 
 void selectUnion(const SetVarArgs&, SetVar, SetVar); set_selectUnion;
 void selectInter(const SetVarArgs&, SetVar, SetVar); set_selectInter;

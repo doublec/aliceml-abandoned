@@ -98,6 +98,11 @@ struct
    val relCSC = UnsafeGecode.set_relCSC
    val relSCC = UnsafeGecode.set_relSCC
 
+   val cardinality = UnsafeGecode.set_cardinality
+   val maxElement = UnsafeGecode.set_max
+   val minElement = UnsafeGecode.set_min
+   val match = UnsafeGecode.set_match
+
    val convex = UnsafeGecode.set_convex
    val convexHull = UnsafeGecode.set_convexHull
    val seq = UnsafeGecode.set_seq
