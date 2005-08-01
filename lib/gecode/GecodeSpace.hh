@@ -68,13 +68,13 @@ public:
   {}
 
   explicit
-  GecodeSpace(GecodeSpace& s, bool share=true) : Space(s, share),
+  GecodeSpace(GecodeSpace& s, bool share=true) : Space(share, s),
                                                  noOfIntVars(s.noOfIntVars),
                                                  noOfSetVars(s.noOfSetVars),
                                                  intArraySize(s.intArraySize),
                                                  fsArraySize(s.fsArraySize) {
-    is.update(this, s.is, share);
-    fss.update(this, s.fss, share);
+    is.update(this, share, s.is);
+    fss.update(this, share, s.fss);
   }
 
   virtual Space* copy(bool share) { 

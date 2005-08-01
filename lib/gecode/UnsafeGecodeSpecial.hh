@@ -191,15 +191,13 @@ const SetBvarSel int2fsbvarsel[] =
     SETBVAR_MAX_CARD,
     SETBVAR_MIN_CARD,
     SETBVAR_MIN_UNKNOWN_ELEM,
-    SETBVAR_NONE,
-    SETBVAR_RANDOM
+    SETBVAR_NONE
   };
 
 const SetBvalSel int2fsbvalsel[] =
   {
     SETBVAL_MAX,
-    SETBVAL_MIN,
-    SETBVAL_RANDOM
+    SETBVAL_MIN
   };
 
 class GecodeHandler : public ConcreteRepresentationHandler {
