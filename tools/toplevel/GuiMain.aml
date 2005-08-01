@@ -219,7 +219,7 @@ structure GuiMain =
 		 val ratio = Real.fromInt h1 / Real.fromInt (h1+h2)
 	     in
 		 if Gtk.notebookGetNPages Gui.notebook1 > 0
-		     then (if Gtk.panedGetPosition Gui.vpaned1 = 1 then
+		     then (if Gtk.panedGetPosition Gui.vpaned1 = 0 then
 			   let
 			       val newPos = Real.fromInt (h1+h2-Config.editorHeight) * ratio
 			   in
@@ -234,7 +234,7 @@ structure GuiMain =
 			 val newHeight = editorHeight+h1+h2
 			 val newPos = Real.fromInt newHeight * ratio
 		     in
-			 Gtk.panedSetPosition(Gui.vpaned1,1);
+			 Gtk.panedSetPosition(Gui.vpaned1,0);
 			 Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
 			 Gtk.widgetGrabFocus Gui.compilerout;
 			 Gtk.widgetSetSensitive(Gui.switch_to_editor, false)
@@ -895,6 +895,10 @@ structure GuiMain =
                                changeFocus COMPILER);
              Gtk.signalConnect(Gui.progout, "focus-in-event",
                                changeFocus STDSTREAMS);
+	     Gtk.panedSetPosition(Gui.vpaned1,0);
+	          (* workaround: Glade refuses to set pane position to 0,
+		   * but with 1 the statusbar appears over the menu when
+		   * using an eventbox... 8-} *)
 	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
 	     OutputWriters.makeWriters (eval (false, false));
 	     History.set (Config.loadHistory());
