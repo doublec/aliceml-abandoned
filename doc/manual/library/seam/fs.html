@@ -111,18 +111,14 @@ sig
 	   | FSB_MIN_CARD
            | FSB_MIN_UNKNOWN_ELEM
 	   | FSB_NONE
-           | FSB_RANDOM_VAR
 	     
     datatype fsb_val_sel =
 	     FSB_MAX
 	   | FSB_MIN
-           | FSB_RANDOM_VAL
 
     val setvarbranch :  space *  setvar vector * fsb_var_sel *
 			fsb_val_sel -> unit
 
-    val randomBranch :  space *  setvar vector * fsb_var_sel *
-			fsb_val_sel * int -> unit
 end
 </PRE>
 
@@ -589,7 +585,6 @@ end
       <TT>FSB_MIN_CARD</TT> : Pick the variable with the lowest possible cardinality.<BR>
       <TT>FSB_MIN_UNKNOWN_ELEM</TT> : Pick the variable with the smallest unknown element.<BR>
       <TT>FSB_NONE</TT> : Pick the leftmost undetermined variable.<BR>
-      <TT>FSB_RANDOM_VAR</TT> : Pick at random.<BR>                  
     </P></DD>
 
     <DT>
@@ -599,7 +594,6 @@ end
       <P>Identifies the value selection strategy in branching.<BR>
       <TT>FSB_MAX</TT> : Pick the largest unknown value of the variable.<BR>
       <TT>FSB_MIN</TT> : Pick the smallest unknown value of the variable.<BR>
-      <TT>FSB_RANDOM_VAR</TT> : Pick at random.<BR>              
     </P></DD>
 
     <DT>
@@ -610,12 +604,4 @@ end
       over the setvars in <I>v</I> following the given strategy.
     </P></DD>
 
-    <DT>
-      <TT>randombranch (<I>s, v, varStrategy, valStrategy, n</I>)</TT>
-    </DT>
-    <DD>
-      <P> same as setvarbranch, with the possibility of pre-setting the random seed 
-      to achieve reproduceable random search trees.
-    </P></DD>
-   </DL>
 <?php footing() ?>
