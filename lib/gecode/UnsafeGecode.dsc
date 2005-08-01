@@ -132,4 +132,3 @@ void selectDisjoint(const SetVarArgs&, SetVar); set_selectDisjoint;
 void selectSets(const SetVarArgs&, IntVar, SetVar); set_selectSets;
 
 void branch(const SetVarArgs&, SetBvarSel, SetBvalSel); set_branch;
-void branch(const SetVarArgs&, SetBvarSel, SetBvalSel, int); set_randomBranch;

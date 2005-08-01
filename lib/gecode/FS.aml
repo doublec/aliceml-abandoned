@@ -40,12 +40,10 @@ struct
 	  | FSB_MIN_CARD
           | FSB_MIN_UNKNOWN_ELEM
 	  | FSB_NONE
-          | FSB_RANDOM_VAR
 	    
    datatype fsb_val_sel =
 	    FSB_MAX
 	  | FSB_MIN
-          | FSB_RANDOM_VAL
 
    type domain = (int * int) vector
 
@@ -109,7 +107,6 @@ struct
    val sequentialUnion = UnsafeGecode.set_seqU
 
    val setvarbranch = UnsafeGecode.set_branch
-   val randomBranch = UnsafeGecode.set_randomBranch
 
    structure Value =
        struct
