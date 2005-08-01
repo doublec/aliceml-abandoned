@@ -12,7 +12,6 @@
 
 #define XArray Word8Array
 #define XVector Word8Vector
-#define YArray CharArray
 #define REQUEST_ELEMS_INT 1
 
 #include "Array.icc"

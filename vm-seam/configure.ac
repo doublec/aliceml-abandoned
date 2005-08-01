@@ -62,11 +62,8 @@ case $host_os in
        DEFS="${DEFS}${DEFS:+ }-D_BSD_SOCKLEN_T_"
        alicedll=""
        ;;
-    *cygwin*)
-       alicedll='${libdir}/seam/alice.dll'
-       ;;
     *)
-       alicedll=""
+       alicedll='${libdir}/seam/alice.dll'
        ;;
 esac
 
@@ -79,7 +76,6 @@ AC_CHECK_SIZEOF(long)
 # checks for compiler characteristics
 
 AC_SEAM_CHECK_DECLSPEC
-AC_SEAM_CHECK_CXXFLAG(-fPIC)
 
 # checks for library functions
 

@@ -384,7 +384,7 @@ public:
   void Init(u_int index, word value) {
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
-    Assert(i >= 0 && i <= 0xFF);
+    Assert(i >= -128 && i <= 127);
     GetValue()[index] = i;
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
@@ -397,9 +397,6 @@ public:
   }
   void UpdateChunk(u_int index, u_int size, const u_char *chunk) {
     InitChunk(index, size, chunk);
-  }
-  word SubNoX(u_int index) {
-    return Store::IntToWord(GetValue()[index]);
   }
   word Sub(u_int index) {
     s_int i = GetValue()[index];
@@ -430,6 +427,96 @@ public:
   void Init(u_int index, word value) {
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
+    Assert(i >= -128 && i <= 127);
+    GetValue()[index] = i;
+  }
+  void InitChunk(u_int index, u_int size, const u_char *chunk) {
+    Assert(index + size <= GetSize());
+    u_char *base = GetValue();
+    memcpy(base + index, chunk, size);
+  }
+  void LateInit(u_int index, word value) {
+    // This is only meant to be called by Vector.tabulate
+    Init(index, value);
+  }
+  word Sub(u_int index) {
+    s_int i = GetValue()[index];
+    return Store::IntToWord(mydiv(i * Word8Array::nonbits_exp,
+				  Word8Array::nonbits_exp));
+  }
+};
+
+class AliceDll CharArray: private Chunk {
+public:
+  static const u_int maxLen = String::maxSize;
+
+  static const s_int nonbits_exp =
+  STATIC_CAST(u_int,1) << (STORE_WORD_WIDTH - 8);
+
+  using Chunk::ToWord;
+
+  static CharArray *New(u_int length) {
+    Chunk *c = Store::AllocMutableChunk(length);
+    return STATIC_CAST(CharArray *, c);
+  }
+  static CharArray *FromWord(word x) {
+    return STATIC_CAST(CharArray *, Store::WordToChunk(x));
+  }
+  static CharArray *FromWordDirect(word x) {
+    return STATIC_CAST(CharArray *, Store::DirectWordToChunk(x));
+  }
+
+  u_char *GetValue() {
+    return reinterpret_cast<u_char *>(GetBase());
+  }
+  u_int GetLength() {
+    return GetSize();
+  }
+  void Init(u_int index, word value) {
+    Assert(index < GetSize());
+    s_int i = Store::WordToInt(value);
+    Assert(i >= 0 && i <= 0xFF);
+    GetValue()[index] = i;
+  }
+  void InitChunk(u_int index, u_int size, const u_char *chunk) {
+    Assert(index + size <= GetSize());
+    u_char *base = GetValue();
+    memcpy(base + index, chunk, size);
+  }
+  void Update(u_int index, word value) {
+    Init(index, value);
+  }
+  void UpdateChunk(u_int index, u_int size, const u_char *chunk) {
+    InitChunk(index, size, chunk);
+  }
+  word Sub(u_int index) {
+    return Store::IntToWord(GetValue()[index]);
+  }
+};
+
+class AliceDll CharVector: private String {
+public:
+  static const u_int maxLen = String::maxSize;
+
+  using String::ToWord;
+  using String::GetValue;
+
+  static CharVector *New(u_int length) {
+    return STATIC_CAST(CharVector *, String::New(length));
+  }
+  static CharVector *FromWord(word x) {
+    return STATIC_CAST(CharVector *, String::FromWord(x));
+  }
+  static CharVector *FromWordDirect(word x) {
+    return STATIC_CAST(CharVector *, String::FromWordDirect(x));
+  }
+
+  u_int GetLength() {
+    return GetSize();
+  }
+  void Init(u_int index, word value) {
+    Assert(index < GetSize());
+    s_int i = Store::WordToInt(value);
     Assert(i >= 0 && i <= 0xFF);
     GetValue()[index] = i;
   }
@@ -442,13 +529,8 @@ public:
     // This is only meant to be called by Vector.tabulate
     Init(index, value);
   }
-  word SubNoX(u_int index) {
-    return Store::IntToWord(GetValue()[index]);
-  }
   word Sub(u_int index) {
-    s_int i = GetValue()[index];
-    return Store::IntToWord(mydiv(i * Word8Array::nonbits_exp,
-				  Word8Array::nonbits_exp));
+    return Store::IntToWord(GetValue()[index]);
   }
 };
 

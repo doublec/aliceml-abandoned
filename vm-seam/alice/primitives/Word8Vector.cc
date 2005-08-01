@@ -11,7 +11,6 @@
 //
 
 #define XVector Word8Vector
-#define YVector CharVector
 #define REQUEST_ELEMS_INT 1
 
 #include "Vector.icc"

@@ -59,6 +59,8 @@ void PrimitiveTable::Init() {
   RegisterArray();
   RegisterByte();
   RegisterChar();
+  RegisterCharArray();
+  RegisterCharVector();
   RegisterExn();
   RegisterFuture();
   RegisterGeneral();

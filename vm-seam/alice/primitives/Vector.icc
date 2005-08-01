@@ -206,16 +206,6 @@ DEFINE2(Vector_sub) {
   RETURN(vector->Sub(index));
 } END
 
-#if defined(YVector)
-DEFINE2(Vector_subNoX) {
-  DECLARE_XVECTOR(vector, x0);
-  DECLARE_INT(index, x1);
-  if (STATIC_CAST(u_int, index) >= vector->GetLength())
-    RAISE(PrimitiveTable::General_Subscript);
-  RETURN(vector->SubNoX(index));
-} END
-#endif
-
 DEFINE2(Vector_tabulate) {
   DECLARE_INT(length, x0);
   if (length == 0) {
@@ -244,20 +234,6 @@ DEFINE1(Vector_toList) {
   RETURN(list);
 } END
 
-#if defined(YVector)
-DEFINE1(Vector_toListNoX) {
-  DECLARE_XVECTOR(vector, x0);
-  word list = Store::IntToWord(Types::nil);
-  for (u_int i = vector->GetLength(); i--; ) {
-    TagVal *cons = TagVal::New(Types::cons, 2);
-    cons->Init(0, vector->SubNoX(i));
-    cons->Init(1, list);
-    list = cons->ToWord();
-  }
-  RETURN(list);
-} END
-#endif
-
 void PrimitiveTable::XCONCAT(Register,XVector)() {
   VectorTabulateWorker::Init();
   Register(XSTRINGIFY(XVector)".concat", Vector_concat, 1);
@@ -268,14 +244,4 @@ void PrimitiveTable::XCONCAT(Register,XVector)() {
   Register(XSTRINGIFY(XVector)".sub", Vector_sub, 2);
   Register(XSTRINGIFY(XVector)".tabulate", Vector_tabulate, 2);
   Register(XSTRINGIFY(XVector)".toList", Vector_toList, 1);
-#if defined(YVector)
-  Register(XSTRINGIFY(YVector)".concat", Vector_concat, 1);
-  Register(XSTRINGIFY(YVector)".extract", Vector_extract, 3);
-  Register(XSTRINGIFY(YVector)".fromList", Vector_fromList, 1);
-  Register(XSTRINGIFY(YVector)".maxLen", Store::IntToWord(XVector::maxLen));
-  Register(XSTRINGIFY(YVector)".length", Vector_length, 1);
-  Register(XSTRINGIFY(YVector)".sub", Vector_subNoX, 2);
-  Register(XSTRINGIFY(YVector)".tabulate", Vector_tabulate, 2);
-  Register(XSTRINGIFY(YVector)".toList", Vector_toListNoX, 1);
-#endif
 }
