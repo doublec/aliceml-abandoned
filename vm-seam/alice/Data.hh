@@ -359,7 +359,8 @@ class AliceDll Word8Array: private Chunk {
 public:
   static const u_int maxLen = String::maxSize;
 
-  static const s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
+  static const s_int nonbits_exp =
+  STATIC_CAST(u_int,1) << (STORE_WORD_WIDTH - 8);
 
   using Chunk::ToWord;
 
@@ -387,7 +388,7 @@ public:
     GetValue()[index] = i;
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
-    Assert(index + size < GetSize());
+    Assert(index + size <= GetSize());
     u_char *base = GetValue();
     memcpy(base + index, chunk, size);
   }
@@ -433,7 +434,7 @@ public:
     GetValue()[index] = i;
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
-    Assert(index + size < GetSize());
+    Assert(index + size <= GetSize());
     u_char *base = GetValue();
     memcpy(base + index, chunk, size);
   }
