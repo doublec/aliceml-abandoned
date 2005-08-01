@@ -1,5 +1,9 @@
 Runtime System:
 
+* [NEW] Experimental optimized byte code, produced by jitting; activate by
+        setting environment variable ALICE_JIT_MODE=2. This byte code is at
+        least twice as fast as non-jitted code, which is particularly
+        interesting on PowerPC, where native code jitting is not supported yet.
 * [FIX] Custom component managers can no longer be bypassed by importing global
         ComponentManager explicitly.
 * [FIX] Importing from HTTP was broken (bug 120).
@@ -55,7 +59,7 @@ Basic Library:
 * [CHG] ComponentManager: replaced `logStream' by `logger' function, to avoid
         type dependencies; log now contains manager's id for each message.
 * [FIX] IntInf: fixed `~>>'.
-* [FIX] Real: fixed `rem' and `hash'; fixed isFinite and isNormal for NaN.
+* [FIX] Real: fixed `rem' & `hash'; fixed treatment of NaN in several functions.
 * [FIX] Substring: fixed `isSuffix'.
 * [FIX] Word8{Vector,Array}: result from `sub' was broken when >= 128 (bug 119).
 * [FIX] Array2: properly treat zero-size regions (bug 127).

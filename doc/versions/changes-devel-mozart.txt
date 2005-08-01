@@ -72,7 +72,7 @@ Library:
 * Toplevel: Future.await is now available unqualified; fst and snd no longer.
 * Word[N]: fixed compare.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
-* Real: Fixed isFinite and isNormal for NaN.
+* Real: Fixed treatment of NaN in several functions.
 * Exn: new structure for dealing with exceptions and backtraces.
 * OS.Path:
   - Handle Windows style path syntax as well.

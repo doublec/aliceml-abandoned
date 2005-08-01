@@ -54,6 +54,8 @@ struct
 
     val posInf = 1.0 / 0.0
     val negInf = ~1.0 / 0.0
+    val posNan = 0.0 / 0.0
+    val negNan = ~posNan
 
     fun compareReal(x,y) =
 	(case compare(x,y)
@@ -65,42 +67,45 @@ struct
     fun *+(x,y,z)			= x*y + z
     fun *-(x,y,z)			= x*y - z
 
-    fun abs x where (x < 0.0)		= ~x
-      | abs x				= x
-
-    fun min(x,y)			= if x < y then x else y
-    fun max(x,y)			= if x > y then x else y
+    fun abs x				= if x = ~0.0 orelse x < 0.0 then ~x
+					  else x
 
     fun x == y				= compareReal(x, y) = IEEEReal.EQUAL
     fun x != y				= Bool.not(x == y)
     val equal				= op ==
 
-    fun isNan x				= compareReal(x, x) =
-	                                  IEEEReal.UNORDERED
-    fun isFinite x			= abs x <> 1.0/0.0
-    fun isNormal x			= isFinite x andalso abs x <> 0.0
+    fun isNan x				= compareReal(x, x) = IEEEReal.UNORDERED
+    fun isFinite x			= x <> posInf andalso x <> negInf
+					  andalso Bool.not(isNan x)
+    fun isZero x			= x = 0.0 orelse x = ~0.0
+    fun isNormal x			= isFinite x andalso Bool.not(isZero x)
+
+    fun min(x,y)			= if isNan x then y else
+					  if isNan y then x else
+					  if x < y then x else y
+    fun max(x,y)			= if isNan x then y else
+					  if isNan y then x else
+					  if x > y then x else y
 
     fun sign x where (x > 0.0)		= 1
       | sign x where (x < 0.0)		= ~1
       | sign x where (isNan x)          = raise General.Domain
       | sign x				= 0
 
-    fun signBit x			= Int.<(sign x, 0) orelse x == ~0.0
+    fun signBit x			= x < 0.0 orelse x = ~0.0 orelse
+					  x = negNan
     fun sameSign(x,y)			= signBit x = signBit y
+    fun copySign(x,y)			= if sameSign(x,y) then x else ~x
 
-    fun copySign(x,y) where (sameSign(x,y))	= x
-      | copySign(x,y)				= ~x
-
-    fun x ?= y				= isNan x andalso isNan y orelse
-	                                  x = y orelse
+    fun x ?= y				= isNan x andalso isNan y
+					  orelse x = y orelse
 					  sign x = 0 andalso sign y = 0
 
     fun class x				= class'(abs x)
     and class' x			= if isNan x then IEEEReal.NAN else
-					  if x == 1.0/0.0 then IEEEReal.INF
-					  else
-					  if x == 0.0 then IEEEReal.ZERO else
-					  IEEEReal.NORMAL
+					  if Bool.not(isFinite x) then IEEEReal.INF
+					  else if abs x == 0.0 then IEEEReal.ZERO
+					  else IEEEReal.NORMAL
 					  (* TODO: detect SUBNORMAL *)
 
     fun checkFloat x			= if isNan x then raise General.Div
