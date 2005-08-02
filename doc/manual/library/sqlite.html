@@ -12,7 +12,7 @@
     The <TT>SQLite</TT> structure provides an interface to a database
     engine using a simple flat-file format. See <A
     href="http://www.sqlite.org">the SQLite web page</A> for further
-    details.
+    details. Alice uses version 3 of the library.
   </P>
 
 <?php section("import", "import") ?>
@@ -44,7 +44,10 @@
       <TT>opendb <I>fileName</I></TT>
     </DT>
     <DD>
-      <P>Opens the SQLite database stored in file <TT><I>fileName</I></TT>.
+      <P>Opens the SQLite database stored in file
+      <TT><I>fileName</I></TT>. If opening fails, this raises an
+      <TT>SQLError</TT> exception with a string describing what went
+      wrong.
       </P>
     </DD>
 
@@ -52,7 +55,10 @@
       <TT>closedb <I>db</I></TT>
     </DT>
     <DD>
-      <P>Closes the SQLite database referened through <TT><I>db</I></TT>.
+      <P>Closes the SQLite database referened through
+      <TT><I>db</I></TT>. If closing fails, this raises an
+      <TT>SQLError</TT> exception with a string describing what went
+      wrong.
       </P>
     </DD>
 
@@ -67,7 +73,19 @@
       </P>
       <P>The return type must match the result of your query: It must
       be either a tuple of the right size or a record with the same
-      labels as the column names.</P>
+      labels as the column names. If the result does not match the
+      type, a <TT>TypeError</TT> exception is raised with a string
+      describing the error.</P>
+      <P>The fields of the record or tuple must be of type
+      <TT>int</TT>,<TT>real</TT>, or <TT>string</TT>, or an
+      <TT>option</TT> of these types. Whether a plain type or an
+      option is given determines how the special database value
+      <TT>null</TT> is treated: it is converted to the
+      empty string or 0 if the field type is a plain type, or to
+      <TT>NONE</TT> if an option type was given. If the type does not
+      satisfy these rules, a <TT>TypeError</TT> exception is
+      raised with a string describing the error.
+      </P>
       </P>Assuming a database of users with the following layout:</P>
       <PRE>
       table users: lastname (text), firstname (text), uid (int), password (text)
@@ -80,11 +98,6 @@
       val all : (string * string * int * string) list =
             = query (db, "SELECT * FROM users")
       </PRE>
-      <P>
-      The special <TT>null</TT> value in a field is converted to the
-      empty string or 0 if the field type is a plain type, or to
-      <TT>NONE</TT> if an option type was given.
-      </P>
     </DD>
 
 
