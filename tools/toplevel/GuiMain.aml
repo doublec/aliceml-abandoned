@@ -196,6 +196,7 @@ structure GuiMain =
                 val textView = Gtk.binGetChild scrWin
             in
 		currentPage := curPage;
+		markSet curPage (Gtk.textViewGetBuffer textView, ());
 		case !curtextview of
 		    BUFFER _ => (curtextview := BUFFER textView;
 				 Option.app SearchDialog.reconnect (getCurrentPage()))
