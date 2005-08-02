@@ -65,7 +65,13 @@ DEFINE1(xml_parse) {
 
   if (doc==NULL) {
     xmlErrorPtr err = xmlGetLastError();
-    word exn = MakeXMLError(String::New(err->message));
+    String *s;
+    if (err==NULL)
+      s = String::New("unknown error");
+    else
+      s = String::New(err->message);
+    xmlResetLastError();
+    word exn = MakeXMLError(s);
     RAISE(exn);
   }
 
@@ -90,7 +96,13 @@ DEFINE1(xml_parseString) {
 
   if (doc==NULL) {
     xmlErrorPtr err = xmlGetLastError();
-    word exn = MakeXMLError(String::New(err->message));
+    String *s;
+    if (err==NULL)
+      s = String::New("unknown error");
+    else
+      s = String::New(err->message);
+    xmlResetLastError();
+    word exn = MakeXMLError(s);
     RAISE(exn);
   }
 
@@ -102,7 +114,6 @@ DEFINE1(xml_parseString) {
   Tuple *t = Tuple::New(2);
   t->Init(0, cr->ToWord());
   t->Init(1, Store::UnmanagedPointerToWord(cur));
-
   RETURN(t->ToWord());
 } END
 
