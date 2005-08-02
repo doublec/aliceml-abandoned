@@ -15,7 +15,9 @@ signature NATIVE_XML =
     sig
 	structure NativeXML:
 	    sig
-		val parse : string -> 'xml_doc_ptr
+	        exception XMLError of string
+		val parse : string -> 'xml_node_ptr
+		val parseString : string -> 'xml_node_ptr
 		val isNull : 'xml_node_ptr -> bool
 		val children : 'xml_node_ptr -> 'xml_node_ptr
 		val parent : 'xml_node_ptr -> 'xml_node_ptr

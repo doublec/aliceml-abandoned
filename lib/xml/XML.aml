@@ -5,7 +5,7 @@ structure XML :> XML =
     struct
 	type xml_node
 
-	exception DocumentParsingError
+	exception XMLError = NativeXML.XMLError
 
 	datatype xml_node_type =
 	    ATTRIBUTE_DECL
@@ -45,7 +45,17 @@ structure XML :> XML =
 		val doc = X.parse filename
 	    in
 		if X.isNull doc then
-		    raise DocumentParsingError
+		    raise XMLError ""
+		else
+		    doc
+	    end
+
+	fun parseString string =
+	    let
+		val doc = X.parseString string
+	    in
+		if X.isNull doc then
+		    raise XMLError ""
 		else
 		    doc
 	    end

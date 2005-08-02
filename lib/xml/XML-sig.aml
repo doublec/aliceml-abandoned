@@ -2,7 +2,7 @@ signature XML =
     sig
 	type xml_node
 
-	exception DocumentParsingError
+	exception XMLError of string
 
 	datatype xml_node_type =
 	    ATTRIBUTE_DECL
@@ -31,6 +31,7 @@ signature XML =
 	fun /> : xml_node * (xml_node -> 'a) -> 'a
 
 	val parse : string -> xml_node
+	val parseString : string -> xml_node
 	fun name : xml_node -> string
 	fun children : xml_node -> xml_node list
 	fun null : xml_node -> bool

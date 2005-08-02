@@ -48,12 +48,52 @@ xmlDocPtr extract_docptr(word c) {
   return (xmlDocPtr)Store::WordToUnmanagedPointer(cr->Get(0));
 }
   
+static word XMLErrorConstructor;
+
+static word MakeXMLError(String *err) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(XMLErrorConstructor), 1);
+  conVal->Init(0, err->ToWord());
+  return conVal->ToWord();
+}
 
 DEFINE1(xml_parse) {
   DECLARE_STRING(filename, x0);
   xmlDocPtr doc;
   xmlNodePtr cur;
   doc = xmlParseFile(filename->ExportC());
+
+  if (doc==NULL) {
+    xmlErrorPtr err = xmlGetLastError();
+    word exn = MakeXMLError(String::New(err->message));
+    RAISE(exn);
+  }
+
+  cur = xmlDocGetRootElement((xmlDocPtr) doc);
+
+  ConcreteRepresentation *cr = ConcreteRepresentation::New(xmlRepHandler,1);
+  cr->Init(0, Store::UnmanagedPointerToWord(doc));
+  xmlFinalizationSet->Register(cr->ToWord());
+  Tuple *t = Tuple::New(2);
+  t->Init(0, cr->ToWord());
+  t->Init(1, Store::UnmanagedPointerToWord(cur));
+
+  RETURN(t->ToWord());
+} END
+
+DEFINE1(xml_parseString) {
+  DECLARE_STRING(str, x0);
+  xmlDocPtr doc;
+  xmlNodePtr cur;
+  char* strv = STATIC_CAST(char*, str->GetValue());
+  doc = xmlParseMemory(strv, str->GetSize());
+
+  if (doc==NULL) {
+    xmlErrorPtr err = xmlGetLastError();
+    word exn = MakeXMLError(String::New(err->message));
+    RAISE(exn);
+  }
+
   cur = xmlDocGetRootElement((xmlDocPtr) doc);
 
   ConcreteRepresentation *cr = ConcreteRepresentation::New(xmlRepHandler,1);
@@ -179,15 +219,11 @@ DEFINE2(xml_getProp) {
   isolat1ToUTF8((unsigned char*) buffer2->GetBase(), &outlen,
 		(unsigned char*) name->ExportC(), &len2);
   buffer2->GetBase()[outlen] = 0;
-  //  String *utf8name = String::New((char*) buffer2->GetBase(),outlen);
-  //  fprintf(stderr, "buffer: %s\n", utf8name->ExportC());
 
   xmlChar *prop;
 
   prop = xmlGetProp((xmlNodePtr) cur,
-		    //		    (xmlChar *) utf8name->ExportC());
 		    (xmlChar *) buffer2->GetBase());
-  //		    (unsigned char*) name->ExportC());
 
   if (prop==NULL) {
     RETURN(Store::IntToWord(0)); // NONE
@@ -207,10 +243,28 @@ DEFINE2(xml_getProp) {
 
 } END
 
+DEFINE3(xml_error) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(XMLErrorConstructor), 1);
+  conVal->Init(0, x0);
+  RETURN(conVal->ToWord());
+} END
+
+static void IgnoreXMLError(void *ctx, const char* msg,...) {
+  return;
+}
+
 word InitComponent() {
-  Record *record = Record::New(11);
+
+  xmlSetGenericErrorFunc(NULL, IgnoreXMLError);
+
+  Record *record = Record::New(14);
   xmlFinalizationSet = new XMLFinalizationSet();
   xmlRepHandler = new XMLRepHandler();
+
+  XMLErrorConstructor =
+    UniqueConstructor::New("XMLError", "NativeXML.XMLError")->ToWord();
+  RootSet::Add(XMLErrorConstructor);
 
   xmlTypeMapping[1] = 10;
   xmlTypeMapping[2] = 1;
@@ -236,6 +290,8 @@ word InitComponent() {
 
   INIT_STRUCTURE(record, "NativeXML", "parse",
 		 xml_parse, 1);
+  INIT_STRUCTURE(record, "NativeXML", "parseString",
+		 xml_parseString, 1);
   INIT_STRUCTURE(record, "NativeXML", "isNull",
 		 xml_isNull, 1);
   INIT_STRUCTURE(record, "NativeXML", "children",
@@ -256,5 +312,8 @@ word InitComponent() {
 		 xml_getProp, 2);
   INIT_STRUCTURE(record, "NativeXML", "nodeListGetString",
 		 xml_nodeListGetString, 2);
+  record->Init("'XMLError", XMLErrorConstructor);
+  INIT_STRUCTURE(record, "NativeXML", "XMLError",
+		 xml_error, 1);
   RETURN_STRUCTURE("NativeXML$", record);
 }
