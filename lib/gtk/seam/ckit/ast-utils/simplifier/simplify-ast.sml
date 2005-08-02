@@ -205,7 +205,7 @@ struct
 
       fun mkInt i = coreExp2exp intCt (IntConst (i:LargeInt.int))
 
-      fun mkChr c = coreExp2exp charCt (IntConst (Int32.fromInt (ord c)))
+      fun mkChr c = coreExp2exp charCt (IntConst (LargeInt.fromInt (ord c)))
 
       fun simplifyExtDecls edecls =
 	      map simplifyExtDecl edecls

@@ -604,11 +604,11 @@ let
   fun TCInitializer(ctype as (Ast.TypeRef _ | Ast.Qual _), expr) =
         TCInitializer(getCoreType ctype, expr)  (* the following TCInitializer cases expect coretypes *)
     | TCInitializer (Ast.Array(opt, ctype), Ast.Aggregate exprs) = 
-	(case (opt, Int32.fromInt(List.length exprs))
+	(case (opt, LargeInt.fromInt(List.length exprs))
 	   of (NONE, _) =>
 	       bug "TCInitializer: array size should be filled in by now?"
 	    | (SOME(x, _), y) =>
-	       if x = y then ()   (* Int32 equality *)
+	       if x = y then ()   (* LargeInt equality *)
 	       else if x < y then
 		 error "TCInitializer: badly formed array initializer: \
 	                \too many initializers"
@@ -697,7 +697,7 @@ let
 			 (case initExpr'
 			    of Ast.Aggregate inits =>
 			      let val len = List.length inits
-				val i = Int32.fromInt len
+				val i = LargeInt.fromInt len
 				val (_, expr) = wrapEXPR(stdInt, Ast.IntConst i)
 			      in
 				if len=0 then warn "Array has zero size." else ();
@@ -1549,7 +1549,7 @@ let
 			else ();
 		       i)
 		   | (NONE, _, _, _) => (error "Non-constant case label."; 0))
-	   in case addSwitchLabel n
+	   in case addSwitchLabel (LargeInt.fromLarge n)
 	     of NONE => ()
 	   | SOME msg => error msg;
 	   wrapSTMT(Ast.CaseLabel (n, (cnvStatement stmt)))
@@ -2717,7 +2717,7 @@ end old code ******)
 			  let
 			    val ty = cnvCtype (false, ct)
 			    fun process2 (decr,expr)
-				 : Ast.ctype * Ast.member option * Int32.int option = 
+				 : Ast.ctype * Ast.member option * LargeInt.int option = 
 			      let
 				val (ty', memNameOpt) = mungeTyDecr (ty, decr)
 				val sizeOpt = 
@@ -2769,7 +2769,7 @@ end old code ******)
 
 		      (* union members are more restricted than struct members *)
 		      fun checkUnionMember (ty: Ast.ctype, NONE: Ast.member option,
-					    _ : Int32.int option) =
+					    _ : LargeInt.int option) =
 			  (error "union member has no name";
 			   (ty,bogusMember(Sym.member(tid,"<noname>"))))
 			| checkUnionMember (ty,SOME m,SOME _) =

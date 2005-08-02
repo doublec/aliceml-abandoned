@@ -15,7 +15,7 @@ sig
   (* check if type has known storage size *)
 
 (*
-  val fixArrayType : Ast.tidtab -> {n:Int32.int, ty:Ast.ctype} -> {err:bool, ty:Ast.ctype}
+  val fixArrayType : Ast.tidtab -> {n:LargeInt.int, ty:Ast.ctype} -> {err:bool, ty:Ast.ctype}
   (* fix up array type using initializer info e.g. int x[] = {1,2,3}; *)
 *)
 

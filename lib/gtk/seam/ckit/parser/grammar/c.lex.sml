@@ -60,9 +60,9 @@ fun mkHexChar (args as (s, a, b, errWarn:errWarn)) : int (* returns a character 
 	in
 	  if (i>255) then 
 	    ((#warn errWarn) (a,b,"overflow in hexadecimal escape sequence");
-	    Int32.toInt(i mod 256))
+	    LargeInt.toInt(i mod 256))
 	  else
-       	    Int32.toInt i
+       	    LargeInt.toInt i
         end	
 
 fun mkOctInt (s,a,b,errWarn:errWarn)
@@ -77,9 +77,9 @@ fun mkOctChar (args as (s, a, b, errWarn:errWarn)) (* returns a character sized 
 	in
 	  if (i>255) then 
 	    ((#warn errWarn) (a,b,"overflow in octal escape sequence");
-	    Int32.toInt(i mod 256))
+	    LargeInt.toInt(i mod 256))
 	  else
-       	    Int32.toInt i
+       	    LargeInt.toInt i
         end	
 
 fun mkInt (s,a,b,errWarn:errWarn) = ((case (StringCvt.scanString (LargeInt.scan StringCvt.DEC) s) of
@@ -963,12 +963,12 @@ let fun continue() : Internal.result =
 + size(yytext)))
 | 20 => (charlist := [""]; stringstart := yypos; YYBEGIN S; continue())
 | 206 => (let val s = substring(yytext, 2, size(yytext)-3)
-				     in Tokens.CCONST(Int32.fromInt (mkOctChar(s,yypos,yypos+size(yytext),errWarn)),
+				     in Tokens.CCONST(LargeInt.fromInt (mkOctChar(s,yypos,yypos+size(yytext),errWarn)),
 						      yypos,
 					      yypos+size(yytext))
 	                             end)
 | 213 => (let val s = substring(yytext, 3, size(yytext)-4)
-				     in Tokens.CCONST(Int32.fromInt (mkHexChar(s,yypos,yypos+size(yytext),errWarn)),
+				     in Tokens.CCONST(LargeInt.fromInt (mkHexChar(s,yypos,yypos+size(yytext),errWarn)),
 						      yypos,
 						      yypos+size(yytext))
 	                             end)
@@ -976,7 +976,7 @@ let fun continue() : Internal.result =
 	                            in Tokens.CCONST(Int.toLarge cval,yypos,yypos+size(yytext))
                                     end)
 | 22 => (YYBEGIN INITIAL;Tokens.STRING(makeString charlist,!stringstart,yypos+1))
-| 222 => (Tokens.CCONST(Int32.fromInt(special_char(substring(yytext,1,size(yytext)-2),yypos,yypos+size(yytext),errWarn)), yypos, yypos+size(yytext)))
+| 222 => (Tokens.CCONST(LargeInt.fromInt(special_char(substring(yytext,1,size(yytext)-2),yypos,yypos+size(yytext),errWarn)), yypos, yypos+size(yytext)))
 | 225 => (TokTable.checkToken(yytext,yypos))
 | 227 => (continue())
 | 24 => ((#err errWarn) (!stringstart,yypos,"unclosed string");

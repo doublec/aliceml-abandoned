@@ -36,9 +36,9 @@ structure PPLib = struct
       if i >= 0 then addStr pps (Int.toString i)
       else (addStr pps "-"; addStr pps (Int.toString (~i)))
 
-  fun ppInt32 pps i =
-      if i >= 0 then addStr pps (Int32.toString i)
-      else (addStr pps "-"; addStr pps (Int32.toString (~i)))
+  fun ppLargeInt pps i =
+      if i >= 0 then addStr pps (LargeInt.toString i)
+      else (addStr pps "-"; addStr pps (LargeInt.toString (~i)))
 
   fun ppLI pps i = 
       if i >= 0 then addStr pps (LargeInt.toString i)
