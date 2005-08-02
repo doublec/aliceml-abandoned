@@ -164,11 +164,13 @@ structure SQLite =
       val closedb : db -> unit = SQLite'.closedb
       __overload 'a query : (db * string) -> 'a list = SQLite'.query'
 
-      fun ppExn t fm (SQLError msg as exn) =
-          PPValue.ppExnWithArg fm exn msg
-        | ppExn t fm (TypeError msg as exn) =
-          PPValue.ppExnWithArg fm exn msg
-        | ppExn _ _ _ = NONE
-
-      val _ = PPValue.registerTyp ppExn
+      local
+	  fun ppExn t fm (SQLError msg as exn) =
+	      PPValue.ppExnWithArg fm exn msg
+	    | ppExn t fm (TypeError msg as exn) =
+	      PPValue.ppExnWithArg fm exn msg
+	    | ppExn _ _ _ = NONE
+      in
+	  val _ = PPValue.registerTyp ppExn
+      end
   end
