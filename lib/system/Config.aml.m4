@@ -72,5 +72,5 @@ struct
 		 " " ^ name ("Remix", revisions, revision))
 	  | _ => "Alien Invaders Breakz Mix"
 
-    val buildDate = valOf (Date.fromISO ("substr(esyscmd(date "-I"), 0, 10)"))
+    val buildDate = valOf (Date.fromISO ("substr(esyscmd(date "+%Y-%m-%d"), 0, 10)"))
 end
