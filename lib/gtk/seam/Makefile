@@ -130,16 +130,8 @@ compile: compiledll compilealice
 compiledll: $(DLLOBJECTS)
 compilealice: $(ALICEOBJECTS)
 
-# this (the use of ALICEDLL) is an ugly hack around
-# a linking problem which occurs on some linuxes
-# (Debian at least)
-# It should work like this:
-# %.dll: %.o
-#	$(ALICETOOL) -v link $< -o $@ \
-#	...
-#
 %.dll: %.o
-	$(ALICETOOL) -v link $(ALICEDLL) $< -o $@ \
+	$(ALICETOOL) -v link $< -o $@ \
 	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
 
 %.o: %.cc
