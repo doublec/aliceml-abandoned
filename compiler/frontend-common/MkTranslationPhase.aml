@@ -505,7 +505,7 @@ struct
 	(* [pack mod : inf] =
 	 *   let id1 = [mod]
 	 *   in seal __Package(strict(id1,
-	 *		lazy __pervasive.Inf.strengthen(seal id1, [inf])))
+	 *		lazy __pervasive.DynMatch.strengthen(seal id1, [inf])))
 	 *)
 	let
 	    val r     = #region i
@@ -746,8 +746,12 @@ struct
       | trMod(env, I.UnpackMod(i, exp, inf)) =
 	(* [unpack exp : inf] =
 	 *   let __Package(strict(id1,id2)) = unseal [exp]
-	 *   in __pervasive.Inf.match(id2, [inf]); id1
+	 *   in unseal __pervasive.DynMatch.unpackMatch(id1, id2, [inf])
 	 *)
+	(* Note that we thread the module id1 through the unpackMatch call
+	 * instead of returning it directly in order to prevent value
+	 * propagation phase from hoisting subsequent selections on it across
+	 * the type check, resulting in unsound code! *)
 	let
 	    val r     = #region i
 	    val t1'   = infToTyp(env, #inf(I.infoInf inf))
@@ -761,11 +765,11 @@ struct
 	    val dec'  = O.ValDec(origInfo(r,Aux), pat', exp1')
 	    val exp'  = if not(!Switches.Language.supportRtt)
 			then idExp id1' else
-			seqExp(infExp(env, lab_match,
-				      tupExp(r, #[idExp id2',trInf(env, inf)])),
-			       idExp id1')
+			rttAppExp(env, r, modlab_dynmatch, lab_unpackMatch,
+				  tupExp(r, #[idExp id1', idExp id2',
+					      trInf(env, inf)]))
 	in
-	    letExp(#[dec'], exp')
+	    letExp(#[dec'], O.UnsealExp(typInfo(r,t1'), exp'))
 	end
 
       | trMod(env, I.PrimMod(i, "Cast", inf)) =
@@ -1595,7 +1599,7 @@ struct
 
       | trInf'(env, I.SingInf(i,(I.AnnMod(_,mod,inf) | I.SealMod(_,mod,inf)))) =
 	(* [sing mod : inf] =
-	 *   __pervasive.Inf.strengthen(seal [mod], [inf])
+	 *   __pervasive.DynMatch.strengthen(seal [mod], [inf])
 	 *)
 	let
 	    val r     = #region i

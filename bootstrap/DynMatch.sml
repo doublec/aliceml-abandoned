@@ -23,4 +23,5 @@ struct
     val strengthenWith	= dummy
     val thin		= dummy
     val seal		= dummy
+    val unpackMatch	= dummy
 end

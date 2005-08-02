@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2004
+ *   Andreas Rossberg, 2004-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -21,4 +21,5 @@ sig
     val lab_strengthen :	Label.t
     val lab_thin :		Label.t
     val lab_seal :		Label.t
+    val lab_unpackMatch :	Label.t
 end

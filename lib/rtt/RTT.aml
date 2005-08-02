@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -235,6 +235,7 @@ local
 		val strengthenWith :	Inf.rea * module * Inf.inf -> Inf.inf
 		val thin :		module * Inf.inf -> module
 		val seal :		module * Inf.inf -> module
+		val unpackMatch :	module * Inf.inf * Inf.inf -> module
 	    end
 	end
 in

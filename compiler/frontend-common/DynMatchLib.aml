@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2004
+ *   Andreas Rossberg, 2004-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -44,4 +44,6 @@ struct
     val _		= DynMatch.thin : module * inf -> module (* verify *)
     val lab_seal	= vallab "seal"
     val _		= DynMatch.seal : module * inf -> module (* verify *)
+    val lab_unpackMatch	= vallab "unpackMatch"
+    val _		= DynMatch.unpackMatch : module * inf * inf -> module (* verify *)
 end

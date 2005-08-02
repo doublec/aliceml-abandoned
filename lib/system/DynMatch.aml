@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2004
+ *   Andreas Rossberg, 2004-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -276,4 +276,6 @@ struct
 	        sealSig((l',v)::lvs, m, items)
 	    end
 	  | Inf.HiddenItem _ => raise Hidden
+
+    fun unpackMatch(m, j1, j2) = (Inf.match(j1,j2); m)
 end

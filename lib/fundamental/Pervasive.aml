@@ -197,6 +197,7 @@ local
 		val strengthenWith :	Inf.rea * module * Inf.inf -> Inf.inf
 		val thin :		module * Inf.inf -> module
 		val seal :		module * Inf.inf -> module
+		val unpackMatch :	module * Inf.inf * Inf.inf -> module
 	    end
 	end
 

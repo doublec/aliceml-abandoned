@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2004
+ *   Andreas Rossberg, 2004-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,4 +25,5 @@ sig
     val strengthenWith : Inf.rea * Reflect.module * Inf.t -> Inf.t
     val thin :           Reflect.module * Inf.t -> Reflect.module
     val seal :           Reflect.module * Inf.t -> Reflect.module
+    val unpackMatch :    Reflect.module * Inf.t * Inf.t -> Reflect.module
 end

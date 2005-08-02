@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -140,6 +140,7 @@ in
 		val strengthenWith = dummy
 		val thin = dummy
 		val seal = dummy
+		val unpackMatch = dummy
 	    end
 	end
     end

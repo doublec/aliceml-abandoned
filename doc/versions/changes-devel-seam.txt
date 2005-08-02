@@ -20,6 +20,7 @@ Compiler:
 * [FIX] Make type-checking work properly in the presence of diamond import of
         abstract types through components compiled against different versions
         of the type. This requires indirectly imported component to be present.
+* [FIX] Fixed overly aggressive optimization that could break package unpacking.
 * [FIX] Fixed bug in type variable scope resolution (bug 140).
 * [FIX] Fixed bug allowing non-value expressions and unsound typing in val rec.
 * [FIX] Fixed bug in liveness analysis that broke exception handlers (bug 123).
@@ -90,10 +91,11 @@ Gtk Library:
 
 Other Libraries:
 
+* [NEW] XML: added `parseString'; proper error handling.
 * [NEW] Inspector: most library exceptions now recognized.
 * [FIX] Inspector: fixed handling of polymorphic types (bug 121).
 * [FIX] Inspector: fixed updating of futures as list tails (bug 149).
-* [FIX] SQLite: fixed exception generation.
+* [FIX] SQLite: fixed exception generation; improved documentation.
 
 Platforms:
 
