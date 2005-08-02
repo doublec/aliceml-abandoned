@@ -412,6 +412,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		      | (labelIdRefVec, LabelSort.Prod) =>
 			    (stms, O.ProdArgs labelIdRefVec)
 		end
+	  | unfoldArgs ((SealExp (_, exp) | UnsealExp (_, exp)), rest) =
+	    unfoldArgs (exp, rest)
 	  | unfoldArgs (exp, rest) =
 	    let
 		val (stms, idRef) = unfoldTerm (exp, Goto rest)
@@ -425,6 +427,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(stms, O.OneArg idRef)
 	    end
+	  | unfoldFunArgs ((SealExp (_, exp) | UnsealExp (_, exp)), rest) =
+	    unfoldFunArgs (exp, rest)
 	  | unfoldFunArgs (exp, rest) = unfoldArgs (exp, rest)
 	and unfoldStrict (info, exp, cont) =
 	    let
