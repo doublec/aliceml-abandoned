@@ -27,7 +27,7 @@ signature XML =
     sig
 	type xml_node
 
-	exception DocumentParsingError
+	exception XMLError of string
 
 	datatype xml_node_type =
 	    ATTRIBUTE_DECL
@@ -53,6 +53,7 @@ signature XML =
 	  | XINCLUDE_START
 
 	val parse : string -> xml_node
+	val parseString : string -> xml_node
 	fun name : xml_node -> string
 	fun children : xml_node -> xml_node list
 	fun null : xml_node -> bool
@@ -73,7 +74,23 @@ signature XML =
       <TT>parse <I>fileName</I></TT>
     </DT>
     <DD>
-      <P>Opens an XML file and returns the root node.
+      <P>Parses the file <TT><I>fileName</I></TT> into an xml document
+      tree and returns the root node. If this is not successfull, for
+      example because the file does not exist or is malformed, this
+      operation raises the <TT>XMLError</TT>
+      exception with a string describing the error.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>parseString <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Parses the string <TT><I>s</I></TT> into an xml document tree
+      and returns the root node. If this is not successfull, for
+      example because the string is malformed, this
+      operation raises the <TT>XMLError</TT>
+      exception with a string describing the error.
       </P>
     </DD>
 
@@ -98,7 +115,8 @@ signature XML =
     </DT>
     <DD>
       <P>Tests whether <TT><I>node<I><TT> is null, i.e. an illegal
-      node. null e.g. returned if you ask for the root node's parent.
+      node. A null node is e.g. returned if you ask for the root
+      node's parent.
       </P>
     </DD>
 
@@ -106,7 +124,7 @@ signature XML =
       <TT>parent <I>node</I></TT>
     </DT>
     <DD>
-      <P>Returns the parent of <TT><I>node<I><TT>.
+      <P>Returns the parent of <TT><I>node<I><TT>, or null for the root.
       </P>
     </DD>
 
