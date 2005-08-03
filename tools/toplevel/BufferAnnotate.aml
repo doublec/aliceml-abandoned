@@ -93,7 +93,10 @@ struct
 		parseEntries(stream'', (rs,(keyw,tok,s))::entries)
 	    end
 
-    fun parseAnnotations stream = parseEntries(stream, [])
+    fun parseAnnotations stream =
+	if Future.isFuture stream
+	then (stream, #[])
+	else parseEntries(stream, [])
 
     exception Off
     fun moveToCol(iter, 0, col) = ()
