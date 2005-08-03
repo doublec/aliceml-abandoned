@@ -56,10 +56,18 @@ struct
 		val file = Url.toLocalFile url
 		val file' = if OS.Path.getVolume file = ""
 			    then OS.Path.getVolume cwd ^ file else file
+		val file'' = OS.Path.mkCanonical file'
+		val path1 = OS.Path.fromString file''
+		val path2 = OS.Path.fromString cwd
+		val disjointPaths = #isAbs path1 andalso #isAbs path2 andalso
+				    case (#arcs path1, #arcs path2)
+				     of (d1::_, d2::_) => d1 <> d2
+				      | _ => false
 	    in
-		OS.Path.mkRelative{path = OS.Path.mkCanonical file,
-				   relativeTo = cwd}
-		handle OS.Path.Path => file
+		if disjointPaths
+		then file'
+		else OS.Path.mkRelative{path = file'', relativeTo = cwd}
+		     handle OS.Path.Path => file'
 	    end
 	  | _ =>
 	    Url.toStringRaw url
