@@ -50,16 +50,8 @@ distdir = alice-gecode-$(VERSION)
 
 MAKEDEPEND = alicetool makedepend
 
-GECODEOBJ = -lgecodeset -lgecodeint -lgecodekernel
-
-CPPFLAGS = -I$(GECODEDIR)/include/gecode
-LDFLAGS = -L$(GECODEDIR)/lib/gecode
-
-ALICEDLL = `alice-config --alicedll` 
-
-MY_CXXFLAGS=-O3 -finline-limit=3000 -DNDEBUG -pipe -DHAVE_CONFIG_H
-
-#MY_CXXFLAGS=-ggdb -pipe -DHAVE_CONFIG_H
+CPPFLAGS = `pkg-config --cflags gecode`
+LDFLAGS = `pkg-config --libs gecode`
 
 .PHONY: all generate clean veryclean distclean depend install dist
 
@@ -75,22 +67,12 @@ GeneratorMain.alc: Generator.alc
 Generator.alc: DescParser.alc
 
 %.o: %.cc
-	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) $(MY_CXXFLAGS) \
+	alicetool -v compile $(CXXFLAGS) \
 	$(CPPFLAGS) -c  $< -o $@
 
 
-# this (the use of ALICEDLL) is an ugly hack around
-# a linking problem which occurs on some linuxes
-# (Debian at least)
-# It should work like this:
-# %.dll: %.o
-#	$(ALICETOOL) -v link $< -o $@ \
-#	...
-
-
 %.dll: %.o
-	alicetool -v link $(ALICEDLL) $(LDFLAGS) $(SOURCES:%.cc=%.o) \
-	$(GECODEOBJ) $(EXTRA_LIBS) -o $@
+	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) -o $@
 
 %.alc: %.aml
 	alicec -z $< -o $@
@@ -109,7 +91,7 @@ distclean: veryclean
 
 depend: UnsafeGecode.cc
 	alicedep *.aml > Makefile.depend
-	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(MY_CXXFLAGS) $(CXXFLAGS) $(SOURCES) \
+	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(CXXFLAGS) $(SOURCES) \
 	$(CPPFLAGS) >> Makefile.depend
 
 install: installdll installalice
