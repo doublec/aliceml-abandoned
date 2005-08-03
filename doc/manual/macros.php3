@@ -52,15 +52,17 @@
 
 <?php
   };
-
+ 
   function footing()
   {
+  $file = __FILE__;
+  $lastmod = date("Y/M/d H:i", filemtime($file));
 ?>
   <BR>
   <HR>
   <DIV ALIGN=RIGHT>
     <ADDRESS>
-       last modified <?php echo(date("Y/m/d H:i", getlastmod())) ?>
+       last modified <?php echo("$lastmod"); ?>
     </ADDRESS>
   </DIV>
 
