@@ -165,8 +165,12 @@ local
 	then paren doc
 	else doc
 
+
     fun ppApply (fm : format) args =
 	parenPrec (#prec fm) (applyPrec, apply args)
+
+    fun ppApplyShort (fm : format) args =
+	parenPrec (#prec fm) (applyPrec, applyShort args)
 
     fun ppKeyword (fm : format) doc =
 	parenPrec (#prec fm) (keywordPrec, doc)
@@ -216,7 +220,9 @@ local
 		val ls   = rowToLabs r
 		val i    = UnsafeValue.tag(x,ls)
 		val l    = Vector.sub(ls,i)
-		val doc0 = text(Label.toString l)
+		val s    = Label.toString l
+		val ppApply = if isShort s then ppApplyShort else ppApply
+		val doc0 = text s
 		val fm'  = arg fm
 	    in
 		case unarg(lookupRow(r,l))
@@ -354,8 +360,12 @@ local
 			    ^ "\\...\""))
 
     fun ppExnWithArg' t fm exn a  =
-        SOME (ppApply fm (text (General.exnName exn),
-                          [ppVal' t (arg fm) a]))
+	let
+	    val s = Exn.name exn
+	    val ppApply = if isShort s then ppApplyShort else ppApply
+	in
+	    SOME (ppApply fm (text s, [ppVal' t (arg fm) a]))
+	end
 
     __overload 'a ppExnWithArg : format -> exn -> 'a -> doc option
         = ppExnWithArg'
@@ -397,8 +407,9 @@ local
 
     fun ppRef t fm x =
 	let
-	    val (_,t') = Type.asApply t
-	    val ppElem = ppVal' t' (arg fm)
+	    val (_,t')  = Type.asApply t
+	    val ppElem  = ppVal' t' (arg fm)
+	    val ppApply = if isShort "ref" then ppApplyShort else ppApply
 	in
 	    SOME(
 		ppApply fm (text "ref", [ppElem(!x)])

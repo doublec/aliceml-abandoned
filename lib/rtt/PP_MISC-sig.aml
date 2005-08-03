@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,6 +29,8 @@ sig
     val brack:		doc -> doc
 
     val apply:		doc * doc list -> doc
+    val applyShort:	doc * doc list -> doc
+    val isShort:	string -> bool
 
     val ppCommaList:	('a -> doc) -> 'a list -> doc
     val ppStarList:	('a -> doc) -> 'a list -> doc

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,7 +29,10 @@ struct
 
     (* Some PP combinators *)
 
-    val nest = nest 3
+    val nestDepth = 3
+    val nest = nest nestDepth
+
+    fun isShort s = String.size s < nestDepth
 
     fun contain (l,r) doc = text l ^^ fbox(below doc) ^^ text r
     val quote = contain("`","'")
@@ -38,6 +41,8 @@ struct
     val brack = contain("[","]")
 
     fun apply(doc, docs) = fbox(nest(doc ^/^ List.foldr op^/^ empty docs))
+    fun applyShort(doc, docs) =
+	fbox(nest(doc ^^ text " " ^^ List.foldr op^/^ empty docs))
     fun indent doc = nest(break ^^ doc)
     fun par docs   = fbox(List.foldr op^/^ empty docs)
     fun textpar ss = fbox(List.foldr (fn(s,doc) => text s ^/^ doc) empty ss)
