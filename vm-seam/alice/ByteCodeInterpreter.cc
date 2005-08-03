@@ -1101,7 +1101,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(prepare_con): // r0, r1, size
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,size);
-	ConVal *conVal = ConVal::New(Store::WordToBlock(GETREG(r1)), size);
+	word requestWord = GETREG(r1);
+	Block *constructor = Store::WordToBlock(requestWord);
+	if(constructor == INVALID_POINTER)
+	  REQUEST(requestWord);
+	ConVal *conVal = ConVal::New(constructor, size);
 	SETREG(r0, conVal->ToWord());
       }
       DISPATCH(PC);
