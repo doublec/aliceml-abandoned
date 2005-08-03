@@ -10,10 +10,6 @@ DEBUG = 0
 
 VERSION = 1.1
 
-GECODEDIR = /opt/gecode
-SQLITEDIR = /opt/seam-support
-LIBXMLDIR = /usr
-
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
 OPTS3= # '--dump-phases' # --dump-intermediate'
@@ -47,7 +43,7 @@ else
     TIMECOMMAND3 =
 endif
 
-export PREFIX TARGET WINDOWS GECODEDIR
+export PREFIX TARGET WINDOWS
 
 .PHONY: clean clean-common clean-mozart clean-seam clean-test\
 	install install-prelude install-common install-global install-mozart install-seam \
@@ -202,12 +198,12 @@ libs-mozart:
 ## Install Alice on Seam
 ##
 install-seam:
-	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) GECODEDIR=$(GECODEDIR) \
+	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) \
 		install-seam-rec
 install-seam-rec: install-common build-seam bootstrap-seam libs-seam
 
 reinstall-seam:
-	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) GECODEDIR=$(GECODEDIR) \
+	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) \
 		reinstall-seam-rec
 reinstall-seam-rec: bootstrap-seam libs-seam
 
@@ -247,12 +243,12 @@ libs-seam:
 	(cd tools/lex && make all && make install) || exit 1 ;\
 	(cd lib/regex && make install) || exit 1 ;\
 	(cd lib/sqlite && make depend) || exit 1 ;\
-	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
+	(cd lib/sqlite && make all install) || exit 1 ;\
 	(cd lib/xml && make depend) || exit 1 ;\
-	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
-	(cd lib/gecode && make generate GECODEDIR=$(GECODEDIR)) || exit ;\
-	(cd lib/gecode && make depend GECODEDIR=$(GECODEDIR)) || exit ;\
-	(cd lib/gecode && make all install GECODEDIR=$(GECODEDIR)) || exit ;\
+	(cd lib/xml && make all install) || exit 1 ;\
+	(cd lib/gecode && make generate) || exit ;\
+	(cd lib/gecode && make depend) || exit ;\
+	(cd lib/gecode && make all install) || exit ;\
 	(cd lib/gecode/search-factory && make depend) || exit ;\
 	(cd lib/gecode/search-factory && make all install) || exit ;\
 	(cd lib/gecode/distributed-search && make depend) || exit ;\
