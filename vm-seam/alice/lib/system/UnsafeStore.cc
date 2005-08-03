@@ -279,14 +279,8 @@ u_int ReturnSizeWorker::GetFrameSize(StackFrame *sFrame) {
 }
 
 Worker::Result ReturnSizeWorker::Run(StackFrame *sFrame) {
-  fprintf(stderr, "Returning from SizeWorker\n");
-  DumpCurrentTaskStack();
-  fprintf(stderr, "\tnArgs: %d\n", Scheduler::GetNArgs());
   Scheduler::PopFrame(sFrame->GetSize());
   SizeWorkerArgs::ClipForReturn();
-  fprintf(stderr, "\tpopped frame\n");
-  DumpCurrentTaskStack();
-  fprintf(stderr, "\tnArgs: %d\n", Scheduler::GetNArgs());
   Tuple *t = Tuple::New(5);
   t->Init(0, Scheduler::GetCurrentArg(0));
   t->Init(1, Scheduler::GetCurrentArg(1));
