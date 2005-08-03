@@ -14,8 +14,10 @@ import structure TextIO      from "x-alice:/lib/system/TextIO"
 import structure Url         from "x-alice:/lib/system/Url"
 import structure Reflect     from "x-alice:/lib/system/Reflect"
 import structure Component   from "x-alice:/lib/system/Component"
+import structure PPValue     from "x-alice:/lib/system/PPValue"
 import structure PPComponent from "x-alice:/lib/system/PPComponent"
 import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
 import signature COMPILER    from "x-alice:/lib/system/COMPILER-sig"
 import structure Config      from "x-alice:/lib/system/Config"
@@ -78,6 +80,17 @@ struct
 	val eval	: string * signal -> unit
 	val evalFile	: string * signal -> unit
     end
+
+    fun printExn (os, exn) =
+	let
+	    open PrettyPrint
+	    infix ^^
+	    val doc = text "   " ^^
+		      below (PPValue.ppVal PervasiveType.typ_exn exn)
+	in
+	    PrettyPrint.output (os, doc, !outWidth);
+	    TextIO.output (os, "\n")
+	end
 
     functor MkEvaluator (Compiler : COMPILER) : EVALUATOR =
     struct
@@ -158,13 +171,12 @@ struct
 				       "Assertion failure at " ^
 				       file ^ ":" ^ Int.toString line ^ "\n")
 		  | Component.Failure (url, Component.Eval exn) =>
-			TextIO.output (errStream,
-				       "Uncaught exception " ^
-				       General.exnName exn ^
-				       (if String.isSuffix "/" (Url.toStringRaw url)
-					then "\n"
-					else " while evaluating \n   " ^
-					     Url.toStringRaw url ^ "\n"))
+			(TextIO.output (errStream, "Uncaught exception\n");
+			 printExn (errStream, exn);
+			 if String.isSuffix "/" (Url.toStringRaw url) then ()
+			 else
+			 TextIO.output (errStream, "while evaluating\n   " ^
+						   Url.toStringRaw url ^ "\n"))
 		  | Component.Failure (_, Component.Mismatch
 					 {component, request, cause}) =>
 		    let
@@ -186,29 +198,26 @@ struct
 				       "Failure loading \n   " ^
 				       Url.toStringRaw url ^ "\n")
 		  | Component.Failure (url, Component.Internal exn) =>
-			TextIO.output (errStream,
-				       "Internal exception " ^
-				       General.exnName exn ^
-				       (if String.isSuffix "/" (Url.toStringRaw url)
-					then "\n"
-					else " while linking \n   " ^
-					     Url.toStringRaw url ^ "\n"))
+			(TextIO.output (errStream, "Internal exception\n");
+			 printExn (errStream, exn);
+			 if String.isSuffix "/" (Url.toStringRaw url) then ()
+			 else
+			 TextIO.output (errStream, "while linking\n   " ^
+						   Url.toStringRaw url ^ "\n"))
 		  | Component.Failure (url, exn) =>
-			TextIO.output (errStream,
-				       "Unknown failure " ^
-				       General.exnName exn ^
-				       (if String.isSuffix "/" (Url.toStringRaw url)
-					then "\n"
-					else " while linking \n   " ^
-					     Url.toStringRaw url ^ "\n"))
+			(TextIO.output (errStream, "Unknown failure\n");
+			 printExn (errStream, exn);
+			 if String.isSuffix "/" (Url.toStringRaw url) then ()
+			 else
+			 TextIO.output (errStream, "while linking\n   " ^
+						   Url.toStringRaw url ^ "\n"))
 		  | Assert (file, line) =>
 			TextIO.output (errStream,
 				       "Internal assertion failure at " ^
 				       file ^ ":" ^ Int.toString line ^ "\n")
 		  | _ =>
-			TextIO.output (errStream,
-				       "Internal exception " ^
-				       General.exnName exn ^ "\n");
+			(TextIO.output (errStream, "Internal exception\n");
+			 printExn (errStream, exn));
 		 NONE)
 
 	val evalString = eval' (Compiler.prepareWith, false)
