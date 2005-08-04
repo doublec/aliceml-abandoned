@@ -311,7 +311,8 @@ structure GuiMain =
 
         fun openGivenFile mode f =
 	    let
-	        val (buf,id) = Buffer.getBufferByName
+	        val f = OS.Path.mkCanonical f
+		val (buf,id) = Buffer.getBufferByName
 		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
 	    in
 		case buf of
@@ -922,7 +923,8 @@ structure GuiMain =
 	fun quit () = quit' true
 
         fun init notebookSwitchEventId =
-            (Core.setLogMode("Gtk", Core.LOG_MODE_NULL);
+            (Core.setLogMode("GLib", Core.LOG_MODE_NULL);
+             Core.setLogMode("Gtk", Core.LOG_MODE_NULL);
 	     Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
              Gtk.signalConnect(Gui.compilerout, "focus-in-event",
                                changeFocus COMPILER);
