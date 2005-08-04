@@ -14,14 +14,21 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Core from "x-alice:/lib/gtk/Core"
 import structure Gui from "Gui"
+import structure Config from "x-alice:/lib/system/Config"
 
 structure FileDialog =
     struct
+        (* Hack: on Windoze, Gtk does not recognize / as arc seperator. *)
+        fun windozisePath p =
+	    if Config.platform <> Config.WIN32 then p
+	    else String.map (fn #"/" => #"\\" | c => c) p
+
         fun openFile(msg,fileName) =
             let
-	        val fileSel = Gtk.fileSelectionNew msg
+	        val fileNameUtf8 = Gtk.latin1ToUtf8 fileName
+		val fileSel = Gtk.fileSelectionNew msg
 		val _ = if fileName <> "" then
-		         Gtk.fileSelectionSetFilename(fileSel, fileName)
+		         Gtk.fileSelectionSetFilename(*Utf8*)(fileSel, windozisePath fileNameUtf8)
 			else ()
                 val _ = Gtk.windowSetPosition (fileSel, Gtk.WIN_POS_MOUSE)
                 val _ = Gtk.widgetShowAll fileSel
@@ -29,7 +36,7 @@ structure FileDialog =
                 val ret =
                     case Gtk.IntToGtkResponseType response of
                         Gtk.RESPONSE_OK =>
-                        SOME (Gtk.fileSelectionGetFilename fileSel)
+                        SOME (Gtk.utf8ToLatin1 (Gtk.fileSelectionGetFilename(*Utf8*) fileSel))
                       | _ => NONE
             in
                 Gtk.widgetDestroy fileSel;
@@ -81,11 +88,12 @@ structure FileDialog =
         fun quitWarning (interactive,filename) =
             let
                 val dia = Gui.save_on_quit_dialog
+		val filenameUtf8 = Gtk.latin1ToUtf8 filename
             in
 		Gtk.widgetSetSensitive(Gui.save_on_quit_cancel_button,
 				       interactive);
 		Gtk.labelSetText(Gui.save_on_quit_label,
-				 "File '"^filename^"' was modified.");
+				 "File '"^filenameUtf8^"' was modified.");
 		Gtk.dialogSetDefaultResponse(dia,
 					     Gtk.GtkResponseTypeToInt
 					     Gtk.RESPONSE_OK);
