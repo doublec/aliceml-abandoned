@@ -478,6 +478,8 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 
 	functor Enter (val url: Url.t signature S structure X: S) =
 	    (val _ = enter (url, fromPackage (pack X : S)))
+
+	val _ = trace (!logger, id, "created")
     end
 
     val url = Url.fromString "x-alice:/lib/system/Component"
