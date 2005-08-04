@@ -200,26 +200,29 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
   String *buffer = String::FromWordDirect(wBufferString);
   u_int size = buffer->GetSize();
  retry:
+  {
+    char *buf = (char *) buffer->GetValue();
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  u_int n = GetCurrentDirectory(size, (CHAR *) buffer->GetValue());
-  if (n == 0) RAISE_SYS_ERR();
-  if (n > size) {
-    size = n + 1;
-    buffer = String::New(size);
-    wBufferString = buffer->ToWord();
-    goto retry;
-  }
-  buffer[0] = tolower(buffer[0]);
+    u_int n = GetCurrentDirectory(size, (CHAR *) buf);
+    if (n == 0) RAISE_SYS_ERR();
+    if (n > size) {
+      size = n + 1;
+      buffer = String::New(size);
+      wBufferString = buffer->ToWord();
+      goto retry;
+    }
+    buf[0] = tolower(buf[0]);
 #else
-  if (getcwd((char *) buffer->GetValue(), size) == NULL) {
-    if (errno != ERANGE) RAISE_SYS_ERR();
-    size = size * 3 / 2;
-    buffer = String::New(size);
-    wBufferString = buffer->ToWord();
-    goto retry;
-  }
+    if (getcwd(buf, size) == NULL) {
+      if (errno != ERANGE) RAISE_SYS_ERR();
+      size = size * 3 / 2;
+      buffer = String::New(size);
+      wBufferString = buffer->ToWord();
+      goto retry;
+    }
 #endif
-  RETURN(String::New((char *) buffer->GetValue())->ToWord());
+    RETURN(String::New(buf)->ToWord());
+  }
 } END
 
 DEFINE1(UnsafeOS_FileSys_mkDir) {
