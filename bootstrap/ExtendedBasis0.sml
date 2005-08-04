@@ -50,5 +50,19 @@ structure OS =
 	val mkAbsolute = fn{path, relativeTo} => mkAbsolute(path, relativeTo)
 	val mkRelative = fn{path, relativeTo} => mkRelative(path, relativeTo)
       end
+    structure FileSys =
+      struct
+        open FileSys
+	fun getDir() =
+	    let
+		val p = FileSys.getDir()
+	    in
+		if String.size p > 1 andalso String.sub(p,1) = #":" then
+		    String.str(Char.toLower(String.sub(p,0))) ^
+		    String.extract(p, 1, NONE)
+		else
+		    p
+	    end
+      end
   end
 
