@@ -8,7 +8,7 @@ GLOBAL_PREFIX = /opt/alice-devel
 PREFIX = $(PWD)/install
 DEBUG = 0
 
-VERSION = 1.1
+VERSION = 1.2
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
