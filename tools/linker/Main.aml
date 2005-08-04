@@ -18,6 +18,7 @@ import structure CommandLine from "../../lib/system/CommandLine"
 import structure Url         from "../../lib/system/Url"
 import structure Resolver    from "../../lib/system/Resolver"
 import structure Store       from "../../lib/system/Store"
+import structure Config      from "../../lib/system/Config"
 import structure MyComponent from "MyComponent"
 import structure Link        from "Link"
 import structure PrintSig    from "PrintSig"
@@ -44,7 +45,11 @@ structure Main :> MAIN =
 	     OS.Process.failure)
 
         fun version () =
-            (TextIO.output (TextIO.stdOut, "alicelink 0.0.0\n");
+            (TextIO.output (TextIO.stdOut,
+			    "alicelink " ^ Int.toString (#major Config.version)
+			    ^ "." ^ Int.toString (#minor Config.version)
+			    ^ "." ^ Int.toString (#revision Config.version)
+			    ^ "\n");
              OS.Process.success)
 	fun usage (SOME s, status) =
 	    (TextIO.output (if status then TextIO.stdErr else TextIO.stdOut,
