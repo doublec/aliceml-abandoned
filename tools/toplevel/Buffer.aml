@@ -47,15 +47,7 @@ structure Buffer =
 
       val bufferMap : buffer Map.map = Map.map()
 
-      fun shortName s =
-          let
-              fun lastSlash i j = if j=size s then i
-                                  else if String.sub(s,j) = #"/" orelse String.sub(s,j) = #"\\"
-				  then lastSlash j (j+1)
-                                  else lastSlash i (j+1)
-          in
-              String.extract(s,1 + lastSlash ~1 0, NONE)
-          end
+      fun shortName s = Gtk.latin1ToUtf8 (OS.Path.file s)
 
       (* Concurrent highlighting *)
 
@@ -444,13 +436,13 @@ structure Buffer =
                   case file of NONE => ("", Time.zeroTime)
                              | SOME f =>
 		  let
-		      val fileD = TextIO.openIn f
 		      val timeStamp = OS.FileSys.modTime f
+		      val fileD = TextIO.openIn f
 		  in
 		      (Gtk.latin1ToUtf8(TextIO.inputAll fileD), timeStamp)
 		      before TextIO.closeIn fileD
 		  end
-		  handle IO.Io _ =>
+		  handle (IO.Io _ | OS.SysErr _) =>
 		    if mode = SESSION then raise Abort{quit=false} else
 		    case FileDialog.fileNotFound(mode=COMMANDLINE, f) of
 		       Gtk.RESPONSE_OK => ("", Time.zeroTime)
@@ -590,7 +582,8 @@ structure Buffer =
 		      timeStamp := OS.FileSys.modTime f;
 		      Gtk.textBufferSetModified(buf, false);
 		      setUndoSaveMarker undo
-		  end handle IO.Io _ => FileDialog.message ("I/O error: Could not save file " ^ f)
+		  end handle (IO.Io _ | OS.SysErr _) =>
+			     FileDialog.message ("I/O error: Could not save file " ^ f)
 	      else ();
 		  true)
           end
