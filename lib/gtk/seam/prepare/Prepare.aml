@@ -34,6 +34,7 @@ local
 		 | "))"                         => 
 			   if decCounter() then "" else "))"
                  | "inline"                     => ""
+                 | "__inline__"                 => ""
 		 | k                            => k
 	      ) :: (keyFilter kr)
 	  | nil  => nil
