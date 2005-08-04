@@ -69,11 +69,20 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "gtk_radio_menu_item_new_with_mnemonic",
                              "gtk_icon_theme_set_search_path",
                              "gtk_icon_theme_get_search_path",
+			     "gtk_icon_theme_get_search_path_utf8",
+			     "gtk_icon_theme_set_search_path_utf8",
                              "gtk_text_iter_copy",
                              "gtk_object_get",
                              "gtk_object_set",
 			     "gtk_widget_add_accelerator",
+			     "gtk_plug_new",
+			     "gtk_plug_new_for_display",
+			     "gtk_plug_get_type",
+			     "gtk_socket_new",
+			     "gtk_socket_get_type",
 			     "_GtkSocket",
+			     "GtkPlug",
+			     "GtkSocket",
 			     "_GtkPlug"] (* not available for win32 *)
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
@@ -197,9 +206,20 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
        (* isIgnored: true if no binding should be generated for an item *)
        fun isIgnored (FUNC (n, retT, argsT)) = 
 	   (Util.contains n ignoreItems) orelse
+	   isTyIgnored retT orelse
+	   List.exists isTyIgnored argsT orelse
            (List.exists (fn (FUNC (n',_,_)) => n=n' | _ => false) changedFuns) 
 	 | isIgnored (STRUCT (n, _)) = Util.contains n ignoreItems
 	 | isIgnored (ENUM (n, _)) = Util.contains n ignoreItems
 	 | isIgnored _ = false
+			 
+       and isTyIgnored (STRUCTREF name) =
+	   Util.contains name ignoreItems
+         | isTyIgnored (TYPEREF (name, t)) =
+	   Util.contains name ignoreItems orelse isTyIgnored t
+	 | isTyIgnored (ENUMREF name) =
+	   Util.contains name ignoreItems
+	 | isTyIgnored (POINTER (_, t)) = isTyIgnored t
+	 | isTyIgnored _ = false
 
     end
