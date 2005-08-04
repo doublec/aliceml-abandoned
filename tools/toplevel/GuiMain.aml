@@ -187,6 +187,37 @@ structure GuiMain =
                 Stream.send(OutputWriters.rowCol, (line, col, annot))
             end
 
+	(* Do not allow cursor in first two columns of compiler output *)
+	fun compilerOutMarkSet (buf,[_,Gtk.OBJECT mark]) =
+	    let
+		val markName = Gtk.textMarkGetName mark
+	    in
+		if markName="insert" orelse markName="selection_bound" then
+		Lock.sync Gtk.lock
+		(fn () =>
+		 let
+		     val iter = Gtk.textIterNew()
+		     val _ = Gtk.textBufferGetIterAtMark(buf,iter,mark)
+		     val line = Gtk.textIterGetLine iter
+		     val off = Gtk.textIterGetLineOffset iter
+		     val iter' = Gtk.textIterCopy iter
+		     val _ = Gtk.textIterSetLineOffset(iter', 2)
+		     val forbidden = off<2 andalso
+			 (Gtk.textIterSetLineOffset(iter, 0);
+			  Gtk.textBufferGetText(buf,iter,iter',true)="> ")
+		 in
+		     if forbidden then
+			 (if off=1 andalso Gtk.textIterBackwardLine iter' then
+			      (Gtk.textIterForwardToLineEnd iter'; ())
+			  else (* off=0 *) ();
+			  Gtk.textBufferMoveMark(buf,mark,iter'))
+		     else ()
+		 end
+		 ) ()
+		else ()
+	    end
+	  | compilerOutMarkSet (_, _) = assert(false)
+
 	val notebookSwitchEventIdP = Promise.promise()
 	val notebookSwitchEventId = Promise.future notebookSwitchEventIdP
         fun switchPage notebook =
@@ -913,6 +944,9 @@ structure GuiMain =
 
 	fun initDone loadSession =
 	    (Gtk.textViewSetEditable(Gui.compilerout, true);
+	     Gtk.signalConnect(Gtk.textViewGetBuffer Gui.compilerout,
+			       "mark-set",
+			       compilerOutMarkSet);
 	     Gtk.widgetSetSensitive(Gui.feed1, true);
 	     Evaluator.setAnnotActive true;
 	     if not loadSession then () else
