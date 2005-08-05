@@ -139,9 +139,7 @@ struct
 	    fun h xs = (Array.fromList xs; true)
 		         handle Size => List.length xs > Array.maxLen
 	in
-	    Gen.try 100 (Gen.list Gen.int) (Test.test t)(*;
-		  TODO: more higher timeout
-	    Test.test h (0 :: (Array.toList (Array.array (Array.maxLen, 0))))*)
+	    Gen.try 100 (Gen.list Gen.int) (Test.test t)
 	end
 	    
     fun testTabulate () =

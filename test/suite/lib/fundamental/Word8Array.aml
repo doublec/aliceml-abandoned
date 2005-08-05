@@ -143,9 +143,7 @@ struct
 	    fun h xs = (Word8Array.fromList xs; true)
 		         handle Size => List.length xs > Word8Array.maxLen
 	in
-	    Gen.try 100 (Gen.list Gen.word8) (Test.test t)(*;
-		  TODO: more higher timeout
-	    Test.test h (0 :: (Word8Array.toList (Word8Array.array (Word8Array.maxLen, 0))))*)
+	    Gen.try 100 (Gen.list Gen.word8) (Test.test t)
 	end
 	    
     fun testTabulate () =

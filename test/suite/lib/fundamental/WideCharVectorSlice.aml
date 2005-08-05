@@ -142,24 +142,7 @@ struct
 				    r = t x
 			          end))
 	end
-(* TODO: ???
-    fun testUpdate () = 
-	let
-	    fun t (asl, i, a) = 
-		let
-		    val r = SOME (WideCharVectorSlice.update (asl, i, a))
-			     handle Subscript => NONE
-		in
-		    if Option.isSome r 
-		    then WideCharVectorSlice.sub (asl, i) = a
-		    else true
-		end
-	in
-	    Gen.try 1000 (Gen.triple (Gen.wideCharVectorSlice Gen.wideChar,
-				      Gen.int, 
-				      Gen.int)) (Test.test t)
-	end
-*)
+
     fun testSubslice () = 
 	let
 	    fun t'' (a, sl, i, sz) = 
@@ -506,41 +489,7 @@ struct
 	    Gen.try 100 (Gen.wideCharVectorSlice Gen.wideChar) 
 	    (Test.test (fn asl => WideCharVectorSlice.toList asl = t asl))
 	end
-(* TODO: ???
-    fun testSwap () = 
-	let
-	    fun t' (sl, i, j) = 
-		let
-		    val h = WideCharVectorSlice.sub (sl, i)
-		in
-		    WideCharVectorSlice.update (sl, i, WideCharVectorSlice.sub (sl, j));
-		    WideCharVectorSlice.update (sl, j, h);
-		    sl
-		end
 
-	    fun t (sl1, sl2, i, j) = WideCharVectorSlice.equal WideChar.equal
-		  ((WideCharVectorSlice.swap (sl1, i, j); sl1), t' (sl2, i, j))
-		        handle Subscript => i < 0 orelse
-					   (WideCharVectorSlice.length sl1) <= i 
-					    orelse
-					    j < 0 orelse
-					    (WideCharVectorSlice.length sl1) <= j
-	in 
-	    Gen.try 100 (Gen.triple (Gen.wideCharVectorSlice Gen.wideChar,
-				      Gen.int,
-				      Gen.int)) 
-		     (Test.test (fn (sl, i, j) => 
-				    let
-					val (a, x, y) = WideCharVectorSlice.base sl
-					val b = WideCharVector.fromList 
-						    (WideCharVector.toList a)
-					val csl = WideCharVectorSlice.slice (b, x, 
-								    SOME y)
-				    in 
-					t (sl, csl, i, j)
-	                            end))
-	end
-*)
     fun testRev () = 
 	let
 	    fun t' sl = 
@@ -550,7 +499,6 @@ struct
 		    WideCharVectorSlice.slice (WideCharVector.rev a, 
 				       (WideCharVector.length a) - x - y, SOME y)
 		end
-		(* TODO: why returns VS.rev an 'a vector ? *)
 	    fun t (sl, csl) = WideCharVectorSlice.equal WideChar.equal 
 		  (WideCharVectorSlice.full (WideCharVectorSlice.rev sl), t' csl)
 	in
@@ -782,7 +730,6 @@ struct
 
     fun testSort () = 
 	let
-	    (* TODO: ask whether WideCharVectorSlice.sort returns an 'a vector *)
 	    fun t sl = WideCharVectorSlice.isSorted WideChar.compare 
 					    (WideCharVectorSlice.full 
 				             (WideCharVectorSlice.sort 

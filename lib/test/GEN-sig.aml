@@ -63,6 +63,9 @@ sig
     val word8:      Word8.word gen
     val word32:     LargeWord.word gen
     val real:	    real gen
+    val realNan:    real gen
+    val realInf:    real gen
+    val realAll:    real gen
     val bool:	    bool gen
     val string:	    string gen
     val substring:  Substring.substring gen

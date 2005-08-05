@@ -36,14 +36,17 @@ struct
 	 Test.test (fn x => Bool.equal x = true)  (false, false);
          Test.test (fn x => Bool.equal x = false) (false, true))
 
+    fun testFromString () =
+	let
+	    fun t s = StringCvt.scanString Bool.scan s = 
+		      Bool.fromString s
+	in 
+	    Gen.try 1000 Gen.string (Test.test t)
+	end 
+
     fun testToString () =
 	(Test.test (fn x => Bool.toString x = "true")  true;
 	 Test.test (fn x => Bool.toString x = "false") false)
-
-    fun testFromString () = 
-	(Test.test (fn x => Bool.fromString x = SOME true)  "true";
-	 Test.test (fn x => Bool.fromString x = SOME false) "false";
-         Gen.try 100 Gen.string (Test.test (fn x => Bool.fromString x = NONE)))
 
     fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 

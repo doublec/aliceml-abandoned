@@ -73,10 +73,21 @@ struct
     fun word n		= Word.fromInt (cardinal n)
     fun word8 n         = Word8.fromInt (cardinal n)
     fun word32 n        = LargeWord.fromInt (cardinal n)
-    fun real n		= Random.real (Real.fromInt n)
+    fun option gen n	= if bool n then SOME (gen n) else NONE
 
-    fun option gen n	= if bool 0 then SOME (gen n) else NONE
-    fun alt (ga, gb) n	= if bool 0 then FST (ga n) else SND (gb n)	
+    fun real n		= Random.real (Real.fromInt n)
+    fun realNan n       = if bool n
+			  then Real.posInf - Real.posInf
+			  else 0.0 / 0.0
+    fun realInf n       = if bool n
+			  then Real.posInf
+			  else Real.negInf
+    fun realAll n       = case option bool n of
+			      NONE       => real n
+			    | SOME true  => realInf n
+			    | SOME false => realNan n
+
+    fun alt (ga, gb) n	= if bool n then FST (ga n) else SND (gb n)	
     fun vector gen n	= Vector.tabulate (cardinal n, gen)
     fun word8Vector gen n     = Word8Vector.tabulate (cardinal n, word8)
     fun charVector gen n      = CharVector.tabulate (cardinal n, char)

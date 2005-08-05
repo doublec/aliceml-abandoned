@@ -142,24 +142,7 @@ struct
 				    r = t x
 			          end))
 	end
-(* TODO: ???
-    fun testUpdate () = 
-	let
-	    fun t (asl, i, a) = 
-		let
-		    val r = SOME (CharVectorSlice.update (asl, i, a))
-			     handle Subscript => NONE
-		in
-		    if Option.isSome r 
-		    then CharVectorSlice.sub (asl, i) = a
-		    else true
-		end
-	in
-	    Gen.try 1000 (Gen.triple (Gen.charVectorSlice Gen.char,
-				      Gen.int, 
-				      Gen.int)) (Test.test t)
-	end
-*)
+
     fun testSubslice () = 
 	let
 	    fun t'' (a, sl, i, sz) = 
@@ -506,41 +489,7 @@ struct
 	    Gen.try 100 (Gen.charVectorSlice Gen.char) 
 	    (Test.test (fn asl => CharVectorSlice.toList asl = t asl))
 	end
-(* TODO: ???
-    fun testSwap () = 
-	let
-	    fun t' (sl, i, j) = 
-		let
-		    val h = CharVectorSlice.sub (sl, i)
-		in
-		    CharVectorSlice.update (sl, i, CharVectorSlice.sub (sl, j));
-		    CharVectorSlice.update (sl, j, h);
-		    sl
-		end
 
-	    fun t (sl1, sl2, i, j) = CharVectorSlice.equal Char.equal
-		  ((CharVectorSlice.swap (sl1, i, j); sl1), t' (sl2, i, j))
-		        handle Subscript => i < 0 orelse
-					   (CharVectorSlice.length sl1) <= i 
-					    orelse
-					    j < 0 orelse
-					    (CharVectorSlice.length sl1) <= j
-	in 
-	    Gen.try 100 (Gen.triple (Gen.charVectorSlice Gen.char,
-				      Gen.int,
-				      Gen.int)) 
-		     (Test.test (fn (sl, i, j) => 
-				    let
-					val (a, x, y) = CharVectorSlice.base sl
-					val b = CharVector.fromList 
-						    (CharVector.toList a)
-					val csl = CharVectorSlice.slice (b, x, 
-								    SOME y)
-				    in 
-					t (sl, csl, i, j)
-	                            end))
-	end
-*)
     fun testRev () = 
 	let
 	    fun t' sl = 
@@ -550,7 +499,6 @@ struct
 		    CharVectorSlice.slice (CharVector.rev a, 
 				       (CharVector.length a) - x - y, SOME y)
 		end
-		(* TODO: why returns VS.rev an 'a vector ? *)
 	    fun t (sl, csl) = CharVectorSlice.equal Char.equal 
 		  (CharVectorSlice.full (CharVectorSlice.rev sl), t' csl)
 	in
@@ -782,7 +730,6 @@ struct
 
     fun testSort () = 
 	let
-	    (* TODO: ask whether CharVectorSlice.sort returns an 'a vector *)
 	    fun t sl = CharVectorSlice.isSorted Char.compare 
 					    (CharVectorSlice.full 
 				             (CharVectorSlice.sort 
