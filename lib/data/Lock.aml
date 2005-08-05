@@ -1,57 +1,115 @@
 (*
  * Author:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg, 2005
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-(*
- *  Items marked with (**) are extensions to the Standard Basis.
- *)
+import structure Name        from "../rtt/Name"
+import structure Label       from "../rtt/Label"
+import structure Path        from "../rtt/Path"
+import structure Type        from "../rtt/Type"
+import structure Inf         from "../rtt/Inf"
+import structure Reflect     from "../system/Reflect"
+import structure UnsafeValue from "../system/UnsafeValue"
+import signature LOCK        from "LOCK-sig"
 
-import structure __pervasive                         from "Pervasive"
-import __primitive type unit datatype option and ref from "ToplevelTypes"
-import __primitive infix 4 = infix 3 :=
-		   val op= and op! and op:=          from "ToplevelValues"
-import __primitive structure Ref                     from "Ref"
-import __primitive structure Promise                 from "Promise"
-import __primitive structure Future                  from "Future"
-import __primitive structure Thread                  from "Thread"
-import __primitive signature LOCK                    from "LOCK-sig"
+structure Lock =
+struct
+    open Lock
 
-local
-    structure Lock : LOCK =					(**)
-    struct
-	type lock = unit ref * Thread.t option ref
-	type t = lock
+    local
+	open __pervasive
 
-	fun lock () = (ref (), ref NONE)
+	exception Hidden
 
-	fun sync (signal, thread) f x =
+	(* Keep in sync with compiler/frontend-common/NameTranslation! *)
+	fun trName f (Name.ExId s) = Name.ExId (f s)
+	  | trName f Name.InId = Name.InId
+	fun trLab f l = Label.fromName(trName f (Label.toName l))
+	val trValLab = id
+	val trTypLab = trLab (fn s => "$" ^ s)
+	val trModLab = trLab (fn s => s ^ "$")
+	val trInfLab = trLab (fn s => "$" ^ s ^ "$")
+
+	fun syncMod (lock, m, j) =
+	    case Inf.inspect j of
+		Inf.Sig s =>
+		    let
+			val lvs = syncSig (lock, [], m, Inf.items s)
+		    in
+			UnsafeValue.prodPoly (Vector.fromList lvs)
+		    end
+              | Inf.Arrow(p, j1, j2) =>
+		    let
+			fun f x = syncMod (lock, UnsafeValue.cast m x, j2)
+		    in
+			UnsafeValue.cast (sync lock f)
+		    end
+              | Inf.Sing m' => syncMod (lock, m, #2 (Inf.asMod m'))
+	      | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
+	      | Inf.Exist _ => raise Hidden
+	      | Inf.Lambda _ => raise Inf.Interface
+
+	and syncSig (lock, lvs, m, []) = lvs
+	  | syncSig (lock, lvs, m, item::items) =
+	    case Inf.inspectItem item of
+		Inf.FixItem _ => syncSig (lock, lvs, m, items)
+	      | Inf.ValItem (l, t) =>
+		    let
+			val l' = trValLab l
+			val v = UnsafeValue.projPoly (m, l')
+			val v' = syncVal (lock, v, t)
+		    in
+			syncSig (lock, (l', v')::lvs, m, items)
+		    end
+	      | Inf.TypItem (p, k) =>
+		    let
+			val l' = trTypLab (Path.toLab p)
+			val v = UnsafeValue.projPoly (m, l')
+		    in
+			syncSig (lock, (l',v)::lvs, m, items)
+		    end
+	      | Inf.ModItem (p, j) =>
+		    let
+			val l' = trModLab (Path.toLab p)
+			val v = UnsafeValue.projPoly (m, l')
+			val v' = syncMod (lock, v, j)
+		    in
+			syncSig (lock, (l', v')::lvs, m, items)
+		    end
+	      | Inf.InfItem (p, k) =>
+		    let
+			val l' = trInfLab (Path.toLab p)
+			val v = UnsafeValue.projPoly (m, l')
+		    in
+			syncSig (lock, (l',v)::lvs, m, items)
+		    end
+	      | Inf.HiddenItem _ => raise Hidden
+
+	and syncVal (lock, v, t) =
+	    case Type.inspect t of
+		Type.Arrow (t1, t2) =>
+		    let
+			fun f x = syncVal (lock, UnsafeValue.cast v x, t2)
+		    in
+			UnsafeValue.cast (sync lock f)
+		    end
+	      | (Type.All (_, t') | Type.Exist (_, t')) => syncVal (lock, v, t')
+	      | _ => v
+    in
+	functor Sync (val lock : lock signature S structure X : S) =
 	    let
-		val self = SOME (Thread.current ())
+		structure M = Reflect.Reflect (signature S = S structure X = X)
+		structure J = Reflect.ReflectSig (signature S = S)
 	    in
-		if !thread = self then f x else
-		let
-		    val p = Promise.promise ()
-		in
-		    Future.await (Ref.exchange (signal, Promise.future p)); 
-		    thread := self; 
-		    f x
-		    finally (thread := NONE; Promise.fulfill (p, ()))
-		end
+		Reflect.Reify (val x = syncMod (lock, UnsafeValue.cast M.x, J.x)
+			       signature S = S)
 	    end
     end
-
-    __primitive eqtype lock = "Lock.lock"
-    __primitive functor Cast (structure X : LOCK signature S) : S = "Cast"
-in
-    structure Lock = Cast (signature S = LOCK where type lock = lock
-			   structure X = Lock)
 end

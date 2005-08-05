@@ -177,7 +177,8 @@ LIBDATASOURCES0 = \
 	IMP_SET-sig.aml IMP_MAP-sig.aml MkHashImpSet.aml MkHashImpMap.aml \
 	MkRedBlackImpSet.aml MkRedBlackImpMap.aml \
 	STACK-sig.aml Stack.aml STREAM-sig.aml Stream.aml \
-	REF_MAP-sig.aml RefMap.aml
+	REF_MAP-sig.aml RefMap.aml \
+	LOCK-sig.aml Lock.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	CONFIG-sig.aml IO-sig.aml IO.aml PRIM_IO-sig.aml PrimIO.aml \

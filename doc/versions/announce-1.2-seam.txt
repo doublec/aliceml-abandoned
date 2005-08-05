@@ -1,0 +1,63 @@
+We are happy to announce version 1.2 of the Alice programming
+system:
+
+     http://www.ps.uni-sb.de/alice/
+
+Alice ML is a functional programming language that enriches the
+statically typed, closed functional world of ML with extensive
+support for type-safe programming of concurrent, distributed
+and open systems. It also features cutting-edge constraint
+programming technology in the tradition of Oz/Mozart.
+
+Alice ML is a mostly conservative extension of Standard ML
+featuring:
+
+  Futures
+     selective laziness and light-weight concurrency with
+     implicit dataflow synchronisation
+  Higher-order modules
+     higher-order functors and abstract signatures
+  Packages
+     dynamically typed ML modules as first-class values
+  Pickling
+     type-safe, generic & platform-independent marshalling,
+     including code, types and full modules
+  Components
+     type-safe lazy dynamic linking across the Internet
+  Distribution
+     type-safe remote functions and network mobility
+  Constraints
+     constraint propagation and programmable search for
+     solving hard combinatorical problems
+  Virtual Machine
+     portable implementation with support for just-in-time
+     compilation
+  Interactive tools
+     graphical browsers for data structures and search spaces
+
+The highlights of this release are:
+
+  Improvements to Interactive Toplevel
+     Many improvements, tweaks and fixes in the GUI; new features include type
+     tips, and native look&feel on Windows (thanks to Gtk Wimp theme).
+  Overhaul of Constraint Library
+     Many, many bug fixes in Gecode implementation and binding; simplified
+     interface to set constraints.
+  Experimental Byte Code Jitter
+     Optimized byte code produced by jitting, which is at least twice as fast
+     as non-jitted code; unlike native code jitting also available on PowerPC.
+  Regular Expression Library
+     A simple binding to GNU Regex library is included in the distribution.
+  Bug Fixes
+     Lots of bug fixes and minor improvements all over the place.
+
+For a detailed list of changes please see:
+
+     http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Alice is open source under a BSD-style license. Source and binary
+packages are currently available for Linux, Mac OS, and Windows.
+
+Enjoy,
+
+        - The Alice Team

@@ -15,6 +15,9 @@
 
 (* This file is prepended to every compiled input. *)
 
+import signature LOCK             from "x-alice:/lib/data/LOCK-sig"
+import structure Lock             from "x-alice:/lib/data/Lock"
+
 import signature TIME             from "x-alice:/lib/system/TIME-sig"
 import structure Time             from "x-alice:/lib/system/Time"
 import signature DATE             from "x-alice:/lib/system/DATE-sig"

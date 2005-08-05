@@ -1,27 +1,23 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-(*
- *  Items marked with (**) are extensions to the Standard Basis.
- *)
-
-import structure __pervasive from "Pervasive"
-import __primitive type unit from "ToplevelTypes"
-
-signature LOCK =						(**)
+signature LOCK =
     sig
 	type lock
 	type t = lock
 
 	val lock: unit -> lock
 	val sync: lock -> ('a -> 'b) -> 'a -> 'b
+
+	functor Sync (val lock : lock signature S structure X : S) : S
     end

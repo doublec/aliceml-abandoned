@@ -10,7 +10,8 @@
 
   <P>
     The <TT>Lock</TT> structure defines a simple means to implement
-    monitor-like synchronisation of arbitrary sets of functions.
+    monitor-like synchronisation of arbitrary sets of functions or
+    whole modules.
   </P>
 
   <P>
@@ -20,7 +21,8 @@
 
   <P>See also:
     <A href="future.html"><TT>Future</TT></A>,
-    <A href="thread.html"><TT>Thread</TT></A>
+    <A href="thread.html"><TT>Thread</TT></A>,
+    <A href="remote.html"><TT>Remote.Proxy</TT></A>
   </P>
 
 <?php section("import", "import") ?>
@@ -39,6 +41,8 @@
 
 	val lock : unit -> lock
 	val sync : lock -> ('a -> 'b) -> ('a -> 'b)
+
+	functor Sync (val lock : lock signature S  structure X : S) : S
     end
   </PRE>
 
@@ -70,7 +74,55 @@
       time, other threads will block until that function returns.
       Locking is <EM>not</EM> reentrant.</P>
     </DD>
+
+    <DT>
+      <TT>Sync (val lock = <I>lock</I>
+	signature S = <I>S</I>
+	structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a wrapper of structure <TT><I>X</I></TT> where all fields
+        of function type are synchronised with respect to lock
+	<TT><I>lock</I></TT>.
+        A function that returns a function will return a synchronised function,
+	respectively
+	(i.e. the wrapping is recursively performed for curried functions,
+	 such that each partial application is again synchronised).</P>
+      <P>
+        If <TT><I>X</I></TT> is a functor, then the functor itself is
+	synchronised. When the functor is applied, the resulting module will be
+	wrapped recursively (i.e. the wrapping is recursively performed for
+	curried functors <EM>and</EM> any resulting structure).</P>
+      <P>Example:</P>
+      <PRE>
+      Sync (val lock = lock ()
+            signature S = (val x : int val f : int -> int val g : int -> int -> int)
+            structure X = (val x = 5   fun f n = n + 1    fun f n m = n + m))</PRE>
+      <P>returns a structure that is equivalent to</P>
+      <PRE>
+      struct
+         val x = 5 
+         val f = sync lock (fn n => n + 1)
+         val g = sync lock (fn n => sync lock (fn m => n + m))
+      end</PRE>
+      <P>Similarly,</P>
+      <PRE>
+      Sync (val lock = lock ()
+            signature S = fct () -> (val x : int val f : int -> int -> int)
+            structure X = fct () => (val x = 5   fun f n m = n + m))</PRE>
+      <P>returns a <EM>synchronised</EM> functor equivalent to</P>
+      <PRE>
+      fct () => (val x = 5  val f = sync lock (fn n => sync lock (fn m => n + m)))</PRE>
+      <P>Note that structure fields of non-function type will not be wrapped,
+        even if they <EM>contain</EM> function values. For example,</P>
+      <PRE>
+      Sync (val lock = lock ()
+            signature S = (val p : (int -> int) * (int -> int))
+            structure X = (val p = (fn n => n, fn n => n + 1)))</PRE>
+      <P>returns <TT><I>X</I></TT> unchanged.</P>
+    </DD>
   </DL>
+
 
 <?php section("example", "example") ?>
 
@@ -98,6 +150,24 @@
       val even = Lock.sync lock even
       val odd  = Lock.sync lock odd
     end
+  </PRE>
+
+  <P>
+    Alternatively, the structure can be constructed like this:
+  </P>
+
+  <PRE>
+    structure Monitor' =
+    struct
+      fun even 0 = ()
+        | even n = odd(n-1)
+      and odd 0  = ()
+        | odd n  = even(n-1)
+    end
+
+    structure Monitor = Lock.Sync (val lock = Lock.lock()
+                                   signature S = MONITOR
+                                   structure X = Monitor')
   </PRE>
 
 <?php footing() ?>

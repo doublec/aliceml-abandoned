@@ -1,5 +1,5 @@
 Alice 1.2 (Kraftwerk 'What's Your Constraint' Album) - 2005/08/??
---------------------------------------------------------------
+-----------------------------------------------------------------
 
 Runtime System:
 
@@ -53,6 +53,7 @@ Interactive Toplevel:
 
 Basic Library:
 
+* [NEW] Lock: added Sync functor, which synchronises whole modules.
 * [NEW] Resolver, ComponentManager: added support for delegation.
 * [NEW] BinIO: added `openOverwrite', `seekIn', `seekOut'.
 * [NEW] Store: added polymorphic hash tables based on physical equality.
@@ -95,7 +96,7 @@ Gtk Library:
 
 Other Libraries:
 
-* [NEW] Regex: added binding to regular expression library.
+* [NEW] Regex: added binding to GNU regular expression library.
 * [NEW] XML: added `parseString'; proper error handling.
 * [NEW] Inspector: most library exceptions now recognized.
 * [FIX] Inspector: fixed handling of polymorphic types (bug 121).

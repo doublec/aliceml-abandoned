@@ -100,7 +100,10 @@ Library:
 * StringCvt: fixed pad{Left,Right}.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
-* Lock: sync is now re-entrant.
+* Lock:
+  - sync is now re-entrant.
+  - added Sync functor, which turns an arbitrary structure into a monitor.
+  - moved to lib/data.
 * Package: deleted separate val_package type.
 * TextIO, StreamIO: fixed buffering of TTY output.
 * TextIO: implemented CR/NL translation properly.
