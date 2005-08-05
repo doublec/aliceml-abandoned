@@ -24,27 +24,7 @@
  *)
 
 import structure NativeRegex from "NativeRegex"
-
-signature REGEX =
-  sig
-
-    type match
-
-    infix 2 =~
-
-    exception Malformed
-    exception NoSuchGroup
-
-    val match      : string -> string -> match option     (* Malformed *)
-    val =~         : string * string -> bool              (* Malformed *)
-
-    val groups     : match -> string vector
-    val group      : match * int -> string                (* NoSuchGroup *)
-    val groupStart : match * int -> int                   (* NoSuchGroup *)
-    val groupEnd   : match * int -> int                   (* NoSuchGroup *)
-    val groupSpan  : match * int -> (int * int)           (* NoSuchGroup *)
-
-  end
+import signature REGEX from "REGEX-sig"
 
 structure Regex :> REGEX =
   struct

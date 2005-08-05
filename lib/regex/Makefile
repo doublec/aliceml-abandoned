@@ -22,7 +22,7 @@ NATIVES = NativeRegex
 SOURCES = \
 	NativeRegex.cc regex.c
 
-TARGETS = Regex.alc
+TARGETS = REGEX-sig.alc Regex.alc
 
 EXTRA_LIBS = 
 EXTRA_INCLUDES = -DSTDC_HEADERS
