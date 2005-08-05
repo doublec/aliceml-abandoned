@@ -214,7 +214,7 @@ struct
 	 raise IO.Io {name = Url.toStringRaw url,
 		      function = "load", cause = NotFound})
 
-    val load = load' (defaultLogger, 0, defaultResolver, noDelegate)
+    val load = load' (defaultLogger, 0, primalResolver, noDelegate)
 
     fun save (name, component) =
 	UnsafeComponent.save (name, component)
