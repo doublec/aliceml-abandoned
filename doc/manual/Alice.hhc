@@ -370,6 +370,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/ref-map.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Regex">
+			<param name="Local" value="library/regex.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Remote">
 			<param name="Local" value="library/remote.html">
 			</OBJECT>
