@@ -67,9 +67,6 @@ struct
     fun *+(x,y,z)			= x*y + z
     fun *-(x,y,z)			= x*y - z
 
-    fun abs x				= if x = ~0.0 orelse x < 0.0 then ~x
-					  else x
-
     fun x == y				= compareReal(x, y) = IEEEReal.EQUAL
     fun x != y				= Bool.not(x == y)
     val equal				= op ==
@@ -94,12 +91,13 @@ struct
 
     fun signBit x			= x < 0.0 orelse x = ~0.0 orelse
 					  x = negNan
+    fun abs x				= if signBit x then ~x else x
+
     fun sameSign(x,y)			= signBit x = signBit y
     fun copySign(x,y)			= if sameSign(x,y) then x else ~x
 
-    fun x ?= y				= isNan x andalso isNan y
-					  orelse x = y orelse
-					  sign x = 0 andalso sign y = 0
+    fun x ?= y				= if isNan x then isNan y else
+					  if isZero x then isZero y else x = y
 
     fun class x				= class'(abs x)
     and class' x			= if isNan x then IEEEReal.NAN else
