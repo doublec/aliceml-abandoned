@@ -20,7 +20,9 @@
 #define _POSIX_C_SOURCE
 #endif
 
+extern "C" {
 #include "regex.h"
+}
 
 // In future releases, DECLARE_UNMANAGED_POINTER will be defined
 // in vm-stockwerk/alice/Authoring.hh.
