@@ -579,12 +579,12 @@ public:
     Assert(n != 0);
     u_int index = label->Hash() % n;
     u_int i = index;
-    while (true) {
+    do {
       if (GetArg(BASE_SIZE + i * 2) == wLabel)
 	return GetArg(BASE_SIZE + i * 2 + 1);
       i = (i + 1) % n;
-      Assert(i != index);
-    }
+    } while (i != index);
+    Error("Could not find symbol in dll. Aborting.");
   }
 };
 
