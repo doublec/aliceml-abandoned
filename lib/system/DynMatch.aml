@@ -177,7 +177,7 @@ struct
 		    val rea = match(x,j1)
 		    val j2' = Inf.realise(rea,j2)
 		in
-		    thin(x,j2')
+		    thin(UnsafeValue.cast m x, j2')
 		end)
 	  | Inf.Sing m' => thin(m, #2(Inf.asMod m'))
 	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
@@ -235,7 +235,7 @@ struct
 		    val rea = match(x,j1)
 		    val j2' = Inf.realise(rea,j2)
 		in
-		    seal(x,j2')
+		    thin(UnsafeValue.cast m x, j2')
 		end)
 	  | Inf.Sing m' => thin(m, #2(Inf.asMod m'))
 	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
