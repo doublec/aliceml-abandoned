@@ -27,7 +27,7 @@ structure Generator =
             "  int noOfPairs"^n^" = v"^n^"->GetLength();\n" ^
             "  int pairs"^n^"[noOfPairs"^n^"][2];\n\n" ^
 	    "  {\n" ^
-            "  int lastMax = IntegerSet::SMALLEST_ELEMENT-1;\n" ^
+            "  int lastMax = Limits::Set::int_min-1;\n" ^
             "  for (int j=0; j<noOfPairs"^n^"; j++) {\n" ^
             "    DECLARE_TUPLE(tmp, v"^n^"->Sub(j));\n" ^
             "    DECLARE_INT(tmp0, tmp->Sel(0));\n" ^
