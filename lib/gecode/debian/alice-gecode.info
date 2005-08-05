@@ -1,5 +1,5 @@
 Package: alice-gecode
-Version: 1.1
+Version: 1.2
 Revision: 2
 Source: http://www.ps.uni-sb.de/alice/download/sources/%n-%v.tar.gz
 Maintainer: Guido Tack <tack@ps.uni-sb.de>

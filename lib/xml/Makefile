@@ -9,7 +9,7 @@ SOURCES = \
 
 TARGETS = XML.alc XML-sig.alc
 
-VERSION = 1.1
+VERSION = 1.2
 DISTFILES = $(SOURCES) Makefile debian
 distdir = alice-xml-$(VERSION)
 

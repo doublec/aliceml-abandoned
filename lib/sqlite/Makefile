@@ -29,7 +29,7 @@ EXTRA_LIBS = `pkg-config --libs sqlite3`
 EXTRA_INCLUDES = `pkg-config --cflags sqlite3`
 ALICEDLL = `alice-config --alicedll`
 
-VERSION = 1.1
+VERSION = 1.2
 DISTFILES = $(SOURCES) Makefile debian
 distdir = alice-sqlite-$(VERSION)
 

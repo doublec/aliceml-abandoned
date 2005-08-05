@@ -1,5 +1,5 @@
 Name: alice-gecode
-Version: 1.1
+Version: 1.2
 Release: 1
 Copyright: X11
 Summary: The Alice Programming System, Gecode Binding

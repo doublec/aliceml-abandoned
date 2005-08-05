@@ -1,7 +1,7 @@
 ###
 # GTK+ 2.0 Interface for Alice - Makefile
 
-VERSION = 1.1
+VERSION = 1.2
 
 # The generator creates full code for the following name spaces
 COMPS = Gdk Gtk Canvas

@@ -1,11 +1,17 @@
+alice-xml (1.2-2) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Guido Tack <tack@ps.uni-sb.de>  Fri, 5 Aug 2005 13:26:30 +0100
+
 alice-xml (1.1-2) unstable; urgency=low
 
   * Fixed wrong path in control file.
 
- -- Guido Tack <tack@frisch.ps.uni-sb.de>  Wed, 8 Jun 2005 10:27:35 +0100
+ -- Guido Tack <tack@ps.uni-sb.de>  Wed, 8 Jun 2005 10:27:35 +0100
 
 alice-xml (1.1-1) unstable; urgency=low
 
   * Initial release.
 
- -- Guido Tack <tack@frisch.ps.uni-sb.de>  Wed, 16 Feb 2005 15:27:35 +0100
+ -- Guido Tack <tack@ps.uni-sb.de>  Wed, 16 Feb 2005 15:27:35 +0100
