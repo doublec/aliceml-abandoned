@@ -10,7 +10,7 @@ dnl
 
 AC_REVISION([$Id$])
 AC_PREREQ(2.53)
-AC_INIT(SEAM, 1.0.0, seam@ps.uni-sb.de)
+AC_INIT(SEAM, 1.2, seam@ps.uni-sb.de)
 AC_CONFIG_SRCDIR(Seam.hh)
 AM_INIT_AUTOMAKE
 

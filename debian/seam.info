@@ -1,5 +1,5 @@
 Package: seam
-Version: 1.0.0
+Version: 1.2
 Revision: 1
 Source: http://www.ps.uni-sb.de/alice/download/%n-%v.tar.gz
 Maintainer: Guido Tack <tack@ps.uni-sb.de>

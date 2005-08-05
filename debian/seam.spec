@@ -1,5 +1,5 @@
 Name: seam
-Version: 1.0.0
+Version: 1.2
 Release: 1
 Copyright: X11
 Summary: The Simple Extensible Abstract Machine

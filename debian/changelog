@@ -1,3 +1,9 @@
+seam (1.2-1) unstable; urgency=low
+
+  * Update
+
+ -- Guido Tack <tack@ps.uni-sb.de>  Fri,  3 Aug 2005 15:14:05 +0100
+
 seam (1.0.0-1) unstable; urgency=low
 
   * First official release. 
