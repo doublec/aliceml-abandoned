@@ -357,7 +357,8 @@ structure GuiMain =
 		case FileDialog.openFile("Open file", file ^ "/") of
 		    NONE => ()
 		  | SOME f => (Config.workDir := OS.Path.dir f;
-			       openGivenFile EXPLICIT f)
+			       openGivenFile EXPLICIT f);
+		Config.saveHistory (History.get(), Buffer.getFileNames())
 	    end
        
 
@@ -372,14 +373,17 @@ structure GuiMain =
 			       Buffer.saveAs (id, f))
 	    end
         fun saveFileAs () =
-            case getCurrentPage() of NONE => ()
-                                   | SOME id => saveGivenFileAs id
+            (case getCurrentPage() of NONE => ()
+                                   | SOME id => saveGivenFileAs id;
+	     Config.saveHistory (History.get(), Buffer.getFileNames()))
 
         fun saveFile () =
-            case getCurrentPage() of NONE => ()
+            (case getCurrentPage() of NONE => ()
                                    | SOME id =>
                                      if Buffer.save id then ()
-                                     else saveGivenFileAs id
+                                     else saveGivenFileAs id;
+	     Config.saveHistory (History.get(), Buffer.getFileNames()))
+
 
         (* Evaluation *)
 
@@ -435,7 +439,7 @@ structure GuiMain =
 		val p = Promise.promise()
 		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
             in
-                case file of
+		case file of
                     NONE => ()
                   | SOME f =>
 		    let
@@ -697,6 +701,7 @@ structure GuiMain =
              else FileDialog.modifiedWarning
 		 ("File modified.", "Discard changes and close anyway, or cancel?",
 		  reallyClose, !currentPage);
+	     Config.saveHistory (History.get(), Buffer.getFileNames());
              checkNotebookSize())
 
         fun interruptEval() =
