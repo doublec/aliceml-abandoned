@@ -584,7 +584,9 @@ public:
 	return GetArg(BASE_SIZE + i * 2 + 1);
       i = (i + 1) % n;
     } while (i != index);
-    Error("Could not find symbol in dll. Aborting.");
+    fprintf(stderr, "Could not find field %s in structure.\n",
+	    label->ToString()->ExportC());
+    Error("Aborting.");
   }
 };
 
