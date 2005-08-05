@@ -20,7 +20,7 @@ ALICETOOL = alicetool
 NATIVES = NativeRegex
 
 SOURCES = \
-	NativeRegex.cc
+	NativeRegex.cc regex.c
 
 TARGETS = Regex.alc
 
@@ -30,7 +30,7 @@ EXTRA_INCLUDES =
 MAKEDEPEND = $(ALICETOOL) makedepend
 
 VERSION = 1.2
-DISTFILES = $(SOURCES) Makefile debian
+DISTFILES = $(SOURCES) Makefile debian regex.h
 distdir = alice-regex-$(VERSION)
 
 all: compiledll compilealice
@@ -41,8 +41,12 @@ compilealice: $(TARGETS)
 	$(ALICETOOL) compile $(EXTRA_INCLUDES) \
 	-c  $< -o $@
 
-%.dll: %.o
-	$(ALICETOOL) link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+%.o: %.c
+	$(ALICETOOL) compilec $(EXTRA_INCLUDES) \
+	-c  $< -o $@
+
+%.dll: NativeRegex.o regex.o
+	$(ALICETOOL) link $(EXTRA_LIBS) NativeRegex.o regex.o -o $@
 
 %.alc: %.aml
 	alicec -z $< -o $@
