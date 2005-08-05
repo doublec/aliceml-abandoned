@@ -36,7 +36,8 @@ usage () {
     echo "  -V, --version    show version information and exit       " >&2
     echo "                                                           " >&2
     echo "MODE must be one of the following:                         " >&2
-    echo "  compile          compile a source file                   " >&2
+    echo "  compile          compile a C++ source file               " >&2
+    echo "  compilec         compile a C source file                 " >&2
     echo "  link             create a library or an executable       " >&2
     echo "  makedepend       create a dependency stub                " >&2
     echo "                                                           " >&2
@@ -81,6 +82,9 @@ case "$mode" in
 	;;
     compile)
 	exec seamtool ${verbose} compile "${gmpincludes}" -I"${includedir}" "$@"
+	;;
+    compilec)
+	exec seamtool ${verbose} compilec "${gmpincludes}" -I"${includedir}" "$@"
 	;;
     link)
     if test -n "${alicedll}" ; then
