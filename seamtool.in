@@ -31,7 +31,8 @@ usage () {
     echo "  -V, --version    show version information and exit       " >&2
     echo "                                                           " >&2
     echo "MODE must be one of the following:                         " >&2
-    echo "  compile          compile a source file                   " >&2
+    echo "  compile          compile a C++ source file               " >&2
+    echo "  compilec         compile a C source file                 " >&2
     echo "  link             create a library or an executable       " >&2
     echo "  config           output installation paths for SEAM      " >&2
     echo "                                                           " >&2
@@ -96,6 +97,10 @@ case "$mode" in
     compile)
 	cmd @SEAMTOOL_COMPILE_CMD_PREAMBLE@ "$@" \
             @SEAMTOOL_COMPILE_CMD_POSTAMBLE@
+	;;
+    compilec)
+	cmd @SEAMTOOL_COMPILE_C_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_COMPILE_C_CMD_POSTAMBLE@
 	;;
     link)
         cmd @SEAMTOOL_LINK_CMD_PREAMBLE@ "$@" \

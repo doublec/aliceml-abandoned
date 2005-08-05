@@ -291,10 +291,19 @@ AC_DEFUN([AC_SEAM_SEAMTOOL_COMMANDS],
           ac_seam_tmp="${ac_seam_tmp} ${SEAMTOOL_CXXFLAGS}"
           SEAMTOOL_COMPILE_CMD_PREAMBLE="${ac_seam_tmp}"
           SEAMTOOL_COMPILE_CMD_POSTAMBLE=""
+          ac_seam_tmp="$CC"
+          ac_seam_tmp="${ac_seam_tmp} ${DEFAULT_INCLUDES}"
+          ac_seam_tmp="${ac_seam_tmp} -I."
+          ac_seam_tmp="${ac_seam_tmp} -I${includedir}/seam"
+          ac_seam_tmp="${ac_seam_tmp} ${SEAMTOOL_CFLAGS}"
+          SEAMTOOL_COMPILE_C_CMD_PREAMBLE="${ac_seam_tmp}"
+          SEAMTOOL_COMPILE_C_CMD_POSTAMBLE=""
           ;;
     esac
     AC_SUBST(SEAMTOOL_COMPILE_CMD_PREAMBLE)
     AC_SUBST(SEAMTOOL_COMPILE_CMD_POSTAMBLE)
+    AC_SUBST(SEAMTOOL_COMPILE_C_CMD_PREAMBLE)
+    AC_SUBST(SEAMTOOL_COMPILE_C_CMD_POSTAMBLE)
     # link command
     case $host_os in
        darwin*)
