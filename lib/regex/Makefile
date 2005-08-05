@@ -1,9 +1,21 @@
-# Makefile for alice xml binding
+### -*- Makefile -*-
+###
+### Author:
+###   Guido Tack <tack@ps.uni-sb.de>
+###
+### Copyright:
+###   Guido Tack, 2003
+###
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+###
 
-INSTALLTO = `alice-config --alicelibdir`/regex
+# Makefile for alice regex binding
+
+INSTALLDIR = `alice-config --alicelibdir`/regex
 
 ALICETOOL = alicetool
-
 
 NATIVES = NativeRegex
 
@@ -12,22 +24,25 @@ SOURCES = \
 
 TARGETS = Regex.alc
 
-ALICEDLL = `alice-config --alicedll`
-
 EXTRA_LIBS = 
 EXTRA_INCLUDES = 
 
-MAKEDEPEND = $(ALICETOOL) -v cc -M $(DEFINES) $(INCLUDES)
+MAKEDEPEND = $(ALICETOOL) makedepend
 
+VERSION = 1.2
+DISTFILES = $(SOURCES) Makefile debian
+distdir = alice-regex-$(VERSION)
 
-all: $(NATIVES:%=%.dll) $(TARGETS)
+all: compiledll compilealice
+compiledll: $(NATIVES:%=%.dll)
+compilealice: $(TARGETS)
 
 %.o: %.cc
-	$(ALICETOOL) compile -DPROFILE=0 $(EXTRA_INCLUDES) \
+	$(ALICETOOL) compile $(EXTRA_INCLUDES) \
 	-c  $< -o $@
 
 %.dll: %.o
-	$(ALICETOOL) link $(ALICEDLL) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	$(ALICETOOL) link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
 %.alc: %.aml
 	alicec -z $< -o $@
@@ -46,8 +61,23 @@ depend:
 	alicedep *.aml > Makefile.depend
 #	$(MAKEDEPEND) $(SOURCES) >> Makefile.depend
 
-install: all
-	install -d $(INSTALLTO)
-	install $(NATIVES:%=%.dll) $(NATIVES:%=%.asig) $(TARGETS) $(INSTALLTO)
+install: installdll installalice
+installdll: compiledll
+	install -d $(INSTALLDIR)
+	install $(NATIVES:%=%.dll) $(INSTALLDIR)
+installalice: compilealice
+	install -d $(INSTALLDIR)
+	install $(TARGETS) $(INSTALLDIR)
+
+### DISTRIBUTION OF THE C SOURCES FOR PACKAGING
+#
+distdir:
+	rm -rf $(distdir)
+	mkdir $(distdir)
+	cp -r $(DISTFILES) $(distdir)
+
+dist:	distdir
+	tar chzf alice-regex-$(VERSION).tar.gz $(distdir)
+	rm -rf $(distdir)
 
 -include Makefile.depend
