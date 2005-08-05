@@ -1,3 +1,6 @@
+Alice 1.2 (Kraftwerk 'What's Your Constraint' Album) - 2005/08/??
+--------------------------------------------------------------
+
 Runtime System:
 
 * [NEW] Experimental optimized byte code, produced by jitting; activate by
@@ -36,12 +39,13 @@ Interactive Toplevel:
 * [NEW] Better handling of file loading and loading failure in GUI (including
         bugs 138, 142).
 * [NEW] Check file for external changes before saving.
+* [NEW] Session management can be deactivated in preferences; when toplevel is
+        invoked with file arguments or "-", old session is not reloaded either.
 * [NEW] Reset now also clears component manager thanks to whole session being
         executed in a sandbox; global function `reset' for reset in text mode.
 * [NEW] GUI I/O pane can be cleared via menu.
 * [NEW] Nesting depth and width printing limits are now configurable.
 * [NEW] Array2.array and most library exceptions recognized by printer.
-* [CHG] When invoked with file arguments (or "-"), old session is not reloaded.
 * [FIX] Miscellaneous usability tweaks and fixes in GUI.
 * [FIX] Jump-to-error works with Windows paths containing volumes.
 * [FIX] Fixed pretty-printing of values of datatypes with more than 100
@@ -91,6 +95,7 @@ Gtk Library:
 
 Other Libraries:
 
+* [NEW] Regex: added binding to regular expression library.
 * [NEW] XML: added `parseString'; proper error handling.
 * [NEW] Inspector: most library exceptions now recognized.
 * [FIX] Inspector: fixed handling of polymorphic types (bug 121).
