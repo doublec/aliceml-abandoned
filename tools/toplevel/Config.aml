@@ -16,7 +16,7 @@ import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
 import structure FileDialog from "FileDialog"
 
-signature USER_CONFIG =
+signature OLD_USER_CONFIG =
    sig
       val reservedColor : (int * int * int)
       val errorColor : (int * int * int)
@@ -25,6 +25,12 @@ signature USER_CONFIG =
       val commentColor : (int * int * int)
       val historySize : int
       val stdFontName : string
+   end
+
+signature USER_CONFIG =
+   sig
+      include OLD_USER_CONFIG
+      val loadFileHistory : bool
    end
 
 structure Config =
@@ -46,6 +52,7 @@ structure Config =
 
       val historySize = ref 100
       val useTabs = ref true
+      val loadFileHistory = ref true
 
       val cmap   = Gdk.colormapGetSystem ()
       val ugly = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
@@ -138,7 +145,8 @@ structure Config =
 
       fun init() =
 	  let
-	      structure C = unpack (Pickle.load preferencesFile) : USER_CONFIG
+	      val p = Pickle.load preferencesFile
+	      structure C = unpack p : OLD_USER_CONFIG
 	  in
 	      stdFontName := C.stdFontName;
 	      stdFont := Gtk.pangoFontDescriptionFromString (!stdFontName);
@@ -149,7 +157,12 @@ structure Config =
 	      reservedColor := mkRgbColor C.reservedColor;
 	      commentColor := mkRgbColor C.commentColor;
 
-	      historySize := C.historySize
+	      historySize := C.historySize;
+	      let
+		  structure D = unpack p : USER_CONFIG
+	      in
+		  loadFileHistory := D.loadFileHistory
+	      end handle Package.Mismatch _ => ()
 	  end handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) => ()
 
       fun save() =
@@ -163,6 +176,7 @@ structure Config =
 		  val commentColor = getRgbColor (!commentColor)
 		  val historySize = !historySize
 		  val stdFontName = !stdFontName
+		  val loadFileHistory = !loadFileHistory
 	      end
 	  in
 	      createConfigDir ();
@@ -210,7 +224,7 @@ structure Config =
 	      in
 		 D.workDir
 	      end handle Package.Mismatch _ => OS.FileSys.getHomeDir ());
-	      O.openFiles
+	      if !loadFileHistory then O.openFiles else nil
 	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => nil
 		| e => (TextIO.output(TextIO.stdErr,
 				    "** error loading history: uncaught \

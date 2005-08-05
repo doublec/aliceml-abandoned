@@ -130,6 +130,8 @@ structure Preferences =
 	fun fillDialog () =
 	    (Gtk.buttonSetLabel(Gui.font_button, !Config.stdFontName);
 	     fillColors ();
+	     Gtk.toggleButtonSetActive(Gui.loadSessionButton,
+				       !Config.loadFileHistory);
 	     Gtk.entrySetText(Gui.history_size_entry,
 			      Int.toString (!Config.historySize)))
 
@@ -139,6 +141,8 @@ structure Preferences =
 		val historySize = Gtk.entryGetText Gui.history_size_entry
 		val historySize =
 		    Option.getOpt(Int.fromString historySize, 100)
+		val loadFileHistory =
+		    Gtk.toggleButtonGetActive Gui.loadSessionButton
 	    in
 		Config.historySize := historySize;
 		if !colorsChanged then
@@ -154,6 +158,7 @@ structure Preferences =
 		Config.stdFontName := fontName;
 		Config.stdFont :=
 		Gtk.pangoFontDescriptionFromString fontName;
+		Config.loadFileHistory := loadFileHistory;
 		Buffer.changeFonts();
 		Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
 		Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont)
