@@ -70,7 +70,7 @@ import structure TestRegressions from "lib/regression/tests/TestRegressions"
 
 fun randomizeTests () = 
     let
-	val allTests = [(*TestCompiler.randomize,*)
+	val allTests = [TestCompiler.randomize,
 			TestAlt.randomize,
 			TestBool.randomize,
 			TestChar.randomize,
@@ -117,7 +117,7 @@ fun randomizeTests () =
 	List.app (fn x => x ()) allTests
     end
 
-fun allTests b = [(*TestRegressions.suite b,
+fun allTests b = [TestRegressions.suite b,
 		  TestCompiler.suite,
 		  TestPair.suite,
 		  TestRef.suite,
@@ -126,11 +126,11 @@ fun allTests b = [(*TestRegressions.suite b,
 		  TestGeneral.suite,
 		  TestWord.suite,
 		  TestWord8.suite,
-		  TestWord32.suite,*)
+		  TestWord32.suite,
 		  TestReal.suite,
 		  TestOption.suite, 
 		  TestList.suite,
-		  TestListPair.suite,(*
+		  TestListPair.suite,
 		  TestArray.suite,
 		  TestWord8Array.suite,
 		  TestCharArray.suite,
@@ -157,7 +157,7 @@ fun allTests b = [(*TestRegressions.suite b,
 		  TestIntInf.suite,
 		  TestByte.suite,
 		  TestConfig.suite,
-		  TestOSPath.suite,*)
+		  TestOSPath.suite,
 		  TestTime.suite,
 		  TestTimer.suite]
 

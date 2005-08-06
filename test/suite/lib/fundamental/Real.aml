@@ -69,10 +69,24 @@ struct
 	Test.test (fn x => ~1.0/0.0 = x) Real.negInf
 
     fun testIsNormal () =
-	Test.test (fn x => x + Gen.real 1000 = x) Real.negInf
+	let
+	    fun t' x = Bool.not (Real.isNan x orelse Real.sign x = 0) andalso
+		       Real.isFinite x
+	    fun t x = Real.isNormal x = t' x
+	in 
+	    Gen.try 10000 Gen.realAll (Test.test t)
+	end
 
-    fun testClass () =
-	Test.test (fn x => x + Gen.real 1000 = x) Real.negInf
+    fun testClass () = (* TODO: implement SUBNORMAL recognition*)
+	let
+	    fun t' x = if Real.isNan x then IEEEReal.NAN 
+		       else if Bool.not (Real.isFinite x) then IEEEReal.INF
+		       else if Real.sign x = 0 then IEEEReal.ZERO
+		       else IEEEReal.NORMAL
+	    fun t x = Real.class x = t' x
+	in 
+	    Gen.try 10000 Gen.realAll (Test.test t)
+	end
 
     fun testEqual () = 
 	Gen.try 1000 (Gen.pair (Gen.real, Gen.real)) 
@@ -700,9 +714,9 @@ struct
 
     fun testEqualReal () =
 	let
+	    fun isZero x = x = 0.0 orelse x = ~0.0
 	    fun t' (x, y) = Bool.not (Real.isNan x orelse Real.isNan y) 
-			    andalso x = y orelse
-			    (Real.sign x = 0 andalso Real.sign y = 0)
+			    andalso x = y orelse (isZero x andalso isZero y)
 	    fun t (x, y) = Real.== (x, y) = t' (x, y)
 	in
 	    Gen.try 10000 (Gen.pair (Gen.realAll, Gen.realAll)) (Test.test t)
@@ -710,9 +724,10 @@ struct
 
     fun testQuestEqual () =
 	let
+	    fun isZero x = x = 0.0 orelse x = ~0.0
 	    fun t' (x, y) = (Real.isNan x andalso Real.isNan y)
 			    orelse x = y orelse 
-			    (Real.sign x = 0 andalso Real.sign y = 0)
+			    (isZero x andalso isZero y)
 	    fun t (x, y) = Real.?= (x, y) = t' (x, y)
 	in 
 	    Gen.try 10000 (Gen.pair (Gen.realAll, Gen.realAll)) (Test.test t)
