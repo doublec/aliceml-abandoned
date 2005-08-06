@@ -21,6 +21,9 @@
 #include "alice/Data.hh"
 #include "alice/JitterImmediateEnv.hh"
 
+#define DO_REG_ALLOC
+//#undef DO_REG_ALLOC
+
 #define INITIAL_SHAREDTABLE_SIZE 256
 
 /* We can try to omit a range check if we fill the missing slots in the
@@ -35,11 +38,14 @@ class LazyByteCompileClosure;
 
 class AliceDll ByteCodeJitter {
 private:
-  Tuple *assignment;
   u_int currentNLocals;
   u_int PC;
   ImmediateEnv imEnv;
   IntMap *sharedTable;
+
+#ifdef DO_REG_ALLOC
+  u_int *mapping;
+#endif
   
   // inlining of primitives
   enum { INT_PLUS, INT_MINUS, 
@@ -53,13 +59,14 @@ private:
   u_int S0, S1, S2, S3;
 
   u_int IdToReg(word id) {
-    /*    u_int n   = Store::DirectWordToInt(id);
-    u_int reg = Store::DirectWordToInt(assignment->Sel(n));
-    return reg;*/
+#ifdef DO_REG_ALLOC
+    return mapping[Store::DirectWordToInt(id)];
+#else
     return Store::DirectWordToInt(id);
+#endif
   }
 
-  u_int LoadIdRefKill(u_int dest, word idRef);
+  u_int LoadIdRefKill(u_int dest, word idRef, bool forceDest);
 
   // AbstractCode Instructions
   TagVal *InstrKill(TagVal *pc);

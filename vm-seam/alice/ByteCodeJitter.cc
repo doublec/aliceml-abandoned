@@ -37,35 +37,101 @@ static inline u_int GetNumberOfArguments(TagVal *abstractCode) {
 }
 
 // Register Allocation
+#ifdef DO_REG_ALLOC
+// Register Allocation
 class RegisterAllocator {
-public:
-  static void Run(u_int *resNLocals,
-		  Tuple **resAssignment,
-		  TagVal *abstractCode) {
-    u_int nLocals = GetNumberOfArguments(abstractCode);
-    /*
-    Tuple *assignment = Tuple::New(nLocals+NUMBER_OF_SCRATCH_REGISTERS);
-    
-       TODO: do something usefull to reduce number of local vars
-       Perhaps it would make sense to skip the register allocation
-       for nLocals<10, or so. Profile whether this can be usefull in practice.
-  
-    // this is the identity function at the moment
-    for(u_int i = nLocals; i--; )
-      assignment->Init(i,Store::IntToWord(i));
-    for(u_int i=nLocals; i<nLocals+NUMBER_OF_SCRATCH_REGISTERS; i++)
-      assignment->Init(i,Store::IntToWord(i));
+private:
+  class Info {
+  public:
+    u_int reg;
+    u_int start;
+    u_int end;
+    Info(u_int r,u_int s, u_int e) : reg(r), start(s), end(e) {}
+    u_int GetKey() { return end; }
+  };
 
-    *resAssignment = assignment;
-*/
-    *resNLocals = nLocals;
+  class MinHeap {
+  private:
+    Info **heap;
+    u_int top;
+    u_int size;
+  public:
+    MinHeap(u_int s) : top(0), size(s+1) {
+      heap = new Info*[size];
+    }
+    ~MinHeap() {
+      for(u_int i=1; i<=top; i++)
+	delete heap[i];
+      delete[] heap;
+    }
+    Info* GetMin() {
+      return heap[1];
+    }
+    void DeleteMin() {
+      heap[1] = heap[top--];
+      Info *tmp;
+      u_int i = 1, left, right;
+      u_int smallest = 0;
+      for(;;) {
+	left = i << 1;
+	right = left | 1;
+	// choose max(i,left,right)
+	if(left <= top && heap[left]->GetKey() < heap[i]->GetKey()) 
+	  smallest = left;
+	else
+	  smallest = i;
+	if(right <= top && heap[right]->GetKey() < heap[smallest]->GetKey()) 
+	  smallest = right;
+	if(smallest == i) return;
+	// push the smallest element upwards
+	tmp = heap[smallest];
+	heap[smallest] = heap[i];
+	heap[i] = tmp;
+	i = smallest;
+      }
+    }
+    void Insert(Info *item) {
+      heap[++top] = item;
+      Info *tmp;
+      u_int i = top;
+      u_int parent = i >> 1;
+      while(i > 1 && heap[parent]->GetKey() > heap[i]->GetKey()) {
+	tmp = heap[parent];
+	heap[parent] = heap[i];
+	heap[i] = tmp;
+	i = parent;
+	parent >>= 1;
+      }
+    }
+  };
+
+public:
+  static void Run(Vector *liveness, u_int mapping[], u_int *nLocals) {
+    MinHeap heap(*nLocals);
+    u_int regs = 0;
+    u_int size = liveness->GetLength();
+    for(u_int i=0; i<size; i+=3) {
+      u_int index = Store::DirectWordToInt(liveness->Sub(i));
+      u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
+      u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
+      Info *info = new Info(regs,start,end);
+      heap.Insert(info);
+      Info *min = heap.GetMin();
+      if(min->end < start) {
+	mapping[index] = min->reg;
+	info->reg = min->reg;
+	heap.DeleteMin();
+      } else {
+	mapping[index] = regs++;
+      }
+    }
+    *nLocals = regs;
   }
 };
-
-
+#endif // DO_REG_ALLOC
 
 // instruction helpers
-u_int ByteCodeJitter::LoadIdRefKill(u_int dest, word idRef) {
+u_int ByteCodeJitter::LoadIdRefKill(u_int dest, word idRef, bool forceDest = false) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
   
   // TODO: incorporate substitution
@@ -77,7 +143,18 @@ u_int ByteCodeJitter::LoadIdRefKill(u_int dest, word idRef) {
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::LastUseLocal: // TODO: include liveness table
   case AbstractCode::Local:
-    dest = IdToReg(tagVal->Sel(0));
+    {    
+#ifdef DO_REG_ALLOC
+      u_int src = IdToReg(tagVal->Sel(0));
+      if(forceDest && src != dest) {
+	SET_INSTR_2R(PC,load_reg,dest,src);
+      } else {
+	dest = src;
+      }
+#else
+      dest = IdToReg(tagVal->Sel(0));
+#endif
+    }
     break;
   case AbstractCode::Global:
     {
@@ -783,8 +860,8 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	for(u_int i=0; i<nArgs; i++) 
 	  tup->Init(i,args->Sub(i));
 	u_int tupAddr = imEnv.Register(tup->ToWord());
-	SET_INSTR_1R1I(PC,load_immediate,S0,tupAddr);
-	SET_INSTR_1R1I(PC,seam_set_sreg,S0,0);
+	SET_INSTR_1R1I(PC,load_immediate,S1,tupAddr);
+	SET_INSTR_1R1I(PC,seam_set_sreg,S1,0);
       }
       u_int callInstr = isTailcall ? seam_tailcall : seam_call;
       u_int closure = LoadIdRefKill(S0,pc->Sel(0));
@@ -820,7 +897,7 @@ inline TagVal *ByteCodeJitter::InstrGetRef(TagVal *pc) {
 inline TagVal *ByteCodeJitter::InstrGetTup(TagVal *pc) {
   Vector *idDefs = Vector::FromWordDirect(pc->Sel(0));
   u_int size = idDefs->GetLength();
-  u_int src = LoadIdRefKill(S0,pc->Sel(1));
+  u_int src = LoadIdRefKill(S0,pc->Sel(1),true);
 
   if(size == 0) { // this is a request for unit
     SET_INSTR_1R(PC,await,src);
@@ -884,7 +961,7 @@ inline TagVal *ByteCodeJitter::InstrSel(TagVal *pc) {
 inline TagVal *ByteCodeJitter::InstrLazyPolySel(TagVal *pc) {
   Vector *ids = Vector::FromWordDirect(pc->Sel(0));
   u_int size = ids->GetLength();
-  u_int src = LoadIdRefKill(S0,pc->Sel(1));
+  u_int src = LoadIdRefKill(S0,pc->Sel(1),true);
   Vector *labels = Vector::FromWordDirect(pc->Sel(2));
   u_int labelAddr;
   u_int dst;
@@ -1047,7 +1124,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
 // TagTest of idRef * int * (int * instr) vector
 //          * (int * idDef vector * instr) vector * instr   
 /*inline*/ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
-  u_int testVal = LoadIdRefKill(S0,pc->Sel(0));
+  u_int testVal = LoadIdRefKill(S0,pc->Sel(0),true);
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   Vector *nullaryTests = Vector::FromWordDirect(pc->Sel(2));
   Vector *naryTests = Vector::FromWordDirect(pc->Sel(3));
@@ -1171,7 +1248,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
 // TODO: check for optimizations
 // CompactTagTest of idRef * int * tagTests * instr option  
 inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
-  u_int testVal = LoadIdRefKill(S0,pc->Sel(0));
+  u_int testVal = LoadIdRefKill(S0,pc->Sel(0),true);
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   Vector *tests = Vector::FromWordDirect(pc->Sel(2));
   u_int size = tests->GetLength();
@@ -1276,7 +1353,7 @@ inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
 // Contest of idRef * (idRef * instr) vector 
 //          * (idRef * idDef vector * instr) vector * instr    
 inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
-  u_int testVal = LoadIdRefKill(S0,pc->Sel(0));
+  u_int testVal = LoadIdRefKill(S0,pc->Sel(0),true);
   Vector *nullaryTests = Vector::FromWordDirect(pc->Sel(1));
   Vector *naryTests = Vector::FromWordDirect(pc->Sel(2));
   u_int nullarySize = nullaryTests->GetLength();
@@ -1285,7 +1362,7 @@ inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
   // compile nullary tests
   for(u_int i=0 ; i<nullarySize; i++) {
     Tuple *pair = Tuple::FromWordDirect(nullaryTests->Sub(i));
-    u_int src = LoadIdRefKill(S0,pair->Sel(0));
+    u_int src = LoadIdRefKill(S1,pair->Sel(0));
     u_int conTestInstrPC = PC;
     SET_INSTR_2R1I(PC,contest,0,0,0);                      // dummy instr
     CompileInstr(TagVal::FromWordDirect(pair->Sel(1)));    // compile branch
@@ -1295,7 +1372,7 @@ inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
   // compile n-ary tests
   for(u_int i=0; i<narySize; i++) {
     Tuple *triple = Tuple::FromWordDirect(naryTests->Sub(i));
-    u_int src = LoadIdRefKill(S0,triple->Sel(0));
+    u_int src = LoadIdRefKill(S1,triple->Sel(0));
     u_int conTestInstrPC = PC;
     SET_INSTR_2R1I(PC,contest,0,0,0);                      // dummy instr
     // compile binding
@@ -1317,7 +1394,7 @@ inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
 
 // VecTest of idRef * (idDef vector * instr) vector * instr  
 inline TagVal *ByteCodeJitter::InstrVecTest(TagVal *pc) {
-  u_int testVal = LoadIdRefKill(S0,pc->Sel(0));
+  u_int testVal = LoadIdRefKill(S0,pc->Sel(0),true);
   Vector *tests = Vector::FromWordDirect(pc->Sel(1));
   u_int nTests = tests->GetLength();
   IntMap *map = IntMap::New(2 * nTests);
@@ -1558,7 +1635,13 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
       }*/
 
   // perform register allocation
-  RegisterAllocator::Run(&currentNLocals,&assignment,abstractCode);
+  currentNLocals = GetNumberOfArguments(abstractCode);
+
+#ifdef DO_REG_ALLOC
+  Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
+  mapping = new u_int[currentNLocals];
+  RegisterAllocator::Run(liveness,mapping,&currentNLocals);
+#endif
 
   // now prepare scratch registers
   BCJIT_DEBUG("nLocals: %d + 4 scratch\n",currentNLocals); 
@@ -1585,6 +1668,11 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   // compile function body
   CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
 
+#ifdef DO_REG_ALLOC
+  // free register mapping as we don't need it after compilation
+  delete[] mapping;
+#endif
+
   // create compiled concrete code
   Chunk *code = WriteBuffer::FlushCode();
   ByteConcreteCode *bcc = 
@@ -1592,7 +1680,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 				  code,
 				  imEnv.ExportEnv(),
 				  Store::IntToWord(currentNLocals));
-  BCJIT_DEBUG("compilation finished, return bcc %p:\n",bcc->ToWord());
+
   //  ByteCode::Disassemble(stderr,0,code,
   //		Tuple::FromWordDirect(imEnv.ExportEnv()));
   return bcc->ToWord();
