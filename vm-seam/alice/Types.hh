@@ -44,9 +44,10 @@ public:
   enum { canOutput, writeArr, writeArrNB, writeVec, writeVecNB,
 	 WRITER_CAPABILITIES_SIZE };
   // Component.component
-  enum { EVALUATED, UNEVALUATED };
+  enum { EVALUATED, UNEVALUATED, VNATIVE };
   enum { inf1, mod };                   // EVALUATED labels
   enum { body, imports, inf2 };         // UNEVALUATED labels
+  enum { name1, component };            // VNATIVE labels
   // Config.platform
   enum { Config_UNIX, Config_WIN32 };
   // Label.lab

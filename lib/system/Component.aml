@@ -39,10 +39,12 @@ struct
     __primitive type component = "Component.component"
     type t = component
     datatype component' =
-	UNEVALUATED of { imports: (string * inf) vector,
+	EVALUATED of { inf: inf, mod: mod }
+      | UNEVALUATED of { imports: (string * inf) vector,
 			 body:    mod vector -> mod,
 			 inf:     inf }
-      | EVALUATED of { inf: inf, mod: mod }
+      | VNATIVE of { name: string, component: component' option ref }
+	(* VNATIVE tag must be > UNEVALUATED for backwards compatibility! *)
 
     signature CM_COMPONENT = (structure ComponentManager : COMPONENT_MANAGER)
     structure CMSig = lazy Reflect.ReflectSig (signature S = CM_COMPONENT)
@@ -79,6 +81,8 @@ struct
     fun createEvaluated (mod, inf) = cast (EVALUATED {inf, mod}) : component
     fun createUnevaluated (imports, body, inf) =
 	cast (UNEVALUATED {imports, body, inf}) : component
+    fun createNative name =
+	cast (VNATIVE {name, component = ref NONE}) : component
 
     fun fromPackage p =
 	let
@@ -146,26 +150,10 @@ struct
 		     UrlMap.EXISTING component => component
 		   | UrlMap.NEW p =>
 		     let
-			 val component = UnsafeComponent.linkNative name
+			 val component = createNative name
 		     in
 			 Promise.fulfill (p, component); component
-		     end
-		     handle cause' =>
-			let
-			    val (cause, msg) =
-				case cause' of
-				    UnsafeComponent.Native msg =>
-					(cause', msg)
-				  | UnsafeComponent.CorruptInternal =>
-					(Corrupt, "could not resolve symbol")
-				  | _ =>
-					(cause',
-					 "internal exception "^ Exn.name cause')
-			     val exn = IO.Io {name, function = "load", cause}
-			in
-			     trace (logger, id, "link native " ^ msg);
-			     Promise.fail (p, exn); raise exn
-			end)
+		     end)
 	  | SOME (Resolver.STRING string) =>
 		(UnsafeComponent.unpack_ (UnsafeComponent.unzip string)
 		 handle (UnsafeComponent.CorruptInternal | UnsafeComponent.Corrupt) =>
@@ -223,13 +211,14 @@ struct
 	     | cause => raise IO.Io {name, function = "save", cause}
 
     fun inf component = inf' (cast component)
-    and inf' (UNEVALUATED {inf, ...}) = inf
-      | inf' (EVALUATED {inf, ...}) = inf
+    and inf' (EVALUATED {inf, ...}) = inf
+      | inf' (UNEVALUATED {inf, ...}) = inf
+      | inf' (VNATIVE _) = NONE
 
     fun imports component = imports' (cast component)
     and imports' (UNEVALUATED {imports, ...}) =
 	Vector.map (Pair.mapFst Url.fromString) imports
-      | imports' (EVALUATED _) = #[]
+      | imports' (EVALUATED _ | VNATIVE _) = #[]
 
 
     signature MANAGER_CONFIG = (val initialTable : initial_table
@@ -405,6 +394,36 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 			SOME (lazy DynMatch.strengthenWith (rea, mod, inf'))
 	    in
 		(mod, dynInf)
+	    end
+	  | eval'' (baseUrl, VNATIVE {name, component = compOpt}) =
+	    let
+		val p = Promise.promise ()
+		val comp = 
+		    case Ref.exchange (compOpt, Promise.future p) of
+			SOME comp => comp
+		      | NONE =>
+			    UnsafeComponent.linkNative name
+			    handle cause' =>
+				let
+				    val (cause, msg) =
+					case cause' of
+					    UnsafeComponent.Native msg =>
+						(cause', msg)
+					  | UnsafeComponent.CorruptInternal =>
+						(Corrupt,
+						 "could not resolve symbol")
+					  | _ =>
+						(cause', "internal exception "
+						 ^ Exn.name cause')
+				    val exn = IO.Io {name, function = "load",
+						     cause}
+				in
+				    trace (!logger, id, "link native " ^ msg);
+				    Promise.fail (p, exn); raise exn
+				end
+	    in
+		Promise.fulfill (p, SOME comp);
+		eval'' (baseUrl, comp)
 	    end
 
 	fun validate url =
