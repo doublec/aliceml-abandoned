@@ -1,5 +1,6 @@
 import signature GDK from "x-alice:/lib/gtk/GDK-sig"
 import signature GTK from "x-alice:/lib/gtk/GTK-sig"
+import structure GtkEnums from "x-alice:/lib/gtk/GtkEnums"
 import signature COMPONENT_MANAGER
    from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 
@@ -14,13 +15,30 @@ structure Egg =
 		val it : unit -> unit
 	    end
 
+	(* hack to avoid loading Gtk when running egg.aml *)
+	signature GDK =
+	sig
+	    type object
+	    val pixbufNewFromInline : int * string * bool -> object * object
+	end
+	signature GTK =
+	sig
+	    type object
+	    val WINDOW_TOPLEVEL : GtkEnums.GtkWindowType
+	    val windowNew : GtkEnums.GtkWindowType -> object
+	    val windowSetTitle : object * string -> unit
+	    val imageNewFromPixbuf : object -> object
+	    val containerAdd : object * object -> unit
+	    val widgetShowAll : object -> unit
+	end
+
 	functor MkToplevelIt (CM : COMPONENT_MANAGER) : TOPLEVEL_IT =
 	    struct
 		structure GtkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gtk"
 					 signature S = (structure Gtk : GTK))
-		structure GdkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gdk"
-					 signature S = (structure Gdk : GDK))
 		structure Gtk = GtkComp.Gtk
+		structure GdkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gdk"
+					 signature S = (structure Gdk : GDK where type object = Gtk.object))
 		structure Gdk = GdkComp.Gdk
 		fun it () =
 		    let
