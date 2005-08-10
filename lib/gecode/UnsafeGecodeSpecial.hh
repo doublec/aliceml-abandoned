@@ -415,9 +415,9 @@ DEFINE2(int_getRanges) {
   DECLARE_INTVAR(var1, s, stamp, pstamp, x1);
   unsigned int retIterSize = 0;
   Int::IntView iv(var1);
-  for(Int::DomRanges<Int::IntView> iters(iv);
+  for(Int::ViewRanges<Int::IntView> iters(iv);
       iters(); ++iters) retIterSize++;
-  Int::DomRanges<Int::IntView> ret(var1);
+  Int::ViewRanges<Int::IntView> ret(var1);
   Vector *vret = Vector::New(retIterSize);
   if(retIterSize>0) {
     u_int count = 0;
@@ -434,3 +434,48 @@ DEFINE2(int_getRanges) {
 
 using namespace Iter::Ranges;
 using namespace Set;
+ 
+ class SetVarLubRanges {
+ private:
+   LubRanges<SetView> i;
+ public:
+   SetVarLubRanges(SetVar x) {
+     SetView xv(x);
+     i.init(xv);
+   }
+   bool operator()(void) const { return i(); }
+   void operator++(void) { ++i; }
+   int min(void) { return i.min(); }
+   int max(void) { return i.max(); }
+   unsigned int width(void) { return i.width(); }
+ };
+
+ class SetVarGlbRanges {
+ private:
+   GlbRanges<SetView> i;
+ public:
+   SetVarGlbRanges(SetVar x) {
+     SetView xv(x);
+     i.init(xv);
+   }
+   bool operator()(void) const { return i(); }
+   void operator++(void) { ++i; }
+   int min(void) { return i.min(); }
+   int max(void) { return i.max(); }
+   unsigned int width(void) { return i.width(); }
+ };
+
+ class SetVarUnknownRanges {
+ private:
+   UnknownRanges<SetView> i;
+ public:
+   SetVarUnknownRanges(SetVar x) {
+     SetView xv(x);
+     i.init(xv);
+   }
+   bool operator()(void) const { return i(); }
+   void operator++(void) { ++i; }
+   int min(void) { return i.min(); }
+   int max(void) { return i.max(); }
+   unsigned int width(void) { return i.width(); }
+ };
