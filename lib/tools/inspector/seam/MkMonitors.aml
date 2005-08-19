@@ -122,7 +122,9 @@ struct
 	end
 
   fun monitorFuture (f, id) =
-      spawn (if Future.isLazy f
+      spawn (if Hole.isHole f
+	     then ignore(Future.await(Hole.future f)) handle _ => ()
+	     else if Future.isLazy f
 	     then ignore(UnsafeValue.awaitRequest f) handle _ => ()
 	     else ignore(Future.await f) handle _ => () ; 
 	     QueuePut.put (Common.Future id))

@@ -105,6 +105,7 @@ struct
 
   val absL = "_val"
   val funL = "_fn"
+  val holeL = "_hole"
   val lazL = "_lazy"
   val futL = "_future"
   val faiL = "_failed"
@@ -163,6 +164,7 @@ struct
 
   (* Styles for displaying values. *)
 
+  val holeStyle   = newStyle ("hole", !fontname, (45000,0,0), false)
   val lazyStyle   = newStyle ("lazy", !fontname, (45000,0,0), false)
   val futureStyle = newStyle ("future", !fontname, (45000,0,0), false)
   val failStyle   = newStyle ("failed", !fontname, (45000,0,0), false)

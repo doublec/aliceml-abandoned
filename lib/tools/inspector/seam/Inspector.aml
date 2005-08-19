@@ -156,6 +156,7 @@ struct
   val equal             = AbsTree.equal
   val equalL            = AbsTree.equalL
 
+  val holeStyle    = Prefs.holeStyle
   val lazyStyle    = Prefs.lazyStyle
   val futureStyle  = Prefs.futureStyle
   val failStyle    = Prefs.failStyle

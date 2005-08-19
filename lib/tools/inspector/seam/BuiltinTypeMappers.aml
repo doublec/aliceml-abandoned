@@ -115,6 +115,15 @@ struct
 	    Array.update (array, index, last) ;
 	    (array, Limited, false)
 	  end
+	else if Hole.isHole l then
+          let
+            val array = Array.array (index + 1, undefinedListKid)
+            val desc = AbsTree.ListTail (itemTyp, l, Future ())
+          in
+            Array.update (array, index, Basic.future (desc, l)) ;
+            (array, Undetermined, false)
+          end
+
         else case Future.status l of
           Future.FUTURE =>
           let

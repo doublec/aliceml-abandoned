@@ -101,7 +101,18 @@ struct
     else
     let val item' = AbsTree.castItem item
     in
-    case Future.status value of
+    if Hole.isHole value then
+    (* Hole. *)
+      let
+	val item' =
+	    case item of
+	      Common.Value (t, v)  => AbsTree.Value (t, v, AbsTree.Future ())
+	    | Common.Module (s, m) => AbsTree.Module (s, m, AbsTree.Future ())
+      in
+	Basic.future (item', value)
+      end
+
+    else case Future.status value of
     (* Future. *)
       Future.FUTURE => 
       let

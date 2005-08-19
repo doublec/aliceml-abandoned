@@ -104,7 +104,9 @@ struct
       let 
 	val item' = AbsTree.NestedRow NONE
 	val subtree =
-	    if Future.isLazy value
+	    if Hole.isHole value
+	    then AbsTree.simpleText (item', Prefs.holeL, Prefs.holeStyle)
+	    else if Future.isLazy value
 	    then AbsTree.simpleText (item', Prefs.lazL, Prefs.lazyStyle)
 	    else AbsTree.simpleText (item', Prefs.futL, Prefs.futureStyle)
 

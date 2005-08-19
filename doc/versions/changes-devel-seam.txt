@@ -74,6 +74,7 @@ Basic Library:
 * [FIX] BinIO: added missing type sharing with BinPrimIO.{reader,writer}.
 * [FIX] ComponentManager: loading components via HTTP was broken (bug 120).
 * [FIX] Store: fixed crash with `futures' function (bug 146).
+* [FIX] Print: fixed printing of lists with holes as tails.
 
 Constraint Library:
 
@@ -98,6 +99,7 @@ Other Libraries:
 
 * [NEW] Regex: added binding to GNU regular expression library.
 * [NEW] XML: added `parseString'; proper error handling.
+* [NEW] Inspector: support for holes.
 * [NEW] Inspector: most library exceptions now recognized.
 * [FIX] Inspector: fixed handling of polymorphic types (bug 121).
 * [FIX] Inspector: fixed updating of futures as list tails (bug 149).
