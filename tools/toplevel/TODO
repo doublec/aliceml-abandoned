@@ -5,6 +5,7 @@ Bugs:
 
 * on startup, shortcuts for cycling thru buffers are disabled
 * search/goto dialogs should always be raised and moved to mouse position
+* highlighting after undoing a deletion
 * aliceglade ignores packing flags
   (manually replace alignment21's first Gtk.FILL by Gtk.EXPAND for text fields
    in search dialog to span full window)
