@@ -29,18 +29,27 @@
   } END
 
 static inline double Asinh(double x) {
-  return log(x + sqrt(x * x + 1.0));
+  return std::log(x + std::sqrt(x * x + 1.0));
 }
 
 static inline double Acosh(double x) {
-  return log(x + sqrt(x * x - 1.0));
+  return std::log(x + std::sqrt(x * x - 1.0));
 }
 
 static inline double Atanh(double x) {
-  if (fabs(x) > 1.0) {
-    return asin(2.0);
+  if (std::fabs(x) > 1.0) {
+    return std::asin(2.0);
   } else {
-    return log((1.0 + x) / (1.0 - x)) / 2.0;
+    return std::log((1.0 + x) / (1.0 - x)) / 2.0;
+  }
+}
+
+static inline double Pow(double x, double y) {
+  // C and SML differ for the following case...
+  if (std::fabs(x) == 1.0 && std::fabs(y) == 1.0/0.0) {
+    return 0.0/0.0; // NaN
+  } else {
+    return std::pow(x, y);
   }
 }
 
@@ -55,7 +64,7 @@ REAL_TO_REAL(Math_cos, std::cos)
 REAL_TO_REAL(Math_cosh, std::cosh)
 REAL_TO_REAL(Math_exp, std::exp)
 REAL_TO_REAL(Math_ln, std::log)
-REAL_REAL_TO_REAL(Math_pow, std::pow);
+REAL_REAL_TO_REAL(Math_pow, Pow);
 REAL_TO_REAL(Math_sin, std::sin);
 REAL_TO_REAL(Math_sinh, std::sinh);
 REAL_TO_REAL(Math_sqrt, std::sqrt);
@@ -72,10 +81,10 @@ void PrimitiveTable::RegisterMath() {
   Register("Math.atan2", Math_atan2, 2);
   Register("Math.cos", Math_cos, 1);
   Register("Math.cosh", Math_cosh, 1);
-  Register("Math.e", Real::New(2.71828182846)->ToWord());
+  Register("Math.e", Real::New(2.7182818284590452353602874713526625)->ToWord());
   Register("Math.exp", Math_exp, 1);
   Register("Math.ln", Math_ln, 1);
-  Register("Math.pi", Real::New(3.14159265359)->ToWord());
+  Register("Math.pi", Real::New(3.1415926535897932384626433832795029)->ToWord());
   Register("Math.pow", Math_pow, 2);
   Register("Math.sin", Math_sin, 1);
   Register("Math.sinh", Math_sinh, 1);
