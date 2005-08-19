@@ -39,7 +39,6 @@ class ByteCodeFrame;
 class ReadBuffer;
 
 class AliceDll ByteCodeInterpreter : public Interpreter {
-  friend class TestSuite;
 private:
   ByteCodeInterpreter() : Interpreter() {}
 

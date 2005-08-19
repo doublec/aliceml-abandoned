@@ -48,49 +48,49 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
       GET_1R(codeBuffer,PC,reg);
       fprintf(f,"await R%d\n",reg);
     }
-    break;
+    return PC;
   case iadd:
     {
       GET_3R(codeBuffer,PC,r0,r1,r2);
       fprintf(f,"iadd R%d, R%d, R%d\n",r0,r1,r2);
     }
-    break;
+    return PC;
   case isub:
     {
       GET_3R(codeBuffer,PC,r0,r1,r2);
       fprintf(f,"isub R%d, R%d, R%d\n",r0,r1,r2);
     }
-    break;
+    return PC;
   case loop: // r, exit
     {
       GET_1R1I(codeBuffer,PC,reg,exit);
       fprintf(f,"loop R%d, %d\n",reg,exit);
     }
-    break;
+    return PC;
   case set_local: // reg, index
     {
       GET_1R1I(codeBuffer,PC,reg,index);
       fprintf(f,"set_local R%d, %d\n",reg,index);
     }
-    break;
+    return PC;
   case set_global: // reg, index
     {
       GET_1R1I(codeBuffer,PC,reg,index);
       fprintf(f,"set_global R%d, %d\n",reg,index);
     }
-    break;
+    return PC;
   case seam_set_nargs: // nargs
     {
       GET_1I(codeBuffer,PC,nargs);
       fprintf(f,"seam_set_nargs %d\n",nargs);
     }
-    break;
+    return PC;
   case seam_set_sreg: // reg, index
     {
       GET_1R1I(codeBuffer,PC,reg,index);
       fprintf(f,"seam_set_sreg R%d, %d\n",reg,index);      
     }
-    break;
+    return PC;
   case spec_closure: // r, gp, tp
     {
       GET_1R2I(codeBuffer,PC,reg,gpAddr,tpAddr);
@@ -111,7 +111,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
   case seam_ccc1: 
     {
       GET_1R(codeBuffer,PC,reg);
-      fprintf(f,"seam_ccc1 %d\n",reg);
+      fprintf(f,"seam_ccc1 R%d\n",reg);
     }
     return PC;
   case seam_ccc1_wildcard: 
@@ -233,6 +233,12 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
       fprintf(f,"bci_call R%d, %d\n",r,n);
     }
     return PC;
+  case bci_call0: // r
+    {
+      GET_1R(codeBuffer,PC,r);
+      fprintf(f,"bci_call0 R%d\n",r);
+    }
+    return PC;
   case bci_call1: // reg,r0
     {
       GET_2R(codeBuffer,PC,reg,r0);
@@ -314,8 +320,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
   case seam_call_prim: // n,prim
     {
       GET_2I(codeBuffer,PC,n,prim);
-      word wPrim = imEnv->Sel(prim);
-      fprintf(f,"seam_call_prim %d, %d->%p\n",n,prim,wPrim);
+      fprintf(f,"seam_call_prim %d, %d\n",n,prim);
     }
     return PC;
   case seam_call_prim0: // prim
@@ -782,6 +787,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
   default:
     {
       fprintf(f, "instr number %d unkown\n",instr);
+      Error("unkown instruction");
     }
     return PC;
     }

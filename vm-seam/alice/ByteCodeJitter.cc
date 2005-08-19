@@ -439,7 +439,8 @@ didn't get 1 arg\n");
   if(cFunction == inlineTable[HOLE_HOLE]) { 
     BCJIT_DEBUG("inline Hole.hole\n");
     if(args->GetLength() == 1) { // request unit      
-      SET_INSTR_1R(PC,await,S0);
+      u_int arg0 = LoadIdRefKill(S0,args->Sub(0));
+      SET_INSTR_1R(PC,await,arg0);
     }
     if(isTailcall) {
       SET_INSTR_1R(PC,inlined_hole_hole,S0);
@@ -499,7 +500,7 @@ didn't get 1 arg\n");
     }
     return true;
   }
-
+  
   // inline Future.await
   if(cFunction == inlineTable[FUTURE_AWAIT]) {
     BCJIT_DEBUG("inline Future.await\n");
@@ -513,13 +514,15 @@ didn't get 1 arg\n");
       TagVal *ret = TagVal::FromWord(idDefInstr->Sel(0));
       if(ret != INVALID_POINTER) {
 	u_int dst = IdToReg(ret->Sel(0));
-	if(dst != arg)
+	if(dst != arg) {
 	  SET_INSTR_2R(PC,load_reg,dst,arg);
+	}
       }
       *continuation = TagVal::FromWordDirect(idDefInstr->Sel(1)); 
     }
+    return true;
   }
-
+  
   return false;
 }
 
@@ -541,6 +544,7 @@ didn't get 1 arg\n");
   u_int inArity = interpreter->GetInArity(concreteCode);
   bool needCCC = false;
   if(inArity != nArgs) {
+    BCJIT_DEBUG("primitive CCC: %d --> %d\n",nArgs,inArity);
     switch(inArity) {							
     case 0:
       {
@@ -558,7 +562,7 @@ didn't get 1 arg\n");
 	  {
 	    SET_INSTR_1I(PC,seam_set_nargs,1);
 	    SET_INSTR_1R(PC,load_zero,S0);
-	    SET_INSTR_1R(PC,seam_set_sreg,S0);
+	    SET_INSTR_1R1I(PC,seam_set_sreg,S0,0);
 	    needCCC = true;
 	  }
 	  break;
@@ -1203,9 +1207,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     u_int testInstr = isBigTag ? cbigtagtest_direct : ctagtest_direct;
     u_int loadInstr = isBigTag ? load_bigtagval : load_tagval;
 
-    Vector *tests = Vector::New(maxTag);
-    u_int testsAddr = imEnv.Register(tests->ToWord());
-    SET_INSTR_1R1I(PC,testInstr,testVal,testsAddr);
+    SET_INSTR_1R1I(PC,testInstr,testVal,maxTag);
     u_int jumpTablePC = PC;
     PC += maxTag;
     u_int elsePC = PC;
@@ -1613,15 +1615,15 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
   }
 }
 
+u_int invocations = 0;
+
 // Function of coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
-  static u_int invocations = 0;
   BCJIT_DEBUG("start compilation (%d times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
-
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
-  /*  
+  /*
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   std::fprintf(stderr, "%d. compile function (%p) at %s:%d.%d nArgs=%d\n\n",
 	       ++invocations, abstractCode->ToWord(),
@@ -1680,9 +1682,12 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 				  code,
 				  imEnv.ExportEnv(),
 				  Store::IntToWord(currentNLocals));
-
-  //  ByteCode::Disassemble(stderr,0,code,
-  //		Tuple::FromWordDirect(imEnv.ExportEnv()));
+  /*
+    fprintf(stderr,"-----------------\ncompiled code:\n");
+    ByteCode::Disassemble(stderr,0,code,
+    Tuple::FromWordDirect(imEnv.ExportEnv()));
+    fprintf(stderr,"-------------\n");
+  */
   return bcc->ToWord();
 }
 

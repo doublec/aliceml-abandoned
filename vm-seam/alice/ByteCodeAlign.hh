@@ -101,47 +101,47 @@ class ByteCode; // forward declaration
 
 #define SET_INSTR(index,instr) ENCODE_INSTR(index,instr)	
 							
-#define SET_INSTR_1I(index,instr,i)		\
+#define SET_INSTR_1I(index,instr,i) {		\
   SET_INSTR(index,instr);			\
-  ENCODE_1I(index,i)	
+  ENCODE_1I(index,i); }
 
-#define SET_INSTR_2I(index,instr,i1,i2)	        \
+#define SET_INSTR_2I(index,instr,i1,i2) {	\
   SET_INSTR(index,instr);			\
-  ENCODE_2I(index,i1,i2)  
+  ENCODE_2I(index,i1,i2); }
 							
-#define SET_INSTR_1R(index,instr,r)		\
+#define SET_INSTR_1R(index,instr,r) 		\
   SET_INSTR_1I(index,instr,r)
 
 #define SET_INSTR_2R(index,instr,r1,r2)		\
   SET_INSTR_2I(index,instr,r1,r2)
 
-#define SET_INSTR_3R(index,instr,r1,r2,r3)	\
+#define SET_INSTR_3R(index,instr,r1,r2,r3) {	\
   SET_INSTR_2I(index,instr,r1,r2);		\
-  ENCODE_1I(index,r3)
+  ENCODE_1I(index,r3); }
 
-#define SET_INSTR_4R(index,instr,r1,r2,r3,r4)	\
+#define SET_INSTR_4R(index,instr,r1,r2,r3,r4) {	\
   SET_INSTR_3R(index,instr,r1,r2,r3);		\
-  ENCODE_1I(index,r4)  
+  ENCODE_1I(index,r4); }
 
-#define SET_INSTR_1R1I(index,instr,r,i)			\
+#define SET_INSTR_1R1I(index,instr,r,i) {		\
   SET_INSTR_1R(index,instr,r);			        \
-  ENCODE_1I(index,i)						
+  ENCODE_1I(index,i); }
 							
-#define SET_INSTR_1R2I(index,instr,r,i1,i2)		\
+#define SET_INSTR_1R2I(index,instr,r,i1,i2) {		\
   SET_INSTR_1R(index,instr,r);			        \
-  ENCODE_2I(index,i1,i2)					
+  ENCODE_2I(index,i1,i2); }
 							
-#define SET_INSTR_1R3I(index,instr,r,i1,i2,i3)		\
+#define SET_INSTR_1R3I(index,instr,r,i1,i2,i3) {	\
   SET_INSTR_1R(index,instr,r);			        \
-  ENCODE_3I(index,i1,i2,i3)					
+  ENCODE_3I(index,i1,i2,i3); }
 							
-#define SET_INSTR_2R1I(index,instr,r1,r2,i)		\
+#define SET_INSTR_2R1I(index,instr,r1,r2,i) {		\
   SET_INSTR_2R(index,instr,r1,r2);			\
-  ENCODE_1I(index,i)						
+  ENCODE_1I(index,i); }
 
-#define SET_INSTR_3R1I(index,instr,r1,r2,r3,i)		\
+#define SET_INSTR_3R1I(index,instr,r1,r2,r3,i) {	\
   SET_INSTR_3R(index,instr,r1,r2,r3);			\
-  ENCODE_1I(index,i)						
+  ENCODE_1I(index,i); }
 									
 // get instruction + arguments
 

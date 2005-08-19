@@ -64,7 +64,7 @@ public:
     if(map->IsMember(wInstr))
       return Store::DirectWordToInt(map->Get(wInstr));
     else
-      return 7711; // unkown
+      return (u_int) instr; // unkown
   }
 #endif // THREADED
 
