@@ -47,7 +47,7 @@ void distinct(const IntArgs&, const IntVarArgs&, IntConLevel); int_distinctI;
 
 // Sortedness
 void sortedness(const IntVarArgs&, const IntVarArgs&, IntConLevel); int_sortedness;
-void permsort(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, IntConLevel); int_permsort;
+void sortedness(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, IntConLevel); int_permsort;
 
 // Global cardinality
 void gcc(const IntVarArgs&, const IntArgs&, const IntArgs&, IntConLevel); int_gcc;

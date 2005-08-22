@@ -72,7 +72,7 @@ Generator.alc: DescParser.alc
 
 
 %.dll: %.o
-	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) -o $@
+	alicetool -v link $(SOURCES:%.cc=%.o) $(LDFLAGS) -o $@
 
 %.alc: %.aml
 	alicec -z $< -o $@
