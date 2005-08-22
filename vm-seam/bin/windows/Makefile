@@ -8,7 +8,7 @@ LD = g++ -mno-cygwin
 LDFLAGS = -L$(PREFIX)/lib -lseam
 
 EXES = \
-	alicerun.exe alicerunwin.exe alice.exe alicec.exe \
+	alicerun.exe alicewin.exe alice.exe alicec.exe \
 	alicelink.exe alicedep.exe aliceglade.exe aliceremote.exe
 SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
@@ -20,7 +20,7 @@ alicerun.o: alicex.cc Makefile
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
-alicerunwin.exe: alicerun.exe
+alicewin.exe: alice.exe
 	cp $< $@
 	editbin /subsystem:windows $@
 
@@ -67,5 +67,5 @@ install: $(EXES:%=$(BINDIR)/%)
 	rm -f $(SCRIPTS)
 
 clean:
-	-rm -f alice.o alicec.o aliceserv.o alicelink.o alicedep.o
-	-rm -f alice.exe alicec.exe aliceserv.exe alicelink.exe alicedep.exe
+	-rm -f $(EXES)
+	-rm -f $(EXES:%.exe=%.o)
