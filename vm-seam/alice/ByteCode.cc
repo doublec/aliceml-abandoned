@@ -103,10 +103,10 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
       fprintf(f,"seam_set_sreg R%d, %d\n",reg,index);      
     }
     return PC;
-  case spec_closure: // r, gp, tp
+  case spec_closure: // r0,r1,i0,i1
     {
-      GET_1R2I(codeBuffer,PC,reg,gpAddr,tpAddr);
-      fprintf(f,"spec_closure R%d, %d, %d\n",reg,gpAddr,tpAddr);
+      GET_2R2I(codeBuffer,PC,r0,r1,i0,i1);
+      fprintf(f,"spec_closure R%d, R%d, %d, %d\n",r0,r1,i0,i1);
     }
     return PC;
   case ccc1: 
@@ -620,6 +620,12 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
     {
       GET_2R1I(codeBuffer,PC,r1,r2,index);
       fprintf(f,"lazyselect_polyrec R%d, R%d, %d\n",r1,r2,index);
+    }
+    return PC;     
+  case lazyselect_polyrec_n:
+    {
+      GET_1R2I(codeBuffer,PC,r0,i0,i1);
+      fprintf(f,"lazyselect_polyrec_n R%d, %d, %d\n",r0,i0,i1);
     }
     return PC;     
   case jump: // target

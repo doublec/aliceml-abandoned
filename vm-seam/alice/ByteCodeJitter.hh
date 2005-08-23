@@ -42,6 +42,7 @@ private:
   u_int PC;
   ImmediateEnv imEnv;
   IntMap *sharedTable;
+  Vector *globalSubst;
 
 #ifdef DO_REG_ALLOC
   u_int *mapping;
@@ -64,6 +65,10 @@ private:
 #else
     return Store::DirectWordToInt(id);
 #endif
+  }
+
+  TagVal *LookupSubst(u_int index) {
+    return TagVal::FromWordDirect(globalSubst->Sub(index));
   }
 
   u_int LoadIdRefKill(u_int dest, word idRef, bool forceDest);

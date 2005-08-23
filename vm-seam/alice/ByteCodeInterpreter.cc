@@ -609,7 +609,25 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(spec_closure): Error("spec_closure not yet implemented");
+    Case(spec_closure): // r0, r1, template, size
+      {
+	GET_2R2I(codeBuffer,PC,r0,r1,tempAddr,size);
+	TagVal *templ = TagVal::FromWordDirect(IP->Sel(tempAddr));
+	TagVal *abstractCode =
+	  TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);    
+	abstractCode->Init(0, templ->Sel(0));
+	abstractCode->Init(1, GETREG(r1)); // substitution
+	abstractCode->Init(2, templ->Sel(2));
+	abstractCode->Init(3, templ->Sel(3));
+	abstractCode->Init(4, templ->Sel(4));
+	abstractCode->Init(5, templ->Sel(5));
+	abstractCode->Init(6, templ->Sel(6));
+	word wConcreteCode =
+	  AliceLanguageLayer::concreteCodeConstructor(abstractCode);
+	Closure *closure = Closure::New(wConcreteCode,size);
+	SETREG(r0, closure->ToWord());
+      }
+      DISPATCH(PC);
 
     /********************************
      * handling of external requests
@@ -725,11 +743,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	GET_1R(codeBuffer,PC,reg);
 	REQUEST_INT(x,GETREG(reg));
-	s_int res = x+1;
-	if (res > MAX_VALID_INT) 
+	s_int result = x+1;
+	if (result > MAX_VALID_INT) 
 	  RAISE(PrimitiveTable::General_Overflow) 	
 	else
-	  SETREG(reg, Store::IntToWord(reg));	
+	  SETREG(reg, Store::IntToWord(result));	
       }
       DISPATCH(PC);
 
@@ -737,11 +755,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	GET_1R(codeBuffer,PC,reg);
 	REQUEST_INT(x,GETREG(reg));
-	s_int res = x-1;
-	if (res < MIN_VALID_INT) 
+	s_int result = x-1;
+	if (result < MIN_VALID_INT) 
 	  RAISE(PrimitiveTable::General_Overflow) 	
 	else
-	  SETREG(reg, Store::IntToWord(reg));	
+	  SETREG(reg, Store::IntToWord(result));	
       }
       DISPATCH(PC); 
 
@@ -1221,6 +1239,32 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	else {
 	  BCI_DEBUG("non-lazy select of %s\n",label->ToString()->ExportC());
 	  SETREG(r0, record->PolySel(label));
+	}
+      }
+      DISPATCH(PC);
+
+    Case(lazyselect_polyrec_n): // r0, regs, labels
+      {
+	GET_2R1I(codeBuffer,PC,r0,regsAddr,labelsAddr);
+	Vector *regs = Vector::FromWordDirect(IP->Sel(regsAddr));
+	Vector *labels = Vector::FromWordDirect(IP->Sel(labelsAddr));
+	word wRecord = GETREG(r0);
+	Record *record = Record::FromWord(wRecord);	
+	if (record == INVALID_POINTER) { // transient -> create byneed
+	  for (u_int i = regs->GetLength(); i--; ) {
+	    UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
+	    LazySelClosure *closure = LazySelClosure::New(wRecord, label);
+	    Byneed *byneed = Byneed::New(closure->ToWord());
+	    u_int dst = Store::DirectWordToInt(regs->Sub(i));
+	    SETREG(dst,byneed->ToWord());
+	  }
+	}
+	else {
+	  for (u_int i = regs->GetLength(); i--; ) {
+	    UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
+	    u_int dst = Store::DirectWordToInt(regs->Sub(i));
+	    SETREG(dst, record->PolySel(label));
+	  }
 	}
       }
       DISPATCH(PC);

@@ -144,12 +144,9 @@ public:
 u_int ByteCodeJitter::LoadIdRefKill(u_int dest, word idRef, 
 				    bool forceDest = false) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
-  
-  // TODO: incorporate substitution
-  /*
+
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
     tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
-  */
 
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::LastUseLocal: // TODO: include liveness table
@@ -339,7 +336,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
 
   u_int x = LoadIdRefKill(S0,args->Sub(0));
   /* word wY = ExtractImmediate(args->Sub(1));
-
+  
   // try first to compile the special case
   if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
@@ -355,7 +352,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
     }
     // else: inline iadd
   }
-*/
+  */
   // normal case
   u_int y = LoadIdRefKill(S1,args->Sub(1));
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
@@ -365,8 +362,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
   } 
   Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
   TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
-  u_int dst = 
-    (ret0 == INVALID_POINTER) ? S2 : IdToReg(ret0->Sel(0));
+  u_int dst = (ret0 == INVALID_POINTER) ? S2 : IdToReg(ret0->Sel(0));
   SET_INSTR_3R(PC,iadd,dst,x,y);
   return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
 }
@@ -376,7 +372,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
   // TODO: we might need a CCC
 
   u_int x = LoadIdRefKill(S0,args->Sub(0));
-  /* word wY = ExtractImmediate(args->Sub(1));
+  /*  word wY = ExtractImmediate(args->Sub(1));
 
   // try first to compile the special case
   if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
@@ -393,8 +389,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
     }
     // else: inline iadd
   }
-*/
-
+  */
   // normal case
   u_int y = LoadIdRefKill(S1,args->Sub(1));
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
@@ -404,8 +399,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
   } 
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
   TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
-  u_int dst = 
-    (ret0 == INVALID_POINTER) ? S2 : IdToReg(ret0->Sel(0));
+  u_int dst = (ret0 == INVALID_POINTER) ? S2 : IdToReg(ret0->Sel(0));
   SET_INSTR_3R(PC,isub,dst,x,y);
   return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
 }
@@ -644,10 +638,33 @@ inline TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
-// TODO: has to be implemented
 // Specialize of id * idRef vector * template * instr  
+/* On runtime every value of the global environment is directly 
+ * substituted into the code. This means that every time such a closure
+ * is really needed, new code must be compiled.
+ */
 inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
-  Error("BCJIT: Specialize not yet implemented\n");
+  u_int dst = IdToReg(pc->Sel(0));
+  Vector *globalRefs = Vector::FromWordDirect(pc->Sel(1));
+  u_int nGlobals = globalRefs->GetLength();
+
+  // create code for runtime substitution building
+  // substitiution is stored in scratch register S0
+  SET_INSTR_1R1I(PC,new_vec,S0,nGlobals);
+  for(u_int i=nGlobals; i--; ) {
+    u_int src = LoadIdRefKill(S1,globalRefs->Sub(i));
+    SET_INSTR_1R2I(PC,new_tagval,S2,1,Types::SOME);
+    SET_INSTR_2R1I(PC,init_tagval,S2,src,0);
+    SET_INSTR_2R1I(PC,init_vec,S0,S2,i);
+  }
+
+  u_int templateAddr = imEnv.Register(pc->Sel(2));
+  SET_INSTR_2R2I(PC,spec_closure,dst,S0,templateAddr,nGlobals);
+  for (u_int i = 0; i<nGlobals; i++) {
+    u_int src = LoadIdRefKill(S0, globalRefs->Sub(i));
+    SET_INSTR_2R1I(PC,init_closure,dst,src,i);
+  }
+  return TagVal::FromWordDirect(pc->Sel(3));
 }
 
 // AppPrim of value * idRef vector * (idDef * instr) option   
@@ -1072,19 +1089,37 @@ inline TagVal *ByteCodeJitter::InstrLazyPolySel(TagVal *pc) {
   u_int size = ids->GetLength();
   u_int src = LoadIdRefKill(S0,pc->Sel(1));
   Vector *labels = Vector::FromWordDirect(pc->Sel(2));
-  u_int labelAddr;
-  u_int dst;
-  for(u_int i=0; i<size; i++) {
-    dst = IdToReg(ids->Sub(i));
+
+  /*
+  for(u_int i=size; i--; ) {
+    u_int dst = IdToReg(ids->Sub(i));
 #ifdef DO_REG_ALLOC
-    if(dst == src) {
+    if(i > 0 && dst == size) {
       SET_INSTR_2R(PC,load_reg,S1,src);
       src = S1;
     }
 #endif
-    labelAddr = imEnv.Register(labels->Sub(i));
+    u_int labelAddr = imEnv.Register(labels->Sub(i));
+    SET_INSTR_2R1I(PC,lazyselect_polyrec,dst,src,labelAddr);
+    } */
+
+  if(size > 1) {
+    Vector *regs = Vector::New(size);
+    u_int regsAddr = imEnv.Register(regs->ToWord());
+    Vector *selLabels = Vector::New(size);
+    u_int selLabelsAddr = imEnv.Register(selLabels->ToWord());
+    for(u_int i=size; i--; ) {
+      word dst = Store::IntToWord(IdToReg(ids->Sub(i)));
+      regs->Init(i,dst);
+      selLabels->Init(i,labels->Sub(i));
+    }
+    SET_INSTR_1R2I(PC,lazyselect_polyrec_n,src,regsAddr,selLabelsAddr);
+  } else { // unfold 
+    u_int dst = IdToReg(ids->Sub(0));
+    u_int labelAddr = imEnv.Register(labels->Sub(0));
     SET_INSTR_2R1I(PC,lazyselect_polyrec,dst,src,labelAddr);
   }
+  
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
@@ -1686,8 +1721,8 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
     case AbstractCode::Close:
       pc = InstrClose(pc); break;
     case AbstractCode::Specialize:
-      //pc = InstrSpecialize(pc); break;
-      pc = InstrClose(pc); break;
+      pc = InstrSpecialize(pc); break;
+      // pc = InstrClose(pc); break;
     case AbstractCode::AppPrim:
       pc = InstrAppPrim(pc); break;
     case AbstractCode::AppVar:
@@ -1789,7 +1824,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   BCJIT_DEBUG("start compilation (%d times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
-  /* 
+  /*
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   std::fprintf(stderr, "%d. compile function (%p) at %s:%d.%d nArgs=%d\n\n",
 	       ++invocations, abstractCode->ToWord(),
@@ -1800,14 +1835,15 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 	       );
   AbstractCode::Disassemble(stderr,
 			    TagVal::FromWordDirect(abstractCode->Sel(5)));
-      
-*/
+    */  
+
   // perform register allocation
   currentNLocals = GetNumberOfArguments(abstractCode);
 
 #ifdef DO_REG_ALLOC
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
-  mapping = new u_int[currentNLocals];
+  u_int local_mapping[currentNLocals];
+  mapping = local_mapping;
   RegisterAllocator::Run(liveness,mapping,&currentNLocals);
 #endif
 
@@ -1825,6 +1861,24 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   // prepare control data structures
   sharedTable = IntMap::New(INITIAL_SHAREDTABLE_SIZE);
  
+  // prepare substituation
+  Vector *substInfo = Vector::FromWordDirect(abstractCode->Sel(1));
+  u_int nSubst      = substInfo->GetLength();
+  globalSubst       = Vector::New(nSubst);
+  for (u_int i = nSubst; i--;) {
+    TagVal *valueOpt = TagVal::FromWord(substInfo->Sub(i));
+    TagVal *subst;
+    if (valueOpt != INVALID_POINTER) {
+      subst = TagVal::New(AbstractCode::Immediate, 1);
+      subst->Init(0, valueOpt->Sel(0));
+    }
+    else {
+      subst = TagVal::New(AbstractCode::Global, 1);
+      subst->Init(0, Store::IntToWord(i));
+    }
+    globalSubst->Init(i, subst->ToWord());
+  }
+
   // prepare ByteCode WriteBuffer
   WriteBuffer::Init(); 
   PC = 0;
@@ -1836,24 +1890,23 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   // compile function body
   CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
 
-#ifdef DO_REG_ALLOC
-  // free register mapping as we don't need it after compilation
-  delete[] mapping;
-#endif
-
   // create compiled concrete code
   Chunk *code = WriteBuffer::FlushCode();
+
   ByteConcreteCode *bcc = 
     ByteConcreteCode::NewInternal(abstractCode,
 				  code,
 				  imEnv.ExportEnv(),
 				  Store::IntToWord(currentNLocals));
-  /*  
-    fprintf(stderr,"-----------------\ncompiled code:\n");
-    ByteCode::Disassemble(stderr,0,code,
-    Tuple::FromWordDirect(imEnv.ExportEnv()));
-    fprintf(stderr,"-------------\n");
-  */
+  /*    
+  static u_int codeSize = 0;
+  codeSize += code->GetSize();
+  fprintf(stderr,"codeSize %d\n",codeSize);
+  fprintf(stderr,"-----------------\ncompiled code:\n");
+  ByteCode::Disassemble(stderr,0,code,
+  Tuple::FromWordDirect(imEnv.ExportEnv()));
+  fprintf(stderr,"-------------\n");
+*/  
   return bcc->ToWord();
 }
 
