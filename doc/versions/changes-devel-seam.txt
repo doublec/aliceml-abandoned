@@ -53,7 +53,7 @@ Interactive Toplevel:
 
 Basic Library:
 
-* [NEW] Lock: added Sync functor, which synchronises whole modules.
+* [NEW] Lock: added Sync functor, which synchronises whole modules as monitors.
 * [NEW] Resolver, ComponentManager: added support for delegation.
 * [NEW] BinIO: added `openOverwrite', `seekIn', `seekOut'.
 * [NEW] Store: added polymorphic hash tables based on physical equality.
@@ -66,6 +66,7 @@ Basic Library:
         type dependencies; log now contains manager's id for each message.
 * [FIX] IntInf: fixed `~>>'.
 * [FIX] Real: fixed `rem' & `hash'; fixed treatment of NaN in several functions.
+* [FIX] Math: fixed precision of `e' and `pi'.
 * [FIX] Substring: fixed `isSuffix'.
 * [FIX] Word8{Vector,Array}: result from `sub' was broken when >= 128 (bug 119).
 * [FIX] Array2: properly treat zero-size regions (bug 127).
