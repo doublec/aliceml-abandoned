@@ -81,10 +81,10 @@ void PrimitiveTable::RegisterMath() {
   Register("Math.atan2", Math_atan2, 2);
   Register("Math.cos", Math_cos, 1);
   Register("Math.cosh", Math_cosh, 1);
-  Register("Math.e", Real::New(2.7182818284590452353602874713526625)->ToWord());
+  Register("Math.e", Real::New(std::exp(1.0))->ToWord());
   Register("Math.exp", Math_exp, 1);
   Register("Math.ln", Math_ln, 1);
-  Register("Math.pi", Real::New(3.1415926535897932384626433832795029)->ToWord());
+  Register("Math.pi", Real::New(2.0 * std::acos(0.0))->ToWord());
   Register("Math.pow", Math_pow, 2);
   Register("Math.sin", Math_sin, 1);
   Register("Math.sinh", Math_sinh, 1);
