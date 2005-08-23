@@ -34,23 +34,25 @@ DEFINE1(UnsafeDebug_disassemble) {
   if (b == INVALID_POINTER) {
     REQUEST(cc);
   }
-  if (b->GetInterpreter() == AbstractCodeInterpreter::self) {
+  
+  Interpreter *interpreter = b->GetInterpreter();
+  if (interpreter == AbstractCodeInterpreter::self) {
     AliceConcreteCode *acc = AliceConcreteCode::FromWord(cc);
     acc->Disassemble(stderr);
   } 
-  else if (b->GetInterpreter() == ByteCodeInterpreter::self) {
+  else if (interpreter == ByteCodeInterpreter::self) {
     ByteConcreteCode *bcc = ByteConcreteCode::FromWord(cc);
     bcc->Disassemble(stderr);
   }
 #if HAVE_LIGHTNING
-    else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
+  else if (interpreter == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
     ncc->Disassemble(stderr);
   }
 #endif
-    else {
-      fprintf(stderr,"unkown interpreter\n");
-    }
+  else {
+    fprintf(stderr,"unkown interpreter: %s\n",interpreter->Identify());
+  }
 
   RETURN_UNIT;
 } END
