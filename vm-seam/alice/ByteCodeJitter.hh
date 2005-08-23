@@ -68,6 +68,20 @@ private:
 
   u_int LoadIdRefKill(u_int dest, word idRef, bool forceDest);
 
+  // inlined primitives
+  TagVal *Inline_IntPlus(Vector *args, TagVal *idDefInstrOpt);
+  TagVal *Inline_IntMinus(Vector *args, TagVal *idDefInstrOpt);
+  TagVal *Inline_RefAssign(Vector *args, TagVal *idDefInstrOpt);
+  TagVal *Inline_FutureAwait(Vector *args, TagVal *idDefInstrOpt);
+  TagVal *Inline_FutureByneed(Vector *args, TagVal *idDefInstrOpt);
+  TagVal *Inline_HoleHole(Vector *args, TagVal *idDefInstrOpt);
+  TagVal *Inline_HoleFill(Vector *args, TagVal *idDefInstrOpt);
+
+  bool InlinePrimitive(void *cFunction, 
+		       Vector *args, TagVal *idDefInstrOpt, 
+		       TagVal **continuation);
+
+
   // AbstractCode Instructions
   TagVal *InstrKill(TagVal *pc);
   TagVal *InstrPutVar(TagVal *pc);
@@ -105,8 +119,7 @@ private:
   void CompileCCC(u_int inArity,Vector *rets);
   void CompileInstr(TagVal *pc);
   void CompileApplyPrimitive(Closure *closure, Vector *args, bool isTailcall);
-  bool InlinePrimitive(void *cFunction, Vector *args, TagVal *idDefInstrOpt, 
-		       TagVal **continuation);
+
 public:
   ByteCodeJitter();
   ~ByteCodeJitter();

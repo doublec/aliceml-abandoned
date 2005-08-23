@@ -26,7 +26,7 @@
 //#define DO_REWRITING
 #undef DO_REWRITING
 
-// debug output, ATTENTION: DEBUG_INSTR is slow for threaded code
+// debug output
 
 #define BCI_DEBUG(s,...)
 #define DEBUG_INSTR()
@@ -58,6 +58,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
+  virtual ByteCodeFrame* DupFrame(ByteCodeFrame *bcFrame);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);

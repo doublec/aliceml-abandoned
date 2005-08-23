@@ -61,6 +61,18 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
       fprintf(f,"isub R%d, R%d, R%d\n",r0,r1,r2);
     }
     return PC;
+  case idec:
+    {
+      GET_1R(codeBuffer,PC,r0);
+      fprintf(f,"idec R%d\n",r0);
+    }
+    return PC;
+  case iinc:
+    {
+      GET_1R(codeBuffer,PC,r0);
+      fprintf(f,"iinc R%d\n",r0);
+    }
+    return PC;
   case loop: // r, exit
     {
       GET_1R1I(codeBuffer,PC,reg,exit);

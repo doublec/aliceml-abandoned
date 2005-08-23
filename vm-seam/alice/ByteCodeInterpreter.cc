@@ -328,7 +328,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);			\
         REWRITE_SEAM_CALL(NOA);						\
-	/* dynamic self call test */					\
+        if(closure == CP) {						\
+	  PushCall(closure);						\
+          frame = (ByteCodeFrame*) Scheduler::GetFrame();		\
+	  if(StatusWord::GetStatus()) return Worker::PREEMPT;	        \
+	  PC = 0;							\
+	  DISPATCH(PC);							\
+	}								\
+	/* dynamic byte code call test */				\
 	if(closure !=INVALID_POINTER) {					\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
@@ -343,7 +350,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	      codeBuffer = ReadBuffer::New(code);			\
 	      DISPATCH(PC);						\
 	    }								\
-	  } 								\
+	  }								\
 	}								\
 	/* preemption test happens in Scheduler::PushCall */		\
       	return Scheduler::PushCall(wClosure);				\
@@ -422,9 +429,17 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       word wClosure = GETREG(reg);					\
       Closure *closure = Closure::FromWord(wClosure);			\
       REWRITE_SEAM_TAILCALL(NOA);					\
+      if(closure == CP) {						\
+	if(StatusWord::GetStatus()) {					\
+          frame->SavePC(0);    					        \
+	  return Worker::PREEMPT;					\
+        }								\
+	PC = 0;								\
+	DISPATCH(PC);							\
+      }									\
+      /* dynamic byte code call test */					\
       Scheduler::PopFrame(frame->GetSize());				\
-      /* dynamic self call test */					\
-      if(closure !=INVALID_POINTER) {					\
+      if(closure != INVALID_POINTER) {					\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
 	  if(cc != INVALID_POINTER) {					\
@@ -474,24 +489,24 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      * normal primitive call
      *************************/
 
-#define SEAM_CALL_PRIM(NOA) {							\
-      PREPARE_PRIMCALL##NOA();							\
-      frame->SaveState(PC,CP,IP);						\
-      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);		\
-      /*Worker::Result res = Primitive::Execute(interpreter);*/			\
-      NEW_STACK_FRAME(primFrame, interpreter, 0);				\
-      Worker::Result res = interpreter->GetCFunction()();			\
-      StackFrame *newFrame = Scheduler::GetFrame();				\
-      /* test if we can skip the scheduler */					\
-      if(res == CONTINUE && !StatusWord::GetStatus()				\
-         && newFrame->GetWorker() == this) {					\
-	frame = (ByteCodeFrame*) newFrame;					\
-	frame->GetState(&PC,&CP,&IP);						\
-	code = frame->GetCode();						\
-	codeBuffer = ReadBuffer::New(code);					\
-	DISPATCH(PC);								\
-      }										\
-      return res;								\
+#define SEAM_CALL_PRIM(NOA) {						 \
+      PREPARE_PRIMCALL##NOA();						 \
+      frame->SaveState(PC,CP,IP);					 \
+      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	 \
+      /*Worker::Result res = Primitive::Execute(interpreter);*/		 \
+      NEW_STACK_FRAME(primFrame, interpreter, 0);			 \
+      Worker::Result res = interpreter->GetCFunction()();		 \
+      StackFrame *newFrame = Scheduler::GetFrame();			 \
+      /* test if we can skip the scheduler */				 \
+      if(res == CONTINUE && !StatusWord::GetStatus()			 \
+         && newFrame->GetWorker() == this) {				 \
+	frame = (ByteCodeFrame*) newFrame;				 \
+	frame->GetState(&PC,&CP,&IP);					 \
+	code = frame->GetCode();					 \
+	codeBuffer = ReadBuffer::New(code);				 \
+	DISPATCH(PC);							 \
+      }									 \
+      return res;							 \
     }									
 
       
@@ -706,6 +721,29 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
+    Case(iinc): // reg
+      {
+	GET_1R(codeBuffer,PC,reg);
+	REQUEST_INT(x,GETREG(reg));
+	s_int res = x+1;
+	if (res > MAX_VALID_INT) 
+	  RAISE(PrimitiveTable::General_Overflow) 	
+	else
+	  SETREG(reg, Store::IntToWord(reg));	
+      }
+      DISPATCH(PC);
+
+    Case(idec): // reg
+      {
+	GET_1R(codeBuffer,PC,reg);
+	REQUEST_INT(x,GETREG(reg));
+	s_int res = x-1;
+	if (res < MIN_VALID_INT) 
+	  RAISE(PrimitiveTable::General_Overflow) 	
+	else
+	  SETREG(reg, Store::IntToWord(reg));	
+      }
+      DISPATCH(PC); 
 
       /**********************************
        * real instructions
@@ -1290,7 +1328,6 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 }
 
 
-// TODO: check if this is correct
 void ByteCodeInterpreter::PushCall(Closure *closure) { 
   BCI_DEBUG("BCI::PushCall(%p) current frame=%p --> ",
 	    closure->ToWord(),Scheduler::GetFrame());
@@ -1306,6 +1343,16 @@ void ByteCodeInterpreter::PushCall(Closure *closure) {
 		       0, closure, immediateArgs,
 		       nLocals);
   BCI_DEBUG(" new frame=%p\n",frame);  
+}
+
+ByteCodeFrame *ByteCodeInterpreter::DupFrame(ByteCodeFrame *bcFrame) {
+  // isn't working :-(
+  u_int size = bcFrame->GetSize();
+  StackFrame *frame = STATIC_CAST(StackFrame*,frame);
+  word wFrame = frame->Clone();
+  StackFrame *newFrame = Scheduler::PushFrame(size);
+  StackFrame::New(newFrame,size,wFrame);
+  return STATIC_CAST(ByteCodeFrame*,newFrame);
 }
 
 void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
