@@ -123,9 +123,10 @@ structure Main :> MAIN =
 
 	fun startDumpOnly root =
 	    (case MyComponent.load (Url.fromString root) of
-		 SOME component => PrintSig.printSig (root, component)
-	       | NONE => TextIO.print "[no signature]\n";
-	     OS.Process.success)
+		 SOME component => (PrintSig.printSig (root, component);
+				    OS.Process.success)
+	       | NONE => error ("not a valid component:\n\
+				\   " ^ root ^ "\n"))
 	    handle IO.Io _ =>
 		       error ("could not load component\n\
 			      \   " ^ root ^ "\n")

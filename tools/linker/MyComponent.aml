@@ -37,14 +37,14 @@ struct
 	case Resolver.localize Component.defaultResolver url of
 	    SOME (Resolver.FILE name) =>
 		(SOME (UnsafeComponent.load name)
-		 handle Component.Corrupt => NONE)
+		 handle UnsafeComponent.CorruptInternal => NONE)
 	  | SOME (Resolver.STRING string) =>
 		(SOME (UnsafeComponent.unpack_ string)
 		 handle cause =>
 		     raise IO.Io {name = Url.toStringRaw url,
 				  function = "load", cause})
 	  | SOME (Resolver.DELEGATE url') =>
-		load url'
+		load (Url.fromString (Url.toLocalFile url))
 	  | NONE => raise IO.Io {name = Url.toStringRaw url,
 				 function = "load", cause = Component.NotFound}
 
