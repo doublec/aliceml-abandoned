@@ -57,7 +57,10 @@ private:
   static void* inlineTable[INLINE_TABLE_SIZE]; 
   
   // scratch registers
-  u_int S0, S1, S2, S3;
+  u_int scratch;
+  u_int maxRegNum;
+
+  u_int GetNewScratch() { return scratch++; }
 
   u_int IdToReg(word id) {
 #ifdef DO_REG_ALLOC
@@ -71,7 +74,7 @@ private:
     return TagVal::FromWordDirect(globalSubst->Sub(index));
   }
 
-  u_int LoadIdRefKill(u_int dest, word idRef, bool forceDest);
+  u_int LoadIdRefKill(word idRef);
 
   // inlined primitives
   TagVal *Inline_IntPlus(Vector *args, TagVal *idDefInstrOpt);
