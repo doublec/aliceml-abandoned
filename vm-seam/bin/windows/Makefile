@@ -16,7 +16,7 @@ all: $(EXES)
 
 alicerun.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DARGS='{--argc>0?(--brokerArgc,*++argv):usage()}' \
+		-DARGS='{--argc>0 ? *++argv : usage()}' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
