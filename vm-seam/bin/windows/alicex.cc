@@ -115,12 +115,15 @@ int main(int argc, char *argv[]) {
   }
 #endif
   trace("GetArgs");
-  int brokerArgc = argc + 1;
+  const char *extraArgv[] = ARGS;
+  int extraArgc = sizeof(extraArgv)/sizeof(const char*);
+  int brokerArgc = argc + extraArgc;
   char *brokerArgv[brokerArgc];
   brokerArgv[0] = "alice";
-  brokerArgv[1] = ROOT;
+  for (int i = 0; i < extraArgc; i++)
+    brokerArgv[i + 1] = extraArgv[i];
   for (int i = 1; i < argc; i++)
-    brokerArgv[i + 1] = argv[i];
+    brokerArgv[i + extraArgc] = argv[i];
   String *languageId = String::New(brokerArgv[0]);
   trace("StartBroker");
   Broker::Start(languageId, brokerArgc, brokerArgv);

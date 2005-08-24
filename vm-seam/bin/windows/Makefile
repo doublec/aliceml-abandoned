@@ -16,44 +16,47 @@ all: $(EXES)
 
 alicerun.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DROOT='--argc>0?(--brokerArgc,*++argv):usage()' \
+		-DARGS='{--argc>0?(--brokerArgc,*++argv):usage()}' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
-
-alicewin.exe: alice.exe
-	cp $< $@
-	editbin /subsystem:windows $@
 
 aliceremote.exe: alicerun.exe
 	cp $< $@
 
 alice.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DROOT='"x-alice:/tools/Toplevel"' \
+		-DARGS='{"x-alice:/tools/Toplevel"}' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
+alicewin.exe: alicex.cc Makefile
+	$(CXX) $(CXXFLAGS) \
+		-DARGS='{"x-alice:/tools/Toplevel","--gui"}' \
+		-DPRELOAD_GTK=0 \
+		-c $< -o $@
+	editbin /subsystem:windows $@
+
 alicec.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DROOT='"x-alice:/compiler/CompilerMain"' \
+		-DARGS='{"x-alice:/compiler/CompilerMain"}' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
 alicelink.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DROOT='"x-alice:/tools/Linker"' \
+		-DARGS='{"x-alice:/tools/Linker"}' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
 alicedep.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DROOT='"x-alice:/tools/Depend"' \
+		-DARGS='{"x-alice:/tools/Depend"}' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
 aliceglade.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DROOT='"x-alice:/tools/Glade"' \
+		-DARGS='{"x-alice:/tools/Glade"}' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
