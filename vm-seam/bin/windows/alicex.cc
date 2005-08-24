@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
   }
 #endif
   trace("GetArgs");
-  const char *extraArgv[] = ARGS;
-  int extraArgc = sizeof(extraArgv)/sizeof(const char*);
+  char *extraArgv[] = ARGS;
+  int extraArgc = sizeof(extraArgv)/sizeof(char*);
   int brokerArgc = argc + extraArgc;
   char *brokerArgv[brokerArgc];
   brokerArgv[0] = "alice";
