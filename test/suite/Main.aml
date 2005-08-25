@@ -25,6 +25,7 @@ import structure TestAlt         from "lib/fundamental/Alt"
 import structure TestIEEEReal    from "lib/fundamental/IEEEReal"
 import structure TestChar        from "lib/fundamental/Char"
 import structure TestReal        from "lib/fundamental/Real"
+import structure TestMath        from "lib/fundamental/Math"
 import structure TestWord        from "lib/fundamental/Word"
 import structure TestWord8       from "lib/fundamental/Word8"
 import structure TestWord32      from "lib/fundamental/Word32"
@@ -61,6 +62,13 @@ import structure TestWideCharVectorSlice
 import structure TestVectorPair  from "lib/fundamental/VectorPair"
 import structure TestPair        from "lib/fundamental/Pair"
 import structure TestRef         from "lib/fundamental/Ref"
+import structure TestExn         from "lib/fundamental/Exn"
+import structure TestFuture      from "lib/fundamental/Future"
+import structure TestPromise     from "lib/fundamental/Promise"
+import structure TestHole        from "lib/fundamental/Hole"
+import structure TestThread      from "lib/fundamental/Thread"
+import structure TestPackage     from "lib/fundamental/Package"
+import structure TestLock        from "lib/data/Lock"
 import structure TestConfig      from "lib/system/Config"
 import structure TestTime        from "lib/system/Time"
 import structure TestTimer       from "lib/system/Timer"
@@ -74,12 +82,20 @@ fun randomizeTests () =
 			TestAlt.randomize,
 			TestBool.randomize,
 			TestChar.randomize,
+			TestFuture.randomize,
+			TestPromise.randomize,
+			TestHole.randomize,
+			TestThread.randomize,
+			TestPackage.randomize,
+			TestLock.randomize,
 			TestArray.randomize,
 			TestVector.randomize,
 			TestWord.randomize,
 			TestVectorPair.randomize,
 			TestGeneral.randomize,
+			TestMath.randomize,
 			TestArraySlice.randomize,
+			TestExn.randomize,
 			TestWord8ArraySlice.randomize,
 			TestWideCharArraySlice.randomize,
 			TestCharArraySlice.randomize,
@@ -128,6 +144,7 @@ fun allTests b = [TestRegressions.suite b,
 		  TestWord8.suite,
 		  TestWord32.suite,
 		  TestReal.suite,
+		  TestMath.suite,
 		  TestOption.suite, 
 		  TestList.suite,
 		  TestListPair.suite,
@@ -156,6 +173,13 @@ fun allTests b = [TestRegressions.suite b,
 		  TestInteger.suite,
 		  TestIntInf.suite,
 		  TestByte.suite,
+		  TestExn.suite,
+		  TestFuture.suite,
+		  TestPromise.suite, 
+		  TestHole.suite,
+		  TestThread.suite,
+		  TestPackage.suite,
+		  TestLock.suite,
 		  TestConfig.suite,
 		  TestOSPath.suite,
 		  TestTime.suite,

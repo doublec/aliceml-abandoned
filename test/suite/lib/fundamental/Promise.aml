@@ -1,0 +1,94 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestPromise :> TESTSUITE = (* the promise test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    fun testPromise () =
+	Test.test (fn x => (Promise.promise x; true) handle _ => false) ()
+
+    fun testFulfill () =
+	let
+	    fun t p =
+		let
+		    val _ = Promise.fulfill (p, "Alice")
+		    val a = Promise.future p = "Alice"
+		    val b = (Promise.fulfill (p, "C++"); false) 
+			        handle Promise.Promise => true
+		in 
+		    a andalso b
+		end 
+	in 
+	    Test.test t (Promise.promise ())
+	end
+
+    fun testFuture () =
+	let
+	    fun t p = 
+		let
+		    val a = Promise.future p 
+		    val b = Future.isFuture a
+		    val _ = Promise.fulfill (p, "Alice")
+		    val c = Promise.future p
+		    val d = Future.isFuture c
+		    val e = Future.isDetermined c
+		    val f = c = "Alice"
+		in
+		    b andalso (not d) andalso e andalso f
+		end
+	in
+	    Test.test t (Promise.promise ())
+	end
+
+    fun testFail () =
+	let
+	    fun t p =
+		let
+		    val _ = Promise.fail (p, Subscript)
+		    val a = Future.isFailed (Promise.future p)
+		in 
+		    a
+		end
+	in
+	    Test.test t (Promise.promise ())
+	end
+
+    fun testIsFulfilled () =
+	let
+	    fun t p =
+		let
+		    val a = Promise.isFulfilled p
+		    val _ = Promise.fulfill (p, "Alice")
+		    val b = Promise.future p = "Alice"
+		    val c = Promise.isFulfilled p
+		in 
+		    (not a) andalso b andalso c
+		end 
+	in 
+	    Test.test t (Promise.promise ())
+	end
+
+
+    val suite = ("Promise", [("promise", testPromise), 
+                             ("future", testFuture),
+                             ("fulfill", testFulfill),
+                             ("fail", testFail),
+ 			     ("isFulfilled", testIsFulfilled)])
+end

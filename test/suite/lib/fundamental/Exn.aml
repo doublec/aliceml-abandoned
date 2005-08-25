@@ -1,0 +1,79 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestExn :> TESTSUITE = (* the exn test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    fun testName () =
+	Gen.try 100 Gen.exn (Test.test (fn x => Exn.name x = 
+						General.exnName x))
+    fun testMessage () =
+	Gen.try 100 Gen.exn (Test.test (fn x => Exn.message x = 
+						General.exnMessage x))
+
+    fun testCatch () =
+	let
+	    fun t' e () = (raise e; e)
+	    fun t e = (Exn.catch (id o Exn.fromPacket) (t' e)) = 
+		      (t' e () handle e => e)
+	in
+	    Gen.try 100 Gen.exn (Test.test t)
+	end
+
+    fun testFromPacket () =
+	let
+	    fun t' e () = raise e
+	    fun t e = Exn.catch Exn.fromPacket (t' e) = e
+	in
+	    Gen.try 100 Gen.exn (Test.test t)
+	end
+
+    fun testUpdate () =
+	let
+	    fun up p = Exn.update (p, General.Size)
+	    fun t' e () = raise e
+	    fun t e = Exn.catch (Exn.fromPacket o up) (t' e) = General.Size
+	in
+	    Gen.try 100 Gen.exn (Test.test t)
+	end
+
+    fun testReraise () = (* TODO *)
+	let
+	    fun t' e () = raise e
+	    fun t e = Exn.catch Exn.reraise (t' e) handle x => x = e
+	in
+	    Gen.try 100 Gen.exn (Test.test t)
+	end
+
+    fun testDumpTrace () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite = ("Exn", [("name", testName),
+			 ("message", testMessage),
+			 ("fromPacket", testFromPacket),
+			 ("update", testUpdate),
+			 ("catch", testCatch),
+			 ("reraise", testReraise),
+			 ("dumpTrace", testDumpTrace)])
+
+end
+
+

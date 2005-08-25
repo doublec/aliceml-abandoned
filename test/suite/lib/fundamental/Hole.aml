@@ -1,0 +1,82 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestHole :> TESTSUITE = (* the hole test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    fun testHole () =
+	Test.test (fn x => (Hole.hole x; true) handle _ => false) ()
+
+    fun testFill () =
+	let
+	    fun t h =
+		let
+		    val a = (Hole.fill ("Alice", "C++"); false) 
+			       handle Hole.Hole => true
+		    val b = (Hole.fill (h, h); false) 
+			       handle Future.Cyclic => true
+		    val _ = Hole.fill (h, "Alice")
+		    val c = h = "Alice"
+		in 
+		    a andalso b andalso c
+		end 
+	in 
+	    Test.test t (Hole.hole ())
+	end
+
+    fun testFuture () =
+	let
+	    fun t h = 
+		let
+		    val a = Hole.future h
+		    val b = Future.isFuture a
+		    val _ = Hole.fill (h, "Alice")
+		    val c = Hole.future h
+		    val d = Future.isDetermined c
+		in
+		    b andalso d
+		end
+	in
+	    Test.test t (Hole.hole ())
+	end
+
+    fun testFail () =
+	let
+	    fun t h =
+		let
+		    val _ = Hole.fail (h, Subscript)
+		    val a = Future.isFailed h
+		in 
+		    a
+		end
+	in
+	    Test.test t (Hole.hole ())
+	end
+
+    fun testIsHole () =
+	(Test.test Hole.isHole (Hole.hole ());
+	 Test.test (Bool.not o Hole.isHole) "Alice")
+
+    val suite = ("Hole", [("hole", testHole), 
+                          ("future", testFuture),
+                          ("fill", testFill),
+                          ("fail", testFail),
+ 			  ("isHole", testIsHole)])
+end

@@ -1,0 +1,69 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestThread :> TESTSUITE = (* the thread test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    fun testThread () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSpawnThread () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testCurrent () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testState () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testYield () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSleep () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testRaiseIn () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testTerminate () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSuspend () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testResume () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testIsSuspended () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite = ("Thread", [("thread", testThread), 
+			    ("spawnThread", testSpawnThread), 
+			    ("current", testCurrent), 
+			    ("state", testState), 
+			    ("yield", testYield), 
+			    ("sleep", testSleep), 
+			    ("raiseIn", testRaiseIn), 
+                            ("terminate", testTerminate),
+                            ("suspend", testSuspend),
+                            ("resume", testResume),
+ 			    ("isSuspended", testIsSuspended)])
+end
