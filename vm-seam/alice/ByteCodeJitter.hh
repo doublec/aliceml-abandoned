@@ -58,7 +58,8 @@ private:
   
   // scratch registers
   u_int scratch;
-  u_int maxRegNum;
+  u_int nRegisters;
+  u_int delayedScratchInc;
 
   u_int GetNewScratch() { return scratch++; }
 
@@ -74,7 +75,7 @@ private:
     return TagVal::FromWordDirect(globalSubst->Sub(index));
   }
 
-  u_int LoadIdRefKill(word idRef);
+  u_int LoadIdRefKill(word idRef, bool doIncScratch);
 
   // inlined primitives
   TagVal *Inline_IntPlus(Vector *args, TagVal *idDefInstrOpt);
@@ -88,7 +89,6 @@ private:
   bool InlinePrimitive(void *cFunction, 
 		       Vector *args, TagVal *idDefInstrOpt, 
 		       TagVal **continuation);
-
 
   // AbstractCode Instructions
   TagVal *InstrKill(TagVal *pc);
