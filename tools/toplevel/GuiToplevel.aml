@@ -23,14 +23,14 @@ structure GuiToplevel =
     fun run files =
 	let
 	    structure EH = GuiSignals (structure S = EventHandler)
-	    val loadSession = List.null files
-	    val files = List.filter (fn f => f <> "-") files
+	    val files' = List.filter (fn f => f <> "-") files
+	    val loadSession = (List.length files' = List.length files)
 	in
 	    Config.init ();
 	    GuiMain.init EH.notebook1_on_notebook1_switch_page;
 	    Evaluator.init ();
 	    GuiMain.initDone loadSession;
-	    List.app (GuiMain.openGivenFile GuiMain.COMMANDLINE) files;
+	    List.app (GuiMain.openGivenFile GuiMain.COMMANDLINE) files';
 	    await (Promise.future (Promise.promise ()))
 	end
   end

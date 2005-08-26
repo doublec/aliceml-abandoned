@@ -40,7 +40,7 @@ Interactive Toplevel:
         bugs 138, 142).
 * [NEW] Check file for external changes before saving.
 * [NEW] Session management can be deactivated in preferences; when toplevel is
-        invoked with file arguments or "-", old session is not reloaded either.
+        invoked with argument "-", old session is not reloaded either.
 * [NEW] Reset now also clears component manager thanks to whole session being
         executed in a sandbox; global function `reset' for reset in text mode.
 * [NEW] GUI I/O pane can be cleared via menu.
@@ -108,6 +108,7 @@ Other Libraries:
 
 Platforms:
 
+* [NEW] Windows: Installer associates Alice with .aml files.
 * [FIX] Debian: fixed XML package.
 
 

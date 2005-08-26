@@ -3,7 +3,7 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* on startup, shortcuts for cycling thru buffers are disabled
+* on startup, shortcuts for cycling thru buffers are disabled (and syntax hilite)
 * search/goto dialogs should always be raised and moved to mouse position
 * highlighting after undoing a deletion
 * aliceglade ignores packing flags
