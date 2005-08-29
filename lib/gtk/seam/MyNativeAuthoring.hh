@@ -322,7 +322,7 @@
 
 extern word GtkCoreErrorConstructor;
 
-#define RAISE_CORE_ERROR(a,b,msg) \
+#define RAISE_CORE_ERROR(msg) \
  do { ConVal *conVal = ConVal::New(Store::DirectWordToBlock(GtkCoreErrorConstructor), 1); \
       conVal->Init (0, String::New(msg)->ToWord()); \
       word exn = conVal->ToWord (); \

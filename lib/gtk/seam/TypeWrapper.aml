@@ -163,11 +163,9 @@ struct
                 inCode    = "",
                 prepareOutCode    = "GError *$t1 = 0; GError **$1 = &$t1;",
                 outCode   = "if ((*$0) != NULL) {" ^
-                               "char domain[strlen((*$0)->domain)];" ^
-                               "char code[strlen((*$0)->code)];" ^
                                "char message[strlen((*$0)->message)];" ^ 
                                "g_error_free(*$0);" ^
-                               "RAISE_CORE_ERROR(domain, code, message);" ^
+                               "RAISE_CORE_ERROR(message);" ^
                                "}",
                 paramKind = ERROR
             }

@@ -97,7 +97,9 @@ NativeCanvas.dll: NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll Nat
 	alicetool link $(ALICEDLL) $^ -o $@ \
 	 `pkg-config $(PC_OPTS) --libs`
 
-
+Key.aml:
+	./prepare-keyval.sh 
+	
 %.alc: %.aml
 	alicec --no-warn-conventions -c $< -o $@
 
