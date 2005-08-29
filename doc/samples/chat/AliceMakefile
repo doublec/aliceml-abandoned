@@ -10,7 +10,7 @@ endif
 export ROOT
 
 ifndef EXT
-  EXT := ozf
+  EXT := alc
 endif
 export EXT
 

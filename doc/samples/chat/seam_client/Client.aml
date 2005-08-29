@@ -1,4 +1,4 @@
-                    import structure Remote         from "x-alice:/lib/distribution/Remote"
+import structure Remote         from "x-alice:/lib/distribution/Remote"
 import structure Protocol       from "../common/Protocol"
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
 import structure Gdk            from "x-alice:/lib/gtk/Gdk"
@@ -7,131 +7,91 @@ import structure Gdk            from "x-alice:/lib/gtk/Gdk"
 structure P = Protocol
 
 
-structure StrList :>
-sig
-    type str_list
-
-    type t = str_list
-
-    val strList: string -> str_list
-
-    val getAll: str_list -> string list
-
-    val setAll: str_list * string list -> unit
-
-    val toWidget: str_list  -> Gtk.object
-end
-=
-struct
-    type str_list = Gtk.object * string list ref
-   
-    type t = str_list
-
-    fun strList title =
-        let
-            val clist   = Gtk.clistNew 1
-            val _       = Gtk.clistSetColumnTitle (clist, 0, title)
-        in
-            (clist, ref [])
-        end
-
-    fun getAll (_, ref l) = l
-
-    fun setAll ((clist, l), lst) = 
-        let fun add s = 
-            (* doesn't work right now: Gtk.clistAppend: object * object -> int
-                should be GtkclistAppend object * string list -> int
-            *) 
-            (Gtk.clistAppend (clist, #[s]); ())
-        in
-            l := lst;
-            Gtk.clistClear clist;
-            List.app add lst
-        end
-
-    fun toWidget (clist, _) = clist
-end
-
-
-fun insert cmp (v, l) =
-    case l of
-        []  => [v]
-    | v'::l => 
-        case cmp (v', v) of
-            LESS    => v' :: insert cmp (v, l)
-        |   EQUAL   => v::l
-        |   GREATER => v :: v' :: l
-
-
-fun remove cmp (v, l) =
-    case l of
-        []  => []
-    | v'::l =>
-        case cmp (v', v) of
-            LESS    => v' :: remove cmp (v, l)
-        |   EQUAL   => v' :: l
-        |   GREATER => v' :: l
-
-
 fun connectClient (nick, ticket) =
     let
         val serverPromise   = Promise.promise () 
         val server          = Promise.future serverPromise : P.server_interface
 
-        val win     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-        val _       = Gtk.windowSetTitle (win, "Chat: " ^ nick)
-        val vbox    = Gtk.vboxNew (false, 3)
-        val _       = Gtk.containerAdd (win, vbox)
+        val win     = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+        val _       = Gtk.Window.setTitle (win, "Chat: " ^ nick)
+        val vbox    = Gtk.VBox.new (false, 3)
+        val _       = Gtk.Container.add (win, vbox)
 
-        val hbox    = Gtk.hboxNew (false, 2)
-        val _       = Gtk.containerAdd (vbox, hbox)
+        val hbox    = Gtk.HBox.new (false, 2)
+        val _       = Gtk.Container.add (vbox, hbox)
         
-        val person_list = StrList.strList "persons" 
-        val _       = Gtk.widgetSetUsize (StrList.toWidget person_list, 200, ~1)
-        val _       = Gtk.boxPackStart (hbox, StrList.toWidget person_list, false, true, 0)
+        fun newCol (v, t, ndx) =
+            let val c = Gtk.TreeViewColumn.new ()
+                val r = Gtk.CellRendererText.new ()
+            in
+                Gtk.TreeViewColumn.packStart (c, r, true);
+                Gtk.TreeViewColumn.setTitle (c, t);
+                Gtk.TreeViewColumn.addAttribute (c, r, "text", ndx);
+                Gtk.TreeView.appendColumn (v, c);
+                c
+            end
 
-        val adjHor  = Gtk.adjustmentNew (0.0, 0.0, 1.0, 1.0, 10.0, 1.0)
-        val adjVer  = Gtk.adjustmentNew (0.0, 0.0, 1.0, 1.0, 10.0, 1.0)
-        val text    = Gtk.textViewNew ()
-        val _       = Gtk.containerAdd (hbox, text)
+            
+        val persons = Gtk.ListStore.newv #[Gtk.Types.string]
+        val personL = Gtk.TreeView.newWithModel persons
+        val personCol = newCol (personL, "Name", 0)
+        val _       = Gtk.Widget.setSizeRequest (personL, 100, ~1)
+        val _       = Gtk.Box.packStart (hbox, personL, false, true, 0)
 
-        (*FIXME: create appropriate tags of name tag-others, tag-you and use
-            Gtk.textBufferInsertWithTagsByName
-          *)
+        val adjHor  = Gtk.Adjustment.new (0.0, 0.0, 1.0, 1.0, 10.0, 1.0)
+        val adjVer  = Gtk.Adjustment.new (0.0, 0.0, 1.0, 1.0, 10.0, 1.0)
+        val text    = Gtk.TextView.new ()
+        val _       = Gtk.Container.add (hbox, text)
+
         fun appendText tag person msg =
-            Gtk.textBufferInsertAtCursor (Gtk.textViewGetBuffer text, person ^ msg ^ "\n", ~1)
+            Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer text, person ^ msg ^ "\n", ~1)
         
-        val entry   = Gtk.entryNewWithMaxLength 40
-        val _       = Gtk.boxPackStart (vbox, entry, false, true, 0)
+        val entry   = Gtk.Entry.new ()
+        val _       = Gtk.Box.packStart (vbox, entry, false, true, 0)
         
 
-        val quitBt  = Gtk.buttonNewWithLabel "Quit"
-        val _       = Gtk.boxPackStart (vbox, quitBt, false, true, 0)
+        val quitBt  = Gtk.Button.newWithLabel "Quit"
+        val _       = Gtk.Box.packStart (vbox, quitBt, false, true, 0)
 
 
 
         fun accepted s = (
             Promise.fulfill (serverPromise, s);
             print ("was accepted :-)\n");
-            Gtk.widgetShowAll win
+            Gtk.Widget.showAll win
         )
 
         fun receive (msg: P.message) =
             appendText "tag-others" (#sender msg ^ "> ") (#content msg)
 
 
-        fun connected nick = (
-            print (nick ^ " connected\n");
-            StrList.setAll (person_list, insert String.compare 
-                    (nick, StrList.getAll person_list)) 
-        )
+        fun connected nick = 
+            let
+                val iter = Gtk.TreeIter.new ()
+            in
+                print (nick ^ " connected\n");
+                Gtk.ListStore.append (persons, iter);
+                Gtk.ListStore.setValue (persons, iter, 0, Gtk.Value.string nick)
+            end
         
-        fun disconnected nick = (
-            print (nick ^ " disconnected\n");
-            StrList.setAll (person_list, remove String.compare
-                (nick, StrList.getAll person_list)) 
-        )
-        
+        fun disconnected nick = 
+            let
+                val iter = Gtk.TreeIter.new ()
+                fun loop (iter, not_done) =
+                    if not_done then
+                        let val v = Gtk.TreeModel.getValue (persons, iter, 0) 
+                        in
+                            if Gtk.Value.toString v = nick then
+                                (Gtk.ListStore.remove (persons,iter); ())
+                            else
+                                loop (iter, Gtk.TreeModel.iterNext (persons, iter))
+                        end
+                    else ()
+            in
+                print (nick ^ " disconnected\n");
+                loop (iter, Gtk.TreeModel.getIterFirst (persons, iter))
+            end
+            
 
         fun error (msg:string):unit   =
             print ("error: " ^ msg ^ "\n")
@@ -150,18 +110,18 @@ fun connectClient (nick, ticket) =
         (*--------- gui callbacks --------------*)
 
         val _       = Gtk.signalConnect (win, "destroy",
-                fn args => Gtk.widgetDestroy win)
+                fn args => Gtk.Widget.destroy win)
 
         val _       = Gtk.signalConnect (quitBt, "clicked",
-                fn args => Gtk.widgetDestroy win)
+                fn args => Gtk.Widget.destroy win)
 
         val _       = Gtk.signalConnect (entry, "activate",
                 fn args => 
                     let 
-                        val text = Gtk.entryGetText entry
+                        val text = Gtk.Entry.getText entry
                     in
                         appendText "tag-you" "you> " text;
-                        Gtk.entrySetText (entry, "");
+                        Gtk.Entry.setText (entry, "");
                         (#send server { kind    = P.M_BROADCAST, 
                                         sender  = nick, 
                                         content = text
