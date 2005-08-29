@@ -32,11 +32,12 @@ structure FileDialog =
 			else ()
                 val _ = Gtk.Window.setPosition (fileSel, Gtk.WindowPosition.MOUSE)
                 val _ = Gtk.Widget.showAll fileSel
+		val _ = Gtk.Window.present fileSel
                 val response = Gtk.Dialog.run fileSel
                 val ret =
                     case Gtk.ResponseType.fromInt response of
                         Gtk.ResponseType.OK =>
-                        SOME (Gtk.utf8ToLatin1 (Gtk.FileSelection.getFilename(*Utf8*) fileSel))
+                        SOME (Gtk.utf8ToLatin1 (Gtk.FileSelection.getFilename fileSel))
                       | _ => NONE
             in
                 Gtk.Widget.destroy fileSel;
@@ -51,10 +52,11 @@ structure FileDialog =
 		Gtk.Label.setText(Gui.modified_msg2, msg2);
 		Gtk.Dialog.setDefaultResponse(modifiedDia,
 				    Gtk.ResponseType.toInt Gtk.ResponseType.CANCEL);
-                (*Gtk.Window.setKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.Window.setKeepAbove (modifiedDia, true);
                 Gtk.Window.setPosition (modifiedDia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll modifiedDia;
 		Gtk.Widget.map modifiedDia;
+		Gtk.Window.present modifiedDia;
 		Gtk.Window.setModal(modifiedDia, true);
 		case Gtk.ResponseType.fromInt (Gtk.Dialog.run modifiedDia) of
 		    Gtk.ResponseType.CLOSE => close arg
@@ -71,10 +73,11 @@ structure FileDialog =
 		Gtk.Label.setText(Gui.overwrite_msg2, msg2);
 		Gtk.Dialog.setDefaultResponse(overwriteDia,
                                              Gtk.ResponseType.toInt Gtk.ResponseType.CLOSE);
-                (*Gtk.Window.setKeepAbove (overwriteDia, true); Gtk 2.4 *)
+                Gtk.Window.setKeepAbove (overwriteDia, true);
                 Gtk.Window.setPosition (overwriteDia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll overwriteDia;
 		Gtk.Widget.map overwriteDia;
+		Gtk.Window.present overwriteDia;
 		Gtk.Window.setModal(overwriteDia, true);
 		case Gtk.ResponseType.fromInt (Gtk.Dialog.run overwriteDia) of
 		    Gtk.ResponseType.CLOSE => close arg
@@ -94,10 +97,11 @@ structure FileDialog =
 				 "File '"^filenameUtf8^"' was modified.");
 		Gtk.Dialog.setDefaultResponse(dia,
 				    Gtk.ResponseType.toInt Gtk.ResponseType.OK);
-                (*Gtk.Window.setKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.Window.setKeepAbove (dia, true);
                 Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll dia;
 		Gtk.Widget.map dia;
+		Gtk.Window.present dia;
 		Gtk.Window.setModal(dia, true);
 		Gtk.Dialog.run dia
 		    before (Gtk.Widget.unmap dia;
@@ -115,10 +119,11 @@ structure FileDialog =
 		Gtk.Dialog.setDefaultResponse (dia,
 					     Gtk.ResponseType.toInt
 					     Gtk.ResponseType.OK);
-                (*Gtk.Window.setKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.Window.setKeepAbove (dia, true);
                 Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll dia;
 		Gtk.Widget.map dia;
+		Gtk.Window.present dia;
 		Gtk.Window.setModal (dia, true);
 		Gtk.Dialog.run dia
 		    before (Gtk.Widget.unmap dia;
