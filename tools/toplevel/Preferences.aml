@@ -16,7 +16,6 @@ import structure Gtk   from "x-alice:/lib/gtk/Gtk"
 import structure Pango from "x-alice:/lib/gtk/Pango"
 import structure Gui from "Gui"
 import structure Config from "Config"
-import structure History from "History"
 import structure Buffer from "Buffer"
 
 structure Preferences =
