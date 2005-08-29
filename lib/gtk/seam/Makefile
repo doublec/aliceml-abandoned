@@ -43,7 +43,7 @@ WRAPPERSCAP= \
 	    GTK \
 	    CANVAS
 
-DEFS=atk-types.defs atk.defs canvas.defs gdk-types.defs gdk.defs gtk-extrafuncs.defs gtk-types.defs gtk.defs libglade.defs pango-types.defs pango.defs wrapper.defs types canvas-properties.defs gtk-properties.defs
+DEFS=atk-types.defs atk.defs canvas.defs gdk-types.defs gdk.defs gtk-extrafuncs.defs gtk-types.defs gtk.defs pango-types.defs pango.defs wrapper.defs types canvas-properties.defs gtk-properties.defs
 
 TARGETS= $(SOURCES:%.aml=%.alc) 
 
