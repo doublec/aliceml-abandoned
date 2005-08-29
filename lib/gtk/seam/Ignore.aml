@@ -199,10 +199,11 @@ struct
     
 
     val ignoreTyList = [
+	"GtkSocket",
+	"GtkPlug",
+
         (* pango *)
-        "PangoAttrList",
-        "GtkPlug",
-        "GtkSocket"
+        "PangoAttrList"
     ]
         
     fun notIgnoredType (BasicTypes.CN cname) = not (List.exists (curry op= cname) ignoreTyList)
