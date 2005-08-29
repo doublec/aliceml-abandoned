@@ -684,7 +684,7 @@ and wrapEnum (p, pSig, pNative, pNatSig, pNatH, moduleName, { aliceName = name,
             cName ^ " v) {");
         pNative (1, "unsigned r = 0;");
         List.appi (fn (i, (_, CN n)) =>
-                   (pNative (2, "if ((v & " ^ n ^ ") == " ^ n ^ ") {");
+                   (pNative (2, "if (v  == " ^ n ^ ") {");
                     pNative (3, "r = " ^ Int.toString i ^ ";");
                     pNative (2, "} else "))) values;
         pNative (2, "{ Error (\"\"); }");
