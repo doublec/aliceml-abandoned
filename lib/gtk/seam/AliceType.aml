@@ -1,6 +1,5 @@
 import structure AliceName      from "AliceName"
 import structure Rename         from "Rename"
-import structure Inspector      from "x-alice:/lib/tools/Inspector"
 
 
 signature ALICE_TYPE =
