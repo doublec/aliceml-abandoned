@@ -63,7 +63,7 @@ import structure FS from "x-alice:/lib/gecode/FS"
 *)
 (* import signature INSPECTOR from "x-alice:/lib/tools/INSPECTOR-sig" *)
 (* import signature EXPLORER from "x-alice:/lib/tools/EXPLORER-sig" *)
-(* import structure Inspector from "x-alice:/lib/tools/Inspector" *)
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 (*import structure Explorer from "x-alice:/lib/tools/Explorer"
 *)
 import val use : string -> unit val reset : unit -> unit from "x-alice-toplevel:/Ops"
@@ -115,7 +115,7 @@ __overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
 
 __overload 'a printVal :  'a -> unit = Print'.printVal'
 __overload 'a printType : 'a -> unit = Print'.printType'
-(* __overload 'a inspect : 'a -> unit = Inspector.inspectVal *)
+__overload 'a inspect : 'a -> unit = Inspector.inspectVal
 
 val use = use
 val reset = reset
