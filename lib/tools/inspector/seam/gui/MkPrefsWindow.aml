@@ -17,6 +17,7 @@ local
   val prefs = Prefs.getCurrentPrefs ()
     
   val dialog = Gtk.Dialog.new ()
+  val _ = Gtk.Window.setTitle (dialog, "Inspector Preferences")
   (* WithButtons ("Inspector Preferences",
                                          MainWin.window,
                                          Gtk.DIALOG_DESTROY_WITH_PARENT,
