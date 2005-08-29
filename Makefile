@@ -10,6 +10,9 @@ DEBUG = 0
 
 VERSION = 1.2
 
+LD_LIBRARY_PATH := /opt/gtk+-2.6/lib:$(LD_LIBRARY_PATH)
+PKG_CONFIG_PATH := $(PWD)/../seam/support/install/lib/pkgconfig:/opt/gecode/lib/pkgconfig:/opt/gtk+-2.6/lib/pkgconfig:$(PKG_CONFIG_PATH)
+
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
 OPTS3= # '--dump-phases' # --dump-intermediate'
@@ -43,7 +46,7 @@ else
     TIMECOMMAND3 =
 endif
 
-export PREFIX TARGET WINDOWS
+export PREFIX TARGET WINDOWS LD_LIBRARY_PATH PKG_CONFIG_PATH
 
 .PHONY: clean clean-common clean-mozart clean-seam clean-test\
 	install install-prelude install-common install-global install-mozart install-seam \
@@ -229,7 +232,8 @@ libs-seam:
 	(cd lib/distribution && make TARGET=seam depend) || exit 1 ;\
 	(cd lib/distribution && \
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
-	(cd lib/gtk/seam && ./BUILD_ALL) || exit 1 ;\
+	(cd lib/gtk/seam && make depend) || exit 1 ;\
+	(cd lib/gtk/seam && make wrappers) || exit 1 ;\
 	(cd lib/gtk/seam && make install) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
