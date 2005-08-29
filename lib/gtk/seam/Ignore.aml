@@ -12,9 +12,15 @@ struct
 
     val ignoreFunList = [
         (* gdk *)
+        "gdk_add_client_message_filter",
+
         "gdk_display_get_pointer",
         "gdk_display_list_devices",
+        "gdk_display_add_client_message_filter",
         "gdk_draw_text_wc",
+
+        "gdk_event_handler_set",
+
         "gdk_text_width_wc",
         "gdk_text_extents_wc",
         "gdk_char_width_wc",
@@ -23,6 +29,7 @@ struct
         "gdk_gc_get_values",
         "gdk_gc_set_values",
         "gdk_gc_get",
+        "gdk_gc_set_function",
         "gdk_gc_set_dashes",
 
         "gdk_window_new",
@@ -31,6 +38,9 @@ struct
         "gdk_window_get_user_data",
         "gdk_window_property_get",
         "gdk_window_invalidate_maybe_recurse",
+        "gdk_window_add_filter",
+        "gdk_window_remove_filter",
+        "gdk_window_set_functions",
         
         "gdk_property_get",
         
@@ -95,13 +105,24 @@ struct
         "gtk_window_set_geometry_hints",
         "gtk_widget_class_list_style_properties",
 
+        "gtk_entry_completion_set_match_func",
+
         "gtk_icon_theme_get_icon_sizes",
         "gtk_icon_theme_get_search_path",
         "gtk_icon_theme_set_search_path",
+        
+        "gtk_icon_view_selected_foreach",
 
+        "gtk_clipboard_set_with_data",
+        "gtk_clipboard_set_with_owner",
+        "gtk_clipboard_request_contents",
+        "gtk_clipboard_request_text",
+        "gtk_clipboard_request_targets",
         "gtk_combo_box_get_row_separator_func",
+        "gtk_combo_box_set_row_separator_func",
         
         "gtk_accel_group_find",
+        "gtk_action_group_set_translate_func",
 
         "gtk_tree_path_get_indices",
 
@@ -117,6 +138,8 @@ struct
 
         "gtk_file_chooser_button_new",
         "gtk_file_chooser_button_new_with_backend",
+
+        "gtk_file_filter_add_custom",
         
         "gtk_curve_set_vector",
         "gtk_curve_get_vector",
@@ -126,19 +149,39 @@ struct
 
         "gtk_plug_get_id",
 
-        "gtk_ctree_base_nodes",
-        "gtk_ctree_new_with_titles",
-        "gtk_ctree_insert_node",
-
-        "gtk_clist_new_with_titles",
-        "gtk_clist_insert",
-        "gtk_clist_append",
-        "gtk_clist_prepend",
+        "gtk_cell_layout_set_cell_data_func",
 
         "gtk_about_dialog_set_url_hook",
         "gtk_about_dialog_set_email_hook",
 
+        "gtk_timeout_add",
+        "gtk_timeout_add_full",
+        "gtk_idle_add",
+        "gtk_idle_add_priority",
+        "gtk_idle_add_full",
+        "gtk_input_add_full",
+        "gtk_key_snooper_install",
 
+        (* "gtk_menu_popup", *)
+        (* "gtk_menu_attach_to_widget", *)
+
+        "gtk_tree_model_foreach",
+        "gtk_tree_model_filter_set_visible_func",
+        "gtk_tree_model_set_modify_func",
+        "gtk_tree_selection_set_select_function",
+        "gtk_tree_selection_selected_foreach",
+        "gtk_tree_sortable_set_sort_func",
+        "gtk_tree_sortable_set_default_sort_func",
+        "gtk_tree_view_insert_column_with_data_func",
+        "gtk_tree_view_set_column_drag_function",
+        "gtk_tree_view_map_expanded_rows",
+        "gtk_tree_view_get_search_equal_func",
+        "gtk_tree_view_set_search_equal_func",
+        "gtk_tree_view_set_destroy_count_func",
+        "gtk_tree_view_get_row_separator_func",
+        "gtk_tree_view_set_row_separator_func",
+        "gtk_tree_view_set_cell_data_func",
+        
         (* canvas *)
         "gnome_canvas_bpath_set_bpath"
     ]
