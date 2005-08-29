@@ -199,7 +199,7 @@ struct
 			       else ())
 
   fun removeMarked (Simple {content = Fold (SOME {tree, group, ...}), ...}) =
-                            (Gtk.objectDestroy group ; removeMarked tree)
+                            (Gtk.Object.destroy group ; removeMarked tree)
     | removeMarked (Simple _) = ()
     | removeMarked (Prefix {tree, ...}) = removeMarked (!tree)
     | removeMarked (Container {desc, height, kids, ...}) =
@@ -245,7 +245,7 @@ struct
 	(Simple {content = Fold (SOME {tree = tree', group = group', ...}),
 		 ...}) => (destroy tree' ;
 			   GrTypes.destroy tree ;
-			   Gtk.objectDestroy group')
+			   Gtk.Object.destroy group')
 	(* Optimization. *)
       | Simple _ => GrTypes.destroy tree
 

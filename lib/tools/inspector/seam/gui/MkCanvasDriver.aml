@@ -1,3 +1,4 @@
+import structure GLib          from "x-alice:/lib/gtk/GLib"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure Canvas        from "x-alice:/lib/gtk/Canvas"
@@ -28,80 +29,100 @@ struct
 
   (* Init the canvas. *)
   val _ =
-    (Cn.setBackgroundColor(canvas, Prefs.white) ;
+    (Gtk.Widget.modifyBg (canvas, Gtk.StateType.NORMAL, Prefs.white) ; 
      Cn.setPixelsPerUnit(canvas, 1.0);
      Cn.setCenterScrollRegion(canvas, false) ;
      resizeCanvas () ;
      ())
     
   (* Text items. *)
-  val textItemType = Cn.textGetType ()
-  val anchor = Gtk.INT (Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_NORTH_WEST)
+  (*
+  val textItemType = Cn.Text.getType ()
+  val anchor = Gtk.INT (Gtk.AnchorTypeToInt Gtk.ANCHOR_NORTH_WEST)
 
-  val groupType = Cn.groupGetType ()
+  val groupType = Cn.Group.getType ()
 
-  val lineType = Cn.lineGetType ()
+  val lineType = Cn.Line.getType ()
   val lineStyle = Gtk.INT (Gdk.GdkLineStyleToInt Gdk.LINE_ON_OFF_DASH)
+  
+  val gtkZero = Gtk.Value.double 0.0
+  val gtkOne  = Gtk.INT 1
+  *)
 
+  infix 3 ::= 
+
+  fun p ::= v = Cn.Prop.prop (p, v)
+
+  fun newItem (g, t, props) =
+    let
+      val ob = Cn.Group.newItem (g, t)
+    in
+        Cn.Prop.setL ob props;
+        ob
+    end
+    
+  (**** LINE ****)
   val lineWidth = ref MainWin.canvasWidth
 
-  val gtkZero = Gtk.REAL 0.0
-  val gtkOne  = Gtk.INT 1
-
-  (**** LINE ****)
-
   fun createDashedLine (group, ypos) =
-    Cn.itemCreate (group,
-                            lineType,
-                            [("points",
-                              Gtk.OBJECT (Cn.makePoints
-                                          [0, ypos, !lineWidth, ypos])),
-                             ("fill_color_gdk", Gtk.OBJECT (!Prefs.sepColor)),
-                             ("line_style", lineStyle),
-                             ("width_pixels", gtkOne)])
+    let
+        open Cn.Line
+    in
+        newItem (group, getType (), [
+            points       ::= [(0.0, real ypos), 
+                                (real (!lineWidth), real ypos)],
+            fillColorGdk ::= !Prefs.sepColor,
+            lineStyle    ::= Gdk.LineStyle.ON_OFF_DASH,
+            widthPixels  ::= 1
+        ])
+    end
 
   fun resizeLine (line, ypos) =
-      Cn.itemSet(line, "points", 
-		 Gtk.OBJECT (Cn.makePoints [0, ypos, !lineWidth, ypos]))
+      Cn.Prop.set Cn.Line.points (line, [(0.0, Real.fromInt ypos), (Real.fromInt (!lineWidth), 
+                Real.fromInt ypos)])
 
-   fun mvByX (group, x) = Cn.itemMove(group, real x, 0.0)
-   fun mvByY (group, y) = Cn.itemMove(group, 0.0, real y)
-   fun mvByXY (group, x, y) = Cn.itemMove(group, real x, real y)
+   fun mvByX (group, x) = Cn.Item.move(group, real x, 0.0)
+   fun mvByY (group, y) = Cn.Item.move(group, 0.0, real y)
+   fun mvByXY (group, x, y) = Cn.Item.move(group, real x, real y)
 			   
    fun convertFromMouse (x, y) =
-       let val (x, y) = Cn.windowToWorld (canvas, x, y)
+       let val (x, y) = Cn.windowToWorld (canvas, x, y, 0.0, 0.0)
        in (Real.trunc x, Real.trunc y)
        end
       
-   fun newGroup' (group, x, y) =
-       Cn.itemCreate (group, groupType, [("x", x), ("y", y)])
+   fun newGroup' (group, aX, aY) =
+        newItem (group, Cn.Group.getType (), [
+            Cn.Group.x ::= aX,
+            Cn.Group.y ::= aY
+        ])
 
-   fun newGroupX (group, x) = newGroup' (group, Gtk.REAL (real x), gtkZero)
-   fun newGroupY (group, y) = newGroup' (group, gtkZero, Gtk.REAL (real y))
-   fun newGroupXY (group, x, y) = newGroup' (group, Gtk.REAL (real x),
-					     Gtk.REAL (real y))
+   fun newGroupX (group, x) = newGroup' (group, real x, 0.0)
+   fun newGroupY (group, y) = newGroup' (group, 0.0, real y)
+   fun newGroupXY (group, x, y) = newGroup' (group, real x, real y)
 
 
-   fun getParent n = Gtk.objectGetObject(n, "parent")
-   val hide = Cn.itemHide
+   fun getParent n = Cn.Prop.get Cn.Item.parent n
+
+   val hide = Cn.Item.hide
 	      
 
    (* Maximal height of the different fonts. *)
    val maxHeight = ref 0
 		   
    val topHiddenGroup = newGroupY (rootGroup, ~200)
-   val testString = Gtk.STRING "[|?{#!YMZ&/yghl"
+   val testString = "[|?{#!YMZ&/yghl"
 
    fun initFont font =
        let
-	 val testGlyph = Cn.itemCreate (topHiddenGroup,
-					textItemType,
-					[("text", testString),
-					 ("anchor", anchor),
-					 ("font", Gtk.STRING font)])
-	 val height = Gtk.objectGetDouble(testGlyph, "text-height")
+         structure T = Cn.Text
+	 val testGlyph = newItem (topHiddenGroup, T.getType (),
+                                        [ T.text   ::= testString,
+                                          T.anchor ::= Gtk.AnchorType.NORTH_WEST,
+                                          T.font   ::= font
+                                        ])
+	 val height = Cn.Prop.get T.textHeight testGlyph
        in
-	 Gtk.objectDestroy testGlyph ;
+	 Gtk.Object.destroy testGlyph ;
 	 maxHeight := Int.max (!maxHeight, Real.round height)
        end
 
@@ -116,32 +137,34 @@ struct
 
    (**** TEXT ITEMS ****)
    fun getWidth item = Int.max (1,
-                                Real.round
-                                    (Gtk.objectGetDouble(item, "text-width")))
+                                Real.round (Cn.Prop.get Cn.Text.textWidth item))
 
    fun styleItem (item, ({font, usefont, colorClass, ...} : Prefs.style)) =
        let
+         structure T = Cn.Text
 	 val font = if !usefont then !font else !Prefs.fontname
-	 val _ = Cn.itemSet (item, "font", Gtk.STRING font)
-	 val _ = Cn.itemSet (item, "fill_color_gdk", Gtk.OBJECT (!colorClass))
+         val _ = Cn.Prop.setL item [
+                    T.font         ::= font,
+                    T.fillColorGdk ::= !colorClass  
+                ]
 	 val width  = getWidth item
-	 val height = Int.max (1, Real.round (Gtk.objectGetDouble(item, "text-height")))
+	 val height = Int.max (1, Real.round (Cn.Prop.get T.textHeight item))
        in
 	 if height >= !maxHeight then (item, width, height)
-         else (Cn.itemSet (item, "y-offset",
-			   Gtk.REAL (real ((!maxHeight - height) div 2))) ;
+         else (Cn.Prop.set Cn.Text.yOffset (item, real ((!maxHeight - height) div 2));
                (item, width, !maxHeight))
        end
 		  
    fun newTextItem ((str, style), group, xpos) =
        let
+         structure T = Cn.Text
 	 (* We do not use x-offset because it is independent from 'moveItem'...
 	  * hence some very curious behaviour. *)
-	 val str = Gtk.latin1ToUtf8 str
-	 val item = Cn.itemCreate (group,
-				   textItemType,
-				   [("text", Gtk.STRING str),
-				    ("anchor", anchor)])
+	 val str  = Gtk.latin1ToUtf8 str
+	 val item = newItem (group, T.getType (), [
+                                T.text   ::= str,
+                                T.anchor ::= Gtk.AnchorType.NORTH_WEST
+                            ])
        in
 	 mvByX (item, xpos) ;
 	 styleItem (item, style)
@@ -152,12 +175,13 @@ struct
        NONE => newTextItem ((str, style), group, xpos)
      | SOME n =>
          let
+           structure T = Cn.Text
           (* Note : <sub> misbehaves with font sizes. Not my fault. *)
-           val markup = str ^ "<sub>" ^ (Int.toString n) ^ " </sub>"
-           val item = Cn.itemCreate (group,
-                                     textItemType,
-                                     [("markup", Gtk.STRING markup),
-                                      ("anchor", anchor)])
+           val markup = Gtk.latin1ToUtf8 str ^ "<sub>" ^ (Int.toString n) ^ " </sub>"
+           val item = newItem (group, T.getType (), [ 
+                                    T.text   ::= str,
+                                    T.anchor ::= Gtk.AnchorType.NORTH_WEST
+                            ])
          in
            mvByX (item, xpos) ;
            styleItem (item, style)
@@ -167,12 +191,12 @@ struct
        let
 	 val markup = str ^ "<sub>" ^ (Int.toString nb) ^ " </sub>"
        in
-	 Cn.itemSet (item, "markup", Gtk.STRING markup) ;
+	 Cn.Prop.set Cn.Text.markup (item, markup) ;
 	 styleItem (item, style)
        end
          
    fun updItem (item, (str, style)) =
-       (Cn.itemSet (item, "text", Gtk.STRING str) ;
+       (Cn.Prop.set Cn.Text.text (item, str) ;
 	styleItem (item, style))
 
    fun getGarmentPos ([], xpos) = xpos
@@ -185,34 +209,35 @@ struct
      end
 
    fun shadeItem (item, _) =
-     Cn.itemSet(item, "fill_color_gdk", 
-                Gtk.OBJECT Prefs.shadeColor)
+     Cn.Prop.set Cn.Shape.fillColorGdk (item, Prefs.shadeColor)
      
 
    fun unshadeItem (item, (_, ({font, colorClass, ...} : Prefs.style))) =
-     Cn.itemSet(item, "fill_color_gdk", Gtk.OBJECT (!colorClass))
+     Cn.Prop.set Cn.Shape.fillColorGdk (item, !colorClass)
 
    fun shadeGarments gl = List.app shadeItem gl
    fun unshadeGarments gl = List.app unshadeItem gl
 
   (**** RECTANGLE ****)
-   val rectType = Cn.rectGetType ()
 		  
    fun drawSelection (group, x, y, w, h) =
        let
-	 val x1 = Gtk.REAL (real x)
-	 val y1 = Gtk.REAL (real y)
-	 val x2 = Gtk.REAL (real (x+w))
-	 val y2 = Gtk.REAL (real (y+h))
-         val color = Gtk.OBJECT Prefs.selectColor
-         val outline = Gtk.OBJECT Prefs.outlineColor
-         val rect = Cn.itemCreate (group, rectType,
-                                   [("x1", x1), ("y1", y1),
-                                    ("x2", x2), ("y2", y2),
-                                    ("fill_color_gdk", color),
-                                    ("outline_color_gdk", outline)])
+	 val x1 = (real x)
+	 val y1 = (real y)
+	 val x2 = (real (x+w))
+	 val y2 = (real (y+h))
+         val color = Prefs.selectColor
+         val outline = Prefs.outlineColor
+         val rect = newItem (group, Cn.Rect.getType (), [
+                                Cn.RE.x1 ::= x1,
+                                Cn.RE.y1 ::= y1,
+                                Cn.RE.x2 ::= x2,
+                                Cn.RE.y2 ::= y2,
+                                Cn.Shape.fillColorGdk ::= color,
+                                Cn.Shape.outlineColorGdk ::= outline
+                            ])
        in
-         Cn.itemLowerToBottom rect ;
+         Cn.Item.lowerToBottom rect ;
          rect
        end
 

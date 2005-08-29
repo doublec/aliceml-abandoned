@@ -25,12 +25,7 @@ struct
             tree, item,
             suffix = [] 
         }
-(*
-    fun valueToItem' t v = (Common.Value (t, Reflect.reflect v), t, Reflect.reflect v)
 
-    __overload 'a valueToItem : 
-        'a -> (Common.alice_item * Type.typ * Reflect.value) = valueToItem'
-  *)     
     fun exnToTreeNoPar' t (depth, item, label, v) =
         let val x              = Reflect.reflect v
             val item'          = Common.Value (t, x)

@@ -353,7 +353,7 @@ fun expand full tree =
 		assert group' = (getGroup fftree) ;
                 substitute (tree, fftree, parent', index') ;
 		GrTypes.destroy tree ; (* Not Monitors.destroy ! *)
-		Gtk.objectDestroy hgroup ;
+		Gtk.Object.destroy hgroup ;
 		refont fftree
               end
 

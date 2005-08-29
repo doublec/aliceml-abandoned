@@ -124,12 +124,12 @@ struct
  ***********************************************************)
 
   val allocColor = lazy
-    let val colorMap = Gdk.colormapGetSystem () (* Gtk color System *)
+    let val colorMap = Gdk.Colormap.getSystem () (* Gtk color System *)
     in
       fn (r ,g ,b ) =>
         let
-	  val c = Gdk.colorNew (r, g, b)
-	  val r = Gdk.colormapAllocColor (colorMap, c, false, true)
+	  val c = Gdk.Color.new { red = r, green = g, blue = b }
+	  val r = Gdk.Colormap.allocColor (colorMap, c, false, true)
 	in
 	  if not r
           then print ("*** Inspector warning (Prefs.aml): " ^ 

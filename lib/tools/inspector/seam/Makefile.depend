@@ -5,7 +5,7 @@ gui/MkMainWindow.alc: \
 	gui/MAIN_WINDOW-sig.alc
 
 gui/MkAboutWindow.alc: \
-	gui/MAIN_WINDOW-sig.alc
+	gui/MAIN_WINDOW-sig.alc \
 
 gui/MkPrefsWindow.alc: \
 	Prefs.alc \
@@ -47,7 +47,7 @@ gui/MkBoard.alc: \
 
 gui/GrTypes.alc: \
 	Prefs.alc \
-	AbsTree.alc \
+	AbsTree.alc
 
 gui/LAYOUT-sig.alc: \
 	gui/GrTypes.alc
@@ -192,6 +192,8 @@ Print.alc: \
 	gui/GrTypes.alc \
 	AbsTree.alc \
 
+Debug.alc: \
+
 HANDLERS-sig.alc: \
 	Prefs.alc \
 	Common.alc \
@@ -205,6 +207,7 @@ MkHandlers.alc: \
 	HANDLERS-sig.alc \
 	TypeMappers.alc \
 	AbsTree.alc \
+	Debug.alc \
 	Print.alc \
 	gui/MkTooltip.alc
 

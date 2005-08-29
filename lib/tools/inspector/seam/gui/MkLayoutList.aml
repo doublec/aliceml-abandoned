@@ -74,7 +74,7 @@ struct
     List.map (fn (l, orient, depth) => (GrTypes.mapSuffix l, orient, depth))
              suffix
 
-  fun destroySuffix (s, _, _) = List.app (fn (ob, _) => Gtk.objectDestroy ob) s
+  fun destroySuffix (s, _, _) = List.app (fn (ob, _) => Gtk.Object.destroy ob) s
 
   (* Replace the last suffix of the given object. *)
   fun replaceLastSuffix (tree, newSuffix) =

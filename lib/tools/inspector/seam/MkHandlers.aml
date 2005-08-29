@@ -10,6 +10,7 @@ import structure AbsTree        from "AbsTree"
 import structure Print          from "Print"
 import structure MkTooltip      from "gui/MkTooltip"
 
+
 functor MkHandlers
   (structure MainWindow : MAIN_WINDOW
    val       queue      : Common.Queue.t
@@ -67,6 +68,7 @@ struct
     end
 
   fun processInstruction instr =
+    Exn.catch (fn packet => (print ("Inspector.exception:  " ^ Exn.message (Exn.fromPacket packet)); Exn.dumpTrace packet)) (fn () =>
     (case instr of
        NewFont             => (Selection.reselect () ;
                                Driver.initFonts () ;
@@ -92,12 +94,14 @@ struct
          (MainWindow.setStatus "" ;
           (* If the selection is empty, we try to select at the current pos. *)
           if Selection.isEmpty () then Board.clic (x,y,m) else () ;
-          if Selection.isEmpty () then () else MainWindow.popup (b, t)))
-
+          if Selection.isEmpty () then () else MainWindow.popup (b, t))))
+    
+    (*
        handle Assert (f, n) => print ("Inspector.ASSERT FALSE : " ^ f ^
                                       " Line " ^ (Int.toString n) ^ "\n")
 	    | Fail s => print ("Inspector.FAILURE == " ^ s ^ "\n")
-            | e => print ("Inspector.exception " ^ (exnName e) ^ "\n")
+            | e => print ("Inspector.exception: " ^ (exnName e) ^ "\n")
+    *)
 
   fun applyPreferences (newPrefs:Prefs.prefs) =
     let
@@ -124,9 +128,9 @@ struct
     end
 
   fun canvasEvent (_, [Gdk.EVENT event]) =
-      (case event of
+       (case event of
 	Gdk.EVENT_BUTTON_PRESS {x, y, button, state, time, ...} =>
-          let val (cx,cy) = Driver.convertFromMouse (x,y)
+          let val (cx,cy) = Driver.convertFromMouse (x,y) 
           in
             Tooltip.move (x, y) ;
             case button of
@@ -145,7 +149,7 @@ struct
      Common.Queue.close queue ;
      Common.Queue.purge queue ;
      Tooltip.quit () ;
-     Gtk.widgetDestroy (MainWindow.window) ; (* Close the main window. *)
+     Gtk.Widget.destroy (MainWindow.window) ; (* Close the main window. *)
      Monitors.purge () ;
      ())         
 

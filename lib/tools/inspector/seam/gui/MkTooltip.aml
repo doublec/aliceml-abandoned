@@ -87,28 +87,28 @@ struct
   (*************** GRAPHICAL PART : ONLY IN THE MAIN THREAD ****************)
 
   (* Gtk tooltip. *)
-  val tooltips = Gtk.tooltipsNew ()
+  val tooltips = Gtk.Tooltips.new ()
 
   fun hideTipWindow _ =
       let
-	val _ = Gtk.tooltipsForceWindow tooltips
-	val tipWindow = Gtk.tooltipsGetFieldTipWindow tooltips
+	val _ = Gtk.Tooltips.forceWindow tooltips
+	val tipWindow = Gtk.Tooltips.getFieldTipWindow tooltips
       in
-	Gtk.widgetHide tipWindow
+	Gtk.Widget.hide tipWindow
       end
 
   fun addEvent (window, event) =
-    Gtk.widgetAddEvents (window, Gdk.GdkEventMaskToInt event)
+    Gtk.Widget.addEvents (window, Gdk.EventMask.toInt event)
 
 
   fun createTooltip (x, y, message) =
     let
-      val _ = Gtk.tooltipsForceWindow tooltips
-      val tipWindow = Gtk.tooltipsGetFieldTipWindow tooltips
-      val tipLabel = Gtk.tooltipsGetFieldTipLabel tooltips
-      val (x0,y0) = Gtk.windowGetPosition MainWindow.window
-      val (x1,y1) = Gtk.widgetGetPointer MainWindow.window
-      val (ww, wh) = Gtk.windowGetSize MainWindow.window
+      val _ = Gtk.Tooltips.forceWindow tooltips
+      val tipWindow = Gtk.Tooltips.getFieldTipWindow tooltips
+      val tipLabel = Gtk.Tooltips.getFieldTipLabel tooltips
+      val (x0,y0) = Gtk.Window.getPosition (MainWindow.window, 0, 0)
+      val (x1,y1) = Gtk.Widget.getPointer (MainWindow.window, 0, 0)
+      val (ww, wh) = Gtk.Window.getSize (MainWindow.window, 0, 0)
       val nx = x0 + x1 + 35
       val ny = y0 + y1 + 35
 
@@ -116,9 +116,9 @@ struct
 
       fun mapped _ =
         let
-          val (tipW, tipH) = Gtk.windowGetSize tipWindow
-          val screenW = Gdk.screenWidth ()
-          val screenH = Gdk.screenHeight ()
+          val (tipW, tipH) = Gtk.Window.getSize (tipWindow, 0, 0)
+          val screenW = Gdk.Screen.width ()
+          val screenH = Gdk.Screen.height ()
 
           (* Find a suitable location to show the tooltip. *)
           val xleft = x0 + x1 - tipW - 20
@@ -131,23 +131,23 @@ struct
         in
           Gtk.signalDisconnect (tipWindow, Promise.future signalConnectionP) ;
           if nx <> nx' orelse ny <> ny'
-            then Gtk.windowMove (tipWindow, nx', ny')
+            then Gtk.Window.move (tipWindow, nx', ny')
           else ()
         end      
     in
-      Gtk.labelSetLineWrap (tipLabel, false) ;
+      Gtk.Label.setLineWrap (tipLabel, false) ;
       Promise.fulfill (signalConnectionP, 
                        Gtk.signalConnect (tipWindow, "map-event", mapped)) ;
-      addEvent (tipWindow, Gdk.BUTTON_PRESS_MASK) ;
-      addEvent (tipWindow, Gdk.POINTER_MOTION_MASK) ;
+      addEvent (tipWindow, [Gdk.EventMask.BUTTON_PRESS_MASK, 
+                            Gdk.EventMask.POINTER_MOTION_MASK]) ;
       Gtk.signalConnect (tipWindow, "leave-notify-event", hideTooltip) ;
       Gtk.signalConnect (tipWindow, "motion-notify-event", hideTooltip) ;
       Gtk.signalConnect (tipWindow, "button-press-event", hideTooltip) ;
-      Gtk.labelSetText (tipLabel, message) ;
-      Gtk.windowSetTransientFor (tipWindow, MainWindow.window) ;
-      Gtk.windowMove (tipWindow, nx, ny) ;
-      Gtk.windowSetDestroyWithParent (tipWindow, true) ;
-      Gtk.widgetShow tipWindow ;      
+      Gtk.Label.setText (tipLabel, message) ;
+      Gtk.Window.setTransientFor (tipWindow, MainWindow.window) ;
+      Gtk.Window.move (tipWindow, nx, ny) ;
+      Gtk.Window.setDestroyWithParent (tipWindow, true) ;
+      Gtk.Widget.show tipWindow ;      
       ()
     end
 

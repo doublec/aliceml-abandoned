@@ -33,7 +33,7 @@ sig
   val resizeLine       : item * int -> unit
   val lineWidth        : int ref
 
-  val newGroup' : group * Gtk.arg * Gtk.arg -> group
+  val newGroup' : group * real * real -> group
   val newGroupX : group * int -> group
   val newGroupY : group * int -> group
   val newGroupXY : group * int * int -> group

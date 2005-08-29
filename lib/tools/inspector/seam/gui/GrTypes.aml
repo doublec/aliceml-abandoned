@@ -1,7 +1,8 @@
+import structure GLib          from "x-alice:/lib/gtk/GLib"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure Canvas        from "x-alice:/lib/gtk/Canvas"
 import structure Prefs         from "../Prefs"
 import structure AbsTree       from "../AbsTree"
-import structure Canvas        from "x-alice:/lib/gtk/Canvas"
 
 structure GrTypes =
 struct
@@ -116,7 +117,7 @@ fun getDepth (Simple {depth, ...} | Prefix {depth, ...}
 fun getDesc (Prefix {tree, ...}) = getDesc (!tree)
   | getDesc (Simple {desc, ...} | Container {desc, ...}) = desc
 
-fun getGroup (Simple {textItem,...}) = Gtk.objectGetObject(textItem, "parent")
+fun getGroup (Simple {textItem,...}) = Gtk.Value.toObject (GLib.Object.getProperty (textItem, "parent"))
   | getGroup (Prefix {group, ...} | Container {group, ...}) = group
 
 fun getStatus (Container {status, ...}) = status
@@ -139,7 +140,7 @@ fun getSize (Simple {width, suffixWidth, height, ...}) =
     end
 
 fun getDelta (Simple {textItem, delta, ...}) =
-                        (Gtk.objectGetObject(textItem, "parent"), delta)
+                        (Gtk.Value.toObject (GLib.Object.getProperty (textItem, "parent")), delta)
   | getDelta (Prefix {group, delta, ...} |
               Container {group, delta, ...}) = (group, delta)
 
@@ -190,17 +191,17 @@ fun isSameTree (Simple _, Simple _) = true
 
 fun isDirectSon tree = isSameTree (tree, fromParent (getParent tree))
 
-fun destroyPrefix prefix = List.app (fn (item, _) => Gtk.objectDestroy item)
+fun destroyPrefix prefix = List.app (fn (item, _) => Gtk.Object.destroy item)
 				    prefix
 
 (* Destroy the group associated with the given tree. *)
-fun destroy' tree = Gtk.objectDestroy (getGroup tree)
+fun destroy' tree = Gtk.Object.destroy (getGroup tree)
 
 (* Destroy all canvas items of the given tree (including suffixes !) *)
 fun destroy tree =
       case tree of
 	Simple {textItem, suffix, ...} => 
-	      (Gtk.objectDestroy textItem ;
+	      (Gtk.Object.destroy textItem ;
 	       List.app (fn (gl, _, _) => destroyPrefix gl) suffix)
       | Prefix {prefix, tree, ...} => (destroyPrefix prefix ; destroy (!tree))
       | Container {kids, index, ...} =>
@@ -209,10 +210,10 @@ fun destroy tree =
               else Array.app destroy' (!kids)
 
 (* Reparent a tree. *)
-fun reparent' group' tree = Canvas.itemReparent (getGroup tree, group')
+fun reparent' group' tree = Canvas.Item.reparent (getGroup tree, group')
 
 fun reparentPrefix (group', prefix) =
-    List.app (fn (item, _) => Canvas.itemReparent (item, group')) prefix
+    List.app (fn (item, _) => Canvas.Item.reparent (item, group')) prefix
 
 fun reparentSuffix (group', suffix) =
     List.app (fn (gl, _, _) => reparentPrefix (group', gl)) suffix
@@ -222,7 +223,7 @@ fun reparent group' =
 	    case tree of
 	      Container {kids, ...} => Array.app (reparent' group') (!kids)
 	    | Simple {textItem, suffix, ...}
-	                       => (Canvas.itemReparent (textItem, group') ;
+	                       => (Canvas.Item.reparent (textItem, group') ;
 				   reparentSuffix (group', suffix))
 	    | Prefix {prefix, tree, ...} => (reparentPrefix (group', prefix) ;
 					     loop (!tree))

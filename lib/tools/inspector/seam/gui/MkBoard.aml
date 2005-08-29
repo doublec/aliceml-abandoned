@@ -80,7 +80,7 @@ struct
   fun removeAll () =
     (Selection.deselect () ;
      Monitors.purge () ;
-     app (fn {group, ...} => Gtk.objectDestroy group, !entries) ;
+     app (fn {group, ...} => Gtk.Object.destroy group, !entries) ;
      Driver.height := Prefs.margin ;
      Driver.width  := 0 ;
      entries       := Nil ;
@@ -130,7 +130,7 @@ struct
 	  in
 	    currentRef := !tail ;
             Monitors.destroy (GrTypes.getSonOf tree) ;
-	    Gtk.objectDestroy group ;
+	    Gtk.Object.destroy group ;
 
             (* Move the elements below. *)
             (case !tail of
@@ -149,15 +149,14 @@ struct
 
   val canvas = Driver.canvas
 
-  val leftx = Gtk.REAL (real Prefs.margin)
+  val leftx = real Prefs.margin
 		  
   (* Create a new top-level group. *)
   fun newGroup () = 
     let
       val height = !Driver.height
       val id = newid ()
-      val group = Driver.newGroup' (Driver.rootGroup, leftx,
-				    Gtk.REAL (real height))
+      val group = Driver.newGroup' (Driver.rootGroup, leftx, real height)
     in 
       (group, id)
     end
@@ -216,7 +215,6 @@ struct
           else MainWindow.setStatus "Not in the entry (H)."
 	else infoEntryAt (mx, my, !tail, glob)
       end
-
   fun info (x, y, m) = (Selection.modifier := Word.fromInt m ;
                         MainWindow.setStatus "" ;
                         infoEntryAt (x, y, !entries, Selection.isShift ()))

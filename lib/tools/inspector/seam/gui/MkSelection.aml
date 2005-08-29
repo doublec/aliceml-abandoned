@@ -37,7 +37,7 @@ val selection = ref ([]: selection list)
 
 fun isEmpty () = !selection = []
 
-val setSens = Gtk.widgetSetSensitive
+val setSens = Gtk.Widget.setSensitive
 
 fun initMenu () =
     if !selection = [] then setSens (MainWindow.menuSelection, false)
@@ -167,7 +167,7 @@ fun fromPath (x :: 0 :: xs) =
   | fromPath _ = assert false
 
 fun deselectOne {rect, shaded, entry, path, width, height, xpos} =
-  (Gtk.objectDestroy rect ;
+  (Gtk.Object.destroy rect ;
    List.app Driver.unshadeGarments shaded)
 
 (* Tells if path p occurs is related to one in the selection list. *)
@@ -222,8 +222,8 @@ fun deselect () = (List.app deselectOne (!selection) ; setSelection ([], []))
 infix &&
 fun a && b    = Word31.andb (a,b)  (* AND two masks *)
 val zeroMask  = Word31.fromInt 0 (* Empty mask *)
-val shiftMask = Word.fromInt (Gdk.GdkModifierTypeToInt Gdk.SHIFT_MASK)
-val ctrlMask  = Word.fromInt (Gdk.GdkModifierTypeToInt Gdk.CONTROL_MASK)
+val shiftMask = Word.fromInt (Gdk.ModifierType.toInt [Gdk.ModifierType.SHIFT_MASK])
+val ctrlMask  = Word.fromInt (Gdk.ModifierType.toInt [Gdk.ModifierType.CONTROL_MASK])
 
 val modifier  = ref zeroMask
 
@@ -630,9 +630,9 @@ fun toEntries f =
 (* For tooltips *)
 fun isInEntry (x, y) ({rect, width, height, xpos, ...} : selection) =
   let
-    val (x0, y0) = Canvas.itemI2w' (rect, 0.0, 0.0)
-    val x0 = xpos + Real.round x0
-    val y0 = Real.round y0
+    val (x0, y0) = Canvas.Item.i2w (rect, 0.0, 0.0)
+    val x0 = xpos + Real.trunc x0
+    val y0 = Real.trunc y0
   in
     x >= x0 andalso x <= x0 + width andalso y >= y0 andalso y <= y0 + height
   end

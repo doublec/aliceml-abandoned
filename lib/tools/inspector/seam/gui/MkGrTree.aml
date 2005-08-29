@@ -228,15 +228,15 @@ fun fromAbsTree {group, delta, abstree, parent, index, depth, suffixes, id} =
                 case mode of
                   Horizontal => let val pdelta = curWidth + xpos
                                 in
-                                  (Gtk.REAL (real pdelta),
-                                   gtkZero,
+                                  (real pdelta,
+                                   0.0,
                                    ~pdelta)
                                 end
                 | (Vertical _ | AlwaysVertical) =>
                                 let val pdelta = curHeight
                                 in
-                                  (Gtk.REAL (real xpos),
-                                   Gtk.REAL (real pdelta),
+                                  (real xpos,
+                                   real pdelta,
                                    ~pdelta)
                                 end
               val group' = Driver.newGroup' (group, x, y)
