@@ -60,6 +60,11 @@ INSTALLDLLTARGETS=$(DLLS) NativeCore.dll
 INSTALLDIR=`alice-config --alicelibdir`/gtk
 #ALICEDLL=`alice-config --alicedll`
 
+ifeq ($(WINDOWS),1)
+CC_OPTS=-mno-cygwin -mms-bitfields
+else
+CC_OPT=
+endif
 PC_OPTS=gtk+-2.0 libgnomecanvas-2.0 glib-2.0
 
 .PHONY: clean all wrappers installdll installalice compiledll compilealice
@@ -71,41 +76,42 @@ all: installalice installdll
 
 NativeCore.dll:	NativeCore.o
 	alicetool -v link $^ $(ALICEDLL) -o $@ \
-	`pkg-config $(PC_OPTS) --libs` 
+	$(CC_OPTS) `pkg-config $(PC_OPTS) --libs` 
 
 NativeGLib.dll: NativeCore.dll NativeGLib.o 
 	alicetool link $(ALICEDLL) $^ -o $@ \
-	 `pkg-config $(PC_OPTS) --libs`
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
 
-NativePango.dll: NativeGLib.dll NativePango.o
+NativePango.dll: NativeCore.dll NativeGLib.dll NativePango.o
 	alicetool link $(ALICEDLL) $^ -o $@ \
-	 `pkg-config $(PC_OPTS) --libs`
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
 
-NativeAtk.dll: NativeGLib.dll NativeAtk.o
+NativeAtk.dll: NativeCore.dll NativeGLib.dll NativeAtk.o
 	alicetool link $(ALICEDLL) $^ -o $@ \
-	 `pkg-config $(PC_OPTS) --libs`
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
 
-NativeGdk.dll: NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.o
+NativeGdk.dll: NativeCore.dll NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.o
 	alicetool link $(ALICEDLL) $^ -o $@ \
-	 `pkg-config $(PC_OPTS) --libs`
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
 
-NativeGtk.dll: NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.o
+NativeGtk.dll: NativeCore.dll NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.o
 	alicetool link $(ALICEDLL) $^ -o $@ \
-	 `pkg-config $(PC_OPTS) --libs`
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
 
-NativeCanvas.dll: NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.dll NativeCanvas.o
+NativeCanvas.dll: NativeCore.dll NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.dll NativeCanvas.o
 	alicetool link $(ALICEDLL) $^ -o $@ \
-	 `pkg-config $(PC_OPTS) --libs`
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
 
 Key.aml:
 	./prepare-keyval.sh 
-	
+
 %.alc: %.aml
 	alicec --no-warn-conventions -c $< -o $@
 
 %.o: %.cc 
-	alicetool -v compile -g `pkg-config $(PC_OPTS) --cflags` -c $< -o $@
-	
+	alicetool -v compile -g \
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --cflags` -c $< -o $@
+
 clean:
 	rm -f $(TARGETS) $(WRAPPERS) $(WRAPPERS_SIGS) $(WRAPPERS_SIGS:%.aml=%.alc) $(WRAPPERS_SIGS_TML) $(NATIVEWRAPPERS) $(NATIVEWRAPPERS:%.cc=%.hh) $(NATIVEWRAPPERS:%.cc=%.asig) $(NATIVEWRAPPERS:%.cc=%.o) $(COMPILED_WRAPPERS) $(DLLS) NativeCore.dll  NativeCore.o  CORE-sig.alc Key.alc Core.alc
 	rm -f Main.alc
@@ -130,7 +136,7 @@ compilealice:	$(INSTALLALICETARGETS)
 
 
 ### INSTALLATION #############################################################
-	
+
 install:	all installdll installalice
 
 installdll:	$(DLLS)
