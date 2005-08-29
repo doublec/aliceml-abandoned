@@ -23,7 +23,7 @@ local
     val _      = Gtk.AboutDialog.setCopyright (dialog, "The Alice Team")
 
     val authors = #[
-        "Didier Le Botlan <botlan@ps.uni-sb.de.de>"
+        "Didier Le Botlan <botlan@ps.uni-sb.de>"
         (*
         "Andreas Rossberg <rossberg@ps.uni-sb.de>",
         "Guido Tack       <tack@ps.uni-sb.de>"
