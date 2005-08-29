@@ -130,6 +130,9 @@ struct
         "gtk_tree_view_get_search_equal_func",
         "gtk_tree_view_row_search_equal_func",
         
+        "gtk_socket_new",
+        "gtk_socket_steal",
+        "gtk_socket_add_id",
         "gtk_socket_get_id",
         "gtk_style_apply_default_pixmap",
         "gtk_draw_expander",
@@ -147,6 +150,10 @@ struct
         "gtk_color_selection_set_change_palette_with_screen_hook",
         "gtk_color_selection_set_change_palette_hook",
 
+        "gtk_plug_construct",
+        "gtk_plug_construct_for_display",
+        "gtk_plug_new",
+        "gtk_plug_new_for_display",
         "gtk_plug_get_id",
 
         "gtk_cell_layout_set_cell_data_func",
