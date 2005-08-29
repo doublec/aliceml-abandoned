@@ -200,7 +200,7 @@ structure GuiMain =
 		     val line = Gtk.TextIter.getLine iter
 		     val off = Gtk.TextIter.getLineOffset iter
 		     val iter' = Gtk.TextIter.copy iter
-		     val _ = Gtk.TextIter.setLineOffset(iter', 2)
+		     val _ = Gtk.TextIter.forwardChars(iter', 2)
 		     val forbidden = off<2 andalso
 			 (Gtk.TextIter.setLineOffset(iter, 0);
 			  Gtk.TextBuffer.getText(buf,iter,iter',true)="> ")
