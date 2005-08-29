@@ -794,7 +794,7 @@ DEFINE0(NativeCore_getPixbufType) {
 DEFINE0(NativeCore_valueUndefined) {
     GValue *v = new GValue;
     memset (v, 0, sizeof (GValue));
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN, G_TYPE_VALUE));
 } END
 
 DEFINE1(NativeCore_valueInt) {
@@ -803,7 +803,7 @@ DEFINE1(NativeCore_valueInt) {
     memset(v, 0, sizeof (GValue));
     g_value_init(v, G_TYPE_INT);
     g_value_set_int (v, i);
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN, G_TYPE_VALUE));
 } END
 
 DEFINE2(NativeCore_valueEnum) {
@@ -813,7 +813,7 @@ DEFINE2(NativeCore_valueEnum) {
     memset(v, 0, sizeof (GValue));
     g_value_init(v, t);
     g_value_set_enum (v, i);
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN, G_TYPE_VALUE));
 } END
 
 
@@ -823,7 +823,7 @@ DEFINE1(NativeCore_valueString) {
     memset(v, 0, sizeof (GValue));
     g_value_init(v, G_TYPE_STRING);
     g_value_set_string (v, s);
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN, G_TYPE_VALUE));
 } END
 
 DEFINE1(NativeCore_valueFloat) {
@@ -832,7 +832,7 @@ DEFINE1(NativeCore_valueFloat) {
     memset(v, 0, sizeof (GValue));
     g_value_init(v, G_TYPE_FLOAT);
     g_value_set_float (v, f);
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN, G_TYPE_VALUE));
 } END 
 
 DEFINE1(NativeCore_valueDouble) {
@@ -841,7 +841,7 @@ DEFINE1(NativeCore_valueDouble) {
     memset(v, 0, sizeof (GValue));
     g_value_init(v, G_TYPE_DOUBLE);
     g_value_set_double (v, d);
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN, G_TYPE_VALUE));
 } END 
 
 DEFINE1(NativeCore_valueBool) {
@@ -850,7 +850,7 @@ DEFINE1(NativeCore_valueBool) {
     memset(v, 0, sizeof (GValue));
     g_value_init(v, G_TYPE_BOOLEAN);
     g_value_set_boolean (v, b);
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN, G_TYPE_VALUE));
 } END 
 
 DEFINE1(NativeCore_valueObject) {
@@ -876,7 +876,7 @@ DEFINE1(NativeCore_valueObject) {
         default:
             Error ("NativeCore_valueObject: invalid internal object type");
     }
-    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED | FLAG_OWN));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED | FLAG_OWN, G_TYPE_VALUE));
 } END 
 
 
