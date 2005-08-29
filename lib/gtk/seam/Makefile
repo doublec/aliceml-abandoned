@@ -62,9 +62,9 @@ INSTALLDIR=`alice-config --alicelibdir`/gtk
 
 PC_OPTS=gtk+-2.0 libgnomecanvas-2.0 glib-2.0
 
-.PHONY: clean all wrappers
+.PHONY: clean all wrappers installdll installalice compiledll compilealice
 
-all: Generate.alc $(NATIVETARGETS) $(COMPILED_WRAPPERS_SIGS) $(COMPILED_WRAPPERS) $(DLLS) Key.alc
+all: installalice installdll 
 
 %-sig.aml: %-sig.tml
 	gawk -f includesig.awk $< > $@
@@ -124,6 +124,11 @@ $(WRAPPERS) $(WRAPPERS_SIGS_TML) $(NATIVEWRAPPERS): Generate.alc $(DEFS)
 	alicerun Generate.alc
 
 
+compiledll:	$(DLLS)
+
+compilealice:	$(INSTALLALICETARGETS)
+
+
 ### INSTALLATION #############################################################
 	
 install:	all installdll installalice
@@ -132,7 +137,7 @@ installdll:	$(DLLS)
 	mkdir -p -m 775 $(INSTALLDIR)
 	./myinstall $(INSTALLDLLTARGETS) $(INSTALLDIR)
 
-installalice: 
+installalice: $(INSTALLALICETARGETS)
 	mkdir -p -m 775 $(INSTALLDIR)
 	./myinstall $(INSTALLALICETARGETS) $(INSTALLDIR)
 
