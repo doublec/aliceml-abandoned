@@ -51,11 +51,11 @@ functor MkCanvasHelper (Space : SPACE)
               Gtk.signalConnect(actionGroup, "event",
 			        EventHandler.nodeEvent (state, serve));
       in
-	   Gtk.widgetSetSizeRequest(canvas, xDim, yDim);
+	   Gtk.Widget.setSizeRequest(canvas, xDim, yDim);
 	   Canvas.setScrollRegion(canvas, 0.0, 0.0,
 				       Real.fromInt xDim, Real.fromInt yDim);
 	   Canvas.setPixelsPerUnit(canvas, 1.0);
-	   Canvas.setBackgroundColor(canvas, GtkNode.white);
+           Gtk.Widget.modifyBg (canvas, Gtk.StateType.NORMAL, GtkNode.white);
 	   (canvas, ref rootGroup,ref shadowGroup, ref actionGroup,
             ref actionHandler)
       end
@@ -67,7 +67,7 @@ functor MkCanvasHelper (Space : SPACE)
 				            canvas=canvas,...},...}
 				 : Types.explorer_state option)))=
       (Gtk.signalDisconnect(!actionGroup, !actionHandler);
-       Gtk.objectDestroy (!rootGroup);
+       Gtk.Object.destroy (!rootGroup);
        rootGroup := GtkNode.makeGroup (Canvas.root canvas);
        actionGroup := GtkNode.makeGroup (!rootGroup);
        actionHandler := Gtk.signalConnect(!actionGroup, "event",
@@ -82,7 +82,7 @@ functor MkCanvasHelper (Space : SPACE)
 			  scaleWidget) _ =
       (serve (fn () =>
 		 let
-		     val x = Gtk.rangeGetValue scaleWidget
+		     val x = Gtk.Range.getValue scaleWidget
 		 in
 		     Canvas.setPixelsPerUnit(canvas, x);
 		     scale := x / Defaults.floatScaleBase

@@ -37,20 +37,20 @@ functor MkGtkNode (Space : SPACE)
        type status = Types.status
        type tree = Types.tree
 	   
-       val map   = Gdk.colormapGetSystem ()
-       val black = Gdk.colorNew(0,0,0)
-       val blue  = Gdk.colorNew(100*256,112*256,255*256)
-       val red   = Gdk.colorNew(238*256,44*256,44*256)
-       val green = Gdk.colorNew(60*256,179*256,113*256)
-       val white = Gdk.colorNew(65535, 65535, 65535)
-       val gray  = Gdk.colorNew(30000, 30000, 30000)
-       val lightgray = Gdk.colorNew(60000,60000,60000)
-       val _     = Gdk.colormapAllocColor(map, black, false, true)
-       val _     = Gdk.colormapAllocColor(map, white, false, true)
-       val _     = Gdk.colormapAllocColor(map, blue,  false, true)
-       val _     = Gdk.colormapAllocColor(map, red,   false, true)
-       val _     = Gdk.colormapAllocColor(map, green,  false, true)
-       val _     = Gdk.colormapAllocColor(map, gray,  false, true)
+       val map   = Gdk.Colormap.getSystem ()
+       val black = Gdk.Color.new { red = 0, green = 0, blue = 0 }
+       val blue  = Gdk.Color.new { red = 100*256, green = 112*256, blue = 255*256 }
+       val red   = Gdk.Color.new { red = 238*256, green = 44*256, blue = 44*256 }
+       val green = Gdk.Color.new { red = 60*256,  green = 179*256, blue = 113*256 }
+       val white = Gdk.Color.new { red = 65535, green = 65535, blue = 65535 }
+       val gray  = Gdk.Color.new { red = 30000, green = 30000, blue = 30000 }
+       val lightgray = Gdk.Color.new { red = 60000, green = 60000, blue = 60000 }
+       val _     = Gdk.Colormap.allocColor(map, black, false, true)
+       val _     = Gdk.Colormap.allocColor(map, white, false, true)
+       val _     = Gdk.Colormap.allocColor(map, blue,  false, true)
+       val _     = Gdk.Colormap.allocColor(map, red,   false, true)
+       val _     = Gdk.Colormap.allocColor(map, green,  false, true)
+       val _     = Gdk.Colormap.allocColor(map, gray,  false, true)
 	   
        val succColor = green
        val failedColor = red
@@ -59,12 +59,24 @@ functor MkGtkNode (Space : SPACE)
        val shadowColor = gray
 	   
        val itr = Real.fromInt
-	   
+       
+       infix 3 ::= 
+       
+       fun p ::= v = Canvas.Prop.prop (p, v)
+
+       fun itemNew (g, t, props) =
+          let
+            val ob = Canvas.Group.newItem (g, t)
+          in
+            Canvas.Prop.setL ob props;
+            ob
+          end
+
        fun makeGroup parent =
-	   Canvas.itemCreate(parent,
-			     Canvas.groupGetType(),
-			     [("x", Gtk.REAL 0.0),
-			      ("y", Gtk.REAL 0.0)])
+           itemNew (parent, Canvas.Group.getType (), [
+                Canvas.Group.x ::= 0.0,
+                Canvas.Group.y ::= 0.0 
+            ])
 	   
        fun drawHidden (openChildren, hasSolBelow)
 	   (group, shadow, scale, myX, myY) =
@@ -75,13 +87,13 @@ functor MkGtkNode (Space : SPACE)
 	       val width = Real.round(10.0*256.0*scale)
 	       val sHorSpace = Real.round((itr TreeNode.horSpaceI)*scale/2.0)
 	       val sVerSpace = Real.round((itr TreeNode.verSpaceI)*scale)
-	       val x0 = myX
-	       val y0 = myY - width
-	       val x1 = myX - sHorSpace
-	       val y1 = myY + sVerSpace
-	       val x2 = myX + sHorSpace
-	       val y2 = myY + sVerSpace
-	       val points = [x0,y0,x1,y1,x2,y2,x0,y0]
+	       val x0 = Real.fromInt myX
+	       val y0 = Real.fromInt (myY - width)
+	       val x1 = Real.fromInt (myX - sHorSpace)
+	       val y1 = Real.fromInt (myY + sVerSpace)
+	       val x2 = Real.fromInt (myX + sHorSpace)
+	       val y2 = Real.fromInt (myY + sVerSpace)
+	       val points = [(x0,y0),(x1,y1),(x2,y2),(x0,y0)]
 	   in
 	       if not shadow andalso openChildren > 0 then
 		   let
@@ -91,48 +103,34 @@ functor MkGtkNode (Space : SPACE)
 			   Real.round((itr TreeNode.horSpaceI)*scale/2.0)
 		       val sVerSpace =
 			   Real.round((itr TreeNode.verSpaceI)*scale)
-		       val x02 = myX
-		       val y02 = myY + 10
-		       val x12 = myX - (sHorSpace - 5)
-		       val y12 = myY + (sVerSpace - 5)
-		       val x22 = myX + (sHorSpace - 5)
-		       val y22 = myY + (sVerSpace - 5)
-		       val points2 = [x02,y02,x12,y12,x22,y22,x02,y02]
+		       val x02 = Real.fromInt myX
+		       val y02 = Real.fromInt (myY + 10)
+		       val x12 = Real.fromInt (myX - (sHorSpace - 5))
+		       val y12 = Real.fromInt (myY + (sVerSpace - 5))
+		       val x22 = Real.fromInt (myX + (sHorSpace - 5))
+		       val y22 = Real.fromInt (myY + (sVerSpace - 5))
+		       val points2 = [(x02,y02),(x12,y12),(x22,y22),(x02,y02)]
 		   in
-		       (Canvas.itemCreate(item,
-					  Canvas.polygonGetType(),
-					  [("points",
-					    Gtk.OBJECT
-					    (Canvas.makePoints points)),
-					   ("fill_color_gdk",Gtk.OBJECT color),
-					   ("outline_color_gdk",
-					    Gtk.OBJECT outline)
-					   ]
-					  ));
-		       (Canvas.itemCreate(item,
-					  Canvas.polygonGetType(),
-					  [("points",
-					    Gtk.OBJECT
-					    (Canvas.makePoints points2)),
-					   ("fill_color_gdk",
-					    Gtk.OBJECT lightgray),
-					   ("outline_color_gdk",
-					    Gtk.OBJECT black)
-					   ]
-					  ));
+		       itemNew(item, Canvas.Polygon.getType (), [
+                            Canvas.Line.points           ::= points,
+                            Canvas.Shape.fillColorGdk    ::= color,
+                            Canvas.Shape.outlineColorGdk ::= outline
+                        ]);
+
+		        itemNew (item, Canvas.Polygon.getType (), [
+                            Canvas.Line.points           ::= points2,
+                            Canvas.Shape.fillColorGdk    ::= lightgray,
+                            Canvas.Shape.outlineColorGdk ::= black
+                        ]);
+
 		       item
 		   end
 	       else
-		   (Canvas.itemCreate(group,
-				      Canvas.polygonGetType(),
-				      [("points",
-					Gtk.OBJECT
-					(Canvas.makePoints points)),
-				       ("fill_color_gdk", Gtk.OBJECT color),
-				       ("outline_color_gdk",
-					Gtk.OBJECT outline)
-				       ]
-				      ))  
+                   itemNew (group, Canvas.Polygon.getType (), [
+                        Canvas.Line.points              ::= points,
+                        Canvas.Shape.fillColorGdk       ::= color,
+                        Canvas.Shape.outlineColorGdk    ::= outline
+                    ])
 	   end
        
        fun drawSuccNode (group, shadow, scale, myX, myY) =
@@ -140,23 +138,19 @@ functor MkGtkNode (Space : SPACE)
 	       val color = if shadow then shadowColor else succColor
 	       val outline = if shadow then shadowColor else black
 	       val width = Real.round(10.0*256.0*scale)
-	       val x0 = myX - width
-	       val x1 = myX
-	       val x2 = myX + width
-	       val y0 = myY - width
-	       val y1 = myY
-	       val y2 = myY + width
-	       val points = [x0,y1,x1,y0,x2,y1,x1,y2,x0,y1,x0,y1]
+	       val x0 = Real.fromInt (myX - width)
+	       val x1 = Real.fromInt (myX)
+	       val x2 = Real.fromInt (myX + width)
+	       val y0 = Real.fromInt (myY - width)
+	       val y1 = Real.fromInt (myY)
+	       val y2 = Real.fromInt (myY + width)
+	       val points = [(x0,y1),(x1,y0),(x2,y1),(x1,y2),(x0,y1),(x0,y1)]
 	   in
-	       (Canvas.itemCreate(group,
-				  Canvas.polygonGetType(),
-				  [("points",
-				    Gtk.OBJECT
-				    (Canvas.makePoints points)),
-				   ("fill_color_gdk", Gtk.OBJECT color),
-				   ("outline_color_gdk", Gtk.OBJECT outline)
-				   ]
-				  ))	  
+	       itemNew (group, Canvas.Polygon.getType (), [
+                    Canvas.Line.points           ::= points,
+                    Canvas.Shape.fillColorGdk    ::= color,
+                    Canvas.Shape.outlineColorGdk ::= outline
+                ])
 	   end
 
        fun drawFailedNode (group, shadow, scale, myX, myY) =
@@ -164,20 +158,19 @@ functor MkGtkNode (Space : SPACE)
 	       val color = if shadow then shadowColor else failedColor
 	       val outline = if shadow then shadowColor else black
 	       val width = 7.0*256.0*scale
-	       val x1 = (itr myX) - width
-	       val y1 = (itr myY) - width
-	       val x2 = (itr myX) + width
-	       val y2 = (itr myY) + width
+	       val x1 = ((itr myX) - width)
+	       val y1 = ((itr myY) - width)
+	       val x2 = ((itr myX) + width)
+	       val y2 = ((itr myY) + width)
 	   in
-	       Canvas.itemCreate(group,
-				 Canvas.rectGetType(),
-				 [("x1", Gtk.REAL x1),
-				  ("y1", Gtk.REAL y1),
-				  ("x2", Gtk.REAL x2),
-				  ("y2", Gtk.REAL y2),
-				  ("fill_color_gdk", Gtk.OBJECT color),
-				  ("outline_color_gdk", Gtk.OBJECT outline)
-				  ])
+               itemNew (group, Canvas.Rect.getType (), [
+                  Canvas.RE.x1                 ::= x1,
+                  Canvas.RE.y1                 ::= y1,
+                  Canvas.RE.x2                 ::= x2,
+                  Canvas.RE.y2                 ::= y2,
+                   Canvas.Shape.fillColorGdk    ::= color,
+                  Canvas.Shape.outlineColorGdk ::= outline
+               ])
 	   end
        (* Alternative shape: red cross *)
        (*       let *)
@@ -194,7 +187,7 @@ functor MkGtkNode (Space : SPACE)
        (*           val points2 = [x2,y1,x1,y2] *)
        (*           val capStyle = Gdk.GdkCapStyleToInt Gdk.CAP_ROUND *)
        (*       in *)
-       (*           Canvas.itemCreate(item, *)
+       (*           Canvas.Item.create(item, *)
        (*                                  Canvas.lineGetType(), *)
        (*                                  [("points", *)
        (*                                    Gtk.OBJECT *)
@@ -203,7 +196,7 @@ functor MkGtkNode (Space : SPACE)
        (*                                   ("width_units", Gtk.REAL 3.0), *)
        (*                                   ("cap_style", Gtk.INT capStyle) *)
        (*                                   ]); *)
-       (*           Canvas.itemCreate(item, *)
+       (*           Canvas.Item.create(item, *)
        (*                                  Canvas.lineGetType(), *)
        (*                                  [("points", *)
        (*                                    Gtk.OBJECT *)
@@ -226,15 +219,14 @@ functor MkGtkNode (Space : SPACE)
 	       val x2 = (itr myX) + scaledCircleWidth
 	       val y2 = (itr myY) + scaledCircleWidth
 	   in
-	       Canvas.itemCreate(group,
-				 Canvas.ellipseGetType(),
-				 [("x1", Gtk.REAL x1),
-				  ("y1", Gtk.REAL y1),
-				  ("x2", Gtk.REAL x2),
-				  ("y2", Gtk.REAL y2),
-				  ("fill_color_gdk", Gtk.OBJECT color),
-				  ("outline_color_gdk", Gtk.OBJECT outline)
-				  ])
+                itemNew (group, Canvas.Ellipse.getType (), [
+                   Canvas.RE.x1                 ::= x1,
+                   Canvas.RE.y1                 ::= y1,
+                   Canvas.RE.x2                 ::= x2,
+                   Canvas.RE.y2                 ::= y2,
+                   Canvas.Shape.fillColorGdk    ::= color,
+                   Canvas.Shape.outlineColorGdk ::= outline
+               ])
 	   end
 
        fun drawUnknownNode (group, shadow, scale, myX, myY) =
@@ -244,23 +236,19 @@ functor MkGtkNode (Space : SPACE)
 	       val width = Real.round(9.0*256.0*scale)
 	       val sHorSpace = width
 	       val sVerSpace = width
-	       val x0 = myX
-	       val y0 = myY - width - 1
-	       val x1 = myX - sHorSpace
-	       val y1 = myY + sVerSpace
-	       val x2 = myX + sHorSpace
-	       val y2 = myY + sVerSpace
-	       val points = [x0,y0,x1,y1,x2,y2,x0,y0]
+	       val x0 = itr myX
+	       val y0 = itr (myY - width - 1)
+	       val x1 = itr (myX - sHorSpace)
+	       val y1 = itr (myY + sVerSpace)
+	       val x2 = itr (myX + sHorSpace)
+	       val y2 = itr (myY + sVerSpace)
+	       val points = [(x0,y0),(x1,y1),(x2,y2),(x0,y0)]
 	   in
-	       (Canvas.itemCreate(group,
-				  Canvas.polygonGetType(),
-				  [("points",
-				    Gtk.OBJECT
-				    (Canvas.makePoints points)),
-				   ("fill_color_gdk", Gtk.OBJECT color),
-				   ("outline_color_gdk", Gtk.OBJECT outline)
-				   ]
-				  ))	  
+	       itemNew (group, Canvas.Polygon.getType (), [
+                    Canvas.Line.points           ::= points,
+                    Canvas.Shape.fillColorGdk    ::= color,
+                    Canvas.Shape.outlineColorGdk ::= outline
+                ])
 	   end
 
        fun connect
@@ -291,22 +279,18 @@ functor MkGtkNode (Space : SPACE)
 					  (itr (momY+t))*scale)
 		     | Types.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
 
-	       val points = [Real.round x1,Real.round y1,
-			     Real.round x2,Real.round y2]
+	       val points = [(x1,y1),
+			     (x2,y2)]
 	   in
-	       (Canvas.itemCreate(rootGroup,
-				  Canvas.lineGetType(),
-				  [("points",
-				    Gtk.OBJECT
-				    (Canvas.makePoints points)),
-				   ("fill_color_gdk", Gtk.OBJECT black),
-				   ("line_style", Gtk.INT 0),
-				   ("width_pixels", Gtk.INT 1)
-				   ]
-				  ))	  
+                itemNew (rootGroup, Canvas.Line.getType (), [
+                    Canvas.Line.points           ::= points,
+                    Canvas.Line.fillColorGdk    ::= black,
+                    Canvas.Line.lineStyle        ::= Gdk.LineStyle.SOLID,
+                    Canvas.Line.widthPixels      ::= 1
+                 ])
 	   end
 
-       fun unconnect connection = Gtk.objectDestroy connection
+       fun unconnect connection = Gtk.Object.destroy connection
 
        fun doDraw (group, shadow, scale, hidden, 
 		   openChildren, hasSolBelow, status, x, y) =
@@ -364,19 +348,16 @@ functor MkGtkNode (Space : SPACE)
 	   case !vNode of
 	       SOME v =>
 		   let
-		       val (x1,y1,x2,y2) = Canvas.itemGetBounds v
+		       val (x1,y1,x2,y2) = Canvas.Item.getBounds (v, 0.0, 0.0, 0.0, 0.0)
 		   in
-		       Canvas.itemCreate(Canvas.root canvas,
-					 Canvas.ellipseGetType(),
-					 [("x1", Gtk.REAL x1),
-					  ("y1", Gtk.REAL y1),
-					  ("x2", Gtk.REAL x2),
-					  ("y2", Gtk.REAL y2),
-					  ("fill_color_gdk",
-					   Gtk.OBJECT black),
-					  ("outline_color_gdk",
-					   Gtk.OBJECT black)
-					  ]);
+	               itemNew (Canvas.root canvas, Canvas.Ellipse.getType (), [
+                           Canvas.RE.x1                 ::= x1,
+                           Canvas.RE.y1                 ::= y1,
+                           Canvas.RE.x2                 ::= x2,
+                           Canvas.RE.y2                 ::= y2,
+                           Canvas.Shape.fillColorGdk    ::= black,
+                           Canvas.Shape.outlineColorGdk ::= black
+                       ]);
 		       ()
 		   end
 	     | NONE => ()
@@ -395,11 +376,11 @@ functor MkGtkNode (Space : SPACE)
 	       val myX = myX+3*256
 	       val myY = myY+3*256
 	   in
-	       Gtk.objectDestroy (!shadowGroup);
+	       Gtk.Object.destroy (!shadowGroup);
 	       shadowGroup := makeGroup (!rootGroup);
 	       doDraw (!shadowGroup, true, TreeNode.defScale, hidden,
 		       0, false, status, myX, myY);
-	       Canvas.itemLowerToBottom (!shadowGroup)
+	       Canvas.Item.lowerToBottom (!shadowGroup)
 	   end
 
        fun undrawSubtree (Types.N({vNode=vNode,connection=connection,...},
@@ -408,15 +389,15 @@ functor MkGtkNode (Space : SPACE)
 	       NONE => ()
 	     | SOME v =>
 		   (vNode := NONE;
-		    Gtk.objectDestroy v;
+		    Gtk.Object.destroy v;
 		    (case (!connection) of NONE => ()
-		  | SOME c => (Gtk.objectDestroy c;
+		  | SOME c => (Gtk.Object.destroy c;
 			       connection:=NONE));
 			 Vector.app undrawSubtree (!children))
 
        fun moveNode ({gtk={scale=ref scale,...},...}: Types.explorer_state,
 		     v, myByX) =
-	   Canvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale,
+	   Canvas.Item.move(v, (Real.fromInt myByX)*TreeNode.defScale,
 			   0.0)
 
        fun moveTree (state: Types.explorer_state)
@@ -431,12 +412,12 @@ functor MkGtkNode (Space : SPACE)
 
        fun findByXY(canvas, scale, x, y) =
 	   let
-	       val (cXI, cYI) = Canvas.w2c(canvas, x, y)
-	       val (sox1, _, _, _) = Canvas.getScrollRegion canvas
+	       val (cXI, cYI) = Canvas.w2c(canvas, x, y, 0, 0)
+	       val (sox1, _, _, _) = Canvas.getScrollRegion (canvas, 0.0, 0.0, 0.0, 0.0)
 
-	       val cX = (Real.fromInt cXI)/scale
-	       val cY = (Real.fromInt cYI)
-	       val myX = cX + (sox1*256.0)
+	       val cX = Real.fromInt cXI  / scale
+	       val cY = Real.fromInt cYI
+               val myX = cX + (sox1*256.0)
 	       val findX = Real.round(myX-11.0*256.0)
 	       val depth = Real.round(cY/(scale*38.0*256.0))-1
 	   in

@@ -56,14 +56,14 @@ functor MkMainWindow (Space : SPACE)
                                  ...},...})
 	   : explorer_state option ref) =
     let
-	val sub = Gtk.menuNew()
+	val sub = Gtk.Menu.new()
                   
 	val entries =
 	    List.foldl
             (fn ((_,n),nil) =>
                 let
                     val mi = 
-			Gtk.radioMenuItemNewWithLabel(Gtk.NULL, n)
+			Gtk.RadioMenuItem.newWithLabel([], n)
                 in
                     Gtk.signalConnect(mi, "toggled",
                                       EventHandler.selectInspectionAction
@@ -73,8 +73,8 @@ functor MkMainWindow (Space : SPACE)
 	      | ((_,n),res as (prev::_)) =>
 		let
 		    val mi =
-			Gtk.radioMenuItemNewWithLabel
-                            (Gtk.radioMenuItemGetGroup prev, n)
+			Gtk.RadioMenuItem.newWithLabel
+                            (Gtk.RadioMenuItem.getGroup prev, n)
 		in
                     Gtk.signalConnect(mi, "toggled",
                                       EventHandler.selectInspectionAction
@@ -84,10 +84,10 @@ functor MkMainWindow (Space : SPACE)
 	    nil
 	    actionsList
     in
-	List.app (fn m => Gtk.menuShellAppend(sub, m)) entries;
-        Gtk.menuItemRemoveSubmenu(!inspectionActions);
-	Gtk.menuItemSetSubmenu((!inspectionActions), sub);
-	Gtk.widgetShowAll (!inspectionActions)
+	List.app (fn m => Gtk.MenuShell.append(sub, m)) entries;
+        Gtk.MenuItem.removeSubmenu(!inspectionActions);
+	Gtk.MenuItem.setSubmenu((!inspectionActions), sub);
+	Gtk.Widget.showAll (!inspectionActions)
     end
     | updateInspectionActionsMenu _ = ()
 
@@ -100,9 +100,9 @@ functor MkMainWindow (Space : SPACE)
 	      CanvasHelper.createCanvas (state, serve, xDim, yDim)
 
           val w = ExplorerGUI.aliceexplorer
-          val _ = Gtk.containerAdd(ExplorerGUI.scrolledwindow, canvas)
+          val _ = Gtk.Container.add(ExplorerGUI.scrolledwindow, canvas)
 
-          val cid = Gtk.statusbarGetContextId(ExplorerGUI.statusbar,
+          val cid = Gtk.Statusbar.getContextId(ExplorerGUI.statusbar,
                                               "Alice explorer")
 
           structure Signals : EXPLORERGUISIGNALS_SIG =
@@ -156,8 +156,8 @@ functor MkMainWindow (Space : SPACE)
           structure S = ExplorerGUISignals(structure S = Signals)
 
       in
-	  Gtk.widgetShowAll w;
-          Gtk.statusbarPush(ExplorerGUI.statusbar,cid,
+	  Gtk.Widget.showAll w;
+          Gtk.Statusbar.push(ExplorerGUI.statusbar,cid,
                             "Ready.");
 	  state := SOME {gtk={canvas=canvas,
                               rootGroup=rootGroup,
@@ -199,12 +199,12 @@ functor MkMainWindow (Space : SPACE)
                     Types.explorer_state option ref,
                     msg, push) =
       if push then
-          (Gtk.statusbarPush(ExplorerGUI.statusbar, !contextId, msg); ())
+          (Gtk.Statusbar.push(ExplorerGUI.statusbar, !contextId, msg); ())
       else
-          Gtk.statusbarPop(ExplorerGUI.statusbar, !contextId)
+          Gtk.Statusbar.pop(ExplorerGUI.statusbar, !contextId)
     | setStatusMsg _ = ()
 
   fun setWindowTitle title =
-    Gtk.windowSetTitle(ExplorerGUI.aliceexplorer, title)
+    Gtk.Window.setTitle(ExplorerGUI.aliceexplorer, title)
 
   end

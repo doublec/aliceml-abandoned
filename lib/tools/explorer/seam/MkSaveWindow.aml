@@ -110,40 +110,40 @@ functor MkSaveWindow (Space : SPACE)
       
       fun showErrorWindow sw msg =
 	  let
-	      val md = Gtk.messageDialogNew(sw, Gtk.DIALOG_MODAL,
-					    Gtk.MESSAGE_ERROR,
-					    Gtk.BUTTONS_CLOSE,
-					    msg, Gtk.LIST nil)
+	      val md = Gtk.MessageDialog.new(sw, [Gtk.DialogFlags.MODAL],
+					    Gtk.MessageType.ERROR,
+					    Gtk.ButtonsType.CLOSE,
+					    msg)
 	  in
-	      Gtk.dialogRun md;
-	      Gtk.widgetDestroy md
+	      Gtk.Dialog.run md;
+	      Gtk.Widget.destroy md
 	  end
       
       fun okHandler (sw, serve, state : Types.explorer_state option ref) _ =
 	  serve (fn () =>
 		 case !state of SOME {tree={tree,...},...} =>
 		     let
-			 val filename = Gtk.fileSelectionGetFilename sw
+			 val filename = Gtk.FileSelection.getFilename sw
 		     in
 			 ((PS.emit (filename, buildPsTree 0 0 (!tree)))
 			  handle _ => 
 			      showErrorWindow sw "Something went wrong!\n");
-			 Gtk.widgetDestroy sw
+			 Gtk.Widget.destroy sw
 		     end
 	       | NONE => ())
 	  
-      fun cancelHandler sw _ = Gtk.widgetDestroy sw
+      fun cancelHandler sw _ = Gtk.Widget.destroy sw
 	  
       fun newSaveWindow (serve, state : Types.explorer_state option ref) =
 	  let
-	      val sw = Gtk.fileSelectionNew("Save as PostScript")
-	      val ok = Gtk.fileSelectionGetFieldOkButton sw
-	      val cancel = Gtk.fileSelectionGetFieldCancelButton sw
+	      val sw = Gtk.FileSelection.new("Save as PostScript")
+	      val ok = Gtk.FileSelection.getFieldOkButton sw
+	      val cancel = Gtk.FileSelection.getFieldCancelButton sw
 	  in
-	      Gtk.fileSelectionSetFilename(sw, "tree.eps");
+	      Gtk.FileSelection.setFilename(sw, "tree.eps");
 	      Gtk.signalConnect(ok, "clicked", okHandler (sw, serve, state));
 	      Gtk.signalConnect(cancel, "clicked", cancelHandler sw);
-	      Gtk.widgetShowAll sw
+	      Gtk.Widget.showAll sw
 	  end
       
   end

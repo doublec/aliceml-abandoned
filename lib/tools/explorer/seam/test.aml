@@ -11,7 +11,7 @@
  *)
 
 import structure FD        from "x-alice:/lib/gecode/FD"
-import structure Explorer  from "x-alice:/lib/tools/Explorer"
+import structure Explorer  from "Explorer"
 
 fun queens n cl space =
     let

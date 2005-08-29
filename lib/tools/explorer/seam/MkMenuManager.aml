@@ -43,8 +43,8 @@ functor MkMenuManager (Space : SPACE)
 
          
       fun switchItems(onitems, offitems, activate) =
-	  (app (fn i => Gtk.widgetSetSensitive(i, activate)) onitems;
-	   app (fn i => Gtk.widgetSetSensitive(i, not activate)) offitems)
+	  (app (fn i => Gtk.Widget.setSensitive(i, activate)) onitems;
+	   app (fn i => Gtk.Widget.setSensitive(i, not activate)) offitems)
 	  
       fun updateMenus n =
 	  (switchItems([ExplorerGUI.next_solution,
@@ -76,22 +76,22 @@ functor MkMenuManager (Space : SPACE)
 	   )
 	  
       fun startSearch() =
-	  (Gtk.widgetSetSensitive(ExplorerGUI.cancel_search, true);
-	   Gtk.widgetSetSensitive(ExplorerGUI.save, false))
+	  (Gtk.Widget.setSensitive(ExplorerGUI.cancel_search, true);
+	   Gtk.Widget.setSensitive(ExplorerGUI.save, false))
 	  
       fun finishSearch() =
-	  (Gtk.widgetSetSensitive(ExplorerGUI.cancel_search, false);
-	   Gtk.widgetSetSensitive(ExplorerGUI.save, true))
+	  (Gtk.Widget.setSensitive(ExplorerGUI.cancel_search, false);
+	   Gtk.Widget.setSensitive(ExplorerGUI.save, true))
 	  
       fun refreshStatusbar state =
 	  let
 	      val (choices, failed, solved) = Types.getSearchState state
 	  in
-	      Gtk.labelSetText(ExplorerGUI.noOfChoices,
+	      Gtk.Label.setText(ExplorerGUI.noOfChoices,
 			       Int.toString choices);
-	      Gtk.labelSetText(ExplorerGUI.noOfFailed,
+	      Gtk.Label.setText(ExplorerGUI.noOfFailed,
 			       Int.toString failed);
-	      Gtk.labelSetText(ExplorerGUI.noOfSolved,
+	      Gtk.Label.setText(ExplorerGUI.noOfSolved,
 			       Int.toString solved)
 	  end
   end

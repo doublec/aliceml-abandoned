@@ -136,7 +136,7 @@ functor MkEventHandler (Space : SPACE)
                                              tree={rootSpace,tree,...},
                                              ...})
 			 : explorer_state option ref) =
-      (Gtk.widgetHide window;
+      (Gtk.Widget.hide window;
        rootSpace := NONE;
        resetCanvas serve state;
        Types.resetSearchState state;
@@ -168,9 +168,9 @@ functor MkEventHandler (Space : SPACE)
           let
               val shape = TreeNode.getShape tree
 	      val (minx, maxx, depth) = TreeNode.getBBox shape
-	      val xSize = Gtk.adjustmentGetFieldPageSize
+	      val xSize = Gtk.Adjustment.getFieldPageSize
                               ExplorerGUI.scrolledwindow_xa
-	      val ySize = Gtk.adjustmentGetFieldPageSize
+	      val ySize = Gtk.Adjustment.getFieldPageSize
                               ExplorerGUI.scrolledwindow_ya
 	      val xMin   = Real.round((itr minx)*(TreeNode.defScale))
 	      val xMax   = Real.round((itr maxx)*(TreeNode.defScale))
@@ -186,7 +186,7 @@ functor MkEventHandler (Space : SPACE)
               val scaleTo = Real.min(3.0,scaleTo)
           in
 	      Canvas.setPixelsPerUnit(canvas, scaleTo);
-              Gtk.rangeSetValue(ExplorerGUI.scale,scaleTo);
+              Gtk.Range.setValue(ExplorerGUI.scale,scaleTo);
 	      scale := scaleTo / Defaults.floatScaleBase
           end
         | _ => ()
@@ -204,10 +204,10 @@ functor MkEventHandler (Space : SPACE)
 	      val shape = TreeNode.layoutNode tree
 	      val (minx, maxx, depth) = TreeNode.getBBox shape
           in
-              Gtk.widgetShowAll window;
+              Gtk.Widget.showAll window;
               MenuManager.refreshStatusbar state;
               setBBox (state, (minx, maxx, depth));
-              Gtk.layoutFreeze canvas;
+              Gtk.Layout.freeze canvas;
 	      VisualNode.adjust (rstate, tree, 0, 0, TreeNode.verSpaceI, 0);
 	      (case cn of NONE => ()
 		        | SOME cn =>
@@ -216,7 +216,7 @@ functor MkEventHandler (Space : SPACE)
 		          in
 			      GtkNode.drawShadow (rstate, x, y, cn)
 		          end);
-              Gtk.layoutThaw canvas;
+              Gtk.Layout.thaw canvas;
               Canvas.setPixelsPerUnit(canvas,
                                            (!scale)*Defaults.floatScaleBase);
               if Types.getZoomFollows state then
@@ -314,11 +314,11 @@ functor MkEventHandler (Space : SPACE)
                 case !state of
                     SOME {curInspAction=curInspAction,...} =>
                     (case event of (obj, _) =>
-                       if (Gtk.checkMenuItemGetFieldActive obj)=1 then
+                       if Gtk.CheckMenuItem.getFieldActive obj then
                            let
-                               val label = Gtk.binGetChild obj
+                               val label = Gtk.Bin.getChild obj
                            in
-                               curInspAction := Gtk.labelGetText label
+                               curInspAction := Gtk.Label.getText label
                            end
                        else
                            ())
@@ -328,8 +328,8 @@ functor MkEventHandler (Space : SPACE)
       let
           val configure = OptionsWindow.newViewOptionsWindow (mw, serve, state)
       in
-          Gtk.windowSetPosition(configure, Gtk.WIN_POS_MOUSE);
-          Gtk.widgetShowAll configure
+          Gtk.Window.setPosition(configure, Gtk.WindowPosition.MOUSE);
+          Gtk.Widget.showAll configure
       end
 
   fun searchOptionsHandler (mw, serve, state) _ =
@@ -337,8 +337,8 @@ functor MkEventHandler (Space : SPACE)
           val configure = OptionsWindow.newSearchOptionsWindow
 	      (mw, serve, state)
       in
-          Gtk.windowSetPosition(configure, Gtk.WIN_POS_MOUSE);
-          Gtk.widgetShowAll configure
+          Gtk.Window.setPosition(configure, Gtk.WindowPosition.MOUSE);
+          Gtk.Widget.showAll configure
       end
 
   fun zoomToFitHandler (serve, state : Types.explorer_state option ref) _ =
