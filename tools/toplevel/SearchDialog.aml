@@ -19,11 +19,11 @@ structure SearchDialog =
     struct
 	val searchDialog = Gui.searchDialog
 
-	val _ = Gtk.dialogSetDefaultResponse(searchDialog,
-					     ~5)
+	val _ = Gtk.Dialog.setDefaultResponse(searchDialog, 
+                        Gtk.ResponseType.toInt Gtk.ResponseType.OK)
 
-        fun closeCallback _ = (Gtk.windowSetModal(searchDialog, false);
-			       Gtk.widgetUnmap searchDialog)
+        fun closeCallback _ = (Gtk.Window.setModal(searchDialog, false);
+			       Gtk.Widget.unmap searchDialog)
         val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
         val _ = Gtk.signalConnect(Gui.search_cancel_button, "clicked", closeCallback)
 
@@ -37,27 +37,27 @@ structure SearchDialog =
 	     doSearch id arg)
         and doSearch id _ =
             let
-                val txt = Gtk.entryGetText Gui.searchString
-                val replacetxt = Gtk.entryGetText Gui.replaceString
+                val txt = Gtk.Entry.getText Gui.searchString
+                val replacetxt = Gtk.Entry.getText Gui.replaceString
                 val caseSensitive =
-		    Gtk.toggleButtonGetActive Gui.search_case_sensitive
+		    Gtk.ToggleButton.getActive Gui.search_case_sensitive
             in
 		if txt = "" then ()
 		else let
 		    val found = Buffer.find (id, txt, caseSensitive)
 		in
 		    if found andalso !isReplace then
-			(Gtk.windowSetModal(searchDialog, true);
+			(Gtk.Window.setModal(searchDialog, true);
 			 Option.app (fn s => Gtk.signalDisconnect(Gui.search_replace_button, s))
 			 (!replaceSignal);
 			 replaceSignal :=
                              SOME (Gtk.signalConnect(Gui.search_replace_button,
 						     "clicked",
 						     doReplace(id, replacetxt)));
-			 Gtk.widgetSetSensitive(Gui.search_replace_button,true))
+			 Gtk.Widget.setSensitive(Gui.search_replace_button,true))
 		    else
-			(Gtk.windowSetModal(searchDialog, false);
-			 Gtk.widgetSetSensitive(Gui.search_replace_button,false))
+			(Gtk.Window.setModal(searchDialog, false);
+			 Gtk.Widget.setSensitive(Gui.search_replace_button,false))
 		end
             end
                 
@@ -71,86 +71,86 @@ structure SearchDialog =
             (reconnect id;
              case Buffer.getSelection id of
                  NONE => ()
-               | SOME s => Gtk.entrySetText(Gui.searchString, s);
-	     Gtk.widgetSetSensitive(Gui.replaceString,false);
-	     Gtk.widgetSetSensitive(Gui.label29,false);
-	     Gtk.widgetSetSensitive(Gui.search_replace_button,false);
+               | SOME s => Gtk.Entry.setText(Gui.searchString, s);
+	     Gtk.Widget.setSensitive(Gui.replaceString,false);
+	     Gtk.Widget.setSensitive(Gui.label29,false);
+	     Gtk.Widget.setSensitive(Gui.search_replace_button,false);
 	     isReplace := false;
-	     Gtk.windowSetModal(searchDialog, false);
-             Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE);
-             Gtk.widgetShowAll searchDialog;
-             Gtk.widgetMap searchDialog;
+	     Gtk.Window.setModal(searchDialog, false);
+             Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
+             Gtk.Widget.showAll searchDialog;
+             Gtk.Widget.map searchDialog;
 	     let
-		val buf = Gtk.textViewGetBuffer Gui.searchString
-		val startiter = Gtk.textIterNew ()
-		val enditer = Gtk.textIterNew ()
+		val buf = Gtk.TextView.getBuffer Gui.searchString
+		val startiter = Gtk.TextIter.new ()
+		val enditer = Gtk.TextIter.new ()
 	     in
-	        Gtk.textBufferGetStartIter(buf, startiter);
-	        Gtk.textBufferGetStartIter(buf, enditer);
-		Gtk.textBufferPlaceCursor(buf, enditer);
-		Gtk.textBufferMoveMarkByName(buf, "selection_bound", startiter)
-		(* Gtk2.4 Gtk.textBufferSelectRange(buf, startiter, enditer)*)
+	        Gtk.TextBuffer.getStartIter(buf, startiter);
+	        Gtk.TextBuffer.getStartIter(buf, enditer);
+		Gtk.TextBuffer.placeCursor(buf, enditer);
+		Gtk.TextBuffer.moveMarkByName(buf, "selection_bound", startiter)
+		(* Gtk2.4 Gtk.TextBuffer.selectRange(buf, startiter, enditer)*)
 		
 	     end;
-	     Gtk.widgetGrabFocus Gui.searchString)
+	     Gtk.Widget.grabFocus Gui.searchString)
 
 	fun searchAgain(id, arg) = 
             (reconnect id;
              case Buffer.getSelection id of
                  NONE => ()
-               | SOME s => Gtk.entrySetText(Gui.searchString, s);
+               | SOME s => Gtk.Entry.setText(Gui.searchString, s);
 	     doSearch id arg)
 
         fun replace id =
             (reconnect id;
              case Buffer.getSelection id of
                  NONE => ()
-               | SOME s => Gtk.entrySetText(Gui.searchString, s);
-	     Gtk.widgetSetSensitive(Gui.replaceString,true);
-	     Gtk.widgetSetSensitive(Gui.label29,true);
-	     Gtk.widgetSetSensitive(Gui.search_replace_button,false);
+               | SOME s => Gtk.Entry.setText(Gui.searchString, s);
+	     Gtk.Widget.setSensitive(Gui.replaceString,true);
+	     Gtk.Widget.setSensitive(Gui.label29,true);
+	     Gtk.Widget.setSensitive(Gui.search_replace_button,false);
 	     isReplace := true;
-	     Gtk.windowSetModal(searchDialog, false);
-             Gtk.windowSetPosition (searchDialog, Gtk.WIN_POS_MOUSE);
-             Gtk.widgetShowAll searchDialog;
-             Gtk.widgetMap searchDialog;
+	     Gtk.Window.setModal(searchDialog, false);
+             Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
+             Gtk.Widget.showAll searchDialog;
+             Gtk.Widget.map searchDialog;
 	     let
-		val buf = Gtk.textViewGetBuffer Gui.searchString
-		val startiter = Gtk.textIterNew ()
-		val enditer = Gtk.textIterNew ()
+		val buf = Gtk.TextView.getBuffer Gui.searchString
+		val startiter = Gtk.TextIter.new ()
+		val enditer = Gtk.TextIter.new ()
 	     in
-	        Gtk.textBufferGetStartIter(buf, startiter);
-	        Gtk.textBufferGetStartIter(buf, enditer);
-		Gtk.textBufferPlaceCursor(buf, enditer);
-		Gtk.textBufferMoveMarkByName(buf, "selection_bound", startiter)
-		(* Gtk2.4 Gtk.textBufferSelectRange(buf, startiter, enditer)*)
+	        Gtk.TextBuffer.getStartIter(buf, startiter);
+	        Gtk.TextBuffer.getStartIter(buf, enditer);
+		Gtk.TextBuffer.placeCursor(buf, enditer);
+		Gtk.TextBuffer.moveMarkByName(buf, "selection_bound", startiter)
+		(* Gtk2.4 Gtk.TextBuffer.selectRange(buf, startiter, enditer)*)
 		
 	     end;
-	     Gtk.widgetGrabFocus Gui.searchString)
+	     Gtk.Widget.grabFocus Gui.searchString)
 
 	fun gotoLine id =
             let
                 val dia = Gui.go_to_line_dialog
             in
-		Gtk.windowSetModal(dia, true);
-		Gtk.dialogSetDefaultResponse(dia, ~5);
-                Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
-                Gtk.widgetShowAll dia;
-		Gtk.widgetMap dia;
-                if Gtk.dialogRun dia = ~5 then
-		    (case Int.fromString (Gtk.entryGetText Gui.go_to_line_entry) of
+		Gtk.Window.setModal(dia, true);
+		Gtk.Dialog.setDefaultResponse(dia, ~5);
+                Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll dia;
+		Gtk.Widget.map dia;
+                if Gtk.Dialog.run dia = ~5 then
+		    (case Int.fromString (Gtk.Entry.getText Gui.go_to_line_entry) of
 			 NONE => ()
 		       | SOME line =>
 			     let
 				 val buf = Buffer.getBuffer id
-				 val iter = Gtk.textIterNew()
-				 val _ = Gtk.textBufferGetIterAtLine(buf,iter,line-1)
+				 val iter = Gtk.TextIter.new()
+				 val _ = Gtk.TextBuffer.getIterAtLine(buf,iter,line-1)
 			     in
-				 Gtk.textBufferPlaceCursor(buf, iter);
+				 Gtk.TextBuffer.placeCursor(buf, iter);
 				 Buffer.scrollToCursor id
 			     end)
                 else ();
-                Gtk.widgetUnmap dia;
-		Gtk.windowSetModal(dia, false)
+                Gtk.Widget.unmap dia;
+		Gtk.Window.setModal(dia, false)
             end
     end

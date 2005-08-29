@@ -83,10 +83,10 @@ structure Buffer =
       (* Cursor *)
       fun getCursorIter buf =
           let
-              val cursor = Gtk.textBufferGetInsert buf
-              val iter = Gtk.textIterNew()
+              val cursor = Gtk.TextBuffer.getInsert buf
+              val iter = Gtk.TextIter.new()
           in
-              Gtk.textBufferGetIterAtMark(buf, iter, cursor);
+              Gtk.TextBuffer.getIterAtMark(buf, iter, cursor);
               iter
           end
 
@@ -94,23 +94,23 @@ structure Buffer =
           let
               val {view,buf,...} = Map.lookupExistent(bufferMap, id)
 	  in
-              Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buf,
+              Gtk.TextView.scrollToMark(view, Gtk.TextBuffer.getInsert buf,
                                        0.1, false, 0.0, 0.0)
 	  end
 
       fun selectRange(buf, startiter, enditer) =
-	  (Gtk.textBufferPlaceCursor(buf, enditer);
-	   Gtk.textBufferMoveMarkByName(buf, "selection_bound", startiter))
+	  (Gtk.TextBuffer.placeCursor(buf, enditer);
+	   Gtk.TextBuffer.moveMarkByName(buf, "selection_bound", startiter))
 
       fun modifiedChanged id _ =
           let
               val {fileLabel,file,buf,...} = Map.lookupExistent(bufferMap, id)
               val fileName = shortName (Option.getOpt(!file, "New file "^Int.toString id))
           in
-              if Gtk.textBufferGetModified buf then
-                  Gtk.labelSetText(fileLabel, fileName^"*")
+              if Gtk.TextBuffer.getModified buf then
+                  Gtk.Label.setText(fileLabel, fileName^"*")
               else
-                  Gtk.labelSetText(fileLabel, fileName)
+                  Gtk.Label.setText(fileLabel, fileName)
           end
 
       fun deleteText id (buf,[Gtk.INT off, Gtk.INT _, Gtk.STRING txt]) =
@@ -127,19 +127,19 @@ structure Buffer =
         | deleteText _ _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: delete\n")
 
       fun findStartOfLine iter =
-	  if Gtk.textIterGetChar iter = Char.ord #"\n" then
-	      ignore (Gtk.textIterForwardChar iter)
-	  else if Gtk.textIterIsStart iter then
+	  if Gtk.TextIter.getChar iter = Char.ord #"\n" then
+	      ignore (Gtk.TextIter.forwardChar iter)
+	  else if Gtk.TextIter.isStart iter then
 	      ()
 	  else
-	      (Gtk.textIterBackwardChar iter; findStartOfLine iter)
+	      (Gtk.TextIter.backwardChar iter; findStartOfLine iter)
 
       fun findNonSpace iter =
 	  let
-	      val c = Char.chr (Gtk.textIterGetChar iter)
+	      val c = Char.chr (Gtk.TextIter.getChar iter)
 	  in
 	      if c = #" " orelse c = #"\t" then
-	          (Gtk.textIterForwardChar iter; findNonSpace iter)
+	          (Gtk.TextIter.forwardChar iter; findNonSpace iter)
 	      else ()
 	  end
 
@@ -155,15 +155,15 @@ structure Buffer =
 	      Promise.fulfill (!highlight, SOME off) handle Promise.Promise => ();
 	      if txt <> "\n" orelse off = 0 then () else
 	      let
-		  val startiter = Gtk.textIterNew()
-		  val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, off-1)
+		  val startiter = Gtk.TextIter.new()
+		  val _ = Gtk.TextBuffer.getIterAtOffset(buf, startiter, off-1)
 		  val _ = findStartOfLine startiter
-		  val enditer = Gtk.textIterCopy startiter
+		  val enditer = Gtk.TextIter.copy startiter
 		  val _ = findNonSpace enditer
-		  val indent = Gtk.textBufferGetText(buf, startiter, enditer, false)
+		  val indent = Gtk.TextBuffer.getText(buf, startiter, enditer, false)
 	      in
-		  Gtk.textBufferGetIterAtOffset(buf, startiter, off+1);
-		  Gtk.textBufferInsert(buf, startiter, indent, ~1)
+		  Gtk.TextBuffer.getIterAtOffset(buf, startiter, off+1);
+		  Gtk.TextBuffer.insert(buf, startiter, indent, ~1)
 	      end
           end
         | insertText' _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: insert\n")
@@ -184,12 +184,12 @@ structure Buffer =
 	      val (txt,equal) = Lock.sync Gtk.lock
 		  (fn () =>
 		   let
-		       val startiter = Gtk.textIterNew()
-		       val enditer = Gtk.textIterNew()
+		       val startiter = Gtk.TextIter.new()
+		       val enditer = Gtk.TextIter.new()
 		   in
-		       Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
-		       (Gtk.textBufferGetText(buf,startiter,enditer,false),
-			Gtk.textIterEqual(startiter, enditer))
+		       Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer);
+		       (Gtk.TextBuffer.getText(buf,startiter,enditer,false),
+			Gtk.TextIter.equal(startiter, enditer))
 		   end) ()
           in
               if equal then NONE else SOME txt
@@ -202,29 +202,29 @@ structure Buffer =
       fun getColFromOffset(iter, 0, col) = col
 	| getColFromOffset(iter, offset, col) =
 	  let
-	      val c = Gtk.textIterGetChar iter
+	      val c = Gtk.TextIter.getChar iter
 	  in
 	      if c = Char.ord #"\t" then
 		  let
 		      val tabjump = 8 - col mod 8
 		  in
-		      Gtk.textIterForwardChar iter;
+		      Gtk.TextIter.forwardChar iter;
 		      getColFromOffset(iter, offset-1, col+tabjump)
 		  end
 	      else
-		  (Gtk.textIterForwardChar iter;
+		  (Gtk.TextIter.forwardChar iter;
 		   getColFromOffset(iter, offset-1, col+1))
 	  end
       fun getColumn iter =
 	  let
-	      val line = Gtk.textIterGetLine iter
-	      val offset = Gtk.textIterGetLineOffset iter
-	      val iter' = Gtk.textIterCopy iter
+	      val line = Gtk.TextIter.getLine iter
+	      val offset = Gtk.TextIter.getLineOffset iter
+	      val iter' = Gtk.TextIter.copy iter
 	  in
-	      Gtk.textIterSetLineOffset(iter', 0);
+	      Gtk.TextIter.setLineOffset(iter', 0);
 	      getColFromOffset(iter', offset, 0)
 	  end
-      fun getLine iter = Gtk.textIterGetLine iter + 1
+      fun getLine iter = Gtk.TextIter.getLine iter + 1
 
       fun indentString n =
 	  if !Config.useTabs
@@ -234,10 +234,10 @@ structure Buffer =
 
       fun findNonSpace iter =
           let
-              val c = Gtk.textIterGetChar iter
+              val c = Gtk.TextIter.getChar iter
           in
               if c = ord #" " orelse c = ord #"\t"
-              then (Gtk.textIterForwardChar iter; findNonSpace iter)
+              then (Gtk.TextIter.forwardChar iter; findNonSpace iter)
               else ()
           end
 
@@ -245,28 +245,28 @@ structure Buffer =
 	  if line = endline then ()
 	  else
 	      let
-		  val startiter = Gtk.textIterNew()
-		  val _ = Gtk.textBufferGetIterAtLine(buf, startiter, line)
-		  val enditer = Gtk.textIterCopy startiter
+		  val startiter = Gtk.TextIter.new()
+		  val _ = Gtk.TextBuffer.getIterAtLine(buf, startiter, line)
+		  val enditer = Gtk.TextIter.copy startiter
 		  val _ = findNonSpace enditer
 		  val col = getColumn enditer
 		  val col' = if indent then col+1 else Int.max(0, col-1)
 	      in
-		  Gtk.textBufferDelete(buf, startiter, enditer);
-		  Gtk.textBufferGetIterAtLine(buf, startiter, line);
-		  Gtk.textBufferInsert(buf, startiter, indentString col', ~1);
+		  Gtk.TextBuffer.delete(buf, startiter, enditer);
+		  Gtk.TextBuffer.getIterAtLine(buf, startiter, line);
+		  Gtk.TextBuffer.insert(buf, startiter, indentString col', ~1);
 		  doIndent(buf, line+1, endline, indent)
 	      end
 	  
       fun selectWholeLines buf =
 	  let
-              val startiter = Gtk.textIterNew()
-              val enditer = Gtk.textIterNew()
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
 	  in
-	      Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
-	      Gtk.textIterSetLineOffset(startiter, 0);
-	      Gtk.textIterGetLineOffset enditer = 0
-	      orelse Gtk.textIterForwardLine enditer;
+	      Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer);
+	      Gtk.TextIter.setLineOffset(startiter, 0);
+	      Gtk.TextIter.getLineOffset enditer = 0
+	      orelse Gtk.TextIter.forwardLine enditer;
 	      selectRange(buf, startiter, enditer)
 	  end
 
@@ -276,18 +276,18 @@ structure Buffer =
 	  let
               val {buf,...} = Map.lookupExistent(bufferMap, id)
 	      val _ = selectWholeLines buf
-              val startiter = Gtk.textIterNew()
-              val enditer = Gtk.textIterNew()
-	      val _ = Gtk.textBufferGetSelectionBounds(buf, startiter, enditer)
-	      val startline = Gtk.textIterGetLine startiter
-	      val endline = Gtk.textIterGetLine enditer
-	      val endline = if Gtk.textIterGetLineOffset enditer = 0
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
+	      val _ = Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer)
+	      val startline = Gtk.TextIter.getLine startiter
+	      val endline = Gtk.TextIter.getLine enditer
+	      val endline = if Gtk.TextIter.getLineOffset enditer = 0
 			    then endline else endline+1
 	  in
-	      Gtk.textBufferBeginUserAction buf;
+	      Gtk.TextBuffer.beginUserAction buf;
 	      doIndent(buf, startline, endline, indent);
 	      selectWholeLines buf;
-	      Gtk.textBufferEndUserAction buf
+	      Gtk.TextBuffer.endUserAction buf
 	  end) ()
 
       fun setUndoSaveMarker undo =
@@ -296,24 +296,24 @@ structure Buffer =
       fun undo' (undoBuf, buf, rollBack) =
           let
               fun checkUnmodified (SAVE_MARKER::_) =
-                  Gtk.textBufferSetModified(buf, false)
+                  Gtk.TextBuffer.setModified(buf, false)
                 | checkUnmodified _ = ()
           in
               case (!undoBuf) of nil => ()
                             | (DELETE(off,txt)::ur) =>
                               let
-                                  val startiter = Gtk.textIterNew()
-				  val enditer = Gtk.textIterNew()
+                                  val startiter = Gtk.TextIter.new()
+				  val enditer = Gtk.TextIter.new()
 				  val len = String.size txt
                               in
-                                  Gtk.textBufferGetIterAtOffset(buf,
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
                                                                 startiter,
                                                                 off);
-                                  Gtk.textBufferInsert(buf, startiter, txt, len);
-                                  Gtk.textBufferGetIterAtOffset(buf,
+                                  Gtk.TextBuffer.insert(buf, startiter, txt, len);
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
                                                                 startiter,
                                                                 off);
-                                  Gtk.textBufferGetIterAtOffset(buf,
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
                                                                 enditer,
                                                                 off + len);
                                   selectRange(buf, startiter, enditer);
@@ -324,17 +324,17 @@ structure Buffer =
                               end
                             | (INSERT(off1,off2)::ur) =>
                               let
-                                  val startiter = Gtk.textIterNew()
-                                  val enditer = Gtk.textIterNew()
+                                  val startiter = Gtk.TextIter.new()
+                                  val enditer = Gtk.TextIter.new()
                               in
-                                  Gtk.textBufferGetIterAtOffset(buf,
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
                                                                 startiter,
                                                                 off1);
-                                  Gtk.textBufferGetIterAtOffset(buf,
+                                  Gtk.TextBuffer.getIterAtOffset(buf,
                                                                 enditer,
                                                                 off2);
-                                  Gtk.textBufferPlaceCursor(buf, startiter);
-                                  Gtk.textBufferDelete(buf, startiter,
+                                  Gtk.TextBuffer.placeCursor(buf, startiter);
+                                  Gtk.TextBuffer.delete(buf, startiter,
                                                        enditer);
 				  checkUnmodified ur;
 				  undoBuf := ur;
@@ -391,11 +391,11 @@ structure Buffer =
 		  Lock.sync Gtk.lock
 		  (fn () =>
 		   let
-		       val startiter = Gtk.textIterNew()
-		       val enditer = Gtk.textIterNew()
+		       val startiter = Gtk.TextIter.new()
+		       val enditer = Gtk.TextIter.new()
 		   in
-		       Gtk.textBufferGetStartIter(buf, startiter);
-		       Gtk.textBufferGetEndIter(buf, enditer);
+		       Gtk.TextBuffer.getStartIter(buf, startiter);
+		       Gtk.TextBuffer.getEndIter(buf, enditer);
 		       BufferHighlight.uncolor(buf, startiter, enditer)
 		   end) ();
 		  Promise.fulfill(!highlight, SOME 0)
@@ -419,7 +419,7 @@ structure Buffer =
 			   | SOME f => (id,f)::fs) nil bufferMap))
 
       fun haveModified () =
-	  Map.exists (fn {buf,...} => Gtk.textBufferGetModified buf)
+	  Map.exists (fn {buf,...} => Gtk.TextBuffer.getModified buf)
 	  bufferMap
 
       exception Abort of {quit:bool}
@@ -445,39 +445,39 @@ structure Buffer =
 		  end
 		  handle (IO.Io _ | OS.SysErr _) =>
 		    if mode = SESSION then raise Abort{quit=false} else
-		    case FileDialog.fileNotFound(mode=COMMANDLINE, f) of
-		       Gtk.RESPONSE_OK => ("", Time.zeroTime)
-		     | Gtk.RESPONSE_CANCEL => raise Abort{quit=false}
-		     | Gtk.RESPONSE_CLOSE => raise Abort{quit=true}
+		    case Gtk.ResponseType.fromInt (FileDialog.fileNotFound(mode=COMMANDLINE, f)) of
+		       Gtk.ResponseType.OK => ("", Time.zeroTime)
+		     | Gtk.ResponseType.CANCEL => raise Abort{quit=false}
+		     | Gtk.ResponseType.CLOSE => raise Abort{quit=true}
 		     | _ => ("", Time.zeroTime)
 
               val fileName = Option.getOpt(file, "New file "^Int.toString id)
-              val scrolledwindow2_xa = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
-              val scrolledwindow2_ya = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
-              val scrolledwindow2 = Gtk.scrolledWindowNew(scrolledwindow2_xa,scrolledwindow2_ya)
-              val _ = Gtk.scrolledWindowSetShadowType(scrolledwindow2,Gtk.SHADOW_NONE)
-              val _ = Gtk.widgetShow scrolledwindow2
+              val scrolledwindow2_xa = Gtk.Adjustment.new(0.0,0.0,0.0,1.0,0.0,0.0)
+              val scrolledwindow2_ya = Gtk.Adjustment.new(0.0,0.0,0.0,1.0,0.0,0.0)
+              val scrolledwindow2 = Gtk.ScrolledWindow.new(scrolledwindow2_xa,scrolledwindow2_ya)
+              val _ = Gtk.ScrolledWindow.setShadowType(scrolledwindow2,Gtk.ShadowType.NONE)
+              val _ = Gtk.Widget.show scrolledwindow2
                       
-              val newSource = Gtk.textViewNew()
-              val _ = Gtk.widgetShow newSource
-              val _ = Gtk.textViewSetEditable(newSource,true)
-              val _ = Gtk.textViewSetJustification(newSource,Gtk.JUSTIFY_LEFT)
-              val _ = Gtk.textViewSetWrapMode(newSource,Gtk.WRAP_NONE)
-              val _ = Gtk.textViewSetCursorVisible(newSource,true)
-              val _ = Gtk.textViewSetPixelsAboveLines(newSource,0)
-              val _ = Gtk.textViewSetPixelsBelowLines(newSource,0)
-              val _ = Gtk.textViewSetPixelsInsideWrap(newSource,0)
-              val _ = Gtk.textViewSetLeftMargin(newSource,0)
-              val _ = Gtk.textViewSetRightMargin(newSource,0)
-              val _ = Gtk.textViewSetIndent(newSource,0)
-              val buf = Gtk.textViewGetBuffer newSource
-              val _ = Gtk.containerAdd(scrolledwindow2,newSource)
-              val label1 = Gtk.labelNew (shortName fileName)
-              val _ = Gtk.widgetShow label1
-	      val _ = Gtk.notebookAppendPage(notebook, scrolledwindow2, label1)
-              val page = Gtk.notebookPageNum(notebook, scrolledwindow2)
-              val _ = Gtk.notebookSetCurrentPage(notebook, page)
-              val _ = Gtk.widgetModifyFont(newSource, !stdFont)
+              val newSource = Gtk.TextView.new()
+              val _ = Gtk.Widget.show newSource
+              val _ = Gtk.TextView.setEditable(newSource,true)
+              val _ = Gtk.TextView.setJustification(newSource,Gtk.Justification.LEFT)
+              val _ = Gtk.TextView.setWrapMode(newSource,Gtk.WrapMode.NONE)
+              val _ = Gtk.TextView.setCursorVisible(newSource,true)
+              val _ = Gtk.TextView.setPixelsAboveLines(newSource,0)
+              val _ = Gtk.TextView.setPixelsBelowLines(newSource,0)
+              val _ = Gtk.TextView.setPixelsInsideWrap(newSource,0)
+              val _ = Gtk.TextView.setLeftMargin(newSource,0)
+              val _ = Gtk.TextView.setRightMargin(newSource,0)
+              val _ = Gtk.TextView.setIndent(newSource,0)
+              val buf = Gtk.TextView.getBuffer newSource
+              val _ = Gtk.Container.add(scrolledwindow2,newSource)
+              val label1 = Gtk.Label.new (shortName fileName)
+              val _ = Gtk.Widget.show label1
+	      val _ = Gtk.Notebook.appendPage(notebook, scrolledwindow2, label1)
+              val page = Gtk.Notebook.pageNum(notebook, scrolledwindow2)
+              val _ = Gtk.Notebook.setCurrentPage(notebook, page)
+              val _ = Gtk.Widget.modifyFont(newSource, !stdFont)
 
 	      val highlightActive =
 		  case file of
@@ -501,15 +501,15 @@ structure Buffer =
 	      Lock.sync Gtk.lock
 	      (fn () =>
 	       let
-		   val iter = Gtk.textIterNew()
+		   val iter = Gtk.TextIter.new()
 	       in
-		   Gtk.textBufferSetText(buf, text, ~1);
-		   Gtk.textBufferSetModified(buf, false);
-		   Gtk.textBufferGetStartIter(buf, iter);
-		   Gtk.textBufferPlaceCursor(buf, iter)
+                   Gtk.TextBuffer.setText(buf, text, ~1);
+                   Gtk.TextBuffer.setModified(buf, false);
+                   Gtk.TextBuffer.getStartIter(buf, iter);
+                   Gtk.TextBuffer.placeCursor(buf, iter)
 	       end) ();
               Gtk.signalConnect(buf, "modified-changed", modifiedChanged id);
-              Gtk.textBufferConnectSpecialSignals buf;
+              (* Gtk.TextBuffer.connectSpecialSignals buf; *)
               Gtk.signalConnect(buf, "delete-text", deleteText id);
               Gtk.signalConnect(buf, "insert-text", insertText id);
               Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
@@ -524,7 +524,7 @@ structure Buffer =
           let
               val {buf,...} = Map.lookupExistent(bufferMap, id)
 	  in
-              not (Gtk.textBufferGetModified buf)
+              not (Gtk.TextBuffer.getModified buf)
           end
 
       fun close id =
@@ -559,7 +559,7 @@ structure Buffer =
           let
               val {id,file,timeStamp,buf,undo,...} =
 		  Map.lookupExistent(bufferMap, id)
-              val modified = Gtk.textBufferGetModified buf
+              val modified = Gtk.TextBuffer.getModified buf
           in
               case !file of NONE => false
                           | SOME f =>
@@ -568,20 +568,20 @@ structure Buffer =
 		      val file = TextIO.openOut f
 		      val str = Lock.sync Gtk.lock
 			  (fn () =>
-			   let
-			       val startiter = Gtk.textIterNew()
-			       val _ = Gtk.textBufferGetStartIter(buf,startiter)
-			       val enditer = Gtk.textIterNew()
-			       val _ = Gtk.textBufferGetEndIter(buf,enditer)
-			   in
-			       Gtk.textBufferGetText(buf, startiter, enditer, false)
+                           let
+                              val startiter = Gtk.TextIter.new()
+                              val _ = Gtk.TextBuffer.getStartIter(buf,startiter)
+                              val enditer = Gtk.TextIter.new()
+                              val _ = Gtk.TextBuffer.getEndIter(buf,enditer)
+                           in
+                              Gtk.TextBuffer.getText(buf, startiter, enditer, false)
 			   end) ()
 		      val str = Gtk.utf8ToLatin1 str
 		  in 
 		      TextIO.output(file, str);
 		      TextIO.closeOut file;
 		      timeStamp := OS.FileSys.modTime f;
-		      Gtk.textBufferSetModified(buf, false);
+		      Gtk.TextBuffer.setModified (buf, false);
 		      setUndoSaveMarker undo
 		  end handle (IO.Io _ | OS.SysErr _) =>
 			     FileDialog.message ("I/O error: Could not save file " ^ f)
@@ -594,18 +594,18 @@ structure Buffer =
               val {id,file,fileLabel,buf,...} = Map.lookupExistent(bufferMap, id)
           in
               file := SOME fileName;
-              Gtk.labelSetText(fileLabel, shortName fileName);
-              Gtk.textBufferSetModified(buf, true);
+              Gtk.Label.setText(fileLabel, shortName fileName);
+              Gtk.TextBuffer.setModified(buf, true);
               save id;
 	      ()
           end
 
       fun match (iter, back, txt, i, caseSensitive) =
           if (if caseSensitive then
-                  Gtk.textIterGetChar iter = ord (String.sub(txt,i))
+                  Gtk.TextIter.getChar iter = ord (String.sub(txt,i))
               else
                   let
-                      val c = Gtk.textIterGetChar iter
+                      val c = Gtk.TextIter.getChar iter
                       val c = if c<=Char.maxOrd then
                                   ord (Char.toLower (chr c))
                               else c
@@ -613,22 +613,22 @@ structure Buffer =
                       c = ord (Char.toLower (String.sub(txt,i)))
                   end)
           then if i=String.size txt - 1 then 
-                   (Gtk.textIterSetOffset(iter,back);
+                   (Gtk.TextIter.setOffset(iter,back);
                     true)
-               else if Gtk.textIterForwardChar iter 
+               else if Gtk.TextIter.forwardChar iter 
                then match (iter, back, txt, i+1, caseSensitive)
-               else (Gtk.textIterSetOffset(iter,back);
+               else (Gtk.TextIter.setOffset(iter,back);
                      false)
-          else (Gtk.textIterSetOffset(iter,back);
+          else (Gtk.TextIter.setOffset(iter,back);
                 false)
 
       fun find' (iter, off, txt, caseSensitive, wrapAround) =
           match (iter, off, txt, 0, caseSensitive) orelse
-	   (if Gtk.textIterForwardChar iter then
+	   (if Gtk.TextIter.forwardChar iter then
                 find' (iter, off+1, txt, caseSensitive, wrapAround)
 	    else
 	        not wrapAround andalso
-		(Gtk.textIterSetOffset(iter, 0);
+		(Gtk.TextIter.setOffset(iter, 0);
 		 find' (iter, 0, txt, caseSensitive, true)))
 
       fun find(id, txt, caseSensitive) =
@@ -637,17 +637,17 @@ structure Buffer =
           let
               val {view,buf,lastSearchPos,...} = Map.lookupExistent(bufferMap, id)
               val iter = getCursorIter buf
-              val off = Gtk.textIterGetOffset iter
-              val off = if (off = (!lastSearchPos)) andalso Gtk.textIterForwardChar iter
+              val off = Gtk.TextIter.getOffset iter
+              val off = if (off = (!lastSearchPos)) andalso Gtk.TextIter.forwardChar iter
                         then off + 1
                         else off
           in
               if find' (iter, off, txt, caseSensitive, false) then
                   let
-                      val iter' = Gtk.textIterCopy iter
+                      val iter' = Gtk.TextIter.copy iter
                   in
-                      Gtk.textIterForwardChars(iter',size txt);
-                      lastSearchPos := Gtk.textIterGetOffset iter;
+                      Gtk.TextIter.forwardChars(iter',size txt);
+                      lastSearchPos := Gtk.TextIter.getOffset iter;
                       selectRange(buf,iter,iter');
 		      scrollToCursor id;
 		      true
@@ -660,19 +660,19 @@ structure Buffer =
 	  (fn () =>
           let
               val {buf,...} = Map.lookupExistent(bufferMap, id)
-              val startiter = Gtk.textIterNew()
-              val enditer = Gtk.textIterNew()
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
           in
-              Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
-	      Gtk.textBufferBeginUserAction buf;
-	      Gtk.textBufferDelete(buf, startiter, enditer);
-	      Gtk.textBufferInsert(buf, startiter, replaceString, ~1);
-	      Gtk.textBufferEndUserAction buf
+              Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer);
+	      Gtk.TextBuffer.beginUserAction buf;
+	      Gtk.TextBuffer.delete(buf, startiter, enditer);
+	      Gtk.TextBuffer.insert(buf, startiter, replaceString, ~1);
+	      Gtk.TextBuffer.endUserAction buf
           end) ()
 
       fun changeFonts() =
           Map.app (fn {view,...} =>
-                            Gtk.widgetModifyFont(view, !Config.stdFont))
+                            Gtk.Widget.modifyFont(view, !Config.stdFont))
                         bufferMap
 
       fun changeColors() =
@@ -683,13 +683,13 @@ structure Buffer =
 	  (fn () =>
 	  let
 	      val {buf,annotTags,...} = Map.lookupExistent(bufferMap, id)
-              val startiter = Gtk.textIterNew()
-              val enditer = Gtk.textIterNew()
+              val startiter = Gtk.TextIter.new()
+              val enditer = Gtk.TextIter.new()
 	  in
-	      Gtk.textBufferGetStartIter(buf, startiter);
-	      Gtk.textBufferGetEndIter(buf, enditer);
+	      Gtk.TextBuffer.getStartIter(buf, startiter);
+	      Gtk.TextBuffer.getEndIter(buf, enditer);
 	      Vector.app (fn (tag, _) =>
-	          Gtk.textBufferRemoveTag(buf, tag, startiter, enditer)
+	          Gtk.TextBuffer.removeTag(buf, tag, startiter, enditer)
 	      ) (!annotTags);
 	      annotTags := BufferAnnotate.applyAnnots(buf, entries, !annotTags)
 	  end) ()

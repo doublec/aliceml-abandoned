@@ -14,12 +14,13 @@
 
 import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Gui from "Gui"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Config from "Config"
 import structure History from "History"
 import structure Evaluator from "Evaluator"
 import structure BufferHighlight from "BufferHighlight"
+import structure Gui            from "Gui"
+
 
 structure OutputWriters =
    struct
@@ -83,41 +84,41 @@ structure OutputWriters =
       (* Highlight *)
 
       fun highlight (buffer, text, startOffset, startiter, enditer) =
-          if Gtk.textIterGetChar startiter = ord #"#"
-          then Gtk.textBufferApplyTagByName(buffer, "comment", startiter, enditer)
+          if Gtk.TextIter.getChar startiter = ord #"#"
+          then Gtk.TextBuffer.applyTagByName(buffer, "comment", startiter, enditer)
           else BufferHighlight.highlight(buffer, text, startOffset, false, ref false)
 
       fun fillBuf (view, buffer, handler, tags, noed, highlight, text) =
           let
-              val iter = Gtk.textIterNew()
-              val _ = Gtk.textBufferGetEndIter(buffer,iter)
-	      val _ = Gtk.textIterBackwardChar iter
-              val noInputYet = Gtk.textIterHasTag(iter, noed)
-	      val _ = Gtk.textIterForwardChar iter
+              val iter = Gtk.TextIter.new()
+              val _ = Gtk.TextBuffer.getEndIter(buffer,iter)
+	      val _ = Gtk.TextIter.backwardChar iter
+              val noInputYet = Gtk.TextIter.hasTag(iter, noed)
+	      val _ = Gtk.TextIter.forwardChar iter
 	      val _ = if noInputYet
-		      then Gtk.textBufferGetEndIter(buffer, iter)
-		      else ignore (Gtk.textIterBackwardToTagToggle(iter, noed))
-	      val startOffset = Gtk.textIterGetOffset iter
-	      val start = Gtk.textIterCopy iter
+		      then Gtk.TextBuffer.getEndIter(buffer, iter)
+		      else ignore (Gtk.TextIter.backwardToTagToggle(iter, noed))
+	      val startOffset = Gtk.TextIter.getOffset iter
+	      val start = Gtk.TextIter.copy iter
               val textUtf8 = Gtk.latin1ToUtf8 text
           in
               Gtk.signalHandlerBlock(buffer, handler);
-	      Gtk.textBufferInsert(buffer, iter, textUtf8, size textUtf8);
-              Gtk.textBufferGetIterAtOffset (buffer, start, startOffset);
-              Gtk.textBufferGetIterAtOffset (buffer, iter, startOffset + size text);
-              app (fn t => Gtk.textBufferApplyTag(buffer, t, start, iter)) tags;
+	      Gtk.TextBuffer.insert(buffer, iter, textUtf8, size textUtf8);
+              Gtk.TextBuffer.getIterAtOffset (buffer, start, startOffset);
+              Gtk.TextBuffer.getIterAtOffset (buffer, iter, startOffset + size text);
+              app (fn t => Gtk.TextBuffer.applyTag(buffer, t, start, iter)) tags;
               highlight (buffer, text, startOffset, start, iter);
-              Gtk.textBufferApplyTag(buffer, noed, start, iter);
-              Gtk.textBufferPlaceCursor(buffer,iter);
-              Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buffer,
+              Gtk.TextBuffer.applyTag(buffer, noed, start, iter);
+              Gtk.TextBuffer.placeCursor(buffer,iter);
+              Gtk.TextView.scrollToMark(view, Gtk.TextBuffer.getInsert buffer,
                                        0.0, false, 0.0, 0.0);
               Gtk.signalHandlerUnblock(buffer, handler)
           end
 
       val fillBuf = Lock.sync Gtk.lock fillBuf
               
-      val contextId = Gtk.statusbarGetContextId(Gui.statusbar, "Alice")
-      val _ = Gtk.statusbarPush(Gui.statusbar,contextId, "Ready.");
+      val contextId = Gtk.Statusbar.getContextId(Gui.statusbar, "Alice")
+      val _ = Gtk.Statusbar.push(Gui.statusbar,contextId, "Ready.");
 
       fun setStatus msg = 
           let
@@ -126,16 +127,16 @@ structure OutputWriters =
                         else msg
               val msg = String.map (fn #"\n" => #" " | c => c) msg
           in
-              (Gtk.statusbarPop(Gui.statusbar, contextId);
-               Gtk.statusbarPush(Gui.statusbar, contextId, msg);
+              (Gtk.Statusbar.pop(Gui.statusbar, contextId);
+               Gtk.Statusbar.push(Gui.statusbar, contextId, msg);
                ())
           end
 
-      val rowColId = Gtk.statusbarGetContextId(Gui.statusbar1, "rowcol")
-      val _ = Gtk.statusbarPush(Gui.statusbar1,rowColId,
+      val rowColId = Gtk.Statusbar.getContextId(Gui.statusbar1, "rowcol")
+      val _ = Gtk.Statusbar.push(Gui.statusbar1,rowColId,
                                 "L 0  C 0");
 
-      val tooltips = Gtk.tooltipsNew()
+      val tooltips = Gtk.Tooltips.new()
 
       fun setRowCol (row, col, annotOpt) =
           let
@@ -146,59 +147,59 @@ structure OutputWriters =
               val msg = "L "^r^"  C "^c^"    "^annot
           in
 	      case annotOpt of
-	          NONE => Gtk.tooltipsDisable tooltips
+	          NONE => Gtk.Tooltips.disable tooltips
 		| SOME(_,_,s) =>
 		  let val s = if String.sub(s, String.size s-1) <> #"\n" then s
 				else String.substring(s, 0, String.size s-1)
 	          in
-		      Gtk.tooltipsForceWindow tooltips;
-		      Gtk.tooltipsSetTip(tooltips, Gui.eventbox1, s,
+		      Gtk.Tooltips.forceWindow tooltips;
+		      Gtk.Tooltips.setTip(tooltips, Gui.eventbox1, s,
 			"Type information about identifier at cursor position");
-		     Gtk.tooltipsEnable tooltips
+		     Gtk.Tooltips.enable tooltips
 		  end;
-              (Gtk.statusbarPop(Gui.statusbar1, rowColId);
-               Gtk.statusbarPush(Gui.statusbar1, rowColId, msg);
+              (Gtk.Statusbar.pop(Gui.statusbar1, rowColId);
+               Gtk.Statusbar.push(Gui.statusbar1, rowColId, msg);
                ())
           end
 
-	val cmap   = Gdk.colormapGetSystem ()
-        val textColor = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
-	val black = Gdk.colorNew(0, 0, 0)
-	val white = Gdk.colorNew(65535, 65535, 65535)
-	val _ = Gdk.colormapAllocColor(cmap, black, false, true)
-	val _ = Gdk.colormapAllocColor(cmap, white, false, true)
-	val _ = Gdk.colormapAllocColor(cmap, textColor, false, true)
+	val cmap   = Gdk.Colormap.getSystem ()
+        val textColor = Gdk.Color.new { red = 0xf0f0, green = 0x2020, blue = 0xa0a0 }
+	val black = Gdk.Color.new { red = 0, green = 0, blue = 0 }
+	val white = Gdk.Color.new { red = 65535, green = 65535, blue = 65535 }
+	val _ = Gdk.Colormap.allocColor(cmap, black, false, true)
+	val _ = Gdk.Colormap.allocColor(cmap, white, false, true)
+	val _ = Gdk.Colormap.allocColor(cmap, textColor, false, true)
 
         fun progInInsert (stdInStream,noedit,bold)
 		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
             if String.sub(txt, String.size txt - 1) = #"\n" then
                 let
-                    val enditer = Gtk.textIterNew()
-                    val cursor = Gtk.textBufferGetInsert buf
-                    val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
-                    val startiter = Gtk.textIterCopy enditer
-                    val _ = Gtk.textIterBackwardToTagToggle(startiter,noedit)
-                    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                    val enditer = Gtk.TextIter.new()
+                    val cursor = Gtk.TextBuffer.getInsert buf
+                    val _ = Gtk.TextBuffer.getIterAtMark(buf,enditer,cursor)
+                    val startiter = Gtk.TextIter.copy enditer
+                    val _ = Gtk.TextIter.backwardToTagToggle(startiter,noedit)
+                    val str = Gtk.TextBuffer.getText(buf, startiter, enditer, false)
                     val str = Gtk.utf8ToLatin1 str
                     val _ = Stream.send(stdInStream, str)
                 in
-                    Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
+                    Gtk.TextBuffer.applyTag(buf, noedit, startiter, enditer)
                 end
             else
                 let
-                    val startiter = Gtk.textIterNew()
-		    val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, off)
-                    val enditer = Gtk.textIterCopy startiter
-		    val _ = Gtk.textIterForwardChars(enditer, size)
+                    val startiter = Gtk.TextIter.new()
+		    val _ = Gtk.TextBuffer.getIterAtOffset(buf, startiter, off)
+                    val enditer = Gtk.TextIter.copy startiter
+		    val _ = Gtk.TextIter.forwardChars(enditer, size)
                 in
-                    Gtk.textBufferApplyTag(buf, bold, startiter, enditer)
+                    Gtk.TextBuffer.applyTag(buf, bold, startiter, enditer)
                 end
           | progInInsert _ _ = () (* Gtk is crazy *)
 
         fun lastChar' iter =
-            if Gtk.textIterBackwardChar iter then
+            if Gtk.TextIter.backwardChar iter then
                 let
-                    val c = Gtk.textIterGetChar iter
+                    val c = Gtk.TextIter.getChar iter
                 in
                     (*if c <= Char.maxOrd andalso Char.isSpace(chr c)
                     then lastChar' iter
@@ -207,26 +208,26 @@ structure OutputWriters =
             else NONE
         fun lastChar(buf, off) =
             let
-                val iter = Gtk.textIterNew()
+                val iter = Gtk.TextIter.new()
             in
-                (*Gtk.textBufferGetIterAtOffset(buf, iter, off);*)
-		Gtk.textBufferGetEndIter(buf, iter);
-		Gtk.textIterGetOffset iter = off+1
-		andalso Gtk.textIterBackwardChar iter;
+                (*Gtk.TextBuffer.getIterAtOffset(buf, iter, off);*)
+		Gtk.TextBuffer.getEndIter(buf, iter);
+		Gtk.TextIter.getOffset iter = off+1
+		andalso Gtk.TextIter.backwardChar iter;
                 lastChar' iter
             end
 
 	fun feedCurrentInput () =
 	    let
-		val buf = Gtk.textViewGetBuffer Gui.compilerout
-                val enditer = Gtk.textIterNew()
-		val _ = Gtk.textBufferGetEndIter(buf, enditer)
-		val off = Gtk.textIterGetOffset enditer
+		val buf = Gtk.TextView.getBuffer Gui.compilerout
+                val enditer = Gtk.TextIter.new()
+		val _ = Gtk.TextBuffer.getEndIter(buf, enditer)
+		val off = Gtk.TextIter.getOffset enditer
 	    in
-		Gtk.textBufferPlaceCursor(buf, enditer);
+		Gtk.TextBuffer.placeCursor(buf, enditer);
 		lastChar(buf, off) = SOME (ord #";")
-		orelse Gtk.textBufferInsertInteractive(buf,enditer,";",~1,true);
-		Gtk.textBufferInsertInteractive(buf,enditer,"\n",~1,true);
+		orelse Gtk.TextBuffer.insertInteractive(buf,enditer,";",~1,true);
+		Gtk.TextBuffer.insertInteractive(buf,enditer,"\n",~1,true);
 		()
 	    end
 
@@ -238,33 +239,33 @@ structure OutputWriters =
 		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
 	    let
 (*
-                val enditer = Gtk.textIterNew()
-                val cursor = Gtk.textBufferGetInsert buf
-                val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
-                val startiter = Gtk.textIterCopy enditer
+                val enditer = Gtk.TextIter.new()
+                val cursor = Gtk.TextBuffer.getInsert buf
+                val _ = Gtk.TextBuffer.getIterAtMark(buf,enditer,cursor)
+                val startiter = Gtk.TextIter.copy enditer
 *)
-                val startiter = Gtk.textIterNew()
-                val enditer = Gtk.textIterNew()
+                val startiter = Gtk.TextIter.new()
+                val enditer = Gtk.TextIter.new()
 	    in
 		(*if String.sub(txt, String.size txt - 1) = #"\n" then*)
 		if txt = "\n" then
 		    if lastChar(buf, off+size-1) = SOME (ord #";") then
                 	let
-			    val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, off)
-			    val _ = Gtk.textBufferGetIterAtOffset(buf, enditer, off)
-			    val _ = Gtk.textIterForwardChar enditer
-			    val _ = Gtk.textBufferDelete(buf, startiter, enditer)
+			    val _ = Gtk.TextBuffer.getIterAtOffset(buf, startiter, off)
+			    val _ = Gtk.TextBuffer.getIterAtOffset(buf, enditer, off)
+			    val _ = Gtk.TextIter.forwardChar enditer
+			    val _ = Gtk.TextBuffer.delete(buf, startiter, enditer)
 
-			    val _ = Gtk.textBufferGetEndIter(buf, startiter)
+			    val _ = Gtk.TextBuffer.getEndIter(buf, startiter)
 			    val _ = Gtk.signalHandlerBlock(buf, !insertHandler)
-			    val _ = Gtk.textBufferInsert(buf, startiter, "\n", ~1)
+			    val _ = Gtk.TextBuffer.insert(buf, startiter, "\n", ~1)
 			    val _ = Gtk.signalHandlerUnblock(buf, !insertHandler)
 
-		            val _ = Gtk.textBufferGetEndIter(buf, enditer)
-			    val _ = Gtk.textBufferGetEndIter(buf, startiter)
-                	    val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
-                	    val _ = Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
-                	    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+		            val _ = Gtk.TextBuffer.getEndIter(buf, enditer)
+			    val _ = Gtk.TextBuffer.getEndIter(buf, startiter)
+                	    val _ = Gtk.TextIter.backwardToTagToggle(startiter, noedit)
+                	    val _ = Gtk.TextBuffer.applyTag(buf, noedit, startiter, enditer)
+                	    val str = Gtk.TextBuffer.getText(buf, startiter, enditer, false)
                 	    val str = Gtk.utf8ToLatin1 str
                 	in
                 	    eval str;
@@ -272,24 +273,24 @@ structure OutputWriters =
                 	end
 		    else
 			(Gtk.signalHandlerBlock(buf, !insertHandler);
-			 Gtk.textBufferInsertAtCursor(buf, "  ", ~1);
+			 Gtk.TextBuffer.insertAtCursor(buf, "  ", ~1);
 			 Gtk.signalHandlerUnblock(buf, !insertHandler))
         	else
 		    let
-			val _ = Gtk.textBufferGetEndIter(buf, enditer)
-			val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, off)
-			val _ = Gtk.textIterBackwardChar startiter
-        		val noInputYet = Gtk.textIterHasTag(startiter, noedit)
-			val _ = Gtk.textIterForwardChar startiter
+			val _ = Gtk.TextBuffer.getEndIter(buf, enditer)
+			val _ = Gtk.TextBuffer.getIterAtOffset(buf, startiter, off)
+			val _ = Gtk.TextIter.backwardChar startiter
+        		val noInputYet = Gtk.TextIter.hasTag(startiter, noedit)
+			val _ = Gtk.TextIter.forwardChar startiter
 			val _ = if noInputYet
-				then Gtk.textBufferGetIterAtOffset(buf, startiter, off)
-				else ignore (Gtk.textIterBackwardToTagToggle(startiter, noedit))
-                	val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+				then Gtk.TextBuffer.getIterAtOffset(buf, startiter, off)
+				else ignore (Gtk.TextIter.backwardToTagToggle(startiter, noedit))
+                	val str = Gtk.TextBuffer.getText(buf, startiter, enditer, false)
                 	val str = Gtk.utf8ToLatin1 str
-			val offset = Gtk.textIterGetOffset startiter
+			val offset = Gtk.TextIter.getOffset startiter
 		    in
-			Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
-                        Gtk.textBufferApplyTag(buf, bold, startiter, enditer);
+			Gtk.TextBuffer.removeAllTags(buf, startiter, enditer);
+                        Gtk.TextBuffer.applyTag(buf, bold, startiter, enditer);
                 	highlight(buf, str, offset, startiter, enditer)
 		    end
 	    end
@@ -297,22 +298,22 @@ structure OutputWriters =
 
 	fun compilerDelete (noedit, bold) (buf, _) =
 	    let
-                val startiter = Gtk.textIterNew()
-                val enditer = Gtk.textIterNew()
-		val _ = Gtk.textBufferGetEndIter(buf, enditer)
-		val _ = Gtk.textBufferGetEndIter(buf, startiter)
-		val _ = Gtk.textIterBackwardChar startiter
-        	val noInputYet = Gtk.textIterHasTag(startiter, noedit)
-		val _ = Gtk.textIterForwardChar startiter
+                val startiter = Gtk.TextIter.new()
+                val enditer = Gtk.TextIter.new()
+		val _ = Gtk.TextBuffer.getEndIter(buf, enditer)
+		val _ = Gtk.TextBuffer.getEndIter(buf, startiter)
+		val _ = Gtk.TextIter.backwardChar startiter
+        	val noInputYet = Gtk.TextIter.hasTag(startiter, noedit)
+		val _ = Gtk.TextIter.forwardChar startiter
 		val _ = if noInputYet
-			then Gtk.textBufferGetEndIter(buf, startiter)
-			else ignore (Gtk.textIterBackwardToTagToggle(startiter, noedit))
-                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+			then Gtk.TextBuffer.getEndIter(buf, startiter)
+			else ignore (Gtk.TextIter.backwardToTagToggle(startiter, noedit))
+                val str = Gtk.TextBuffer.getText(buf, startiter, enditer, false)
                 val str = Gtk.utf8ToLatin1 str
-		val offset = Gtk.textIterGetOffset startiter
+		val offset = Gtk.TextIter.getOffset startiter
 	    in
-		Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
-                Gtk.textBufferApplyTag(buf, bold, startiter, enditer);
+		Gtk.TextBuffer.removeAllTags(buf, startiter, enditer);
+                Gtk.TextBuffer.applyTag(buf, bold, startiter, enditer);
                 highlight(buf, str, offset, startiter, enditer)
 	    end
 
@@ -320,24 +321,24 @@ structure OutputWriters =
 	    let
                 val buf = Option.valOf (!compilerBufRef)
 		val noedit = Option.valOf (!noeditRef)
-		val enditer = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetEndIter(buf, enditer)
-                val startiter = Gtk.textIterCopy enditer
-		val _ = Gtk.textIterBackwardChar startiter
-                val noInputYet = Gtk.textIterHasTag(startiter, noedit)
-		val _ = Gtk.textIterForwardChar startiter
+		val enditer = Gtk.TextIter.new()
+                val _ = Gtk.TextBuffer.getEndIter(buf, enditer)
+                val startiter = Gtk.TextIter.copy enditer
+		val _ = Gtk.TextIter.backwardChar startiter
+                val noInputYet = Gtk.TextIter.hasTag(startiter, noedit)
+		val _ = Gtk.TextIter.forwardChar startiter
 		val _ = if noInputYet
-			then Gtk.textBufferGetEndIter(buf, startiter)
-			else ignore (Gtk.textIterBackwardToTagToggle(startiter, noedit))
-                val s = Gtk.textBufferGetText(buf, startiter, enditer, false)
+			then Gtk.TextBuffer.getEndIter(buf, startiter)
+			else ignore (Gtk.TextIter.backwardToTagToggle(startiter, noedit))
+                val s = Gtk.TextBuffer.getText(buf, startiter, enditer, false)
 		val s = Gtk.utf8ToLatin1 s
 		val s' = Gtk.latin1ToUtf8 (direction s)
 	    in
-		Gtk.textBufferDelete(buf, startiter, enditer);
-		Gtk.textBufferPlaceCursor(buf, startiter);
-		Gtk.textBufferInsertAtCursor(buf, s', ~1);
-                Gtk.textViewScrollToMark(Gui.compilerout,
-					 Gtk.textBufferGetInsert buf,
+		Gtk.TextBuffer.delete(buf, startiter, enditer);
+		Gtk.TextBuffer.placeCursor(buf, startiter);
+		Gtk.TextBuffer.insertAtCursor(buf, s', ~1);
+                Gtk.TextView.scrollToMark(Gui.compilerout,
+					 Gtk.TextBuffer.getInsert buf,
                                          0.0, false, 0.0, 0.0)
 	    end
 
@@ -346,8 +347,8 @@ structure OutputWriters =
 
       fun makeWriters eval =
           let
-              val progBuf = Gtk.textBufferNew Gtk.NULL
-              val compilerBuf = Gtk.textBufferNew Gtk.NULL
+              val progBuf = Gtk.TextBuffer.new Gtk.NULL
+              val compilerBuf = Gtk.TextBuffer.new Gtk.NULL
               val {err=pErr,log=pLog,plain=pStd,noedit=pNoEd,bold=pBold,...} = makeTags progBuf
               val {err=cErr,log=cLog,plain=cStd,noedit=cNoEd,bold=cBold,...} = makeTags compilerBuf
               val pSig = Gtk.signalConnect(progBuf, "insert-text",
@@ -381,10 +382,10 @@ structure OutputWriters =
               compilerBufRef := SOME compilerBuf;
 	      noeditRef := SOME cNoEd;
 	      insertHandler := cSig;
-	      Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont);
-	      Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
-              Gtk.textViewSetBuffer(Gui.progout, progBuf);
-              Gtk.textViewSetBuffer(Gui.compilerout, compilerBuf);
+	      Gtk.Widget.modifyFont(Gui.compilerout, !Config.stdFont);
+	      Gtk.Widget.modifyFont(Gui.progout, !Config.stdFont);
+              Gtk.TextView.setBuffer(Gui.progout, progBuf);
+              Gtk.TextView.setBuffer(Gui.compilerout, compilerBuf);
 	      spawn foldl (forward (Gui.compilerout, compilerBuf, cSig, cNoEd,
 				    #[cStd, cLog, cErr],
 				    #[highlight, highlight, const ()])) 1 compilerText;

@@ -11,8 +11,9 @@
  *
  *)
 
-import structure Gdk from "x-alice:/lib/gtk/Gdk"
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk   from "x-alice:/lib/gtk/Gdk"
+import structure Gtk   from "x-alice:/lib/gtk/Gtk"
+import structure Pango from "x-alice:/lib/gtk/Pango"
 import structure Gui from "Gui"
 import structure Config from "Config"
 import structure History from "History"
@@ -21,12 +22,12 @@ import structure Buffer from "Buffer"
 structure Preferences =
     struct
 
-	val plain_label = Gtk.labelNew ""
-	val error_label = Gtk.labelNew ""
-	val keyword_label = Gtk.labelNew ""
-	val string_label = Gtk.labelNew ""
-	val comment_label = Gtk.labelNew ""
-	val log_label = Gtk.labelNew ""
+	val plain_label = Gtk.Label.new ""
+	val error_label = Gtk.Label.new ""
+	val keyword_label = Gtk.Label.new ""
+	val string_label = Gtk.Label.new ""
+	val comment_label = Gtk.Label.new ""
+	val log_label = Gtk.Label.new ""
 
 	fun formatHex x =
 	    let
@@ -38,9 +39,9 @@ structure Preferences =
 
 	fun mkLabel(txt, color) =
 	    let
-		val r = Gdk.colorGetFieldRed color div 256
-		val g = Gdk.colorGetFieldGreen color div 256
-		val b = Gdk.colorGetFieldBlue color div 256
+		val r = Gdk.Color.getFieldRed color div 256
+		val g = Gdk.Color.getFieldGreen color div 256
+		val b = Gdk.Color.getFieldBlue color div 256
 	    in
 		"<span foreground=\"#"^
                 formatHex r^
@@ -49,23 +50,24 @@ structure Preferences =
                 "\">"^txt^"</span>"
 	    end
 
-	val plain_color_button = Gtk.buttonNew ()
-	val error_color_button = Gtk.buttonNew ()
-	val keyword_color_button = Gtk.buttonNew ()
-	val string_color_button = Gtk.buttonNew ()
-	val comment_color_button = Gtk.buttonNew ()
+	val plain_color_button = Gtk.Button.new ()
+	val error_color_button = Gtk.Button.new ()
+	val keyword_color_button = Gtk.Button.new ()
+	val string_color_button = Gtk.Button.new ()
+	val comment_color_button = Gtk.Button.new ()
 
-	val _ = Gtk.containerAdd(plain_color_button, plain_label)
-	val _ = Gtk.containerAdd(error_color_button, error_label)
-	val _ = Gtk.containerAdd(keyword_color_button, keyword_label)
-	val _ = Gtk.containerAdd(string_color_button, string_label)
-	val _ = Gtk.containerAdd(comment_color_button, comment_label)
+	val _ = Gtk.Container.add(plain_color_button, plain_label)
+	val _ = Gtk.Container.add(error_color_button, error_label)
+	val _ = Gtk.Container.add(keyword_color_button, keyword_label)
+	val _ = Gtk.Container.add(string_color_button, string_label)
+	val _ = Gtk.Container.add(comment_color_button, comment_label)
 	    
-	val _ = Gtk.tableAttach(Gui.table1,plain_color_button,1,2,0,1,Gtk.FILL,Gtk.FILL,0,0)
-	val _ = Gtk.tableAttach(Gui.table1,error_color_button,1,2,1,2,Gtk.FILL,Gtk.FILL,0,0)
-	val _ = Gtk.tableAttach(Gui.table1,keyword_color_button,1,2,2,3,Gtk.FILL,Gtk.FILL,0,0)
-	val _ = Gtk.tableAttach(Gui.table1,string_color_button,1,2,3,4,Gtk.FILL,Gtk.FILL,0,0)
-	val _ = Gtk.tableAttach(Gui.table1,comment_color_button,1,2,4,5,Gtk.FILL,Gtk.FILL,0,0)
+	val _ = Gtk.Table.attach(Gui.table1,plain_color_button,1,2,0,1,
+                    [Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,error_color_button,1,2,1,2,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,keyword_color_button,1,2,2,3,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,string_color_button,1,2,3,4,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
+	val _ = Gtk.Table.attach(Gui.table1,comment_color_button,1,2,4,5,[Gtk.AttachOptions.FILL],[Gtk.AttachOptions.FILL],0,0)
 
 	val plainColor = ref (!Config.plainColor)
 	val errorColor = ref (!Config.errorColor)
@@ -76,26 +78,26 @@ structure Preferences =
 
 	fun colorDialog(label, color) _ =
 	    let
-		val dia = Gtk.colorSelectionDialogNew "Select colour"
-		val cs = Gtk.colorSelectionDialogGetFieldColorsel dia
-		val _ = Gtk.colorSelectionSetCurrentColor(cs, !color)
-                val response = Gtk.dialogRun dia
+		val dia = Gtk.ColorSelectionDialog.new "Select colour"
+		val cs = Gtk.ColorSelectionDialog.getFieldColorsel dia
+		val _ = Gtk.ColorSelection.setCurrentColor(cs, !color)
+                val response = Gtk.Dialog.run dia
 	    in
-		case Gtk.IntToGtkResponseType response of
-		    Gtk.RESPONSE_OK =>
+		case Gtk.ResponseType.fromInt response of
+		    Gtk.ResponseType.OK =>
 		    let
-			val c = Gdk.colorNew(0, 0, 0)
-			val txt = Gtk.labelGetText label
+			val c = Gdk.Color.new { red = 0, green = 0, blue = 0 }
+			val txt = Gtk.Label.getText label
 		    in
-			Gtk.colorSelectionGetCurrentColor(cs, c);
-			Gdk.colormapAllocColor(Config.cmap, c, false, true);
+			Gtk.ColorSelection.getCurrentColor(cs, c);
+			Gdk.Colormap.allocColor(Config.cmap, c, false, true);
 			color := c;
 			colorsChanged := true;
-			Gtk.labelSetMarkup(label,
+			Gtk.Label.setMarkup(label,
 					   mkLabel(txt, c))
 		    end
 		  | _ => ();
-		Gtk.widgetDestroy dia
+		Gtk.Widget.destroy dia
 	    end
 
 	val _ = Gtk.signalConnect(plain_color_button, "clicked",
@@ -116,33 +118,33 @@ structure Preferences =
 	     stringColor := (!Config.stringColor);
 	     commentColor := (!Config.commentColor);
 	     colorsChanged := false;
-	     Gtk.labelSetMarkup(plain_label,
+	     Gtk.Label.setMarkup(plain_label,
 				mkLabel("plain text", !plainColor));
-	     Gtk.labelSetMarkup(error_label,
+	     Gtk.Label.setMarkup(error_label,
 				mkLabel("error", !errorColor));
-	     Gtk.labelSetMarkup(keyword_label,
+	     Gtk.Label.setMarkup(keyword_label,
 				mkLabel("keyword", !reservedColor));
-	     Gtk.labelSetMarkup(string_label,
+	     Gtk.Label.setMarkup(string_label,
 				mkLabel("\"string\"", !stringColor));
-	     Gtk.labelSetMarkup(comment_label,
+	     Gtk.Label.setMarkup(comment_label,
 				mkLabel("(*comment*)", !commentColor)))
 	    
 	fun fillDialog () =
-	    (Gtk.buttonSetLabel(Gui.font_button, !Config.stdFontName);
+	    (Gtk.Button.setLabel(Gui.font_button, !Config.stdFontName);
 	     fillColors ();
-	     Gtk.toggleButtonSetActive(Gui.loadSessionButton,
+	     Gtk.ToggleButton.setActive(Gui.loadSessionButton,
 				       !Config.loadFileHistory);
-	     Gtk.entrySetText(Gui.history_size_entry,
-			      Int.toString (!Config.historySize)))
+             Gtk.Entry.setText(Gui.history_size_entry,
+                Int.toString (!Config.historySize)))
 
 	fun applyConfig () =
 	    let
-		val fontName = Gtk.buttonGetLabel Gui.font_button
-		val historySize = Gtk.entryGetText Gui.history_size_entry
+		val fontName = Gtk.Button.getLabel Gui.font_button
+		val historySize = Gtk.Entry.getText Gui.history_size_entry
 		val historySize =
 		    Option.getOpt(Int.fromString historySize, 100)
 		val loadFileHistory =
-		    Gtk.toggleButtonGetActive Gui.loadSessionButton
+		    Gtk.ToggleButton.getActive Gui.loadSessionButton
 	    in
 		Config.historySize := historySize;
 		if !colorsChanged then
@@ -151,47 +153,45 @@ structure Preferences =
 		     Config.reservedColor := (!reservedColor);
 		     Config.stringColor := (!stringColor);
 		     Config.commentColor := (!commentColor);
-		     Config.changeColors (Gtk.textViewGetBuffer Gui.progout);
-		     Config.changeColors (Gtk.textViewGetBuffer Gui.compilerout);
+		     Config.changeColors (Gtk.TextView.getBuffer Gui.progout);
+		     Config.changeColors (Gtk.TextView.getBuffer Gui.compilerout);
 		     Buffer.changeColors())
 		else ();
 		Config.stdFontName := fontName;
 		Config.stdFont :=
-		Gtk.pangoFontDescriptionFromString fontName;
+		    Pango.FontDescription.fromString fontName;
 		Config.loadFileHistory := loadFileHistory;
 		Buffer.changeFonts();
-		Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
-		Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont)
+		Gtk.Widget.modifyFont(Gui.progout, !Config.stdFont);
+		Gtk.Widget.modifyFont(Gui.compilerout, !Config.stdFont)
 	    end
 
 	fun fontCallback _ =
 	    let
-                val dia = Gtk.fontSelectionDialogNew "Select font"
-		val _ =Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE)
-		val fontName = Gtk.buttonGetLabel Gui.font_button
-                val _ = Gtk.fontSelectionDialogSetFontName(dia,
+                val dia = Gtk.FontSelectionDialog.new "Select font"
+		val _ =Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE)
+		val fontName = Gtk.Button.getLabel Gui.font_button
+                val _ = Gtk.FontSelectionDialog.setFontName(dia,
                                                            !Config.stdFontName)
-                val response = Gtk.dialogRun dia
+                val response = Gtk.Dialog.run dia
             in
-                case Gtk.IntToGtkResponseType response of
-                    Gtk.RESPONSE_OK =>
+                case Gtk.ResponseType.fromInt response of
+                    Gtk.ResponseType.OK =>
                     let
-                        val newFont = Gtk.fontSelectionDialogGetFontName dia
+                        val newFont = Gtk.FontSelectionDialog.getFontName dia
                     in
-			Gtk.buttonSetLabel(Gui.font_button, newFont)
+			Gtk.Button.setLabel(Gui.font_button, newFont)
                     end
-                  | _ => ();
-                Gtk.widgetDestroy dia                
+                 | _ => ();
+                Gtk.Widget.destroy dia
             end
 
-        val _ = Gtk.signalConnect(Gui.font_button, "clicked",
-				  fontCallback)
+        val _ = Gtk.signalConnect (Gui.font_button, "clicked", fontCallback)
 
-        val _ = Gtk.signalConnect(Gui.clear_history_button, "clicked",
-				  fn _ => History.set [])
+        fun closeCallback _ = (Gtk.Window.setModal (Gui.preferences, false);
+			       Gtk.Widget.unmap Gui.preferences)
 
-        fun closeCallback _ = (Gtk.windowSetModal(Gui.preferences, false);
-			       Gtk.widgetUnmap Gui.preferences)
+                    
         val _ = Gtk.signalConnect(Gui.preferences, "delete-event",
 				  closeCallback)
         val _ = Gtk.signalConnect(Gui.pref_cancel_button, "clicked",
@@ -217,9 +217,9 @@ structure Preferences =
 		val _ = ()
 	    in
 		fillDialog();
-		Gtk.windowSetPosition (Gui.preferences, Gtk.WIN_POS_MOUSE);
-		Gtk.windowSetModal(Gui.preferences, true);
-		Gtk.widgetShowAll Gui.preferences;
-		Gtk.widgetMap Gui.preferences
+		Gtk.Window.setPosition (Gui.preferences, Gtk.WindowPosition.MOUSE);
+		Gtk.Window.setModal(Gui.preferences, true);
+		Gtk.Widget.showAll Gui.preferences;
+		Gtk.Widget.map Gui.preferences
 	    end
     end

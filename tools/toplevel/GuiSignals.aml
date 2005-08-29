@@ -6,9 +6,7 @@
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
-
 import structure Key from "x-alice:/lib/gtk/Key"
-
 import structure Gui from "Gui"
 
 signature GUISIGNALS_SIG =

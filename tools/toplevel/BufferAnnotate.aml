@@ -102,7 +102,7 @@ struct
     fun moveToCol(iter, 0, col) = ()
       | moveToCol(iter, n, col) =
 	let
-	    val c = Gtk.textIterGetChar iter
+	    val c = Gtk.TextIter.getChar iter
 	in
 	    if c = Char.ord #"\n" then
 		raise Off
@@ -110,20 +110,20 @@ struct
 		let
 		    val tabjump = 8 - col mod 8
 		in
-		    Gtk.textIterForwardChar iter;
+		    Gtk.TextIter.forwardChar iter;
 		    moveToCol(iter, n-tabjump, col+tabjump)
 		end
 	    else
-		(Gtk.textIterForwardChar iter;
+		(Gtk.TextIter.forwardChar iter;
 		 moveToCol(iter, n-1, col+1))
 	end
 
     fun applyTag (buf, tag, iter1, iter2) ((l1,c1), (l2,c2)) =
-	(Gtk.textIterSetLine(iter1, l1-1);
+	(Gtk.TextIter.setLine(iter1, l1-1);
 	 moveToCol(iter1, c1, 0);
-	 Gtk.textIterSetLine(iter2, l2-1);
+	 Gtk.TextIter.setLine(iter2, l2-1);
 	 moveToCol(iter2, c2, 0);
-	 Gtk.textBufferApplyTag(buf, tag, iter1, iter2))
+	 Gtk.TextBuffer.applyTag(buf, tag, iter1, iter2))
 
     fun applyAnnot (buf, iter1, iter2) ((rs,s), (tag, _)) =
 	List.app (applyTag(buf, tag, iter1, iter2)) rs;
@@ -136,9 +136,9 @@ struct
 
     fun applyAnnots(buf, entries, annotTags) =
 	let
-	    val iter1 = Gtk.textIterNew()
-	    val iter2 = Gtk.textIterNew()
-	    val tagTable = Gtk.textBufferGetTagTable buf
+	    val iter1 = Gtk.TextIter.new()
+	    val iter2 = Gtk.TextIter.new()
+	    val tagTable = Gtk.TextBuffer.getTagTable buf
 	    val nTags = Vector.length annotTags
 	    val nEntries = Vector.length entries
 	    val annotTags' =
@@ -152,15 +152,15 @@ struct
 			end
 		    else
 			let
-			    val tag = Gtk.textTagNew(tagNamePrefix ^ Int.toString i)
+			    val tag = Gtk.TextTag.new(tagNamePrefix ^ Int.toString i)
 			in
-			    Gtk.textTagTableAdd(tagTable, tag);
+			    Gtk.TextTagTable.add(tagTable, tag);
 			    (tag, Pair.snd(Vector.sub(entries, i)))
 			end
 		)
 	in
-	    Gtk.textBufferGetStartIter(buf, iter1);
-	    Gtk.textBufferGetStartIter(buf, iter2);
+	    Gtk.TextBuffer.getStartIter(buf, iter1);
+	    Gtk.TextBuffer.getStartIter(buf, iter2);
 	    VectorPair.app (applyAnnot(buf, iter1, iter2)) (entries, annotTags');
 	    annotTags'
 	end

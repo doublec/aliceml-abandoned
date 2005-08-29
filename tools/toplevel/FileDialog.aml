@@ -12,7 +12,7 @@
  *)
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Core from "x-alice:/lib/gtk/Core"
+(* import structure Core from "./../lib/gtk/newprep/Core" *)
 import structure Gui from "Gui"
 import structure Config from "x-alice:/lib/system/Config"
 
@@ -26,20 +26,20 @@ structure FileDialog =
         fun openFile(msg,fileName) =
             let
 	        val fileNameUtf8 = Gtk.latin1ToUtf8 fileName
-		val fileSel = Gtk.fileSelectionNew msg
+	        val fileSel = Gtk.FileSelection.new msg
 		val _ = if fileName <> "" then
-		         Gtk.fileSelectionSetFilename(*Utf8*)(fileSel, windozisePath fileNameUtf8)
+		         Gtk.FileSelection.setFilename(fileSel, windozisePath fileNameUtf8)
 			else ()
-                val _ = Gtk.windowSetPosition (fileSel, Gtk.WIN_POS_MOUSE)
-                val _ = Gtk.widgetShowAll fileSel
-                val response = Gtk.dialogRun fileSel
+                val _ = Gtk.Window.setPosition (fileSel, Gtk.WindowPosition.MOUSE)
+                val _ = Gtk.Widget.showAll fileSel
+                val response = Gtk.Dialog.run fileSel
                 val ret =
-                    case Gtk.IntToGtkResponseType response of
-                        Gtk.RESPONSE_OK =>
-                        SOME (Gtk.utf8ToLatin1 (Gtk.fileSelectionGetFilename(*Utf8*) fileSel))
+                    case Gtk.ResponseType.fromInt response of
+                        Gtk.ResponseType.OK =>
+                        SOME (Gtk.utf8ToLatin1 (Gtk.FileSelection.getFilename(*Utf8*) fileSel))
                       | _ => NONE
             in
-                Gtk.widgetDestroy fileSel;
+                Gtk.Widget.destroy fileSel;
                 ret
             end
 
@@ -47,42 +47,40 @@ structure FileDialog =
             let
                 val modifiedDia = Gui.modified_dialog
             in
-		Gtk.labelSetText(Gui.modified_msg1, msg1);
-		Gtk.labelSetText(Gui.modified_msg2, msg2);
-		Gtk.dialogSetDefaultResponse(modifiedDia,
-					     Gtk.GtkResponseTypeToInt
-					     Gtk.RESPONSE_CANCEL);
-                (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
-                Gtk.windowSetPosition (modifiedDia, Gtk.WIN_POS_MOUSE);
-                Gtk.widgetShowAll modifiedDia;
-		Gtk.widgetMap modifiedDia;
-		Gtk.windowSetModal(modifiedDia, true);
-		case Gtk.IntToGtkResponseType (Gtk.dialogRun modifiedDia) of
-		    Gtk.RESPONSE_CLOSE => close arg
+		Gtk.Label.setText(Gui.modified_msg1, msg1);
+		Gtk.Label.setText(Gui.modified_msg2, msg2);
+		Gtk.Dialog.setDefaultResponse(modifiedDia,
+				    Gtk.ResponseType.toInt Gtk.ResponseType.CANCEL);
+                (*Gtk.Window.setKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.Window.setPosition (modifiedDia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll modifiedDia;
+		Gtk.Widget.map modifiedDia;
+		Gtk.Window.setModal(modifiedDia, true);
+		case Gtk.ResponseType.fromInt (Gtk.Dialog.run modifiedDia) of
+		    Gtk.ResponseType.CLOSE => close arg
 		  | _ => ();
-                Gtk.widgetUnmap modifiedDia;
-		Gtk.windowSetModal(modifiedDia, false)
+                Gtk.Widget.unmap modifiedDia;
+		Gtk.Window.setModal(modifiedDia, false)
             end
 
         fun overwriteWarning(msg1,msg2,close,arg) =
             let
                 val overwriteDia = Gui.overwrite_dialog
             in
-		Gtk.labelSetText(Gui.overwrite_msg1, msg1);
-		Gtk.labelSetText(Gui.overwrite_msg2, msg2);
-		Gtk.dialogSetDefaultResponse(overwriteDia,
-					     Gtk.GtkResponseTypeToInt
-					     Gtk.RESPONSE_CANCEL);
-                (*Gtk.windowSetKeepAbove (overwriteDia, true); Gtk 2.4 *)
-                Gtk.windowSetPosition (overwriteDia, Gtk.WIN_POS_MOUSE);
-                Gtk.widgetShowAll overwriteDia;
-		Gtk.widgetMap overwriteDia;
-		Gtk.windowSetModal(overwriteDia, true);
-		case Gtk.IntToGtkResponseType (Gtk.dialogRun overwriteDia) of
-		    Gtk.RESPONSE_CLOSE => close arg
+		Gtk.Label.setText(Gui.overwrite_msg1, msg1);
+		Gtk.Label.setText(Gui.overwrite_msg2, msg2);
+		Gtk.Dialog.setDefaultResponse(overwriteDia,
+                                             Gtk.ResponseType.toInt Gtk.ResponseType.CLOSE);
+                (*Gtk.Window.setKeepAbove (overwriteDia, true); Gtk 2.4 *)
+                Gtk.Window.setPosition (overwriteDia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll overwriteDia;
+		Gtk.Widget.map overwriteDia;
+		Gtk.Window.setModal(overwriteDia, true);
+		case Gtk.ResponseType.fromInt (Gtk.Dialog.run overwriteDia) of
+		    Gtk.ResponseType.CLOSE => close arg
 		  | _ => ();
-                Gtk.widgetUnmap overwriteDia;
-		Gtk.windowSetModal(overwriteDia, false)
+                Gtk.Widget.unmap overwriteDia;
+		Gtk.Window.setModal(overwriteDia, false)
             end
 
         fun quitWarning (interactive,filename) =
@@ -90,55 +88,53 @@ structure FileDialog =
                 val dia = Gui.save_on_quit_dialog
 		val filenameUtf8 = Gtk.latin1ToUtf8 filename
             in
-		Gtk.widgetSetSensitive(Gui.save_on_quit_cancel_button,
+		Gtk.Widget.setSensitive(Gui.save_on_quit_cancel_button,
 				       interactive);
-		Gtk.labelSetText(Gui.save_on_quit_label,
+		Gtk.Label.setText(Gui.save_on_quit_label,
 				 "File '"^filenameUtf8^"' was modified.");
-		Gtk.dialogSetDefaultResponse(dia,
-					     Gtk.GtkResponseTypeToInt
-					     Gtk.RESPONSE_OK);
-                (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
-                Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
-                Gtk.widgetShowAll dia;
-		Gtk.widgetMap dia;
-		Gtk.windowSetModal(dia, true);
-		Gtk.IntToGtkResponseType (Gtk.dialogRun dia)
-		before (Gtk.widgetUnmap dia;
-			Gtk.windowSetModal(dia, false))
+		Gtk.Dialog.setDefaultResponse(dia,
+				    Gtk.ResponseType.toInt Gtk.ResponseType.OK);
+                (*Gtk.Window.setKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll dia;
+		Gtk.Widget.map dia;
+		Gtk.Window.setModal(dia, true);
+		Gtk.Dialog.run dia
+		    before (Gtk.Widget.unmap dia;
+		            Gtk.Window.setModal(dia, false))
             end
 
         fun fileNotFound (startup,filename) =
             let
                 val dia = Gui.file_not_found_dialog
             in
-		Gtk.widgetSetSensitive(Gui.file_not_found_quit_button,
+		Gtk.Widget.setSensitive (Gui.file_not_found_quit_button,
 				       startup);
-		Gtk.labelSetText(Gui.could_not_load_label,
+		Gtk.Label.setText(Gui.could_not_load_label,
 				 "Could not load file '"^filename^"'.");
-		Gtk.dialogSetDefaultResponse(dia,
-					     Gtk.GtkResponseTypeToInt
-					     Gtk.RESPONSE_OK);
-                (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
-                Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE);
-                Gtk.widgetShowAll dia;
-		Gtk.widgetMap dia;
-		Gtk.windowSetModal(dia, true);
-		Gtk.IntToGtkResponseType (Gtk.dialogRun dia)
-		before (Gtk.widgetUnmap dia;
-			Gtk.windowSetModal(dia, false))
+		Gtk.Dialog.setDefaultResponse (dia,
+					     Gtk.ResponseType.toInt
+					     Gtk.ResponseType.OK);
+                (*Gtk.Window.setKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
+                Gtk.Widget.showAll dia;
+		Gtk.Widget.map dia;
+		Gtk.Window.setModal (dia, true);
+		Gtk.Dialog.run dia
+		    before (Gtk.Widget.unmap dia;
+			    Gtk.Window.setModal (dia, false))
             end
 
         fun message msg =
             let
                 val msgDia =
-                    Gtk.messageDialogNew(Gui.mainwidget,
-                                         Gtk.DIALOG_MODAL,
-                                         Gtk.MESSAGE_WARNING,
-                                         Gtk.BUTTONS_CLOSE,
-                                         msg,
-                                         Core.LIST nil)
+                    Gtk.MessageDialog.new(Gui.mainwidget,
+                                         [Gtk.DialogFlags.MODAL],
+                                         Gtk.MessageType.WARNING,
+                                         Gtk.ButtonsType.CLOSE,
+                                         msg)
             in
-                Gtk.dialogRun msgDia;
-                Gtk.widgetDestroy msgDia
+                Gtk.Dialog.run msgDia;
+                Gtk.Widget.destroy msgDia
             end
     end

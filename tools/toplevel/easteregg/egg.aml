@@ -19,36 +19,56 @@ structure Egg =
 	signature GDK =
 	sig
 	    type object
-	    val pixbufNewFromInline : int * string * bool -> object * object
+            structure Pixbuf :
+            sig
+	        val newFromInline : int * string * bool -> object 
+            end
 	end
 	signature GTK =
 	sig
 	    type object
-	    val WINDOW_TOPLEVEL : GtkEnums.GtkWindowType
-	    val windowNew : GtkEnums.GtkWindowType -> object
-	    val windowSetTitle : object * string -> unit
-	    val imageNewFromPixbuf : object -> object
-	    val containerAdd : object * object -> unit
-	    val widgetShowAll : object -> unit
+            structure WindowType :
+            sig
+                datatype t = 
+                    POPUP
+                  | TOPLEVEL
+            end
+            structure Window :
+            sig
+	        val new : WindowType.t -> object
+	        val setTitle : object * string -> unit
+            end
+            structure Image :
+            sig
+	        val newFromPixbuf : object -> object
+            end
+            structure Container :
+            sig
+	        val add : object * object -> unit
+            end
+            structure Widget :
+            sig
+	        val showAll : object -> unit
+            end
 	end
 
 	functor MkToplevelIt (CM : COMPONENT_MANAGER) : TOPLEVEL_IT =
 	    struct
 		structure GtkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gtk"
 					 signature S = (structure Gtk : GTK))
-		structure Gtk = GtkComp.Gtk
 		structure GdkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gdk"
-					 signature S = (structure Gdk : GDK where type object = Gtk.object))
+					 signature S = (structure Gdk : GDK where type object = GtkComp.Gtk.object))
+		structure Gtk = GtkComp.Gtk
 		structure Gdk = GdkComp.Gdk
 		fun it () =
 		    let
-		     	val mw = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
-		     	val _ = Gtk.windowSetTitle(mw,"Alice Herself")
-			val (buf,_) = Gdk.pixbufNewFromInline(~1, str, false)
-			val img = Gtk.imageNewFromPixbuf buf
+		     	val mw = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+		     	val _ = Gtk.Window.setTitle(mw,"Alice Herself")
+			val buf = Gdk.Pixbuf.newFromInline(~1, str, false)
+			val img = Gtk.Image.newFromPixbuf buf
 		    in
-			Gtk.containerAdd(mw, img);
-			Gtk.widgetShowAll mw
+			Gtk.Container.add (mw, img);
+			Gtk.Widget.showAll mw
 		    end
 	    end
 

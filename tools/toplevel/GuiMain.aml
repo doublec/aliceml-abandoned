@@ -13,7 +13,6 @@
 
 import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gui from "Gui"
-import structure Core from "x-alice:/lib/gtk/Core" (* property hack *)
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure OutputWriters from "OutputWriters"
@@ -33,7 +32,7 @@ structure GuiMain =
 
         (* Buffers *)
 
-        val clipboard = Gtk.clipboardGet(Gdk.atomIntern("PRIMARY", false))
+        val clipboard = Gtk.Clipboard.get(Gdk.Atom.intern("PRIMARY", false))
         datatype active_view = COMPILER | STDSTREAMS | BUFFER of Gtk.object
         val curtextview = ref COMPILER
 
@@ -70,36 +69,36 @@ structure GuiMain =
                              | COMPILER => Gui.compilerout
                              | STDSTREAMS => Gui.progout
             in
-                (view, Gtk.textViewGetBuffer view)
+                (view, Gtk.TextView.getBuffer view)
             end
 
         fun getCurBuf () = #2 (getCurViewBuf ())
 
-        fun copy() = Gtk.textBufferCopyClipboard(getCurBuf(), clipboard)
+        fun copy() = Gtk.TextBuffer.copyClipboard(getCurBuf(), clipboard)
 
         fun paste() =
             let
-		val txt = Gtk.clipboardWaitForText clipboard
+		val txt = Gtk.Clipboard.waitForText clipboard
 		val (view, buf) = getCurViewBuf()
 	    in
-		Gtk.textBufferBeginUserAction buf;
-		Gtk.textBufferDeleteSelection(buf, true, true);
-		Gtk.textBufferInsertInteractiveAtCursor(buf,txt,~1,true);
-		Gtk.textBufferEndUserAction buf;
-		Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buf,
+		Gtk.TextBuffer.beginUserAction buf;
+		Gtk.TextBuffer.deleteSelection(buf, true, true);
+		Gtk.TextBuffer.insertInteractiveAtCursor(buf,txt,~1,true);
+		Gtk.TextBuffer.endUserAction buf;
+		Gtk.TextView.scrollToMark(view, Gtk.TextBuffer.getInsert buf,
 					 0.0, false, 0.0, 0.0);
 		()
 	    end
 
         fun cut() =
-            Gtk.textBufferCutClipboard(getCurBuf(), clipboard, true)
+            Gtk.TextBuffer.cutClipboard(getCurBuf(), clipboard, true)
 
         fun delete() =
-            ignore (Gtk.textBufferDeleteSelection(getCurBuf(), true, true))
+            ignore (Gtk.TextBuffer.deleteSelection(getCurBuf(), true, true))
 
         fun syntax() =
             case (!curtextview) of BUFFER view =>
-                BufferHighlight.highlightAll(Gtk.textViewGetBuffer view, ref false)
+                BufferHighlight.highlightAll(Gtk.TextView.getBuffer view, ref false)
               | _ => ()
 
         fun search() =
@@ -119,12 +118,12 @@ structure GuiMain =
                                    | SOME id => SearchDialog.gotoLine id
 
 	fun bufferMenus activate =
-	    (app (fn w => Gtk.widgetSetSensitive(w,activate))
+	    (app (fn w => Gtk.Widget.setSensitive(w,activate))
 	     [Gui.save1,Gui.save_as1,Gui.go_to_line,
 	      Gui.undo,Gui.find,Gui.replace,Gui.find_again,
 	      Gui.feedfile,Gui.syntax_colouring,
 	      Gui.compilefile,Gui.indent_region, Gui.outdent_region];
-	     app (fn w => Gtk.widgetSetSensitive(w,not activate))
+	     app (fn w => Gtk.Widget.setSensitive(w,not activate))
 	     [Gui.back_in_history,Gui.forward_in_history])
 
         fun changeFocus view _ =
@@ -132,43 +131,43 @@ structure GuiMain =
 		val _ = curtextview := view
 		val _ = case getCurrentPage() of
 		    NONE =>
-			Gtk.widgetSetSensitive(Gui.compilefile,false)
+			Gtk.Widget.setSensitive(Gui.compilefile,false)
 		  | SOME id =>
-			(Option.app (fn _ => Gtk.widgetSetSensitive(Gui.compilefile,true))
+			(Option.app (fn _ => Gtk.Widget.setSensitive(Gui.compilefile,true))
 			 (Buffer.getFileName id);
-			 Gtk.checkMenuItemSetActive(Gui.syntax_colouring,
+			 Gtk.CheckMenuItem.setActive(Gui.syntax_colouring,
 					     Buffer.getSyntaxHighlighting id))
 		val _ = case view of
 		    BUFFER _ => (bufferMenus true;
-				 Gtk.widgetSetSensitive(Gui.feedregion,true))
+				 Gtk.Widget.setSensitive(Gui.feedregion,true))
 		  | COMPILER => (bufferMenus false;
-				 Gtk.widgetSetSensitive(Gui.feedregion,true))
+				 Gtk.Widget.setSensitive(Gui.feedregion,true))
 		  | STDSTREAMS => (bufferMenus false;
-				   Gtk.widgetSetSensitive(Gui.feedregion,false))
+				   Gtk.Widget.setSensitive(Gui.feedregion,false))
 		val _ = if !currentPage > 0 then
-		            Gtk.widgetSetSensitive(Gui.previous_file, true)
+		            Gtk.Widget.setSensitive(Gui.previous_file, true)
 			else
-			    Gtk.widgetSetSensitive(Gui.previous_file, false)
+			    Gtk.Widget.setSensitive(Gui.previous_file, false)
 		val _ = if !currentPage <> ~1 andalso
 		            !currentPage < List.length (!pages) - 1 then
-		            Gtk.widgetSetSensitive(Gui.next_file, true)
+		            Gtk.Widget.setSensitive(Gui.next_file, true)
 			else
-			    Gtk.widgetSetSensitive(Gui.next_file, false)
+			    Gtk.Widget.setSensitive(Gui.next_file, false)
 	    in ()
 	    end
 
         fun markSet id (buf,_) =
             let
-                val cursor = Gtk.textBufferGetInsert buf
+                val cursor = Gtk.TextBuffer.getInsert buf
 		val (line, col, annot) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
-			 val iter = Gtk.textIterNew()
-			 val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
-			 val annot = ref NONE
+			 val iter = Gtk.TextIter.new()
+			 val _ = Gtk.TextBuffer.getIterAtMark(buf,iter,cursor)
+                         val annot = ref NONE
 		     in
 			 List.app (fn tag =>
-			    let val name = Core.objectGetStringProp(tag, "name")
+			    let val name = Gtk.Prop.get Gtk.TextTag.name tag
 			    in
 				if BufferAnnotate.isAnnotationTagName name
 				then
@@ -180,7 +179,7 @@ structure GuiMain =
 				    end
 				else ()
 			    end
-			 ) (Gtk.textIterGetTags iter);
+			 ) (Gtk.TextIter.getTags iter);
 			 (Buffer.getLine iter, Buffer.getColumn iter, !annot)
 		     end) ()
             in
@@ -190,27 +189,27 @@ structure GuiMain =
 	(* Do not allow cursor in first two columns of compiler output *)
 	fun compilerOutMarkSet (buf,[_,Gtk.OBJECT mark]) =
 	    let
-		val markName = Gtk.textMarkGetName mark
+		val markName = Gtk.TextMark.getName mark
 	    in
 		if markName="insert" orelse markName="selection_bound" then
 		Lock.sync Gtk.lock
 		(fn () =>
 		 let
-		     val iter = Gtk.textIterNew()
-		     val _ = Gtk.textBufferGetIterAtMark(buf,iter,mark)
-		     val line = Gtk.textIterGetLine iter
-		     val off = Gtk.textIterGetLineOffset iter
-		     val iter' = Gtk.textIterCopy iter
-		     val _ = Gtk.textIterSetLineOffset(iter', 2)
+		     val iter = Gtk.TextIter.new ()
+		     val _ = Gtk.TextBuffer.getIterAtMark(buf,iter,mark)
+		     val line = Gtk.TextIter.getLine iter
+		     val off = Gtk.TextIter.getLineOffset iter
+		     val iter' = Gtk.TextIter.copy iter
+		     val _ = Gtk.TextIter.setLineOffset(iter', 2)
 		     val forbidden = off<2 andalso
-			 (Gtk.textIterSetLineOffset(iter, 0);
-			  Gtk.textBufferGetText(buf,iter,iter',true)="> ")
+			 (Gtk.TextIter.setLineOffset(iter, 0);
+			  Gtk.TextBuffer.getText(buf,iter,iter',true)="> ")
 		 in
 		     if forbidden then
-			 (if off=1 andalso Gtk.textIterBackwardLine iter' then
-			      (Gtk.textIterForwardToLineEnd iter'; ())
+			 (if off=1 andalso Gtk.TextIter.backwardLine iter' then
+			      (Gtk.TextIter.forwardToLineEnd iter'; ())
 			  else (* off=0 *) ();
-			  Gtk.textBufferMoveMark(buf,mark,iter'))
+			  Gtk.TextBuffer.moveMark(buf,mark,iter'))
 		     else ()
 		 end
 		 ) ()
@@ -222,12 +221,12 @@ structure GuiMain =
 	val notebookSwitchEventId = Promise.future notebookSwitchEventIdP
         fun switchPage notebook =
             let
-                val curPage = Gtk.notebookGetCurrentPage notebook
-                val scrWin = Gtk.notebookGetNthPage(notebook, curPage)
-                val textView = Gtk.binGetChild scrWin
+                val curPage = Gtk.Notebook.getCurrentPage notebook
+                val scrWin = Gtk.Notebook.getNthPage(notebook, curPage)
+                val textView = Gtk.Bin.getChild scrWin
             in
 		currentPage := curPage;
-		markSet curPage (Gtk.textViewGetBuffer textView, ());
+		markSet curPage (Gtk.TextView.getBuffer textView, ());
 		case !curtextview of
 		    BUFFER _ => (curtextview := BUFFER textView;
 				 Option.app SearchDialog.reconnect (getCurrentPage()))
@@ -236,50 +235,50 @@ structure GuiMain =
 
         fun checkNotebookSize() =
             let
-		 val rq1 = Gdk.rectangleNew(0,0,0,0)
-		 val _ = Gtk.textViewGetVisibleRect(Gui.compilerout,rq1)
-		 val rq2 = Gdk.rectangleNew(0,0,0,0)
-		 val _ = Gtk.textViewGetVisibleRect(Gui.progout,rq2)
+		 val rq1 = Gdk.Rectangle.new { width = 0, height = 0, x = 0, y = 0 }
+		 val _ = Gtk.TextView.getVisibleRect(Gui.compilerout,rq1)
+		 val rq2 = Gdk.Rectangle.new { width = 0, height = 0, x = 0, y = 0 }
+		 val _ = Gtk.TextView.getVisibleRect(Gui.progout,rq2)
 
-		 val buf = Gtk.textViewGetBuffer Gui.compilerout
-		 val progBuf = Gtk.textViewGetBuffer Gui.progout
+		 val buf = Gtk.TextView.getBuffer Gui.compilerout
+		 val progBuf = Gtk.TextView.getBuffer Gui.progout
 
 		 (* Hack alert: The scrollbar between the two panes *)
 		 (* seems to be about 18 pixels high...*)
-		 val h1 = Gdk.rectangleGetFieldHeight rq1 + 18
-		 val h2 = Gdk.rectangleGetFieldHeight rq2
+		 val h1 = Gdk.Rectangle.getFieldHeight rq1 + 18
+		 val h2 = Gdk.Rectangle.getFieldHeight rq2
 		 val ratio = Real.fromInt h1 / Real.fromInt (h1+h2)
 	     in
-		 if Gtk.notebookGetNPages Gui.notebook1 > 0
-		     then (if Gtk.panedGetPosition Gui.vpaned1 = 0 then
+		 if Gtk.Notebook.getNPages Gui.notebook1 > 0
+		     then (if Gtk.Paned.getPosition Gui.vpaned1 = 0 then
 			   let
 			       val newPos = Real.fromInt (h1+h2-Config.editorHeight) * ratio
 			   in
-			       Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
-			       Gtk.panedSetPosition(Gui.vpaned1,Config.editorHeight)
+			       Gtk.Paned.setPosition(Gui.vpaned2,Real.round newPos);
+			       Gtk.Paned.setPosition(Gui.vpaned1,Config.editorHeight)
 			   end
 			   else ();
-			   Gtk.widgetSetSensitive(Gui.switch_to_editor, true))
+			   Gtk.Widget.setSensitive(Gui.switch_to_editor, true))
 		 else
 		     let
-			 val editorHeight = Gtk.panedGetPosition Gui.vpaned1
+			 val editorHeight = Gtk.Paned.getPosition Gui.vpaned1
 			 val newHeight = editorHeight+h1+h2
 			 val newPos = Real.fromInt newHeight * ratio
 		     in
-			 Gtk.panedSetPosition(Gui.vpaned1,0);
-			 Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
-			 Gtk.widgetGrabFocus Gui.compilerout;
-			 Gtk.widgetSetSensitive(Gui.switch_to_editor, false)
+			 Gtk.Paned.setPosition(Gui.vpaned1,0);
+			 Gtk.Paned.setPosition(Gui.vpaned2,Real.round newPos);
+			 Gtk.Widget.grabFocus Gui.compilerout;
+			 Gtk.Widget.setSensitive(Gui.switch_to_editor, false)
 		     end;
 		 (* Hack alert: scroll to end mark seems to have no effect if
 		  * performed immediately... so wait for a moment... *)
 		 spawn (
 		     await(Future.alarm(Time.fromMilliseconds(Int.toLarge 300)));
-		     Gtk.textViewScrollToMark(Gui.compilerout,
-					      Gtk.textBufferGetInsert buf,
+		     Gtk.TextView.scrollToMark(Gui.compilerout,
+					      Gtk.TextBuffer.getInsert buf,
 					      0.0, false, 0.0, 0.0);
-		     Gtk.textViewScrollToMark(Gui.progout,
-					      Gtk.textBufferGetInsert progBuf,
+		     Gtk.TextView.scrollToMark(Gui.progout,
+					      Gtk.TextBuffer.getInsert progBuf,
 					      0.0, false, 0.0, 0.0)
 		 );
 		 ()
@@ -295,7 +294,7 @@ structure GuiMain =
 		val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
                                                     id, file, mode=NEW}
             in
-                Gtk.widgetGrabFocus (view);
+                Gtk.Widget.grabFocus (view);
                 Gtk.signalConnect(buf, "mark-set", markSet id);
                 Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
                 markSet id (buf, nil);
@@ -317,7 +316,7 @@ structure GuiMain =
 	    in
 		case buf of
 		    SOME buf =>
-		    Gtk.notebookSetCurrentPage(Gui.notebook1, valOf (findPage id))
+		    Gtk.Notebook.setCurrentPage(Gui.notebook1, valOf (findPage id))
 		  | NONE =>
                 let
 		    val file = OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()}
@@ -330,7 +329,7 @@ structure GuiMain =
                 in
                     Gtk.signalConnect(buf, "mark-set", markSet id);
                     Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
-                    Gtk.widgetGrabFocus (view);
+                    Gtk.Widget.grabFocus (view);
                     markSet id (buf, nil);
                     addPage(!numberOfPages);
                     numberOfPages := (!numberOfPages) + 1;
@@ -464,14 +463,14 @@ structure GuiMain =
 (*
             case (!curtextview) of BUFFER view =>
             let
-                val buf = Gtk.textViewGetBuffer view
+                val buf = Gtk.TextView.getBuffer view
 		val str = Lock.sync Gtk.lock
 		    (fn () => let
-		     val startiter = Gtk.textIterNew()
-		     val _ = Gtk.textBufferGetStartIter(buf,startiter)
-		     val enditer = Gtk.textIterNew()
-		     val _ = Gtk.textBufferGetEndIter(buf,enditer)
-		     in Gtk.textBufferGetText(buf, startiter, enditer, false)
+		     val startiter = Gtk.TextIter.new()
+		     val _ = Gtk.TextBuffer.getStartIter(buf,startiter)
+		     val enditer = Gtk.TextIter.new()
+		     val _ = Gtk.TextBuffer.getEndIter(buf,enditer)
+		     in Gtk.TextBuffer.getText(buf, startiter, enditer, false)
 		     end) ()
                 val str = Gtk.utf8ToLatin1 str
             in
@@ -488,7 +487,7 @@ structure GuiMain =
             (case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
-                val buf = Gtk.textViewGetBuffer view
+                val buf = Gtk.TextView.getBuffer view
 		val p = Promise.promise()
 		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
 
@@ -496,12 +495,12 @@ structure GuiMain =
 		    Lock.sync Gtk.lock
 		    (fn () =>
 		     let
-		     val startiter = Gtk.textIterNew()
-		     val enditer = Gtk.textIterNew()
+		     val startiter = Gtk.TextIter.new()
+		     val enditer = Gtk.TextIter.new()
 		     in
-			 (Gtk.textBufferGetSelectionBounds(buf,
+			 (Gtk.TextBuffer.getSelectionBounds(buf,
                                                            startiter,enditer),
-			  Gtk.textBufferGetText(buf, startiter, enditer, false),
+			  Gtk.TextBuffer.getText(buf, startiter, enditer, false),
 			  Buffer.getLine startiter,
 			  Buffer.getColumn startiter)
 		     end) ()
@@ -526,7 +525,7 @@ structure GuiMain =
             (case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
-                val buf = Gtk.textViewGetBuffer view
+                val buf = Gtk.TextView.getBuffer view
 		val p = Promise.promise()
 		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
 		    
@@ -534,12 +533,12 @@ structure GuiMain =
 		    (fn () =>
 		     let
 			 val startiter = Buffer.getCursorIter buf
-			 val enditer = Gtk.textIterCopy(startiter)
+			 val enditer = Gtk.TextIter.copy(startiter)
 		     in
-			 Gtk.textIterSetLineOffset(startiter, 0);
-			 Gtk.textIterForwardToLineEnd(enditer);
+			 Gtk.TextIter.setLineOffset(startiter, 0);
+			 Gtk.TextIter.forwardToLineEnd(enditer);
 			 (Buffer.getLine startiter,
-			  Gtk.textBufferGetText(buf,
+			  Gtk.TextBuffer.getText(buf,
 						startiter, enditer, false))
 		     end) ()
                 val str = addSpace(startline, 0, Gtk.utf8ToLatin1 str)
@@ -561,7 +560,7 @@ structure GuiMain =
         fun findNextEOL iter next =
             if next iter then
                 let
-                    val c = chr (Gtk.textIterGetChar iter)
+                    val c = chr (Gtk.TextIter.getChar iter)
                 in
                     if c = #"\n" then ()
                     else if Char.isSpace c then findNextEOL iter next
@@ -570,7 +569,7 @@ structure GuiMain =
             else ()
         and findEOP iter next =
             let
-                val c = Gtk.textIterGetChar iter
+                val c = Gtk.TextIter.getChar iter
             in
                 if c=0 then ()
                 else
@@ -583,7 +582,7 @@ structure GuiMain =
 
         fun findNonWS iter next =
             let
-                val c = Gtk.textIterGetChar iter
+                val c = Gtk.TextIter.getChar iter
             in
                 if c=0 then ()
                 else if Char.isSpace (chr c) then
@@ -593,7 +592,7 @@ structure GuiMain =
 
         fun eolBeforeNonWS acc iter next =
             let
-                val c = Gtk.textIterGetChar iter
+                val c = Gtk.TextIter.getChar iter
             in
                 if c=0 then acc
                 else if Char.isSpace (chr c) then
@@ -605,16 +604,16 @@ structure GuiMain =
         fun paragraphIters(buf) =
             let
                 val startiter = Buffer.getCursorIter buf
-                val c = Gtk.textIterGetChar startiter
+                val c = Gtk.TextIter.getChar startiter
                 val _ = if c = ord #"\n" orelse c=0 then
-                            Gtk.textIterBackwardChar startiter else false
-                val enditer = Gtk.textIterCopy(startiter)
-                val _ = findEOP startiter Gtk.textIterBackwardChar
-                val _ = findEOP enditer Gtk.textIterForwardChar
-                val _ = findNonWS startiter Gtk.textIterForwardChar
-                val _ = findNonWS enditer Gtk.textIterBackwardChar
-                val _ = Gtk.textIterForwardChar enditer (* end is exclusive! *)
-		val _ = Gtk.textIterSetLineOffset(startiter, 0)
+                            Gtk.TextIter.backwardChar startiter else false
+                val enditer = Gtk.TextIter.copy(startiter)
+                val _ = findEOP startiter Gtk.TextIter.backwardChar
+                val _ = findEOP enditer Gtk.TextIter.forwardChar
+                val _ = findNonWS startiter Gtk.TextIter.forwardChar
+                val _ = findNonWS enditer Gtk.TextIter.backwardChar
+                val _ = Gtk.TextIter.forwardChar enditer (* end is exclusive! *)
+		val _ = Gtk.TextIter.setLineOffset(startiter, 0)
             in
                 (startiter, enditer)
             end
@@ -624,24 +623,24 @@ structure GuiMain =
             (case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
-                val buf = Gtk.textViewGetBuffer view
+                val buf = Gtk.TextView.getBuffer view
 		val p = Promise.promise()
 		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
 
 		val (str, line, col) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
-		     val startiter = Gtk.textIterNew()
-		     val enditer = Gtk.textIterNew()
+		     val startiter = Gtk.TextIter.new()
+		     val enditer = Gtk.TextIter.new()
 		     val (startiter, enditer) = 
-			 if Gtk.textBufferGetSelectionBounds(buf, startiter, enditer)
+			 if Gtk.TextBuffer.getSelectionBounds(buf, startiter, enditer)
 			     then (startiter, enditer)
 			 else let val (start,endd) = paragraphIters(buf)
 			      in Buffer.selectRange(buf, start, endd);
 				  (start,endd)
 			      end
 		     in
-			 (Gtk.textBufferGetText(buf, startiter, enditer, false),
+			 (Gtk.TextBuffer.getText(buf, startiter, enditer, false),
 			  Buffer.getLine startiter,
 			  Buffer.getColumn startiter)
 		     end) ()
@@ -690,8 +689,8 @@ structure GuiMain =
         fun reallyClose p =
             (Buffer.close (getPage p);
 	     removePage p;
-             Gtk.notebookRemovePage(Gui.notebook1, p);
-             currentPage := Gtk.notebookGetCurrentPage Gui.notebook1)
+             Gtk.Notebook.removePage(Gui.notebook1, p);
+             currentPage := Gtk.Notebook.getCurrentPage Gui.notebook1)
 
         fun close () = 
 	     case getCurrentPage() of NONE => ()
@@ -729,39 +728,39 @@ structure GuiMain =
 	    Lock.sync Gtk.lock
 	    (fn () =>
 	    let
-                val lineCount = Gtk.textBufferGetLineCount buf
-                val startiter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetStartIter(buf, startiter)
-                val enditer = Gtk.textIterCopy startiter
+                val lineCount = Gtk.TextBuffer.getLineCount buf
+                val startiter = Gtk.TextIter.new()
+                val _ = Gtk.TextBuffer.getStartIter(buf, startiter)
+                val enditer = Gtk.TextIter.copy startiter
             in
                 if row <= lineCount andalso
                    row' <= lineCount
                 then
-                    (Gtk.textIterSetLine(startiter, row-1);
-                     Gtk.textIterSetLine(enditer, row'-1);
+                    (Gtk.TextIter.setLine(startiter, row-1);
+                     Gtk.TextIter.setLine(enditer, row'-1);
                      Buffer.moveToCol(startiter, col, 0);
                      Buffer.moveToCol(enditer, col', 0);
                      Buffer.selectRange(buf, enditer, startiter);
 		     Buffer.scrollToCursor id;
-		     Gtk.notebookSetCurrentPage(Gui.notebook1,
+		     Gtk.Notebook.setCurrentPage(Gui.notebook1,
 						valOf (findPage id));
-                     Gtk.widgetGrabFocus (Buffer.getView id))
+                     Gtk.Widget.grabFocus (Buffer.getView id))
                     handle Buffer.Off => ()
                 else ()
             end) ()
 	    end
 
         fun findErrorStart' (iter, tag) =
-            if Gtk.textIterHasTag(iter, tag) then
-                (Gtk.textIterBackwardChar iter; findErrorStart' (iter, tag))
+            if Gtk.TextIter.hasTag(iter, tag) then
+                (Gtk.TextIter.backwardChar iter; findErrorStart' (iter, tag))
             else
-                ignore (Gtk.textIterForwardChar iter)
+                ignore (Gtk.TextIter.forwardChar iter)
 		
         fun findErrorStart (iter, tag) =
-            if Gtk.textIterHasTag(iter, tag) then
+            if Gtk.TextIter.hasTag(iter, tag) then
 		findErrorStart'(iter,tag)
             else
-                if Gtk.textIterBackwardChar iter then findErrorStart(iter, tag)
+                if Gtk.TextIter.backwardChar iter then findErrorStart(iter, tag)
 		else ()
 
 	exception ParseError
@@ -790,32 +789,32 @@ structure GuiMain =
 
         fun populatePopup (view, [Gtk.OBJECT menu]) =
             let
-                val separator= Gtk.menuItemNew()
-                val showError = Gtk.menuItemNewWithMnemonic("Jump to error location")
-                val buf = Gtk.textViewGetBuffer view
-                val cursor = Gtk.textBufferGetInsert(buf)
+                val separator= Gtk.MenuItem.new()
+                val showError = Gtk.MenuItem.newWithMnemonic("Jump to error location")
+                val buf = Gtk.TextView.getBuffer view
+                val cursor = Gtk.TextBuffer.getInsert(buf)
 	    in
 		Lock.sync Gtk.lock
 		(fn () =>
 		 let
-		     val iter = Gtk.textIterNew()
-		     val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
+		     val iter = Gtk.TextIter.new()
+		     val _ = Gtk.TextBuffer.getIterAtMark(buf,iter,cursor)
 		     val errorTag =
-			 Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
+			 Gtk.TextTagTable.lookup(Gtk.TextBuffer.getTagTable buf,
 						"error")
-		     val onErrorLine = Gtk.textIterHasTag(iter, errorTag)
+		     val onErrorLine = Gtk.TextIter.hasTag(iter, errorTag)
 		 in
-		     Gtk.widgetSetSensitive(showError,
+		     Gtk.Widget.setSensitive(showError,
 					    onErrorLine);
 		     if onErrorLine then
 			 let
 			     val _ = findErrorStart (iter, errorTag)
-			     val iter2 = Gtk.textIterCopy iter
-			     val _ = Gtk.textIterForwardLine iter2
-			     val str = Gtk.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
+			     val iter2 = Gtk.TextIter.copy iter
+			     val _ = Gtk.TextIter.forwardLine iter2
+			     val str = Gtk.utf8ToLatin1 (Gtk.TextIter.getText(iter, iter2))
 			     val coords = parseErrorCoords str
 			 in
-			     case coords of NONE => Gtk.widgetSetSensitive(showError,
+			     case coords of NONE => Gtk.Widget.setSensitive(showError,
 									   false)
 				 
 			   | SOME coords =>
@@ -824,10 +823,10 @@ structure GuiMain =
 			 end
 		     else ()
 		 end) ();
-                Gtk.widgetShow separator;
-                Gtk.widgetShow showError;
-                Gtk.containerAdd(menu, separator);
-                Gtk.containerAdd(menu, showError)
+                Gtk.Widget.show separator;
+                Gtk.Widget.show showError;
+                Gtk.Container.add(menu, separator);
+                Gtk.Container.add(menu, showError)
             end
           | populatePopup _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: popup\n")
 
@@ -835,16 +834,16 @@ structure GuiMain =
 	    Lock.sync Gtk.lock
 	    (fn () =>
 	     let
-		 val buf = Gtk.textViewGetBuffer Gui.compilerout
-		 val iter = Gtk.textIterNew()
-		 val _ = Gtk.textBufferGetEndIter(buf, iter)
+		 val buf = Gtk.TextView.getBuffer Gui.compilerout
+		 val iter = Gtk.TextIter.new()
+		 val _ = Gtk.TextBuffer.getEndIter(buf, iter)
 		 val errorTag =
-		     Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
+		     Gtk.TextTagTable.lookup(Gtk.TextBuffer.getTagTable buf,
 					    "error")
 		 val _ = findErrorStart (iter, errorTag)
-		 val iter2 = Gtk.textIterCopy iter
-		 val _ = Gtk.textIterForwardLine iter2
-		 val str = Gtk.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
+		 val iter2 = Gtk.TextIter.copy iter
+		 val _ = Gtk.TextIter.forwardLine iter2
+		 val str = Gtk.utf8ToLatin1 (Gtk.TextIter.getText(iter, iter2))
 		 val coords = parseErrorCoords str
 	     in
 		 case coords of
@@ -869,24 +868,24 @@ structure GuiMain =
 		if np<0 orelse np>List.length(!pages) then
 		    ()
 		else
-		    Gtk.notebookSetCurrentPage(Gui.notebook1,
+		    Gtk.Notebook.setCurrentPage(Gui.notebook1,
 					       np)
 	    end
 
 	fun switchTo 0 =
 	    (case getCurrentPage() of
 		 NONE => ()
-	       | SOME id => Gtk.widgetGrabFocus (Buffer.getView id))
+	       | SOME id => Gtk.Widget.grabFocus (Buffer.getView id))
 	  | switchTo 1 =
-		Gtk.widgetGrabFocus Gui.compilerout
+		Gtk.Widget.grabFocus Gui.compilerout
 	  | switchTo 2 =
-		Gtk.widgetGrabFocus Gui.progout
+		Gtk.Widget.grabFocus Gui.progout
 	  | switchTo _ = ()
 
 	fun clearIO () =
 	    Lock.sync Gtk.lock
 	    (fn () =>
-	        Gtk.textBufferSetText(Gtk.textViewGetBuffer Gui.progout, "", ~1)
+	        Gtk.TextBuffer.setText(Gtk.TextView.getBuffer Gui.progout, "", ~1)
 	    ) ()
 
 	fun activateSyntax () =
@@ -894,7 +893,7 @@ structure GuiMain =
 		NONE => ()
 	      | SOME id =>
 		    Buffer.setSyntaxHighlighting
-		    (id, Gtk.checkMenuItemGetActive Gui.syntax_colouring)
+		    (id, Gtk.CheckMenuItem.getActive Gui.syntax_colouring)
 
 
 	fun doQuit () = (Config.saveHistory (History.get(),
@@ -904,15 +903,16 @@ structure GuiMain =
 
 	exception DiscardAll
 	fun quitCloseOpenFiles interactive (buffer as {id,buf,file,...} : Buffer.buffer) =
-	    if Gtk.textBufferGetModified buf then
-		case FileDialog.quitWarning(interactive,Option.getOpt(!file,"New File "^Int.toString id)) of
-		    Gtk.RESPONSE_CANCEL => false
-		  | Gtk.RESPONSE_OK => (* save *) if Buffer.save id then true
+	    if Gtk.TextBuffer.getModified buf then
+		case Gtk.ResponseType.fromInt 
+        (FileDialog.quitWarning(interactive,Option.getOpt(!file,"New File "^Int.toString id))) of
+		    Gtk.ResponseType.CANCEL => false
+		  | Gtk.ResponseType.OK => (* save *) if Buffer.save id then true
 						  else (saveGivenFileAs id; true)
-		  | Gtk.RESPONSE_ACCEPT => (* save as *) (saveGivenFileAs id; true)
-		  | Gtk.RESPONSE_REJECT => (* discard all *) raise DiscardAll
-		  | Gtk.RESPONSE_CLOSE => (* discard *) true
-		  | Gtk.RESPONSE_DELETE_EVENT => if interactive then false
+		  | Gtk.ResponseType.ACCEPT => (* save as *) (saveGivenFileAs id; true)
+		  | Gtk.ResponseType.REJECT => (* discard all *) raise DiscardAll
+		  | Gtk.ResponseType.CLOSE => (* discard *) true
+		  | Gtk.ResponseType.DELETE_EVENT => if interactive then false
 						 else quitCloseOpenFiles interactive buffer
 		  | _ => raise Match (* make compiler happy *)
 	    else true
@@ -928,33 +928,34 @@ structure GuiMain =
 	fun quit () = quit' true
 
         fun init notebookSwitchEventId =
-            (Core.setLogMode("GLib", Core.LOG_MODE_NULL);
-             Core.setLogMode("Gtk", Core.LOG_MODE_NULL);
+            ((* Gtk.setLogMode("GLib", Core.LOG_MODE_NULL);
+             Gtk.setLogMode("Gtk", Core.LOG_MODE_NULL); 
+             *)
 	     Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
              Gtk.signalConnect(Gui.compilerout, "focus-in-event",
                                changeFocus COMPILER);
              Gtk.signalConnect(Gui.progout, "focus-in-event",
                                changeFocus STDSTREAMS);
-	     Gtk.panedSetPosition(Gui.vpaned1,0);
+	     Gtk.Paned.setPosition(Gui.vpaned1,0);
 	          (* workaround: Glade refuses to set pane position to 0,
 		   * but with 1 the statusbar appears over the menu when
 		   * using an eventbox... 8-} *)
 	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
 	     OutputWriters.makeWriters (eval (false, false));
 	     History.set (Config.loadHistory());
-	     Gtk.textViewSetEditable(Gui.compilerout, false);
-	     Gtk.windowSetDefaultSize(Gui.mainwidget,
+	     Gtk.TextView.setEditable(Gui.compilerout, false);
+	     Gtk.Window.setDefaultSize(Gui.mainwidget,
 				      Config.sizeX,Config.sizeY);
-	     Gtk.widgetShowAll Gui.mainwidget;
-             Gtk.widgetGrabFocus (Gui.compilerout);
+	     Gtk.Widget.showAll Gui.mainwidget;
+             Gtk.Widget.grabFocus (Gui.compilerout);
 	     OS.Process.atExit (fn () => quit' false))
 
 	fun initDone loadSession =
-	    (Gtk.textViewSetEditable(Gui.compilerout, true);
-	     Gtk.signalConnect(Gtk.textViewGetBuffer Gui.compilerout,
+	    (Gtk.TextView.setEditable(Gui.compilerout, true);
+	     Gtk.signalConnect(Gtk.TextView.getBuffer Gui.compilerout,
 			       "mark-set",
 			       compilerOutMarkSet);
-	     Gtk.widgetSetSensitive(Gui.feed1, true);
+	     Gtk.Widget.setSensitive(Gui.feed1, true);
 	     Evaluator.setAnnotActive true;
 	     if not loadSession then () else
 	     app (openGivenFile SESSION) (Config.loadOpenFiles ()))
