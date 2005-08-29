@@ -29,9 +29,7 @@ structure Egg =
 	    type object
             structure WindowType :
             sig
-                datatype t = 
-                    POPUP
-                  | TOPLEVEL
+                datatype t = POPUP | TOPLEVEL
             end
             structure Window :
             sig

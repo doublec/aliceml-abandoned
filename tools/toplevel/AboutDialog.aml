@@ -31,8 +31,8 @@ structure AboutDialog =
        val _      = Gtk.AboutDialog.setCopyright (dialog, "The Alice Team")
 
        val authors = #[
-            "Andreas Rossberg <rossberg@ps.uni-sb.de>",
-            "Guido Tack       <tack@ps.uni-sb.de>"
+            "Guido Tack <tack@ps.uni-sb.de>",
+            "Andreas Rossberg <rossberg@ps.uni-sb.de>"
        ]
 
        val _      = Gtk.AboutDialog.setAuthors (dialog, authors) 
