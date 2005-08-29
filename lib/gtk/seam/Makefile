@@ -63,7 +63,7 @@ INSTALLDIR=`alice-config --alicelibdir`/gtk
 ifeq ($(WINDOWS),1)
 CC_OPTS=-mno-cygwin -mms-bitfields
 else
-CC_OPT=
+CC_OPTS=
 endif
 PC_OPTS=gtk+-2.0 libgnomecanvas-2.0 glib-2.0
 
