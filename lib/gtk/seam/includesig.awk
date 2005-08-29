@@ -15,9 +15,9 @@ BEGIN {
 }
 
 {
-  if (match ($0, /^\W*sig\W*$/)) { if (body) printlines = 1; else print $0 }
+  if (match ($0, /^sig\W*$/)) { if (body) printlines = 1; else print $0 }
   else 
-    if (match ($0, /^\W*end\W*$/)) { if (body) printlines = 0; else print $0 }
+    if (match ($0, /^end\W*$/)) { if (body) printlines = 0; else print $0 }
     else
       if (match ($0, /^<<<\W*\".*\"\W*>>>$/)) { 
 	print "(* begin of " $2 " *)\n"     

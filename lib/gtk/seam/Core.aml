@@ -11,14 +11,23 @@
  *
  *)
 
-import structure NativeCore from "NativeCore"
+import structure NativeCore from "NativeCore" 
 import signature CORE from "CORE-sig"
 
 structure Core : CORE =
 struct
     (* object is an abstract type for pointers to Gtk structures *)
-    __primitive type object = "Gtk.object"
-    __primitive type group = "Gtk.group"
+    __primitive type object   = "Gtk.object"
+    __primitive type gtype    = "Gtk.gtype"
+    __primitive type gvalue   = "Gtk.gvalue"
+    
+    datatype 'a prop = PROP of {
+        name :          string,
+        toValue :       'a -> gvalue,
+        fromValue :     gvalue -> 'a
+    }
+
+    type prop_initializer = object -> unit
 
     (* event represents a GdkEvent *)
     datatype event =
@@ -155,7 +164,19 @@ struct
 				   Exn.name (Exn.fromPacket packet) ^
 				   " ***\n*** Backtrace:\n") ;
 		    Exn.dumpTrace packet ))
-	      (fn _ => NativeCore.signalMapCondGet(connid, dummyHandler) (obj, args)) ;
+	      (fn _ => 
+                let (* val _ = TextIO.output (TextIO.stdErr, "*** looking up signal handler ***") *)
+                    val f = NativeCore.signalMapCondGet(connid, dummyHandler) 
+                in
+                    (*
+                    TextIO.output (TextIO.stdErr,
+                      "*** calling signal handler ***");
+                    *)
+                    f (obj, args)
+                    (* ;
+                    TextIO.output (TextIO.stdErr,
+                        "*** signal handler has returned") *)
+                end) ;
 	      listener stream )
     end
 
@@ -213,17 +234,58 @@ struct
 	    spawn (mainLoop initPoll)
 	end
 
-    val objectSetIntProp    = NativeCore.propSetInt
-    val objectSetStringProp = NativeCore.propSetString
-    val objectSetBoolProp   = NativeCore.propSetBool
 
-    val objectGetIntProp    = NativeCore.propInt
-    val objectGetStringProp = NativeCore.propString
-    val objectGetBoolProp   = NativeCore.propBool
+    structure Types =
+    struct
+        val string      = NativeCore.getStringType ()
+        val int         = NativeCore.getIntType ()
+        val float       = NativeCore.getFloatType ()
+        val double      = NativeCore.getDoubleType ()
+        val pixbuf      = NativeCore.getPixbufType ()
+    end
 
-    datatype log_mode =
-        LOG_MODE_DEFAULT
-      | LOG_MODE_NULL
+    structure Value =
+    struct
+        val undefined   = NativeCore.valueUndefined
+        val int         = NativeCore.valueInt
+        val enum        = NativeCore.valueEnum
+        val string      = NativeCore.valueString
+        val float       = NativeCore.valueFloat
+        val double      = NativeCore.valueDouble
+        val bool        = NativeCore.valueBool
+        val object      = NativeCore.valueObject
 
-    val setLogMode = NativeCore.setLogMode
+        val toInt       = NativeCore.valueToInt
+        val toString    = NativeCore.valueToString
+        val toReal      = NativeCore.valueToReal
+        val toBool      = NativeCore.valueToBool
+        val toObject    = NativeCore.valueToObject
+        val getType     = NativeCore.valueGetType
+    end
+
+    structure Prop =
+    struct
+
+        val rawSet = NativeCore.propRawSet
+        val rawGet = NativeCore.propRawGet
+
+        fun set (PROP { toValue, name, ... }) (ob, v) =
+            let
+                val gv = toValue v
+            in
+                rawSet (ob, name, gv)
+            end
+
+        fun get (PROP { fromValue, name, ... }) ob =
+            fromValue (rawGet (ob, name))
+
+        fun name (PROP { name, ... }) = name
+
+        fun newProp (name, toValue, fromValue) = PROP { name, toValue, fromValue }
+
+        fun prop (p, v) ob = set p (ob, v)
+
+        fun setL ob l =
+            List.app (fn pi => pi ob) l
+    end
 end

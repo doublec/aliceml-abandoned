@@ -1,0 +1,4 @@
+import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+
+structure StrMap = MkHashImpMap String
+

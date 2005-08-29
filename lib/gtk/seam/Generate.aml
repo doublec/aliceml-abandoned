@@ -1,0 +1,784 @@
+import structure OS          from "x-alice:/lib/system/OS"
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import structure Defs        from "Defs"
+import structure StrMap      from "StrMap"
+import structure AliceType   from "AliceType"
+import structure AliceName   from "AliceName"
+import structure Lexer       from "Lexer"
+import structure TypeWrapper from "TypeWrapper"
+import structure DefsParser  from "DefsParser"
+import structure Naming      from "Naming"
+import structure Code        from "Code"
+
+open Defs
+
+(* list of modules we want to generate
+   wrappers for.  In the order the wrappers
+   have to be created.  
+ *)
+
+val modulesDesc = [
+    ("GLib",  "g_", "GLib", []),
+    ("Pango", "pango_", "Pango", 
+        ["GLib"]),
+    ("Atk", "atk_", "Atk",
+        ["GLib"]),
+    ("Gdk", "gdk_", "Gdk",
+        ["GLib", "Pango", "Atk"]),
+    ("Gtk", "gtk_", "Gtk",
+        ["GLib", "Pango", "Atk", "Gdk"]),
+    ("Gnome", "gnome_canvas_", "Canvas",
+        ["GLib", "Pango", "Atk", "Gdk", "Gtk"])
+]
+
+val indentWidth = 4
+
+fun print f (indent, msg) = 
+    TextIO.output (f,
+        String.tabulate (indent * indentWidth, const #" ") ^ msg ^ "\n")
+
+fun generateFiles name f =
+    let val aml       = TextIO.openOut (name ^ ".aml")
+        val amlSig    = TextIO.openOut (String.map Char.toUpper name ^ "-sig.tml")
+        val nativeSig = TextIO.openOut ("Native" ^ name ^ ".asig")
+        val native    = TextIO.openOut ("Native" ^ name ^ ".cc")
+        val nativeH   = TextIO.openOut ("Native" ^ name ^ ".hh")
+    in
+        f (print aml, print amlSig, print native, print nativeSig, print nativeH);
+        List.app TextIO.closeOut [aml, amlSig, native, nativeSig, nativeH]
+    end
+
+fun nativeFunName an =
+    List.last (AliceName.absolutePath an) ^ AliceName.name an
+
+
+fun addToDefines defines { argc, retc, name } =
+    defines := (argc, retc, nativeFunName name) :: (!defines)
+
+fun generate () =
+    let (* load all .def files *)
+        val (modules, types) as info = DefsParser.load "wrapper.defs"
+        
+        fun lookupModule name =
+            case List.find 
+                (fn (MODULE (m as { name = n, ...})) => n = name) modules of
+                NONE    => assert false
+              | SOME m  => m
+    in
+        (* generate code for all modules we know about *)
+        List.app (fn (name, prefix, aliceName, imports) =>
+            generateModule (info, prefix, aliceName, imports, lookupModule name)) modulesDesc
+    end
+
+
+and removeStructurePrefix prefix (OBJECT ob) =
+    let
+        val path     = List.rev (#alicePath ob)
+        val last     = hd path
+        val newLast  = Naming.removePrefix prefix last
+        val newPath  = List.rev (newLast :: tl path)
+        fun removePrefixOfFun (FUNCTION f) =
+            let
+                val an          = #aliceName f
+                val path        = List.rev (AliceName.absolutePath an)
+                val last        = hd path
+                val newLast     = Naming.removePrefix prefix last
+                val newPath     = List.rev (if newLast = "" then tl path else newLast :: tl path)
+                val newName     = AliceName.aliceName (newPath, AliceName.name an)
+            in
+                FUNCTION { f where aliceName = newName }
+            end
+    in
+        #methods ob := List.map removePrefixOfFun (!(#methods ob));
+        #constructors ob := List.map removePrefixOfFun (!(#constructors ob));
+        OBJECT { ob where alicePath = newPath }
+    end
+  | removeStructurePrefix _ foo = foo
+
+    
+and generateModule (info, prefix, aliceName, imports, (MODULE m) as module) =
+    generateFiles aliceName (fn (p, pSig, pNative, pNatSig, pNatH) =>
+    let val sigName = String.map Char.toUpper aliceName
+        val defines = ref []
+    in
+        (* Alice structure header *)
+         p (0, "import structure Core  from \"Core\"");
+         List.app (fn imp =>
+            p (0, "import structure " ^ imp ^ "\tfrom \"" ^ imp ^ "\"")) imports;
+         p (0, "import structure Native" ^ aliceName ^"\tfrom \"Native" ^ 
+                    aliceName ^ "\"");
+         p (0, "import signature " ^ sigName ^ "\tfrom \"" ^ sigName ^ "-sig\"");
+         p (0, "structure " ^ aliceName ^ " :> " ^  sigName ^  " =");
+         p (0, "struct");
+         p (1, "open Core");
+         p (1, "val _ = Future.await Core.latin1ToUtf8");
+
+         (* Alice signature header *)
+         pSig (0, "import structure Core  from \"Core\"");
+         List.app (fn imp =>
+            pSig (0, "import structure " ^ imp ^ "\tfrom \"" ^ imp ^ "\"")) imports;
+         pSig (0, "signature " ^ sigName ^ " =");
+         pSig (0, "sig");
+         pSig (1, "type object = Core.object");
+         pSig (1, "type gtype = Core.gtype");
+         pSig (1, "type gvalue = Core.gvalue");
+         pSig (1, "type prop   = Core.prop");
+         pSig (1, "type prop_initializer = Core.prop_initializer");
+         pSig (0, "<<< \"CORE-sig.aml\" >>>");
+
+         (* native signature *)
+         pNatSig (0, "signature NATIVE_" ^ sigName ^ "_COMPONENT =");
+         pNatSig (0, "sig");
+         pNatSig (1, "structure Native" ^ aliceName ^ " :");
+         pNatSig (1, "sig");  
+                
+         (* Native Code header *)
+         pNative (0, "#include <pango/pango.h>");
+         pNative (0, "#include <atk/atk.h>");
+         pNative (0, "#include <atk/atk-enum-types.h>");
+         pNative (0, "#include <gdk/gdk.h>");
+         pNative (0, "#include <gdk-pixbuf/gdk-pixbuf.h>");
+         pNative (0, "#include <gtk/gtk.h>");
+         pNative (0, "#include <gtk/gtkprivate.h>");
+         pNative (0, "#include <gtk/gtktree.h>");
+         pNative (0, "#include <libgnomecanvas/gnome-canvas.h>");
+         pNative (0, "#include <libgnomecanvas/gnome-canvas-bpath.h>");
+         pNative (0, "#include \"NativeUtils.hh\"");
+         
+
+         List.app (fn imp =>
+            pNative (0, "#include \"Native" ^ imp ^ ".hh\"")) imports;
+         pNative (0, "#include \"Native" ^ aliceName ^ ".hh\"");
+
+         (* wrap the enums *)
+         List.app (fn (TY_ENUM t) => wrapEnum (p, pSig, pNative, pNatSig, pNatH, aliceName, 
+                                               t, defines)
+                    | _           => ()) (!(#types m));
+
+         (* wrap the boxed types *)
+         List.app (fn (box as TY_BOXED _) => wrapBoxed info (p, pSig, pNative, pNatSig, 
+                                            aliceName, box, defines)
+                    | _              => ()) (!(#types m));
+
+         (* wrap the objects *)
+         List.app (fn (TY_OBJECT ob) => 
+                    wrapObject info 
+                        (p, pSig, pNative, pNatSig, aliceName, removeStructurePrefix aliceName ob, 
+                                defines)
+                     | _             => ()) (!(#types m));
+
+         (* wrap the standalone functions *)
+         wrapStandAloneFunctions (aliceName, p, pSig, pNative, pNatSig, defines) 
+            (!(#functions m));
+
+         (* native code InitComponent *)
+         pNative (0, "word InitComponent() {");
+         pNative (1, "InitLocalInstance ();");
+         pNative (1, "Record *record = Record::New ((unsigned)" ^ 
+                        Int.toString (List.length (!defines)) ^ ");");
+         List.app (fn (argc, retc, name) =>
+                    pNative (1, "INIT_STRUCTURE_N(record, \"Native" ^ aliceName ^
+                                    "\", \"" ^ name ^ "\"," ^ aliceName ^ "_" ^ 
+                                    name ^ ", " ^ Int.toString argc ^ 
+                                    ", " ^ Int.toString retc ^ ");")) 
+                    (!defines);
+         pNative (1, "RETURN_STRUCTURE(\"Native" ^ aliceName ^ "$\", record);");
+         pNative (0, "}");
+         
+         (* native signature footer *)
+         pNatSig (1, "end");
+         pNatSig (0, "end");
+     
+         (* Alice structure footer *)
+         p (0, "end");
+         (* Alice signature footer *)
+         pSig (0, "end")
+    end)
+     
+and categorizeFunctions functions =
+    let
+        val funs = StrMap.map ()
+        fun modOfFun (FUNCTION { aliceName = n, ... }) = 
+            List.sub (AliceName.absolutePath n, 1)
+
+        fun addToFuns f =
+            StrMap.insertWith (op @) (funs, modOfFun f, [f])
+    in
+        List.app addToFuns functions;
+        StrMap.foldi (fn (k, v, l) => (k, v) :: l) [] funs
+    end
+
+and wrapStandAloneFunctions (module, p, pSig, pNat, pNatSig, defines) functions =
+    let
+        val cats = categorizeFunctions functions 
+    in
+        List.app (fn (module2, funs) =>
+            (pSig (1, "structure " ^ module2 ^ ":");
+             pSig (1, "sig");
+             p (1, "structure " ^ module2 ^ "=");
+             p (1, "struct");
+             List.app (fn (f as FUNCTION { aliceName, ... }) =>
+                let 
+                in
+                    printFunctionSig [module, module2] (curry pSig 2) f;
+                    pNatSig (2, "val " ^ nativeFunName aliceName ^ ": " ^ 
+                        AliceType.toString (AliceType.toNativeType 
+                            (TypeWrapper.aliceFunctionSig f), []));
+
+                    p (2, "val " ^ AliceName.toString (aliceName, [module, module2]) ^ 
+                                " = Native" ^ module ^ "." ^ nativeFunName aliceName);
+                    wrapFunction (module, pNat, defines) f
+                end) funs;
+            pSig (1, "end");
+            p (1, "end") )
+        ) cats
+    end
+
+
+and wrapFunction (module, pNat, defines) (f as FUNCTION { 
+            aliceName = name, 
+            parameters, 
+            cName = CN cFunName,
+            returnType,
+            varArgs,
+            code,
+            ... }) =
+    let
+        val (paramsSig, resSig) = 
+            case TypeWrapper.aliceFunctionSig f of
+                AliceType.AT_ARROW (AliceType.AT_PROD args, 
+                                    AliceType.AT_PROD res) => (args, res)
+              | AliceType.AT_ARROW (AliceType.AT_REC args,
+                                    AliceType.AT_PROD res) => (List.map #2 args, res)
+              | AliceType.AT_ARROW (AliceType.AT_REC args,
+                                    res                  ) => (List.map #2 args, [res])
+              | AliceType.AT_ARROW (AliceType.AT_PROD args, res) => (args, [res])
+              | AliceType.AT_ARROW (arg, AliceType.AT_PROD res)  => ([arg], res)
+              | AliceType.AT_ARROW (arg, res)                    => ([arg], [res])
+    
+        val resN = List.length resSig
+        val tempC = ref 0 
+        (* i++ style increment *)
+        fun incr r () = !r before (r := !r + 1)
+
+        val argc = ref 0 
+
+        fun paramToArg (i, p as PARAM { defType, ... }) =
+            let val ty as TypeWrapper.TY_WRAP { 
+                    defType, 
+                    cType = CT cType,
+                    aliceType,
+                    inCode,
+                    outCode,
+                    argCode,
+                    prepareOutCode,
+                    paramKind
+                } = TypeWrapper.param p
+            in
+                if TypeWrapper.isInArg ty then
+                    (Code.format (inCode, incr tempC, 
+                        #["x" ^ Int.toString (incr argc ()),
+                          "a" ^ Int.toString i,
+                          "ty" ^ Int.toString i]),
+                     Code.format (argCode, incr tempC, 
+                            #["a" ^ Int.toString i]),
+                     (if TypeWrapper.isOutArg ty orelse 
+                        paramKind = TypeWrapper.ERROR then
+                        Code.format (outCode, incr tempC,
+                            #["a" ^ Int.toString i,
+                              "r" ^ Int.toString i,
+                              ",ty" ^ Int.toString i])
+                      else ""),
+                     if TypeWrapper.isOutArg ty then 
+                        SOME ("r" ^ Int.toString i)
+                     else NONE)
+                else 
+                    (Code.format (prepareOutCode, incr tempC,
+                            #["SHOULD_NOT_APPEAR",
+                              "a" ^ Int.toString i,
+                              "ty" ^ Int.toString i]),
+                     Code.format (argCode, incr tempC,
+                            #["a" ^ Int.toString i]),
+                     Code.format (outCode, incr tempC,
+                            #["a" ^ Int.toString i,
+                              "r" ^ Int.toString i,
+                              ",ty" ^ Int.toString i]),
+                     if TypeWrapper.isOutArg ty then 
+                        SOME ("r" ^ Int.toString i)
+                     else NONE)
+            end
+            
+
+        val args = List.mapi paramToArg parameters
+    
+        val (returnCode, returnCode2) = case returnType of
+                NONE    => ("", "")
+              | SOME t  =>
+                let val ty as TypeWrapper.TY_WRAP { 
+                        cType = CT cType,
+                        outCode,
+                        ... 
+                    }  = TypeWrapper.return t
+                in
+                    (cType ^ " cres = (" ^ cType ^ ")", 
+                                Code.format (outCode, incr tempC,
+                                            #["cres", "res", ""]))
+                end
+                
+    in
+        addToDefines defines { argc = !argc, retc = resN, name }; 
+        pNat (0, "DEFINE" ^ Int.toString (List.length paramsSig) ^ "(" ^ module ^ 
+                    "_" ^ List.last (AliceName.absolutePath name) ^ 
+                    (AliceName.name name) ^ ") {");
+        List.app (fn (inCode, _, _, _)  => pNat (1, inCode)) args;
+        case code of
+            NONE        =>
+            (pNat (1, returnCode ^ cFunName ^ "(");
+             List.appi (fn (i, (_, arg, _, _)) => 
+                        pNat (2, (if i > 0 then "," else "") ^ arg)) args;
+             (* FIXME: hack alert if vararg function we just pass NULL every time
+               as the ... argument *)
+             if varArgs then
+                pNat (2, ", NULL")
+             else ();
+                pNat (2, ");"))
+          | SOME code   =>
+            pNat (1, code);
+        if returnCode2 <> "" then pNat (1, returnCode2) else ();
+        List.app (fn (_, _, "", _) => ()
+                   | (_, _, outCode, _) => pNat (1, outCode)) args;
+        if null resSig then pNat (1, "RETURN_UNIT;")
+        else
+            let val resL = List.mapPartial #4
+                            ( ("", "", "", Option.map (const "res") returnType) ::
+                              args)
+                val n    = List.length resL
+            in
+                (* assert (n = resN); *)
+                pNat (1, "RETURN" ^ Int.toString n ^ "(" ^ 
+                            String.concatWith "," resL ^ ");")
+            end;
+        pNat (0, "} END")
+    end
+
+
+and wrapObject info (p, pSig, pNative, pNatSig, moduleName, ob as
+    OBJECT { alicePath, cName, parent, fields, gType,
+             methods = ref methods,
+             constructors = constructors,
+             properties   = ref properties,
+             isInterface
+           }, defines) = 
+    let val name      = List.last alicePath 
+        val useStruct = name <> "" 
+    in
+    if null (!constructors) andalso not (null fields) then
+        constructors := [generateNew (pNative, cName, moduleName, alicePath, fields) ]
+     else ();
+     (* signature *)
+     if useStruct then (
+        pSig (1, "structure " ^ List.last alicePath ^ " :");
+        pSig (1, "sig");
+        pSig (2, "(* constructors *)");
+        List.app (printFunctionSig alicePath (curry pSig 2)) (!constructors);
+        pSig (2, "(* methods *)");
+        List.app (printFunctionSig alicePath (curry pSig 2)) methods;
+        pSig (2, "(* properties *)");
+        List.app (printPropertySig alicePath (curry pSig 2)) properties;
+        pSig (1, "end")
+     ) else (
+        List.app (printFunctionSig alicePath (curry pSig 1)) (!constructors);
+        List.app (printFunctionSig alicePath (curry pSig 1)) methods
+     );
+        
+     (* structure *)
+     if useStruct then (
+         p (1, "structure " ^ List.last alicePath ^ " =");
+         p (1, "struct");
+         p (2, "(* constructors *)");
+         List.app (fn (FUNCTION { aliceName = name, ... }) =>
+                    p (2, "val " ^ AliceName.toString (name, alicePath) ^ " = Native" ^
+                          moduleName ^ "." ^ nativeFunName name)) (!constructors);
+         p (2, "(* methods *)");
+         List.app (fn (FUNCTION { aliceName = name, ... }) =>
+                    p (2, "val " ^ AliceName.toString (name, alicePath) ^ " = Native" ^
+                          moduleName ^ "." ^ nativeFunName name)) methods;
+         p (2, "(* properties *)");
+         List.app (printPropDef alicePath (curry p 2)) properties;
+         p (1, "end")
+     ) else (
+         List.app (fn (FUNCTION { aliceName = name, ... }) =>
+                    p (1, "val " ^ AliceName.toString (name, alicePath) ^ " = Native" ^
+                          moduleName ^ "." ^ nativeFunName name)) (!constructors);
+         List.app (fn (FUNCTION { aliceName = name, ... }) =>
+                    p (1, "val " ^ AliceName.toString (name, alicePath) ^ " = Native" ^
+                          moduleName ^ "." ^ nativeFunName name)) methods;
+         p (2, "(* properties *)");
+         List.app (printPropDef alicePath (curry p 2)) properties
+     );
+
+     (* native signature *)
+     List.app (fn (f as FUNCTION { aliceName = name, ... }) =>
+                pNatSig (2, "val " ^ nativeFunName name ^ ": " ^ 
+                    AliceType.toString (AliceType.toNativeType 
+                        (TypeWrapper.aliceFunctionSig f), []))) (!constructors);
+     List.app (fn (f as FUNCTION { aliceName = name, ... }) =>
+                pNatSig (2, "val " ^ nativeFunName name ^ ": " ^ 
+                    AliceType.toString (AliceType.toNativeType 
+                        (TypeWrapper.aliceFunctionSig f), []))) methods;
+   
+    (* native code *)
+    List.app (wrapFunction (moduleName, pNative, defines)) (!constructors);
+    (* generate field setter / getter macros *)
+    List.app (fn (_, CN cn, (getter, setter)) => (
+                pNative (0, "#define DO" ^ getter ^ "(O) ((O)->" ^ cn ^ ")");
+                pNative (0, "#define DO" ^ setter ^ "(O, V) ((O)->" ^ cn ^ " = (V))"))) fields;
+    List.app (wrapFunction (moduleName, pNative, defines)) methods;
+    (* undefine field setter / getter macros *)
+    List.app (fn (_, CN cn, (getter, setter)) => (
+                pNative (0, "#undef DO" ^ getter);
+                pNative (0, "#undef DO" ^ setter))) fields
+    end
+
+
+and generateNew (p, CN obName, module, path, fields) =
+    let
+        val args = map (fn (dt, CN n, _) =>  
+                PARAM {
+                    name        = n,
+                    defType     = dt,
+                    default     = NONE,
+                    nullOk      = true,
+                    array       = NONE
+                })      fields
+    in
+        p (0, obName ^ "* MK_" ^ obName ^ "New (");
+        List.appi (fn (i, (dt, CN n, _)) =>
+            let val ty as TypeWrapper.TY_WRAP {
+                cType = CT ct,
+                ...
+                }       = TypeWrapper.lookupParam dt
+            in
+                p (2, (if i > 0 then ", " else "") ^ 
+                    ct ^ " " ^ n)
+            end) fields;
+        p (2, ") {");
+        p (1, obName ^ "* res_ = new " ^ obName ^ ";");
+        List.app (fn (_, CN n, _) =>
+                p (1, "res_->" ^ n ^ " = " ^ n ^ ";")
+            ) fields;
+        p (1, "return res_;");
+        p (0, "}");
+
+        FUNCTION {
+            aliceName   = AliceName.aliceName (path, "new"),
+            cName       = CN ("MK_" ^ obName ^ "New"),
+            returnType  = SOME (DT (obName ^ "*")),
+            parameters  = args,
+            varArgs     = false,
+            code        = NONE,
+            useRecord   = true
+        } 
+    end
+
+and wrapBoxed info (p, pSig, pNative, pNatSig, moduleName, boxed as TY_BOXED
+                    { cName, aliceName, copyFunc, 
+                      releaseFunc, fields, 
+                      methods = ref methods, 
+                      constructors = constructors,
+                      gType }, defines) =
+    (if null (!constructors) andalso not (null fields) then
+        constructors := [generateNew (pNative, cName, moduleName, 
+                            AliceName.absolutePath aliceName, fields)]
+     else ();
+
+     pSig (1, "structure " ^ List.last (AliceName.absolutePath aliceName) ^ " :");
+     pSig (1, "sig");
+     pSig (2, "(* constructors *)");
+     List.app (printFunctionSig (AliceName.absolutePath aliceName) 
+                    (curry pSig 2)) (!constructors);
+     pSig (2, "(* methods *)");
+     List.app (printFunctionSig (AliceName.absolutePath aliceName)
+                    (curry pSig 2)) methods;
+     pSig (1, "end");
+     (* structure *)
+     p (1, "structure " ^ List.last (AliceName.absolutePath aliceName) ^ " =");
+     p (1, "struct");
+     p (2, "(* constructors *)");
+     List.app (fn (FUNCTION { aliceName = name, ... }) =>
+                p (2, "val " ^ AliceName.toString (name, 
+                                    AliceName.absolutePath aliceName) ^ " = Native" ^
+                      moduleName ^ "." ^ (List.last (AliceName.absolutePath name)) ^ 
+                      AliceName.name name)) (!constructors);
+     p (2, "(* methods *)");
+     List.app (fn (FUNCTION { aliceName = name, ... }) =>
+                p (2, "val " ^ AliceName.toString (name, 
+                                AliceName.absolutePath aliceName) ^ " = Native" ^
+                      moduleName ^ "." ^ (List.last (AliceName.absolutePath name)) ^ 
+                      AliceName.name name)) methods;
+     p (1, "end");
+     (* native signature *)
+     List.app (fn (f as FUNCTION { aliceName = name, ... }) =>
+                pNatSig (2, "val " ^ nativeFunName name ^ ": " ^ 
+                    AliceType.toString (AliceType.toNativeType 
+                        (TypeWrapper.aliceFunctionSig f), []))) (!constructors);
+     List.app (fn (f as FUNCTION { aliceName = name, ... }) =>
+                pNatSig (2, "val " ^ nativeFunName name ^ ": " ^ 
+                    AliceType.toString (AliceType.toNativeType 
+                        (TypeWrapper.aliceFunctionSig f), []))) methods;
+     (* native code *)
+     List.app (wrapFunction (moduleName, pNative, defines)) (!constructors);
+     (* generate field setter / getter macros *)
+     List.app (fn (_, CN cn, (getter, setter)) => (
+                pNative (0, "#define DO" ^ getter ^ "(O) ((O)->" ^ cn ^ ")");
+                pNative (0, "#define DO" ^ setter ^ "(O, V) ((O)->" ^ cn ^ " = (V))"))) fields;
+     List.app (wrapFunction (moduleName, pNative, defines)) methods;
+     (* undefine field setter / getter macros *)
+     List.app (fn (_, CN cn, (getter, setter)) => (
+                pNative (0, "#undef DO" ^ getter);
+                pNative (0, "#undef DO" ^ setter))) fields)
+  | wrapBoxed _ _ = assert false
+
+
+and printFunctionSig alicePath pSig (f as FUNCTION { aliceName=n, ... }) = 
+    pSig ("val " ^ AliceName.name n ^ " : " ^ 
+        AliceType.toString (TypeWrapper.aliceFunctionSig f, alicePath))
+                            
+and printPropertySig alicePath pSig (PROP { name, aliceType, ... }) =
+    pSig ("val " ^ Naming.propNameToAlice name ^ " : " ^ 
+            AliceType.toString (aliceType, alicePath))
+
+and printPropDef alicePath p (PROP { name, toValue, fromValue, ... }) =
+    let
+        val n      = ref 0
+        fun gen () = !n before n := !n + 1
+    in
+        p ("val " ^ Naming.propNameToAlice name ^ " = Prop.newProp (\"" ^ 
+                name ^ "\"," ^ toValue ^ "," ^ fromValue ^ ")")
+    end
+
+(* On enum handling:
+    - First of all now that we exclusively use the .defs file from the pygtk
+      project we no longer have the numerical values of the enumerations which
+      means we have to generate conversion functions in c++.
+ *)
+  
+  
+and printConverterSig path p (n, name, fromT, toT) =
+    let
+        val f = AliceType.AT_ARROW (fromT, toT)
+    in
+        p (2, "val " ^ List.last (AliceName.absolutePath n) ^ name ^ " : " ^ 
+           AliceType.toString (AliceType.toNativeType f, path))
+    end
+
+and flagType (aliceName) = 
+    AliceType.AT (AliceName.aliceName (AliceName.absolutePath aliceName, "flag"))
+
+
+and wrapEnum (p, pSig, pNative, pNatSig, pNatH, moduleName, { aliceName = name, 
+                                              cName = CN cName, 
+                                              values, isFlag, gType }, defines) =
+    ((* generate signature *)
+     pSig (1, "structure " ^ List.last (AliceName.absolutePath name) ^ " :");
+     pSig (1, "sig");
+     pSig (2, "datatype " ^ (if isFlag then "flag" else "t") ^ " =");
+     List.appi (fn (i, (n, _)) => 
+                  if i = 0 then pSig (3, n)
+                  else pSig (2, "  | " ^ n)) values;
+     if isFlag then (
+        (*
+        pSig (2, "val flagToInt   : flag -> int");
+        pSig (2, "val flagFromInt : int -> flag");
+        *)
+        pSig (2, "type t = flag list"))
+     else ();
+     if Option.isSome gType then
+        pSig (2, "val getType : unit -> gtype")
+     else ();
+     pSig (2, "val toInt   : t -> int");
+     pSig (2, "val fromInt : int -> t");
+     pSig (1, "end");
+     
+     (* generate structure *)
+     
+     p (1, "structure " ^ List.last (AliceName.absolutePath name) ^ " = ");
+     p (1, "struct");
+     p (2, "datatype " ^ (if isFlag then "flag" else "t") ^ " =");
+     List.appi (fn (i, (n, _)) => 
+                  if i = 0 then p (3, n)
+                  else p (2, "  | " ^ n)) values;
+     if isFlag then (
+        (*
+        p (2, "val flagToInt  = Native" ^ moduleName ^ "." ^ 
+                    List.last (AliceName.absolutePath name) ^ "FlagToInt");
+        p (2, "val flagFromInt = Native" ^ moduleName ^ "." ^ 
+                    List.last (AliceName.absolutePath name) ^ "FlagFromInt");
+        *)
+        p (2, "type t = flag list"))
+     else ();
+     if Option.isSome gType then
+        p (2, "val getType = Native" ^ moduleName ^ "." ^ 
+                List.last (AliceName.absolutePath name) ^ "GetType")
+     else ();
+     p (2, "val toInt   = Native" ^ moduleName ^ "." ^
+                    List.last (AliceName.absolutePath name) ^ "ToInt");
+     p (2, "val fromInt = Native" ^ moduleName ^ "." ^ 
+                    List.last (AliceName.absolutePath name) ^ "FromInt");
+     p (1, "end");
+     
+     
+     (* generate native signature *)
+     if isFlag then (
+        (*
+        printConverterSig [] pNatSig (name, "FlagToInt", flagType name, AliceType.Types.int);
+        printConverterSig [] pNatSig (name, "FlagFromInt", AliceType.Types.int, flagType name))
+        *)
+        ()
+        )
+    else ();
+    printConverterSig [] pNatSig (name, "ToInt", AliceType.AT name, AliceType.Types.int);
+    printConverterSig [] pNatSig (name, "FromInt", AliceType.Types.int, AliceType.AT name);
+    if Option.isSome gType then
+        printConverterSig [] pNatSig (name, "GetType", AliceType.Types.unit, AliceType.Types.gtype)
+    else ();
+     
+    (* generate c++ helper functions declarations *)
+    pNatH (0, "word " ^ Naming.nativeEnumToWord (AliceName.reveal name) ^ "(" ^ cName ^ " v);");
+    pNatH (0, cName   ^ " " ^ Naming.nativeEnumFromWord (AliceName.reveal name) ^ "(word w);");
+
+    (* generate c++ helper functions *)
+    if isFlag then (
+        pNative (0, "word " ^ Naming.nativeEnumToWord (AliceName.reveal name) ^ "(" ^
+                        cName ^ " v) {");
+        pNative (1, "word w = Store::IntToWord(Types::nil);");
+        List.appi (fn (i, (_, CN n)) =>
+                   (pNative (2, "if ((v & " ^ n ^ ") == " ^ n ^ ") {");
+                    pNative (3, "w = alice_cons (Store::IntToWord (" ^ 
+                                    Int.toString i ^ "), w);");
+                    pNative (2, "}"))) values;
+        pNative (1, "return w;");
+        pNative (0, "}");
+
+        pNative (0, cName ^ " " ^ Naming.nativeEnumFromWord (AliceName.reveal name) ^
+                        "(word w) {");
+        pNative (1, "unsigned r = 0;");
+        pNative (1, "TagVal *tv;");
+        pNative (1, "while ((tv = TagVal::FromWord(w)) != INVALID_POINTER) {");
+        pNative (2, "Assert(tv->GetTag () == Types::cons);");
+        pNative (2, "switch (Store::WordToInt (tv->Sel (0))) {");
+        List.appi (fn (i, (_, CN n)) =>
+                   (pNative (3, "case " ^ Int.toString i ^ ": r |= " ^ n ^ ";");
+                    pNative (4, "break;"))) values;
+        pNative (3, "default:");
+        pNative (4, "Error (\"" ^ Naming.nativeEnumFromWord (AliceName.reveal name) ^
+                            ": invalid enum\");");
+        pNative (3, "break;");
+        pNative (2, "}");
+        pNative (2, "w = tv->Sel (1);");
+        pNative (1, "}");
+        pNative (1, "return (" ^ cName ^ ")r;");
+        pNative (0, "}")
+    ) else (
+        pNative (0, "word " ^ Naming.nativeEnumToWord (AliceName.reveal name) ^ "(" ^
+            cName ^ " v) {");
+        pNative (1, "unsigned r = 0;");
+        List.appi (fn (i, (_, CN n)) =>
+                   (pNative (2, "if ((v & " ^ n ^ ") == " ^ n ^ ") {");
+                    pNative (3, "r = " ^ Int.toString i ^ ";");
+                    pNative (2, "} else "))) values;
+        pNative (2, "{ Error (\"\"); }");
+        pNative (1, "return Store::IntToWord (r);");
+        pNative (0, "}");
+
+        pNative (0, cName ^ " " ^ Naming.nativeEnumFromWord (AliceName.reveal name) ^
+                        "(word w) {");
+        pNative (1, cName ^ " r;");
+        pNative (1, "s_int wi = Store::WordToInt(w);");
+        pNative (1, "switch (wi) {");
+        List.appi (fn (i, (_, CN n)) =>
+                   (pNative (2, "case " ^ Int.toString i ^ ": r = " ^ n ^ ";");
+                    pNative (3, "break;"))) values;
+        pNative (2, "default:");
+        pNative (3, "Error (\"" ^ Naming.nativeEnumFromWord (AliceName.reveal name) ^
+                            ": invalid enum\");");
+        pNative (3, "break;");
+        pNative (1, "}");
+        pNative (1, "return r;");
+        pNative (0, "}")
+     );
+
+    (* generate c++ functions *)
+    pNative (0, "DEFINE1(" ^ moduleName ^ "_" ^ List.last (AliceName.absolutePath name) 
+                                ^ "ToInt) {");
+    if isFlag then
+        pNative (1, "DECLARE_LIST_ELEMS(l, len, x0, " ^
+                        "{ if (Store::WordToInt (l->Sel(0)) == INVALID_INT) " ^ 
+                            "{ REQUEST(x0); }" ^
+                        "});")
+    else
+        pNative (1, "if (Store::WordToInt (x0) == INVALID_INT) { REQUEST(x0); }");
+    pNative (1, "RETURN_INT(" ^ Naming.nativeEnumFromWord (AliceName.reveal name) ^
+                    "(x0));");
+    pNative (0, "} END");
+    addToDefines defines { argc = 1, retc = 1, 
+                           name = AliceName.aliceName (AliceName.absolutePath name,
+                                                       "ToInt") };
+    
+    pNative (0, "DEFINE1(" ^ moduleName ^ "_" ^ List.last (AliceName.absolutePath name) 
+                                ^ "FromInt) {");
+    pNative (1, "DECLARE_INT(i, x0);");
+    pNative (1, "RETURN(" ^ Naming.nativeEnumToWord (AliceName.reveal name) ^ 
+                "((" ^ cName ^ ")i));");
+    pNative (0, "} END");
+    addToDefines defines { argc = 1, retc = 1, 
+                           name = AliceName.aliceName (AliceName.absolutePath name,
+                                                       "FromInt") };
+    case gType of 
+        SOME gType =>
+            (pNative (0, "DEFINE0(" ^ moduleName ^ "_" ^ List.last (AliceName.absolutePath name) ^
+                                "GetType) {");
+             pNative (1, "RETURN1(Store::IntToWord(" ^ gType ^ "));");
+             pNative (0, "} END");
+             addToDefines defines { argc = 0, retc = 1,
+                    name = AliceName.aliceName (AliceName.absolutePath name,
+                        "GetType") })
+      | NONE => ()
+    
+    (*
+     if isFlag then
+        (pNative (0, "DEFINE1(" ^ moduleName ^ "_" ^ name ^ "FlagsFromInt) {");
+         pNative (1, "int r = Store::WordToInt (x0);");
+         pNative (1, "word w = Store::IntToWord (0);");
+         List.appi (fn (i, (_, n)) =>
+                    (pNative (1, "if ((r & " ^ n ^ ") == " ^ n ^ ") {");
+                     pNative (2, "TagVal *t = TagVal::New (0, 2);");
+                     pNative (2, "t->Init (0, Store::IntToWord (" ^ 
+                        Int.toString i ^ "));");
+                     pNative (2, "t->Init (1, w);");
+                     pNative (2, "w = t->ToWord ();");
+                     pNative (1, "}"))) values;
+         pNative (1, "RETURN(w);");
+         pNative (0, "} END"))
+     else (); 
+     *)
+     )
+
+
+fun main () = 
+     (generate (); 
+      OS.Process.exit OS.Process.success)
+  handle 
+    Lexer.Error msg =>
+     (TextIO.print ("error: " ^ msg ^ "\n"); 
+      OS.Process.exit OS.Process.failure)
+  | StrMap.Unknown key =>
+    (TextIO.print ("don't know how to handle '" ^ key ^ "'\n");
+     OS.Process.exit OS.Process.failure)
+  | Fail msg =>
+    (TextIO.print ("internal failure '" ^ msg ^ "'.\n");
+     OS.Process.exit OS.Process.failure)
+
+
+
+val _ = main ()

@@ -1,0 +1,34 @@
+signature CODE =
+sig
+    type tmp_generator = unit -> int
+
+    val format : string * tmp_generator * string vector -> string
+end
+
+structure Code : CODE = 
+struct
+    type tmp_generator = unit -> int
+    
+    fun format (msg, tmpGen, args) =
+        let val temps = Vector.tabulate (9, fn _ => lazy (tmpGen ()))
+        in
+            format' (explode msg, args, [], temps)
+        end
+
+    and format' ([], args, res, temps) = String.concat (rev res)
+      | format' (#"$" :: d :: xs, args, res, temps) where (Char.isDigit d) =
+        let val d = ord d - ord #"0"
+        in
+            if d >= Vector.length args then raise Fail "invalid format"
+            else format' (xs, args, Vector.sub (args, d) :: res, temps)
+        end
+      | format' (#"$" :: #"t" :: d :: xs, args, res, temps) where (Char.isDigit d) =
+        let val d = ord d - ord #"0"
+        in
+            format' (xs, args, "tmp" ^ Int.toString (Future.await (Vector.sub (temps, d))) 
+                                :: res, temps)
+        end
+      | format' (x :: xs, args, res, temps) =
+        format' (xs, args, String.str x :: res, temps)
+
+end

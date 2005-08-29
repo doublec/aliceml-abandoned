@@ -1,27 +1,7 @@
-//
-// Author:
-//   Robert Grabowski <grabow@ps.uni-sb.de>
-//
-// Copyright:
-//   Robert Grabowski, 2003
-//
-// Last Change:
-//   $Date$ by $Author$
-//   $Revision$
-//
-
-/*
-  The native core component. See Core.aml for the purpose of the core.
-*/
-
-#include "Alice.hh"
+#include <glib.h>
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 #include "ExtraMarshaller.hh"
-
-#if defined(__CYGWIN32__) || defined(__MINGW32__)
-#include <windows.h>
-#endif
 
 static word eventStream;
 static word weakDict;
@@ -29,6 +9,46 @@ static word signalMap;
 static word signalMap2;
 static bool had_events;
 static word destroyCallback;
+
+word GtkCoreErrorConstructor = 0;
+
+static word GtkCoreTypeErrorConstructor = 0;
+
+const char *empty_str = "";
+
+word makeGtkCoreTypeError (GType actual, GType expected) {
+    ConVal *conVal = ConVal::New (Store::DirectWordToBlock (GtkCoreTypeErrorConstructor), 2);
+    conVal->Init (0, String::New (getGType (actual))->ToWord ());
+    conVal->Init (1, String::New (getGType (expected))->ToWord ());
+    return conVal->ToWord ();
+}
+
+DEFINE1(Core_error) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(GtkCoreErrorConstructor), 1);
+  conVal->Init(0, x0);
+  RETURN(conVal->ToWord());
+} END
+
+
+DEFINE2(Core_typeError) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(GtkCoreTypeErrorConstructor), 2);
+  conVal->Init(0, x0);
+  conVal->Init(1, x1);
+  RETURN(conVal->ToWord());
+} END
+
+
+word alice_cons (word h, word t) {
+    TagVal *c = TagVal::New (Types::cons, 2);
+    
+    c->Init (0, h);
+    c->Init (1, t);
+    
+    return c->ToWord ();
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -392,7 +412,7 @@ sendArgsToStream(gint connid, guint n_param_values, const GValue *param_values) 
   
   word widgetW;
   if (GTK_IS_OBJECT(widget))
-    widgetW = OBJECT_TO_WORD(widget, TYPE_GTK_OBJECT);
+    widgetW = OBJECT_TO_WORD(widget, TYPE_GTK_OBJECT, G_OBJECT_TYPE(widget));
   else
     widgetW = OBJECT_TO_WORD(widget, (G_IS_OBJECT(widget) ? TYPE_G_OBJECT 
                                                           : TYPE_UNKNOWN));
@@ -400,10 +420,11 @@ sendArgsToStream(gint connid, guint n_param_values, const GValue *param_values) 
   tup->Init(0,INT_TO_WORD(connid));
   tup->Init(1,widgetW);
   tup->Init(2,paramlist);
+//  tup->Init(3, Store::IntToWord (G_IS_OBJECT(widget) ? G_OBJECT_TYPE(widget) : 0));
   
   put_on_stream(&eventStream, tup->ToWord());
 
-  //  g_message("event has been put on stream");
+ // g_message("event has been put on stream");
 }
 
 // the generic_marshaller is attached to every GObject (instead of the
@@ -414,7 +435,7 @@ static void generic_marshaller(GClosure *closure, GValue *return_value,
 
   gint connid = GPOINTER_TO_INT(marshal_data);
 
-  //  g_print("event occured: %d\n", connid);
+  // g_print("event occured: %d\n", connid);
   had_events = true;
 
   sendArgsToStream(connid,n_param_values,param_values);
@@ -436,28 +457,28 @@ static word SignalConnect(void *object, char *signalname, bool after) {
 }
 
 DEFINE3(NativeCore_signalConnect) {
-  DECLARE_OBJECT(obj,x0);
+  DECLARE_OBJECT_OF_TYPE(obj,x0, G_TYPE_OBJECT);
   DECLARE_CSTRING(signalname,x1);
   DECLARE_BOOL(after,x2);
   RETURN(SignalConnect(obj, signalname, after));
 } END
 
 DEFINE2(NativeCore_signalDisconnect) {
-  DECLARE_OBJECT(obj,x0);
+  DECLARE_OBJECT_OF_TYPE(obj,x0, G_TYPE_OBJECT);
   DECLARE_INT(handler_id,x1);
   g_signal_handler_disconnect(G_OBJECT(obj), static_cast<gulong>(handler_id));
   RETURN_UNIT;
 } END
 
 DEFINE2(NativeCore_signalHandlerBlock) {
-  DECLARE_OBJECT(obj,x0);
+  DECLARE_OBJECT_OF_TYPE(obj,x0, G_TYPE_OBJECT);
   DECLARE_INT(handler_id,x1);
   g_signal_handler_block(G_OBJECT(obj), static_cast<gulong>(handler_id));
   RETURN_UNIT;
 } END
 
 DEFINE2(NativeCore_signalHandlerUnblock) {
-  DECLARE_OBJECT(obj,x0);
+  DECLARE_OBJECT_OF_TYPE(obj,x0, G_TYPE_OBJECT);
   DECLARE_INT(handler_id,x1);
   g_signal_handler_unblock(G_OBJECT(obj), static_cast<gulong>(handler_id));
   RETURN_UNIT;
@@ -529,20 +550,24 @@ public:
 // OBJECT HANDLING
 
 // convert a pointer to an object, and add it to the weak map if necessary
-word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
+word OBJECT_TO_WORD_implementation(const void *pointer, int type, GType gtype) {
   void *pointer_ = const_cast<void *>(pointer);
   word key = Store::UnmanagedPointerToWord(pointer_);
+  Tuple *object = NULL;
   if (pointer == NULL) {
-    Tuple *object = Tuple::New(3);
+    object = Tuple::New(4);
     object->Init(0, key);
     object->Init(1, Store::IntToWord(type));
     object->Init(2, Store::IntToWord(0));
-    return object->ToWord();
+    object->Init(3, Store::IntToWord(gtype));
   } else {
     WeakMap *objectMap = WeakMap::FromWordDirect(weakDict);
     if (objectMap->IsMember(key)) {
-      Tuple *object = Tuple::FromWordDirect(objectMap->Get(key));
+      object = Tuple::FromWordDirect(objectMap->Get(key));
+      Assert(object != NULL);
+      object->AssertWidth (4);
       int objectType = Store::DirectWordToInt(object->Sel(1));
+      GType objectGType = Store::DirectWordToInt(object->Sel(3));
       if ((type != objectType) &&
           (objectType != TYPE_UNKNOWN) &&
           (type != TYPE_UNKNOWN) ) {
@@ -550,13 +575,22 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
 		getObjectType(objectType), getObjectType(type));
 	fflush(stderr);
       }
-      return object->ToWord();
+      if ((gtype != objectGType) &&
+              (objectType != TYPE_UNKNOWN) &&
+              (type != TYPE_UNKNOWN)) {
+          /* 
+          fprintf (stderr, "OBJECT_TO_WORD: gtype warning: old %s != %s\n",
+                  getGType(objectGType), getGType(gtype));
+          fflush(stderr);
+          */
+      }
     }
     else {
-      Tuple *object = Tuple::New(3);
+      object = Tuple::New(4);
       object->Init(0, key);
       object->Init(1, Store::IntToWord(type));
       object->Init(2, Store::IntToWord(0));
+      object->Init(3, Store::IntToWord(gtype));
       objectMap->Put(key, object->ToWord());
       __refObject(pointer_, type);
       // Register default destroy event for gtk objects
@@ -564,9 +598,11 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
 	word connid = SignalConnect(pointer_, "destroy", true);
 	AddToSignalMap(connid, destroyCallback, key);
       }
-      return object->ToWord();
     }
   }
+  Assert(object != NULL);
+  object->AssertWidth (4);
+  return object->ToWord ();
 }
 
 DEFINE1(NativeCore_unrefObject) {
@@ -641,10 +677,7 @@ static void Init() {
   ShowWindow(hWnd, SW_SHOWNORMAL);
   DestroyWindow(hWnd);
 #endif
-  int argc = 1;
-  static char *args[2] = {"alice", NULL};
-  char **argv = args;
-  gtk_init(&argc, &argv);
+  gtk_init(NULL,NULL);
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))
     __die("error during init: cannot reverse stdin redirecting");
@@ -733,108 +766,277 @@ DEFINE1(NativeCore_utf8ToLatin1) {
 } END
 
 ////////////////////////////////////////////////////////////////////////
-// propertySetting
 
-DEFINE3(NativeCore_propSetString) {
-    DECLARE_OBJECT(ob, x0);
-    DECLARE_CSTRING(name, x1);
-    DECLARE_CSTRING(str, x2);
-    GValue v;
-    memset (&v, 0, sizeof (v));
-    g_value_init (&v, G_TYPE_STRING);
-    g_value_set_string (&v, str);
-    g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
-    RETURN_UNIT;
+
+DEFINE0(NativeCore_getStringType) {
+    RETURN_INT(G_TYPE_STRING);
 } END
 
-DEFINE3(NativeCore_propSetBool) {
-    DECLARE_OBJECT(ob, x0);
-    DECLARE_CSTRING(name, x1);
-    DECLARE_BOOL(b, x2);
-    GValue v;
-    memset (&v, 0, sizeof (v));
-    g_value_init (&v, G_TYPE_BOOLEAN);
-    g_value_set_boolean (&v, b);
-    g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
-    RETURN_UNIT;
+DEFINE0(NativeCore_getIntType) {
+    RETURN_INT(G_TYPE_INT);
 } END
 
-
-DEFINE3(NativeCore_propSetInt) {
-    DECLARE_OBJECT(ob, x0);
-    DECLARE_CSTRING(name, x1);
-    DECLARE_INT(b, x2);
-    GValue v;
-    memset (&v, 0, sizeof (v));
-    g_value_init (&v, G_TYPE_INT);
-    g_value_set_int (&v, b);
-    g_object_set_property ((GObject*)ob, (const gchar*)name, &v);
-    RETURN_UNIT;
+DEFINE0(NativeCore_getFloatType) {
+    RETURN_INT(G_TYPE_FLOAT);
 } END
 
-DEFINE2(NativeCore_propString) {
-    DECLARE_OBJECT(ob, x0);
-    DECLARE_CSTRING(name, x1);
-    GValue v;
-    memset (&v, 0, sizeof (v));
-    g_value_init (&v, G_TYPE_STRING);
-    g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
-    RETURN1(String::New(g_value_get_string (&v))->ToWord ());
+DEFINE0(NativeCore_getDoubleType) {
+    RETURN_INT(G_TYPE_DOUBLE);
 } END
 
-DEFINE2(NativeCore_propInt) {
-    DECLARE_OBJECT(ob, x0);
-    DECLARE_CSTRING(name, x1);
-    GValue v;
-    memset (&v, 0, sizeof (v));
-    g_value_init (&v, G_TYPE_INT);
-    g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
-    RETURN_INT(g_value_get_int (&v));
-} END
-
-DEFINE2(NativeCore_propBool) {
-    DECLARE_OBJECT(ob, x0);
-    DECLARE_CSTRING(name, x1);
-    GValue v;
-    memset (&v, 0, sizeof (v));
-    g_value_init (&v, G_TYPE_BOOLEAN);
-    g_object_get_property ((GObject*)ob, (const gchar*)name, &v);
-    RETURN_BOOL(g_value_get_boolean (&v));
+DEFINE0(NativeCore_getPixbufType) {
+    RETURN_INT(GDK_TYPE_PIXBUF);
 } END
 
 
 ////////////////////////////////////////////////////////////////////////
-// setLogMode -- enable/disable logging
 
-static void null_log_handler (const gchar *dom, GLogLevelFlags l, const gchar *msg, 
-        gpointer d) {
-    // do nothing
-}
-
-DEFINE2(NativeCore_setLogMode) {
-    DECLARE_STRING(dom, x0);
-    DECLARE_INT(mode, x1);      // constructors of no arguments = int
-    switch (mode) {
-        case 0: // LOG_MODE_DEFAULT
-            g_log_set_handler (dom->ExportC (), (GLogLevelFlags)(G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-                    | G_LOG_FLAG_RECURSION), g_log_default_handler, NULL);
-            break;
-
-        case 1: // LOG_MODE_NULL
-            g_log_set_handler (dom->ExportC (), (GLogLevelFlags)(G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-                    | G_LOG_FLAG_RECURSION), null_log_handler, NULL);
-            break;
-
-        default:
-            Assert(false);
-    }
-    RETURN_UNIT;
+DEFINE0(NativeCore_valueUndefined) {
+    GValue *v = new GValue;
+    memset (v, 0, sizeof (GValue));
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
 } END
 
-///////////////////////////////////////////////////////////////////////
+DEFINE1(NativeCore_valueInt) {
+    DECLARE_INT(i, x0);
+    GValue *v = new GValue;
+    memset(v, 0, sizeof (GValue));
+    g_value_init(v, G_TYPE_INT);
+    g_value_set_int (v, i);
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+} END
+
+DEFINE2(NativeCore_valueEnum) {
+    DECLARE_INT(i, x0);
+    DECLARE_INT(t, x1);
+    GValue *v = new GValue;
+    memset(v, 0, sizeof (GValue));
+    g_value_init(v, t);
+    g_value_set_enum (v, i);
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+} END
+
+
+DEFINE1(NativeCore_valueString) {
+    DECLARE_CSTRING(s, x0);
+    GValue *v = new GValue;
+    memset(v, 0, sizeof (GValue));
+    g_value_init(v, G_TYPE_STRING);
+    g_value_set_string (v, s);
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+} END
+
+DEFINE1(NativeCore_valueFloat) {
+    DECLARE_CFLOAT(f, x0);
+    GValue *v = new GValue;
+    memset(v, 0, sizeof (GValue));
+    g_value_init(v, G_TYPE_FLOAT);
+    g_value_set_float (v, f);
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+} END 
+
+DEFINE1(NativeCore_valueDouble) {
+    DECLARE_CFLOAT(d, x0);
+    GValue *v = new GValue;
+    memset(v, 0, sizeof (GValue));
+    g_value_init(v, G_TYPE_DOUBLE);
+    g_value_set_double (v, d);
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+} END 
+
+DEFINE1(NativeCore_valueBool) {
+    DECLARE_BOOL(b, x0);
+    GValue *v = new GValue;
+    memset(v, 0, sizeof (GValue));
+    g_value_init(v, G_TYPE_BOOLEAN);
+    g_value_set_boolean (v, b);
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED|FLAG_OWN));
+} END 
+
+DEFINE1(NativeCore_valueObject) {
+    DECLARE_OBJECT_WITH_TYPE(b, t, x0);
+    GValue *v = new GValue;
+    memset(v, 0, sizeof (GValue));
+    switch (t & ~FLAG_OWN) {
+        case TYPE_GTK_OBJECT:
+        case TYPE_G_OBJECT:
+            g_value_init (v, t_gtype);
+            g_value_set_object (v, b);
+            break;
+        case TYPE_BOXED:
+            g_value_init (v, t_gtype);
+            g_value_set_boxed (v, b);
+            break;
+        case TYPE_POINTER:
+        case TYPE_UNKNOWN:
+            g_value_init (v, G_TYPE_POINTER);
+            g_value_set_pointer (v, b);
+            break;
+        
+        default:
+            Error ("NativeCore_valueObject: invalid internal object type");
+    }
+    RETURN(OBJECT_TO_WORD(v, TYPE_BOXED | FLAG_OWN));
+} END 
+
+
+DEFINE1(NativeCore_valueToInt) {
+    DECLARE_OBJECT_OF_TYPE(vptr, x0, G_TYPE_VALUE);
+    GValue *v = (GValue*)vptr;
+    if (!G_VALUE_HOLDS_INT (v)) {
+        THROW_TYPE_ERROR(G_VALUE_TYPE(v), G_TYPE_INT);
+    }
+    
+    int i    = g_value_get_int (v);
+    RETURN_INT(i);
+} END
+
+DEFINE1(NativeCore_valueToBool) {
+    DECLARE_OBJECT_OF_TYPE(vptr, x0, G_TYPE_VALUE);
+    GValue *v = (GValue*)vptr;
+    if (!G_VALUE_HOLDS_BOOLEAN (v)) {
+        THROW_TYPE_ERROR(G_VALUE_TYPE(v), G_TYPE_BOOLEAN);
+    }
+    bool b    = g_value_get_boolean (v);
+    RETURN_BOOL(b);
+} END
+
+
+DEFINE1(NativeCore_valueToString) {
+    DECLARE_OBJECT_OF_TYPE(vptr, x0, G_TYPE_VALUE);
+    GValue *v = (GValue*)vptr;
+    if (!G_VALUE_HOLDS_STRING (v)) {
+        THROW_TYPE_ERROR(G_VALUE_TYPE(v), G_TYPE_STRING);
+    }
+    const gchar * s = g_value_get_string (v);
+    RETURN(String::New(s)->ToWord ());
+} END
+
+DEFINE1(NativeCore_valueToReal) {
+    DECLARE_OBJECT_OF_TYPE(vptr, x0, G_TYPE_VALUE);
+    GValue *v = (GValue*)vptr;
+    double d;
+    if (G_VALUE_TYPE(v) == G_TYPE_FLOAT) {
+        d = g_value_get_float (v);
+    } else if (G_VALUE_TYPE(v) == G_TYPE_DOUBLE) {
+        d = g_value_get_double (v);
+    } else { 
+        THROW_TYPE_ERROR(G_VALUE_TYPE(v), G_TYPE_DOUBLE);
+    }
+    RETURN(Real::New (d)->ToWord ());
+} END
+
+
+DEFINE1(NativeCore_valueToObject) {
+    DECLARE_OBJECT_OF_TYPE(vptr, x0, G_TYPE_VALUE);
+    GValue *v = (GValue*)vptr;
+    gpointer o;
+    int t;
+    GType gt;
+    if (G_VALUE_TYPE(v) == G_TYPE_POINTER) {
+        o = g_value_get_pointer (v);
+        t = TYPE_UNKNOWN;
+        gt = 0;
+    } else if (g_type_is_a (G_VALUE_TYPE(v), GTK_TYPE_OBJECT)) {
+        o  = g_value_get_object (v);
+        t  = TYPE_GTK_OBJECT;
+        gt = G_VALUE_TYPE(v); 
+    } else if (g_type_is_a (G_VALUE_TYPE(v), G_TYPE_OBJECT)) {
+        o  = g_value_get_object (v);
+        t  = TYPE_G_OBJECT;
+        gt = G_VALUE_TYPE(v);
+    } else if (g_type_is_a (G_VALUE_TYPE(v), G_TYPE_BOXED)) {
+        o  = g_value_get_boxed (v);
+        t  = TYPE_BOXED;
+        gt = G_VALUE_TYPE(v);
+    } else {
+        fprintf (stderr, "valueToObject: unexpected %s\n", getGType (G_VALUE_TYPE(v)));
+        THROW_TYPE_ERROR(G_VALUE_TYPE(v), G_TYPE_OBJECT);
+    }
+            
+    RETURN(OBJECT_TO_WORD(o, t, gt));
+} END
+
+
+DEFINE1(NativeCore_valueGetType) {
+    DECLARE_OBJECT_OF_TYPE(vptr, x0, G_TYPE_VALUE);
+    GValue *v = (GValue*)vptr;
+    RETURN_INT(G_VALUE_TYPE(v));
+} END
+
+////////////////////////////////////////////////////////////////////////
+
+
+static GType get_property_type (GObject *ob, const gchar *prop_name) {
+    return G_PARAM_SPEC_VALUE_TYPE(
+            g_object_class_find_property (G_OBJECT_GET_CLASS(ob), prop_name));
+}
+    
+DEFINE2(NativeCore_propRawGet) {
+    DECLARE_OBJECT_OF_TYPE(a0, x0, G_TYPE_OBJECT);
+    DECLARE_CSTRING(a1, x1);
+    GValue* a2 = new GValue; memset(a2, 0, sizeof(GValue));
+    g_value_init ((GValue*)a2, get_property_type ((GObject*)a0, (const gchar*)a1));
+    g_object_get_property ((GObject*)a0, (const gchar*)a1, (GValue*)a2);
+    
+    word r2 = OBJECT_TO_WORD (a2, TYPE_BOXED | FLAG_OWN, G_TYPE_VALUE);
+    RETURN1(r2);
+} END
+
+DEFINE3(NativeCore_propRawSet) {
+    DECLARE_OBJECT_OF_TYPE(a0, x0, G_TYPE_OBJECT);
+    DECLARE_CSTRING(a1, x1);
+    DECLARE_OBJECT_OF_TYPE(a2, x2, G_TYPE_VALUE);
+    GType prop_type     = get_property_type ((GObject*)a0, (const gchar*)a1);
+    GType actual_type   = G_VALUE_TYPE((const GValue*)a2);
+    // FIXME: this also allows transformations which one might
+    // not like e.g int -> string
+    // but it is needed for use with the different integer conversions
+    if (g_value_type_transformable (actual_type, prop_type)) {
+        GValue v;
+        memset (&v, 0, sizeof (v));
+        g_value_init (&v, prop_type);
+        g_value_transform ((const GValue*)a2, &v);
+        g_object_set_property ((GObject*)a0, (const gchar*)a1, (const GValue*)&v);
+        RETURN_UNIT;
+        /*
+    if (G_TYPE_CHECK_VALUE_TYPE((const GValue*)a2, prop_type)) {
+        g_object_set_property(
+            (GObject*)a0
+            ,(const gchar*)a1
+            ,(const GValue*)a2
+            );
+        RETURN_UNIT; */
+    } else {
+        THROW_TYPE_ERROR(actual_type, prop_type);
+    }
+} END
+
+////////////////////////////////////////////////////////////////////////
+
+GnomeCanvasItem *alice_gnome_canvas_item_new (GnomeCanvasGroup *group, GtkType type) {
+    GnomeCanvasItem *item;
+    item = gnome_canvas_item_new (group, type, NULL);
+    return item;
+}
+
+////////////////////////////////////////////////////////////////////////
 word InitComponent() {
-  Record *record = Record::New(25);
+  Record *record = Record::New(43);
   Init();
+  GtkCoreErrorConstructor =
+      UniqueConstructor::New ("Error", "Core.Error")->ToWord ();
+  GtkCoreTypeErrorConstructor =
+      UniqueConstructor::New ("TypeError", "Core.TypeError")->ToWord ();
+  RootSet::Add (GtkCoreErrorConstructor);
+  RootSet::Add (GtkCoreTypeErrorConstructor);
+
+  record->Init ("'Error", GtkCoreErrorConstructor);
+  INIT_STRUCTURE(record, "Core", "Error", Core_error, 1);
+
+  record->Init ("'TypeError", GtkCoreTypeErrorConstructor);
+  INIT_STRUCTURE(record, "Core", "TypeError", Core_typeError, 2);
+
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
   INIT_STRUCTURE(record, "NativeCore", "gtkTrue", 
@@ -845,7 +1047,7 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeCore", "signalConnect", 
 		 NativeCore_signalConnect, 3);
   INIT_STRUCTURE(record, "NativeCore", "signalDisconnect", 
-		 NativeCore_signalDisconnect, 2);
+		 NativeCore_signalDisconnect, 3);
   INIT_STRUCTURE(record, "NativeCore", "getEventStream", 
 		 NativeCore_getEventStream, 1);
 
@@ -878,23 +1080,110 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeCore", "utf8ToLatin1",
 		 NativeCore_utf8ToLatin1, 1);
 
-  INIT_STRUCTURE(record, "NativeCore", "setLogMode",
-                NativeCore_setLogMode, 2);
 
-  INIT_STRUCTURE(record, "NativeCore", "propSetInt",
-            NativeCore_propSetInt, 3);
-  INIT_STRUCTURE(record, "NativeCore", "propSetString",
-            NativeCore_propSetString, 3);
-  INIT_STRUCTURE(record, "NativeCore", "propSetBool",
-            NativeCore_propSetBool, 3);
-
-  INIT_STRUCTURE(record, "NativeCore", "propInt",
-            NativeCore_propInt, 2);
-  INIT_STRUCTURE(record, "NativeCore", "propString",
-            NativeCore_propString, 2);
-  INIT_STRUCTURE(record, "NativeCore", "propBool",
-            NativeCore_propBool, 2);
+  INIT_STRUCTURE(record, "NativeCore", "getStringType",
+                NativeCore_getStringType, 0);
+  INIT_STRUCTURE(record, "NativeCore", "getIntType",
+                NativeCore_getIntType, 0);
+  INIT_STRUCTURE(record, "NativeCore", "getFloatType",
+                NativeCore_getFloatType, 0);
+  INIT_STRUCTURE(record, "NativeCore", "getDoubleType",
+                NativeCore_getDoubleType, 0);
+  INIT_STRUCTURE(record, "NativeCore", "getPixbufType",
+                NativeCore_getPixbufType, 0);
 
 
+  INIT_STRUCTURE(record, "NativeCore", "valueUndefined",
+                NativeCore_valueUndefined, 0);
+  INIT_STRUCTURE(record, "NativeCore", "valueInt",
+                NativeCore_valueInt, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueEnum",
+                NativeCore_valueEnum, 2);
+  INIT_STRUCTURE(record, "NativeCore", "valueFloat",
+                NativeCore_valueFloat, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueDouble",
+                NativeCore_valueDouble, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueBool",
+                NativeCore_valueBool, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueString",
+                NativeCore_valueString, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueObject",
+                NativeCore_valueObject, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueToInt",
+                NativeCore_valueToInt, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueToBool",
+                NativeCore_valueToBool, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueToReal",
+                NativeCore_valueToReal, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueToString",
+                NativeCore_valueToString, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueToObject",
+                NativeCore_valueToObject, 1);
+  INIT_STRUCTURE(record, "NativeCore", "valueGetType",
+                NativeCore_valueGetType, 1);
+
+  INIT_STRUCTURE(record, "NativeCore", "propRawGet", NativeCore_propRawGet, 2);
+  INIT_STRUCTURE(record, "NativeCore", "propRawSet", NativeCore_propRawSet, 3);
+  
   RETURN_STRUCTURE("NativeCore$", record);
 }
+        
+/*
+GSList *alice_list_to_gslist (word w) {
+    GSList *l = NULL;
+    DECLARE_LIST(lst, length, w);
+    for (i = 0; i < length; i++) {
+        lst = TagVal::FromWord (w);
+        l = g_slist_prepend (l, Store::WordToUnmanagedPointer (lst->Sel(0)));
+        w = lst->Sel(1);
+    } 
+
+    GSList *r = g_slist_reverse (l);
+    g_slist_free (l);
+    return r;
+}
+
+word gslist_to_alice_list (GSList *l) {
+    word w =  Store::IntToWord (Types::nil);
+    
+    l = g_slist_reverse (l);
+    while (l != NULL) {
+        TagVal *t = TagVal::New (Types::cons, 2);
+        t->Init (0, Store::UnmanagedPointerToWord (l->data));
+        t->Init (1, w);
+        w = t->ToWord ();
+        l = l->next;
+    }
+
+    return w;
+}
+
+GList *alice_list_to_glist (word w) {
+    GList *l = NULL;
+    DECLARE_LIST(lst, length, w);
+    for (i = 0; i < length; i++) {
+        lst = TagVal::FromWord (w);
+        l = g_list_prepend (l, Store::WordToUnmanagedPointer (lst->Sel(0)));
+        w = lst->Sel(1);
+    } 
+
+    GList *r = g_list_reverse (l);
+    g_list_free (l);
+    return r;
+}
+
+word glist_to_alice_list (GList *l) {
+    word w =  Store::IntToWord (Types::nil);
+    
+    l = g_list_reverse (l);
+    while (l != NULL) {
+        TagVal *t = TagVal::New (Types::cons, 2);
+        t->Init (0, Store::UnmanagedPointerToWord (l->data));
+        t->Init (1, w);
+        w = t->ToWord ();
+        l = l->next;
+    }
+
+    return w;
+}
+*/

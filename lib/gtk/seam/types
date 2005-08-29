@@ -1,0 +1,258 @@
+;; ordinal types
+(type-wrapper "gint" "int"
+    (in-code  "DECLARE_INT($1, $0);")
+    (out-code "word $1 = Store::IntToWord($0);"))
+
+(type-wrapper "int" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "guint" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "gunichar" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+
+(type-wrapper "glong" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "gsize" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+
+(type-wrapper "gulong" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "guint32" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "guint16" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "guint8" "int"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "gboolean" "bool"
+    (out-code "word $1 = BOOL_TO_WORD($0);")
+    (in-code  "DECLARE_BOOL($1, $0);"))
+
+(type-wrapper "gchar" "char"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "guchar" "char"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+
+(type-wrapper "char" "char"
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "double" "real"
+    (out-code "word $1 = Real::New ($0)->ToWord ();")
+    (in-code  "DECLARE_CDOUBLE($1, $0);"))
+
+(type-wrapper "gdouble" "real"
+    (out-code "word $1 = Real::New ($0)->ToWord ();")
+    (in-code  "DECLARE_CDOUBLE($1, $0);"))
+
+(type-wrapper "float" "real"
+    (out-code "word $1 = Real::New ($0)->ToWord ();")
+    (in-code  "DECLARE_CFLOAT($1, $0);"))
+
+(type-wrapper "gfloat" "real"
+    (out-code "word $1 = Real::New ($0)->ToWord ();")
+    (in-code  "DECLARE_CFLOAT($1, $0);"))
+
+(type-wrapper "GdkAtom" "Word32.word"
+    (out-code "word $1 = Word32ToWord ((u_int)$0);")
+    (in-code  "DECLARE_WORD32($t1, $0); GdkAtom $1 = (GdkAtom)$t1;"))
+
+(type-wrapper "GdkAtom*" "Word32.word"
+    (mode out)
+    (out-code "word $1 = Word32ToWord((u_int)*$0);"))
+
+;; in - out variants of ordinal types
+(type-wrapper "gint*" "int"
+    (mode in-out)
+    (in-code  "DECLARE_INT_AS(gint, $t1, $0);
+               gint* $1 = (gint*)&$t1;")
+    (out-code "word $1 = Store::IntToWord(*$0);"))
+
+(type-wrapper "int*" "int"
+    (mode in-out)
+    (in-code  "DECLARE_INT_AS(int, $t1, $0);
+               int* $1 = (int*)&$t1;")
+    (out-code "word $1 = Store::IntToWord(*$0);"))
+
+(type-wrapper "guint*" "int"
+    (mode in-out)
+    (in-code  "DECLARE_INT_AS(guint, $t1, $0);
+               int* $1 = (int*)&$t1;")
+    (out-code "word $1 = Store::IntToWord(*$0);"))
+
+
+(type-wrapper "gulong*" "int"
+    (mode in-out)
+    (in-code  "DECLARE_INT_AS(gulong, $t1, $0);
+               gulong* $1 = (gulong*)&$t1;")
+    (out-code "word $1 = Store::IntToWord(*$0);"))
+
+(type-wrapper "glong*" "int"
+    (mode in-out)
+    (in-code  "DECLARE_INT_AS(glong, $t1, $0);
+               glong* $1 = (glong*)&$t1;")
+    (out-code "word $1 = Store::IntToWord(*$0);"))
+
+(type-wrapper "gdouble*" "real"
+    (mode in-out)
+    (in-code  "DECLARE_DOUBLE_AS(gdouble, $t1, $0);
+               gdouble* $1 = (gdouble*)&$t1;")
+    (out-code "word $1 = Real::New(*$0)->ToWord ();"))
+
+(type-wrapper "double*" "real"
+    (mode in-out)
+    (in-code  "DECLARE_CDOUBLE($t1, $0);
+               double* $1 = (double*)&$t1;")
+    (out-code "word $1 = Real::New(*$0)->ToWord ();"))
+
+
+(type-wrapper "gfloat*" "real"
+    (mode in-out)
+    (in-code  "DECLARE_DOUBLE_AS(gfloat, $t1, $0);
+               gfloat* $1 = (gfloat*)&$t1;")
+    (out-code "word $1 = Real::New(*$0)->ToWord ();"))
+
+(type-wrapper "const-double[6]" "real vector"
+    (mode in)
+    (c-type "const double*")
+    (in-code "double $1[6]; // FIXME")
+    (out-code ""))
+
+(type-wrapper "double[6]" "real vector"
+    (mode in)
+    (c-type "double*")
+    (in-code "double $1[6]; // FIXME")
+    (out-code ""))
+
+;; arrays of ordinal types
+
+(type-wrapper "gint8[]" "Word8Vector.vector"
+    (in-code "FIXME")
+    (out-code "FIXME"))
+
+;; strings
+
+(type-wrapper "const-char*" "string"
+    (c-type "const char*")
+    (in-code  "DECLARE_CSTRING($1, $0);")
+    (out-code "word $1 = String::New ($0 != 0 ? $0 : empty_str)->ToWord ();"))
+
+(type-wrapper "const-gchar*" "string"
+    (c-type "const gchar*")
+    (in-code  "DECLARE_CSTRING($1, $0);")
+    (out-code "word $1 = String::New ($0 != 0 ? $0 : empty_str)->ToWord ();"))
+
+(type-wrapper "const-guchar*" "string"
+    (c-type "const guchar*")
+    (in-code  "DECLARE_CSTRING($1, $0);")
+    (out-code "word $1 = String::New ($0 != 0 ? $0 : empty_str)->ToWord ();"))
+
+
+;; FIXME: make it in-out?!
+(type-wrapper "char*" "string"
+    (c-type "char*")
+    (in-code  "DECLARE_CSTRING($1, $0);")
+    (out-code "word $1 = String::New ($0 != 0 ? $0 : empty_str)->ToWord ();"))
+
+;; FIXME: make it in-out?!
+(type-wrapper "gchar*" "string"
+    (c-type "gchar*")
+    (in-code  "DECLARE_CSTRING($1, $0);")
+    (out-code "word $1 = String::New ($0 != 0 ? $0 : empty_str)->ToWord ();"))
+
+;; FIXME: make it in-out?!
+(type-wrapper "guchar*" "string"
+    (c-type "guchar*")
+    (in-code  "DECLARE_CSTRING($1, $0);")
+    (out-code "word $1 = String::New ($0 != 0 ? ((const char*)$0) : empty_str)->ToWord ();"))
+
+(type-wrapper "const-gchar**" "string vector"
+    (mode in)
+    (c-type "const gchar**")
+    (in-code "DECLARE_ZERO_TERMINATED_ARRAY($1, $0, gchar*, DECLARE_CSTRING(elem_c, elem_alice));"))
+
+(type-wrapper "char**" "string vector"
+    (mode in)
+    (c-type "char**")
+    (in-code "DECLARE_ZERO_TERMINATED_ARRAY($1, $0, char*, DECLARE_CSTRING(elem_c, elem_alice));"))
+
+
+(type-wrapper "gchar**" "string vector"
+    (mode in)
+    (c-type "gchar**")
+    (in-code "DECLARE_ZERO_TERMINATED_ARRAY($1, $0, gchar*, DECLARE_CSTRING(elem_c, elem_alice));"))
+
+(type-wrapper "const-char**" "string vector"
+    (mode in)
+    (c-type "const char**")
+    (in-code "DECLARE_ZERO_TERMINATED_ARRAY($1, $0, char*, DECLARE_CSTRING(elem_c, elem_alice));"))
+
+;;; ----------------------- special glib types ------------------------
+
+(type-wrapper "GSList*" "object list"   
+    (c-type "GSList*")
+    (in-code "GSList *$1 = alice_list_to_gslist($0);")
+    (out-code "word $1 = gslist_to_alice_list($0);"))
+
+(type-wrapper "GList*" "object list"   
+    (c-type "GList*")
+    (in-code "GList *$1 = alice_list_to_glist($0);")
+    (out-code "word $1  = glist_to_alice_list($0);"))
+
+(type-wrapper "gpointer" "object"
+    (c-type "gpointer")
+    (in-code  "DECLARE_OBJECT($1, $0);")
+    (out-code "word $1 = OBJECT_TO_WORD($0, TYPE_POINTER);"))
+
+(type-wrapper "GType" "gtype"
+    (c-type "GType")
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+(type-wrapper "GtkType" "gtype"
+    (c-type "GtkType")
+    (out-code "word $1 = Store::IntToWord($0);")
+    (in-code  "DECLARE_INT($1, $0);"))
+
+
+(type-wrapper "const-GValue*" "gvalue"
+    (c-type "GValue*")
+    (in-code "DECLARE_OBJECT_OF_TYPE($1, $0, G_TYPE_VALUE);"))
+
+(type-wrapper "GValue*" "gvalue"
+    (mode out)
+    (c-type "GValue*")
+    (prepare-out-code  "GValue* $1 = new GValue; memset($1, 0, sizeof(GValue));")
+    (out-code "word $1 = OBJECT_TO_WORD ($0, TYPE_BOXED | FLAG_OWN, G_TYPE_VALUE);"))
+
+(type-wrapper "GValue" "gvalue"
+    (c-type   "GValue")
+    (in-code  "GValue $1; { DECLARE_OBJECT_OF_TYPE($t1, $0, G_TYPE_VALUE); g_value_copy ((GValue*)$t1, &$1); }")
+    (out-code ""))
+
+(type-wrapper "GDestroyNotify" "object"
+    (c-type "GDestroyNotify")
+    (in-code "GDestroyNotify $1 = 0; // FIXME not possible in seam")
+    (out-code ""))
+

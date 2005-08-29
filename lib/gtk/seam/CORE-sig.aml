@@ -14,7 +14,10 @@
 signature CORE =
 sig
 (**)type object
-
+(**)type gtype
+(**)type gvalue
+(**)type 'a prop
+(**)type prop_initializer
 
     datatype event =
 	EVENT_NOTHING
@@ -119,18 +122,53 @@ sig
 (**)val printObject : object -> unit
 (**)val forceGC : unit -> unit
 
-    datatype log_mode =
-        LOG_MODE_DEFAULT
-      | LOG_MODE_NULL
+    structure Types :
+    sig
+        val string : gtype
+        val int    : gtype
+        val float  : gtype
+        val double : gtype
+        val pixbuf : gtype
+    end
 
+    structure Value :
+    sig
+        (* exception TypeError *)
 
-    val objectSetIntProp : object * string * int -> unit
-    val objectSetStringProp : object * string * string -> unit
-    val objectSetBoolProp : object * string * bool -> unit
-    
-    val objectGetIntProp : object * string -> int
-    val objectGetStringProp : object * string -> string
-    val objectGetBoolProp : object * string -> bool
+        val undefined : unit -> gvalue
 
-    val setLogMode : string * log_mode -> unit
+        val int : int -> gvalue
+        val enum : int * gtype -> gvalue
+        val string : string -> gvalue
+        val float : real -> gvalue
+        val double : real -> gvalue
+        val bool : bool -> gvalue
+        val object : object -> gvalue
+            
+        val toInt : gvalue -> int
+        val toString : gvalue -> string
+        val toReal : gvalue -> real
+        val toBool : gvalue -> bool
+        val toObject : gvalue -> object
+
+        val getType : gvalue -> gtype
+    end
+
+    structure Prop :
+    sig
+        val setL : object -> prop_initializer list -> unit
+
+        val set : 'a prop -> object * 'a -> unit
+        val get : 'a prop -> object -> 'a 
+
+        val rawSet : object * string * gvalue -> unit
+        val rawGet : object * string -> gvalue
+
+        val name : 'a prop -> string
+
+        val prop : 'a prop * 'a -> prop_initializer
+
+        (* creation *)
+        val newProp : string * ('a -> gvalue) * (gvalue -> 'a) -> 'a prop
+    end
 end

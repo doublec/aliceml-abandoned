@@ -1,0 +1,24 @@
+signature RENAME =
+sig
+    val renameFun :     string -> string
+    val renameField :   string -> string
+end
+
+structure Rename =
+struct
+    val renameTable = [
+        (* raise is a keyword we rename lower just for consistency purposes *)
+        ("lower", "lowerWindow"),
+        ("raise", "raiseWindow"),
+        ("open", "openDisplay"),
+        ("ref",  "reference"),
+        ("type", "ty")
+    ]
+
+    fun renameFun name =
+        case List.find (fn (k, _) => k = name) renameTable of
+            SOME (_, v) => v
+          | NONE        => name
+
+    val renameField = renameFun
+end

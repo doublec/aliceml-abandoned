@@ -1,215 +1,157 @@
+### -*- Makefile -*-
 ###
-# GTK+ 2.0 Interface for Alice - Makefile
+### Author:
+###   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+###
+### Copyright:
+###   Benedikt Grundmann, 2005
+###
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+###
 
-VERSION = 1.2
+SOURCES= \
+	Code.aml \
+	SexpTools.aml \
+	Lexer.aml \
+	StrMap.aml \
+	Rename.aml \
+	AliceName.aml \
+	AliceType.aml \
+	BasicTypes.aml \
+	TypeWrapper.aml \
+	Ignore.aml \
+	Defs.aml \
+	DefsParser.aml \
+	Generate.aml  \
+	Naming.aml
 
-# The generator creates full code for the following name spaces
-COMPS = Gdk Gtk Canvas
-COMPSCAP = GDK GTK CANVAS
+WRAPPERS= \
+	    GLib.aml \
+	    Pango.aml \
+	    Atk.aml \
+	    Gdk.aml \
+	    Gtk.aml \
+	    Canvas.aml
 
-# The generator creates only enum components for the following name spaces
-ENUMCOMPS = Pango Misc
-ENUMCOMPSCAP = PANGO MISC
+WRAPPERSCAP= \
+	    GLIB \
+	    PANGO \
+	    ATK \
+	    GDK \
+	    GTK \
+	    CANVAS
 
-# names of generated files
-ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
-	$(ENUMCOMPSCAP:%=%_ENUMS-sig.aml) $(ENUMCOMPS:%=%Enums.aml)
-UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
-NATIVECOMPS = $(COMPS:%=Native%) $(COMPS:%=NativeFields%)
-NATIVES = $(NATIVECOMPS:%=%.asig) $(NATIVECOMPS:%=%.cc)
-GENFILES = $(NATIVES) $(ENUMS) $(UNSAFE) Key.aml
-GENSIGS = $(COMPSCAP:%=%-sig.aml) 
+DEFS=atk-types.defs atk.defs canvas.defs gdk-types.defs gdk.defs gtk-extrafuncs.defs gtk-types.defs gtk.defs libglade.defs pango-types.defs pango.defs wrapper.defs types canvas-properties.defs gtk-properties.defs
 
-# C input file
-INPUTFILE = gtkclean.c
-# temporary output directory
-OUTDIR = output
+TARGETS= $(SOURCES:%.aml=%.alc) 
 
-PREPAREFILES = $(INPUTFILE) PositiveList.sml
+NATIVEWRAPPERS=$(WRAPPERS:%.aml=Native%.cc)
+NATIVETARGETS=$(NATIVEWRAPPERS:%.cc=%.o)
 
-# support file indicating last generator build
-LASTGENERATE = lastgenerate
+WRAPPERS_SIGS_TML=$(WRAPPERSCAP:%=%-sig.tml)
+WRAPPERS_SIGS=$(WRAPPERSCAP:%=%-sig.aml)
+COMPILED_WRAPPERS=$(WRAPPERS:%.aml=%.alc)
+COMPILED_WRAPPERS_SIGS=$(WRAPPERS_SIGS:%.aml=%.alc)
+DLLS=$(NATIVEWRAPPERS:%.cc=%.dll)
+INSTALLALICETARGETS =$(COMPILED_WRAPPERS_SIGS) $(COMPILED_WRAPPERS) CORE-sig.alc Core.alc Key.alc
+INSTALLDLLTARGETS=$(DLLS) NativeCore.dll
+INSTALLDIR=`alice-config --alicelibdir`/gtk
+#ALICEDLL=`alice-config --alicedll`
 
-# GtkBuilder
-BUILDER = GTK_BUILDER-sig GtkBuilder
+PC_OPTS=gtk+-2.0 libgnomecanvas-2.0 glib-2.0
 
-# names of all files to compile
-CORE = CORE-sig.aml Core.aml Key.aml
-MAINFILES = $(COMPS:%=%.aml) $(BUILDER:%=%.aml)
-CPPSOURCES = $(NATIVECOMPS:%=%.cc) NativeCore.cc
-ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
+.PHONY: clean all wrappers
 
-# names of object files
-DLLOBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll)
-ALICEOBJECTS = $(ALICESOURCES:%.aml=%.alc)
+all: Generate.alc $(NATIVETARGETS) $(COMPILED_WRAPPERS_SIGS) $(COMPILED_WRAPPERS) $(DLLS) Key.alc
 
-INSTALLDLLTARGETS = $(CPPSOURCES:%.cc=%.dll)
-INSTALLALICETARGETS = $(ALICESOURCES:%.aml=%.alc)
-
-PLATFORM := $(shell ./platform.sh smlnj)
-ifeq ("$(PLATFORM)", "")
-  $(error Unknown platform)
-endif
-
-GENERATOR = GtkBinding.$(PLATFORM)
-# platform specific settings
-ifeq ("$(PLATFORM)", "x86-win32")
-CC_OPTS = -mno-cygwin -mms-bitfields
-SML = cmd /c sml
-else
-ifeq ("$(PLATFORM)", "ppc-darwin")
-CC_OPTS = -D__ppc__
-SML = sml
-else
-CC_OPTS =
-SML = sml
-endif
-endif
-
-ifndef PC_OPTS
-PC_OPTS = gtk+-2.0 libgnomecanvas-2.0
-endif
-
-ALICEC = alicec 
-ALICEC_OPTS = --no-warn-conventions --no-warn-unused-imports
-ALICETOOL = alicetool
-ALICEDEP = alicedep
-INSTALL = ./myinstall -v -m 644
-
-INSTALLDIR = `alice-config --alicelibdir`/gtk
-ALICEDLL=`alice-config --alicedll`
-DISTFILES = $(CPPSOURCES) Makefile debian platform.sh \
-	MyNativeAuthoring.hh NativeUtils.hh NativeGdkSpecial.hh \
-	NativeGnomeCanvasSpecial.hh NativeGtkSpecial.hh \
-	ExtraMarshaller.hh myinstall
-distdir = alice-gtk-$(VERSION)
-
-#################################################
-
-.PHONY: all generate compile depend docs clean veryclean distclean install
-
-all: compile
-
-
-### SOURCE CODE GENERATION ######################
-
-#$(GENFILES): $(LASTGENERATE)
-generate:	$(GENFILES)
-
-$(GENFILES): $(INPUTFILE) $(GENERATOR) 
-	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
-	$(SML) $(OUTDIR) $(INPUTFILE) @SMLload=$(GENERATOR)
-	./prepare-keyval.sh && mv Key.aml ${OUTDIR} || exit
-	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
-	rm -f $(OUTDIR)/*
-	rmdir $(OUTDIR)
-
-$(GENERATOR):
-	rm -f $(GENERATOR)
-	case `echo 'OS.Process.exit OS.Process.success' | $(SML) | grep "110\.0\.[0-9]"` in \
-	  *Jersey*) \
-	    echo "CM.make'" '"sources.cm"; GtkBinding.compile();' | $(SML) \
-	    ;; \
-          *) \
-	    echo 'CM.make "sources.cm"; GtkBinding.compile();' | $(SML) \
-	    ;; \
-	esac
-	test -e $(GENERATOR) || exit 1
-
-
-$(PREPAREFILES):
-	( cd prepare && $(MAKE) )
-
-%-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
+%-sig.aml: %-sig.tml
 	gawk -f includesig.awk $< > $@
 
+NativeCore.dll:	NativeCore.o
+	alicetool -v link $^ $(ALICEDLL) -o $@ \
+	`pkg-config $(PC_OPTS) --libs` 
 
-### COMPILATION #################################
+NativeGLib.dll: NativeCore.dll NativeGLib.o 
+	alicetool link $(ALICEDLL) $^ -o $@ \
+	 `pkg-config $(PC_OPTS) --libs`
 
-compile: compiledll compilealice
-compiledll: $(DLLOBJECTS)
-compilealice: $(ALICEOBJECTS)
+NativePango.dll: NativeGLib.dll NativePango.o
+	alicetool link $(ALICEDLL) $^ -o $@ \
+	 `pkg-config $(PC_OPTS) --libs`
 
-%.dll: %.o
-	$(ALICETOOL) -v link $< -o $@ \
-	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
+NativeAtk.dll: NativeGLib.dll NativeAtk.o
+	alicetool link $(ALICEDLL) $^ -o $@ \
+	 `pkg-config $(PC_OPTS) --libs`
 
-%.o: %.cc
-	$(ALICETOOL) -v compile -c $< -o $@ \
-	 $(CC_OPTS) `pkg-config --cflags $(PC_OPTS)`
+NativeGdk.dll: NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.o
+	alicetool link $(ALICEDLL) $^ -o $@ \
+	 `pkg-config $(PC_OPTS) --libs`
+
+NativeGtk.dll: NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.o
+	alicetool link $(ALICEDLL) $^ -o $@ \
+	 `pkg-config $(PC_OPTS) --libs`
+
+NativeCanvas.dll: NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.dll NativeCanvas.o
+	alicetool link $(ALICEDLL) $^ -o $@ \
+	 `pkg-config $(PC_OPTS) --libs`
+
 
 %.alc: %.aml
-	$(ALICEC) $(ALICEC_OPTS) $< -o $@
+	alicec --no-warn-conventions -c $< -o $@
 
-ExtraMarshaller.hh:
-	echo "VOID:INT,INT,STRING" | glib-genmarshal --header --body > $@
-
-### DEPENDENCIES ################################
-
-depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
-	$(ALICETOOL) makedepend `pkg-config --cflags $(PC_OPTS)` \
-	    $(CPPSOURCES) > Makefile.depend
-	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
-                                                                   | $(SML)
-	$(ALICEDEP) $(ALICESOURCES) >> Makefile.depend
-
--include Makefile.depend
-
-
-### SAMPLE FILES ################################
-
-sample-files:
-	(cd samples && $(MAKE) depend && $(MAKE) )
-
-### DOCUMENTATION ###############################
-
-docs:
-	(cd doc && $(MAKE) )
-
-
-### CLEAN #######################################
-
-# clean: clean this directory, and the samples
+%.o: %.cc 
+	alicetool -v compile -g `pkg-config $(PC_OPTS) --cflags` -c $< -o $@
+	
 clean:
-	rm -f $(DLLOBJECTS)
-	rm -f $(ALICEOBJECTS)
-	(cd samples && $(MAKE) clean )
+	rm -f $(TARGETS) $(WRAPPERS) $(WRAPPERS_SIGS) $(WRAPPERS_SIGS:%.aml=%.alc) $(WRAPPERS_SIGS_TML) $(NATIVEWRAPPERS) $(NATIVEWRAPPERS:%.cc=%.hh) $(NATIVEWRAPPERS:%.cc=%.asig) $(NATIVEWRAPPERS:%.cc=%.o) $(COMPILED_WRAPPERS) $(DLLS) NativeCore.dll  NativeCore.o  CORE-sig.alc Key.alc Core.alc
+	rm -f Main.alc
 
-# clean: also clean the generated sources
-veryclean: clean
-	rm -f $(GENERATOR)
-	rm -f $(GENFILES)
-	rm -f $(GENSIGS)
-	rm -f $(LASTGENERATE)
-
-# distclean: clean also all subdirs (including CKIT), 
-#            and remove Makefile.depend and generator input file
-distclean: veryclean
-	rm -f *~
+distclean: clean
 	rm -f Makefile.depend
-	find -type d | grep '/CM$$' | xargs rm -fr
-	rm -f $(PREPAREFILES)
-	(cd prepare && $(MAKE) distclean )
-	(cd samples && $(MAKE) distclean )
-	(cd doc && $(MAKE) distclean )
 
-### INSTALLATION ################################
-#
-install: all installdll installalice
-installdll: compiledll
+depend:
+	alicedep $(SOURCES) > Makefile.depend
+
+wrappers:	$(COMPILED_WRAPPERS)
+
+$(WRAPPERS_SIGS):	$(WRAPPERS_SIGS_TML)
+
+$(WRAPPERS) $(WRAPPERS_SIGS_TML) $(NATIVEWRAPPERS): Generate.alc $(DEFS)
+	alicerun Generate.alc
+
+
+### INSTALLATION #############################################################
+	
+install:	all installdll installalice
+
+installdll:	$(DLLS)
 	mkdir -p -m 775 $(INSTALLDIR)
 	./myinstall $(INSTALLDLLTARGETS) $(INSTALLDIR)
-installalice: compilealice
+
+installalice: 
 	mkdir -p -m 775 $(INSTALLDIR)
 	./myinstall $(INSTALLALICETARGETS) $(INSTALLDIR)
 
-### DISTRIBUTION OF THE C SOURCES FOR PACKAGING
-#
-distdir:
-	rm -rf $(distdir)
-	mkdir $(distdir)
-	cp -r $(DISTFILES) $(distdir)
 
-dist:	distdir
-	tar chzf alice-gtk-$(VERSION).tar.gz $(distdir)
-	rm -rf $(distdir)
+
+#### DEPENDENCIES ############################################################
+
+$(COMPILED_WRAPPERS_SIGS) $(COMPILED_WRAPPERS): CORE-sig.alc Core.alc
+
+Core.alc: 	CORE-sig.alc NativeCore.dll
+GLib.alc:	GLIB-sig.alc NativeGLib.dll
+PANGO-sig.alc:	GLib.alc     NativePango.dll
+Pango.alc:	PANGO-sig.alc 
+ATK-sig.alc:	NativeAtk.dll
+Atk.alc:	ATK-sig.alc
+GDK-sig.alc:	Pango.alc Atk.alc NativeGdk.dll
+Gdk.alc:	GDK-sig.alc
+GTK-sig.alc:	Gdk.alc NativeGtk.dll
+Gtk.alc:	GTK-sig.alc
+CANVAS-sig.alc:	Gtk.alc NativeCanvas.dll
+Canvas.alc:	CANVAS-sig.alc
+
+
+-include Makefile.depend

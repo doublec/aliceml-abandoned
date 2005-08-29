@@ -1,0 +1,10 @@
+
+structure BasicTypes =
+struct
+    datatype c_name      = CN of string   
+        (* name of enum, flags, boxed, object in C *)
+
+    datatype def_type    = DT of string
+
+    datatype c_type      = CT of string
+end

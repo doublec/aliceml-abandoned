@@ -1,0 +1,87 @@
+import structure StrMap from "StrMap"
+
+
+signature TYPE =
+sig
+    (* name of the type in the .defs file *)
+    type type_name = string
+    
+    (* the type used in gtk *)
+    type ctype = string
+
+    type t
+
+    type ccode = string list 
+
+    val lookup 
+
+    (* if this type is used as an argument
+       is it an input, output or input and
+       output argument?
+     *)
+    datatype kind = 
+        IN
+      | IN_OUT
+
+    val kind : t -> kind
+
+    val ctypeIn : t -> ctype
+    val ctypeOut : t -> ctype
+    
+    (* [inArgCode (desc, xi, unwrappedVarName)] *)
+    val inArgCode : t * varname * varname -> ccode 
+
+    (* [returnCode (desc, cVarName)] *)
+    val returnCode : t * varname -> ccode
+
+    (* [outArgCode (desc, unwrappedVarName, resTuplePos)] *)
+    val outArgCode : t * varname * int -> ccode
+
+    (* [argument (desc, unwrappedVarName)] *)
+    val argument : t -> varname -> string
+
+    (* [aliceType desc] *)
+    val  aliceType t -> string
+end
+
+structure Type :> TYPE =
+struct
+    (* name of the type in the .defs file *)
+    type type_name = string
+    
+    (* the type used in gtk *)
+    type ctype = string
+
+    type t
+
+    type ccode = string list 
+    val typeDescriptor : type_name -> t
+
+    (* if this type is used as an argument
+       is it an input, output or input and
+       output argument?
+     *)
+    datatype kind = 
+        IN
+      | IN_OUT
+
+    val kind : t -> kind
+
+    val ctypeIn : t -> ctype
+    val ctypeOut : t -> ctype
+    
+    (* [inArgCode (desc, xi, unwrappedVarName)] *)
+    val inArgCode : t * varname * varname -> ccode 
+
+    (* [returnCode (desc, cVarName)] *)
+    val returnCode : t * varname -> ccode
+
+    (* [outArgCode (desc, unwrappedVarName, resTuplePos)] *)
+    val outArgCode : t * varname * int -> ccode
+
+    (* [argument (desc, unwrappedVarName)] *)
+    val argument : t -> varname -> string
+
+    (* [aliceType desc] *)
+    val  aliceType t -> string
+end

@@ -187,6 +187,29 @@
     word x13= Scheduler::GetCurrentArg(13);			\
     word x14= Scheduler::GetCurrentArg(14);			\
     word x15= Scheduler::GetCurrentArg(15);               
+#define DEFINE17(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 16);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);			\
+    word x10= Scheduler::GetCurrentArg(10);			\
+    word x11= Scheduler::GetCurrentArg(11);			\
+    word x12= Scheduler::GetCurrentArg(12);			\
+    word x13= Scheduler::GetCurrentArg(13);			\
+    word x14= Scheduler::GetCurrentArg(14);			\
+    word x15= Scheduler::GetCurrentArg(15);                     \
+    word x16= Scheduler::GetCurrentArg(16);               
+
+
 
 
 
@@ -197,6 +220,13 @@
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
   else { pointer = Store::WordToUnmanagedPointer(x); }     
 
+#define DECLARE_INT_AS(t, i, x)                 \
+    t i;                                        \
+      { s_int tmp_ = Store::WordToInt (x);      \
+    if (i == INVALID_INT) { REQUEST(x); }       \
+    else {}                                     \
+    i = tmp_; }
+
 // DECLARE_STRING, DECLARE_REAL and DECLARE_ARRAY only return
 // the Alice classes String, Real and Array. The following macros
 // convert them into the C types.
@@ -206,6 +236,15 @@
 #define DECLARE_CDOUBLE(dbl,x)                           \
   DECLARE_REAL(dbl##__temp,x);                           \
   double dbl = dbl##__temp->GetValue();
+      
+#define DECLARE_CFLOAT(dbl,x)                           \
+  DECLARE_REAL(dbl##__temp,x);                           \
+  float dbl = dbl##__temp->GetValue();
+
+#define DECLARE_DOUBLE_AS(t, dbl,x)                      \
+  DECLARE_REAL(dbl##__temp,x);                           \
+  t dbl = dbl##__temp->GetValue();
+
 
 // type = array member C type; F = conversion macro (like DECLARE_INT,etc.)
 #define DECLARE_CARRAY(a,x,type,F)                       \
@@ -280,5 +319,30 @@
     String::New(reinterpret_cast<const char *>(s))->ToWord() :	\
     String::New(static_cast<u_int>(0))->ToWord())
 #define UNMANAGED_POINTER_TO_WORD(p) Store::UnmanagedPointerToWord(p)
-#define ATOM_TO_WORD(a) Word32ToWord((u_int) a)
+
+extern word GtkCoreErrorConstructor;
+
+#define RAISE_CORE_ERROR(a,b,msg) \
+ do { ConVal *conVal = ConVal::New(Store::DirectWordToBlock(GtkCoreErrorConstructor), 1); \
+      conVal->Init (0, String::New(msg)->ToWord()); \
+      word exn = conVal->ToWord (); \
+      RAISE(exn); \
+    } while (0);
+
+/*
+GSList *alice_list_to_gslist (word l);
+word gslist_to_alice_list (GSList *l);
+
+GList *alice_list_to_glist (word l);
+word glist_to_alice_list (GList *l);
+*/
+
+word alice_cons (word h, word t);
+
+// FIXME
+#define gslist_to_alice_list(l) Store::IntToWord (Types::nil)
+#define glist_to_alice_list(l)  Store::IntToWord (Types::nil)
+#define alice_list_to_gslist(l) ((GSList*)0)
+#define alice_list_to_glist(l) ((GList*)0)
+
 #endif

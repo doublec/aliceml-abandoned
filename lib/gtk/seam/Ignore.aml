@@ -1,0 +1,156 @@
+import structure BasicTypes     from "BasicTypes"
+
+
+signature IGNORE =
+sig
+    val notIgnoredFun : BasicTypes.c_name -> bool
+    val notIgnoredType : BasicTypes.c_name -> bool
+end
+
+structure Ignore : IGNORE =
+struct
+
+    val ignoreFunList = [
+        (* gdk *)
+        "gdk_display_get_pointer",
+        "gdk_display_list_devices",
+        "gdk_draw_text_wc",
+        "gdk_text_width_wc",
+        "gdk_text_extents_wc",
+        "gdk_char_width_wc",
+
+        "gdk_gc_new_with_values",
+        "gdk_gc_get_values",
+        "gdk_gc_set_values",
+        "gdk_gc_get",
+        "gdk_gc_set_dashes",
+
+        "gdk_window_new",
+        "gdk_window_set_geometry_hints",
+        "gdk_window_constrain_size",
+        "gdk_window_get_user_data",
+        "gdk_window_property_get",
+        "gdk_window_invalidate_maybe_recurse",
+        
+        "gdk_property_get",
+        
+        "gdk_pixbuf_new_from_array",
+
+        "gdk_rgb_cmap_new",
+        "gdk_draw_indexed_image",
+
+        "gdk_selection_property_get",
+
+        "gdk_keymap_get_entries_for_keycode",
+        "gdk_keymap_get_entries_for_keyval",
+        "gdk_keymap_lookup_key",
+
+        "gdk_draw_segments",
+
+        "gdk_display_set_pointer_hooks",
+
+        "gdk_device_free_history",
+        "gdk_device_get_history",
+
+        (* pango *)
+        "pango_tab_array_get_tabs",
+        
+        "pango_layout_iter_get_line",
+        "pango_layout_iter_get_run",
+        "pango_layout_line_get_x_ranges",
+        "pango_layout_get_log_attrs",
+        "pango_layout_set_attributes",
+        "pango_layout_get_attributes",
+        "pango_layout_set_markup_with_accel",
+
+        "pango_coverage_to_bytes",
+
+        "pango_font_map_list_families",
+        "pango_font_map_get_shape_engine_type",
+
+        "pango_font_family_list_faces",
+
+        "pango_font_face_list_sizes",
+        
+        "pango_font_get_glyph_extents",
+        "pango_font_find_shaper",
+        "pango_font_get_coverage",
+        
+        "pango_context_list_families",
+        "pango_context_new",
+        "pango_context_set_font_map",
+
+        "pango_glyph_string_x_to_index",
+        "pango_glyph_string_index_to_x",
+        "pango_glyph_string_extends_range",
+        "pango_glyph_string_extends",
+
+        (* Atk *)
+        "atk_relation_new",
+        
+        "atk_object_notify_state_change",
+        "atk_object_connect_property_change_handler",
+
+        (* Gtk *)
+        "gtk_window_set_geometry_hints",
+        "gtk_widget_class_list_style_properties",
+
+        "gtk_icon_theme_get_icon_sizes",
+        "gtk_icon_theme_get_search_path",
+        "gtk_icon_theme_set_search_path",
+
+        "gtk_combo_box_get_row_separator_func",
+        
+        "gtk_accel_group_find",
+
+        "gtk_tree_path_get_indices",
+
+        "gtk_tree_view_get_row_separator_func",
+        "gtk_tree_view_get_search_equal_func",
+        "gtk_tree_view_row_search_equal_func",
+        
+        "gtk_socket_get_id",
+        "gtk_style_apply_default_pixmap",
+        "gtk_draw_expander",
+        "gtk_radio_tool_button_new_from_stock",
+        "gtk_radio_tool_button_new",
+
+        "gtk_file_chooser_button_new",
+        "gtk_file_chooser_button_new_with_backend",
+        
+        "gtk_curve_set_vector",
+        "gtk_curve_get_vector",
+
+        "gtk_color_selection_set_change_palette_with_screen_hook",
+        "gtk_color_selection_set_change_palette_hook",
+
+        "gtk_plug_get_id",
+
+        "gtk_ctree_base_nodes",
+        "gtk_ctree_new_with_titles",
+        "gtk_ctree_insert_node",
+
+        "gtk_clist_new_with_titles",
+        "gtk_clist_insert",
+        "gtk_clist_append",
+        "gtk_clist_prepend",
+
+        "gtk_about_dialog_set_url_hook",
+        "gtk_about_dialog_set_email_hook",
+
+
+        (* canvas *)
+        "gnome_canvas_bpath_set_bpath"
+    ]
+
+    fun notIgnoredFun (BasicTypes.CN cname) = not (List.exists (curry op= cname) ignoreFunList)
+    
+
+    val ignoreTyList = [
+        (* pango *)
+        "PangoAttrList"
+    ]
+        
+    fun notIgnoredType (BasicTypes.CN cname) = not (List.exists (curry op= cname) ignoreTyList)
+    
+end

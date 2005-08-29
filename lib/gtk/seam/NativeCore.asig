@@ -15,6 +15,9 @@ signature NATIVE_CORE_COMPONENT =
 sig
     structure NativeCore :
     sig
+        exception Error of string
+        exception TypeError of { actual : string, expected : string }
+
 	val null : unit -> 'object
 	val gtkTrue : unit -> int
 	val gtkFalse : unit -> int
@@ -41,14 +44,29 @@ sig
         val latin1ToUtf8 : string -> string
         val utf8ToLatin1 : string -> string
 
-        val propSetInt : 'object * string * int -> unit
-        val propSetString : 'object * string * string -> unit
-        val propSetBool : 'object * string * bool -> unit
+        val getStringType : 'gtype
+        val getIntType    : 'gtype
+        val getFloatType :  'gtype
+        val getDoubleType : 'gtype
+        val getPixbufType : 'gtype
 
-        val propInt : 'object * string -> int
-        val propString : 'object * string -> string
-        val propBool : 'object * string -> bool
+        val valueUndefined : unit -> 'gvalue
+        val valueInt : int -> 'gvalue
+        val valueEnum : int * 'gtype -> 'gvalue
+        val valueString : string -> 'gvalue
+        val valueFloat : real -> 'gvalue
+        val valueDouble : real -> 'gvalue
+        val valueBool : bool -> 'gvalue
+        val valueObject : 'object -> 'gvalue
 
-        val setLogMode : string * 'log_mode -> unit
+        val valueToInt : 'gvalue -> int
+        val valueToString : 'gvalue -> string
+        val valueToReal : 'gvalue -> real
+        val valueToBool : 'gvalue -> bool
+        val valueToObject : 'gvalue -> 'object
+        
+        val valueGetType : 'gvalue -> 'gtype
+        val propRawGet : 'object * string -> 'gvalue
+        val propRawSet : 'object * string * 'gvalue -> unit
     end
 end

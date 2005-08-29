@@ -1,0 +1,79 @@
+Code.alc:
+
+SexpTools.alc: \
+	Lexer.alc
+
+Lexer.alc:
+
+StrMap.alc: \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/data/MkHashImpMap.alc
+
+Rename.alc:
+
+AliceName.alc:
+
+AliceType.alc: \
+	AliceName.alc \
+	Rename.alc \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/tools/Inspector.alc
+
+BasicTypes.alc:
+
+TypeWrapper.alc: \
+	Defs.alc \
+	BasicTypes.alc \
+	AliceType.alc \
+	AliceName.alc \
+	Lexer.alc \
+	SexpTools.alc \
+	StrMap.alc \
+	Naming.alc \
+	Code.alc \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/system/TextIO.alc \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/system/OS.alc
+
+Ignore.alc: \
+	BasicTypes.alc
+
+Defs.alc: \
+	StrMap.alc \
+	Naming.alc \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/system/Print.alc \
+	AliceName.alc \
+	Rename.alc \
+	Lexer.alc \
+	BasicTypes.alc \
+	Ignore.alc \
+	SexpTools.alc \
+	AliceType.alc
+
+DefsParser.alc: \
+	Defs.alc \
+	Naming.alc \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/system/Print.alc \
+	AliceName.alc \
+	Rename.alc \
+	Lexer.alc \
+	BasicTypes.alc \
+	Ignore.alc \
+	SexpTools.alc \
+	Defs.alc \
+	TypeWrapper.alc \
+	StrMap.alc \
+	AliceType.alc
+
+Generate.alc: \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/system/OS.alc \
+	/home/dreamer/programming/ps/seam-install-debug/share/alice/lib/system/TextIO.alc \
+	Defs.alc \
+	StrMap.alc \
+	AliceType.alc \
+	AliceName.alc \
+	Lexer.alc \
+	TypeWrapper.alc \
+	DefsParser.alc \
+	Naming.alc \
+	Code.alc
+
+Naming.alc:
+
