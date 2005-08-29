@@ -23,7 +23,6 @@ MAIN = QUEUE-sig MkQueue \
        AbsTree BasicTypeMappers ModuleMapper BuiltinTypeMappers TypeMappers StdExceptionMappers \
        MONITORS-sig MkMonitors \
        Print \
-       Debug \
        HANDLERS-sig MkHandlers \
        INSPECTOR-sig Inspector \
        Test
