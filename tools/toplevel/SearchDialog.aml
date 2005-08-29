@@ -80,18 +80,8 @@ structure SearchDialog =
              Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
              Gtk.Widget.showAll searchDialog;
              Gtk.Widget.map searchDialog;
-	     let
-		val buf = Gtk.TextView.getBuffer Gui.searchString
-		val startiter = Gtk.TextIter.new ()
-		val enditer = Gtk.TextIter.new ()
-	     in
-	        Gtk.TextBuffer.getStartIter(buf, startiter);
-	        Gtk.TextBuffer.getStartIter(buf, enditer);
-		Gtk.TextBuffer.placeCursor(buf, enditer);
-		Gtk.TextBuffer.moveMarkByName(buf, "selection_bound", startiter)
-		(* Gtk2.4 Gtk.TextBuffer.selectRange(buf, startiter, enditer)*)
-		
-	     end;
+	     Gtk.Window.present searchDialog;
+	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
 	     Gtk.Widget.grabFocus Gui.searchString)
 
 	fun searchAgain(id, arg) = 
@@ -114,18 +104,8 @@ structure SearchDialog =
              Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
              Gtk.Widget.showAll searchDialog;
              Gtk.Widget.map searchDialog;
-	     let
-		val buf = Gtk.TextView.getBuffer Gui.searchString
-		val startiter = Gtk.TextIter.new ()
-		val enditer = Gtk.TextIter.new ()
-	     in
-	        Gtk.TextBuffer.getStartIter(buf, startiter);
-	        Gtk.TextBuffer.getStartIter(buf, enditer);
-		Gtk.TextBuffer.placeCursor(buf, enditer);
-		Gtk.TextBuffer.moveMarkByName(buf, "selection_bound", startiter)
-		(* Gtk2.4 Gtk.TextBuffer.selectRange(buf, startiter, enditer)*)
-		
-	     end;
+	     Gtk.Window.present searchDialog;
+	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
 	     Gtk.Widget.grabFocus Gui.searchString)
 
 	fun gotoLine id =
@@ -137,6 +117,7 @@ structure SearchDialog =
                 Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll dia;
 		Gtk.Widget.map dia;
+		Gtk.Window.present dia;
                 if Gtk.Dialog.run dia = ~5 then
 		    (case Int.fromString (Gtk.Entry.getText Gui.go_to_line_entry) of
 			 NONE => ()
