@@ -35,9 +35,9 @@ struct
 	let
 	    val (r, g, b) = Color.rgb c
 	    fun conv n = Real.round (65535.0 * n)
-	    val color = Gdk.colorNew (conv r, conv g, conv b)
+	    val color = Gdk.Color.new { red = conv r, green = conv g, blue = conv b }
 	in
-	    Gdk.colormapAllocColor (colormap, color, false, true);
+	    Gdk.Colormap.allocColor (colormap, color, false, true);
 	    color
 	end
 
@@ -56,24 +56,24 @@ struct
     (* builds the waiting window *)
     fun mkWaitWindow (parent, alreadyConn, readyCB, cancelCB, ticket) =
 	let
-	    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val dialogVBox       = Gtk.vboxNew (false, 0)
-	    val connectedLabel   = Gtk.labelNew "Connected Players : "
-	    val separator1       = Gtk.hseparatorNew ()
-	    val separator2       = Gtk.hseparatorNew ()
-	    val disconnectButton = Gtk.buttonNewWithLabel "Disconnect"
-	    val startButton      = Gtk.buttonNewWithLabel "Start"
-	    val buttonHBox       = Gtk.hbuttonBoxNew ()
-	    val urlHBox          = Gtk.hboxNew (false, 10)
-	    val urlLabel         = Gtk.labelNew "Server-URL: "
-	    val serverUrl        = Gtk.entryNew ()
+	    val waiting          = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val dialogVBox       = Gtk.VBox.new (false, 0)
+	    val connectedLabel   = Gtk.Label.new "Connected Players : "
+	    val separator1       = Gtk.HSeparator.new ()
+	    val separator2       = Gtk.HSeparator.new ()
+	    val disconnectButton = Gtk.Button.newWithLabel "Disconnect"
+	    val startButton      = Gtk.Button.newWithLabel "Start"
+	    val buttonHBox       = Gtk.HButtonBox.new ()
+	    val urlHBox          = Gtk.HBox.new (false, 10)
+	    val urlLabel         = Gtk.Label.new "Server-URL: "
+	    val serverUrl        = Gtk.Entry.new ()
 
 	    (* the textwindow where the connected player will be listed *)
 	    val playerText        = Gtk.createTextWidget ()
 	    val playerWindow      = 
-		Gtk.scrolledWindowNew (Gtk.null, Gtk.null)
+		Gtk.ScrolledWindow.new (Gtk.null, Gtk.null)
 
-	    val colormap = Gdk.colormapGetSystem ()
+	    val colormap = Gdk.Colormap.getSystem ()
 
 	    (* [insert(name, color)] inserts one player with name and color in
 	       connected-players list *)
@@ -82,7 +82,7 @@ struct
 		    val text  = name ^ " has connected!\n"
 		    val color = colorToGdkColor (colormap, color)
 		in
-		    Gtk.textWidgetInsert (playerText, text, color)
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
 		end
 
 	    (* inserts "Name: name Color: color has disconnected" 
@@ -92,7 +92,7 @@ struct
 		    val text  = name ^ " has disconnected!\n"
 		    val color = colorToGdkColor (colormap, color)
 		in
-		    Gtk.textWidgetInsert (playerText, text, color)
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
 		end
 
 	    val waitWindow = {object = waiting,
@@ -100,12 +100,12 @@ struct
 			      insertPlayer}
 		
 	    (* the mainQuit procedure resets also the used refs *)
-	    fun mainQuit () = (Gtk.widgetDestroy waiting; cancelCB ())
+	    fun mainQuit () = (Gtk.Widget.destroy waiting; cancelCB ())
 		
 	    (* the signal the server gives to start the game,
 	     also resets the refs and destroyes the window *)
 	    fun start () = 
-		(Gtk.widgetDestroy waiting;
+		(Gtk.Widget.destroy waiting;
 		 case readyCB () of
 		     NONE          => ()
 		   | SOME errorMsg => 
@@ -113,11 +113,10 @@ struct
 	in
 
 	    playersJoined (waitWindow, alreadyConn);
-	    Gtk.widgetSetParentWindow (waiting, parent);
-	    Gtk.windowSetModal (waiting, true);
-	    Gtk.windowSetTitle (waiting, "Waiting...");
-	    Gtk.windowSetPosition (waiting, Gtk.WIN_POS_CENTER);
-	    Gtk.textViewSetEditable (playerText, false);
+	    Gtk.Window.setModal (waiting, true);
+	    Gtk.Window.setTitle (waiting, "Waiting...");
+	    Gtk.Window.setPosition (waiting, Gtk.WindowPosition.CENTER);
+	    Gtk.TextView.setEditable (playerText, false);
 	    
 	    (* connects the signals with procedures *)
 	    Gtk.signalConnect (waiting, "delete-event", 
@@ -128,40 +127,40 @@ struct
 			       fn _ => mainQuit ());
 	    
 	    (* set some default configurations *)
-	    Gtk.entrySetText (serverUrl, ticket);
-	    Gtk.containerSetBorderWidth (waiting, 10);
-	    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);
-	    Gtk.entrySetEditable (serverUrl, false);
-	    Gtk.windowSetDefaultSize(waiting, 300, 400);
-	    Gtk.scrolledWindowSetPolicy (playerWindow, 
-					 Gtk.POLICY_NEVER, 
-					 Gtk.POLICY_ALWAYS);
+	    Gtk.Entry.setText (serverUrl, ticket);
+	    Gtk.Container.setBorderWidth (waiting, 10);
+	    Gtk.Misc.setAlignment (connectedLabel, 0.0, 0.5);
+	    Gtk.Entry.setEditable (serverUrl, false);
+	    Gtk.Window.setDefaultSize(waiting, 300, 400);
+	    Gtk.ScrolledWindow.setPolicy (playerWindow, 
+					 Gtk.PolicyType.NEVER, 
+					 Gtk.PolicyType.ALWAYS);
 	    
 	    (* pack everything in boxes *)
-	    Gtk.boxPackStart (buttonHBox, startButton, true, true, 5);
-	    Gtk.boxPackStart (buttonHBox, disconnectButton, 
+	    Gtk.Box.packStart (buttonHBox, startButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, disconnectButton, 
 			      true, true, 5);
 	    
-	    Gtk.boxPackStart (urlHBox, urlLabel, false, false, 5);
-	    Gtk.boxPackStart (urlHBox, serverUrl, false, false, 5);
+	    Gtk.Box.packStart (urlHBox, urlLabel, false, false, 5);
+	    Gtk.Box.packStart (urlHBox, serverUrl, false, false, 5);
 	    
-	    Gtk.containerAdd (playerWindow, playerText);
+	    Gtk.Container.add (playerWindow, playerText);
 	    
-	    Gtk.boxPackStart (dialogVBox, urlHBox, false, false, 0);
-	    Gtk.boxPackStart (dialogVBox, separator2, false, 
+	    Gtk.Box.packStart (dialogVBox, urlHBox, false, false, 0);
+	    Gtk.Box.packStart (dialogVBox, separator2, false, 
 			      false, 5);
-	    Gtk.boxPackStart (dialogVBox, connectedLabel, false, 
+	    Gtk.Box.packStart (dialogVBox, connectedLabel, false, 
 			      false, 5);
-	    Gtk.boxPackStart (dialogVBox, playerWindow, true, 
+	    Gtk.Box.packStart (dialogVBox, playerWindow, true, 
 			      true, 0);
-	    Gtk.boxPackStart (dialogVBox, separator1, false, 
+	    Gtk.Box.packStart (dialogVBox, separator1, false, 
 			      false, 5);
-	    Gtk.boxPackStart (dialogVBox, buttonHBox, false, 
+	    Gtk.Box.packStart (dialogVBox, buttonHBox, false, 
 			      false, 5);
 	    
 	    (* pack everything in container and show it all *)
-	    Gtk.containerAdd (waiting, dialogVBox);
-	    Gtk.widgetShowAll waiting;
+	    Gtk.Container.add (waiting, dialogVBox);
+	    Gtk.Widget.showAll waiting;
  
 	    waitWindow
 	    

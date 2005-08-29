@@ -24,33 +24,32 @@ struct
     fun mkTextWindow (parent, title, mode) = 
 	let
 
-	    val textWindow  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val dialogVBox  = Gtk.vboxNew (false, 0)
-	    val closeButton = Gtk.buttonNewWithLabel "  Close  "
-	    val buttonHBox  = Gtk.hbuttonBoxNew ()
-	    val label       = Gtk.labelNew mode
+	    val textWindow  = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val dialogVBox  = Gtk.VBox.new (false, 0)
+	    val closeButton = Gtk.Button.newWithLabel "  Close  "
+	    val buttonHBox  = Gtk.HButtonBox.new ()
+	    val label       = Gtk.Label.new mode
 
 	in
-	    Gtk.widgetSetParentWindow (textWindow, parent);
-	    Gtk.windowSetTitle (textWindow, title);
-	    Gtk.windowSetModal (textWindow, true);
-	    Gtk.windowSetPosition (textWindow, Gtk.WIN_POS_CENTER);
-	    Gtk.containerSetBorderWidth (textWindow , 10);
+	    Gtk.Window.setTitle (textWindow, title);
+	    Gtk.Window.setModal (textWindow, true);
+	    Gtk.Window.setPosition (textWindow, Gtk.WindowPosition.CENTER);
+	    Gtk.Container.setBorderWidth (textWindow , 10);
 	    if String.isPrefix "<" mode
-		then Gtk.labelSetMarkup (label, mode)
+		then Gtk.Label.setMarkup (label, mode)
 	    else ();
 
 	    Gtk.signalConnect (textWindow , "delete-event", 
-			       fn _ => Gtk.widgetDestroy textWindow);
+			       fn _ => Gtk.Widget.destroy textWindow);
 	    Gtk.signalConnect (closeButton, "clicked", 
-			       fn _ => Gtk.widgetDestroy textWindow);
+			       fn _ => Gtk.Widget.destroy textWindow);
 
-	    Gtk.boxPackStart (buttonHBox, closeButton, false, false, 5);
-	    Gtk.boxPackStart (dialogVBox, label, false, false, 5);
-	    Gtk.boxPackStart (dialogVBox, buttonHBox, false, false, 5);
+	    Gtk.Box.packStart (buttonHBox, closeButton, false, false, 5);
+	    Gtk.Box.packStart (dialogVBox, label, false, false, 5);
+	    Gtk.Box.packStart (dialogVBox, buttonHBox, false, false, 5);
 
-	    Gtk.containerAdd (textWindow, dialogVBox);
-    	    Gtk.widgetShowAll textWindow;
+	    Gtk.Container.add (textWindow, dialogVBox);
+    	    Gtk.Widget.showAll textWindow;
 
 	    textWindow
 

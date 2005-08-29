@@ -39,9 +39,9 @@ struct
 	let
 	    val (r, g, b) = Color.rgb c
 	    fun conv n = Real.round (65535.0 * n)
-	    val color = Gdk.colorNew (conv r, conv g, conv b)
+	    val color = Gdk.Color.new { red = conv r, green = conv g, blue = conv b }
 	in
-	    Gdk.colormapAllocColor (colormap, color, false, true);
+	    Gdk.Colormap.allocColor (colormap, color, false, true);
 	    color
 	end
 
@@ -49,7 +49,7 @@ struct
        the game starts normally. if he has not, it will abort 
        by returning to MainWindow and showing an error message *)
     fun gameStarted (p : player_settings_widget) = 
-	(Gtk.widgetDestroy (#object p);
+	(Gtk.Widget.destroy (#object p);
 	 if !(#state p) <> WAITING
 	     then Text.mkTextWindow (#object p, "ERROR!", 
 				    "Sorry, game already started without you!")
@@ -70,31 +70,31 @@ struct
     fun mkPlayerSettings (parent, cancelCB, readyCB) = 
 	let
 
-	    val playerSettings  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val playerSettings  = Gtk.Window.new Gtk.WindowType.TOPLEVEL
   	    val playerText      = Gtk.createTextWidget ()
 	    val playerScrolledWindow = 
-		                  Gtk.scrolledWindowNew (Gtk.null, Gtk.null)
- 	    val colorCombo      = Gtk.comboNew ()
-	    val settingsVBox 	= Gtk.vboxNew (false, 0)
-	    val nameLabel 	= Gtk.labelNew "Name : "
-	    val nameText	= Gtk.entryNew ()
-	    val nameHBox	= Gtk.hboxNew (false, 0)
-	    val separator1	= Gtk.hseparatorNew ()
-	    val colorLabel 	= Gtk.labelNew "Color : "
-	    val colorHBox	= Gtk.hboxNew (false, 5)
-	    val separator2	= Gtk.hseparatorNew ()
+		                  Gtk.ScrolledWindow.new (Gtk.null, Gtk.null)
+ 	    val colorCombo      = Gtk.ComboBox.newText ()
+	    val settingsVBox 	= Gtk.VBox.new (false, 0)
+	    val nameLabel 	= Gtk.Label.new "Name : "
+	    val nameText	= Gtk.Entry.new ()
+	    val nameHBox	= Gtk.HBox.new (false, 0)
+	    val separator1	= Gtk.HSeparator.new ()
+	    val colorLabel 	= Gtk.Label.new "Color : "
+	    val colorHBox	= Gtk.HBox.new (false, 5)
+	    val separator2	= Gtk.HSeparator.new ()
 	    val spectatorCheckButton = 
-		Gtk.checkButtonNewWithLabel "Spectator Mode"
-	    val separator3	= Gtk.hseparatorNew ()
-	    val connectedLabel 	= Gtk.labelNew "Connected Players: "
-	    val separator4	= Gtk.hseparatorNew ()
-	    val readyButton    	= Gtk.buttonNewWithLabel "Ready "
-	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
-	    val buttonHBox	= Gtk.hboxNew (true, 10)
+		Gtk.CheckButton.newWithLabel "Spectator Mode"
+	    val separator3	= Gtk.HSeparator.new ()
+	    val connectedLabel 	= Gtk.Label.new "Connected Players: "
+	    val separator4	= Gtk.HSeparator.new ()
+	    val readyButton    	= Gtk.Button.newWithLabel "Ready "
+	    val cancelButton    = Gtk.Button.newWithLabel "Cancel"
+	    val buttonHBox	= Gtk.HBox.new (true, 10)
 
 	    val state = ref SELECTING
 
-	    val colormap = Gdk.colormapGetSystem ()
+	    val colormap = Gdk.Colormap.getSystem ()
 	
 	    (* an alterable list which contains all colors that are
 	     still selectabel *)
@@ -102,17 +102,22 @@ struct
 
 	    (* inserts all colors into the color combo *)
 	    fun insertColors colors = 
-		               Gtk.comboSetPopdownStrings (colorCombo, colors)
+                List.app (fn c => Gtk.ComboBox.appendText (colorCombo, c)) colors
 
 	    fun removeColor col =
 		let
 		    val c = Color.toString col
-		    val colors = !allColors
-		    fun removeColor' () = List.filter (fn x => x <> c) colors
-		    val spareColors = removeColor' ()
+                    fun remove (ndx, res, []) = (~1, List.rev res)
+                      | remove (ndx, res, c'::cs) = 
+                        if c = c' then
+                            (ndx, List.rev res @ cs)
+                        else
+                            remove (ndx + 1, c' :: res,  cs)
+                        
+                    val (ndx, spareColors) = remove (0, [], !allColors)
 		in
 		    allColors := spareColors;
-		    Gtk.comboSetPopdownStrings (colorCombo, spareColors)
+                    Gtk.ComboBox.removeText (colorCombo, ndx)
 		end
 
 	    fun insertColor col = 
@@ -120,7 +125,7 @@ struct
 		    val colors = (Color.toString col) :: (!allColors)
 		in
 		    allColors := colors;
-		    Gtk.comboSetPopdownStrings (colorCombo, colors)
+                    Gtk.ComboBox.appendText (colorCombo, Color.toString col)
 		end
 
 	    val colorlock = Lock.lock ()
@@ -135,7 +140,7 @@ struct
 		    val text = name ^ " has connected!\n"
 		    val color = colorToGdkColor (colormap, color)
 		in
-		    Gtk.textWidgetInsert (playerText, text, color)
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
 		end
 
 
@@ -145,7 +150,7 @@ struct
 		    val text  = name ^ " has disconnected!\n"
 		    val color = colorToGdkColor (colormap, color)
 		in
-		    Gtk.textWidgetInsert (playerText, text, color)
+		    Gtk.TextBuffer.insertAtCursor (Gtk.TextView.getBuffer playerText, text, ~1)
 		end
 
 	    val playerSettingsWindow = {object = playerSettings,
@@ -160,33 +165,33 @@ struct
 	    (* the quit procedure. disconnects the client from the game
 	       and returns to the main window *)
 	    fun quit (p : player_settings_widget) = 
-		                            Gtk.widgetDestroy (#object p)
+		                            Gtk.Widget.destroy (#object p)
 
 	    fun mainQuit (p : player_settings_widget) = 
-		              (Gtk.widgetDestroy (#object p);
+		              (Gtk.Widget.destroy (#object p);
 			       cancelCB ())
 
 	    (* called, if the client has changed the nameText widget.
 	       if nameText = "" -> you can't press the ready-button,
 	       else the ready-button is set sensitive *)
 	    fun changedNameText () =
-		if Gtk.entryGetText nameText = ""
-		    then Gtk.widgetSetSensitive (readyButton, false)
-		else Gtk.widgetSetSensitive (readyButton, true)
+		if Gtk.Entry.getText nameText = ""
+		    then Gtk.Widget.setSensitive (readyButton, false)
+		else Gtk.Widget.setSensitive (readyButton, true)
 
 	    (* handles what happens, if the spectator Button has
 	       been pressed *)
 	    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
-		if Gtk.toggleButtonGetActive spectator
+		if Gtk.ToggleButton.getActive spectator
 		    then
-			(Gtk.widgetSetSensitive (nameBox, false);
-			 Gtk.widgetSetSensitive (colorBox, false);
-			 Gtk.widgetSetSensitive (readyButton, true))
+			(Gtk.Widget.setSensitive (nameBox, false);
+			 Gtk.Widget.setSensitive (colorBox, false);
+			 Gtk.Widget.setSensitive (readyButton, true))
 		else
-		    (Gtk.widgetSetSensitive (nameBox, true);
-		     Gtk.widgetSetSensitive (colorBox, true);
-		     if Gtk.entryGetText nameText = ""
-			 then Gtk.widgetSetSensitive (readyButton, false)
+		    (Gtk.Widget.setSensitive (nameBox, true);
+		     Gtk.Widget.setSensitive (colorBox, true);
+		     if Gtk.Entry.getText nameText = ""
+			 then Gtk.Widget.setSensitive (readyButton, false)
 		     else ())
 
 
@@ -197,44 +202,43 @@ struct
 	     SND errorMsg -> return to main window by showing error message *)
 	    fun okClickedCB (p : player_settings_widget, spectator) = 
 		let
-		    val name  = Gtk.entryGetText nameText
+		    val name  = Gtk.Entry.getText nameText
 		    val color = 
-			Color.fromString (Gtk.entryGetText 
-					  (Gtk.comboGetFieldEntry colorCombo))
+			Color.fromString (Gtk.Entry.getText 
+					  (Gtk.Combo.getFieldEntry colorCombo))
 
 		    fun return () = 
-			if Gtk.toggleButtonGetActive spectator
+			if Gtk.ToggleButton.getActive spectator
 			    then readyCB NONE
 			else readyCB (SOME (name, color))
                     
 		in
 		    case return () of 
-		       NONE =>(Gtk.buttonSetLabel (cancelButton, "Disconnect");
-			       Gtk.widgetSetSensitive (readyButton, false);
-			       Gtk.widgetSetSensitive (nameHBox, false);
-			       Gtk.widgetSetSensitive (colorHBox, false);
-			       Gtk.widgetSetSensitive (spectatorCheckButton, 
+		       NONE =>(Gtk.Button.setLabel (cancelButton, "Disconnect");
+			       Gtk.Widget.setSensitive (readyButton, false);
+			       Gtk.Widget.setSensitive (nameHBox, false);
+			       Gtk.Widget.setSensitive (colorHBox, false);
+			       Gtk.Widget.setSensitive (spectatorCheckButton, 
 						       false);
 			       (#state p) := WAITING;
-			       if Gtk.toggleButtonGetActive spectator
+			       if Gtk.ToggleButton.getActive spectator
 				   then ()
 			       else playersJoined (p, [(name, color)]);
-			       Gtk.comboSetPopdownStrings (colorCombo, 
-						       [Color.toString color]))
+			       () (* FIXME:!! Gtk.Combo.setPopdownStrings (colorCombo, 
+						       [Color.toString color]) *))
 		     | SOME errorMsg => 
 			   (Text.mkTextWindow (parent, "ERROR!!", errorMsg);
-			    Gtk.widgetDestroy (#object p))
+			    Gtk.Widget.destroy (#object p))
 		end
 
 	in
 
 	    (* inserts all available colors into the color combo *)
 	    insertColors (!allColors);
-	    Gtk.widgetSetParentWindow (playerSettings, parent);
-	    Gtk.windowSetModal (playerSettings, true);
-	    Gtk.windowSetTitle (playerSettings, "Player Settings");
-	    Gtk.windowSetPosition (playerSettings, Gtk.WIN_POS_CENTER);
-	    Gtk.textViewSetEditable (playerText, false);
+	    Gtk.Window.setModal (playerSettings, true);
+	    Gtk.Window.setTitle (playerSettings, "Player Settings");
+	    Gtk.Window.setPosition (playerSettings, Gtk.WindowPosition.CENTER);
+	    Gtk.TextView.setEditable (playerText, false);
 	    
 	    Gtk.signalConnect (playerSettings,
 			       "delete-event", 
@@ -257,44 +261,44 @@ struct
 			       fn _ => mainQuit playerSettingsWindow);
 	    
 	    (* setting some useful values *)
-	    Gtk.containerSetBorderWidth (playerSettings, 10);
-	    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);
-	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry colorCombo, 
+	    Gtk.Container.setBorderWidth (playerSettings, 10);
+	    Gtk.Misc.setAlignment (connectedLabel, 0.0, 0.5);
+	    Gtk.Entry.setEditable (Gtk.Combo.getFieldEntry colorCombo, 
 				  false);
-	    Gtk.windowSetDefaultSize(playerSettings, 300, 400);
-	    Gtk.scrolledWindowSetPolicy (playerScrolledWindow, 
-					 Gtk.POLICY_NEVER, 
-					 Gtk.POLICY_ALWAYS);
-	    Gtk.entrySetMaxLength (nameText, 11);
-	    Gtk.widgetSetSensitive (readyButton, false);
+	    Gtk.Window.setDefaultSize(playerSettings, 300, 400);
+	    Gtk.ScrolledWindow.setPolicy (playerScrolledWindow, 
+					 Gtk.PolicyType.NEVER, 
+					 Gtk.PolicyType.ALWAYS);
+	    Gtk.Entry.setMaxLength (nameText, 11);
+	    Gtk.Widget.setSensitive (readyButton, false);
 
 	    (* packing everything in boxes and later in playerSettings *)
-	    Gtk.boxPackStart (nameHBox, nameLabel, false, false, 0);
-	    Gtk.boxPackStart (nameHBox, nameText, true, false, 0);
+	    Gtk.Box.packStart (nameHBox, nameLabel, false, false, 0);
+	    Gtk.Box.packStart (nameHBox, nameText, true, false, 0);
 
-	    Gtk.boxPackStart (colorHBox, colorLabel, false, false, 0);
-	    Gtk.boxPackStart (colorHBox, colorCombo, true, false, 0);
+	    Gtk.Box.packStart (colorHBox, colorLabel, false, false, 0);
+	    Gtk.Box.packStart (colorHBox, colorCombo, true, false, 0);
 
-	    Gtk.boxPackStart (buttonHBox, readyButton, true, true, 5);
-	    Gtk.boxPackStart (buttonHBox, cancelButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, readyButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, cancelButton, true, true, 5);
 
-	    Gtk.boxPackStart (settingsVBox, nameHBox, false, false, 2);
-	    Gtk.boxPackStart (settingsVBox, separator1, false, false, 2);
-	    Gtk.boxPackStart (settingsVBox, colorHBox, false, false, 2);
-	    Gtk.boxPackStart (settingsVBox, separator2, false, false, 5);
-	    Gtk.boxPackStart (settingsVBox, spectatorCheckButton, false, 
+	    Gtk.Box.packStart (settingsVBox, nameHBox, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, separator1, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, colorHBox, false, false, 2);
+	    Gtk.Box.packStart (settingsVBox, separator2, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, spectatorCheckButton, false, 
 			      false, 5);
-	    Gtk.boxPackStart (settingsVBox, separator3, false, false, 5);
-	    Gtk.boxPackStart (settingsVBox, connectedLabel, false, false, 0);
-	    Gtk.boxPackStart (settingsVBox, playerScrolledWindow, 
+	    Gtk.Box.packStart (settingsVBox, separator3, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, connectedLabel, false, false, 0);
+	    Gtk.Box.packStart (settingsVBox, playerScrolledWindow, 
 			      true, true, 0);
-	    Gtk.boxPackStart (settingsVBox, separator4, false, false, 5);
-	    Gtk.boxPackStart (settingsVBox, buttonHBox, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, separator4, false, false, 5);
+	    Gtk.Box.packStart (settingsVBox, buttonHBox, false, false, 5);
 	    
-	    Gtk.containerAdd (playerScrolledWindow, playerText);
-	    Gtk.containerAdd (playerSettings, settingsVBox);
+	    Gtk.Container.add (playerScrolledWindow, playerText);
+	    Gtk.Container.add (playerSettings, settingsVBox);
 
-	    Gtk.widgetShowAll playerSettings;
+	    Gtk.Widget.showAll playerSettings;
 
 	    playerSettingsWindow
 	end

@@ -29,32 +29,31 @@ struct
     fun mkConnectionWindow (parent, connectCB, cancelCB) = 
 	let
 
-	    val connectToServer = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val dialogVBox      = Gtk.vboxNew (false, 0)
-	    val urlLabel 	= Gtk.labelNew "URL : "
-	    val urlHBox	        = Gtk.hboxNew (false, 0)
-	    val separator	= Gtk.hseparatorNew ()
-	    val okButton    	= Gtk.buttonNewWithLabel "  OK  "
-	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
-	    val buttonHBox	= Gtk.hboxNew (true, 10)
-	    val clientUrl       = Gtk.entryNew ()
+	    val connectToServer = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val dialogVBox      = Gtk.VBox.new (false, 0)
+	    val urlLabel 	= Gtk.Label.new "URL : "
+	    val urlHBox	        = Gtk.HBox.new (false, 0)
+	    val separator	= Gtk.HSeparator.new ()
+	    val okButton    	= Gtk.Button.newWithLabel "  OK  "
+	    val cancelButton    = Gtk.Button.newWithLabel "Cancel"
+	    val buttonHBox	= Gtk.HBox.new (true, 10)
+	    val clientUrl       = Gtk.Entry.new ()
 
-	    fun mainQuit obj = (Gtk.widgetDestroy obj;
+	    fun mainQuit obj = (Gtk.Widget.destroy obj;
 			       cancelCB ())
 		
-	    fun readUrl ()  = Gtk.entryGetText clientUrl
+	    fun readUrl ()  = Gtk.Entry.getText clientUrl
 
 	    fun start ticket =
 		(case connectCB ticket of
-		    NONE => Gtk.widgetDestroy connectToServer
+		    NONE => Gtk.Widget.destroy connectToServer
 		  | SOME errorMsg => 
 			(Text.mkTextWindow (parent, "ERROR!!", errorMsg);()))
 
 	in
-	    Gtk.widgetSetParentWindow (connectToServer, parent);
-	    Gtk.windowSetModal (connectToServer, true);
-	    Gtk.windowSetTitle (connectToServer, "Connect to Server");
-	    Gtk.windowSetPosition (connectToServer, Gtk.WIN_POS_CENTER);
+	    Gtk.Window.setModal (connectToServer, true);
+	    Gtk.Window.setTitle (connectToServer, "Connect to Server");
+	    Gtk.Window.setPosition (connectToServer, Gtk.WindowPosition.CENTER);
 
 	    Gtk.signalConnect (connectToServer, "delete-event", 
 			       fn _ => mainQuit connectToServer);
@@ -63,22 +62,22 @@ struct
 	    Gtk.signalConnect (cancelButton, "clicked", 
 			       fn _ => mainQuit connectToServer);
 
-	    Gtk.entrySetText (clientUrl, "x-alice://");
-	    Gtk.widgetGrabFocus clientUrl;
-	    Gtk.containerSetBorderWidth (connectToServer, 10);
+	    Gtk.Entry.setText (clientUrl, "x-alice://");
+	    Gtk.Widget.grabFocus clientUrl;
+	    Gtk.Container.setBorderWidth (connectToServer, 10);
 
-	    Gtk.boxPackStart (urlHBox, urlLabel, false, false, 0);
-	    Gtk.boxPackStart (urlHBox, clientUrl, true, true, 0);
+	    Gtk.Box.packStart (urlHBox, urlLabel, false, false, 0);
+	    Gtk.Box.packStart (urlHBox, clientUrl, true, true, 0);
 
-	    Gtk.boxPackStart (buttonHBox, okButton, true, true, 5);
-	    Gtk.boxPackStart (buttonHBox, cancelButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, okButton, true, true, 5);
+	    Gtk.Box.packStart (buttonHBox, cancelButton, true, true, 5);
 
-	    Gtk.boxPackStart (dialogVBox, urlHBox, false, false, 5);
-	    Gtk.boxPackStart (dialogVBox, separator, false, false, 10);
-	    Gtk.boxPackStart (dialogVBox, buttonHBox, false, false, 5);
+	    Gtk.Box.packStart (dialogVBox, urlHBox, false, false, 5);
+	    Gtk.Box.packStart (dialogVBox, separator, false, false, 10);
+	    Gtk.Box.packStart (dialogVBox, buttonHBox, false, false, 5);
 	    
-	    Gtk.containerAdd (connectToServer, dialogVBox);
-	    Gtk.widgetShowAll connectToServer;
+	    Gtk.Container.add (connectToServer, dialogVBox);
+	    Gtk.Widget.showAll connectToServer;
 	    
 	    connectToServer
 	end

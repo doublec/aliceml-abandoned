@@ -24,28 +24,27 @@ struct
     fun mkQuestionBox (parent, title, quest, {yes, no, cancel}) =
 	let
 
-	    val questionWindow = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val yesButton      = Gtk.buttonNewWithLabel "Yes"
-	    val noButton       = Gtk.buttonNewWithLabel "No"
-	    val buttonBox      = Gtk.hbuttonBoxNew ()
-	    val dialogBox      = Gtk.vboxNew (false, 5)
-	    val label          = Gtk.labelNew ""
+	    val questionWindow = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val yesButton      = Gtk.Button.newWithLabel "Yes"
+	    val noButton       = Gtk.Button.newWithLabel "No"
+	    val buttonBox      = Gtk.HButtonBox.new ()
+	    val dialogBox      = Gtk.VBox.new (false, 5)
+	    val label          = Gtk.Label.new ""
 		
-	    fun question q = Gtk.labelSetText (label, q)
+	    fun question q = Gtk.Label.setText (label, q)
 
 
-	    fun mainQuit ans = (Gtk.widgetDestroy questionWindow;
+	    fun mainQuit ans = (Gtk.Widget.destroy questionWindow;
 			        ans ())
 
 	in
 
 	    question quest;
-	    Gtk.widgetSetParentWindow (questionWindow, parent);
-	    Gtk.windowSetModal (questionWindow, true);
-	    Gtk.containerSetBorderWidth (questionWindow, 10);
-	    Gtk.windowSetTitle (questionWindow, title);
-	    Gtk.windowSetPosition (questionWindow,
-				   Gtk.WIN_POS_CENTER);
+	    Gtk.Window.setModal (questionWindow, true);
+	    Gtk.Container.setBorderWidth (questionWindow, 10);
+	    Gtk.Window.setTitle (questionWindow, title);
+	    Gtk.Window.setPosition (questionWindow,
+				   Gtk.WindowPosition.CENTER);
 	    
 	    Gtk.signalConnect (questionWindow, 
 			       "delete-event",
@@ -55,18 +54,18 @@ struct
 	    Gtk.signalConnect (noButton, "clicked", 
 			       fn _ => mainQuit no);
 	    
-	    Gtk.boxPackStart (buttonBox,
+	    Gtk.Box.packStart (buttonBox,
 			      yesButton, true, true, 5);
-	    Gtk.boxPackStart (buttonBox,
+	    Gtk.Box.packStart (buttonBox,
 			      noButton, true, true, 5);
-	    Gtk.boxPackStart (dialogBox,
+	    Gtk.Box.packStart (dialogBox,
 			      label, false, false, 5);
-	    Gtk.boxPackStart (dialogBox,
+	    Gtk.Box.packStart (dialogBox,
 			      buttonBox, false, false, 5);
 
-	    Gtk.containerAdd (questionWindow, dialogBox);
+	    Gtk.Container.add (questionWindow, dialogBox);
 
-	    Gtk.widgetShowAll questionWindow
+	    Gtk.Widget.showAll questionWindow
 	end
 
 end

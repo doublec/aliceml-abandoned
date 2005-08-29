@@ -48,28 +48,28 @@ struct
 	
     local
 	
-	val colormap = Gdk.colormapGetSystem ()
+	val colormap = Gdk.Colormap.getSystem ()
 	    
 	structure CMap = MkRedBlackMap (Color)
 	    
 	fun conv c = 
 	    let
 		val (r, g, b) = Color.rgb c
-		val color = Gdk.colorNew (colorConv r, 
-					  colorConv g, 
-					  colorConv b)
+		val color = Gdk.Color.new { red   = colorConv r, 
+					    green = colorConv g, 
+					    blue  = colorConv b }
 	    in
-		Gdk.colormapAllocColor (colormap, color, false, true);
+		Gdk.Colormap.allocColor (colormap, color, false, true);
 		color
 	    end
 
 	fun convRadar (r, g, b) = 
 	    let
-		val color = Gdk.colorNew (colorConv r, 
-					  colorConv g, 
-					  colorConv b)
+		val color = Gdk.Color.new { red   = colorConv r, 
+					    green = colorConv g, 
+					    blue  = colorConv b }
 	    in
-		Gdk.colormapAllocColor (colormap, color, false, true);
+		Gdk.Colormap.allocColor (colormap, color, false, true);
 		color
 	    end
 	
@@ -123,7 +123,7 @@ struct
 	let
 	    val (rows, cols) = dim
 	    val (rows, cols) = (real rows, real cols)
-	    val _ = Gtk.widgetSetSizeRequest (canvas, windowWidth, 
+	    val _ = Gtk.Widget.setSizeRequest (canvas, windowWidth, 
 					      windowHeight)
 	    val _ = Canvas.setScrollRegion (canvas, 0.0, 0.0,
 					    cols * cellSize,
@@ -230,8 +230,8 @@ struct
 	    val deltaY = (cellSize * real (newR - oldR))
 	    val deltaX = (cellSize * real (newC - oldC))
 	in
-	    Canvas.itemMove (obj, deltaX, deltaY);
-	    Canvas.itemShow obj;
+	    Canvas.Item.move (obj, deltaX, deltaY);
+	    Canvas.Item.show obj;
 	    Array2.update (radar, newR, newC, (obj, field))
 	end
 
@@ -239,7 +239,7 @@ struct
     fun changeField (object, oldField, r, c, field, cache, radar, canvas) = 
 	(if object <> Gtk.null orelse oldField <> P.EMPTY
 	     then (addToItemCache (r, c, object, oldField, cache);
-		   Canvas.itemHide object)
+		   Canvas.Item.hide object)
 	 else ();
 	 case List.find (fn (_, _, _, f) => f = field) (!cache) of
 	     NONE                      => 
