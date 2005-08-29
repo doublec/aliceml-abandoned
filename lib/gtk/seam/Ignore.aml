@@ -134,6 +134,7 @@ struct
         "gtk_socket_steal",
         "gtk_socket_add_id",
         "gtk_socket_get_id",
+        "gtk_socket_get_type",
         "gtk_style_apply_default_pixmap",
         "gtk_draw_expander",
         "gtk_radio_tool_button_new_from_stock",
@@ -155,6 +156,7 @@ struct
         "gtk_plug_new",
         "gtk_plug_new_for_display",
         "gtk_plug_get_id",
+        "gtk_plug_get_type",
 
         "gtk_cell_layout_set_cell_data_func",
 
@@ -198,7 +200,9 @@ struct
 
     val ignoreTyList = [
         (* pango *)
-        "PangoAttrList"
+        "PangoAttrList",
+        "GtkPlug",
+        "GtkSocket"
     ]
         
     fun notIgnoredType (BasicTypes.CN cname) = not (List.exists (curry op= cname) ignoreTyList)
