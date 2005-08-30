@@ -235,7 +235,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
   intgen_set->Clear();
   // Traverse intgen_set entries (set reusage enforces upward traversal)
   for (u_int i = 0; i < size; i++) {
-    word wEntry = GCHelper::Deref(intgen_set->GetArgUnchecked(i));
+    word wEntry = intgen_set->GetArgUnchecked(i);
     AssertStore(PointerOp::IsInt(wEntry) == 0);
     Block *entry = PointerOp::RemoveTag(wEntry);
     // entry is no longer old but alive
