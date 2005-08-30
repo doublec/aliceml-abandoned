@@ -689,12 +689,10 @@ static void Init() {
   ShowWindow(hWnd, SW_SHOWNORMAL);
   DestroyWindow(hWnd);
 #endif
-  fprintf(stderr,"before gtk_init\n");
   int argc = 1;
   static char *args[2] = {"alice", NULL};
   char **argv = args;
   gtk_init(&argc, &argv);
-  fprintf(stderr,"after gtk_init\n");
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))
     __die("error during init: cannot reverse stdin redirecting");
