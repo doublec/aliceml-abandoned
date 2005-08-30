@@ -61,7 +61,7 @@ INSTALLDIR=`alice-config --alicelibdir`/gtk
 #ALICEDLL=`alice-config --alicedll`
 
 ifeq ($(WINDOWS),1)
-CC_OPTS=-mno-cygwin -mms-bitfields
+CC_OPTS=-mms-bitfields
 else
 CC_OPTS=
 endif
