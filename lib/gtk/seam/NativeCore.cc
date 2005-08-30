@@ -624,6 +624,16 @@ default_delete_text_handler(gint oldOff, gint newOff, gchar* txt) {
   return;
 }
 
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+// Hack for Gtk Wimp theme, see below.
+static guint dummy_handler_id;
+static void
+dummy_log_handler(const gchar*, GLogLevelFlags, const gchar*, gpointer) {
+  // remove after first (spurious) critical
+  g_log_remove_handler("GLib", dummy_handler_id);
+}
+#endif
+
 static void Init() {
   static const u_int INITIAL_MAP_SIZE = 256; // TODO: find appropriate size
   // Init global data
@@ -677,10 +687,20 @@ static void Init() {
   ShowWindow(hWnd, SW_SHOWNORMAL);
   DestroyWindow(hWnd);
 #endif
-  gtk_init(NULL,NULL);
+  fprintf(stderr,"before gtk_init\n");
+  int argc = 1;
+  static char *args[2] = {"alice", NULL};
+  char **argv = args;
+  gtk_init(&argc, &argv);
+  fprintf(stderr,"after gtk_init\n");
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))
     __die("error during init: cannot reverse stdin redirecting");
+  /*
+   * Work around bug in Gtk Wimp theme on Windows, which produces a critical
+   * warning on initialization, and thus fires up a console window.
+   */
+  dummy_handler_id = g_log_set_handler("GLib", (GLogLevelFlags)(G_LOG_LEVEL_CRITICAL | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION), dummy_log_handler, NULL);
 #endif
   // Init types
   G_LIST_TYPE = g_type_from_name("GList");
