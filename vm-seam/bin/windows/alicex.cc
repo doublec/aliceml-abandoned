@@ -68,41 +68,40 @@ static char *usage() {
 }
 
 int main(int argc, char *argv[]) {
+  trace("PATH");
+  trace(GetEnv("PATH", NULL));
+  trace("ALICE_HOME");
+  trace(GetEnv("ALICE_HOME", NULL));
   trace("InitSeam");
   InitSeam();
   trace("InitAlice");
   InitAliceEnvironment();
 #if PRELOAD_GTK
-  // Workaround for the annoying problem we have with Windows+Emacs causing
+  // Workaround for the annoying problem we have with Windows causing
   // a deadlock on some machines when trying to load the Gtk DLL lazily.
-  // No idea why this happens (probably Gtk doing unrecommended stuff in DllMain,
-  // plus Emacs messing with almost every aspect of the environment); no idea
-  // why this fixes it either (partially...), but who wants to know anyway...
+  // No idea why this happens (probably xmlparse doing unrecommended stuff in
+  // DllMain, likewise libwimp); no idea why this fixes it either (partially...),
+  // but who wants to know anyway...
   trace("LoadGtk");
   static const char *dll[] = {
-    // "jpeg-62.dll", //
-    "libjpeg.dll", //
-    "freetype.dll",
-    "libgtk-win32-2.0-0.dll",
-    "iconv.dll",
-    "libintl-1.dll",
-    "libart_lgpl_2.dll",
-    // "libpangoft2-1.0-0.dll", // requires libfontconfig-1.dll
-    "libpango-1.0-0.dll",
-    "libatk-1.0-0.dll", 
-    "libgdk-win32-2.0-0.dll", 
-    "libpangowin32-1.0-0.dll",
-    "libgdk_pixbuf-2.0-0.dll",
-    "libpng.dll",
-    "libglib-2.0-0.dll",  
-    "libtiff.dll", //
-    "libgmodule-2.0-0.dll", 
     "xmlparse.dll",
-    "libgnomecanvas-2.dll", 
-    "xmltok.dll",
+    "libwimp.dll",
+    /* Not needed so far...
+    "gdi32.dll",
+    "intl.dll",
+    "libglib-2.0-0.dll",
+    "libgmodule-2.0-0.dll",
     "libgobject-2.0-0.dll",
-    "zlib.dll",
-    "libgthread-2.0-0.dll",
+    "libart_lgpl_2-2.dll",
+    "libpangowin32-1.0-0.dll",
+    "libpangoft2-1.0-0.dll",
+    "libpango-1.0-0.dll",
+    "libatk-1.0-0.dll",
+    "libgdk_pixbuf-2.0-0.dll",
+    "libgdk-win32-2.0-0.dll",
+    "libgtk-win32-2.0-0.dll",
+    "libgnomecanvas-2.dll",
+    */
     NULL
     // Can we leave out some of these?
   };

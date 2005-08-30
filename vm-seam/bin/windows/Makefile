@@ -17,7 +17,7 @@ all: $(EXES)
 alicerun.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DARGS='{--argc>0?*++argv:usage()}' \
-		-DPRELOAD_GTK=0 \
+		-DPRELOAD_GTK=1 \
 		-c $< -o $@
 
 aliceremote.exe: alicerun.exe
@@ -26,15 +26,14 @@ aliceremote.exe: alicerun.exe
 alice.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DARGS='{"x-alice:/tools/Toplevel"}' \
-		-DPRELOAD_GTK=0 \
+		-DPRELOAD_GTK=1 \
 		-c $< -o $@
 
-alicewin.exe: alicex.cc Makefile
+alicewin.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DARGS='{"x-alice:/tools/Toplevel","--gui"}' \
-		-DPRELOAD_GTK=0 \
+		-DPRELOAD_GTK=1 \
 		-c $< -o $@
-	editbin /subsystem:windows $@
 
 alicec.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
@@ -57,8 +56,12 @@ alicedep.o: alicex.cc Makefile
 aliceglade.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DARGS='{"x-alice:/tools/Glade"}' \
-		-DPRELOAD_GTK=0 \
+		-DPRELOAD_GTK=1 \
 		-c $< -o $@
+
+alicewin.exe: alicewin.o
+	$(LD) $< -o $@ $(LDFLAGS)
+	editbin /subsystem:windows $@
 
 %.exe: %.o
 	$(LD) $< -o $@ $(LDFLAGS)
