@@ -18,6 +18,8 @@ NativeGLib.*
 GTK-sig.*
 Gtk.*
 NativeGtk.*
+NativeLibs.*
 PANGO-sig.*
 Pango.*
 NativePango.*
+wrapper.log
