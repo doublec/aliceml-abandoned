@@ -41,6 +41,15 @@ struct
         "gdk_window_add_filter",
         "gdk_window_remove_filter",
         "gdk_window_set_functions",
+        "gdk_pixmap_foreign_new",
+        "gdk_pixmap_lookup",
+        "gdk_pixmap_foreign_new_for_display",
+        "gdk_pixmap_lookup_for_display",
+        "gdk_window_foreign_new",
+        "gdk_window_lookup",
+        "gdk_window_foreign_new_for_display",
+        "gdk_window_lookup_for_display",
+
         
         "gdk_property_get",
         
@@ -104,6 +113,7 @@ struct
         (* Gtk *)
         "gtk_window_set_geometry_hints",
         "gtk_widget_class_list_style_properties",
+        "gtk_widget_style_get_valist",
 
         "gtk_entry_completion_set_match_func",
 
@@ -120,6 +130,9 @@ struct
         "gtk_clipboard_request_targets",
         "gtk_combo_box_get_row_separator_func",
         "gtk_combo_box_set_row_separator_func",
+
+        "gtk_container_child_set_valist",
+        "gtk_container_child_get_valist",
         
         "gtk_accel_group_find",
         "gtk_action_group_set_translate_func",
@@ -174,6 +187,8 @@ struct
         (* "gtk_menu_popup", *)
         (* "gtk_menu_attach_to_widget", *)
 
+        "gtk_list_store_set_valist",
+        "gtk_tree_store_set_valist",
         "gtk_tree_model_foreach",
         "gtk_tree_model_filter_set_visible_func",
         "gtk_tree_model_set_modify_func",
