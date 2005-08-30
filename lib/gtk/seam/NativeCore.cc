@@ -445,7 +445,7 @@ static void generic_marshaller(GClosure *closure, GValue *return_value,
 			(GPOINTER_TO_INT(closure->data) == 2) ? TRUE : FALSE);
 }
 
-static word SignalConnect(void *object, char *signalname, bool after) {
+word NativeCore_SignalConnect(void *object, char *signalname, bool after) {
   gint userData = (!strcmp(signalname, "delete-event") ? 2 : 1);
   GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
                                      GINT_TO_POINTER(userData), NULL);
@@ -460,7 +460,7 @@ DEFINE3(NativeCore_signalConnect) {
   DECLARE_OBJECT_OF_TYPE(obj,x0, G_TYPE_OBJECT);
   DECLARE_CSTRING(signalname,x1);
   DECLARE_BOOL(after,x2);
-  RETURN(SignalConnect(obj, signalname, after));
+  RETURN(NativeCore_SignalConnect(obj, signalname, after));
 } END
 
 DEFINE2(NativeCore_signalDisconnect) {
@@ -550,7 +550,7 @@ public:
 // OBJECT HANDLING
 
 // convert a pointer to an object, and add it to the weak map if necessary
-word OBJECT_TO_WORD_implementation(const void *pointer, int type, GType gtype) {
+word OBJECT_TO_WORD(const void *pointer, int type, GType gtype) {
   void *pointer_ = const_cast<void *>(pointer);
   word key = Store::UnmanagedPointerToWord(pointer_);
   Tuple *object = NULL;
@@ -595,7 +595,7 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type, GType gtype) {
       __refObject(pointer_, type);
       // Register default destroy event for gtk objects
       if (type == TYPE_GTK_OBJECT) {
-	word connid = SignalConnect(pointer_, "destroy", true);
+	word connid = NativeCore_SignalConnect(pointer_, "destroy", true);
 	AddToSignalMap(connid, destroyCallback, key);
       }
     }
@@ -648,11 +648,13 @@ static void Init() {
   had_events = false;
   destroyCallback = Store::IntToWord(0);
   RootSet::Add(destroyCallback);
+  /*
   // We use the SEAM Broker to distribute the OBJECT_TO_WORD implementation
   word wOBJECT_TO_WORD =
     Store::UnmanagedPointerToWord((void *) OBJECT_TO_WORD_implementation);
   OBJECT_TO_WORD_instance = OBJECT_TO_WORD_implementation;
   Broker::Register(String::New(Alice_Gtk_OBJECT_TO_WORD), wOBJECT_TO_WORD);
+  */
   /*
    * On Windows, Gdk blocks on stdin during init if input redirection is used,
    * as for example within emacs.
@@ -1041,7 +1043,7 @@ GnomeCanvasItem *alice_gnome_canvas_item_new (GnomeCanvasGroup *group, GtkType t
 }
 
 ////////////////////////////////////////////////////////////////////////
-word InitComponent() {
+word NativeCore_CreateComponent () {
   Record *record = Record::New(43);
   Init();
   GtkCoreErrorConstructor =
@@ -1057,95 +1059,95 @@ word InitComponent() {
   record->Init ("'TypeError", GtkCoreTypeErrorConstructor);
   INIT_STRUCTURE(record, "Core", "TypeError", Core_typeError, 2);
 
-  INIT_STRUCTURE(record, "NativeCore", "null", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "null", 
 		 NativeCore_null, 0);
-  INIT_STRUCTURE(record, "NativeCore", "gtkTrue", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "gtkTrue", 
 		 NativeCore_gtkTrue, 0);
-  INIT_STRUCTURE(record, "NativeCore", "gtkFalse", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "gtkFalse", 
 		 NativeCore_gtkFalse, 0);
 
-  INIT_STRUCTURE(record, "NativeCore", "signalConnect", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalConnect", 
 		 NativeCore_signalConnect, 3);
-  INIT_STRUCTURE(record, "NativeCore", "signalDisconnect", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalDisconnect", 
 		 NativeCore_signalDisconnect, 3);
-  INIT_STRUCTURE(record, "NativeCore", "getEventStream", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "getEventStream", 
 		 NativeCore_getEventStream, 1);
 
-  INIT_STRUCTURE(record, "NativeCore", "signalHandlerBlock", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalHandlerBlock", 
 		 NativeCore_signalHandlerBlock, 2);
-  INIT_STRUCTURE(record, "NativeCore", "signalHandlerUnblock", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalHandlerUnblock", 
 		 NativeCore_signalHandlerUnblock, 2);
 
-  INIT_STRUCTURE(record, "NativeCore", "signalMapAdd",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalMapAdd",
 		 NativeCore_signalMapAdd, 3);
-  INIT_STRUCTURE(record, "NativeCore", "signalMapRemove",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalMapRemove",
 		 NativeCore_signalMapRemove, 1);
-  INIT_STRUCTURE(record, "NativeCore", "signalMapCondGet",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalMapCondGet",
 		 NativeCore_signalMapCondGet, 2);
-  INIT_STRUCTURE(record, "NativeCore", "signalMapGetConnIds",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalMapGetConnIds",
 		 NativeCore_signalMapGetConnIds, 1);
 
-  INIT_STRUCTURE(record, "NativeCore", "unrefObject", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "unrefObject", 
 		 NativeCore_unrefObject, 1);
 
-  INIT_STRUCTURE(record, "NativeCore", "handlePendingEvents", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "handlePendingEvents", 
 		 NativeCore_handlePendingEvents, 0);
 
-  INIT_STRUCTURE(record, "NativeCore", "printObject", 
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "printObject", 
 		 NativeCore_printObject, 1);
-  INIT_STRUCTURE(record, "NativeCore", "forceGC",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "forceGC",
 		 NativeCore_forceGC, 0);
-  INIT_STRUCTURE(record, "NativeCore", "latin1ToUtf8",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "latin1ToUtf8",
 		 NativeCore_latin1ToUtf8, 1);
-  INIT_STRUCTURE(record, "NativeCore", "utf8ToLatin1",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "utf8ToLatin1",
 		 NativeCore_utf8ToLatin1, 1);
 
 
-  INIT_STRUCTURE(record, "NativeCore", "getStringType",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "getStringType",
                 NativeCore_getStringType, 0);
-  INIT_STRUCTURE(record, "NativeCore", "getIntType",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "getIntType",
                 NativeCore_getIntType, 0);
-  INIT_STRUCTURE(record, "NativeCore", "getFloatType",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "getFloatType",
                 NativeCore_getFloatType, 0);
-  INIT_STRUCTURE(record, "NativeCore", "getDoubleType",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "getDoubleType",
                 NativeCore_getDoubleType, 0);
-  INIT_STRUCTURE(record, "NativeCore", "getPixbufType",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "getPixbufType",
                 NativeCore_getPixbufType, 0);
 
 
-  INIT_STRUCTURE(record, "NativeCore", "valueUndefined",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueUndefined",
                 NativeCore_valueUndefined, 0);
-  INIT_STRUCTURE(record, "NativeCore", "valueInt",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueInt",
                 NativeCore_valueInt, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueEnum",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueEnum",
                 NativeCore_valueEnum, 2);
-  INIT_STRUCTURE(record, "NativeCore", "valueFloat",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueFloat",
                 NativeCore_valueFloat, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueDouble",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueDouble",
                 NativeCore_valueDouble, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueBool",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueBool",
                 NativeCore_valueBool, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueString",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueString",
                 NativeCore_valueString, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueObject",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueObject",
                 NativeCore_valueObject, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueToInt",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueToInt",
                 NativeCore_valueToInt, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueToBool",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueToBool",
                 NativeCore_valueToBool, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueToReal",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueToReal",
                 NativeCore_valueToReal, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueToString",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueToString",
                 NativeCore_valueToString, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueToObject",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueToObject",
                 NativeCore_valueToObject, 1);
-  INIT_STRUCTURE(record, "NativeCore", "valueGetType",
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "valueGetType",
                 NativeCore_valueGetType, 1);
 
-  INIT_STRUCTURE(record, "NativeCore", "propRawGet", NativeCore_propRawGet, 2);
-  INIT_STRUCTURE(record, "NativeCore", "propRawSet", NativeCore_propRawSet, 3);
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "propRawGet", NativeCore_propRawGet, 2);
+  INIT_STRUCTURE(record, "NativeLibs.NativeCore", "propRawSet", NativeCore_propRawSet, 3);
   
-  RETURN_STRUCTURE("NativeCore$", record);
+  return record->ToWord ();
 }
         
 /*

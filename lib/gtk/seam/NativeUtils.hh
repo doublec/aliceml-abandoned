@@ -120,7 +120,7 @@ static inline const char *getGType (GType gt) {
         }                                                               \
     }
 
-inline void print_type(char *s, void *obj) {
+static inline void print_type(char *s, void *obj) {
   GObject *p = reinterpret_cast<GObject*>(obj);
   GTypeQuery q;
   memset(&q, 0, sizeof(q));
@@ -129,7 +129,7 @@ inline void print_type(char *s, void *obj) {
 	    G_OBJECT(p)->ref_count);
 }
 
-inline const char *getObjectType(int type) {
+static inline const char *getObjectType(int type) {
   switch (type & ~FLAG_OWN) {
   case TYPE_GTK_OBJECT: return "TYPE_GTK_OBJECT";
   case TYPE_G_OBJECT: return "TYPE_G_OBJECT";
@@ -141,7 +141,7 @@ inline const char *getObjectType(int type) {
 }
 
 // Increase reference count of a pointer, depending on type.
-inline void __refObject(void *p, int type) {
+static inline void __refObject(void *p, int type) {
   if (!p) return;
 //    g_message("reffing: %p (type %s)", p, getObjectType(type));
   switch (type) {
@@ -158,7 +158,7 @@ inline void __refObject(void *p, int type) {
   }
 }
 
-inline void __refObject(word wParent) {
+static inline void __refObject(word wParent) {
   Tuple *parent = Tuple::FromWord(wParent);
   if (parent != INVALID_POINTER) {
     __refObject(Store::DirectWordToUnmanagedPointer(parent->Sel(0)),
@@ -167,7 +167,7 @@ inline void __refObject(word wParent) {
 }
 
 // Decrease reference count of a pointer, depending on type.
-inline void __unrefObject(void *p, int type) {
+static inline void __unrefObject(void *p, int type) {
   if (!p) return;
 //    g_message("unreffing: %p (type %s)", p, getObjectType(type));
   switch (type & ~FLAG_OWN) {
@@ -185,7 +185,7 @@ inline void __unrefObject(void *p, int type) {
   }
 }
 
-inline void __unrefObject(word wParent) {
+static inline void __unrefObject(word wParent) {
   Tuple *parent = Tuple::FromWord(wParent);
   if (parent != INVALID_POINTER) {
     __unrefObject(Store::DirectWordToUnmanagedPointer(parent->Sel(0)),
@@ -194,7 +194,7 @@ inline void __unrefObject(word wParent) {
 }
 
 // Manage parental relations to ensure parent objects are freed last
-inline void __parentObject(word wContainer, word wWidget) {
+static inline void __parentObject(word wContainer, word wWidget) {
   Tuple *widget = Tuple::FromWord(wWidget);
   // Release old container object
   __unrefObject(widget->Sel(2));
@@ -205,13 +205,9 @@ inline void __parentObject(word wContainer, word wWidget) {
 }
 
 // Convert a C pointer to an object tuple.
-static word (*OBJECT_TO_WORD_instance)(const void *p, int type, GType gtype);
+word OBJECT_TO_WORD(const void *p, int type, GType gtype);
 
-inline word OBJECT_TO_WORD(const void *p, int type, GType gtype) {
-  return (*OBJECT_TO_WORD_instance)(p, type, gtype);
-}
-
-inline word G_OBJECT_TO_WORD (const void *p) {
+static inline word G_OBJECT_TO_WORD (const void *p) {
     GObject *ob = (GObject*)p;
     if (ob == 0) {
         return OBJECT_TO_WORD (p, TYPE_UNKNOWN, 0);
@@ -222,19 +218,20 @@ inline word G_OBJECT_TO_WORD (const void *p) {
     }
 }
     
-inline word OBJECT_TO_WORD(const void *p, int type) {
-  return (*OBJECT_TO_WORD_instance)(p, type, 0);
+static inline word OBJECT_TO_WORD(const void *p, int type) {
+    return OBJECT_TO_WORD(p, type, 0);
 }
 
-inline word OBJECT_TO_WORD(const void *p) {
+static inline word OBJECT_TO_WORD(const void *p) {
   return OBJECT_TO_WORD(p, TYPE_UNKNOWN, 0);
 }
 
+/*
 #define FUNCTION_TO_WORD(f) OBJECT_TO_WORD((void*)f, TYPE_UNKNOWN)
 
 const char *Alice_Gtk_OBJECT_TO_WORD = "Alice.Gtk.OBJECT_TO_WORD";
 
-static word LazyBrokerLookup(const void *objectPointer, int type, GType gtype) {
+static static word LazyBrokerLookup(const void *objectPointer, int type, GType gtype) {
   word value = Broker::Lookup(String::New(Alice_Gtk_OBJECT_TO_WORD));
   if (value == (word) 0)
     Error("LazyBrokerLookup: OBJECT_TO_WORD not registered");
@@ -247,6 +244,7 @@ static word LazyBrokerLookup(const void *objectPointer, int type, GType gtype) {
 static void InitLocalInstance() {
   OBJECT_TO_WORD_instance = (word (*)(const void *, int, GType)) LazyBrokerLookup;
 }
+*/
 
 /***********************************************************************/
 
@@ -376,4 +374,7 @@ inline word GSLIST_STRING_TO_WORD(GSList *list) {
 #define ENUM_TO_WORD INT_TO_WORD
 
 GnomeCanvasItem *alice_gnome_canvas_item_new (GnomeCanvasGroup *gr, GtkType t);
+
+word NativeCore_SignalConnect (void *ob, char *sig, bool after);
+    
 #endif

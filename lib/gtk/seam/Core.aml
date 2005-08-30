@@ -11,8 +11,10 @@
  *
  *)
 
-import structure NativeCore from "NativeCore" 
+import structure NativeLibs from "NativeLibs" 
 import signature CORE from "CORE-sig"
+
+structure NativeCore = NativeLibs.NativeCore
 
 structure Core : CORE =
 struct

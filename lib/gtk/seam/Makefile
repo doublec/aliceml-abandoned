@@ -11,7 +11,7 @@
 ###   $Revision$
 ###
 
-SOURCES= \
+GENERATOR_SOURCES= \
 	Code.aml \
 	SexpTools.aml \
 	Lexer.aml \
@@ -27,7 +27,7 @@ SOURCES= \
 	Generate.aml  \
 	Naming.aml
 
-WRAPPERS= \
+GEN_WRAPPERS= \
 	    GLib.aml \
 	    Pango.aml \
 	    Atk.aml \
@@ -35,7 +35,7 @@ WRAPPERS= \
 	    Gtk.aml \
 	    Canvas.aml
 
-WRAPPERSCAP= \
+GEN_WRAPPERSCAP= \
 	    GLIB \
 	    PANGO \
 	    ATK \
@@ -43,91 +43,86 @@ WRAPPERSCAP= \
 	    GTK \
 	    CANVAS
 
+VERSION=$(shell alicetool --version 2>&1 | head -n 1  | cut -d ' ' -f 5)
+
 DEFS=atk-types.defs atk.defs canvas.defs gdk-types.defs gdk.defs gtk-extrafuncs.defs gtk-types.defs gtk.defs pango-types.defs pango.defs wrapper.defs types canvas-properties.defs gtk-properties.defs
 
-TARGETS= $(SOURCES:%.aml=%.alc) 
 
-NATIVEWRAPPERS=$(WRAPPERS:%.aml=Native%.cc)
-NATIVETARGETS=$(NATIVEWRAPPERS:%.cc=%.o)
+GENERATOR_SOURCE_TARGETS=$(GENERATOR_SOURCES:%.aml=%.alc)
 
-WRAPPERS_SIGS_TML=$(WRAPPERSCAP:%=%-sig.tml)
-WRAPPERS_SIGS=$(WRAPPERSCAP:%=%-sig.aml)
-COMPILED_WRAPPERS=$(WRAPPERS:%.aml=%.alc)
-COMPILED_WRAPPERS_SIGS=$(WRAPPERS_SIGS:%.aml=%.alc)
-DLLS=$(NATIVEWRAPPERS:%.cc=%.dll)
-INSTALLALICETARGETS =$(COMPILED_WRAPPERS_SIGS) $(COMPILED_WRAPPERS) CORE-sig.alc Core.alc Key.alc
-INSTALLDLLTARGETS=$(DLLS) NativeCore.dll
+# non generated interface files 
+COMPILED_NON_GEN_WRAPPERS=CORE-sig.alc Core.alc Key.alc
+
+# generated files
+GEN_WRAPPERS_CC=$(GEN_WRAPPERS:%.aml=Native%.cc) NativeLibs.cc
+GEN_WRAPPERS_HH=$(GEN_WRAPPERS:%.aml=Native%.hh) 
+GEN_WRAPPERS_SIGS_TML=$(GEN_WRAPPERSCAP:%=%-sig.tml)
+GEN_WRAPPERS_SIGS=$(GEN_WRAPPERSCAP:%=%-sig.aml)
+COMPILED_GEN_WRAPPERS=$(GEN_WRAPPERS:%.aml=%.alc)
+COMPILED_GEN_WRAPPERS_SIGS=$(GEN_WRAPPERS_SIGS:%.aml=%.alc)
+
+# compiled c object files
+WRAPPER_OBJECT_FILES=$(GEN_WRAPPERS_CC:%.cc=%.o) NativeCore.o
+
+INSTALLALICETARGETS =$(COMPILED_GEN_WRAPPERS_SIGS) $(COMPILED_GEN_WRAPPERS) $(COMPILED_NON_GEN_WRAPPERS)
+INSTALLDLLTARGETS=NativeLibs.dll
 INSTALLDIR=`alice-config --alicelibdir`/gtk
 #ALICEDLL=`alice-config --alicedll`
+DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeCore.cc NativeUtils.hh MyNativeAuthoring.hh ExtraMarshaller.hh Makefile
+DISTDIR=alice-gtk-$(VERSION)
 
-ifeq ($(WINDOWS),1)
-CC_OPTS=-mms-bitfields
+ifdef ($(WINDOWS),1)
+    CC_OPTS=-mms-bitfields
 else
-CC_OPTS=
+    CC_OPTS=
 endif
-PC_OPTS=gtk+-2.0 libgnomecanvas-2.0 glib-2.0
+
+PC_OPTS=gtk+-2.0 glib-2.0 libgnomecanvas-2.0
 
 .PHONY: clean all wrappers installdll installalice compiledll compilealice
 
 all: installalice installdll 
 
+NativeLibs.asig: NativeLibs.tasig
+	head -n 4 $< > $@
+	cat NativeCore.asig >> $@
+	tail -n +5 $< >> $@
+
 %-sig.aml: %-sig.tml
 	gawk -f includesig.awk $< > $@
 
-NativeCore.dll:	NativeCore.o
-	alicetool -v link $^ $(ALICEDLL) -o $@ \
-	$(CC_OPTS) `pkg-config $(PC_OPTS) --libs` 
-
-NativeGLib.dll: NativeCore.dll NativeGLib.o 
-	alicetool link $(ALICEDLL) $^ -o $@ \
-	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
-
-NativePango.dll: NativeCore.dll NativeGLib.dll NativePango.o
-	alicetool link $(ALICEDLL) $^ -o $@ \
-	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
-
-NativeAtk.dll: NativeCore.dll NativeGLib.dll NativeAtk.o
-	alicetool link $(ALICEDLL) $^ -o $@ \
-	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
-
-NativeGdk.dll: NativeCore.dll NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.o
-	alicetool link $(ALICEDLL) $^ -o $@ \
-	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
-
-NativeGtk.dll: NativeCore.dll NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.o
-	alicetool link $(ALICEDLL) $^ -o $@ \
-	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
-
-NativeCanvas.dll: NativeCore.dll NativeGLib.dll NativePango.dll NativeAtk.dll NativeGdk.dll NativeGtk.dll NativeCanvas.o
-	alicetool link $(ALICEDLL) $^ -o $@ \
-	 $(CC_OPTS) `pkg-config $(PC_OPTS) --libs`
+NativeLibs.dll: NativeLibs.o NativeCanvas.o NativeGtk.o NativeGdk.o NativePango.o NativeAtk.o NativeGLib.o NativeCore.o
+	alicetool -v link $^ -o $@ $(CC_OPTS) \
+	`pkg-config $(PC_OPTS) --libs`
 
 Key.aml:
 	./prepare-keyval.sh 
 
-%.alc: %.aml
+%.alc: %.aml 
 	alicec --no-warn-conventions -c $< -o $@
 
 %.o: %.cc 
 	alicetool -v compile -g \
-	 $(CC_OPTS) `pkg-config $(PC_OPTS) --cflags` -c $< -o $@
+	 $(CC_OPTS) `pkg-config $(PC_OPTS) --cflags`  -c $< -o $@
 
 clean:
-	rm -f $(TARGETS) $(WRAPPERS) $(WRAPPERS_SIGS) $(WRAPPERS_SIGS:%.aml=%.alc) $(WRAPPERS_SIGS_TML) $(NATIVEWRAPPERS) $(NATIVEWRAPPERS:%.cc=%.hh) $(NATIVEWRAPPERS:%.cc=%.asig) $(NATIVEWRAPPERS:%.cc=%.o) $(COMPILED_WRAPPERS) $(DLLS) NativeCore.dll  NativeCore.o  CORE-sig.alc Key.alc Core.alc
-	rm -f Main.alc
+	rm -f NativeLibs.dll
+	rm -f $(GEN_WRAPPERS_HH)
+	rm -f $(GEN_WRAPPERS_CC)
+	rm -f *.alc *.o
 
 distclean: clean
 	rm -f Makefile.depend
 
 depend:
-	alicedep $(SOURCES) > Makefile.depend
+	alicedep $(GENERATOR_SOURCES) > Makefile.depend
 
-wrappers:	$(COMPILED_WRAPPERS)
+wrappers:	$(GEN_WRAPPERS)
 
-$(WRAPPERS_SIGS):	$(WRAPPERS_SIGS_TML)
+$(GEN_WRAPPERS_SIGS):	$(GEN_WRAPPERS_SIGS_TML)
 
-$(WRAPPERS) $(WRAPPERS_SIGS_TML) $(NATIVEWRAPPERS): Generate.alc $(DEFS)
-	alicerun Generate.alc
+$(GEN_WRAPPERS) $(GEN_WRAPPERS_SIGS_TML) $(GEN_WRAPPERS_CC) NativeLibs.tasig: Generate.alc $(DEFS)
+	alicerun Generate.alc > wrapper.log 2>&1
 
 
 compiledll:	$(DLLS)
@@ -139,7 +134,7 @@ compilealice:	$(INSTALLALICETARGETS)
 
 install:	all installdll installalice
 
-installdll:	$(DLLS)
+installdll:	$(INSTALLDLLTARGETS)
 	mkdir -p -m 775 $(INSTALLDIR)
 	./myinstall $(INSTALLDLLTARGETS) $(INSTALLDIR)
 
@@ -148,22 +143,29 @@ installalice: $(INSTALLALICETARGETS)
 	./myinstall $(INSTALLALICETARGETS) $(INSTALLDIR)
 
 
+distdir:
+	rm -rf $(DISTDIR)
+	mkdir $(DISTDIR)
+	cp -r $(DISTFILES) $(DISTDIR)
 
+dist:	distdir
+	tar chzf alice-gtk-$(VERSION).tar.gz $(DISTDIR)
+	rm -rf $(DISTDIR)
+	
 #### DEPENDENCIES ############################################################
 
-$(COMPILED_WRAPPERS_SIGS) $(COMPILED_WRAPPERS): CORE-sig.alc Core.alc
-
-Core.alc: 	CORE-sig.alc NativeCore.dll
-GLib.alc:	GLIB-sig.alc NativeGLib.dll
-PANGO-sig.alc:	GLib.alc     NativePango.dll
+Core.alc: 	CORE-sig.alc NativeLibs.asig NativeLibs.dll
+GLIB-sig.alc:	Core.alc
+GLib.alc:	GLIB-sig.alc 
+PANGO-sig.alc:	GLib.alc     
 Pango.alc:	PANGO-sig.alc 
-ATK-sig.alc:	NativeAtk.dll
+ATK-sig.alc:	Pango.alc
 Atk.alc:	ATK-sig.alc
-GDK-sig.alc:	Pango.alc Atk.alc NativeGdk.dll
+GDK-sig.alc:	Pango.alc Atk.alc 
 Gdk.alc:	GDK-sig.alc
-GTK-sig.alc:	Gdk.alc NativeGtk.dll
+GTK-sig.alc:	Gdk.alc 
 Gtk.alc:	GTK-sig.alc
-CANVAS-sig.alc:	Gtk.alc NativeCanvas.dll
+CANVAS-sig.alc:	Gtk.alc 
 Canvas.alc:	CANVAS-sig.alc
 
 

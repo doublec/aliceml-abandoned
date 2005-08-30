@@ -223,7 +223,7 @@
 #define DECLARE_INT_AS(t, i, x)                 \
     t i;                                        \
       { s_int tmp_ = Store::WordToInt (x);      \
-    if (i == INVALID_INT) { REQUEST(x); }       \
+    if (tmp_ == INVALID_INT) { REQUEST(x); }       \
     else {}                                     \
     i = tmp_; }
 

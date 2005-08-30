@@ -146,7 +146,7 @@ struct
         in
             case ts' of
                 RPAR :: ts'' => (ty, ts'')
-              | _            => (while true do Thread.sleep (Time.fromMilliseconds (Int.toLarge 1000)); raise Fail "unmatched parenthesis")
+              | _            => (raise Fail "unmatched parenthesis")
         end
       | parseAtom (ID id :: ts) = (AT (AliceName.aliceName id), ts)
       | parseAtom res           = (raise Fail "syntax")

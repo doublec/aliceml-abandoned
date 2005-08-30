@@ -37,15 +37,14 @@ fun print f (indent, msg) =
     TextIO.output (f,
         String.tabulate (indent * indentWidth, const #" ") ^ msg ^ "\n")
 
-fun generateFiles name f =
+fun generateFiles name nativeSig f =
     let val aml       = TextIO.openOut (name ^ ".aml")
         val amlSig    = TextIO.openOut (String.map Char.toUpper name ^ "-sig.tml")
-        val nativeSig = TextIO.openOut ("Native" ^ name ^ ".asig")
         val native    = TextIO.openOut ("Native" ^ name ^ ".cc")
         val nativeH   = TextIO.openOut ("Native" ^ name ^ ".hh")
     in
         f (print aml, print amlSig, print native, print nativeSig, print nativeH);
-        List.app TextIO.closeOut [aml, amlSig, native, nativeSig, nativeH]
+        List.app TextIO.closeOut [aml, amlSig, native, nativeH]
     end
 
 fun nativeFunName an =
@@ -64,10 +63,38 @@ fun generate () =
                 (fn (MODULE (m as { name = n, ...})) => n = name) modules of
                 NONE    => assert false
               | SOME m  => m
+
+        val nativeSig = TextIO.openOut ("NativeLibs.tasig")
     in
+        print nativeSig (0, "signature NATIVE_LIBS_COMPONENT =");
+        print nativeSig (0, "sig");
+        print nativeSig (1, "structure NativeLibs :");
+        print nativeSig (1, "sig");
         (* generate code for all modules we know about *)
         List.app (fn (name, prefix, aliceName, imports) =>
-            generateModule (info, prefix, aliceName, imports, lookupModule name)) modulesDesc
+            generateModule (nativeSig, info, prefix, aliceName, imports, lookupModule name)) modulesDesc;
+        (* close NativeLibs.asig *)
+        print nativeSig (1, "end");
+        print nativeSig (0, "end");
+
+        (* create NativeLibs.cc *)
+        let val f       = TextIO.openOut ("NativeLibs.cc") 
+            val names   = List.map #3 modulesDesc 
+        in
+            print f (0, "#include \"NativeUtils.hh\"");
+            print f (0, "word NativeCore_CreateComponent();");
+            List.app (fn n => print f (0, "word Native" ^ n ^ "_CreateComponent();")) names;
+            print f (0, "word InitComponent () {");
+            print f (1, "Record *record = Record::New (" ^ 
+                            Int.toString (List.length names + 1) ^ ");");
+            print f (1, "record->Init (\"NativeCore$\", NativeCore_CreateComponent());");
+            List.app (fn n =>
+                print f (1, "record->Init (\"Native" ^ n ^ "$\", Native" 
+                        ^ n ^ "_CreateComponent());")) names;
+            print f (1, "RETURN_STRUCTURE(\"NativeLibs$\", record);");
+            print f (0, "}");
+            TextIO.closeOut f
+        end
     end
 
 
@@ -96,22 +123,26 @@ and removeStructurePrefix prefix (OBJECT ob) =
   | removeStructurePrefix _ foo = foo
 
     
-and generateModule (info, prefix, aliceName, imports, (MODULE m) as module) =
-    generateFiles aliceName (fn (p, pSig, pNative, pNatSig, pNatH) =>
+and generateModule (nativeSig, info, prefix, aliceName, imports, (MODULE m) as module) =
+    generateFiles aliceName nativeSig (fn (p, pSig, pNative, pNatSig, pNatH) =>
     let val sigName = String.map Char.toUpper aliceName
         val defines = ref []
     in
         (* Alice structure header *)
-         p (0, "import structure Core  from \"Core\"");
+         p (0, "import structure NativeLibs  from \"NativeLibs\"");
+         p (0, "import structure Core        from \"Core\"");
          List.app (fn imp =>
             p (0, "import structure " ^ imp ^ "\tfrom \"" ^ imp ^ "\"")) imports;
-         p (0, "import structure Native" ^ aliceName ^"\tfrom \"Native" ^ 
-                    aliceName ^ "\"");
          p (0, "import signature " ^ sigName ^ "\tfrom \"" ^ sigName ^ "-sig\"");
+         p (0, "structure Native" ^ aliceName ^" = NativeLibs.Native" ^ aliceName );
          p (0, "structure " ^ aliceName ^ " :> " ^  sigName ^  " =");
          p (0, "struct");
          p (1, "open Core");
+         (*
          p (1, "val _ = Future.await Core.latin1ToUtf8");
+         List.app (fn imp =>
+            p (1, "val _ = Future.await " ^ imp ^ ".latin1ToUtf8")) imports;
+         *)
 
          (* Alice signature header *)
          pSig (0, "import structure Core  from \"Core\"");
@@ -127,10 +158,8 @@ and generateModule (info, prefix, aliceName, imports, (MODULE m) as module) =
          pSig (0, "<<< \"CORE-sig.aml\" >>>");
 
          (* native signature *)
-         pNatSig (0, "signature NATIVE_" ^ sigName ^ "_COMPONENT =");
-         pNatSig (0, "sig");
-         pNatSig (1, "structure Native" ^ aliceName ^ " :");
-         pNatSig (1, "sig");  
+         pNatSig (2, "structure Native" ^ aliceName ^ " :");
+         pNatSig (2, "sig");  
                 
          (* Native Code header *)
          pNative (0, "#include <pango/pango.h>");
@@ -171,23 +200,21 @@ and generateModule (info, prefix, aliceName, imports, (MODULE m) as module) =
          wrapStandAloneFunctions (aliceName, p, pSig, pNative, pNatSig, defines) 
             (!(#functions m));
 
-         (* native code InitComponent *)
-         pNative (0, "word InitComponent() {");
-         pNative (1, "InitLocalInstance ();");
+         (* native code Create component *)
+         pNative (0, "word Native" ^ aliceName ^ "_CreateComponent() {");
          pNative (1, "Record *record = Record::New ((unsigned)" ^ 
                         Int.toString (List.length (!defines)) ^ ");");
          List.app (fn (argc, retc, name) =>
-                    pNative (1, "INIT_STRUCTURE_N(record, \"Native" ^ aliceName ^
+                    pNative (1, "INIT_STRUCTURE_N(record, \"NativeLibs.Native" ^ aliceName ^
                                     "\", \"" ^ name ^ "\"," ^ aliceName ^ "_" ^ 
                                     name ^ ", " ^ Int.toString argc ^ 
                                     ", " ^ Int.toString retc ^ ");")) 
                     (!defines);
-         pNative (1, "RETURN_STRUCTURE(\"Native" ^ aliceName ^ "$\", record);");
+         pNative (1, "return record->ToWord ();");
          pNative (0, "}");
          
          (* native signature footer *)
-         pNatSig (1, "end");
-         pNatSig (0, "end");
+         pNatSig (2, "end");
      
          (* Alice structure footer *)
          p (0, "end");
