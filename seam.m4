@@ -569,10 +569,6 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
    if test "${enable_lightning:-yes}" = "yes"; then
       AC_REQUIRE([AC_CANONICAL_HOST])dnl
       if test -f "${srcdir}/lightning/lightning.h"; then
-        have_lightning=yes
-        AC_DEFINE(HAVE_LIGHTNING, 1)
-        AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
-        AC_MSG_RESULT(yes)
         case "$host_cpu" in
              i?86)	 cpu_subdir=i386                                ;;
              sparc*)	 cpu_subdir=sparc				;;
@@ -580,14 +576,21 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
              *)          ;;
         esac
         if test -n "$cpu_subdir"; then
-        AC_CONFIG_LINKS(lightning/asm.h:lightning/$cpu_subdir/asm.h
-                        lightning/core.h:lightning/$cpu_subdir/core.h
-                        lightning/fp.h:lightning/$cpu_subdir/fp.h
-                        lightning/funcs.h:lightning/$cpu_subdir/funcs.h, , [
-                        ])
-        AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-operator-names)
+          have_lightning=yes
+          AC_DEFINE(HAVE_LIGHTNING, 1)
+          AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
+          AC_MSG_RESULT(yes)
+          AC_CONFIG_LINKS(lightning/asm.h:lightning/$cpu_subdir/asm.h
+                          lightning/core.h:lightning/$cpu_subdir/core.h
+                          lightning/fp.h:lightning/$cpu_subdir/fp.h
+                          lightning/funcs.h:lightning/$cpu_subdir/funcs.h, , [
+                          ])
+          AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-operator-names)
         else
-          AC_MSG_ERROR(cannot find GNU lightning platform specific headers.)
+	  have_lightning=no
+          AC_DEFINE(HAVE_LIGHTNING, 0)
+          AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=0)
+          AC_MSG_RESULT(no)
         fi
       else
         AC_MSG_ERROR(cannot find GNU lightning)
