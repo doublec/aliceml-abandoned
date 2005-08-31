@@ -50,6 +50,7 @@ pkginclude_HEADERS = \
 	ByteCode.hh \
 	ByteCodeBuffer.hh \
 	ByteCodeAlign.hh \
+	ByteCodeInstrs.hh \
 	ByteConcreteCode.hh \
 	ByteCodeFrame.hh \
 	ByteCodeInterpreter.hh \
