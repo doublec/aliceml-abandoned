@@ -16,6 +16,6 @@
 
 #include "alice/ByteCodeBuffer.hh"
 
-word *WriteBuffer::codeBuf = NULL;
+CodeSlot *WriteBuffer::codeBuf = NULL;
 u_int WriteBuffer::size = 0;
 u_int WriteBuffer::top = 0;

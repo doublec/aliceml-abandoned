@@ -33,12 +33,6 @@
 
 class ByteCode; // forward declaration
 
-#ifdef __GNUC__ // GNUC allows labels as values for direct threaded code
-#define THREADED
-#else
-#undef THREADED
-#endif // __GNUC__
-
 /*
  * We use a very simple layout both for switch and threaded interpreter
  *
@@ -71,8 +65,13 @@ class ByteCode; // forward declaration
   ENCODE_1I(index,i3)					
 			
 // get immediates			
+#ifdef THREADED
+#define DECODE_1I(buffer,index,i) 		\
+    i = *index++
+#else
 #define DECODE_1I(buffer,index,i)		\
   i = buffer->GetSlotInt(index++)			   
+#endif
 		
 #define DECODE_2I(buffer,index,i1,i2)		\
   DECODE_1I(buffer,index,i1);			\
@@ -86,15 +85,16 @@ class ByteCode; // forward declaration
 #ifdef THREADED
 // ensure that the lookup table is initialized
 #define ENCODE_INSTR(index,instr) \
-  WriteBuffer::SetSlot(index++,(u_int) ByteCode::LookupInstr(instr))
+  ENCODE_1I(index,(u_int) ByteCode::LookupInstr(instr))
 #else
 #define ENCODE_INSTR(index,instr)	\
-  WriteBuffer::SetSlot(index++,instr)
+  ENCODE_1I(index,instr)
 #endif // THREADED
 
 #define DECODE_INSTR(buffer,index,instr)	\
-  instr = buffer->GetSlotInt(index++)
+  DECODE_1I(buffer,index,instr)
 
+#define SKIP_INSTR(PC) PC++
 
 // set instructions + arguments
 #define SET_1I(index,i)   ENCODE_1I(index,i)

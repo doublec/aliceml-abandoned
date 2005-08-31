@@ -30,10 +30,9 @@
 
 #define BCI_DEBUG(s,...)
 #define DEBUG_INSTR()
-/*
-#define BCI_DEBUG(s,...) fprintf(stderr,s, ##__VA_ARGS__)
-#define DEBUG_INSTR() ByteCode::DisassembleOne(stderr,PC,code,IP)
-*/
+
+// #define BCI_DEBUG(s,...) fprintf(stderr,s, ##__VA_ARGS__)
+// #define DEBUG_INSTR() ByteCode::DisassembleOne(stderr,PC,code,IP)
 
 class ByteCodeFrame;
 class ReadBuffer;

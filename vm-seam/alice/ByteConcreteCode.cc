@@ -153,5 +153,9 @@ void ByteConcreteCode::Disassemble(std::FILE *file) {
 	  Store::DirectWordToInt(coord->Sel(2)));
   Chunk *code = GetByteCode();
   Tuple *imEnv = GetImmediateArgs();
+#ifdef THREADED
+  ByteCode::Disassemble(file,(u_int *)code->GetBase(),code,imEnv);
+#else
   ByteCode::Disassemble(file,0,code,imEnv);
+#endif
 }

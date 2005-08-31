@@ -24,9 +24,11 @@
 
 #define BCJIT_DEBUG(s,...) /* fprintf(stderr,s, ##__VA_ARGS__) */
 
+#define RELATIVE_JUMP
+
 using namespace ByteCodeInstr;
 
-static inline u_int GetNumberOfArguments(TagVal *abstractCode) {
+static inline u_int GetNumberOfLocals(TagVal *abstractCode) {
   TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
   switch (AbstractCode::GetAnnotation(annotation)) {
   case AbstractCode::Simple:
@@ -663,21 +665,20 @@ inline TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
 
   // Inherit substitution
   Vector *subst = Vector::New(nGlobals);
-  for (u_int i = 0; i < nGlobals; i++) {
+  for (u_int i = nGlobals; i--; ) {
     TagVal *tagVal = TagVal::FromWord(globalRefs->Sub(i));
-    /*
       if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global) {
-      TagVal *substVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
-      if (AbstractCode::GetIdRef(substVal) == AbstractCode::Immediate) {
-      TagVal *some = TagVal::New(Types::SOME, 1);
-      some->Init(0, substVal->Sel(0));
-      subst->Init(i, some->ToWord());
+	TagVal *substVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+	if (AbstractCode::GetIdRef(substVal) == AbstractCode::Immediate) {
+	  TagVal *some = TagVal::New(Types::SOME, 1);
+	  some->Init(0, substVal->Sel(0));
+	  subst->Init(i, some->ToWord());
+	}
+	else
+	  subst->Init(i, Store::IntToWord(Types::NONE));
       }
       else
-      subst->Init(i, Store::IntToWord(Types::NONE));
-      }
-      else */
-    subst->Init(i, Store::IntToWord(Types::NONE));
+	subst->Init(i, Store::IntToWord(Types::NONE));
   }
   abstractCode->Init(1, subst->ToWord());
   abstractCode->Init(2, template_->Sel(2));
@@ -692,7 +693,7 @@ inline TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
   u_int ccAddr = imEnv.Register(wConcreteCode);
   // compile the code
   SET_INSTR_1R2I(PC,mk_closure,dst,ccAddr,nGlobals);
-  for (u_int i = 0; i<nGlobals; i++) {
+  for (u_int i = nGlobals; i--; ) {
     u_int reg = LoadIdRefKill(globalRefs->Sub(i),true);
     SET_INSTR_2R1I(PC,init_closure,dst,reg,i);
   }
@@ -1252,10 +1253,17 @@ inline TagVal *ByteCodeJitter::InstrIntTest(TagVal *pc) {
   IntMap *map = IntMap::New(2 * nTests);
   u_int mapAddr = imEnv.Register(map->ToWord());
   SET_INSTR_1R1I(PC,itest,testVal,mapAddr);
+#ifdef RELATIVE_JUMP
+  u_int instrPC = PC;
+#endif
   CompileInstr(TagVal::FromWordDirect(pc->Sel(2))); // compile else branch
   for (u_int i = 0; i<nTests; i++) {
     Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+#ifdef RELATIVE_JUMP
+    map->Put(pair->Sel(0),Store::IntToWord(PC - instrPC));
+#else
     map->Put(pair->Sel(0),Store::IntToWord(PC));
+#endif
     CompileInstr(TagVal::FromWordDirect(pair->Sel(1))); // compile branch
   }
   return INVALID_POINTER;
@@ -1272,18 +1280,32 @@ inline TagVal *ByteCodeJitter::InstrCompactIntTest(TagVal *pc) {
   if(size == 1) {
     u_int ijumpInstrPC = PC;
     SET_INSTR_1R2I(PC,ijump_eq,0,0,0);                  // create dummy code
+#ifdef RELATIVE_JUMP
+    u_int jmpPC = PC;
+#endif
     CompileInstr(TagVal::FromWordDirect(pc->Sel(3)));   // compile else branch
+#ifdef RELATIVE_JUMP
+    SET_INSTR_1R2I(ijumpInstrPC,ijump_eq,testVal,offset,PC-jmpPC);
+#else
     SET_INSTR_1R2I(ijumpInstrPC,ijump_eq,testVal,offset,PC); // patch instr
+#endif
     return TagVal::FromWordDirect(jumpTable->Sub(0));   // compile then part
   }
   
   // size > 1
   SET_INSTR_1R2I(PC,citest,testVal,size,offset);
   u_int jumpTablePC = PC;
+#ifdef RELATIVE_JUMP
+  u_int jmpPC = PC;
+#endif
   PC += size;
   CompileInstr(TagVal::FromWordDirect(pc->Sel(3))); // compile else branch
   for(u_int i=0; i<size; i++) {
-    SET_1I(jumpTablePC,PC);
+#ifdef RELATIVE_JUMP
+    SET_1I(jumpTablePC,PC - jmpPC);
+#else
+    SET_1I(jumpTablePC,PC); // jumpTablePC is implicitly incremented
+#endif
     CompileInstr(TagVal::FromWordDirect(jumpTable->Sub(i))); // compile branch
   }
 
@@ -1300,10 +1322,17 @@ inline TagVal *ByteCodeJitter::InstrRealTest(TagVal *pc) {
   if(nTests == 1) { 
     u_int rjumpInstrPC = PC;
     SET_INSTR_1R2I(PC,rjump_eq,0,0,0); // create dummy code
+#ifdef RELATIVE_JUMP
+    u_int jmpPC = PC;
+#endif
     CompileInstr(TagVal::FromWordDirect(pc->Sel(2))); // compile else branch
     Tuple *pair = Tuple::FromWordDirect(tests->Sub(0));
     u_int valAddr = imEnv.Register(pair->Sel(0));
+#ifdef RELATIVE_JUMP
+    SET_INSTR_1R2I(rjumpInstrPC,rjump_eq,testVal,valAddr,PC-jmpPC);
+#else
     SET_INSTR_1R2I(rjumpInstrPC,rjump_eq,testVal,valAddr,PC); // patch instr
+#endif
     return TagVal::FromWordDirect(pair->Sel(1)); // compile then part
   }
 
@@ -1311,10 +1340,17 @@ inline TagVal *ByteCodeJitter::InstrRealTest(TagVal *pc) {
   ChunkMap *map = ChunkMap::New(2 * nTests);
   u_int mapAddr = imEnv.Register(map->ToWord());
   SET_INSTR_1R1I(PC,rtest,testVal,mapAddr);
+#ifdef RELATIVE_JUMP
+  u_int instrPC = PC;
+#endif
   CompileInstr(TagVal::FromWordDirect(pc->Sel(2))); // compile else branch
   for (u_int i = 0; i<nTests; i++) {
     Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+#ifdef RELATIVE_JUMP
+    map->Put(pair->Sel(0),Store::IntToWord(PC - instrPC));
+#else
     map->Put(pair->Sel(0),Store::IntToWord(PC));
+#endif
     CompileInstr(TagVal::FromWordDirect(pair->Sel(1))); // compile branch
   }
   return INVALID_POINTER;
@@ -1330,10 +1366,17 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
   if(nTests == 1) { 
     u_int sjumpInstrPC = PC;
     SET_INSTR_1R2I(PC,sjump_eq,0,0,0); // create dummy code
+#ifdef RELATIVE_JUMP
+    u_int jmpPC = PC;
+#endif
     CompileInstr(TagVal::FromWordDirect(pc->Sel(2))); // compile else branch
     Tuple *pair = Tuple::FromWordDirect(tests->Sub(0));
     u_int valAddr = imEnv.Register(pair->Sel(0));
+#ifdef RELATIVE_JUMP
+    SET_INSTR_1R2I(sjumpInstrPC,sjump_eq,testVal,valAddr,PC-jmpPC);
+#else
     SET_INSTR_1R2I(sjumpInstrPC,sjump_eq,testVal,valAddr,PC); // patch instr
+#endif
     return TagVal::FromWordDirect(pair->Sel(1)); // compile then part
   }
 
@@ -1341,10 +1384,17 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
   ChunkMap *map = ChunkMap::New(2 * nTests);
   u_int mapAddr = imEnv.Register(map->ToWord());
   SET_INSTR_1R1I(PC,stest,testVal,mapAddr);
+#ifdef RELATIVE_JUMP
+  u_int instrPC = PC;
+#endif
   CompileInstr(TagVal::FromWordDirect(pc->Sel(2))); // compile else branch
   for (u_int i = 0; i<nTests; i++) {
     Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+#ifdef RELATIVE_JUMP
+    map->Put(pair->Sel(0),Store::IntToWord(PC - instrPC));
+#else
     map->Put(pair->Sel(0),Store::IntToWord(PC));
+#endif
     CompileInstr(TagVal::FromWordDirect(pair->Sel(1))); // compile branch
   }
   return INVALID_POINTER;
@@ -1370,16 +1420,27 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     u_int loadInstr = isBigTag ? load_bigtagval : load_tagval;
     u_int patchInstrPC = PC;
     SET_INSTR_1R2I(PC,testInstr,0,0,0); // dummy instr
+#ifdef RELATIVE_JUMP
+    u_int jmpPC = PC;
+#endif
     CompileInstr(TagVal::FromWordDirect(pc->Sel(4))); // compile else branch  
     if(nullarySize == 1) {
       Tuple *pair = Tuple::FromWordDirect(nullaryTests->Sub(0));
       u_int tag = Store::DirectWordToInt(pair->Sel(0));
+#ifdef RELATIVE_JUMP
+      SET_INSTR_1R2I(patchInstrPC,testInstr,testVal,tag,PC-jmpPC);
+#else
       SET_INSTR_1R2I(patchInstrPC,testInstr,testVal,tag,PC); // patch instr
+#endif
       return TagVal::FromWordDirect(pair->Sel(1)); // compile branch   
     } else if (narySize == 1) {
       Tuple *triple = Tuple::FromWordDirect(naryTests->Sub(0));
       u_int tag = Store::DirectWordToInt(triple->Sel(0));
+#ifdef RELATIVE_JUMP
+      SET_INSTR_1R2I(patchInstrPC,testInstr,testVal,tag,PC-jmpPC);
+#else
       SET_INSTR_1R2I(patchInstrPC,testInstr,testVal,tag,PC); // patch instr
+#endif
       // compile binding
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       u_int idDefsLength = idDefs->GetLength();
@@ -1410,19 +1471,30 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     IntMap *map = IntMap::New(2 * (nullarySize + narySize));
     u_int mapAddr = imEnv.Register(map->ToWord());
     SET_INSTR_1R1I(PC,testInstr,testVal,mapAddr);
+#ifdef RELATIVE_JUMP
+    u_int instrPC = PC;
+#endif
     CompileInstr(TagVal::FromWordDirect(pc->Sel(4))); // compile else branch  
     
     // compile nullary tests
     for(u_int i=0; i<nullarySize; i++) {
       Tuple *pair = Tuple::FromWordDirect(nullaryTests->Sub(i));
+#ifdef RELATIVE_JUMP
+      map->Put(pair->Sel(0),Store::IntToWord(PC - instrPC));
+#else
       map->Put(pair->Sel(0),Store::IntToWord(PC));
+#endif
       CompileInstr(TagVal::FromWordDirect(pair->Sel(1))); // compile branch
     }
     
     // compile n-ary tests
     for(u_int i=0; i<narySize; i++) {
       Tuple *triple = Tuple::FromWordDirect(naryTests->Sub(i));
+#ifdef RELATIVE_JUMP
+      map->Put(triple->Sel(0),Store::IntToWord(PC - instrPC));
+#else
       map->Put(triple->Sel(0),Store::IntToWord(PC));
+#endif
       // compile binding
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       u_int idDefsLength = idDefs->GetLength();
@@ -1449,11 +1521,18 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
 
     SET_INSTR_1R1I(PC,testInstr,testVal,maxTag);
     u_int jumpTablePC = PC;
+#ifdef RELATIVE_JUMP
+    u_int jmpPC = PC;
+#endif
     PC += maxTag;
     u_int elsePC = PC;
     u_int defaultTablePC = jumpTablePC;
     for(u_int i=0; i<maxTag; i++) {
+#ifdef RELATIVE_JUMP
+      SET_1I(defaultTablePC,elsePC - jmpPC);
+#else
       SET_1I(defaultTablePC,elsePC);
+#endif
     }
     CompileInstr(TagVal::FromWordDirect(pc->Sel(4))); // compile else branch  
     
@@ -1461,7 +1540,11 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     for(u_int i=0; i<nullarySize; i++) {
       Tuple *pair = Tuple::FromWordDirect(nullaryTests->Sub(i));
       u_int index = jumpTablePC + Store::DirectWordToInt(pair->Sel(0));
+#ifdef RELATIVE_JUMP
+      SET_1I(index,PC-jmpPC);
+#else
       SET_1I(index,PC);
+#endif
       CompileInstr(TagVal::FromWordDirect(pair->Sel(1))); // compile branch
     }
     
@@ -1469,7 +1552,11 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     for(u_int i=0; i<narySize; i++) {
       Tuple *triple = Tuple::FromWordDirect(naryTests->Sub(i));
       u_int index = jumpTablePC + Store::DirectWordToInt(triple->Sel(0));
+#ifdef RELATIVE_JUMP
+      SET_1I(index,PC-jmpPC);
+#else
       SET_1I(index,PC);
+#endif
       // compile binding
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       u_int idDefsLength = idDefs->GetLength();
@@ -1569,7 +1656,7 @@ inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   u_int loadInstr;
   if(Alice::IsBigTagVal(maxTag)) {
     loadInstr = load_bigtagval;
-    testInstr = isFastTest ? cbigtagtest : cbigtagtest_direct;
+    testInstr = isFastTest ? cbigtagtest_direct : cbigtagtest;
   }
   else {
     loadInstr = load_tagval;
@@ -1580,6 +1667,9 @@ inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   u_int newTestsSize = isFastTest ? maxTag : size;
   SET_INSTR_1R1I(PC,testInstr,testVal,newTestsSize);
   u_int jumpTablePC = PC;
+#ifdef RELATIVE_JUMP
+  u_int jmpPC = PC;
+#endif
   PC += newTestsSize;
   u_int elsePC = PC;
 
@@ -1590,7 +1680,11 @@ inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   // compile tests
   for(u_int i=0; i<size; i++) {
     Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+#ifdef RELATIVE_JUMP
+    SET_1I(jumpTablePC,PC - jmpPC);    
+#else
     SET_1I(jumpTablePC,PC);
+#endif
     // compile binding
     TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
     if(idDefsOpt != INVALID_POINTER) {
@@ -1616,7 +1710,11 @@ inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   }
   // fill the rest with the else PC
   for(u_int i=size; i<newTestsSize; i++) {
+#ifdef RELATIVE_JUMP
+    SET_1I(jumpTablePC,elsePC-jmpPC);
+#else
     SET_1I(jumpTablePC,elsePC);
+#endif
   }
   return INVALID_POINTER;  
 }
@@ -1637,8 +1735,15 @@ inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
     u_int src = LoadIdRefKill(pair->Sel(0),true);
     u_int conTestInstrPC = PC;
     SET_INSTR_2R1I(PC,contest,0,0,0);                      // dummy instr
+#ifdef RELATIVE_JUMP
+    u_int jmpPC = PC;
+#endif
     CompileInstr(TagVal::FromWordDirect(pair->Sel(1)));    // compile branch
+#ifdef RELATIVE_JUMP
+    SET_INSTR_2R1I(conTestInstrPC,contest,testVal,src,PC-jmpPC);
+#else
     SET_INSTR_2R1I(conTestInstrPC,contest,testVal,src,PC); // patch instr
+#endif
   }
 
   // compile n-ary tests
@@ -1647,6 +1752,9 @@ inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
     u_int src = LoadIdRefKill(triple->Sel(0),true);
     u_int conTestInstrPC = PC;
     SET_INSTR_2R1I(PC,contest,0,0,0);                      // dummy instr
+#ifdef RELATIVE_JUMP
+    u_int jmpPC = PC;
+#endif
     // compile binding
     Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
     u_int idDefsLength = idDefs->GetLength();
@@ -1666,7 +1774,11 @@ inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
       }
     }
     CompileInstr(TagVal::FromWordDirect(triple->Sel(2)));  // compile branch
+#ifdef RELATIVE_JUMP
+    SET_INSTR_2R1I(conTestInstrPC,contest,testVal,src,PC-jmpPC);
+#else
     SET_INSTR_2R1I(conTestInstrPC,contest,testVal,src,PC); // patch instr
+#endif
   }
   
   return TagVal::FromWordDirect(pc->Sel(3));
@@ -1680,12 +1792,19 @@ inline TagVal *ByteCodeJitter::InstrVecTest(TagVal *pc) {
   IntMap *map = IntMap::New(2 * nTests);
   u_int mapAddr = imEnv.Register(map->ToWord());
   SET_INSTR_1R1I(PC,vectest,testVal,mapAddr);
+#ifdef RELATIVE_JUMP
+  u_int instrPC = PC;
+#endif
   CompileInstr(TagVal::FromWordDirect(pc->Sel(2))); // compile else branch
   for (u_int i = 0; i<nTests; i++) {
     Tuple *pair    = Tuple::FromWordDirect(tests->Sub(i));
     Vector *idDefs = Vector::FromWordDirect(pair->Sel(0));
     word key       = Store::IntToWord(idDefs->GetLength());
+#ifdef RELATIVE_JUMP
+    map->Put(key, Store::IntToWord(PC - instrPC));
+#else
     map->Put(key, Store::IntToWord(PC));
+#endif
     // compile binding
     u_int idDefsLength = idDefs->GetLength();
     u_int src = testVal;
@@ -1713,7 +1832,14 @@ inline TagVal *ByteCodeJitter::InstrShared(TagVal *pc) {
   word stamp = pc->Sel(0);
   if(sharedTable->IsMember(stamp)) {
     u_int target = Store::DirectWordToInt(sharedTable->Get(stamp));
+#ifdef RELATIVE_JUMP
+    u_int instrPC = PC;
+    SET_INSTR_1I(PC,jump,0);
+    s_int offset = target - PC;
+    SET_INSTR_1I(instrPC,jump,offset); // patch
+#else
     SET_INSTR_1I(PC,jump,target);
+#endif
     return INVALID_POINTER;
   }
   else {
@@ -1913,6 +2039,9 @@ u_int invocations = 0;
 // Function of coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
+//   timeval startTime;
+//   gettimeofday(&startTime,0);
+
   BCJIT_DEBUG("start compilation (%d times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
@@ -1930,7 +2059,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
     
 
   // perform register allocation
-  currentNLocals = GetNumberOfArguments(abstractCode);
+  currentNLocals = GetNumberOfLocals(abstractCode);
 
 #ifdef DO_REG_ALLOC
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
@@ -1997,9 +2126,21 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 //   codeSize += code->GetSize();
 //   fprintf(stderr,"codeSize %d\n",codeSize);
 //   fprintf(stderr,"-----------------\ncompiled code:\n");
+// #ifdef THREADED
+//   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
+// 			Tuple::FromWordDirect(imEnv.ExportEnv()));
+// #else
 //   ByteCode::Disassemble(stderr,0,code,
-//   Tuple::FromWordDirect(imEnv.ExportEnv()));
+// 			Tuple::FromWordDirect(imEnv.ExportEnv()));
+// #endif
 //   fprintf(stderr,"-------------\n");
+
+//   static double totalTime = 0;
+//   timeval stopTime;
+//   gettimeofday(&stopTime,0);
+//   totalTime += 0.000001 * ((double) (stopTime.tv_usec - startTime.tv_usec))
+//     + ((double) (stopTime.tv_sec - startTime.tv_sec));
+//   fprintf(stderr,"compile time %f seconds\n",totalTime);
 
   return bcc->ToWord();
 }

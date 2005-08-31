@@ -68,8 +68,10 @@ public:
   }
 #endif // THREADED
 
-  static void Disassemble(std::FILE *f, u_int pc, Chunk *code, Tuple *imEnv); 
-  static int DisassembleOne(std::FILE *f, u_int pc, Chunk *code, Tuple *imEnv);
+  static void Disassemble(std::FILE *f, ProgramCounter pc, 
+			  Chunk *code, Tuple *imEnv); 
+  static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter pc, 
+				       Chunk *code, Tuple *imEnv);
 };
 
 #undef INSTR

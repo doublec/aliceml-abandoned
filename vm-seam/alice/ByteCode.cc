@@ -16,22 +16,17 @@
 
 #include <cstdio>
 #include "alice/ByteCode.hh"
-
 using namespace ByteCodeInstr;
 
 #ifdef THREADED
-
 void **ByteCode::instrTable = NULL;
 word ByteCode::threadedTable = INVALID_POINTER;
-
 #endif // THREADED
-
 
 // this is a naive disassemble
 // are more sofisticated one would expand immediate-env addresses
-int ByteCode::DisassembleOne(std::FILE *f, u_int PC, 
-			       Chunk *code, Tuple *imEnv) {
-  
+ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC, 
+					Chunk *code, Tuple *imEnv) {
   ReadBuffer *codeBuffer = ReadBuffer::New(code);
 
   fprintf(f,"PC %d: ",PC);
@@ -71,12 +66,6 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
     {
       GET_1R(codeBuffer,PC,r0);
       fprintf(f,"iinc R%d\n",r0);
-    }
-    return PC;
-  case loop: // r, exit
-    {
-      GET_1R1I(codeBuffer,PC,reg,exit);
-      fprintf(f,"loop R%d, %d\n",reg,exit);
     }
     return PC;
   case set_local: // reg, index
@@ -666,7 +655,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
     return PC;  
   case ctagtest:
     {
-      u_int oldPC;
+      ProgramCounter oldPC;
       GET_1R1I(codeBuffer,PC,reg,size);
       fprintf(f,"ctagtest R%d, %d\n",reg,size);
       for(u_int i=0;i<size;i++) {
@@ -678,7 +667,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
     return PC;
   case cbigtagtest:
     {
-      u_int oldPC;
+      ProgramCounter oldPC;
       GET_1R1I(codeBuffer,PC,reg,size);
       fprintf(f,"cbigtagtest R%d, %d\n",reg,size);
       for(u_int i=0;i<size;i++) {
@@ -690,7 +679,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
     return PC;  
   case ctagtest_direct:
     {
-      u_int oldPC;
+      ProgramCounter oldPC;
       GET_1R1I(codeBuffer,PC,reg,size);
       fprintf(f,"ctagtest_direct R%d, %d\n",reg,size);
       for(u_int i=0;i<size;i++) {
@@ -702,7 +691,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
     return PC;
   case cbigtagtest_direct:
     {
-      u_int oldPC;
+      ProgramCounter oldPC;
       GET_1R1I(codeBuffer,PC,reg,size);
       fprintf(f,"cbigtagtest_direct R%d, %d\n",reg,size);
       for(u_int i=0;i<size;i++) {
@@ -723,7 +712,7 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
       GET_1R2I(codeBuffer,PC,r,size,offset);
       fprintf(f,"citest R%d, %d, %d\n",r,size,offset);
       for(u_int i=0;i<size;i++) {
-	u_int oldPC = PC;
+	ProgramCounter oldPC = PC;
 	GET_1I(codeBuffer,PC,target);
 	fprintf(f,"PC %d: %d -> %d\n",oldPC,i+offset,target);
       }
@@ -811,11 +800,15 @@ int ByteCode::DisassembleOne(std::FILE *f, u_int PC,
     }
 }
 
-void ByteCode::Disassemble(std::FILE *f, u_int pc, 
+void ByteCode::Disassemble(std::FILE *f, ProgramCounter pc, 
 			   Chunk *code, Tuple *imEnv) {
+#ifdef THREADED
+  ProgramCounter end = (ProgramCounter) (code->GetBase() + code->GetSize());
+  while(pc < end) {
+#else
   u_int max = code->GetSize();
   while(4 * pc < max) {
+#endif
     pc = ByteCode::DisassembleOne(f,pc,code,imEnv);
   }
-  return;
 }

@@ -16,20 +16,31 @@
 #include <cstring> 
 #include "alice/Data.hh"
 
-#define CODE_SLOT_SIZE sizeof(word)
-#define SLOT_TO_INT(slot) (u_int) slot
-#define INT_TO_SLOT(i) (slot_type) i
+#ifdef __GNUC__ // GNUC allows labels as values for direct threaded code
+#define THREADED
+#else
+#undef THREADED
+#endif // __GNUC__
 
-#define MAX_SLOT 0xFFFFFFFF // ajust this const if sizeof(word) != 4
-typedef word slot_type;
+// type definition for ProgramCounter
+typedef u_int CodeSlot;
+
+#ifdef THREADED
+typedef CodeSlot *ProgramCounter; // pointer to the current code slot
+#else
+typedef CodeSlot ProgramCounter; // index into the code
+#endif
+
+#define CODE_SLOT_SIZE sizeof(CodeSlot)
+#define SLOT_TO_INT(slot) (u_int) slot
+#define INT_TO_SLOT(i) (CodeSlot) i
 
 #define INITIAL_WRITEBUFFER_SIZE 10000 // TODO: find reasonable size
-
 
 // write-only (dynamic) byte code buffer
 class AliceDll WriteBuffer {
 private:
-  static slot_type *codeBuf;
+  static CodeSlot *codeBuf;
   static u_int size;
   static u_int top;
 public: 
@@ -39,7 +50,7 @@ public:
     if(s > size || codeBuf == NULL) {
       delete(codeBuf);
       size = s;
-      codeBuf = new slot_type[size];
+      codeBuf = new CodeSlot[size];
     }
   }
   static u_int GetSize() {
@@ -52,38 +63,40 @@ public:
     // shrink buffer for next use
     if(top * 3 / 2 < size) {
       size = size * 2 / 3;
-      slot_type *newCodeBuf = new slot_type[size];
+      CodeSlot *newCodeBuf = new CodeSlot[size];
       delete(codeBuf);
       codeBuf = newCodeBuf;
     }
     top = 0;
     return code;
   }
-  static void SetSlot(u_int index, u_int slot) {
+  static void SetSlot(u_int index, CodeSlot slot) {
     if(index >= top)
       top = index+1;
     if(index+1 >= size) {
       size = size * 3 / 2; 
-      slot_type *newCodeBuf = new slot_type[size];
+      CodeSlot *newCodeBuf = new CodeSlot[size];
       memcpy(newCodeBuf, codeBuf, top * CODE_SLOT_SIZE);
       delete(codeBuf);
       codeBuf = newCodeBuf;
     }
-    codeBuf[index] = (slot_type) (slot); // & MAX_SLOT);
+    codeBuf[index] = slot;
   }
 };
 
 // read-only byte code buffer
+// this is only needed for a switch-based interpreter
+// as with threaded code you access the code directly via the pc
 class AliceDll ReadBuffer : private Chunk {
 public:
   static ReadBuffer *New(Chunk *code) {
     return STATIC_CAST(ReadBuffer *, code->GetBase());
   }			     
-  void RewriteSlot(u_int index, u_int slot) {
-    ((slot_type *) this)[index] = (slot_type) slot;
+  void RewriteSlot(u_int index, CodeSlot slot) {
+    ((CodeSlot *) this)[index] = slot;
   }
-  slot_type GetSlot(u_int index) {
-    return ((slot_type *) this)[index];
+  CodeSlot GetSlot(u_int index) {
+    return ((CodeSlot *) this)[index];
   }
   u_int GetSlotInt(u_int index) {
     return SLOT_TO_INT(GetSlot(index));

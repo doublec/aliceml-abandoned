@@ -32,8 +32,6 @@
 */
 #define OPTIMIZE_TAGTEST_LEVEL 5
 
-#define NUMBER_OF_SCRATCH_REGISTERS 4
-
 class LazyByteCompileClosure;
 
 class AliceDll ByteCodeJitter {
