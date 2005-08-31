@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 import structure Defs           from "Defs"
 import structure BasicTypes     from "BasicTypes"
 import structure AliceType      from "AliceType"

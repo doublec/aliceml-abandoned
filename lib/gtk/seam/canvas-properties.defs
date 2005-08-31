@@ -1,3 +1,15 @@
+;;
+;; Author:
+;;   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+;;
+;; Copyright:
+;;   Benedikt Grundmann, 2005
+;;
+;; Last Change:
+;;   $Date$ by $Author$
+;;   $Revision$
+;;
+
 
 (define-prop "parent" GnomeCanvasItem object)
 
