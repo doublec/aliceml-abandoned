@@ -6,7 +6,7 @@ word NativeAtk_CreateComponent();
 word NativeGdk_CreateComponent();
 word NativeGtk_CreateComponent();
 word NativeCanvas_CreateComponent();
-word NativeGlade_CreateComponent ();
+word NativeGlade_CreateComponent();
 word InitComponent () {
     Record *record = Record::New (8);
     record->Init ("NativeCore$", NativeCore_CreateComponent());
