@@ -24,6 +24,7 @@
 #include "alice/ByteCodeAlign.hh"
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeFrame.hh"
+#include "alice/ByteCodeBuffer.hh"
 
 using namespace ByteCodeInstr;
 
@@ -31,9 +32,22 @@ using namespace ByteCodeInstr;
 
 #ifdef THREADED // is defined in ByteCodeBuffer.hh
 
+#ifdef DO_RELATIVE_JUMP
+#define SETPC(x) PC = ((CodeSlot *)code->GetBase()) + x
+#define SAVEPC(PC) {							\
+    u_int offset = (u_int)(((u_int)PC) - ((u_int)(code->GetBase())));	\
+    Assert(CODE_SLOT_SIZE == 4);					\
+    frame->SavePC(offset>>2);						\
+}
+#define LOADSTATE(PC,CP,IP) {			\
+    SETPC(frame->GetPC());			\
+    CP = frame->GetCP();			\
+    IP = frame->GetIP();			\
+}
+#else
 #define SETPC(x) PC = codeBase + x
 #define SAVEPC(PC) {						\
-    u_int offset = (u_int)(((u_int)PC) - ((u_int)codeBase));	\
+    u_int offset = (u_int)(((u_int)PC) - ((u_int)codeBase)); \
     Assert(CODE_SLOT_SIZE == 4);				\
     frame->SavePC(offset>>2);					\
 }
@@ -43,6 +57,7 @@ using namespace ByteCodeInstr;
     CP = frame->GetCP();			\
     IP = frame->GetIP();			\
 }
+#endif
 #define Case(INSTR) INSTR##LBL
 
 #define DISPATCH(PC)				\
@@ -184,7 +199,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   Chunk *code = frame->GetCode();
 
-#ifdef THREADED
+#if defined(THREADED) && not defined(DO_RELATIVE_JUMP)
   u_int *codeBase = (u_int *) (code->GetBase());
 #else
   ReadBuffer *codeBuffer = ReadBuffer::New(code);
