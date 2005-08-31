@@ -3,7 +3,7 @@
 <?php heading("Gtk Library", "gtk\nlibrary") ?>
 
   <P>
-    This manual describes the GTK+ 2.2 language binding for Alice.
+    This manual describes the GTK+ 2.6 language binding for Alice.
   </P>
   <P>
     <A href="http://www.gtk.org">GTK+</A> is a widget set that allows to
@@ -11,7 +11,7 @@
     The language binding described herein enables Alice programmers to
     build graphical user interfaces using this widget set.
     The binding provides access to GTK+ functionality by lifting its C
-    interface one-to-one to Alice. It hence is a low-level interface without
+    interface almost one-to-one to Alice. It hence is a low-level interface without
     additional abstractions, but provides almost the full GTK+ functionality.
   </P>
   <P>
@@ -42,19 +42,88 @@
     <LI>Make the widget visible.
   </OL>
 
+<?php subsection("structure", "Overall structure of the library"); ?>
+  
+  <P>
+    For each wrapped type there is a distinct corresponding substructure
+    which contains its functions and in some cases also its properties.
+    For example the GtkButton widget is wrapped like this:
+    <PRE>
+        structure Gtk :
+        sig
+            type object
+            ...
+            structure Button :
+            sig
+                (* constructors *)
+                val newWithMnemonic : string -> object
+                val newFromStock : string -> object
+                val newWithLabel : string -> object
+                val new : unit -> object
+                (* methods *)
+                val getImage : object -> object
+                val setImage : object * object -> unit
+                ...
+            end
+            ...
+        end
+    </PRE>
+    
+    <P>
+    Notice that nearly all pointer types, especially those derived from <TT>GObject</TT> and 
+    <TT>struct</TT>s are represented by a single type called <TT>object</TT>.
+
+    <P>
+    Likewise every enum type is represented by a distinct type contained in a distinct substructure
+    of its library's structure.  For example:
+    <PRE>
+        structure Gdk :
+        sig
+            ...
+            structure WindowState :
+            sig
+                datatype flag =
+                    ABOVE
+                  | BELOW
+                  | FULLSCREEN
+                  | ICONIFIED
+                  | MAXIMIZED
+                  | STICKY
+                  | WITHDRAWN
+                type t = flag list
+                val getType : unit -> gtype
+                val toInt   : t -> int
+                val fromInt : int -> t
+            end
+            structure PropertyState :
+            sig
+                datatype t =
+                    DELETE
+                  | NEW_VALUE
+                val getType : unit -> gtype
+                val toInt   : t -> int
+                val fromInt : int -> t
+            end
+            ...
+        end
+    </PRE>
+    Notice that flag types and normal enum types are wrapped differently.  Enum types
+    are wrapped directly into a corresponding datatype. Flag types are wrapped into
+    lists over the respective datatypes.
+    
 <?php subsection("creation", "Widget Creation"); ?>
 
   <P>
     A widget object is created by instantiating a widget class.
-    The constructors are the functions ending with <TT>new</TT>; some
+    The constructors are the functions starting with <TT>new</TT>; some
     widget classes have multiple constructors. In those cases the
     constructor name usually contains a hint on what is different to the
     default constuctor.
     For example,
   <PRE>
-      val window = Gtk.buttonNewWithLabel "Hello, World!"</PRE>
+      val window = Gtk.Button.newWithLabel "Hello, World!"</PRE>
     creates a new object for a button labelled <TT>"Hello, World!"</TT>, whereas
-    <TT>Gtk.buttonNew</TT> would have created a button object with an empty
+    <TT>Gtk.Button.new ()</TT> would have created a button object with an empty
     label.
   <P>
     Object creation yields a freshly created widget object whose attributes
@@ -98,19 +167,59 @@
     non-X platforms such as Windows).  These can be caught using the special
     signal <TT>"event"</TT>.  For more details, see the reference.
 
-<?php subsection("attributes", "Widget Attributes"); ?>
+<?php subsection("properties", "Widget Properties"); ?>
 
   <P>
-    GTK+ widgets organize their data using <EM>attributes</EM>.  Some attributes
+    GTK+ widgets organize their data using <EM>properties</EM>.  Some Properties
     are read-only, others are mutable.  The latter allow for the widget to
     be reconfigured after creation.
   </P>
   <P>
-    Attributes are named by strings and have an associated (typed) value.
-    Many widgets define accessors for commonly used attributes, but in
-    general they can be read using the <TT>Gtk.widgetGet</TT> function
-    and written to using the <TT>Gtk.widgetSet</TT> function.  Trying to access
-    a non-existing attribute yields an error.
+    Properties are named by strings and have an associated (typed) value.
+    Many widgets define accessors for commonly used properties, but in
+    general they can be read using the <TT>Prop.rawGet</TT> function
+    and written to using the <TT>Gtk.rawSet</TT> function.  Trying to access
+    a non-existing attribute yields an error as well as trying to set a
+    property of the wrong type. Both functions operate on <TT>gvalue</TT>s,
+    which can be converted from and to alice values via the functions
+    in <TT>Value</TT>.
+  </P>
+  <P>
+    For some important properties of certain widgets we have predefined special
+    values of type <TT>'a prop</TT> where <TT>'a</TT> is the type of the associated
+    value.  For example the type <TT>GtkTextTag</TT> is wrapped like this:
+
+    <PRE>
+    structure TextTag :
+    sig
+        (* constructors *)
+        val new : string -> object
+        (* methods *)
+        val event : object * object * object * object -> bool
+        val setPriority : object * int -> unit
+        val getPriority : object -> int
+        val getType : unit -> gtype
+        (* properties *)
+        val weightSet : bool prop
+        val weight : int prop
+        val sizeSet : bool prop
+        val size : int prop
+        val styleSet : bool prop
+        val style : Pango.Style.t prop
+        val name : string prop
+        val editableSet : bool prop
+        val editable : bool prop
+        val foregroundGdk : object prop
+        val foreground : string prop
+        val fontDesc : object prop
+        val font : string prop
+        val backgroundGdk : object prop
+        val background : string prop
+    end
+    </PRE>
+    Those properties can be accessed and modified using the functions 
+    <PRE>Prop.get : 'a prop -> object -> 'a</PRE> and 
+    <PRE>Prop.set : 'a prop -> object * 'a -> unit</PRE>.
   </P>
 
 <?php subsection("containers", "Containers"); ?>
@@ -119,7 +228,7 @@
     Widgets are laid out on the screen using so-called containers.
     Container widgets themselves usually do not provide any visible
     information, but display their child widgets according to a built-in
-    strategy.  For example, an <TT>hBox</TT> container will align its children
+    strategy.  For example, an <TT>HBox</TT> container will align its children
     horizontally on the screen.  A container can contain other container
     widgets.
   </P>
@@ -128,7 +237,7 @@
     "daily" needs, which all are descendants of the <TT>container</TT>
     class.
   <P><B>Bins.</B>
-    <TT>window</TT> is a subclass of <TT>bin</TT>, which is the superclass
+    <TT>Window</TT> is a subclass of <TT>Bin</TT>, which is the superclass
     of all containers accepting at most one child.  Bins do not do any
     layouting.  If our window had contained more than one child, we would
     have needed to create another container to lay out the children, which
@@ -149,10 +258,11 @@
 <?php subsection("errors", "Error Handling"); ?>
 
   <P>
-    GTK+ widgets do a lot of error-checking internally, but errors are
+    GTK+ widgets do a lot of error-checking internally, but those errors are
     just reported to the screen instead of being raised as an Alice exception.
     Errors discovered in the language binding's code are reported as
-    exceptions.
+    exceptions (this includes type errors like passing a GtkTextBuffer where
+    a GtkWindow is expected.).
   </P>
 
 <?php section("mapping", "How the C API is mapped to Alice"); ?>
@@ -171,23 +281,31 @@
     The Alice GTK+ library is organized into the following components:
   </P>
   <UL>
+   <LI><TT>structure <A HREF="glib.html">GLib</A>
+            from "x-alice://lib/gtk/Pango"</TT>
+   <LI><TT>structure <A HREF="atk.html">Atk</A>
+            from "x-alice://lib/gtk/Atk"</TT>
+   <LI><TT>structure <A HREF="pango.html">Pango</A>
+            from "x-alice://lib/gtk/Pango"</TT>
    <LI><TT>structure <A HREF="gdk.html">Gdk</A>
            from "x-alice://lib/gtk/Gdk"</TT>
    <LI><TT>structure <A HREF="gtk.html">Gtk</A>
            from 'x-alice://lib/gtk/Gtk'</TT>
    <LI><TT>structure <A HREF="gtk-canvas.html">Canvas</A>
             from 'x-alice://lib/gtk/Canvas'</TT>
+   <LI><TT>structure <A HREF="libglade.html">Glade</A>
+            from 'x-alice://lib/gtk/Glade'</TT>
   </UL>
   <P>
     Each module represents a namespace.  The corresponding API constants
-    and functions are mapped to constants and functions
-    in these namespaces.
+    and functions are mapped to datatypes and functions organized into
+    substructures in these namespaces.
   </P>
 
 <?php subsection("names", "Name mapping"); ?>
   <P>
     We will illustrate how C structure fields and C functions are mapped
-    to methods by example.  Consider the C API for <TT>GtkButton</TT>,
+    to by an example.  Consider the C API for <TT>GtkButton</TT>,
     which is derived from <TT>GtkBin</TT>:
   <PRE>
     struct _GtkButton { 
@@ -227,71 +345,87 @@
     gboolean gtk_button_get_use_underline(GtkButton *button);
     void gtk_button_set_use_stock(GtkButton *button, gboolean use_stock);
     gboolean gtk_button_get_use_stock(GtkButton *button);</PRE>
-You will find these functions as part of the <TT>Gtk</TT> structure:
+In <TT>Gtk</TT> you will find a substructure <TT>Button</TT> which looks like this:
   <PRE>
-   (* accessors *)
-   val buttonGetFieldEventWindow : object -> object
-   val buttonSetFieldEventWindow : object * object -> unit
-   val buttonGetFieldLabelText : object -> string
-   val buttonSetFieldLabelText : object * string -> unit
-   val buttonGetFieldActivateTimeout : object -> int
-   val buttonSetFieldActivateTimeout : object * int -> unit
-   val buttonGetFieldConstructed : object -> int
-   val buttonSetFieldConstructed : object * int -> unit
-   val buttonGetFieldInButton : object -> int
-   val buttonSetFieldInButton : object * int -> unit
-   val buttonGetFieldButtonDown : object -> int
-   val buttonSetFieldButtonDown : object * int -> unit
-   val buttonGetFieldRelief : object -> int
-   val buttonSetFieldRelief : object * int -> unit
-   val buttonGetFieldUseUnderline : object -> int
-   val buttonSetFieldUseUnderline : object * int -> unit
-   val buttonGetFieldUseStock : object -> int
-   val buttonSetFieldUseStock : object * int -> unit
-   val buttonGetFieldDepressed : object -> int
-   val buttonSetFieldDepressed : object * int -> unit
-   val buttonGetFieldDepressedOnActivate : object -> int
-   val buttonSetFieldDepressOnActivate : object * int -> unit
-
-   (* constructors *)
-   val buttonNew : unit -> object
-   val buttonNewWithLabel : string -> object
-   val buttonNewFromStock : string -> object
-   val buttonNewWithMnemonic : string -> object
-
-   (* signal emitters *)
-   val buttonPressed : object -> unit
-   val buttonReleased : object -> unit
-   val buttonClicked : object -> unit
-   val buttonEnter : object -> unit
-   val buttonLeave : object -> unit
-
-   (* attribute accessors *)
-   val buttonSetRelief : object * GtkEnums.GtkReliefStyle -> unit
-   val buttonGetRelief : object -> GtkEnums.GtkReliefStyle
-   val buttonSetLabel : object * string -> unit
-   val buttonGetLabel : object -> string
-   val buttonSetUseUnderline : object * bool -> unit
-   val buttonGetUseUnderline : object -> bool
-   val buttonSetUseStock : object * bool -> unit
-   val buttonGetUseStock : object -> bool</PRE>
+    structure Button :
+    sig
+        (* constructors *)
+        val newWithMnemonic : string -> object
+        val newFromStock : string -> object
+        val newWithLabel : string -> object
+        val new : unit -> object
+        (* methods *)
+        val getImage : object -> object
+        val setImage : object * object -> unit
+        val getAlignment : object * real * real -> real * real
+        val setAlignment : object * real * real -> unit
+        val getFocusOnClick : object -> bool
+        val setFocusOnClick : object * bool -> unit
+        val getUseStock : object -> bool
+        val setUseStock : object * bool -> unit
+        val getUseUnderline : object -> bool
+        val setUseUnderline : object * bool -> unit
+        val getLabel : object -> string
+        val setLabel : object * string -> unit
+        val getRelief : object -> ReliefStyle.t
+        val setRelief : object * ReliefStyle.t -> unit
+        val leave : object -> unit
+        val enter : object -> unit
+        val clicked : object -> unit
+        val released : object -> unit
+        val pressed : object -> unit
+        val getType : unit -> gtype
+        (* properties *)
+    end
+  </PRE>
   <P><B>General Scheme.</B>
     The general scheme is that all underscored identifiers are translated to
-    use camel-casing.  Since functions belong to a module,
-    the module name prefixes are cut off to increase
-    readability.  The first letter of each function is downcased.
+    use camel-casing.  Both the name of the library and and the name of the 
+    type the methods belong are cut off.  The first letter of each function
+    is downcased.
   </P>
   <P><B>Field Accessors.</B>
-    Field accessors are also camel-cased, but in contrast to the standard
-    methods, they use the <TT>{className}GetField{FieldName}</TT> pattern.
-    For example, the <TT>button_down</TT> field above is read
-    using the <TT>buttonGetFieldButtonDown</TT> accessor function.
-    Fields cannot be written directly.
+    If access to the fields of a <TT>struct</TT> is needed accessor functions
+    are generated.  These functions follow the standard naming conventions and
+    use the <TT>getField{FieldName}</TT> and <TT>setField{FieldName}</TT> naming
+    pattern.
+    For example the GdkColor type 
+    <PRE>
+        struct _GdkColor
+        {
+          guint32 pixel;
+          guint16 red;
+          guint16 green;
+          guint16 blue;
+        };
+    </PRE>
+    is wrapped like this:
+    <PRE>
+    structure Gdk :
+    sig
+        structure Color :
+        sig
+            (* constructors *)
+            val new : { blue : int, green : int, red : int } -> object
+            (* methods *)
+            val parse : string * object -> int
+            val getFieldRed : object -> int
+            val setFieldRed : object * int -> unit
+            val getFieldGreen : object -> int
+            val setFieldGreen : object * int -> unit
+            val getFieldBlue : object -> int
+            val setFieldBlue : object * int -> unit
+        end
+    end
+    </PRE>
+    Notice that for <TT>struct</TT>s which do not have a creation function
+    a function <TT>new</TT> is generated which takes the initial values of the
+    fields in a record. Also notice that internal fields of a <TT>struct</TT> are
+    not wrapped.
   </P>
   <P><B>Constants.</B>
-    The members of enumerations and flags are translated to constants
-    exported with all upper case names containing underscores, with the
-    module prefix cut off.
+    As explained above enumeration and flag types are translated into <TT>datatype</TT>s and
+    lists over <TT>datatype</TT>s.
   </P>
 
 <?php subsection("Types", "Types"); ?>
@@ -300,15 +434,14 @@ You will find these functions as part of the <TT>Gtk</TT> structure:
     <TR><TD><TT>gint</TT>, <TT>guint</TT>,
             <TT>glong</TT>, <TT>gulong</TT><Td><TT>int</TT>
     <TR><TD><TT>gboolean</TT><Td><TT>bool</TT>
-    <TR><TD><TT>gchar</TT>, <TT>guchar</TT><Td><TT>int</TT>
+    <TR><TD><TT>gchar</TT>, <TT>guchar</TT><Td><TT>char</TT>
     <TR><TD><TT>gfloat</TT>, <TT>gdouble</TT><Td><TT>real</TT>
-    <TR><Td>enumerations, flags<Td><TT>int</TT>
+    <TR><Td>enumerations, flags<Td>distinct <TT>datatype</TT>s
     <TR><TD><TT>gchar*</TT>, <TT>guchar*</TT><Td><TT>string</TT>
     <TR><TD><TT>gchar*[]</TT>, <TT>guchar*[]</TT>
     <Td><TT>string list</TT>
-    <TR><TD><TT>GdkEvent*</TT><Td><TT>Gtk.object</TT>
+    <TR><TD><TT>GdkEvent*</TT><Td><TT>Gdk.event</TT>
     <TR><TD><TT>GList*</TT><Td><TT>Gtk.object list</TT>
-    <TR><TD><TT>double[4]</TT><Td><TT>real list</TT>
     <TR><TD>all other pointers (i.e., <TT>GtkWidget*</TT>)
     <Td><TT>Gtk.object</TT>
   </TABLE>
@@ -317,20 +450,13 @@ You will find these functions as part of the <TT>Gtk</TT> structure:
     Values are converted back and forth transparently, preserving identity
     whenever possible.
   </P>
-  <P><B>Flags.</B>
-    Flags are translated to enumeration datypes, together with conversion
-    functions from and to integer, respectively.
-  </P>
   <P><B>Inout Arguments.</B>
     The <TT>int*</TT> and <TT>double*</TT>
     types are considered to be <EM>inout</EM> arguments.
-    A function that uses inout arguments,  is available in two flavors,
-    namely a pure out version with default in arguments and a real inout version.
-    The first is denoted by the plain function name, whereas the latter is
-    denoted by name'. For example, the function
-    <TT>void gtk_widget_get_size_request(GtkWidget *,int *, int *)</TT> is
-    available as <TT>val widgetGetSizeRequest : object -> int * int</TT> and
-    <TT>val widgetGetSizeRequest : object * int * int -> int * int</TT>.
+    For example the the function
+    <TT>void gtk_widget_get_size_request(GtkWidget *,int *, int *)</TT> 
+    wrapped as
+    <TT>val getSizeRequest : object * int * int -> int * int</TT>.
   <P><B>Gdk Events.</B>
     The records carried by constructors of the <TT>Gdk.event</TT> type
     represent the structs contained in the <TT>GdkEvent</TT> union.

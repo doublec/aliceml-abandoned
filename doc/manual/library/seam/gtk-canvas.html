@@ -18,9 +18,13 @@
  </P>
 
  <P>See also:
+   <A href="glib.html"><TT>GLib</TT></A>
+   <A href="pango.html"><TT>Pango</TT></A>
+   <A href="atk.html"><TT>Atk</TT></A>,
+   <A href="gdk.html"><TT>Gdk</TT></A>,
    <A href="gtk.html"><TT>Gtk</TT></A>,
-   <A href="gdk.html"><TT>Gdk</TT></A>
- </P>
+   <A href="libglade.html"><TT>Glade</TT></A>
+</P>
 
   <?php section("import", "import"); ?>
 
@@ -33,238 +37,394 @@
 
   <PRE>
 signature CANVAS =
-   sig
-      type object = Gtk.object
-      datatype event =
-         EVENT_2BUTTON_PRESS of
-            {button : int, device : object, send : bool, state : int,
-             time : int, window : object, x : real, x_root : real, y : real,
-             y_root : real} |
-         EVENT_3BUTTON_PRESS of
-            {button : int, device : object, send : bool, state : int,
-             time : int, window : object, x : real, x_root : real, y : real,
-             y_root : real} |
-         EVENT_BUTTON_PRESS of
-            {button : int, device : object, send : bool, state : int,
-             time : int, window : object, x : real, x_root : real, y : real,
-             y_root : real} |
-         EVENT_BUTTON_RELEASE of
-            {button : int, device : object, send : bool, state : int,
-             time : int, window : object, x : real, x_root : real, y : real,
-             y_root : real} | EVENT_CLIENT_EVENT |
-         EVENT_CONFIGURE of
-            {height : int, send : bool, width : int, window : object, x : int,
-             y : int} | EVENT_DELETE | EVENT_DESTROY | EVENT_DRAG_ENTER |
-         EVENT_DRAG_LEAVE | EVENT_DRAG_MOTION | EVENT_DRAG_STATUS |
-         EVENT_DROP_FINISHED | EVENT_DROP_START |
-         EVENT_ENTER_NOTIFY of
-            {detail : int, focus : bool, mode : int, send : bool, state : int,
-             subwindow : object, time : int, window : object, x : real,
-             x_root : real, y : real, y_root : real} |
-         EVENT_EXPOSE of
-            {area_height : int, area_width : int, area_x : int, area_y : int,
-             count : int, region : object, send : bool, window : object} |
-         EVENT_FOCUS_CHANGE of {hasFocus : bool, send : bool, window : object} |
-         EVENT_KEY_PRESS of
-            {group : int, hardware_keycode : int, keyval : int, length : int,
-             send : bool, state : int, string : string, time : int,
-             window : object} |
-         EVENT_KEY_RELEASE of
-            {group : int, hardware_keycode : int, keyval : int, length : int,
-             send : bool, state : int, string : string, time : int,
-             window : object} |
-         EVENT_LEAVE_NOTIFY of
-            {detail : int, focus : bool, mode : int, send : bool, state : int,
-             subwindow : object, time : int, window : object, x : real,
-             x_root : real, y : real, y_root : real} | EVENT_MAP |
-         EVENT_MOTION_NOTIFY of
-            {device : object, is_hint : int, send : bool, state : int,
-             time : int, window : object, x : real, x_root : real, y : real,
-             y_root : real} | EVENT_NOTHING |
-         EVENT_NO_EXPOSE of {send : bool, window : object} |
-         EVENT_PROPERTY_NOTIFY | EVENT_PROXIMITY_IN | EVENT_PROXIMITY_OUT |
-         EVENT_SCROLL of
-            {device : object, direction : int, send : bool, state : int,
-             time : int, window : object, x : real, x_root : real, y : real,
-             y_root : real} | EVENT_SELECTION_CLEAR | EVENT_SELECTION_NOTIFY |
-         EVENT_SELECTION_REQUEST | EVENT_SETTING | EVENT_UNMAP |
-         EVENT_UNSUPPORTED of object |
-         EVENT_VISIBILITY_NOTIFY of
-            {send : bool, state : int, window : object} | EVENT_WINDOW_STATE
-      datatype arg =
-         BOOL of bool | EVENT of event | INT of int | LIST of object list |
-         OBJECT of object | REAL of real | STRING of string
-      val NULL : object
-      val TRUE : int
-      val FALSE : int
-      type callback_function = object * arg list -> unit
-      val signalConnect : object * string * callback_function -> int
-      val signalConnectAfter : object * string * callback_function -> int
-      val signalDisconnect : object * int -> unit
-      val signalHandlerBlock : object * int -> unit
-      val signalHandlerUnblock : object * int -> unit
-      val latin1ToUtf8 : string -> string
-      val utf8ToLatin1 : string -> string
-      val lock : Lock.lock
-      val itemGetType : unit -> int
-      val itemConstruct :
-         Gtk.object * Gtk.object * string * Core.arg list -> unit
-      val itemSet : Gtk.object * string * Core.arg -> unit
-      val itemSetValist : Gtk.object * string * Core.arg list -> unit
-      val itemMove : Gtk.object * real * real -> unit
-      val itemAffineRelative : Gtk.object * real vector -> unit
-      val itemAffineAbsolute : Gtk.object * real vector -> unit
-      val itemRaise : Gtk.object * int -> unit
-      val itemLower : Gtk.object * int -> unit
-      val itemRaiseToTop : Gtk.object -> unit
-      val itemLowerToBottom : Gtk.object -> unit
-      val itemShow : Gtk.object -> unit
-      val itemHide : Gtk.object -> unit
-      val itemGrab : Gtk.object * int * Gtk.object * int -> int
-      val itemUngrab : Gtk.object * int -> unit
-      val itemW2i : Gtk.object -> real * real
-      val itemW2i' : Gtk.object * real * real -> real * real
-      val itemI2w : Gtk.object -> real * real
-      val itemI2w' : Gtk.object * real * real -> real * real
-      val itemI2wAffine : Gtk.object * real vector -> unit
-      val itemI2cAffine : Gtk.object * real vector -> unit
-      val itemReparent : Gtk.object * Gtk.object -> unit
-      val itemGrabFocus : Gtk.object -> unit
-      val itemGetBounds : Gtk.object -> real * real * real * real
-      val itemGetBounds' :
-         Gtk.object * real * real * real * real -> real * real * real * real
-      val itemRequestUpdate : Gtk.object -> unit
-      val canvasGroupGetFieldItemList : Gtk.object -> Gtk.object list
-      val canvasGroupSetFieldItemList : Gtk.object * Gtk.object list -> unit
-      val groupGetType : unit -> int
-      val getType : unit -> int
-      val new : unit -> Gtk.object
-      val newAa : unit -> Gtk.object
-      val root : Gtk.object -> Gtk.object
-      val setScrollRegion : Gtk.object * real * real * real * real -> unit
-      val getScrollRegion : Gtk.object -> real * real * real * real
-      val getScrollRegion' :
-         Gtk.object * real * real * real * real -> real * real * real * real
-      val setCenterScrollRegion : Gtk.object * bool -> unit
-      val getCenterScrollRegion : Gtk.object -> bool
-      val setPixelsPerUnit : Gtk.object * real -> unit
-      val scrollTo : Gtk.object * int * int -> unit
-      val getScrollOffsets : Gtk.object -> int * int
-      val getScrollOffsets' : Gtk.object * int * int -> int * int
-      val updateNow : Gtk.object -> unit
-      val getItemAt : Gtk.object * real * real -> Gtk.object
-      val requestRedrawUta : Gtk.object * Gtk.object -> unit
-      val requestRedraw : Gtk.object * int * int * int * int -> unit
-      val w2cAffine : Gtk.object * real vector -> unit
-      val w2c : Gtk.object * real * real -> int * int
-      val w2c' : Gtk.object * real * real * int * int -> int * int
-      val w2cD : Gtk.object * real * real -> real * real
-      val w2cD' : Gtk.object * real * real * real * real -> real * real
-      val c2w : Gtk.object * int * int -> real * real
-      val c2w' : Gtk.object * int * int * real * real -> real * real
-      val windowToWorld : Gtk.object * real * real -> real * real
-      val windowToWorld' : Gtk.object * real * real * real * real -> real * real
-      val worldToWindow : Gtk.object * real * real -> real * real
-      val worldToWindow' : Gtk.object * real * real * real * real -> real * real
-      val getColor : Gtk.object * string * Gtk.object -> int
-      val getColorPixel : Gtk.object * int -> int
-      val setStippleOrigin : Gtk.object * Gtk.object -> unit
-      val setDither : Gtk.object * GdkRgbDither -> unit
-      val getDither : Gtk.object -> GdkRgbDither
-      val lineGetType : unit -> int
-      val textGetType : unit -> int
-      val richTextGetType : unit -> int
-      val richTextCutClipboard : Gtk.object -> unit
-      val richTextCopyClipboard : Gtk.object -> unit
-      val richTextPasteClipboard : Gtk.object -> unit
-      val richTextSetBuffer : Gtk.object * Gtk.object -> unit
-      val richTextGetBuffer : Gtk.object -> Gtk.object
-      val richTextGetIterLocation : Gtk.object * Gtk.object * Gtk.object -> unit
-      val richTextGetIterAtLocation :
-         Gtk.object * Gtk.object * int * int -> unit
-      val pathDefNew : unit -> Gtk.object
-      val pathDefNewSized : int -> Gtk.object
-      val pathDefNewFromBpath : Gtk.object -> Gtk.object
-      val pathDefNewFromStaticBpath : Gtk.object -> Gtk.object
-      val pathDefNewFromForeignBpath : Gtk.object -> Gtk.object
-      val pathDefRef : Gtk.object -> unit
-      val pathDefFinish : Gtk.object -> unit
-      val pathDefEnsureSpace : Gtk.object * int -> unit
-      val pathDefCopy : Gtk.object * Gtk.object -> unit
-      val pathDefDuplicate : Gtk.object -> Gtk.object
-      val pathDefConcat : Gtk.object list -> Gtk.object
-      val pathDefSplit : Gtk.object -> Gtk.object list
-      val pathDefOpenParts : Gtk.object -> Gtk.object
-      val pathDefClosedParts : Gtk.object -> Gtk.object
-      val pathDefCloseAll : Gtk.object -> Gtk.object
-      val pathDefUnref : Gtk.object -> unit
-      val pathDefReset : Gtk.object -> unit
-      val pathDefMoveto : Gtk.object * real * real -> unit
-      val pathDefLineto : Gtk.object * real * real -> unit
-      val pathDefLinetoMoving : Gtk.object * real * real -> unit
-      val pathDefCurveto :
-         Gtk.object * real * real * real * real * real * real -> unit
-      val pathDefClosepath : Gtk.object -> unit
-      val pathDefClosepathCurrent : Gtk.object -> unit
-      val pathDefBpath : Gtk.object -> Gtk.object
-      val pathDefLength : Gtk.object -> int
-      val pathDefIsEmpty : Gtk.object -> bool
-      val pathDefHasCurrentpoint : Gtk.object -> bool
-      val pathDefCurrentpoint : Gtk.object * Gtk.object -> unit
-      val pathDefLastBpath : Gtk.object -> Gtk.object
-      val pathDefFirstBpath : Gtk.object -> Gtk.object
-      val pathDefAnyOpen : Gtk.object -> bool
-      val pathDefAllOpen : Gtk.object -> bool
-      val pathDefAnyClosed : Gtk.object -> bool
-      val pathDefAllClosed : Gtk.object -> bool
-      val shapeSetPathDef : Gtk.object * Gtk.object -> unit
-      val shapeGetPathDef : Gtk.object -> Gtk.object
-      val shapeGetType : unit -> int
-      val polygonGetType : unit -> int
-      val pixbufGetType : unit -> int
-      val widgetGetType : unit -> int
-      val reGetType : unit -> int
-      val rectGetType : unit -> int
-      val ellipseGetType : unit -> int
-      val bpathGetType : unit -> int
-      val pointsNew : int -> Gtk.object
-      val pointsRef : Gtk.object -> Gtk.object
-      val pointsFree : Gtk.object -> unit
-      val getMiterPoints :
-         real * real * real * real * real * real * real ->
-            int * real * real * real * real
-      val getMiterPoints' :
-         real * real * real * real * real * real * real * real * real * real *
-            real -> int * real * real * real * real
-      val getButtPoints :
-         real * real * real * real * real * int -> real * real * real * real
-      val getButtPoints' :
-         real * real * real * real * real * int * real * real * real * real ->
-            real * real * real * real
-      val polygonToPoint : int * real * real -> real * real
-      val polygonToPoint' : real * int * real * real -> real * real
-      val renderSvp : Gtk.object * Gtk.object * int -> unit
-      val updateSvp : Gtk.object * Gtk.object -> Gtk.object
-      val updateSvp' : Gtk.object * Gtk.object * Gtk.object -> Gtk.object
-      val updateSvpClip : Gtk.object * Gtk.object * Gtk.object -> Gtk.object
-      val updateSvpClip' :
-         Gtk.object * Gtk.object * Gtk.object * Gtk.object -> Gtk.object
-      val itemResetBounds : Gtk.object -> unit
-      val itemUpdateSvp : Gtk.object * Gtk.object -> Gtk.object
-      val itemUpdateSvp' : Gtk.object * Gtk.object * Gtk.object -> Gtk.object
-      val itemUpdateSvpClip : Gtk.object * Gtk.object * Gtk.object -> Gtk.object
-      val itemUpdateSvpClip' :
-         Gtk.object * Gtk.object * Gtk.object * Gtk.object -> Gtk.object
-      val itemRequestRedrawSvp : Gtk.object * Gtk.object -> unit
-      val updateBbox : Gtk.object * int * int * int * int -> unit
-      val bufEnsureBuf : Gtk.object -> unit
-      val pointsGetType : unit -> int
-      val pointsSetCoords : Gtk.object * int * int -> unit
-      val itemNew : Gtk.object * int -> Gtk.object
-      val setBackgroundColor : Gtk.object * Gtk.object -> unit
-      val itemCreate : object * int * (string * arg) list -> object
-      val makePoints : int list -> object
-   end
+sig
+    type object = Core.object
+    type gtype = Core.gtype
+    type gvalue = Core.gvalue
+    type prop   = Core.prop
+    type prop_initializer = Core.prop_initializer
+(* begin of CORE-sig.aml *)
+
+
+    datatype event =
+	EVENT_NOTHING
+      | EVENT_DELETE
+      | EVENT_DESTROY
+      | EVENT_EXPOSE of 
+	{window:object, send:bool, 
+	 area_x:int, area_y:int, area_height:int, area_width:int,
+	 region:object, count:int}
+      | EVENT_MOTION_NOTIFY of
+	{window:object, send:bool, time:int,
+	 x:real, y:real,
+	 state:int, is_hint:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_2BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_3BUTTON_PRESS of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_BUTTON_RELEASE of
+	{window:object, send:bool, time:int,
+	 x:real, y:real, state:int, button:int,
+	 device: object, x_root:real, y_root:real}
+      | EVENT_KEY_PRESS of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_KEY_RELEASE of
+	{window:object, send:bool, time:int, state:int,
+	 keyval:int, length:int, string:string, 
+	 hardware_keycode:int, group:int}
+      | EVENT_ENTER_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_LEAVE_NOTIFY of
+	{window:object, send:bool, subwindow:object, time:int,
+	 x:real, y:real, x_root:real, y_root:real,
+	 mode:int, detail:int, focus:bool, state:int}
+      | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+      | EVENT_CONFIGURE of
+	{window:object, send:bool, x:int, y:int,
+ 	 width:int, height:int}
+      | EVENT_MAP
+      | EVENT_UNMAP
+      | EVENT_PROPERTY_NOTIFY
+      | EVENT_SELECTION_CLEAR
+      | EVENT_SELECTION_REQUEST
+      | EVENT_SELECTION_NOTIFY
+      | EVENT_PROXIMITY_IN
+      | EVENT_PROXIMITY_OUT
+      | EVENT_DRAG_ENTER
+      | EVENT_DRAG_LEAVE
+      | EVENT_DRAG_MOTION
+      | EVENT_DRAG_STATUS
+      | EVENT_DROP_START
+      | EVENT_DROP_FINISHED
+      | EVENT_CLIENT_EVENT
+      | EVENT_VISIBILITY_NOTIFY of
+	{window:object, send:bool, state:int}
+      | EVENT_NO_EXPOSE of {window:object, send:bool}
+      | EVENT_SCROLL of
+	{window:object, send:bool, time:int, x:real, y:real,
+	 state:int, direction:int, device:object,
+	 x_root:real, y_root:real}
+      | EVENT_WINDOW_STATE
+      | EVENT_SETTING
+      | EVENT_UNSUPPORTED of object
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+      | EVENT of event
+
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+
+    type callback_function = object * arg list -> unit
+    val signalConnect        : object * string * callback_function -> int
+    val signalConnectAfter   : object * string * callback_function -> int
+    val signalDisconnect     : object * int -> unit
+    val signalHandlerBlock   : object * int -> unit
+    val signalHandlerUnblock : object * int -> unit
+
+    val latin1ToUtf8 : string -> string
+    val utf8ToLatin1 : string -> string
+
+    val lock : Lock.lock
+
+
+    structure Types :
+    sig
+        val string : gtype
+        val int    : gtype
+        val float  : gtype
+        val double : gtype
+        val pixbuf : gtype
+    end
+
+    structure Value :
+    sig
+        (* exception TypeError *)
+
+        val undefined : unit -> gvalue
+
+        val int : int -> gvalue
+        val enum : int * gtype -> gvalue
+        val string : string -> gvalue
+        val float : real -> gvalue
+        val double : real -> gvalue
+        val bool : bool -> gvalue
+        val object : object -> gvalue
+            
+        val toInt : gvalue -> int
+        val toString : gvalue -> string
+        val toReal : gvalue -> real
+        val toBool : gvalue -> bool
+        val toObject : gvalue -> object
+
+        val getType : gvalue -> gtype
+    end
+
+    structure Prop :
+    sig
+        val setL : object -> prop_initializer list -> unit
+
+        val set : 'a prop -> object * 'a -> unit
+        val get : 'a prop -> object -> 'a 
+
+        val rawSet : object * string * gvalue -> unit
+        val rawGet : object * string -> gvalue
+
+        val name : 'a prop -> string
+
+        val prop : 'a prop * 'a -> prop_initializer
+
+        (* creation *)
+        val newProp : string * ('a -> gvalue) * (gvalue -> 'a) -> 'a prop
+    end
+(* end of CORE-sig.aml *)
+
+    structure Points :
+    sig
+        (* constructors *)
+        val new : int -> object
+        (* methods *)
+        val set : object * int * real -> unit
+    end
+    structure CanvasPathDef :
+    sig
+        (* constructors *)
+        (* methods *)
+        val new : unit -> object
+    end
+    structure Widget :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Text :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+        val yOffset : real prop
+        val y : real prop
+        val xOffset : real prop
+        val x : real prop
+        val weightSet : bool prop
+        val weight : int prop
+        val variantSet : bool prop
+        val variant : Pango.Variant.t prop
+        val underlineSet : bool prop
+        val underline : Pango.Underline.t prop
+        val textWidth : real prop
+        val textHeight : real prop
+        val text : string prop
+        val styleSet : bool prop
+        val style : Pango.Style.t prop
+        val strikethroughSet : bool prop
+        val strikethrough : bool prop
+        val stretchSet : bool prop
+        val stretch : Pango.Stretch.t prop
+        val sizeSet : bool prop
+        val sizePoints : real prop
+        val size : int prop
+        val scaleSet : bool prop
+        val scale : real prop
+        val riseSet : bool prop
+        val rise : int prop
+        val markup : string prop
+        val justification : Gtk.Justification.t prop
+        val fontDesc : object prop
+        val font : string prop
+        val fillStipple : object prop
+        val fillColorGdk : object prop
+        val fillColor : string prop
+        val familySet : bool prop
+        val family : string prop
+        val clipWidth : int prop
+        val clipHeight : int prop
+        val clip : bool prop
+        val attributes : object prop
+        val anchor : Gtk.AnchorType.t prop
+    end
+    structure Bpath :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+    end
+    structure Polygon :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Ellipse :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Rect :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure RE :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+        val y2 : real prop
+        val y1 : real prop
+        val x2 : real prop
+        val x1 : real prop
+    end
+    structure Shape :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+        val wind : int prop
+        val widthUnits : real prop
+        val widthPixels : int prop
+        val outlineStipple : object prop
+        val outlineColorGdk : object prop
+        val outlineColor : string prop
+        val miterlimit : real prop
+        val joinStyle : Gdk.JoinStyle.t prop
+        val fillStipple : object prop
+        val fillColor : string prop
+        val fillColorGdk : object prop
+        val capStyle : Gdk.CapStyle.t prop
+    end
+    structure RichText :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Pixbuf :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+    end
+    structure Line :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getType : unit -> gtype
+        (* properties *)
+        val points : ((real * real) list) prop
+        val widthUnits : real prop
+        val widthPixels : int prop
+        val splineSteps : int prop
+        val smooth : bool prop
+        val capStyle : Gdk.CapStyle.t prop
+        val lineStyle : Gdk.LineStyle.t prop
+        val joinStyle : Gdk.JoinStyle.t prop
+        val lastArrowhead : bool prop
+        val firstArrowhead : bool prop
+        val fillStipple : object prop
+        val fillColor : string prop
+        val fillColorGdk : object prop
+        val arrowShapeC : real prop
+        val arrowShapeB : real prop
+        val arrowShapeA : real prop
+    end
+    structure Clipgroup :
+    sig
+        (* constructors *)
+        (* methods *)
+        (* properties *)
+    end
+    structure Group :
+    sig
+        (* constructors *)
+        val new : { item_list : object list } -> object
+        (* methods *)
+        val getType : unit -> gtype
+        val add : object * gtype * string -> object
+        val newItem : object * gtype -> object
+        val getFieldItemList : object -> object list
+        val setFieldItemList : object * (object list) -> unit
+        (* properties *)
+        val y : real prop
+        val x : real prop
+    end
+    structure Item :
+    sig
+        (* constructors *)
+        (* methods *)
+        val getBounds : object * real * real * real * real -> real * real * real * real
+        val grabFocus : object -> unit
+        val reparent : object * object -> unit
+        val i2cAffine : object * (real vector) -> unit
+        val i2wAffine : object * (real vector) -> unit
+        val i2w : object * real * real -> real * real
+        val w2i : object * real * real -> real * real
+        val hide : object -> unit
+        val show : object -> unit
+        val lowerToBottom : object -> unit
+        val raiseToTop : object -> unit
+        val lowerWindow : object * int -> unit
+        val raiseWindow : object * int -> unit
+        val affineAbsolute : object * (real vector) -> unit
+        val affineRelative : object * (real vector) -> unit
+        val move : object * real * real -> unit
+        val set : object * string -> unit
+        val getType : unit -> gtype
+        (* properties *)
+        val parent : object prop
+    end
+    val newAa : unit -> object
+    val new : unit -> object
+    val getDither : object -> Gdk.RgbDither.t
+    val setDither : object * Gdk.RgbDither.t -> unit
+    val getColorPixel : object * int -> int
+    val getColor : object * string * object -> int
+    val worldToWindow : object * real * real * real * real -> real * real
+    val windowToWorld : object * real * real * real * real -> real * real
+    val c2w : object * int * int * real * real -> real * real
+    val w2cD : object * real * real * real * real -> real * real
+    val w2c : object * real * real * int * int -> int * int
+    val w2cAffine : object * (real vector) -> unit
+    val getItemAt : object * real * real -> object
+    val updateNow : object -> unit
+    val getScrollOffsets : object * int * int -> int * int
+    val scrollTo : object * int * int -> unit
+    val getScrollRegion : object * real * real * real * real -> real * real * real * real
+    val setScrollRegion : object * real * real * real * real -> unit
+    val setCenterScrollRegion : object * bool -> unit
+    val setPixelsPerUnit : object * real -> unit
+    val root : object -> object
+    val getType : unit -> gtype
+end
 </PRE>
 
   <?php section("description", "description"); ?>
