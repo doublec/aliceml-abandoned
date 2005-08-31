@@ -593,7 +593,10 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
           AC_MSG_RESULT(no)
         fi
       else
-        AC_MSG_ERROR(cannot find GNU lightning)
+        have_lightning=no
+        AC_DEFINE(HAVE_LIGHTNING, 0)
+        AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=0)
+        AC_MSG_RESULT(no)
       fi
       AC_CHECK_SIZEOF(long)
    else
