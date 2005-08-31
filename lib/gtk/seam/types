@@ -224,13 +224,13 @@
 
 (type-wrapper "GSList*" "object list"   
     (c-type "GSList*")
-    (in-code "GSList *$1 = alice_list_to_gslist($0);")
-    (out-code "word $1 = gslist_to_alice_list($0);"))
+    (in-code "DECLARE_GSLIST($1, $0, DECLARE_OBJECT);")
+    (out-code "word $1 = GSLIST_OBJECT_TO_WORD($0);"))
 
 (type-wrapper "GList*" "object list"   
     (c-type "GList*")
-    (in-code "GList *$1 = alice_list_to_glist($0);")
-    (out-code "word $1  = glist_to_alice_list($0);"))
+    (in-code "DECLARE_GLIST($1, $0, DECLARE_OBJECT);")
+    (out-code "word $1  = GLIST_OBJECT_TO_WORD($0);"))
 
 (type-wrapper "gpointer" "object"
     (c-type "gpointer")
