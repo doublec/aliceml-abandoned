@@ -1,0 +1,11 @@
+?package(alice):\
+  needs="x11"\
+  section="Apps/Programming"\
+  title="Alice GUI"\
+  command="/usr/bin/alice -g"
+
+?package(alice):\
+  needs="text"\
+  section="Apps/Programming"\
+  title="Alice"\
+  command="/usr/bin/alice"
