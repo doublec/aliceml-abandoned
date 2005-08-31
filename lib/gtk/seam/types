@@ -235,6 +235,11 @@
     (out-code "word $1 = Store::IntToWord($0);")
     (in-code  "DECLARE_INT($1, $0);"))
 
+(type-wrapper "GQuark" "Word32.word"
+    (out-code "word $1 = Word32ToWord ((u_int)$0);")
+    (in-code  "DECLARE_WORD32($t1, $0); GQuark $1 = (GQuark)$t1;"))
+
+
 
 (type-wrapper "const-GValue*" "gvalue"
     (c-type "GValue*")
