@@ -45,7 +45,7 @@ struct
 
     val allMinors = #[
 	    (* 0.X *) #[],
-	    (* 1.X *) #["Debut", "Eval Your Own", "What's Your Constraint"]
+	    (* 1.X *) #["Debut", "Eval Your Own", "Boost Your G-Thing"]
 	]
     val minors = Vector.sub (allMinors, major) handle Subscript => #[]
 
