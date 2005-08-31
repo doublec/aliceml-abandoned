@@ -197,7 +197,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   Chunk *code = frame->GetCode();
 
-#if defined(THREADED) && not defined(DO_RELATIVE_JUMP)
+#if defined(THREADED) && !defined(DO_RELATIVE_JUMP)
   u_int *codeBase = (u_int *) (code->GetBase());
 #else
   ReadBuffer *codeBuffer = ReadBuffer::New(code);
