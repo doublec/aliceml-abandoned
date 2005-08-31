@@ -46,6 +46,7 @@ rm -rf %{buildroot}
 %{_bindir}/*
 %{_datadir}/applications/*
 %{_datadir}/pixmaps/*
+%{_datadir}/man/man1/*
 
 %changelog
 * Wed Apr 14 2004 Guido Tack <tack@ps.uni-sb.de>

@@ -4,11 +4,11 @@ SUBDIRS = debian
 EXTRA_DATADIR_SUBDIRS = alice/compiler alice/doc \
 	alice/lib alice/tools
 EXTRA_DATADIR_DIST = \
-	alice/alice.import alice/alicec.import \
+	alice/alicec.import \
 	applications/alice.desktop pixmaps/alice.png
 EXTRA_BINDIR_DIST = \
 	alice alicec alicedep aliceglade \
-	alicelink alicelex aliceremote aliceyacc
+	alicelink alicelex aliceyacc
 EXTRA_MANDIR_DIST = \
 	alice.1 alicec.1 alicedep.1 alicelink.1 alicerun.1
 
