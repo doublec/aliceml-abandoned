@@ -48,6 +48,7 @@ VERSION=$(shell alicetool --version 2>&1 | head -n 1  | cut -d ' ' -f 5)
 DEFS=atk-types.defs atk.defs canvas.defs gdk-types.defs gdk.defs gtk-extrafuncs.defs gtk-types.defs gtk.defs pango-types.defs pango.defs wrapper.defs types canvas-properties.defs gtk-properties.defs
 
 
+MUST_GENERATE=yes
 GENERATOR_SOURCE_TARGETS=$(GENERATOR_SOURCES:%.aml=%.alc)
 
 # non generated interface files 
@@ -68,7 +69,7 @@ INSTALLALICETARGETS =$(COMPILED_GEN_WRAPPERS_SIGS) $(COMPILED_GEN_WRAPPERS) $(CO
 INSTALLDLLTARGETS=NativeLibs.dll
 INSTALLDIR=`alice-config --alicelibdir`/gtk
 #ALICEDLL=`alice-config --alicedll`
-DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeGlade.cc NativeCore.cc NativeUtils.hh MyNativeAuthoring.hh ExtraMarshaller.hh Makefile debian
+DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeGlade.cc NativeCore.cc NativeUtils.hh MyNativeAuthoring.hh ExtraMarshaller.hh Makefile debian myinstall
 DISTDIR=alice-gtk-$(VERSION)
 
 ifeq ($(WINDOWS),1)
@@ -107,11 +108,11 @@ Key.aml:
 
 clean:
 	rm -f NativeLibs.dll
-	rm -f $(GEN_WRAPPERS_HH)
-	rm -f $(GEN_WRAPPERS_CC)
 	rm -f *.alc *.o
 
 distclean: clean
+	rm -f $(GEN_WRAPPERS_HH)
+	rm -f $(GEN_WRAPPERS_CC)
 	rm -f Makefile.depend
 
 depend:
@@ -121,9 +122,10 @@ wrappers:	$(GEN_WRAPPERS)
 
 $(GEN_WRAPPERS_SIGS):	$(GEN_WRAPPERS_SIGS_TML)
 
+ifeq "$(MUST_GENERATE)" "yes"
 $(GEN_WRAPPERS) $(GEN_WRAPPERS_SIGS_TML) $(GEN_WRAPPERS_CC) NativeLibs.tasig: Generate.alc $(DEFS)
 	alicerun Generate.alc > wrapper.log 2>&1
-
+endif
 
 compiledll:	$(DLLS)
 
@@ -151,7 +153,7 @@ distdir:
 dist:	distdir
 	tar chzf alice-gtk-$(VERSION).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
-	
+
 #### DEPENDENCIES ############################################################
 
 Core.alc: 	CORE-sig.alc NativeLibs.asig NativeLibs.dll
