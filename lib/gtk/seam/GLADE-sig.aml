@@ -1,0 +1,8 @@
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+
+signature GLADE =
+sig
+    val load :  { domain : string option, filename : string, root : string option } -> Gtk.object
+    val connect : Gtk.object * (string * Gtk.callback_function) list -> unit
+    val getWidget : Gtk.object * string -> Gtk.object
+end

@@ -6,8 +6,9 @@ word NativeAtk_CreateComponent();
 word NativeGdk_CreateComponent();
 word NativeGtk_CreateComponent();
 word NativeCanvas_CreateComponent();
+word NativeGlade_CreateComponent ();
 word InitComponent () {
-    Record *record = Record::New (7);
+    Record *record = Record::New (8);
     record->Init ("NativeCore$", NativeCore_CreateComponent());
     record->Init ("NativeGLib$", NativeGLib_CreateComponent());
     record->Init ("NativePango$", NativePango_CreateComponent());
@@ -15,5 +16,6 @@ word InitComponent () {
     record->Init ("NativeGdk$", NativeGdk_CreateComponent());
     record->Init ("NativeGtk$", NativeGtk_CreateComponent());
     record->Init ("NativeCanvas$", NativeCanvas_CreateComponent());
+    record->Init ("NativeGlade$", NativeGlade_CreateComponent());
     RETURN_STRUCTURE("NativeLibs$", record);
 }

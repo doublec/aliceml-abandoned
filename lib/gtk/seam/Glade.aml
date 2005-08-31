@@ -1,0 +1,20 @@
+import signature GLADE      from "GLADE-sig"
+import structure NativeLibs from "NativeLibs"
+
+structure Glade : GLADE =
+struct
+    val load = NativeLibs.NativeGlade.load
+    val getWidget = NativeLibs.NativeGlade.getWidget
+
+
+    fun connect' (glade, name, handler) =
+        let
+            val (connid, object) = NativeLibs.NativeGlade.connect (glade, name)
+        in
+            NativeLibs.NativeCore.signalMapAdd (connid, handler,  object)
+        end
+        
+    fun connect (glade, handlers) =
+        List.app (fn (name, handler) =>
+                    connect' (glade, name, handler)) handlers
+end
