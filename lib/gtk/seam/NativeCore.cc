@@ -582,7 +582,9 @@ word OBJECT_TO_WORD(const void *pointer, int type, GType gtype) {
       GType objectGType = Store::DirectWordToInt(object->Sel(3));
       if ((type != objectType) &&
           (objectType != TYPE_UNKNOWN) &&
-          (type != TYPE_UNKNOWN) ) {
+          (type != TYPE_UNKNOWN) &&
+          // ignore the harmless case
+          (objectType != TYPE_G_OBJECT && type != TYPE_GTK_OBJECT)) {
 	fprintf(stderr, "OBJECT_TO_WORD: type warning: old %s != new %s\n",
 		getObjectType(objectType), getObjectType(type));
 	fflush(stderr);
