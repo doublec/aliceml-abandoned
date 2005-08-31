@@ -35,7 +35,12 @@ DEFINE2(LibGlade_getWidget) {
     DECLARE_CSTRING(name, x1);
     
     GladeXML *glade = (GladeXML*)g;
-    RETURN(OBJECT_TO_WORD(glade_xml_get_widget (glade, name)));
+    GtkWidget *ob = glade_xml_get_widget (glade, name);
+    if (ob == 0) {
+        RAISE_CORE_ERROR("Glade: getWidget failed");
+    } 
+    
+    RETURN(OBJECT_TO_WORD(ob, TYPE_GTK_OBJECT));
 } END
 
 
