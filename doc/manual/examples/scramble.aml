@@ -57,20 +57,31 @@ local
     fun makeColor colormap (r, g, b) = 
 	let
 	    fun colorConv n = Real.round (65535.0 * n)
-	    val color = Gdk.colorNew (colorConv r, 
-				      colorConv g, 
-				      colorConv b)
+	    val color = Gdk.Color.new { red   = colorConv r, 
+				        green = colorConv g, 
+				        blue  = colorConv b }
 	in
-	    Gdk.colormapAllocColor (colormap, color, false, true);
+	    Gdk.Colormap.allocColor (colormap, color, false, true);
 	    color
 	end
 
     val pieceSize = 50
-    val map   = Gdk.colormapGetSystem ()
+    val map   = Gdk.Colormap.getSystem ()
     val black = makeColor map (0.0, 0.0, 0.0)
     val white = makeColor map (1.0, 1.0, 1.0)
 
+    infix 3 ::=
 
+    val op ::= = Gtk.Prop.prop
+
+    fun newItem (p, t, vals) =
+        let
+            val item = Canvas.Group.newItem (p, t)
+        in
+            Canvas.Prop.setL item vals;
+            item
+        end
+            
     (* Constructing pieces *)
 
     val spot = PIECE {num = 0, group = NONE, pos = ref (0, 0)}
@@ -81,27 +92,32 @@ local
 	    val pos = ref (x, y)
 	    val x1 = real (x * pieceSize)
 	    val y1 = real (y * pieceSize)
-	    val x2 = Real.+(x1, real pieceSize)
-	    val y2 = Real.+(y1, real pieceSize)
-	    val tx = Real.+(x1, 25.0)
-	    val ty = Real.+(y1, 25.0)
+	    val x2 = x1 + real pieceSize
+	    val y2 = y1 + real pieceSize
+	    val tx = x1 + 25.0
+	    val ty = y1 + 25.0
 	    val text  = Int.toString n
 
-	    val group = Canvas.itemCreate (parent, Canvas.groupGetType (), [("x", Gtk.REAL x1), ("y", Gtk.REAL y1)])
-	    val box   = Canvas.itemCreate (group, Canvas.rectGetType (),
-			   [("x1", Gtk.REAL 0.0),
-			    ("y1", Gtk.REAL 0.0),
-			    ("x2", Gtk.REAL (real pieceSize)),
-			    ("y2", Gtk.REAL (real pieceSize)),
-			    ("fill_color_gdk", Gtk.OBJECT color),
-			    ("outline_color_gdk", Gtk.OBJECT black),
-			    ("width_pixels", Gtk.INT 0)])
-	    val text = Canvas.itemCreate (group, Canvas.textGetType (),
-			   [("text", Gtk.STRING text),
-			    ("x", Gtk.REAL 25.0),
-			    ("y", Gtk.REAL 25.0),
-			    ("anchor", Gtk.INT (Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_CENTER)),
-			    ("fill_color_gdk", Gtk.OBJECT black)])
+	    val group = newItem (parent, Canvas.Group.getType (), [
+                                    Canvas.Group.x ::= x1,
+                                    Canvas.Group.y ::= y1
+                                ])
+	    val box   = newItem (group, Canvas.Rect.getType (), [
+			   Canvas.RE.x1                 ::= 0.0,
+                           Canvas.RE.y1                 ::= 0.0,
+                           Canvas.RE.x2                 ::= real pieceSize,
+                           Canvas.RE.y2                 ::= real pieceSize,
+                           Canvas.Shape.fillColorGdk    ::= color,
+                           Canvas.Shape.outlineColorGdk ::= black,
+                           Canvas.Shape.widthPixels     ::= 0
+                        ])
+	    val text = newItem (group, Canvas.Text.getType (), [
+                            Canvas.Text.text            ::= text,
+                            Canvas.Text.x               ::= 25.0,
+                            Canvas.Text.y               ::= 25.0,
+                            Canvas.Text.anchor          ::= Gtk.AnchorType.CENTER,
+                            Canvas.Text.fillColorGdk    ::= black
+                        ])
 	in
 	    Gtk.signalConnect (group, "event", handler (pos, text));
 	    PIECE {num = n, group = SOME group, pos}
@@ -119,12 +135,12 @@ local
 	    val r      = 255 * (w - x) div w
 	    val g      = 255 * (h - y) div h
 	    val b      = 128
-	    val color  = Gdk.colorNew (colorConv 0.0, 
-				       colorConv 0.0,
-				       colorConv 0.0)
+	    val color  = Gdk.Color.new { red   = colorConv 0.0, 
+				         green = colorConv 0.0,
+				         blue  = colorConv 0.0 }
 	    val colStr = "#" ^ toHexString r ^ toHexString g ^ toHexString b
-	    val _      = Gdk.colorParse (colStr, color) 
-	    val _      = Gdk.colormapAllocColor (map, color, false, true)
+	    val _      = Gdk.Color.parse (colStr, color) 
+	    val _      = Gdk.Colormap.allocColor (map, color, false, true)
 	in
 	    color
 	end
@@ -145,7 +161,7 @@ local
 	    pos' := (x, y);
 	    Array2.update (matrix, x, y, piece);
 	    Array2.update (matrix, x', y', spot);
-	    Canvas.itemMove (valOf group, dx, dy)
+	    Canvas.Item.move (valOf group, dx, dy)
 	end
 
 
@@ -153,21 +169,21 @@ local
 
     fun victoryNotification () =
 	let
-	    val window      = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val vbox        = Gtk.vboxNew (true, 12)
-	    val deleteEvent = fn _ => Gtk.widgetDestroy window
-	    val label       = Gtk.labelNew "Congratulations, you solved the puzzle!"
-	    val button      = Gtk.buttonNewWithLabel "OK"
+	    val window      = Gtk.Window.new Gtk.WindowType.TOPLEVEL
+	    val vbox        = Gtk.VBox.new (true, 12)
+	    val deleteEvent = fn _ => Gtk.Widget.destroy window
+	    val label       = Gtk.Label.new "Congratulations, you solved the puzzle!"
+	    val button      = Gtk.Button.newWithLabel "OK"
 	in
-	    Gtk.containerSetBorderWidth (vbox, 10);
-	    Gtk.widgetShow vbox;
-	    Gtk.boxPackStart (vbox, label, true, true, 8);
-	    Gtk.boxPackStart (vbox, button, false, false, 8);
+	    Gtk.Container.setBorderWidth (vbox, 10);
+	    Gtk.Widget.show vbox;
+	    Gtk.Box.packStart (vbox, label, true, true, 8);
+	    Gtk.Box.packStart (vbox, button, false, false, 8);
 	    Gtk.signalConnect (window, "delete-event", deleteEvent);
 	    Gtk.signalConnect (button, "clicked", deleteEvent);
-	    Gtk.windowSetTitle (window, "Scramble Notification");
-	    Gtk.containerAdd (window, vbox);
-	    Gtk.widgetShowAll window
+	    Gtk.Window.setTitle (window, "Scramble Notification");
+	    Gtk.Container.add (window, vbox);
+	    Gtk.Widget.showAll window
 	end
 
 
@@ -185,11 +201,9 @@ local
 	(fn () =>
 	 case events of
 	    Gtk.EVENT (Gtk.EVENT_ENTER_NOTIFY _) :: _ =>
-		Canvas.itemSet(text, "fill_color_gdk",
-				  Gtk.OBJECT white)
+                Canvas.Prop.set Canvas.Text.fillColorGdk (text, white)
 	  | Gtk.EVENT (Gtk.EVENT_LEAVE_NOTIFY _) :: _ =>
-		Canvas.itemSet(text, "fill_color_gdk",
-				  Gtk.OBJECT black)
+                Canvas.Prop.set Canvas.Text.fillColorGdk (text, black)
 	  | Gtk.EVENT (Gtk.EVENT_BUTTON_PRESS _) :: _ =>
 	    let
 		val (x, y)   = !spot
@@ -249,29 +263,29 @@ local
 
     fun boardWidget (w, h) =
 	let
-	    val vbox      = Gtk.vboxNew (false, 4)
- 	    val alignment = Gtk.alignmentNew (0.5, 0.5, 0.0, 0.0)
-	    val frame     = Gtk.frameNew ""
+	    val vbox      = Gtk.VBox.new (false, 4)
+ 	    val alignment = Gtk.Alignment.new (0.5, 0.5, 0.0, 0.0)
+	    val frame     = Gtk.Frame.new ""
 	    val canvas    = Canvas.new ()
 	    val board     = board (canvas, w, h)
-	    val button    = Gtk.buttonNewWithLabel "Scramble"
+	    val button    = Gtk.Button.newWithLabel "Scramble"
 	in
-	    Gtk.containerSetBorderWidth (vbox, 4);
-	    Gtk.widgetShow vbox;
-	    Gtk.boxPackStart (vbox, alignment, true, true, 0);
-	    Gtk.widgetShow alignment;
-	    Gtk.frameSetShadowType (frame, Gtk.SHADOW_IN);
-	    Gtk.containerAdd (alignment, frame);
-	    Gtk.widgetShow frame;
-	    Gtk.widgetSetUsize (canvas, w*pieceSize, h*pieceSize);
+	    Gtk.Container.setBorderWidth (vbox, 4);
+	    Gtk.Widget.show vbox;
+	    Gtk.Box.packStart (vbox, alignment, true, true, 0);
+	    Gtk.Widget.show alignment;
+	    Gtk.Frame.setShadowType (frame, Gtk.ShadowType.IN);
+	    Gtk.Container.add (alignment, frame);
+	    Gtk.Widget.show frame;
+	    Gtk.Widget.setSizeRequest (canvas, w*pieceSize, h*pieceSize);
 	    Canvas.setScrollRegion (canvas, 0.0, 0.0,
 				       real (w*pieceSize), real (h*pieceSize));
-	    Gtk.containerAdd (frame, canvas);
-	    Gtk.widgetShow canvas;
-	    Gtk.boxPackStart (vbox, button, false, false, 0);
+	    Gtk.Container.add (frame, canvas);
+	    Gtk.Widget.show canvas;
+	    Gtk.Box.packStart (vbox, button, false, false, 0);
 	    Gtk.signalConnect (button, "clicked",
 			       fn _ => serve (fn () => scramble (board, 20*w*h)));
-	    Gtk.widgetShow button;
+	    Gtk.Widget.show button;
 	    vbox
 	end
 
@@ -281,16 +295,16 @@ local
     fun main' (w, h) =
 	if w < 2 orelse h < 2 then raise Domain else
 	let
-	    val window      = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val window      = Gtk.Window.new Gtk.WindowType.TOPLEVEL
 	    val deleteEvent = fn _ => OS.Process.exit OS.Process.success
 	    val page        = boardWidget (w, h)
-	    val label       = Gtk.labelNew "Scramble"
+	    val label       = Gtk.Label.new "Scramble"
 	in
 	    Gtk.signalConnect (window, "delete-event", deleteEvent);
-	    Gtk.containerSetBorderWidth (window, 4);
-            Gtk.windowSetTitle (window, "Scramble");
-	    Gtk.containerAdd (window, page);
-	    Gtk.widgetShowAll window
+	    Gtk.Container.setBorderWidth (window, 4);
+            Gtk.Window.setTitle (window, "Scramble");
+	    Gtk.Container.add (window, page);
+	    Gtk.Widget.showAll window
 	end
 
     fun usage () =
