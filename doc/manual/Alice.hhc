@@ -113,6 +113,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Name" value="ArraySlice">
 			<param name="Local" value="library/array-slice.html">
 			</OBJECT>
+                <LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Atk">
+			<param name="Local" value="library/atk.html">
+			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="ATOM">
 			<param name="Local" value="library/atom.html">
@@ -198,6 +202,14 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/gdk.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Glade">
+			<param name="Local" value="library/libglade.html">
+			</OBJECT>
+	        <LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="GLib">
+			<param name="Local" value="library/glib.html">
+			</OBJECT>
+	        <LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Gtk">
 			<param name="Local" value="library/gtk.html">
 			</OBJECT>
@@ -332,6 +344,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Pair">
 			<param name="Local" value="library/pair.html">
+			</OBJECT>
+                <LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Pango">
+			<param name="Local" value="library/pango.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Path">
