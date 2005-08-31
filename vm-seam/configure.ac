@@ -29,8 +29,8 @@ AC_PROG_RANLIB
 AC_SEAM_CHECK_SOCKET_FLAVOR
 
 AC_ARG_WITH(gmp,
-   AC_HELP_STRING([--with-gmp],
-     [use the gmp arbitrary precision arithmetic library @<:@default=yes@:>@]))
+   AC_HELP_STRING([--with-gmp=<path>],
+     [path where the gmp arbitrary precision arithmetic library can be found]))
 
 if test "${with_gmp:-yes}" = "no"; then
    AC_MSG_ERROR([Alice/Seam depends on gmp. Please supply the correct paths.])
@@ -50,9 +50,43 @@ else
      ])
 fi
 
+AC_TRY_COMPILE([],
+[
+#if HAVE_LIGHTNING
+#else
+blub
+#endif
+], ac_seam_default_jit=native,
+   ac_seam_default_jit=no)
+
+AC_ARG_WITH(jit,
+   AC_HELP_STRING([--with-jit],
+     [which JIT compiler to use (no/bytecode/native)]))
+
+AC_MSG_CHECKING(which JIT compiler to use)
+case "${with_jit:-${ac_seam_default_jit}}" in
+     no)
+     AC_SUBST(ALICE_JIT_MODE, 0)
+     AC_MSG_RESULT(no)
+     ;;
+     native)
+     if test "${ac_seam_default_jit}" == "no"; then
+        AC_MSG_ERROR(
+          [Native JIT compiler not supported without lightning library.])
+     else
+        AC_SUBST(ALICE_JIT_MODE, 1)
+        AC_MSG_RESULT(native)
+     fi
+     ;;
+     bytecode)
+     AC_SUBST(ALICE_JIT_MODE, 2)
+     AC_MSG_RESULT(bytecode)
+     ;;
+esac
 
 # checks for header files
 
+AC_SEAM_CHECK_CXXFLAGS([-fPIC])
 AC_PATH_SEAM
 
 # checks for types

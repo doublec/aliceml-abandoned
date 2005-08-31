@@ -38,6 +38,7 @@ abs_path () {
 }
 
 : ${ALICE_HOME:="$pkgdatadir"}
+: ${ALICE_JIT_MODE:=@ALICE_JIT_MODE@}
 
 ALICE_HOME=$(abs_path "$ALICE_HOME")
 
@@ -72,7 +73,7 @@ then
 fi
 
 
-export ALICE_HOME ALICE_LOAD
+export ALICE_HOME ALICE_LOAD ALICE_JIT_MODE
 
 case ${ALICE_C_DEBUGGER} in
     gdb*)
