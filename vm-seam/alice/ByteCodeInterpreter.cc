@@ -36,8 +36,7 @@ using namespace ByteCodeInstr;
 #define SETPC(x) PC = ((CodeSlot *)code->GetBase()) + x
 #define SAVEPC(PC) {							\
     u_int offset = (u_int)(((u_int)PC) - ((u_int)(code->GetBase())));	\
-    Assert(CODE_SLOT_SIZE == 4);					\
-    frame->SavePC(offset>>2);						\
+    frame->SavePC(offset / sizeof(u_int));				\
 }
 #define LOADSTATE(PC,CP,IP) {			\
     SETPC(frame->GetPC());			\
@@ -47,9 +46,8 @@ using namespace ByteCodeInstr;
 #else
 #define SETPC(x) PC = codeBase + x
 #define SAVEPC(PC) {						\
-    u_int offset = (u_int)(((u_int)PC) - ((u_int)codeBase)); \
-    Assert(CODE_SLOT_SIZE == 4);				\
-    frame->SavePC(offset>>2);					\
+    u_int offset = (u_int)(((u_int)PC) - ((u_int)codeBase));	\
+    frame->SavePC(offset / sizeof(u_int));			\
 }
 #define LOADSTATE(PC,CP,IP) {			\
     codeBase = (u_int *) code->GetBase();	\
