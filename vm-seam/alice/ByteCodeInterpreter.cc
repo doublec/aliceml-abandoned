@@ -12,6 +12,7 @@
 
 #if defined(INTERFACE)
 #pragma implementation "alice/ByteCodeInterpreter.hh"
+#pragma implementation "alice/ByteCodeFrame.hh"
 #endif
 
 #include "alice/ByteCodeInterpreter.hh"
