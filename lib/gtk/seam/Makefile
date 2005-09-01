@@ -52,7 +52,8 @@ MUST_GENERATE=yes
 GENERATOR_SOURCE_TARGETS=$(GENERATOR_SOURCES:%.aml=%.alc)
 
 # non generated interface files 
-COMPILED_NON_GEN_WRAPPERS=CORE-sig.alc Core.alc Key.alc Glade.alc
+COMPILED_NON_GEN_WRAPPERS=CORE-sig.alc Core.alc Key.alc  
+#Glade.alc
 
 # generated files
 GEN_WRAPPERS_CC=$(GEN_WRAPPERS:%.aml=Native%.cc) NativeLibs.cc
@@ -63,13 +64,14 @@ COMPILED_GEN_WRAPPERS=$(GEN_WRAPPERS:%.aml=%.alc)
 COMPILED_GEN_WRAPPERS_SIGS=$(GEN_WRAPPERS_SIGS:%.aml=%.alc)
 
 # compiled c object files
-WRAPPER_OBJECT_FILES=$(GEN_WRAPPERS_CC:%.cc=%.o) NativeGlade.o NativeCore.o
+WRAPPER_OBJECT_FILES=$(GEN_WRAPPERS_CC:%.cc=%.o) NativeCore.o
+# NativeGlade.o
 
 INSTALLALICETARGETS =$(COMPILED_GEN_WRAPPERS_SIGS) $(COMPILED_GEN_WRAPPERS) $(COMPILED_NON_GEN_WRAPPERS)
 INSTALLDLLTARGETS=NativeLibs.dll
 INSTALLDIR=`alice-config --alicelibdir`/gtk
 #ALICEDLL=`alice-config --alicedll`
-DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeGlade.cc NativeCore.cc NativeUtils.hh MyNativeAuthoring.hh ExtraMarshaller.hh Makefile debian myinstall
+DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeCore.cc NativeUtils.hh MyNativeAuthoring.hh ExtraMarshaller.hh Makefile debian myinstall
 DISTDIR=alice-gtk-$(VERSION)
 
 ifeq ($(WINDOWS),1)
@@ -78,21 +80,21 @@ else
     CC_OPTS=
 endif
 
-PC_OPTS=gtk+-2.0 glib-2.0 libgnomecanvas-2.0 libglade-2.0
+PC_OPTS=gtk+-2.0 glib-2.0 libgnomecanvas-2.0
 
 .PHONY: clean all wrappers installdll installalice compiledll compilealice
 
 all: installalice installdll 
 
-NativeLibs.asig: NativeLibs.tasig NativeCore.asig NativeGlade.asig
+NativeLibs.asig: NativeLibs.tasig NativeCore.asig
 	head -n 4 $< > $@
-	cat NativeCore.asig NativeGlade.asig >> $@
+	cat NativeCore.asig >> $@
 	tail -n +5 $< >> $@
 
 %-sig.aml: %-sig.tml
 	gawk -f includesig.awk $< > $@
 
-NativeLibs.dll: NativeLibs.o NativeGlade.o NativeCanvas.o NativeGtk.o NativeGdk.o NativePango.o NativeAtk.o NativeGLib.o NativeCore.o
+NativeLibs.dll: NativeLibs.o NativeCanvas.o NativeGtk.o NativeGdk.o NativePango.o NativeAtk.o NativeGLib.o NativeCore.o
 	alicetool -v link $^ -o $@ $(CC_OPTS) \
 	`pkg-config $(PC_OPTS) --libs`
 
@@ -169,7 +171,7 @@ GTK-sig.alc:	Gdk.alc
 Gtk.alc:	GTK-sig.alc
 CANVAS-sig.alc:	Gtk.alc 
 Canvas.alc:	CANVAS-sig.alc
-GLADE-sig.alc:	Canvas.alc
-Glade.alc:	GLADE-sig.alc
+#GLADE-sig.alc:	Canvas.alc
+#Glade.alc:	GLADE-sig.alc
 
 -include Makefile.depend
