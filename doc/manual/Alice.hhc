@@ -194,12 +194,12 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/future.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="General">
-			<param name="Local" value="library/general.html">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Gdk">
 			<param name="Local" value="library/gdk.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="General">
+			<param name="Local" value="library/general.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Glade">
@@ -406,6 +406,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/search.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="SET">
+			<param name="Local" value="library/set.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Socket">
 			<param name="Local" value="library/socket.html">
 			</OBJECT>
@@ -416,6 +420,14 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="SQLite">
 			<param name="Local" value="library/sqlite.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Stack">
+			<param name="Local" value="library/stack.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="STAMP">
+			<param name="Local" value="library/stamp.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Store">
@@ -436,6 +448,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="SUBSTRING">
 			<param name="Local" value="library/substring.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="TEXT">
+			<param name="Local" value="library/text.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="TextIO">
