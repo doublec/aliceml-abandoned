@@ -15,7 +15,6 @@ PLATFORM_LIB = \
 	linear.html explorer.html \
 	glib.html pango.html atk.html \
 	gtk.html gtk-canvas.html gtk-overview.html gdk.html \
-	libglade.html \
         sf-search.html sf-path.html sf-problem.html sf-debug.html sf-distributed.html
 PLATFORM = seam
 endif

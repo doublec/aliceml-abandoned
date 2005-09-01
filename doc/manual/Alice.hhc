@@ -202,9 +202,15 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/general.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Gdk">
+			<param name="Local" value="library/gdk.html">
+			</OBJECT>
+                <!--
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Glade">
 			<param name="Local" value="library/libglade.html">
 			</OBJECT>
+                -->
 	        <LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="GLib">
 			<param name="Local" value="library/glib.html">
