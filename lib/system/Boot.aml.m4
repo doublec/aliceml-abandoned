@@ -22,10 +22,23 @@ import structure IO          from "IO"
 import structure TextIO      from "TextIO"
 import structure OS          from "OS"
 
+import structure PPValue     from "PPValue"
 import structure PPMismatch  from "../rtt/PPMismatch"
 import structure PrettyPrint from "../utility/PrettyPrint"
+import structure PervasiveType from "../rtt/PervasiveType"
 
 local
+    fun printExn (os, exn) =
+	let
+	    open PrettyPrint
+	    infix ^^
+	    val doc = text "   " ^^
+		      below (PPValue.ppVal PervasiveType.typ_exn exn)
+	in
+	    PrettyPrint.output (os, doc, 80);
+	    TextIO.output (os, "\n")
+	end
+
     val _ = OS.Process.atExn
 	    (fn packet =>
 		(TextIO.output (TextIO.stdErr, "alicerun: ");
@@ -36,9 +49,10 @@ local
 			 "assertion failure at " ^ file ^ ":" ^
 			 Int.toString line ^ "\n")
 		   | Component.Failure (url, Component.Eval exn) =>
-		     TextIO.output (TextIO.stdErr,
-			 "uncaught exception " ^ General.exnName exn ^
-			 " while evaluating " ^ Url.toStringRaw url ^ "\n")
+		     (TextIO.output (TextIO.stdErr, "uncaught exception\n");
+		      printExn (TextIO.stdErr, exn);
+		      TextIO.output (TextIO.stdErr, "while evaluating\n   " ^
+		 			Url.toStringRaw url ^ "\n"))
 		   | Component.Failure (_, Component.Mismatch
 					   {component, request, cause}) =>
 		     let
@@ -60,20 +74,22 @@ local
 		     TextIO.output (TextIO.stdErr,
 			 "failure loading " ^  Url.toStringRaw url ^ "\n")
 		   | Component.Failure (url, Component.Internal exn) =>
-		     TextIO.output (TextIO.stdErr,
-			 "internal exception " ^ General.exnName exn ^
-			 " while linking " ^ Url.toStringRaw url ^ "\n")
+		     (TextIO.output (TextIO.stdErr, "internal exception\n");
+		      printExn (TextIO.stdErr, exn);
+		      TextIO.output (TextIO.stdErr, "while linking\n   " ^
+		 			Url.toStringRaw url ^ "\n"))
 		   | Component.Failure (url, exn) =>
-		     TextIO.output (TextIO.stdErr,
-			 "unknown failure " ^ General.exnName exn ^
-			 " while linking " ^ Url.toStringRaw url ^ "\n")
+		     (TextIO.output (TextIO.stdErr, "unknown failure\n");
+		      printExn (TextIO.stdErr, exn);
+		      TextIO.output (TextIO.stdErr, "while linking\n   " ^
+		 			Url.toStringRaw url ^ "\n"))
 		   | Assert (file, line) =>
 		     TextIO.output (TextIO.stdErr,
 			 "internal assertion failure at " ^ file ^ ":" ^
 			 Int.toString line ^ "\n")
 		   | exn =>
-		     TextIO.output (TextIO.stdErr,
-			 "internal exception " ^ General.exnName exn ^ "\n");
+		     (TextIO.output (TextIO.stdErr, "internal exception\n");
+		      printExn (TextIO.stdErr, exn));
 		 TextIO.output (TextIO.stdErr, "Backtrace:\n");
 		 Exn.dumpTrace packet;
 		 OS.Process.terminate OS.Process.failure))
