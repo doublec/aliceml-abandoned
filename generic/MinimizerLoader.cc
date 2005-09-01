@@ -85,7 +85,7 @@ public:
     return STATIC_CAST(PLoaderStack *, s);
   }
 
-  void Push(word data, int edge, int parent) {
+  void Push(word data, s_int edge, s_int parent) {
     Stack::AllocArgFrame(FRAME_SIZE);
     Stack::PutFrameArg(DATA_POS, data);
     Stack::PutFrameArg(EDGE_POS, Store::IntToWord(edge));
@@ -94,11 +94,11 @@ public:
   word GetData() {
     return Stack::GetFrameArg(DATA_POS);
   }
-  int GetEdge() {
+  s_int GetEdge() {
     return Store::WordToInt(Stack::GetFrameArg(EDGE_POS));
   }
 
-  int GetParent() {
+  s_int GetParent() {
     return Store::WordToInt(Stack::GetFrameArg(PARENT_POS));
   }
   void PopTopFrame() {
@@ -207,7 +207,7 @@ Worker::Result PartitionLoaderWorker::Run(StackFrame *sFrame) {
       return Worker::REQUEST;
     }
   
-    int i = Store::WordToInt(x0);
+    u_int i = Store::WordToInt(x0);
     if (i!=INVALID_INT) {
       nps->PopTopFrame();
       continue; // we don't want to handle ints
@@ -216,12 +216,12 @@ Worker::Result PartitionLoaderWorker::Run(StackFrame *sFrame) {
 
     Block *b = Store::WordToBlock(x0);
 
-    int edge = nps->GetEdge();
-    int parent = nps->GetParent();
-    int size;
+    s_int edge = nps->GetEdge();
+    s_int parent = nps->GetParent();
+    s_int size;
     u_int oldIndex = seen->Find(b);
     if (oldIndex == PartitionSeen::NOT_FOUND) {
-      int nodeIndex = p->InsertNode(x0);
+      s_int nodeIndex = p->InsertNode(x0);
       seen->Add(b);
       // parent==-1 means that this is the root node
       if (parent!=-1) {

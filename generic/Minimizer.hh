@@ -30,10 +30,10 @@ private:
 	BLOCK_COUNT_POS, SIZE};  
 
   void InitBlocks();
-  PBlock *GetBlock(int blockNo);
+  PBlock *GetBlock(s_int blockNo);
   void InitAgenda(Stack *agenda);
-  bool splitBlockAtNode(int block, int nodeIndex);
-  void FollowBack(int block, int edge);
+  bool splitBlockAtNode(s_int block, s_int nodeIndex);
+  void FollowBack(s_int block, s_int edge);
   void DoSplits(Stack *q);
   void ReduceGraph();
 
@@ -47,8 +47,8 @@ public:
 
   static void Minimize(word root);
 
-  int InsertNode(word node);
-  void AddParent(int nodeIndex, int edge, int parent);
+  s_int InsertNode(word node);
+  void AddParent(s_int nodeIndex, s_int edge, s_int parent);
   void ResetNodeArray();
   void Minimize();
 };
