@@ -143,7 +143,7 @@ configure-gecode:
 		CC='gcc -mno-cygwin' \
 		--enable-static \
 		--disable-examples --disable-search --disable-minimodel \
-		--prefix=$(PWD)/gecode/install)
+		--prefix='$(PWD)/gecode/install')
 
 .PHONY:	rebuild-gecode
 rebuild-gecode:
@@ -170,9 +170,9 @@ configure-seam:
 		CXXFLAGS='-mcpu=pentium3 -march=pentium3' \
 		CC='gcc -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
 		CFLAGS='-mcpu=pentium3 -march=pentium3' \
-		--prefix=$(PREFIX) \
+		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
-		--with-zlib=$(PWD)/seam-support/install)
+		--with-zlib='$(PWD)/seam-support/install')
 
 .PHONY:	rebuild-seam
 rebuild-seam:
@@ -193,11 +193,12 @@ setup-alice-ll:
 
 .PHONY:	configure-alice-ll
 configure-alice-ll:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/build && \
 	 ../sources/vm-seam/configure \
-		--prefix=$(PREFIX) \
+		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
-		--with-gmp=$(PWD)/seam-support/install)
+		--with-gmp='$(PWD)/seam-support/install')
 
 .PHONY:	rebuild-alice-ll
 rebuild-alice-ll:
@@ -214,7 +215,7 @@ clean-alice-bootstrap:
 	(cd alice/sources && make distclean)
 
 .PHONY: setup-alice-bootstrap
-setgup-alice-bootstrap:
+setup-alice-bootstrap:
 	(cp alice/build/Makefile.bootstrap alice/sources/vm-seam) && \
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/sources && \
