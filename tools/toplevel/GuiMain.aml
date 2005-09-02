@@ -388,7 +388,7 @@ structure GuiMain =
 
         val evalSignal = ref NONE
 
-        fun eval (echo,withDir) "" = ()
+        fun eval (echo,withDir) "" = NONE
 	  | eval (echo,withDir) text =
             (* FIXME: race condition, use promises and Ref.exchange! *)
 	    case (!evalSignal) of NONE =>
@@ -411,6 +411,8 @@ structure GuiMain =
 			       of NONE => NONE
 				| SOME p => SOME(OS.Path.getParent p)
 					    handle OS.Path.Path => NONE
+		val p = Promise.promise()
+		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
 	    in
                 evalSignal := SOME signalP;
 		if echo then TextIO.StreamIO.output (OutputWriters.compilerIn, find(0,text))
@@ -421,9 +423,20 @@ structure GuiMain =
 		        * its own directory... *)
 		       Option.app (fn dir' => if dir' <> OS.FileSys.getDir() then ()
 					      else OS.FileSys.chDir dir) srcDir;
-		       evalSignal := NONE)
+		       let
+			   val (annotStream',entries) =
+		               BufferAnnotate.parseAnnotations annotStream
+			       handle BufferAnnotate.Malformed =>
+				   (TextIO.StreamIO.output(OutputWriters.compilerErr,
+					   "\nerror processing annotations\n");
+				    (["##\n"], #[]))
+		       in
+			   Promise.fulfill(p, annotStream'); SOME entries
+		       end
+		       before evalSignal := NONE
+		      )
 	    end
-          | SOME _ => FileDialog.message "Still evaluating."
+          | SOME _ => (FileDialog.message "Still evaluating."; NONE)
 
         fun feedFile() =
             (* FIXME: race condition, use promises and Ref.exchange! *)
@@ -435,13 +448,13 @@ structure GuiMain =
             let
                 val _ = saveFile ()
 		val file = Buffer.getFileName id
-		val p = Promise.promise()
-		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
             in
 		case file of
-                    NONE => Promise.fulfill(p, annotStream)
+                    NONE => ()
                   | SOME f =>
 		    let
+			val p = Promise.promise()
+			val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
                 	val signalP = Promise.promise()
 			val signal = Promise.future signalP
 		    in
@@ -451,13 +464,14 @@ structure GuiMain =
 			let
 			    val (annotStream',entries) =
 		        	BufferAnnotate.parseAnnotations annotStream
+			        handle BufferAnnotate.Malformed =>
+				   (TextIO.StreamIO.output(OutputWriters.compilerErr,
+					   "\nerror processing annotations\n");
+				    (["##\n"], #[]))
 			in
 			    Promise.fulfill(p, annotStream');
 			    Buffer.annotate(id, entries)
-			end handle BufferAnnotate.Malformed =>
-			    (Promise.fulfill(p, annotStream);
-			     TextIO.StreamIO.output(OutputWriters.compilerErr,
-						    "\nerror processing annotations\n"))
+			end
 		    end
             end
 (*
@@ -488,9 +502,6 @@ structure GuiMain =
                                    | SOME id =>
             let
                 val buf = Gtk.TextView.getBuffer view
-		val p = Promise.promise()
-		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
-
 		val (sel, txt, line, col) =
 		    Lock.sync Gtk.lock
 		    (fn () =>
@@ -506,17 +517,9 @@ structure GuiMain =
 		     end) ()
             in
                 if not sel then () else
-                (eval (true,true) (addSpace(line, col, Gtk.utf8ToLatin1 txt));
-		 let
-		    val (annotStream',entries) =
-		        BufferAnnotate.parseAnnotations annotStream
-		 in
-		    Promise.fulfill(p, annotStream');
-		    Buffer.annotate(id, entries)
-		 end handle BufferAnnotate.Malformed =>
-		    (Promise.fulfill(p, annotStream);
-		     TextIO.StreamIO.output(OutputWriters.compilerErr,
-					    "\nerror processing annotations\n")))
+		case eval (true,true) (addSpace(line, col, Gtk.utf8ToLatin1 txt))
+		 of NONE => ()
+		  | SOME entries => Buffer.annotate(id, entries)
             end)
            | _ => ()
 
@@ -526,9 +529,6 @@ structure GuiMain =
                                    | SOME id =>
             let
                 val buf = Gtk.TextView.getBuffer view
-		val p = Promise.promise()
-		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
-		    
 		val (startline, str) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
@@ -543,17 +543,9 @@ structure GuiMain =
 		     end) ()
                 val str = addSpace(startline, 0, Gtk.utf8ToLatin1 str)
             in
-                eval (true, true) str;
-		let
-		    val (annotStream',entries) =
-		        BufferAnnotate.parseAnnotations annotStream
-		in
-		    Promise.fulfill(p, annotStream');
-		    Buffer.annotate(id, entries)
-		end handle BufferAnnotate.Malformed =>
-		    (Promise.fulfill(p, annotStream);
-		     TextIO.StreamIO.output(OutputWriters.compilerErr,
-					    "\nerror processing annotations\n"))
+		case eval (true, true) str
+		 of NONE => ()
+		  | SOME entries => Buffer.annotate(id, entries)
             end)
            | _ => ()
 
@@ -624,9 +616,6 @@ structure GuiMain =
                                    | SOME id =>
             let
                 val buf = Gtk.TextView.getBuffer view
-		val p = Promise.promise()
-		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
-
 		val (str, line, col) = Lock.sync Gtk.lock
 		    (fn () =>
 		     let
@@ -647,17 +636,9 @@ structure GuiMain =
 
                 val str = addSpace(line, col, Gtk.utf8ToLatin1 str)
             in
-                eval (true,true) (str^"\n");
-		let
-		    val (annotStream',entries) =
-		        BufferAnnotate.parseAnnotations annotStream
-		in
-		    Promise.fulfill(p, annotStream');
-		    Buffer.annotate(id, entries)
-		end handle BufferAnnotate.Malformed =>
-		    (Promise.fulfill(p, annotStream);
-		     TextIO.StreamIO.output(OutputWriters.compilerErr,
-					    "\nerror processing annotations\n"))
+                case eval (true,true) (str^"\n")
+		 of NONE => ()
+		  | SOME entries => Buffer.annotate(id, entries)
             end)
 	  | COMPILER => OutputWriters.feedCurrentInput ()
 	  | _ => ()
@@ -672,7 +653,7 @@ structure GuiMain =
 		val annotStream = Ref.exchange(OutputWriters.annotStream, Promise.future p)
             in
                 case file of
-                    NONE => ()
+                    NONE => Promise.fulfill(p, annotStream)
                   | SOME f => Evaluator.compileFile f;
 		let
 		    val (annotStream',entries) =
@@ -941,7 +922,7 @@ structure GuiMain =
 		   * but with 1 the statusbar appears over the menu when
 		   * using an eventbox... 8-} *)
 	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
-	     OutputWriters.makeWriters (eval (false, false));
+	     OutputWriters.makeWriters (ignore o eval (false, false));
 	     History.set (Config.loadHistory());
 	     Gtk.TextView.setEditable(Gui.compilerout, false);
 	     Gtk.Window.setDefaultSize(Gui.mainwidget,

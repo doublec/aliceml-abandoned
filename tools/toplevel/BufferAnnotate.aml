@@ -13,7 +13,6 @@
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 structure BufferAnnotate =
 struct
     exception Malformed
