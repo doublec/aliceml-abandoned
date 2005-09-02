@@ -61,7 +61,7 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <UL>
   <LI>Please add
-  <PRE>deb http://www.ps.uni-sb.de/alice/download/debian testing contrib</PRE>
+  <PRE>deb http://www.ps.uni-sb.de/alice/download/debian stable contrib</PRE>
   to your <TT>/etc/apt/sources.list</TT>. You need to apt-get the
   package <TT>alice-runtime</TT>.</LI>
   <LI>Alternatively, use <TT>deb-src</TT> to retrieve and install
@@ -71,6 +71,9 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
   using the <TT>--force-depends</TT> command line option.
 </LI>
 </UL>
+
+<P><B>Note:</B> Alice packages are available for Debian AMD 64. However,
+this version does not support just-in-time native code compilation yet.</P>
 
 <P>For other Linuces:</P>
 
@@ -103,6 +106,10 @@ The fink dependencies for gtk seem to be incomplete. If you can't see
 any text e.g. in the GUI of the interactive toplevel, please install the
 package <TT>pango1-xft2</TT> manually.</LI>
 
+<P><B>Note:</B> Alice depends on Gtk 2.6, which is not yet in stable Fink.
+Installing the Alice packages will also install a package for Gtk 2.6 from our
+repository, replacing any eventual installation of older versions of Gtk.</P>
+
 <LI>
 Additionally, we provide <A HREF="download/AliceLauncher.dmg">a Mac OS X launcher
 application</A> that will start X11 and launch the
@@ -112,8 +119,7 @@ Alice system itself.
 </UL>
 
 <P><B>Note:</B> The Mac OS version currently does not contain the
-just-in-time native code compiler. It will therefore run considerably
-slower than Alice on x86.</P>
+just-in-time native code compiler.</P>
 
 <?php subsection("license", "License") ?>
 
