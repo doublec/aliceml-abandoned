@@ -44,9 +44,6 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_CHECKED],
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-inline-functions)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fimplement-inlines)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-rtti)
-      AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-ggdb,
-         AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-ggdb),
-         AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-g))
       AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DINTERFACE \
                                        -DDEBUG_CHECK \
                                        -DSTORE_DEBUG)
@@ -295,7 +292,7 @@ AC_DEFUN([AC_SEAM_SEAMTOOL_COMMANDS],
           ac_seam_tmp="${ac_seam_tmp} ${DEFAULT_INCLUDES}"
           ac_seam_tmp="${ac_seam_tmp} -I."
           ac_seam_tmp="${ac_seam_tmp} -I${includedir}/seam"
-          ac_seam_tmp="${ac_seam_tmp} ${SEAMTOOL_CFLAGS}"
+          ac_seam_tmp="${ac_seam_tmp} ${SEAMTOOL_CXXFLAGS}"
           SEAMTOOL_COMPILE_C_CMD_PREAMBLE="${ac_seam_tmp}"
           SEAMTOOL_COMPILE_C_CMD_POSTAMBLE=""
           ;;
