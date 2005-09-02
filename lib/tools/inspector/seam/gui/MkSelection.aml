@@ -2,7 +2,7 @@ import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
 import signature MAIN_WINDOW   from "MAIN_WINDOW-sig"
 import signature SELECTION     from "SELECTION-sig"
 import structure GrTypes       from "GrTypes"
-import structure Print         from "../Print"
+import structure MyPrint       from "../Print"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure Common        from "../Common"
@@ -532,7 +532,7 @@ fun selectAt (atree, x, y) =
 
 fun selectTree tree = ignore (highlight (select' tree))
 
-fun printInfo x = MainWindow.setStatus (Print.info x)
+fun printInfo x = MainWindow.setStatus (MyPrint.info x)
 
 fun infoAt (atree, x, y, false) = printInfo (find (atree, x, y))
   | infoAt (atree, x, y, true) =

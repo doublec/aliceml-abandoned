@@ -4,7 +4,7 @@ import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
 
 (* Prints stuff :) *)
 
-structure Print =
+structure MyPrint =
 struct
 
 datatype tree = datatype GrTypes.tree

@@ -1,4 +1,3 @@
-import structure GLib          from "x-alice:/lib/gtk/GLib"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure Canvas        from "x-alice:/lib/gtk/Canvas"

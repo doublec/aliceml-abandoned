@@ -7,9 +7,10 @@ import structure MkBoard        from "gui/MkBoard"
 import signature HANDLERS       from "HANDLERS-sig"
 import structure TypeMappers    from "TypeMappers"
 import structure AbsTree        from "AbsTree"
-import structure Print          from "Print"
+import structure MyPrint        from "Print"
 import structure MkTooltip      from "gui/MkTooltip"
 
+import "x-alice:/lib/system/Print"
 
 functor MkHandlers
   (structure MainWindow : MAIN_WINDOW
@@ -38,7 +39,7 @@ struct
   fun reinspect _   = queuePut Reinspect
   fun forceEval _   = queuePut ForceEval
   fun removeEntry _ = queuePut RemoveEntry
-  fun pprintT _     = Print.pprintTrees (Selection.getSelection ())
+  fun pprintT _     = MyPrint.pprintTrees (Selection.getSelection ())
 
   (* The limits have been changed. *)
   fun newLimits () = ()
@@ -68,7 +69,7 @@ struct
     end
 
   fun processInstruction instr =
-    Exn.catch (fn packet => (print ("Inspector.exception:  " ^ Exn.message (Exn.fromPacket packet)); Exn.dumpTrace packet)) (fn () =>
+    Exn.catch (fn packet => (print "Inspector.exception: "; Print.printVal (Exn.fromPacket packet); print "\n"; Exn.dumpTrace packet)) (fn () =>
     (case instr of
        NewFont             => (Selection.reselect () ;
                                Driver.initFonts () ;

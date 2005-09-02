@@ -2,7 +2,6 @@ import structure Common        from "../Common"
 import signature LAYOUT        from "LAYOUT-sig"
 import structure GrTypes       from "GrTypes"
 import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
-import structure Canvas        from "x-alice:/lib/gtk/Canvas"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure GLib          from "x-alice:/lib/gtk/GLib"
 
