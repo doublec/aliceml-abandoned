@@ -4,12 +4,14 @@
 ## copy this file into a directory with all the tar.gz source packages.
 ## Then run make to generate the Debian packages.
 
-URL = http://www.ps.uni-sb.de/alice/download
+URL = http://www.ps.uni-sb.de/alice/download/sources
 
 REVISION = 1
-PACKAGES = gecode-0.9 seam-1.0.0 alice-1.0.1 \
-	alice-gecode-1.0.1 alice-gtk-1.0.1 \
-	alice-runtime-1.0.1
+PACKAGES = seam-1.2 alice-1.2 \
+	alice-gecode-1.2 \
+	alice-gtk-1.2 \
+	alice-sqlite-1.2 alice-xml-1.2 alice-regex-1.2 \
+	alice-runtime-1.2
 
 all: $(PACKAGES:%=%.tar.gz)
 
@@ -19,7 +21,12 @@ $(PACKAGES:%=%.tar.gz): %:
 	curl $(URL)/$@ -o $@
 	tar xzf $@ && \
 	cd $(@:%.tar.gz=%) && \
-	dpkg-buildpackage -rfakeroot $(DPKGOPTIONS)
+	dpkg-buildpackage -rfakeroot $(DPKGOPTIONS) && \
+	cd .. && \
+	dpkg -i $(@:%-1.2.tar.gz=%)_*.deb && \
+	(test -f $(@:%-1.2.tar.gz=%)-dev_*.deb && \
+	 dpkg -i $(@:%-1.2.tar.gz=%)-dev_*.deb) || echo done
+	
 
 clean:
 	rm -rf $(TARGETS)
