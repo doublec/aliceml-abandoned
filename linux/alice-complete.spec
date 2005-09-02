@@ -1,23 +1,22 @@
 Name: alice-complete
-Version: 1.1
-Release: 2
+Version: 1.2
+Release: 1
 Copyright: X11
 Summary: The Alice Programming System
 Group: Development/Languages
-Source0: seam-1.1.1.tar.gz
+Source0: seam-%{version}.tar.gz
 Source1: alice-%{version}.tar.gz
 Source2: alice-gtk-%{version}.tar.gz
 Source3: alice-gecode-%{version}.tar.gz
 Source4: alice-sqlite-%{version}.tar.gz
 Source5: alice-xml-%{version}.tar.gz
-Source6: alice-runtime-%{version}.tar.gz
+Source6: alice-regex-%{version}.tar.gz
+Source7: alice-runtime-%{version}.tar.gz
 Vendor: The Alice Project
 URL: http://www.ps.uni-sb.de/alice/
 Packager: Guido Tack <tack@ps.uni-sb.de>
 Requires: /bin/bash
 Requires: /bin/sh
-Requires: libart_lgpl_2.so.2
-Requires: libatk-1.0.so.0
 Requires: libc.so.6
 Requires: libc.so.6(GLIBC_2.0)
 Requires: libc.so.6(GLIBC_2.1)
@@ -29,24 +28,39 @@ Requires: libdl.so.2(GLIBC_2.0)
 Requires: libdl.so.2(GLIBC_2.1)
 Requires: libgcc_s.so.1
 Requires: libgcc_s.so.1(GCC_3.0)
-Requires: libgdk-x11-2.0.so.0
-Requires: libgdk_pixbuf-2.0.so.0
-Requires: libglib-2.0.so.0
 Requires: libgmodule-2.0.so.0
 Requires: libgmp.so.3
-Requires: libgnomecanvas-2.so.0
-Requires: libgobject-2.0.so.0
-Requires: libgtk-x11-2.0.so.0
 Requires: libm.so.6
 Requires: libm.so.6(GLIBC_2.0)
-Requires: libpango-1.0.so.0
-Requires: libpangoft2-1.0.so.0
-Requires: libpangox-1.0.so.0
-Requires: libpangoxft-1.0.so.0
 Requires: libstdc++.so.5
 Requires: libstdc++.so.5(GLIBCPP_3.2)
 Requires: libxml2.so.2
 Requires: libz.so.1
+Requires: libgnomecanvas-2.so.0
+Requires: libart_lgpl_2.so.2
+Requires: libpangoft2-1.0.so.0
+Requires: libgtk-x11-2.0.so.0
+Requires: libgdk-x11-2.0.so.0
+Requires: libatk-1.0.so.0
+Requires: libgdk_pixbuf-2.0.so.0
+Requires: libpangocairo-1.0.so.0
+Requires: libpango-1.0.so.0
+Requires: libfreetype.so.6
+Requires: libcairo.so.2
+Requires: libgobject-2.0.so.0
+Requires: libgmodule-2.0.so.0
+Requires: libglib-2.0.so.0
+Requires: libpangoxft-1.0.so.0
+Requires: libpangox-1.0.so.0
+Requires: libfontconfig.so.1
+Requires: libX11.so.6
+Requires: libXrandr.so.2
+Requires: libXrender.so.1
+Requires: libXext.so.6
+Requires: libXcursor.so.1
+Requires: libpng12.so.0
+Requires: libXft.so.2
+Requires: libexpat.so.0
 
 BuildArchitectures: i386
 BuildRoot: %{_tmppath}/%{name}-%{version}
@@ -75,9 +89,10 @@ rm -rf %{buildroot}
 %setup -q -D -a 4 -c
 %setup -q -D -a 5 -c
 %setup -q -D -a 6 -c
+%setup -q -D -a 7 -c
 
 %build
-cd seam-1.1.1
+cd seam-%{version}
 %configure
 cd ../alice-%{version}
 %configure
@@ -85,13 +100,13 @@ cd ../alice-runtime-%{version}
 %configure
 
 %install
-cd seam-1.1.1
+cd seam-%{version}
 %makeinstall
 cd ../alice-%{version}
 %makeinstall
 cd ../alice-gtk-%{version}
-make compiledll
-make installdll INSTALLDIR=%{buildroot}/usr/share/alice/lib/gtk
+make compiledll MUST_GENERATE=no
+make installdll MUST_GENERATE=no INSTALLDIR=%{buildroot}/usr/share/alice/lib/gtk
 cd ../alice-gecode-%{version}
 make compiledll
 make installdll INSTALLDIR=%{buildroot}/usr/share/alice/lib/gecode
@@ -101,6 +116,9 @@ make installdll INSTALLDIR=%{buildroot}/usr/share/alice/lib/sqlite
 cd ../alice-xml-%{version}
 make compiledll
 make installdll INSTALLDIR=%{buildroot}/usr/share/alice/lib/xml
+cd ../alice-regex-%{version}
+make compiledll
+make installdll INSTALLDIR=%{buildroot}/usr/share/alice/lib/regex
 cd ../alice-runtime-%{version}
 %makeinstall
 
