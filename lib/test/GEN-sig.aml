@@ -74,6 +74,8 @@ sig
     val int:	    int gen
     val largeInt:   IntInf.int gen
     val cardinal:   int gen
+    val exn:        exn gen
+
 end
 
 

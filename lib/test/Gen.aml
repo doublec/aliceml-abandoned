@@ -139,6 +139,24 @@ struct
 					   cardinal n, 
 					   fn (a, b) => gen (a + b))
     fun refOf gen n	= ref (gen n)
-    
+			  
+    fun exn n           = 
+	let
+	    val exns = [Assert ("Gen.exn", 0),
+			Bind,
+			Chr,
+			Div,
+			Domain,
+			Fail "Gen.exn",
+			Match,
+			Overflow,
+			Size,
+			Span,
+			Subscript,
+			Unordered]
+	in
+	    List.nth (exns, Random.int (List.length exns))
+	end
+	
 end
 
