@@ -32,7 +32,7 @@ configure-stamp:
 build: build-stamp
 build-stamp: configure-stamp 
 	dh_testdir
-	cd $(DEB_SOURCE_DIR) && $(MAKE) compiledll
+	cd $(DEB_SOURCE_DIR) && $(MAKE) compiledll MUST_GENERATE=no
 	echo > $@
 
 install: install-stamp
@@ -43,6 +43,7 @@ install-stamp: build-stamp
 	dh_installdirs
 	-mkdir $(DEB_INSTALL_DIR)
 	$(MAKE) installdll \
+	  MUST_GENERATE=no \
 	  INSTALLDIR=$(DEB_INSTALL_DIR)/usr/share/alice/lib/gtk
 	echo > $@
 
