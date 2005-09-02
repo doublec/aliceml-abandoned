@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ $Author$
@@ -22,7 +22,9 @@ import structure IO          from "IO"
 import structure TextIO      from "TextIO"
 import structure OS          from "OS"
 
+ifdef([[CROSS]],[[]],[[
 import structure PPValue     from "PPValue"
+]])
 import structure PPMismatch  from "../rtt/PPMismatch"
 import structure PrettyPrint from "../utility/PrettyPrint"
 import structure PervasiveType from "../rtt/PervasiveType"
@@ -33,7 +35,11 @@ local
 	    open PrettyPrint
 	    infix ^^
 	    val doc = text "   " ^^
+ifdef([[CROSS]],[[
+		      text (General.exnName exn)
+]],[[
 		      below (PPValue.ppVal PervasiveType.typ_exn exn)
+]])
 	in
 	    PrettyPrint.output (os, doc, 80);
 	    TextIO.output (os, "\n")

@@ -466,7 +466,7 @@ build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
 build1/lib/%.aml: lib/%.aml.m4 Rel2.import
-	cat Rel2.import $< | $(M4) > $@
+	cat Rel2.import $< | $(M4) -DCROSS > $@
 
 build1/compiler/%.aml: compiler/%.aml.m4 Rel2.import
 	cat Rel2.import $< | $(M4) > $@
@@ -697,7 +697,10 @@ INSTALL3FILES = \
 $(BUILD3DIRS):
 	mkdir -p $@
 
-$(BUILD3SOURCES0): build3/%: build1/%
+build3/lib/system/Boot.aml: lib/system/Boot.aml.m4 Rel2.import
+	cat Rel2.import $< | $(M4) > $@
+
+$(BUILD3SOURCES0:build3/lib/system/Boot.aml=): build3/%: build1/%
 	cp $< $@
 
 build3/lib/debugger/%.aml: lib/debugger/%.aml Rel2.import
