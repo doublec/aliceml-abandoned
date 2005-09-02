@@ -7,6 +7,6 @@ HomePage: http://www.ps.uni-sb.de/alice
 License: BSD
 Description: Alice Language Layer, Gecode binding
 Source-MD5: INSERTMD5HERE
-Depends: alice (>= %v-%r), gtk+2-shlibs, libgnomecanvas2-shlibs
+Depends: alice (>= %v-%r), gtk+2-shlibs (>= 2.6), libgnomecanvas2-shlibs (>= 2.10), pango1-xft2 (>= 1.10)
 CompileScript: make compiledll MUST_GENERATE=no
 InstallScript: make installdll INSTALLDIR=%i/share/alice/lib/gtk MUST_GENERATE=no
