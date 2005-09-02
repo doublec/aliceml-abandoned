@@ -4,7 +4,6 @@ TODO list for the Alice IDE
 Bugs:
 
 * on startup, shortcuts for cycling thru buffers are disabled (and syntax hilite)
-* search/goto dialogs should always be raised and moved to mouse position
 * highlighting after undoing a deletion
 * aliceglade ignores packing flags
   (manually replace alignment21's first Gtk.FILL by Gtk.EXPAND for text fields
@@ -12,7 +11,7 @@ Bugs:
 * in/outdent shortcuts don't work on Windows (german keyboard)
 * context menu doesn't display correctly (chinese Windows)
 * Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
-* cannot assign .AML files to toplevel on Windows
+* search/goto dialogs should be moved to mouse position (using Gdk)
 
 * reconsider implicit imports
 

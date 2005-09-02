@@ -13,6 +13,7 @@
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 structure BufferAnnotate =
 struct
     exception Malformed
@@ -93,10 +94,7 @@ struct
 		parseEntries(stream'', (rs,(keyw,tok,s))::entries)
 	    end
 
-    fun parseAnnotations stream =
-	if Future.isFuture stream
-	then (stream, #[])
-	else parseEntries(stream, [])
+    fun parseAnnotations stream = parseEntries(stream, [])
 
     exception Off
     fun moveToCol(iter, 0, col) = ()
