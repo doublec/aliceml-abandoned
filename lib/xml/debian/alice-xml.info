@@ -1,6 +1,6 @@
 Package: alice-xml
 Version: 1.2
-Revision: 2
+Revision: 1
 Source: http://www.ps.uni-sb.de/alice/download/sources/%n-%v.tar.gz
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
 HomePage: http://www.ps.uni-sb.de/alice
