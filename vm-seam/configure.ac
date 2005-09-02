@@ -87,6 +87,9 @@ esac
 # checks for header files
 
 AC_SEAM_CHECK_CXXFLAGS([-fPIC])
+AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-ggdb,
+   AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-ggdb),
+   AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-g))
 AC_PATH_SEAM
 
 # checks for types

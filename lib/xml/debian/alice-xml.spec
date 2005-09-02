@@ -26,6 +26,7 @@ Requires: libm.so.6(GLIBC_2.0)
 Requires: libstdc++.so.5
 Requires: libstdc++.so.5(GLIBCPP_3.2)
 Requires: libz.so.1
+Requires: libxml2.so.2
 
 BuildArchitectures: i386
 BuildRoot: %{_tmppath}/%{name}-%{version}
