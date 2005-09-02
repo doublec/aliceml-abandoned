@@ -76,11 +76,11 @@ rm -rf %{buildroot}
 
 %build
 cd alice-gtk-%{version}
-make compiledll
+make compiledll MUST_GENERATE=no
 
 %install
 cd alice-gtk-%{version}
-make installdll INSTALLDIR=%{buildroot}/usr/share/alice/lib/gtk
+make installdll INSTALLDIR=%{buildroot}/usr/share/alice/lib/gtk MUST_GENERATE=no
 
 %clean
 rm -rf %{buildroot}
