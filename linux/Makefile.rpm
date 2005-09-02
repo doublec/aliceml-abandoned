@@ -1,9 +1,10 @@
-URL = http://www.ps.uni-sb.de/~tack/download
+URL = http://www.ps.uni-sb.de/alice/download/sources
 
 REVISION = 1
-PACKAGES = gecode-0.9 seam-1.0.0 alice-1.0.1 \
-	alice-gecode-1.0.1 alice-gtk-1.0.1 \
-	alice-runtime-1.0.1
+PACKAGES = seam-1.2 alice-1.2 \
+	alice-gecode-1.2 alice-gtk-1.2 \
+	alice-xml-1.2 alice-sqlite-1.2 alice-regex-1.2 \
+	alice-runtime-1.2
 
 all: $(PACKAGES:%=%.tar.gz)
 
