@@ -43,24 +43,12 @@ Requires: libgtk-x11-2.0.so.0
 Requires: libgdk-x11-2.0.so.0
 Requires: libatk-1.0.so.0
 Requires: libgdk_pixbuf-2.0.so.0
-Requires: libpangocairo-1.0.so.0
+Requires: libpangoxft-1.0.so.0
+Requires: libpangox-1.0.so.0
 Requires: libpango-1.0.so.0
-Requires: libfreetype.so.6
-Requires: libcairo.so.2
 Requires: libgobject-2.0.so.0
 Requires: libgmodule-2.0.so.0
 Requires: libglib-2.0.so.0
-Requires: libpangoxft-1.0.so.0
-Requires: libpangox-1.0.so.0
-Requires: libfontconfig.so.1
-Requires: libX11.so.6
-Requires: libXrandr.so.2
-Requires: libXrender.so.1
-Requires: libXext.so.6
-Requires: libXcursor.so.1
-Requires: libpng12.so.0
-Requires: libXft.so.2
-Requires: libexpat.so.0
 
 BuildArchitectures: i386
 BuildRoot: %{_tmppath}/%{name}-%{version}
