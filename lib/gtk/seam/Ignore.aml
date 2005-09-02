@@ -203,6 +203,7 @@ struct
         "gtk_tree_store_set_valist",
         "gtk_tree_model_foreach",
         "gtk_tree_model_filter_set_visible_func",
+	"gtk_tree_model_get_valist",
         "gtk_tree_model_set_modify_func",
         "gtk_tree_selection_set_select_function",
         "gtk_tree_selection_selected_foreach",
