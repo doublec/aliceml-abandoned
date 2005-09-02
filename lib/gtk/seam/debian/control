@@ -1,7 +1,7 @@
 Source: alice-gtk
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 4.0.0), alice-dev, libgtk2.0-dev, libgnomecanvas2-dev, libpango1.0-0-dev
+Build-Depends: debhelper (>= 4.0.0), alice-dev, libgtk2.0-dev, libgnomecanvas2-dev, libpango1.0-dev
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
 Standards-Version: 3.6.0
 
