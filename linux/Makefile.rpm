@@ -12,3 +12,6 @@ $(PACKAGES:%=%.tar.gz): %:
 	curl $(URL)/$@ -o $@
 	tar -f $@ -z -x '*/debian/*.spec' -O > $(@:%.tar.gz=%)-$(REVISION).spec
 	./build-rpm $@ $(@:%.tar.gz=%)-$(REVISION).spec
+
+complete:
+	./build-rpm $(PACKAGES:%=%.tar.gz) alice-complete.spec
