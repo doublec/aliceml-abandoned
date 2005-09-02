@@ -1,11 +1,11 @@
 Source: alice-gtk
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 4.0.0), alice-dev, libgtk2.0-dev, libgnomecanvas2-dev
+Build-Depends: debhelper (>= 4.0.0), alice-dev, libgtk2.0-dev, libgnomecanvas2-dev, libpango1.0-0-dev
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
 Standards-Version: 3.6.0
 
 Package: alice-gtk
 Architecture: any
-Depends: ${shlibs:Depends}, alice, libgtk2.0-0, libgnomecanvas2-0
+Depends: ${shlibs:Depends}, alice, libgtk2.0-0 (>= 2.6.0), libgnomecanvas2-0, libpango1.0-0
 Description: The Alice Gtk binding
