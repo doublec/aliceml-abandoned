@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# --with-warnings=(no|yes|pedantic). pedantic also enables -Wall -W
-
-/home/pslab/Projects/Gecode/Sources/configure \
-  CXX='g++ -mno-cygwin' \
-  CC='gcc -mno-cygwin' \
-  --prefix=/home/pslab/Projects/Gecode/Install
-  
