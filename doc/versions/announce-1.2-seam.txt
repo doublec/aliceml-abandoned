@@ -21,7 +21,7 @@ featuring:
      dynamically typed ML modules as first-class values
   Pickling
      type-safe, generic & platform-independent marshalling,
-     including code, types and full modules
+     including code, types and entire modules
   Components
      type-safe lazy dynamic linking across the Internet
   Distribution
@@ -30,26 +30,32 @@ featuring:
      constraint propagation and programmable search for
      solving hard combinatorical problems
   Virtual Machine
-     portable implementation with support for just-in-time
-     compilation
+     portable implementation with just-in-time compilation
   Interactive tools
      graphical browsers for data structures and search spaces
 
 The highlights of this release are:
 
+  New Byte Code Jitter
+     optimized internal byte code produced by jitting, which is
+     a lot faster than non-jitted code; unlike native code jitting
+     it is available on all platforms
   Improvements to Interactive Toplevel
-     Many improvements, tweaks and fixes in the GUI; new features include type
-     tips, and native look&feel on Windows (thanks to Gtk Wimp theme).
-  Overhaul of Constraint Library
-     Many, many bug fixes in Gecode implementation and binding; simplified
-     interface to set constraints.
-  Experimental Byte Code Jitter
-     Optimized byte code produced by jitting, which is at least twice as fast
-     as non-jitted code; unlike native code jitting also available on PowerPC.
+     many tweaks and fixes in the GUI; new features include type hints,
+     and native look&feel on Windows (thanks to Gtk Wimp theme)
+  Overhaul of Gecode Constraint Library
+     many, many bug fixes in Gecode implementation and binding;
+     simplified interface to set constraints
+  Overhaul of Gtk Graphics Library
+     re-structured into submodules with proper dynamic type checking;
+     upgraded to Gtk 2.6, including bindings to GLib, Pango, and Atk
   Regular Expression Library
-     A simple binding to GNU Regex library is included in the distribution.
+     a simple binding to the GNU Regex library is now included
+  64 Bit Support
+     Alice can now support 64 bit architectures; a first package
+     is available for Debian AMD 64
   Bug Fixes
-     Lots of bug fixes and minor improvements all over the place.
+     lots of bug fixes and minor improvements all over the place
 
 For a detailed list of changes please see:
 

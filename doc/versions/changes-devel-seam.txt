@@ -1,12 +1,12 @@
-Alice 1.2 (Kraftwerk 'What's Your Constraint' Album) - 2005/08/??
------------------------------------------------------------------
+Alice 1.2 (Kraftwerk 'Boost Your G-Thing' Album) - 2005/09/02
+-------------------------------------------------------------
 
 Runtime System:
 
-* [NEW] Experimental optimized byte code, produced by jitting; activate by
-        setting environment variable ALICE_JIT_MODE=2. This byte code is at
-        least twice as fast as non-jitted code, which is particularly
-        interesting on PowerPC, where native code jitting is not supported yet.
+* [NEW] New optimized internal byte code, produced by jitting; activate by
+        setting environment variable ALICE_JIT_MODE=2. This byte code is
+        a *lot* faster than non-jitted code, and is now the default on
+        PowerPC and AMD 64, where native code jitting is not supported yet.
 * [FIX] Custom component managers can no longer be bypassed by importing global
         ComponentManager explicitly.
 * [FIX] Importing from HTTP was broken (bug 120).
@@ -14,6 +14,8 @@ Runtime System:
         component managers.
 * [FIX] VM no longer goes into busy loop when stdIn has been closed and no
         thread is runnable.
+* [FIX] Fixed pathological bug in GC's treatment of intergenerational transients
+        (pointed out by Tobias Nurmiranta).
 
 Compiler:
 
@@ -37,15 +39,16 @@ Interactive Toplevel:
 * [NEW] GUI now displays type information about any identifier at cursor
         position once a file has been feeded or compiled within the toplevel.
 * [NEW] Better handling of file loading and loading failure in GUI (including
-        bugs 138, 142).
+        bugs 138, 142, 157).
 * [NEW] Check file for external changes before saving.
 * [NEW] Session management can be deactivated in preferences; when toplevel is
-        invoked with argument "-", old session is not reloaded either.
+        invoked with argument "-", previous session is not reloaded either.
 * [NEW] Reset now also clears component manager thanks to whole session being
         executed in a sandbox; global function `reset' for reset in text mode.
 * [NEW] GUI I/O pane can be cleared via menu.
 * [NEW] Nesting depth and width printing limits are now configurable.
 * [NEW] Array2.array and most library exceptions recognized by printer.
+* [NEW] Native look&feel on Windows (thanks to Gtk Wimp theme).
 * [FIX] Miscellaneous usability tweaks and fixes in GUI.
 * [FIX] Jump-to-error works with Windows paths containing volumes.
 * [FIX] Fixed pretty-printing of values of datatypes with more than 100
@@ -66,7 +69,7 @@ Basic Library:
         type dependencies; log now contains manager's id for each message.
 * [FIX] IntInf: fixed `~>>'.
 * [FIX] Real: fixed `rem' & `hash'; fixed treatment of NaN in several functions.
-* [FIX] Math: fixed precision of `e' and `pi'.
+* [FIX] Math: fixed precision of `e' and `pi'; fixed treatment of NaN in `pow'.
 * [FIX] Substring: fixed `isSuffix'.
 * [FIX] Word8{Vector,Array}: result from `sub' was broken when >= 128 (bug 119).
 * [FIX] Array2: properly treat zero-size regions (bug 127).
@@ -83,7 +86,7 @@ Constraint Library:
 * [NEW] Explorer: recomputation depth can now be configured.
 * [NEW] Explorer: option to stop search after tree has reached a certain size.
 * [NEW] Explorer: improved keyboard navigation.
-* [FIX] Lots and lots of fixes in the Gecode implementation.
+* [FIX] Lots and lots of fixes in Gecode implementation.
 * [FIX] FD: fixed `intvar' (bug 122).
 * [FIX] Space: fixed crash in `fail', and `clone' on a failed space.
 * [FIX] Explorer: status bar is now reset upon each new search.
@@ -93,8 +96,16 @@ Constraint Library:
 
 Gtk Library:
 
+* [CHG] Complete overhaul: binding now generated from PyGtk description files.
+* [CHG] Library now organised more conveniently in substructures.
+* [NEW] Upgrade to Gtk 2.6; bindings to GLib, Pango, and Atk added.
+* [NEW] GObject properties now usable; more consistent treatment of enum types.
+* [NEW] Performs dynamic type checking and throws suitable exceptions.
+* [NEW] Native look&feel on Windows (thanks to Gtk Wimp theme).
+* [FIX] Binding no longer contains dysfunctional functions.
 * [FIX] Fixed representation of GdkAtoms, which could cause assertion failures
         on some platforms (bug 145).
+* [CHG] Aliceglade not yet updated and hence currently unsupported.
 
 Other Libraries:
 
@@ -108,8 +119,10 @@ Other Libraries:
 
 Platforms:
 
+* [NEW] Debian: port for AMD 64 available.
 * [NEW] Windows: Installer associates Alice with .aml files.
 * [FIX] Debian: fixed XML package.
+* [FIX] Windows: added missing entries to help file index.
 
 
 Alice 1.1 (Kraftwerk 'Eval Your Own' Album) - 2005/03/24
