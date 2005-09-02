@@ -8,5 +8,5 @@ License: BSD
 Description: Alice Language Layer, Gecode binding
 Source-MD5: INSERTMD5HERE
 Depends: alice (>= %v-%r), gtk+2-shlibs, libgnomecanvas2-shlibs
-CompileScript: make compiledll
-InstallScript: make installdll INSTALLDIR=%i/share/alice/lib/gtk
+CompileScript: make compiledll MUST_GENERATE=no
+InstallScript: make installdll INSTALLDIR=%i/share/alice/lib/gtk MUST_GENERATE=no
