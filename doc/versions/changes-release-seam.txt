@@ -1,3 +1,130 @@
+Alice 1.2 (Kraftwerk 'Boost Your G-Thing' Album) - 2005/09/02
+-------------------------------------------------------------
+
+Runtime System:
+
+* [NEW] New optimized internal byte code, produced by jitting; activate by
+        setting environment variable ALICE_JIT_MODE=2. This byte code is
+        a *lot* faster than non-jitted code, and is now the default on
+        PowerPC and AMD 64, where native code jitting is not supported yet.
+* [FIX] Custom component managers can no longer be bypassed by importing global
+        ComponentManager explicitly.
+* [FIX] Importing from HTTP was broken (bug 120).
+* [FIX] Native components (DLLs) are now loaded only once, even with multiple
+        component managers.
+* [FIX] VM no longer goes into busy loop when stdIn has been closed and no
+        thread is runnable.
+* [FIX] Fixed pathological bug in GC's treatment of intergenerational transients
+        (pointed out by Tobias Nurmiranta).
+
+Compiler:
+
+* [NEW] Implemented limited form of signature inclusion (bug 151).
+* [NEW] Option --annotations-file to output type information about compiled
+        program for use by external tools, e.g. smart editors.
+* [FIX] Make type-checking work properly in the presence of diamond import of
+        abstract types through components compiled against different versions
+        of the type. This requires indirectly imported component to be present.
+* [FIX] Fixed overly aggressive optimization that could break package unpacking.
+* [FIX] Fixed bug in type variable scope resolution (bug 140).
+* [FIX] Fixed bug allowing non-value expressions and unsound typing in val rec.
+* [FIX] Fixed bug in liveness analysis that broke exception handlers (bug 123).
+* [FIX] Under Windows, outputting error messages for files compiled on
+        drives other than the current didn't work; improved some messages.
+* [FIX] Fixed border case where lexer went into infinite loop for some inputs
+        only consisting of one token.
+
+Interactive Toplevel:
+
+* [NEW] GUI now displays type information about any identifier at cursor
+        position once a file has been feeded or compiled within the toplevel.
+* [NEW] Better handling of file loading and loading failure in GUI (including
+        bugs 138, 142, 157).
+* [NEW] Check file for external changes before saving.
+* [NEW] Session management can be deactivated in preferences; when toplevel is
+        invoked with argument "-", previous session is not reloaded either.
+* [NEW] Reset now also clears component manager thanks to whole session being
+        executed in a sandbox; global function `reset' for reset in text mode.
+* [NEW] GUI I/O pane can be cleared via menu.
+* [NEW] Nesting depth and width printing limits are now configurable.
+* [NEW] Array2.array and most library exceptions recognized by printer.
+* [NEW] Native look&feel on Windows (thanks to Gtk Wimp theme).
+* [FIX] Miscellaneous usability tweaks and fixes in GUI.
+* [FIX] Jump-to-error works with Windows paths containing volumes.
+* [FIX] Fixed pretty-printing of values of datatypes with more than 100
+        constructors.
+
+Basic Library:
+
+* [NEW] Lock: added Sync functor, which synchronises whole modules as monitors.
+* [NEW] Resolver, ComponentManager: added support for delegation.
+* [NEW] BinIO: added `openOverwrite', `seekIn', `seekOut'.
+* [NEW] Store: added polymorphic hash tables based on physical equality.
+* [NEW] Print: added `depth' and `width' to control printing bounds (also
+        control output of the toplevel); renamed `printWidth' to `layoutWidth'.
+* [NEW] Print: Array2.array and most library exceptions recognized by printer.
+* [NEW] Compiler: extended `withStreams' function for type annotations output.
+* [CHG] Toplevel names: removed `fst' and `snd' to avoid confusion with pairs.
+* [CHG] ComponentManager: replaced `logStream' by `logger' function, to avoid
+        type dependencies; log now contains manager's id for each message.
+* [FIX] IntInf: fixed `~>>'.
+* [FIX] Real: fixed `rem' & `hash'; fixed treatment of NaN in several functions.
+* [FIX] Math: fixed precision of `e' and `pi'; fixed treatment of NaN in `pow'.
+* [FIX] Substring: fixed `isSuffix'.
+* [FIX] Word8{Vector,Array}: result from `sub' was broken when >= 128 (bug 119).
+* [FIX] Array2: properly treat zero-size regions (bug 127).
+* [FIX] OS.Path: fixed handling of volumes in `mkRelative' and `concat'.
+* [FIX] TextIO: closing `stdIn' now works on Windows.
+* [FIX] BinIO: added missing type sharing with BinPrimIO.{reader,writer}.
+* [FIX] ComponentManager: loading components via HTTP was broken (bug 120).
+* [FIX] Store: fixed crash with `futures' function (bug 146).
+* [FIX] Print: fixed printing of lists with holes as tails.
+
+Constraint Library:
+
+* [CHG] General overhaul of interface, particularly for finite sets.
+* [NEW] Explorer: recomputation depth can now be configured.
+* [NEW] Explorer: option to stop search after tree has reached a certain size.
+* [NEW] Explorer: improved keyboard navigation.
+* [FIX] Lots and lots of fixes in Gecode implementation.
+* [FIX] FD: fixed `intvar' (bug 122).
+* [FIX] Space: fixed crash in `fail', and `clone' on a failed space.
+* [FIX] Explorer: status bar is now reset upon each new search.
+* [FIX] Explorer: branch-and-bound works properly for more than one search.
+* [FIX] Documentation is in sync with the library again (bugs 124, 125, 129,
+        131, 132, 143, 144).
+
+Gtk Library:
+
+* [CHG] Complete overhaul: binding now generated from PyGtk description files.
+* [CHG] Library now organised more conveniently in substructures.
+* [NEW] Upgrade to Gtk 2.6; bindings to GLib, Pango, and Atk added.
+* [NEW] GObject properties now usable; more consistent treatment of enum types.
+* [NEW] Performs dynamic type checking and throws suitable exceptions.
+* [NEW] Native look&feel on Windows (thanks to Gtk Wimp theme).
+* [FIX] Binding no longer contains dysfunctional functions.
+* [FIX] Fixed representation of GdkAtoms, which could cause assertion failures
+        on some platforms (bug 145).
+* [CHG] Aliceglade not yet updated and hence currently unsupported.
+
+Other Libraries:
+
+* [NEW] Regex: added binding to GNU regular expression library.
+* [NEW] XML: added `parseString'; proper error handling.
+* [NEW] Inspector: support for holes.
+* [NEW] Inspector: most library exceptions now recognized.
+* [FIX] Inspector: fixed handling of polymorphic types (bug 121).
+* [FIX] Inspector: fixed updating of futures as list tails (bug 149).
+* [FIX] SQLite: fixed exception generation; improved documentation.
+
+Platforms:
+
+* [NEW] Debian: port for AMD 64 available.
+* [NEW] Windows: Installer associates Alice with .aml files.
+* [FIX] Debian: fixed XML package.
+* [FIX] Windows: added missing entries to help file index.
+
+
 Alice 1.1 (Kraftwerk 'Eval Your Own' Album) - 2005/03/24
 --------------------------------------------------------
 
