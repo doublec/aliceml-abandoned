@@ -478,14 +478,22 @@ TextIO.print"\n";
 	local
 	    fun compile' context (desc, s) =
 		Compiler.compile (desc, context, Source.fromString s)
+
+	    fun annotsEnd () =
+		if not(!Switches.Global.dumpAnnotations) then () else
+		TextIO.output(Switches.Global.annotOut, "##\n")
 	in
 	    val compileFileToFile = ignore o compileFileToFile'
 
 	    fun compileFile (context, sourceFilename) =
-		processFile (compile' context) (sourceFilename, NONE)
+		(processFile (compile' context) (sourceFilename, NONE)
+		 before annotsEnd ())
+		handle e => (annotsEnd(); raise e)
 
 	    fun compileString (context, sourceText) =
-		processString (compile' context) sourceText
+		(processString (compile' context) sourceText
+		 before annotsEnd ())
+		handle e => (annotsEnd(); raise e)
 	end
 
 	(*
