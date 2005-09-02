@@ -447,18 +447,18 @@ structure GuiMain =
 		    in
                 	evalSignal := SOME signalP;
 			spawn (Evaluator.evalFile (f, signal);
-                	       evalSignal := NONE)
-		    end;
-		let
-		    val (annotStream',entries) =
-		        BufferAnnotate.parseAnnotations annotStream
-		in
-		    Promise.fulfill(p, annotStream');
-		    Buffer.annotate(id, entries)
-		end handle BufferAnnotate.Malformed =>
-		    (Promise.fulfill(p, annotStream);
-		     TextIO.StreamIO.output(OutputWriters.compilerErr,
-					    "\nerror processing annotations\n"))
+                	       evalSignal := NONE);
+			let
+			    val (annotStream',entries) =
+		        	BufferAnnotate.parseAnnotations annotStream
+			in
+			    Promise.fulfill(p, annotStream');
+			    Buffer.annotate(id, entries)
+			end handle BufferAnnotate.Malformed =>
+			    (Promise.fulfill(p, annotStream);
+			     TextIO.StreamIO.output(OutputWriters.compilerErr,
+						    "\nerror processing annotations\n"))
+		    end
             end
 (*
             case (!curtextview) of BUFFER view =>
