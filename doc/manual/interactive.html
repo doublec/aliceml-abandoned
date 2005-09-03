@@ -76,10 +76,11 @@ structure Foo : FOO = Foo
 <P>Such an announcement will import all items exported by the corresponding
 component.</P>
 
+<!--
 <P>All <A href="library/index.html">library</A> components (except the <A
 href="library/#gtk">GTK</A> library) are pre-imported in the interactive
 top-level and will get loaded automatically on demand.</A>
-
+-->
 
 <?php section("text", "text interface") ?>
 
@@ -95,7 +96,7 @@ top-level and will get loaded automatically on demand.</A>
 </P>
 </DIV>
 
-<P>A session can be reset by applying the glboal funciton <TT>reset</TT> (note that this does not kill any running threads).</P>
+<P>A session can be reset by applying the global funciton <TT>reset</TT> (note that this does not kill any running threads).</P>
 
 
 <?php section("gui", "graphical interface") ?>
@@ -117,7 +118,7 @@ default when Alice is started from the system's graphical interface - e.g. the S
 
 <P>The interaction pane operates much like the interactive top-level in text mode: ML snippets can be entered that can span several lines and must be terminated by semicolon. In addition, previous inputs can be retrieved via the history commands from the <I>Eval</I> menu (or the shortcuts Ctrl-Up and Ctrl-Down). History is saved when the top-level is quit.</P>
 
-<P>The <I>Interrupt</I> and <I>Background</I> commands from the <I>Eval</I> menu allow aborting the current computation or putting it into background. The whole interpreter environment can be reset from the menu (note that this does not kill any running threads).</P>
+<P>The <I>Interrupt</I> and <I>Background</I> commands from the <I>Eval</I> menu allow aborting the current computation or putting it into background. The whole interpreter environment can be reset from the menu, or by invoking <TT>reset()</TT> (note that this does not kill any running threads).</P>
 
 
 <?php subsection("gui-feeding", "Feeding") ?>
@@ -128,7 +129,7 @@ default when Alice is started from the system's graphical interface - e.g. the S
   selected text will be fed into the interactive top-level as input.</LI>
   <LI>If nothing has been selected, invoking <I>Feed Region</I> will
   automatically select the <I>paragraph</I> surrounding the cursor, where
-  a paragraph is a region of text delimited by emtpy lines.</LI>
+  a paragraph is a region of text delimited by empty lines.</LI>
   <LI>The whole file can be fed by invoking <I>Feed File</I> (Shift-Ctrl-Return).</LI>
 </UL>
 <P>Note that unlike direct input, fed input is not required to be terminated by a semicolon.</P>
