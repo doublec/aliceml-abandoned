@@ -101,8 +101,12 @@ environment variables:</P>
     boot the machine.</P>
   <?php if ($platform == "seam") { ?>
   <DT><P><TT>ALICE_JIT_MODE</TT></P>
-  <DD><P>if set to <TT>0</TT>, disables the run-time compiler.  By default,
-    it is enabled.</P>
+  <DD><P>if set to <TT>0</TT>, disables the run-time compiler.  
+  If set to <TT>1</TT>, the native code run-time compiler for x86
+  processors is used. If
+  set to <TT>2</TT>, the byte code run-time compiler is used. By
+  default, the mode is <TT>1</TT> for x86 processors and <TT>2</TT> for
+  other processors like PowerPC and AMD64.</P>
   <?php } ?>
 </DL>
 
