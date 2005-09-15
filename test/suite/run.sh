@@ -6,4 +6,4 @@ else
   ARG=PLATFORM_UNIX
 fi
 (make PLATFORM=$ARG $@ && clear && 
- alicerun Main 30.000 false true true)
+ alicerun Main 30.000 false false true)

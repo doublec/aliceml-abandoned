@@ -1,0 +1,42 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestComponent :> TESTSUITE = (* the component test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    structure C = Component
+
+(*
+	val extension : string
+
+	val defaultResolver : Resolver.t
+
+	val fromPackage : package -> component
+
+	functor Create(signature S
+	  functor F (CM : COMPONENT_MANAGER) : S) : (val component : component)
+
+	val load : Url.t -> component
+	val save : string * component -> unit
+
+	functor MkManager(val resolver : Resolver.t) : COMPONENT_MANAGER
+*)
+
+    val suite = ("Component", [])
+end

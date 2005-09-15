@@ -1,0 +1,31 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestComponentManager :> TESTSUITE = (* the cmanager test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    structure C = Component
+    structure CM = ComponentManager
+
+(*
+
+*)
+
+    val suite = ("ComponentManager", [])
+end

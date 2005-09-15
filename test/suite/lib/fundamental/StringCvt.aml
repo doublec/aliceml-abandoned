@@ -1,0 +1,138 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestStringCvt :> TESTSUITE = (* the stringcvt test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+
+    fun rdr str = 
+	let
+	    fun rdr' []      = NONE
+	      | rdr' (x::xs) = SOME (x, xs)
+	in 
+	    case rdr' (explode str) of 
+		NONE         => NONE 
+	      | SOME (x, xs) => SOME (x, implode xs)
+	end
+
+    fun testPadLeft () =
+	let
+	    fun prefix (c, i, s) = if i = 0 then s 
+				   else prefix (c, i - 1, Char.toString c ^ s)
+
+	    fun t' (c, i, s) = 
+		if String.size s >= i orelse i <= 0 then s
+		else prefix (c, i - String.size s, "") ^ s
+	    
+	    fun t (c, i, s) = t' (c, i, s) = StringCvt.padLeft c i s
+	in 
+	    Gen.try 1000 (Gen.triple (Gen.char, Gen.int, Gen.string)) 
+		    (Test.test t)
+	end 
+
+    fun testPadRight () =
+	let
+	    fun postfix (c, i, s) = if i = 0 then s 
+				   else postfix (c, i - 1, Char.toString c ^ s)
+
+	    fun t' (c, i, s) = 
+		if String.size s >= i orelse i <= 0 then s
+		else s ^ postfix (c, i - String.size s, "")
+	    
+	    fun t (c, i, s) = t' (c, i, s) = StringCvt.padLeft c i s
+	in 
+	    Gen.try 1000 (Gen.triple (Gen.char, Gen.int, Gen.string)) 
+		    (Test.test t)
+	end 
+
+(*
+
+type (char,'b) reader = 'b -> (char * 'b) option
+
+fun rdr str = 
+    let
+	fun rdr' []      = NONE
+	  | rdr' (x::xs) = (x, xs)
+    in 
+	case rdr' (explode str) of 
+	    NONE         => NONE 
+	  | SOME (x, xs) => SOME (x, implode xs)
+    end
+
+*)
+
+    fun testSplitl () =
+	let
+	    fun t' (f, r, NONE) (p, s') = (p, s')
+	      | t' (f, r, SOME (c, s)) (p, s') = 
+		if f c 
+		then t' (f, r, r s) (p ^ 
+				     (implode (List.take (explode s', 1))), 
+				     s)
+		else (p, s')
+
+	    fun t s = StringCvt.splitl 
+			       (fn x => Char.ord x < 127) rdr s =
+		      t' (fn x => Char.ord x < 127, rdr, rdr s) ("", s)
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testTakel () =
+	let
+	    fun t' (f, r, s) = #1 (StringCvt.splitl f r s)
+				  
+	    fun t s = StringCvt.takel (fn c => Char.ord c < 127) rdr s =
+		      t' (fn c => Char.ord c < 127, rdr, s)
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testDropl () =
+	let
+	    fun t' (f, r, s) = #2 (StringCvt.splitl f r s)
+				  
+	    fun t s = StringCvt.dropl (fn c => Char.ord c < 127) rdr s =
+		      t' (fn c => Char.ord c < 127, rdr, s)
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testSkipWS () =
+	let
+	    fun t' (r, s) = StringCvt.dropl Char.isSpace r s
+				  
+	    fun t s = StringCvt.skipWS rdr s =
+		      t' (rdr, s)
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testScanString () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite =	 ("StringCvt", [("padLeft", testPadLeft), 
+				("padRight", testPadRight),
+				("splitl", testSplitl),
+				("takel", testTakel),
+ 				("dropl", testDropl), 
+ 				("skipWS", testSkipWS), 
+				("scanString", testScanString)])
+end

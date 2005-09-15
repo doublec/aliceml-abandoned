@@ -15,6 +15,8 @@ import signature TESTSUITE from "../../src/TESTSUITE-sig"
 import structure Gen       from "x-alice:/lib/test/Gen"
 import structure Test      from "../../src/Test"
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 structure TestThread :> TESTSUITE = (* the thread test suite *)
 struct
 
@@ -22,37 +24,279 @@ struct
 
 
     fun testThread () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	Test.test (fn x => (x; true) handle _ => false) (Thread.thread id)
 
     fun testSpawnThread () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time = Time.fromMilliseconds (IntInf.fromInt 2000)
+		       
+	    fun thr t () =
+		if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time)
+		then ()
+		else thr t ()
+			     
+	    fun t (thr, ret) = 
+		let
+		    val a = Future.isFuture ret
+		    val _ = Thread.sleep time
+		    val b = Future.isDetermined ret
+		    val c = ret = ()
+		in
+		    a andalso b andalso c
+		end
+	in
+	    Test.test t (Thread.spawnThread (thr (Time.now ())))
+	end
 
     fun testCurrent () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	Test.test (fn (x, y) => x = y) (Thread.spawnThread Thread.current)
 
     fun testState () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time1 = Time.fromMilliseconds (IntInf.fromInt 1000)
+	    val time2 = Time.fromMilliseconds (IntInf.fromInt 3000)
+	    fun thr t () =
+		if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time1)
+		then ()
+		else thr t ()
+	    fun thr' () = Thread.sleep time1
+	    fun t (x, y) =
+		let
+		    val a = Thread.state x = Thread.RUNNABLE
+		    val b = Thread.state y = Thread.BLOCKED
+		    val _ = Thread.sleep time2 
+		    val c = Thread.state x = Thread.TERMINATED
+		    val d = Thread.state y = Thread.TERMINATED
+		in
+		    a andalso b andalso c andalso d
+		end
+	in
+	    Test.test t (Thread.thread (thr (Time.now ())), 
+			 Thread.thread thr')
+	end
 
     fun testYield () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time = Time.fromMilliseconds (IntInf.fromInt 1000)
+	    fun thr t () =
+		if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time)
+		then ()
+		else thr t ()
+
+	    fun t (x, y) =
+		let
+		    val a = Thread.state x = Thread.RUNNABLE
+		    val b = Thread.state y = Thread.TERMINATED
+		    val _ = Thread.yield x
+		    val _ = Thread.yield y
+		    val _ = Thread.sleep time
+		    val c = Thread.state x = Thread.TERMINATED
+		    val d = Thread.state y = Thread.TERMINATED
+		in
+		    a andalso b andalso c andalso d
+		end
+	in
+	    Test.test t (Thread.thread (thr (Time.now ())), 
+			 Thread.thread (fn () => ()))
+	end
 
     fun testSleep () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	Test.test (fn t => let
+			      val x = Time.now ()
+			      val _ = Thread.sleep t
+			      val y = Time.now ()
+		           in
+			      Time.>= (Time.- (y, x), t)
+			   end) (Time.fromSeconds (IntInf.fromInt 1))
 
     fun testRaiseIn () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time1 = Time.fromMilliseconds (IntInf.fromInt 1000)
+	    val time2 = Time.fromMilliseconds (IntInf.fromInt 3000)
+	    val ref1 = ref "C++"
+	    val ref2 = ref "C++"
+	    val ref3 = ref "C++"
+	    fun thr t () =
+		(if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time1)
+		 then ()
+		 else thr t ()) handle Subscript => ref1 := "Alice"
+	    fun thr' () = Thread.sleep time1 
+		                handle Subscript => ref2 := "Alice"
+	    fun t (r, bl, term) =
+		let
+		    val a = Thread.state r = Thread.RUNNABLE
+		    val b = Thread.state bl = Thread.BLOCKED
+		    val b'' = Thread.state term = Thread.TERMINATED
+		    val _ = Thread.raiseIn (r, Subscript)
+		    val _ = Thread.raiseIn (bl, Subscript)
+		    val b' = (Thread.raiseIn (term, Subscript); false)
+			                  handle Terminated => true
+		    val c = Thread.state r = Thread.RUNNABLE
+		    val d = Thread.state bl = Thread.RUNNABLE
+		    val e = !ref1 = "Alice"
+		    val f = !ref2 = "Alice"
+		    val g = !ref3 = "Alice"
+		in
+		    a andalso b andalso b' andalso b'' andalso 
+		    c andalso d andalso e andalso f
+		end
+	in
+	    Test.test t (Thread.thread (thr (Time.now ())), 
+			 Thread.thread thr',
+			 Thread.thread 
+			    (fn () => () handle Terminated => ref3 := "Alice"))
+	end
 
+
+    (* TODO: komisch, im interpreter funzts... ?!?!? *)
     fun testTerminate () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time1 = Time.fromMilliseconds (IntInf.fromInt 1000)
+	    val time2 = Time.fromMilliseconds (IntInf.fromInt 3000)
+	    val ref1 = ref "C++"
+	    val ref2 = ref "C++"
+		       
+	    fun rep a = (print (Bool.toString a); a)
+
+	    fun thr t () =
+		(if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time1)
+		 then ()
+		 else thr t ()) handle _ => ref1 := "Alice"
+	    fun thr' () = Thread.sleep time1
+		                handle _ => ref2 := "Alice"
+	    fun t (r, bl, term) =
+		let
+		    val a = Thread.state r = Thread.RUNNABLE
+		    val b = Thread.state bl = Thread.BLOCKED
+		    val a' = Thread.state term = Thread.TERMINATED
+		    val _ = Thread.terminate r
+		    val _ = Thread.terminate bl
+		    val b' = (Thread.terminate term; false) 
+			                    handle Terminated => true
+		    val c = Thread.state r = Thread.RUNNABLE
+		    val d = Thread.state bl = Thread.RUNNABLE
+		    val d' = Thread.state term = Thread.TERMINATED
+		    val e = !ref1 = "Alice" (* das hier geht kaputt *)
+		    val f = !ref2 = "Alice"
+		in
+		    a andalso a' andalso b' andalso 
+		    b andalso c andalso 
+		    d andalso d' andalso e andalso f
+		end
+	in
+	    Test.test t (Thread.thread (thr (Time.now ())), 
+			 Thread.thread thr',
+			 Thread.thread (fn () => ()))
+	end
 
     fun testSuspend () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time1 = Time.fromMilliseconds (IntInf.fromInt 1000)
+
+	    fun thr t () =
+		if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time1)
+		then ()
+		else thr t ()
+	    fun thr' () = Thread.sleep time1
+
+	    fun t (r, bl, term) =
+		let
+		    val a = Thread.state r = Thread.RUNNABLE
+		    val b = Thread.state bl = Thread.BLOCKED
+		    val c = Thread.state term = Thread.TERMINATED
+		    val _ = Thread.suspend r
+		    val _ = Thread.suspend bl
+		    val _ = Thread.suspend term
+		    val a' = Thread.state r = Thread.RUNNABLE
+		    val b' = Thread.state bl = Thread.BLOCKED
+		    val c' = Thread.state term = Thread.TERMINATED
+		in
+		    a andalso b andalso c andalso 
+		    a' andalso b' andalso c'
+		end
+	in 
+	    Test.test t (Thread.thread (thr (Time.now ())), 
+			 Thread.thread thr',
+			 Thread.thread (fn () => ()))
+	end
 
     fun testResume () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time1 = Time.fromMilliseconds (IntInf.fromInt 1000)
+
+	    fun thr t () =
+		if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time1)
+		then ()
+		else thr t ()
+	    fun thr' () = Thread.sleep time1
+
+	    fun t (r, bl, term) =
+		let
+		    val a = Thread.state r = Thread.RUNNABLE
+		    val b = Thread.state bl = Thread.BLOCKED
+		    val c = Thread.state term = Thread.TERMINATED
+		    val _ = Thread.resume r
+		    val _ = Thread.resume bl
+		    val _ = Thread.resume term
+		    val a' = Thread.state r = Thread.RUNNABLE
+		    val b' = Thread.state bl = Thread.BLOCKED
+		    val c' = Thread.state term = Thread.TERMINATED
+		in
+		    a andalso b andalso c andalso 
+		    a' andalso b' andalso c'
+		end
+	in 
+	    Test.test t (Thread.thread (thr (Time.now ())), 
+			 Thread.thread thr',
+			 Thread.thread (fn () => ()))
+	end
 
     fun testIsSuspended () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val time1 = Time.fromMilliseconds (IntInf.fromInt 1000)
+
+	    fun thr t () =
+		if IntInf.>= (Time.toMilliseconds (Time.- (Time.now (), t)),
+			      Time.toMilliseconds time1)
+		then ()
+		else thr t ()
+	    fun thr' () = Thread.sleep time1
+
+	    fun t (r, bl, term) =
+		let
+		    val a = Thread.state r = Thread.RUNNABLE
+		    val b = Thread.state bl = Thread.BLOCKED
+		    val c = Thread.state term = Thread.TERMINATED
+		    val _ = Thread.suspend r
+		    val _ = Thread.suspend bl
+		    val _ = Thread.suspend term
+		    val a' = Thread.isSuspended r
+		    val b' = Thread.isSuspended bl
+		    val c' = Thread.isSuspended term
+		    val _ = Thread.resume r
+		    val _ = Thread.resume bl
+		    val _ = Thread.resume term
+		    val a'' = Thread.isSuspended r
+		    val b'' = Thread.isSuspended bl
+		    val c'' = Thread.isSuspended term
+
+		in
+		    a andalso b andalso c andalso 
+		    a' andalso b' andalso c' andalso
+		    not a'' andalso not b'' andalso not c''
+		end
+	in 
+	    Test.test t (Thread.thread (thr (Time.now ())), 
+			 Thread.thread thr',
+			 Thread.thread (fn () => ()))
+	end
 
 
     val suite = ("Thread", [("thread", testThread), 

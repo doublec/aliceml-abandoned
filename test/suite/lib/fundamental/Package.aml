@@ -20,23 +20,193 @@ struct
 
     val randomize = Gen.randomize
 
+
+(*
+
+- structure P = Package.PackVal (val x = 4 type t = int);
+### loaded signature from x-alice:/lib/fundamental/Package
+structure P : sig val package : package end
+- structure X = Package.UnpackVal(val package = P.package type t = int);
+structure X : sig val x : int end
+- open X;
+val x : int = 4
+
+		    signature S = sig type t = t val x : t end
+*)
+
     fun testPack () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t v = 
+		let
+		    structure P = struct type t = int val x = v end
+		    signature S = sig type t val x : t end
+		in
+		    (pack P : S; true)
+		end
+		     
+	in 
+	    Test.test t 4
+	end
 	
     fun testUnpack () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t v = 
+		let
+		    structure P = struct type t = int val x = v end
+		    signature S = sig type t val x : t end
+		    signature F = sig type t val x : string end
+		    val p = pack P : S
+		    structure X = unpack p : S
+		in
+		    let
+			structure XF = unpack p : F
+		    in
+			false
+		    end handle Package.Mismatch _ => true
+		end
+		     
+	in 
+	    Test.test t 4
+	end
+
 
     fun testPackFunctor () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t v = 
+		let
+		    structure X = struct type t = int val x = v end
+		    signature S = sig type t val x : t end
+		    structure P = Package.Pack (signature S = S 
+					        structure X = X)
+		in
+		    true
+		end
+		     
+	in 
+	    Test.test t 4
+	end
 
     fun testUnpackFunctor () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t v = 
+		let
+		    structure X = struct type t = int val x = v end
+		    signature S = sig type t val x : t end
+		    signature F = sig type t val x : string end
+				  
+		    structure P = Package.Pack (signature S = S
+						structure X = X)
+		    structure X = Package.Unpack (val package = P.package
+						  signature S = S)
+		in
+		    let
+		    structure XF = Package.Unpack (val package = P.package
+						   signature S = F)
+		    in
+			false
+		    end handle Package.Mismatch _ => true
+		end
+		     
+	in 
+	    Test.test t 4
+	end
 
     fun testPackValFunctor () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    datatype g = A of string
+
+	    fun t' v =
+ 		let
+		    structure P = Package.PackVal (val x = v type t = g)
+		in
+		    (P.package; true)
+		end
+
+	    fun t v = 
+		let
+		    structure P = Package.PackVal (val x = v type t = int)
+		in
+		    (P.package; true)
+		end
+
+	in
+	    (Test.test t 4;
+	     Test.test t (spawn 4);
+	     Test.test t (lazy 4);
+	     Test.test t' (A "lice"))
+	end
 
     fun testUnpackValFunctor () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    datatype g = A of string
+	    signature S   = sig type t     val x : t end
+	    signature S'  = sig type t = g val x : t end
+	    signature S'' = sig type t = g val x : g end
+
+	    fun t' v = 
+		let
+		    structure P = Package.PackVal (val x = v type t = g)
+		in		    
+		    let
+			structure X = unpack P.package : S 
+		    in
+			false 
+		    end
+		    handle Package.Mismatch _ => 
+	            let
+			structure X = unpack P.package : S' 
+		    in
+			false
+		    end
+		    handle Package.Mismatch _ => 
+		    let
+			structure X = unpack P.package : S''
+		    in
+			false
+		    end
+		    handle Package.Mismatch _ => 
+		    let
+			structure X = Package.UnpackVal 
+					 (val package = P.package type t = g)
+		    in
+			X.x = v
+		    end
+		end
+
+	    fun t v = 
+		let
+		    structure P = Package.PackVal (val x = v type t = int)
+		in		    
+		    let
+			structure X = unpack P.package : S 
+		    in
+			false
+		    end
+		    handle Package.Mismatch _ => 
+	            let
+			structure X = unpack P.package : S' 
+		    in
+			false
+		    end
+		    handle Package.Mismatch _ => 
+		    let
+			structure X = unpack P.package : S''
+		    in
+			false
+		    end
+		    handle Package.Mismatch _ => 
+		    let
+			structure X = Package.UnpackVal 
+					 (val package = P.package type t = int)
+		    in
+			X.x = v
+		    end
+		end
+
+	in
+	    (Test.test t 4;
+	     Test.test t' (A "lice"))
+	end
 
 
     val suite = ("Package", [("pack", testPack), 

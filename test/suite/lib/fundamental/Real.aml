@@ -186,8 +186,7 @@ struct
 				     else sign (x * y) = 1
 
 	    fun t (x, y) = if (isInfinite x orelse isInfinite y) andalso 
-						  not (Real.isNan x orelse
-						       Real.isNan y)
+			      not (Real.isNan x orelse Real.isNan y)
 			   then isInfinite (x * y) andalso correctSign (x, y)
 			   else if Real.isNan x orelse Real.isNan y
 			   then Real.isNan (x * y)

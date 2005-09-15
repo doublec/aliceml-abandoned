@@ -1,0 +1,134 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+import structure Date      from "x-alice:/lib/system/Date"
+
+structure TestDate :> TESTSUITE = (* the date test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+(*
+    fun testDate () =
+	let
+	    fun isSchaltjahr y = 
+		if y mod 4 = 0
+		then if y mod 100 = 0
+		     then y mod 400 = 0
+		     else true
+		else false
+
+	    fun canonicalizeDate d =
+		let
+		    val seconds = (#second d) mod 60
+		    val secondsOvl = (#second d) div 60
+		    val minutes = (#minute d + secondsOvl) mod 60
+		    val minutesOvl = (#minute d + secondsOvl) div 60
+		    val hours = (#hour d + minutesOvl) mod 24
+		    val hoursOvl = (#hour d + minutesOvl) div 24
+		   (* val days = (#day d + hoursOvl) mod (if isSchaltjahr)*)
+
+		    fun t ((a, b, c), (d, e, f), g) = 	
+			(Date.date {year = a, 	
+				    month = b,	
+				    day = c, 	
+				    hour = d, 
+				    minute = e,
+				    second = f,
+				    offset = g}; true)
+	in
+	    Gen.try (Gen.triple (Gen.triple (Gen.int, Gen.dateMonth, Gen.int),
+				 Gen.triple (Gen.int, Gen.int, Gen.int),
+				 Gen.option Gen.time)) (Test.test t)
+	end
+	*)
+(*
+
+  fun weekDayFromInt w =
+        case w of
+           0 => Sun
+         | 1 => Mon
+         | 2 => Tue
+         | 3 => Wed
+         | 4 => Thu
+         | 5 => Fri
+         | 6 => Sat
+         | _ => raise Date
+   
+    fun monthFromInt m =
+        case m of
+           0 => Jan
+         | 1 => Feb
+         | 2 => Mar
+         | 3 => Apr
+         | 4 => May
+         | 5 => Jun
+         | 6 => Jul
+         | 7 => Aug
+         | 8 => Sep
+         | 9 => Oct
+         | 10 => Nov
+         | 11 => Dec
+         | _  => raise Date
+
+
+val date :          {year :   int,
+			     month :  month,
+			     day :    int,
+			     hour :   int,
+			     minute : int,
+			     second : int,
+			     offset : Time.time option} -> date
+
+	val year :          date -> int
+	val month :         date -> month
+	val day :           date -> int
+	val hour :          date -> int
+	val minute :        date -> int
+	val second :        date -> int
+	val weekDay :       date -> weekday
+	val yearDay :       date -> int
+	val offset :        date -> Time.time option
+	val isDst :         date -> bool option
+
+	val localOffset :   unit -> Time.time
+
+	val fromTimeLocal : Time.time -> date
+	val fromTimeUniv :  Time.time -> date
+	val toTime :        date -> Time.time
+
+	val fmt :           string -> date -> string
+	val toString :      date -> string
+	val scan :          (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
+	val toISO :	    date -> string
+	val scanISO :	    (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
+	val fromISO :	    string -> date option
+
+	val compare :       date * date -> order
+*)
+
+    fun testFromString () =
+	let
+	    fun t s = Date.fromString s = StringCvt.scanString Date.scan s
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+
+    val suite = ("Date", [("fromString", testFromString)])
+
+end

@@ -68,12 +68,35 @@ import structure TestPromise     from "lib/fundamental/Promise"
 import structure TestHole        from "lib/fundamental/Hole"
 import structure TestThread      from "lib/fundamental/Thread"
 import structure TestPackage     from "lib/fundamental/Package"
+import structure TestStringCvt   from "lib/fundamental/StringCvt"
+(*
+import structure TestResolver    from "lib/fundamental/Resolver"
+import structure TestResolverHandler
+		                 from "lib/fundamental/ResolverHandler"
+import structure TestRemote      from "lib/fundamental/Remote"
+import structure TestHttp        from "lib/fundamental/Http"
+import structure TestHttpClient  from "lib/fundamental/HttpClient"
+import structure TestHttpServer  from "lib/fundamental/HttpServer"
+import structure TestPrimIo      from "lib/fundamental/PrimIo"
+import structure TestPrint       from "lib/fundamental/Print"
+import structure TestStore       from "lib/fundamental/Store"
+import structure TestSocket      from "lib/fundamental/Socket"
+import structure TestUnix        from "lib/fundamental/Unix"
+*)
 import structure TestLock        from "lib/data/Lock"
+import structure TestComponent   from "lib/system/Component"
+import structure TestComponentManager
+		                 from "lib/system/ComponentManager"
+import structure TestOSFileSys   from "lib/system/OSFileSys"
+import structure TestOSProcess   from "lib/system/OSProcess"
+import structure TestPickle      from "lib/system/Pickle"
+import structure TestUrl         from "lib/system/Url"
+import structure TestDate        from "lib/system/Date"
 import structure TestConfig      from "lib/system/Config"
 import structure TestTime        from "lib/system/Time"
 import structure TestTimer       from "lib/system/Timer"
 import structure TestOSPath      from "lib/system/OS_Path"
-import structure TestCompiler    from "lib/compiler/Compiler"
+import structure TestCompiler    from "lib/system/Compiler"
 import structure TestRegressions from "lib/regression/tests/TestRegressions"
 
 fun randomizeTests () = 
@@ -88,9 +111,30 @@ fun randomizeTests () =
 			TestThread.randomize,
 			TestPackage.randomize,
 			TestLock.randomize,
+			TestLock.randomize,
+			TestUrl.randomize,
+			TestOSFileSys.randomize,
+			TestOSProcess.randomize,
+			TestPickle.randomize,
+			TestComponent.randomize,
+			TestComponentManager.randomize,
+			TestDate.randomize,
+			TestStringCvt.randomize,(*
+			TestResolver.randomize,
+			TestResolverHandler.randomize,
+			TestRemote.randomize,
+			TestHttp.randomize,
+			TestHttpClient.randomize,
+			TestHttpServer.randomize,
+			TestPrimIo.randomize,
+			TestPrint.randomize,
+			TestStore.randomize,
+			TestSocket.randomize,
+			TestUnix.randomize,*)
 			TestArray.randomize,
 			TestVector.randomize,
 			TestWord.randomize,
+			TestCompiler.randomize,
 			TestVectorPair.randomize,
 			TestGeneral.randomize,
 			TestMath.randomize,
@@ -180,6 +224,26 @@ fun allTests b = [TestRegressions.suite b,
 		  TestThread.suite,
 		  TestPackage.suite,
 		  TestLock.suite,
+		  TestUrl.suite,
+		  TestOSFileSys.suite,
+		  TestOSProcess.suite,
+		  TestPickle.suite,
+		  TestComponent.suite,
+		  TestCompiler.suite,
+		  TestComponentManager.suite,
+		  TestDate.suite,
+	          TestStringCvt.suite,
+		  TestResolver.suite,
+		  TestResolverHandler.suite,
+		  TestRemote.suite,
+		  TestHttp.suite,
+		  TestHttpClient.suite,
+		  TestHttpServer.suite,
+		  TestPrimIo.suite,
+		  TestPrint.suite,
+		  TestStore.suite,
+		  TestSocket.suite,
+		  TestUnix.suite,
 		  TestConfig.suite,
 		  TestOSPath.suite,
 		  TestTime.suite,
