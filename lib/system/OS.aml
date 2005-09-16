@@ -33,6 +33,12 @@ struct
 	datatype access_mode = A_READ | A_WRITE | A_EXEC
 
 	open UnsafeOS.FileSys
+
+	fun readDir ds =
+	    case UnsafeOS.FileSys.readDir ds of
+		SOME ("." | "..") => readDir ds
+	      | result => result
+
 	fun getApplicationConfigDir appName =
 	    UnsafeOS.FileSys.getApplicationConfigDir() ^ "/" ^ appName
     end

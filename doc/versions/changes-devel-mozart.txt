@@ -75,6 +75,7 @@ Library:
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
 * Real: Fixed treatment of NaN in several functions.
 * Exn: new structure for dealing with exceptions and backtraces.
+* OS.FileSys: filter out current and parent arc with readDir.
 * OS.Path:
   - Handle Windows style path syntax as well.
   - Allow mkRelative to take two relative paths.
