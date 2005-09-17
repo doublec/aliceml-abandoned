@@ -178,9 +178,59 @@ struct
 					  t asl))
 	end 
 
-    fun testCopy () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testCopy () = 
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < ArraySlice.length src
+		then (Array.update (dst, di + i, ArraySlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   Array.length dst < di + ArraySlice.length src
+		then NONE
+		else SOME (Array.toList (t'' (src, dst, di, 0)))
 
-    fun testCopyVec () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((ArraySlice.copy {src, dst, di}; false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((ArraySlice.copy {src, dst, di};
+				     Array.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.arraySlice Gen.int,
+				      Gen.array Gen.int,
+				      Gen.int)) (Test.test t)
+	end
+
+    fun testCopyVec () =
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < VectorSlice.length src
+		then (Array.update (dst, di + i, VectorSlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   Array.length dst < di + VectorSlice.length src
+		then NONE
+		else SOME (Array.toList (t'' (src, dst, di, 0)))
+
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((ArraySlice.copyVec {src, dst, di}; false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((ArraySlice.copyVec {src, dst, di};
+				     Array.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.vectorSlice Gen.int,
+				      Gen.array Gen.int,
+				      Gen.int)) (Test.test t)
+	end
 
     fun testIsEmpty () = 
 	let

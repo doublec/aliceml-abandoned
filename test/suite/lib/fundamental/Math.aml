@@ -22,7 +22,7 @@ struct
 
     fun impreciseEqual (a, b) = 
 	Real.== (a, b) orelse a = b orelse 
-	      (Real.round a = Real.round b) handle Overflow => true
+	Real.- (Real.abs a, Real.abs b) <= Real.abs (Real.max (a, b))
 
 
     fun testE () = 

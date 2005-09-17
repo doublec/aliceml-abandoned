@@ -363,7 +363,12 @@ struct
 	end
 
     fun testToString () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t i = IntInf.toString i =
+		      IntInf.fmt StringCvt.DEC i 
+	in 
+	    Gen.try 1000 Gen.largeInt (Test.test t)
+	end
 
     fun testFromString () =
 	let

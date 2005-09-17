@@ -36,10 +36,6 @@ struct
     fun testWordSize () =
 	Test.test (fn x => x = 31) Word.wordSize
 
-    fun testToLarge () = Test.test (fn _ => raise Test.NotYetImplemented) ()
-
-    fun testToLargeX () = Test.test (fn _ => raise Test.NotYetImplemented) ()
-
     fun testFromLarge () =
 	let
 	    fun t w = w = Word.fromLarge (Word.toLarge w)
@@ -102,8 +98,6 @@ struct
 	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word)) (Test.test t)
 	end
 
-    fun testNotB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
-
     fun testLeftShift () =
 	let
 	    (* i >> n == (i* 2^(n))(mod (2^(wordSize))) *)
@@ -128,9 +122,6 @@ struct
 					     t (Word.toInt i, 
 						Word.toInt n)))
 	end
-
-    fun testNotRightShift () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testArithmetic () =
 	let
@@ -189,10 +180,6 @@ struct
 	    Gen.try 1000 Gen.word (Test.test t)
 	end
 
-    fun testToLargeIntX () = Test.test (fn _ => raise Test.NotYetImplemented) ()
-
-    fun testFromLargeInt () = Test.test (fn _ => raise Test.NotYetImplemented) ()
-
     fun testEqual () = 
 	let
 	    fun t (i, j) = IntInf.equal (Word.toLargeInt i,
@@ -201,8 +188,6 @@ struct
 	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word))
 	      (Test.test (fn (i, j) => Word.equal (i, j) = t (i, j)))
 	end
-
-    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testMin () =
 	let
@@ -220,8 +205,6 @@ struct
 	      (Test.test (fn x => Word.max x = t x))
 	end
 
-    fun testFmt () = Test.test (fn _ => raise Test.NotYetImplemented) ()
-
     fun testToString () = 
 	let
 	    fun t i = Word.fmt StringCvt.HEX i
@@ -230,7 +213,50 @@ struct
 	       (Test.test (fn w => Word.toString w = t w))
 	end
 
+    fun testNotB () = 
+	let
+	    fun t w = Word.fromLargeInt (IntInf.notb (Word.toLargeInt w)) =
+		      Word.notb w
+	in 
+	    Gen.try 1000 Gen.word (Test.test t)
+	end
+
+    fun testToLarge () = 
+	let
+	    fun t w = Word.fromLarge (Word.toLarge w) = w
+	in 
+	    Gen.try 1000 Gen.word (Test.test t)
+	end 
+
+    fun testToLargeX () =
+	let
+	    fun t w = Word.fromLarge (Word.toLargeX w) = w
+	in 
+	    Gen.try 1000 Gen.word (Test.test t)
+	end
+
+    fun testToLargeIntX () =
+	let
+	    fun t w = LargeWord.toLargeInt (Word.toLarge w) = 
+		      Word.toLargeIntX w
+	in 
+	    Gen.try 1000 Gen.word (Test.test t)
+	end
+
+    fun testFromLargeInt () = 
+	let
+	    fun t i = Word.fromLarge (Word32.fromLargeInt i) = 
+		      Word.fromLargeInt i
+	in 
+	  Gen.try 1000 Gen.largeInt (Test.test t)
+	end
+
+    fun testNotRightShift () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
     fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFmt () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testFromString () = 
 	let

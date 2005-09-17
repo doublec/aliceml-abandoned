@@ -187,7 +187,8 @@ struct
 
 	    fun t (x, y) = if (isInfinite x orelse isInfinite y) andalso 
 			      not (Real.isNan x orelse Real.isNan y)
-			   then isInfinite (x * y) andalso correctSign (x, y)
+			   then (isInfinite (x * y) andalso correctSign (x, y))
+				 orelse Real.isNan (x * y)
 			   else if Real.isNan x orelse Real.isNan y
 			   then Real.isNan (x * y)
 			   else true
@@ -733,22 +734,89 @@ struct
 	end
 
     fun testToInt () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val modes = [IEEEReal.TO_NEGINF,
+			 IEEEReal.TO_POSINF,
+			 IEEEReal.TO_ZERO,
+			 IEEEReal.TO_NEAREST]
+	    fun mode () = List.nth (modes, Gen.cardinal (List.length modes))
+			  
+	    fun tooHuge r = r > Real.fromInt (valOf Int.maxInt) orelse
+			    r < Real.fromInt (valOf Int.minInt) orelse
+			    r = Real.posInf orelse
+			    r = Real.negInf
+
+	    fun t r = if tooHuge r
+		      then (Real.toInt (mode ()) r; false) 
+			                       handle Overflow => true
+		      else if Real.isNan r
+		      then (Real.toInt (mode ()) r; false) 
+			                       handle Domain => true
+		      else true
+	in
+	    Gen.try 1000 Gen.realAll (Test.test t)
+	end
 
     fun testToLargeInt () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val modes = [IEEEReal.TO_NEGINF,
+			 IEEEReal.TO_POSINF,
+			 IEEEReal.TO_ZERO,
+			 IEEEReal.TO_NEAREST]
+	    fun mode () = List.nth (modes, Gen.cardinal (List.length modes))
+			  
+	    fun tooHuge r = r = Real.posInf orelse
+			    r = Real.negInf
+
+	    fun t r = if tooHuge r
+		      then (Real.toInt (mode ()) r; false) 
+			                       handle Overflow => true
+		      else if Real.isNan r
+		      then (Real.toInt (mode ()) r; false) 
+			                       handle Domain => true
+		      else true
+	in
+	    Gen.try 1000 Gen.realAll (Test.test t)
+	end
 
     fun testFromInt () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun tooLarge i = false
+
+	    fun isInfinite r = r = Real.posInf orelse r = Real.negInf
+
+	    fun t i = if tooLarge i
+		      then isInfinite (Real.fromInt i)
+		      else true
+	in
+	    Gen.try 1000 Gen.int (Test.test t)
+	end
 
     fun testFromLargeInt () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun tooLarge i = false
 
-    fun testToLarge () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun isInfinite r = r = Real.posInf orelse r = Real.negInf
 
-    fun testFromLarge () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun t i = if tooLarge i
+		      then isInfinite (Real.fromLargeInt i)
+		      else true
+	in
+	    Gen.try 1000 Gen.largeInt (Test.test t)
+	end
+
+    fun testToFromLarge () =
+	let
+	    val modes = [IEEEReal.TO_NEGINF,
+			 IEEEReal.TO_POSINF,
+			 IEEEReal.TO_ZERO,
+			 IEEEReal.TO_NEAREST]
+	    fun mode () = List.nth (modes, Gen.cardinal (List.length modes))
+
+	    fun t r = r = Real.fromLarge (mode ()) (Real.toLarge r)
+	in 
+	    Gen.try 10000 Gen.realAll (Test.test t)
+	end 
 
     fun testScan () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -815,8 +883,8 @@ struct
 			  ("toLargeInt", testToLargeInt),
 			  ("fromInt", testFromInt),
 			  ("fromLargeInt", testFromLargeInt),
-			  ("toLarge", testToLarge),
-			  ("fromLarge", testFromLarge),
+			  ("toLarge", testToFromLarge),
+			  ("fromLarge", testToFromLarge),
 			  ("scan", testScan)])
 
 end

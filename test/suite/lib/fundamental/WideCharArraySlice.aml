@@ -183,9 +183,65 @@ struct
 					  tt asl))
 	end 
 
-    fun testCopy () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testCopy () =
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < WideCharArraySlice.length src
+		then (WideCharArray.update (dst, 
+				 di + i, WideCharArraySlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   WideCharArray.length dst < 
+		   di + WideCharArraySlice.length src
+		then NONE
+		else SOME (WideCharArray.toList (t'' (src, dst, di, 0)))
 
-    fun testCopyVec () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((WideCharArraySlice.copy {src, dst, di};
+				  false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((WideCharArraySlice.copy {src, dst, di};
+				     WideCharArray.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.wideCharArraySlice Gen.wideChar,
+				      Gen.wideCharArray Gen.wideChar,
+				      Gen.int)) (Test.test t)
+	end
+
+    fun testCopyVec () =
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < WideCharVectorSlice.length src
+		then (WideCharArray.update (dst, di + i, 
+					 WideCharVectorSlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   WideCharArray.length dst < 
+		   di + WideCharVectorSlice.length src
+		then NONE
+		else SOME (WideCharArray.toList (t'' (src, dst, di, 0)))
+
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((WideCharArraySlice.copyVec {src, dst, di}; 
+				  false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((WideCharArraySlice.copyVec {src, dst, di};
+				     WideCharArray.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.wideCharVectorSlice Gen.wideChar,
+				      Gen.wideCharArray Gen.wideChar,
+				      Gen.int)) (Test.test t)
+	end
 
     fun testIsEmpty () = 
 	let

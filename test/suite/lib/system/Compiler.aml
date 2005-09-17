@@ -27,7 +27,39 @@ struct
     val url = Url.fromString "x-alice:/lib/test/Gen"
 
     val comp = Component.load url
-    
+
+
+    fun testInitialEnv () =
+	Test.test (fn x => true) Compiler.initialEnv
+
+    fun testCompile () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+(*
+
+val initialEnv :      env
+
+	val compile :         string -> Component.t
+	val compileWith :     env * string -> Component.t
+	val compileFile :     string * string option -> unit
+	val compileFileWith : env * string * string option -> unit
+
+	val eval :            string -> package
+	val evalWith :        env * string -> env * package
+	val evalFile :        string -> package
+	val evalFileWith :    env * string -> env * package
+
+	val withStreams :     {out : TextIO.outstream option,
+	                       err : TextIO.outstream option,
+	                       trace : TextIO.outstream option,
+	                       annot : TextIO.outstream option}
+	                       -> ('a -> 'b) -> 'a -> 'b
+	val withWidths :      {out : int, err : int, trace : int}
+	                       -> ('a -> 'b) -> 'a -> 'b
+
+*)
+
+
     fun testEval' () = 
 	let
 	    structure X = ComponentManager.Eval (

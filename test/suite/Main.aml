@@ -84,6 +84,7 @@ import structure TestSocket      from "lib/fundamental/Socket"
 import structure TestUnix        from "lib/fundamental/Unix"
 *)
 import structure TestLock        from "lib/data/Lock"
+import structure TestResolver    from "lib/system/Resolver"
 import structure TestComponent   from "lib/system/Component"
 import structure TestComponentManager
 		                 from "lib/system/ComponentManager"
@@ -113,6 +114,7 @@ fun randomizeTests () =
 			TestLock.randomize,
 			TestLock.randomize,
 			TestUrl.randomize,
+			TestResolver.randomize,
 			TestOSFileSys.randomize,
 			TestOSProcess.randomize,
 			TestPickle.randomize,
@@ -120,7 +122,6 @@ fun randomizeTests () =
 			TestComponentManager.randomize,
 			TestDate.randomize,
 			TestStringCvt.randomize,(*
-			TestResolver.randomize,
 			TestResolverHandler.randomize,
 			TestRemote.randomize,
 			TestHttp.randomize,
@@ -211,6 +212,7 @@ fun allTests b = [TestRegressions.suite b,
 		  TestWideCharVectorSlice.suite,
 		  TestVectorPair.suite,
 		  TestChar.suite,
+	          TestStringCvt.suite,
 		  TestString.suite,
 		  TestSubstring.suite,
 		  TestIEEEReal.suite,
@@ -218,7 +220,7 @@ fun allTests b = [TestRegressions.suite b,
 		  TestIntInf.suite,
 		  TestByte.suite,
 		  TestExn.suite,
-		  TestFuture.suite,
+		  TestFuture.suite, 
 		  TestPromise.suite, 
 		  TestHole.suite,
 		  TestThread.suite,
@@ -229,12 +231,12 @@ fun allTests b = [TestRegressions.suite b,
 		  TestOSProcess.suite,
 		  TestPickle.suite,
 		  TestComponent.suite,
+		  TestResolver.suite,
 		  TestCompiler.suite,
 		  TestComponentManager.suite,
 		  TestDate.suite,
-	          TestStringCvt.suite,
 		  TestResolver.suite,
-		  TestResolverHandler.suite,
+		  (*TestResolverHandler.suite,
 		  TestRemote.suite,
 		  TestHttp.suite,
 		  TestHttpClient.suite,
@@ -243,7 +245,7 @@ fun allTests b = [TestRegressions.suite b,
 		  TestPrint.suite,
 		  TestStore.suite,
 		  TestSocket.suite,
-		  TestUnix.suite,
+		  TestUnix.suite,*)
 		  TestConfig.suite,
 		  TestOSPath.suite,
 		  TestTime.suite,
@@ -310,9 +312,4 @@ val _ = (main ();
 	 displayNeededTime ();
 	 TextIO.output (TextIO.stdOut, "\ndone.\n");
 	 OS.Process.exit OS.Process.success)
-
-
-
-
-
 

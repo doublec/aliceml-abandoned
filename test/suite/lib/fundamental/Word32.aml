@@ -22,7 +22,7 @@ struct
 
     fun wordToIntInf w = valOf (StringCvt.scanString 
 				 (IntInf.scan StringCvt.HEX) 
-				               (LargeWord.toString w))
+				 (LargeWord.toString w))
 
     (*  p = 2 ^ wordSize *)
     val p = IntInf.pow (IntInf.fromInt 2, LargeWord.wordSize)
@@ -37,9 +37,19 @@ struct
     fun testWordSize () =
 	Test.test (fn x => x = 32) LargeWord.wordSize
 
-    fun testToLarge () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testToLarge () =
+	let
+	    fun t w = LargeWord.toLarge w = w
+	in 
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
 
-    fun testToLargeX () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testToLargeX () =
+	let
+	    fun t w = LargeWord.toLarge w = w
+	in 
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
 
     fun testFromLarge () =
 	let
@@ -103,7 +113,14 @@ struct
 	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word32)) (Test.test t)
 	end
 
-    fun testNotB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testNotB () =
+	let
+	   fun t w = LargeWord.fromLargeInt 
+			 (IntInf.notb (LargeWord.toLargeInt w)) =
+		     LargeWord.notb w
+	in 
+	    Gen.try 1000 Gen.word32 (Test.test t)
+	end
 
     fun testLeftShift () =
 	let
@@ -114,7 +131,7 @@ struct
 	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word)) 
 		    (Test.test (fn (i, n) => 
 				   wordToIntInf (LargeWord.<< (i, n)) = 
-					     t (LargeWord.toLargeInt i, 
+					     t (LargeWord.toLargeIntX i, 
 						Word.toInt n)))
 	end
 
@@ -128,7 +145,7 @@ struct
 	    Gen.try 1000 (Gen.pair (Gen.word32, Gen.word)) 
 		    (Test.test (fn (i, n) => 
 				   wordToIntInf (LargeWord.>> (i, n)) = 
-				   t (LargeWord.toLargeInt i, 
+				   t (LargeWord.toLargeIntX i, 
 				      Word.toInt n)))
 	end
 
@@ -192,9 +209,11 @@ struct
 	    Gen.try 1000 Gen.word32 (Test.test t)
 	end
 	
-    fun testToLargeIntX () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testToLargeIntX () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    fun testFromLargeInt () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testFromLargeInt () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testEqual () = 
 	let
@@ -233,11 +252,10 @@ struct
 	       (Test.test (fn w => LargeWord.toString w = t w))
 	end
 
-    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
-
     fun testFromString () = 
 	let
-	    fun t s = SOME (StringCvt.scanString (LargeWord.scan StringCvt.HEX) s)
+	    fun t s = 
+		SOME (StringCvt.scanString (LargeWord.scan StringCvt.HEX) s)
 		          handle Overflow => NONE
 	in 
 	    Gen.try 1000 Gen.string

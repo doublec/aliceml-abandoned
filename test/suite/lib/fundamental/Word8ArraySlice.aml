@@ -180,9 +180,62 @@ struct
 	    (Test.test (fn asl => Word8Vector.toList (t asl) = tt asl))
 	end 
 
-    fun testCopy () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testCopy () =
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < Word8ArraySlice.length src
+		then (Word8Array.update (dst, 
+					 di + i, Word8ArraySlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   Word8Array.length dst < di + Word8ArraySlice.length src
+		then NONE
+		else SOME (Word8Array.toList (t'' (src, dst, di, 0)))
 
-    fun testCopyVec () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((Word8ArraySlice.copy {src, dst, di}; false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((Word8ArraySlice.copy {src, dst, di};
+				     Word8Array.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.word8ArraySlice Gen.word8,
+				      Gen.word8Array Gen.word8,
+				      Gen.int)) (Test.test t)
+	end
+
+    fun testCopyVec () =
+	let
+	    fun t'' (src, dst, di, i) = 
+		if i < Word8VectorSlice.length src
+		then (Word8Array.update (dst, di + i, 
+					 Word8VectorSlice.sub (src, i));
+		      t'' (src, dst, di, i + 1))
+		else dst
+		
+	    fun t' (src, dst, di) = 
+		if di < 0 orelse 
+		   Word8Array.length dst < di + Word8VectorSlice.length src
+		then NONE
+		else SOME (Word8Array.toList (t'' (src, dst, di, 0)))
+
+	    fun t (src, dst, di) = 
+		case t' (src, dst, di) of
+			NONE => ((Word8ArraySlice.copyVec {src, dst, di}; 
+				  false) 
+				             handle Subscript => true)
+  		      | SOME xs => ((Word8ArraySlice.copyVec {src, dst, di};
+				     Word8Array.toList dst = xs) 
+				             handle Subscript => false)
+	in
+	    Gen.try 1000 (Gen.triple (Gen.word8VectorSlice Gen.word8,
+				      Gen.word8Array Gen.word8,
+				      Gen.int)) (Test.test t)
+	end
 
     fun testIsEmpty () = 
 	let

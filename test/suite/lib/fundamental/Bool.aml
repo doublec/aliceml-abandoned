@@ -48,7 +48,52 @@ struct
 	(Test.test (fn x => Bool.toString x = "true")  true;
 	 Test.test (fn x => Bool.toString x = "false") false)
 
-    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+(* (char, 'a) reader = 'a -> (char * 'a) option 
+
+   (char, int list) reader = int list -> (char * int list) option *)
+
+    fun testScan () = 
+	let
+	    val bVals = [[116, 114, 117, 101],
+			 [84, 114, 117, 101],
+			 [84, 114, 85, 101],
+			 [102, 97, 108, 115, 101],
+			 [70, 97, 108, 115, 101],
+			 [70, 97, 108, 83, 101]]
+			       
+	    fun stream xs = 
+		if Gen.bool 0
+		then let
+			fun insert ([], ys, zs) = ys @ zs
+			  | insert (x::xs, ys, zs) = 
+			            if x = 32 (* whitespace *)
+				    then insert (xs, x::ys, zs)
+				    else ys @ zs @ xs
+		    in 
+		    (insert (xs, [], 
+			 List.nth (bVals, Gen.cardinal (List.length bVals))),
+		     true)
+		     end
+		else
+		    (List.filter (fn x => x <> 69 andalso x <> 101) xs, false)
+
+	    fun t xs = 
+		let
+		    val (str, b) = stream (List.filter (fn x => x <= 255) xs)
+
+		    fun rdr [] = NONE
+		      | rdr (y::ys) = SOME (Char.chr y, ys)
+
+		    val result = Bool.scan rdr str
+				 
+		in
+		    if b
+		      then isSome result
+		    else isNone result
+		end
+	in 
+	    Gen.try 1000 (Gen.list Gen.cardinal) (Test.test t)
+	end
 
     val suite = ("Bool", [("not", testNot), 
                           ("compare", testCompare),
