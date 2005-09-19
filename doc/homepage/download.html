@@ -52,7 +52,12 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
   <LI>Alternatively, install binary packages of the individual
   components Alice consists of, or use the source rpms to build Alice
   for a different platform. You can find the necessary packages <A
-  HREF="download/rpm">in the rpm download directory</A>.</LI>
+  HREF="download/rpm">in the rpm download directory</A>.
+  Please note that we cannot provide a source package
+  for Gecode at the moment, as it is not yet released. You will have
+  to either use the binary version or install <TT>alice-runtime</TT>
+  using the <TT>--nodeps</TT> command line option.
+  </LI>
   <LI>On newer RPM-based distributions, you may need to install
   <TT>compat-libstdc++</TT> packages.</LI>
 </UL>
