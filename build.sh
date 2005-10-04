@@ -12,6 +12,9 @@ SUPPORTDIR="$(pwd)"
 
 case `uname -s` in
     CYGWIN*)
+	BUILD_GMP=1
+	BUILD_SQLITE=1
+	BUILD_LIBXML=1
 	CC="gcc -mno-cygwin"
 	;;
     *)
