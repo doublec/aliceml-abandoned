@@ -22,9 +22,19 @@
 #include "alice/ByteCodeBuffer.hh"
 #include "alice/ByteCode.hh"
 
-#define BCJIT_DEBUG(s,...) /* fprintf(stderr,s, ##__VA_ARGS__) */
+#define BCJIT_DEBUG(s,...) /*fprintf(stderr,s, ##__VA_ARGS__)*/
+//#define DEBUG_DISASSEMBLE
+
+#define INSERT_DEBUG_MSG(msg)  {		\
+    String *s = String::New(msg);		\
+    u_int addr = imEnv.Register(s->ToWord());	\
+    SET_INSTR_1I(PC,debug_msg,addr);		\
+  }
+
 
 #define RELATIVE_JUMP
+#define DO_INLINING
+// #undef DO_INLINING
 
 using namespace ByteCodeInstr;
 
@@ -38,6 +48,23 @@ static inline u_int GetNumberOfLocals(TagVal *abstractCode) {
   }
 }
 
+static inline Vector *ShiftIdDefs(Vector *srcs, s_int offset) {
+  u_int size = srcs->GetLength();
+  Vector *dsts = Vector::New(size);
+  for(u_int i = size; i--; ) {
+    TagVal *argOpt = TagVal::FromWord(srcs->Sub(i));
+    if(argOpt != INVALID_POINTER) {
+      u_int id = Store::DirectWordToInt(argOpt->Sel(0)) + offset;
+      TagVal *newOpt = TagVal::New(Types::SOME,1);
+      newOpt->Init(0,Store::IntToWord(id));
+      dsts->Init(i,newOpt->ToWord());
+    } else {
+      dsts->Init(i,srcs->Sub(i));
+    }
+  }
+  return dsts;
+}
+
 static inline word ExtractImmediate(word idRef) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
   switch (AbstractCode::GetIdRef(tagVal)) {
@@ -46,6 +73,19 @@ static inline word ExtractImmediate(word idRef) {
   default:
     return INVALID_POINTER;		       
   }
+}
+
+ByteCodeJitter::PatchTable::PatchTable() : size(20), top(0) { 
+  table = new u_int[size]; 
+}
+
+u_int ByteCodeJitter::PatchTable::jumpInstrSize;
+
+void ByteCodeJitter::PatchTable::Init() {
+  WriteBuffer::Init(10);
+  u_int pc = 0;
+  SET_INSTR_1I(pc,jump,0);
+  jumpInstrSize = pc;
 }
 
 // Register Allocation
@@ -118,9 +158,10 @@ private:
   };
 
 public:
-  static void Run(Vector *liveness, u_int mapping[], u_int *nLocals) {
+  static void Run(Vector *liveness, u_int mapping[], 
+		  u_int *nLocals, u_int offset = 0) {
     MinHeap heap(*nLocals);
-    u_int regs = 0;
+    u_int regs = offset;
     u_int size = liveness->GetLength();
     for(u_int i=0; i<size; i+=3) {
       u_int index = Store::DirectWordToInt(liveness->Sub(i));
@@ -152,7 +193,7 @@ u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::LastUseLocal: // TODO: include liveness table
   case AbstractCode::Local:
-    {    
+    {   
       return IdToReg(tagVal->Sel(0));
     }
   case AbstractCode::Global:
@@ -207,6 +248,7 @@ ByteCodeJitter::~ByteCodeJitter() {
 void *ByteCodeJitter::inlineTable[INLINE_TABLE_SIZE];
 
 void ByteCodeJitter::Init() {
+  PatchTable::Init();
   LazyByteCompileInterpreter::Init();
 
   // prepare inlineTable
@@ -231,6 +273,43 @@ void ByteCodeJitter::Init() {
 
 // helpers to inline common primitives
 
+inline void ByteCodeJitter::InlinePrimitiveReturn(u_int reg) {
+#ifdef DO_INLINING
+  if(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
+    u_int nFormals = currentFormalArgs->GetLength();
+    switch(nFormals) {
+    case 0: // is this correct ???
+      break;
+    case 1:
+      {
+	TagVal *argOpt = TagVal::FromWord(currentFormalArgs->Sub(0));
+	if(argOpt != INVALID_POINTER) {
+	  u_int dst = IdToReg(argOpt->Sel(0));
+ 	  if(dst != reg) {
+	    SET_INSTR_2R(PC,load_reg,dst,reg);
+ 	  }	
+	}  
+      }
+      break;
+    default:
+      for(u_int i = nFormals; i--; ) {
+	TagVal *argOpt = TagVal::FromWord(currentFormalArgs->Sub(i));
+	if(argOpt != INVALID_POINTER) {
+	  u_int dst = IdToReg(argOpt->Sel(0));
+	  SET_INSTR_2R1I(PC,select_tup,dst,reg,i);
+	}	  
+      }
+    };
+    patchTable->Add(PC);    
+    SET_INSTR_1I(PC,jump,0);
+  } else {    
+    SET_INSTR_1R(PC,seam_return1,reg);
+  }
+#else
+  SET_INSTR_1R(PC,seam_return1,reg);
+#endif
+}
+
 inline TagVal *ByteCodeJitter::Inline_HoleHole(Vector *args, 
 					       TagVal *idDefInstrOpt) {
   BCJIT_DEBUG("inline Hole.hole\n");
@@ -240,7 +319,7 @@ inline TagVal *ByteCodeJitter::Inline_HoleHole(Vector *args,
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
     u_int S = GetNewScratch();
     SET_INSTR_1R(PC,inlined_hole_hole,S);
-    SET_INSTR_1R(PC,seam_return1,S);
+    InlinePrimitiveReturn(S);
     return INVALID_POINTER;
   }
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
@@ -283,7 +362,7 @@ inline TagVal *ByteCodeJitter::Inline_HoleFill(Vector *args,
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall --> return unit
     u_int S = GetNewScratch();
     SET_INSTR_1R(PC,load_zero,S);
-    SET_INSTR_1R(PC,seam_return1,S);
+    InlinePrimitiveReturn(S);
     return INVALID_POINTER;
   } 
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
@@ -301,8 +380,8 @@ inline TagVal *ByteCodeJitter::Inline_FutureAwait(Vector *args,
   u_int arg = LoadIdRefKill(args->Sub(0));
   SET_INSTR_1R(PC,await,arg);
   if(idDefInstrOpt == INVALID_POINTER) {
-    SET_INSTR_1R(PC,seam_return1,arg);
-      return INVALID_POINTER;
+    InlinePrimitiveReturn(arg);
+    return INVALID_POINTER;
   }
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
   TagVal *ret = TagVal::FromWord(idDefInstr->Sel(0));
@@ -324,7 +403,7 @@ inline TagVal *ByteCodeJitter::Inline_FutureByneed(Vector *args,
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
     u_int S = GetNewScratch();
     SET_INSTR_2R(PC,inlined_future_byneed,S,src);
-    SET_INSTR_1R(PC,seam_return1,S);
+    InlinePrimitiveReturn(S);
     return INVALID_POINTER;
     } 
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
@@ -347,7 +426,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
     u_int x = LoadIdRefKill(args->Sub(0));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_1R(PC,iinc,x);
-      SET_INSTR_1R(PC,seam_return1,x);
+      InlinePrimitiveReturn(x);
       return INVALID_POINTER;
     } 
     Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
@@ -363,7 +442,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
     u_int y = LoadIdRefKill(args->Sub(1));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_1R(PC,iinc,y);
-      SET_INSTR_1R(PC,seam_return1,y);
+      InlinePrimitiveReturn(y);
       return INVALID_POINTER;
     } 
     Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
@@ -381,7 +460,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
     u_int S = GetNewScratch();
     SET_INSTR_3R(PC,iadd,S,x,y);
-    SET_INSTR_1R(PC,seam_return1,S);
+    InlinePrimitiveReturn(S);
     return INVALID_POINTER;
   } 
   Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
@@ -403,7 +482,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
   if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_1R(PC,idec,x);
-      SET_INSTR_1R(PC,seam_return1,x);
+      InlinePrimitiveReturn(x);
       return INVALID_POINTER;
     } 
     Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
@@ -420,7 +499,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
     u_int S = GetNewScratch();
     SET_INSTR_3R(PC,isub,S,x,y);
-    SET_INSTR_1R(PC,seam_return1,S);
+    InlinePrimitiveReturn(S);
     return INVALID_POINTER;
   } 
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
@@ -440,7 +519,7 @@ inline TagVal *ByteCodeJitter::Inline_RefAssign(Vector *args,
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
     u_int S = GetNewScratch();
     SET_INSTR_1R(PC,load_zero,S);
-    SET_INSTR_1R(PC,seam_return1,S); // return unit
+    InlinePrimitiveReturn(S); // return unit
     return INVALID_POINTER;
   }
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
@@ -702,10 +781,9 @@ inline TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
 }
 
 // Specialize of id * idRef vector * template * instr  
-/* On runtime every value of the global environment is directly 
- * substituted into the code. This means that every time such a closure
- * is really needed, new code must be compiled.
- */
+// On runtime every value of the global environment is directly 
+// substituted into the code. This means that every time such a closure
+// is really needed, new code must be compiled.
 inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
   u_int dst = IdToReg(pc->Sel(0));
   Vector *globalRefs = Vector::FromWordDirect(pc->Sel(1));
@@ -890,14 +968,18 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   Closure *closure = Closure::FromWordDirect(pc->Sel(0));
   Vector *args = Vector::FromWordDirect(pc->Sel(1));
   TagVal *idDefInstrOpt = TagVal::FromWord(pc->Sel(2));
+#ifdef DO_INLINING
+  bool isTailcall = (idDefInstrOpt == INVALID_POINTER
+		     && !(inlineDepth > 0 && 
+			  currentFormalArgs != INVALID_POINTER));
+#else
   bool isTailcall = (idDefInstrOpt == INVALID_POINTER);
-
+#endif
   // try first to inline some frequent primitives
   ConcreteCode *concreteCode = 
     ConcreteCode::FromWord(closure->GetConcreteCode());		
   Interpreter *interpreter = concreteCode->GetInterpreter();
   void *cFunction = (void*) interpreter->GetCFunction();
-
 
   TagVal *continuation;
   if(InlinePrimitive(cFunction,args,idDefInstrOpt,&continuation))
@@ -906,7 +988,17 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   // compile normal primitive call
   CompileApplyPrimitive(closure,args,isTailcall);
 
-  if(isTailcall)
+#ifdef DO_INLINING
+  if(idDefInstrOpt == INVALID_POINTER
+     && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
+    u_int inArity = currentFormalArgs->GetLength();
+    CompileCCC(inArity,currentFormalArgs);
+    patchTable->Add(PC);    
+    SET_INSTR_1I(PC,jump,0);
+    return INVALID_POINTER;
+  }
+#endif
+  if(isTailcall) 
     return INVALID_POINTER;
 
   // non-tailcall
@@ -924,7 +1016,15 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   Vector *args = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs = args->GetLength();
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
+
+#ifdef DO_INLINING
+  bool isTailcall = (idDefsInstrOpt == INVALID_POINTER
+		     && !(inlineDepth > 0 && 
+			  currentFormalArgs != INVALID_POINTER));
+#else
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER);
+#endif
+
 
   TagVal *tagVal = TagVal::FromWordDirect(pc->Sel(0));
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
@@ -933,10 +1033,34 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
     {
-      Closure *closure = Closure::FromWord(tagVal->Sel(0));       
+      BCJIT_DEBUG("AppVar: entered immediate\n");
+      // check if the immediate is an inline candidate
+      word wClosure = tagVal->Sel(0);
+#ifdef DO_INLINING
+      Map *inlineMap = inlineInfo->GetInlineMap();
+      if(//inlineDepth < 1 &&
+	 inlineMap->IsMember(wClosure)) {
+	Tuple *tup = Tuple::FromWordDirect(inlineMap->Get(wClosure));
+	TagVal *abstractCode = TagVal::FromWordDirect(tup->Sel(0));
+	// break compile cycle (check moved to ByteCodeInliner)
+	Vector *subst = Vector::FromWordDirect(tup->Sel(1));
+	u_int offset = Store::DirectWordToInt(tup->Sel(2));
+	InlineInfo *info = InlineInfo::FromWordDirect(tup->Sel(3));
+	TagVal *continuation = 
+	  CompileInlineFunction(abstractCode,info,subst,
+				offset,args,idDefsInstrOpt);
+	if(inlineDepth > 0 && idDefsInstrOpt == INVALID_POINTER) {
+	  patchTable->Add(PC);    
+	  SET_INSTR_1I(PC,jump,0);
+	}
+	return continuation;
+      }
+#endif
+      // check if we can inline a primitive
+      Closure *closure = Closure::FromWord(wClosure);       
       if(closure != INVALID_POINTER) {
-	ConcreteCode *concreteCode = 
-	  ConcreteCode::FromWord(closure->GetConcreteCode());		
+	word wConcreteCode = closure->GetConcreteCode();
+	ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
 	if(concreteCode != INVALID_POINTER) {
 	  Interpreter *interpreter = concreteCode->GetInterpreter();
 	  void *cFunction = (void*) interpreter->GetCFunction();
@@ -945,8 +1069,10 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	    // prepare args for InlinePrimitive
 	    TagVal *continuation;
 	    TagVal *idDefInstrOpt;
-	    if(isTailcall)
+	    if(idDefsInstrOpt == INVALID_POINTER) 
 	      idDefInstrOpt = INVALID_POINTER;
+// 	    if(isTailcall)
+// 	      idDefInstrOpt = INVALID_POINTER;
 	    else {		
 	      Tuple *idDefsInstr = 
 		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
@@ -965,7 +1091,18 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	    
 	    // we directly call the primitive function
 	    CompileApplyPrimitive(closure,args,isTailcall);
-	    if(isTailcall) {
+#ifdef DO_INLINING
+	    if(idDefInstrOpt == INVALID_POINTER
+	       && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
+	      u_int inArity = currentFormalArgs->GetLength();
+	      CompileCCC(inArity,currentFormalArgs);
+	      patchTable->Add(PC);    
+	      SET_INSTR_1I(PC,jump,0);
+	      continuation = INVALID_POINTER;
+	    }
+#endif
+	    if(idDefsInstrOpt == INVALID_POINTER) {
+// 	    if(isTailcall) {
 	      continuation = INVALID_POINTER;
 	    } else {
 	      Tuple *idDefsInstr = 
@@ -976,7 +1113,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	      continuation = TagVal::FromWordDirect(idDefsInstr->Sel(1));
 	    } 
 	    return continuation;
-	  }
+	  } 
 	}
       }
     }
@@ -1052,10 +1189,18 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   }
 
  compile_continuation: // nice hack ;-)
-
+#ifdef DO_INLINING
+  if(idDefsInstrOpt == INVALID_POINTER
+     && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
+    u_int inArity = currentFormalArgs->GetLength();
+    CompileCCC(inArity,currentFormalArgs);
+    patchTable->Add(PC);    
+    SET_INSTR_1I(PC,jump,0);
+    return INVALID_POINTER;
+  }
+#endif
   if(isTailcall) 
     return INVALID_POINTER;
-
   // non-tailcall
   Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
   Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
@@ -1067,10 +1212,8 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 
 // GetRef of id * idRef * instr
 inline TagVal *ByteCodeJitter::InstrGetRef(TagVal *pc) {
-  BCJIT_DEBUG("compile GetRef ");
   u_int dst = IdToReg(pc->Sel(0));
   u_int src = LoadIdRefKill(pc->Sel(1));
-  BCJIT_DEBUG(" src->%d and dst->%d\n",src,dst);
   SET_INSTR_2R(PC,load_cell,dst,src);
   return TagVal::FromWordDirect(pc->Sel(2));
 }
@@ -1850,9 +1993,21 @@ inline TagVal *ByteCodeJitter::InstrShared(TagVal *pc) {
 }
 
 // Return of idRef vector
-inline TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
+/*inline*/ TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
   Vector *returnIdRefs = Vector::FromWordDirect(pc->Sel(0));
-  u_int nArgs          = returnIdRefs->GetLength();
+  u_int nArgs = returnIdRefs->GetLength();
+#ifdef DO_INLINING
+  // compile exit of an inlined function
+  if(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
+    CompileInlineCCC(currentFormalArgs,returnIdRefs,true);
+    patchTable->Add(PC);    
+    SET_INSTR_1I(PC,jump,0);
+    return INVALID_POINTER;
+  }
+//   fprintf(stderr,"compile return %p; inlineDepth %d, formalArgs %p\n",
+// 	  pc,inlineDepth,currentFormalArgs);
+#endif
+  // normal return
   switch(nArgs) {
   case 1:
     {
@@ -2003,9 +2158,10 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
 	} else { 
 	  SET_INSTR_1R(PC,seam_ccc1,dst);
 	}
-      } else {
-	SET_INSTR(PC,seam_ccc1_wildcard);
-      }
+      } 
+//       else {
+// 	SET_INSTR(PC,seam_ccc1_wildcard); // DO WE NEED THIS ????
+//       }
     }
     break;
   default:
@@ -2034,35 +2190,255 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
   }
 }
 
+void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs, 
+				      Vector *args, bool isReturn=false) {
+  u_int nFormalArgs = formalArgs->GetLength();
+  u_int nArgs = args->GetLength();
+  // argument match
+  if(nFormalArgs == nArgs) {
+    for(u_int i=0; i<nArgs; i++) {
+      TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(i));
+      if(argOpt != INVALID_POINTER) {
+	u_int dst = IdToReg(argOpt->Sel(0));
+	TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
+	if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+	  tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+	switch (AbstractCode::GetIdRef(tagVal)) {
+	case AbstractCode::LastUseLocal:
+	case AbstractCode::Local:
+	  {    
+	    u_int src = IdToReg(tagVal->Sel(0));	      
+	    if(src != dst) { 
+	      SET_INSTR_2R(PC,load_reg,dst,src);
+	    }
+	  }
+	  break;
+	case AbstractCode::Global:
+	  {
+	    Assert(!isReturn);
+	    SET_INSTR_1R1I(PC,load_global,dst,
+			   Store::DirectWordToInt(tagVal->Sel(0)));
+	  }
+	  break;
+	case AbstractCode::Immediate:
+	  {
+	    word val = tagVal->Sel(0);
+	    if (PointerOp::IsInt(val)) {
+	      s_int x = Store::DirectWordToInt(val);
+	      if(x == 0) { SET_INSTR_1R(PC,load_zero,dst);} 
+	      else { SET_INSTR_1R1I(PC,load_int,dst,x); }
+	    } else {
+	      u_int index = imEnv.Register(val);
+	      SET_INSTR_1R1I(PC,load_immediate,dst,index);
+	    }
+	  }
+	  break;
+	default:
+	  Error("invalid idRef Tag");
+	}
+      }
+    }
+    return;
+  }
+  // argument mismatch
+  switch(nFormalArgs) {
+  case 0:
+    if(nArgs == 1 && !isReturn) {
+      u_int reg = LoadIdRefKill(args->Sub(0));
+      SET_INSTR_1R(PC,await,reg);
+    }
+    break;
+  case 1:
+    switch(nArgs) {
+    case 0:
+      {
+	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
+	if(argOpt != INVALID_POINTER) {
+	  u_int dst = IdToReg(argOpt->Sel(0));	
+	  SET_INSTR_1R(PC,load_zero,dst); // load unit
+	}
+      }
+      break;
+    default:
+      {
+	Assert(nArgs > 1); // construct tuple into formal arg 0
+	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
+	if(argOpt != INVALID_POINTER) {
+	  u_int dst = IdToReg(argOpt->Sel(0));
+	  SET_INSTR_1R1I(PC,new_tup,dst,nArgs);
+	  for(u_int i=nArgs; i--; ) {
+	    u_int src = LoadIdRefKill(args->Sub(i),true);
+	    SET_INSTR_2R1I(PC,init_tup,dst,src,i);
+	  }
+	}
+      }
+    }
+    break;
+  default:
+    BCJIT_DEBUG("inlined ccc nArgs %d, nFormals %d\n",nArgs,nFormalArgs);
+    if(nArgs == 1) { // deconstruct tuple into formal args
+      u_int src = LoadIdRefKill(args->Sub(0));
+      for(u_int i=nFormalArgs; i--; ) {
+	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(i));
+	if(argOpt != INVALID_POINTER) {
+	  u_int dst = IdToReg(argOpt->Sel(0));
+	  SET_INSTR_2R1I(PC,select_tup,dst,src,i);
+	}	  
+      }
+    }
+  }
+}
+
+// Function of coord * value option vector * string vector *
+//             idDef args * outArity option * instr * liveness
+TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode, 
+					      InlineInfo *info,
+					      Vector *subst,		   
+					      u_int offset,
+					      Vector *args,
+					      TagVal *idDefsInstrOpt) {
+#ifdef DEBUG_DISASSEMBLE
+  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
+  std::fprintf(stderr, "inline function at %s:%d.%d depth %d\n",
+	       String::FromWordDirect(coord->Sel(0))->ExportC(),
+	       Store::DirectWordToInt(coord->Sel(1)),
+	       Store::DirectWordToInt(coord->Sel(2)),
+	       inlineDepth); 
+  AbstractCode::Disassemble(stderr,
+			    TagVal::FromWordDirect(abstractCode->Sel(5)));
+#endif
+
+  inlineDepth++;
+  Vector *oldFormalArgs = currentFormalArgs;
+  InlineInfo *oldInlineInfo = inlineInfo;
+  inlineInfo = info;
+  
+  // prepare the exit of the inline function
+  //  patchTable.Clear();
+  PatchTable *oldPatchTable = patchTable;
+  patchTable = new PatchTable();
+
+  TagVal *continuation;
+  if(idDefsInstrOpt != INVALID_POINTER) {
+    Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+    currentFormalArgs = 
+      ShiftIdDefs(Vector::FromWordDirect(idDefsInstr->Sel(0)),-offset);
+    continuation = TagVal::FromWordDirect(idDefsInstr->Sel(1));
+  } else if (inlineDepth == 1) {
+    // if the first caller is a tailcall, than introduce a return instruction
+    // otherwise use the continuation of the caller
+    continuation = INVALID_POINTER;
+    currentFormalArgs = INVALID_POINTER;
+  } else {
+    continuation = INVALID_POINTER;
+    if(currentFormalArgs != INVALID_POINTER)
+      currentFormalArgs = ShiftIdDefs(currentFormalArgs,-offset);
+  }
+
+  // compile in ccc
+  Vector *formalArgs = Vector::FromWordDirect(abstractCode->Sel(3));
+  BCJIT_DEBUG("compile in CCC\n");
+  // shift formal args -> look for better solution
+  Vector *formalArgsShifted = ShiftIdDefs(formalArgs,offset);
+  CompileInlineCCC(formalArgsShifted,args);
+
+  // save jitter state
+//   u_int oldLocalOffset = localOffset;
+  Vector *oldGlobalSubst = globalSubst;
+  IntMap *oldSharedTable = sharedTable;
+
+  globalSubst = subst;
+  localOffset += offset;
+  sharedTable = IntMap::New(inlineInfo->GetNNodes());
+
+  BCJIT_DEBUG("compile instr\n");
+  CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
+  u_int jumpInstrSize = patchTable->GetJumpInstrSize();
+  u_int nPatches = patchTable->GetLength();
+  BCJIT_DEBUG("start patch with nPatches %d\n",nPatches);
+  if(nPatches > 0) {
+    BCJIT_DEBUG("start patch %d\n",nPatches);
+    // avoid last "jump 0" instruction
+    u_int jumpInstrSize = patchTable->GetJumpInstrSize();
+    if(PC - jumpInstrSize == patchTable->Sub(nPatches - 1)) {
+      PC -= jumpInstrSize;
+      WriteBuffer::Shrink(jumpInstrSize);
+      nPatches--;
+    }
+    for(u_int i = nPatches; i--; ) {
+      u_int patchPC = patchTable->Sub(i);
+#ifdef RELATIVE_JUMP
+      u_int offset = PC - (patchPC + jumpInstrSize);    
+#else
+      u_int offset = PC;
+#endif
+      SET_INSTR_1I(patchPC,jump,offset);
+    }
+  }
+
+  // restore state
+  localOffset -= offset;//oldLocalOffset;
+  globalSubst = oldGlobalSubst;;
+  currentFormalArgs = oldFormalArgs;
+  inlineInfo = oldInlineInfo;
+  sharedTable = oldSharedTable;
+  delete patchTable;
+  patchTable = oldPatchTable;
+  inlineDepth--;
+
+  return continuation;
+}
+
+
 u_int invocations = 0;
 
 // Function of coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
-//   timeval startTime;
-//   gettimeofday(&startTime,0);
+//    timeval startTime;
+//    gettimeofday(&startTime,0);
 
   BCJIT_DEBUG("start compilation (%d times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
-  
-//   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-//   std::fprintf(stderr, "%d. compile function (%p) at %s:%d.%d nArgs=%d\n\n",
-// 	       ++invocations, abstractCode->ToWord(),
-// 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
-// 	       Store::DirectWordToInt(coord->Sel(1)),
-// 	       Store::DirectWordToInt(coord->Sel(2)),
-// 	       Vector::FromWordDirect(abstractCode->Sel(3))->GetLength()
-// 	       ); 
-//   AbstractCode::Disassemble(stderr,
-// 			    TagVal::FromWordDirect(abstractCode->Sel(5)));
-    
+#ifdef DEBUG_DISASSEMBLE 
+  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
+  std::fprintf(stderr, "%d. compile function (%p) at %s:%d.%d nArgs=%d\n\n",
+	       ++invocations, abstractCode->ToWord(),
+	       String::FromWordDirect(coord->Sel(0))->ExportC(),
+	       Store::DirectWordToInt(coord->Sel(1)),
+	       Store::DirectWordToInt(coord->Sel(2)),
+	       Vector::FromWordDirect(abstractCode->Sel(3))->GetLength()
+	       ); 
+  AbstractCode::Disassemble(stderr,
+			    TagVal::FromWordDirect(abstractCode->Sel(5)));
+#endif    
 
+// do inline anaysis
+  currentFormalArgs = INVALID_POINTER;
+  localOffset = 0;
+  inlineDepth = 0;
+#ifdef DO_INLINING
+  TagVal *inlineInfoOpt = lazyCompileClosure->GetInlineInfoOpt();
+  if(inlineInfoOpt == INVALID_POINTER) {
+    ByteCodeInliner::ResetRoot();
+    inlineInfo = ByteCodeInliner::AnalyseInlining(abstractCode);
+  } else
+    inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
+#endif
   // perform register allocation
+#ifdef DO_INLINING
+  currentNLocals = inlineInfo->GetNLocals();
+#else
   currentNLocals = GetNumberOfLocals(abstractCode);
+#endif
 
 #ifdef DO_REG_ALLOC
+#ifdef DO_INLINING
+  Vector *liveness = inlineInfo->GetLiveness();
+#else
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
+#endif
   u_int local_mapping[currentNLocals];
   mapping = local_mapping;
   RegisterAllocator::Run(liveness,mapping,&currentNLocals);
@@ -2077,7 +2453,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   imEnv.Init();
 
   // prepare control data structures
-  sharedTable = IntMap::New(INITIAL_SHAREDTABLE_SIZE);
+  sharedTable = IntMap::New(inlineInfo->GetNNodes());
  
   // prepare substituation
   Vector *substInfo = Vector::FromWordDirect(abstractCode->Sel(1));
@@ -2115,7 +2491,13 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
     ByteConcreteCode::NewInternal(abstractCode,
 				  code,
 				  imEnv.ExportEnv(),
-				  Store::IntToWord(nRegisters));
+				  Store::IntToWord(nRegisters),
+#ifdef DO_INLINING
+				  inlineInfo->ToWord()
+#else
+                                  Store::IntToWord(0)
+#endif
+				  );
 
 //   static u_int sumNRegisters = 0;
 //   sumNRegisters += nRegisters;
@@ -2125,16 +2507,17 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 //   static u_int codeSize = 0;
 //   codeSize += code->GetSize();
 //   fprintf(stderr,"codeSize %d\n",codeSize);
-//   fprintf(stderr,"-----------------\ncompiled code:\n");
-// #ifdef THREADED
-//   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
-// 			Tuple::FromWordDirect(imEnv.ExportEnv()));
-// #else
-//   ByteCode::Disassemble(stderr,0,code,
-// 			Tuple::FromWordDirect(imEnv.ExportEnv()));
-// #endif
-//   fprintf(stderr,"-------------\n");
-
+#ifdef DEBUG_DISASSEMBLE
+  fprintf(stderr,"-----------------\ncompiled code:\n");
+#ifdef THREADED
+  ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
+			Tuple::FromWordDirect(imEnv.ExportEnv()));
+#else
+  ByteCode::Disassemble(stderr,0,code,
+			Tuple::FromWordDirect(imEnv.ExportEnv()));
+#endif
+  fprintf(stderr,"-------------\n");
+#endif
 //   static double totalTime = 0;
 //   timeval stopTime;
 //   gettimeofday(&stopTime,0);

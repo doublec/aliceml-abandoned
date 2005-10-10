@@ -1,3 +1,4 @@
+
 //
 // Author:
 //   Christian Mueller <cmueller@ps.uni-sb.de>
@@ -20,16 +21,14 @@
 #include "alice/Base.hh"
 #include "alice/Data.hh"
 #include "alice/JitterImmediateEnv.hh"
+#include "alice/ByteCodeInliner.hh"
 
 #define DO_REG_ALLOC
 //#undef DO_REG_ALLOC
 
-#define INITIAL_SHAREDTABLE_SIZE 256
-
-/* We can try to omit a range check if we fill the missing slots in the
-   jump table with the PC of the "else" part. This optimization is used if
-   actualNumberOfTests * OPTIMIZE_TAGTEST_LEVEL > maxTag
-*/
+// We can try to omit a range check if we fill the missing slots in the
+// jump table with the PC of the "else" part. This optimization is used if
+// actualNumberOfTests * OPTIMIZE_TAGTEST_LEVEL > maxTag
 #define OPTIMIZE_TAGTEST_LEVEL 5
 
 class LazyByteCompileClosure;
@@ -41,6 +40,43 @@ private:
   ImmediateEnv imEnv;
   IntMap *sharedTable;
   Vector *globalSubst;
+  
+  // offset for inline functions
+  u_int localOffset;
+  Vector *currentFormalArgs;
+
+  // patch forward jumps in CompileInlineFunctions
+  class PatchTable {
+  private:
+    u_int *table;
+    u_int size, top;
+    static u_int jumpInstrSize;
+  public:
+    PatchTable();
+    ~PatchTable() { delete table; }
+    static void Init();
+    void Add(u_int addr) {
+      if(top >= size) {
+	size = size * 3 / 2;
+	u_int *newTable = new u_int[size];
+	memcpy(newTable,table,top*sizeof(u_int));
+	delete table;
+	table = newTable;
+      }
+      table[top++] = addr;
+    }
+    u_int Sub(u_int i) { return table[i]; }
+    u_int GetLength() { return top; }
+    u_int Clear() { top = 0; }
+    u_int GetJumpInstrSize() { return jumpInstrSize; }
+  };
+  PatchTable *patchTable;
+
+  // this is the result of the inlining analysis
+  InlineInfo *inlineInfo;
+
+  // this variable indicates the current compilation depth 
+  u_int inlineDepth;
 
 #ifdef DO_REG_ALLOC
   u_int *mapping;
@@ -63,9 +99,9 @@ private:
 
   u_int IdToReg(word id) {
 #ifdef DO_REG_ALLOC
-    return mapping[Store::DirectWordToInt(id)];
+    return mapping[Store::DirectWordToInt(id) + localOffset];
 #else
-    return Store::DirectWordToInt(id);
+    return Store::DirectWordToInt(id) + localOffset;
 #endif
   }
 
@@ -76,6 +112,7 @@ private:
   u_int LoadIdRefKill(word idRef, bool doIncScratch);
 
   // inlined primitives
+  void InlinePrimitiveReturn(u_int reg);
   TagVal *Inline_IntPlus(Vector *args, TagVal *idDefInstrOpt);
   TagVal *Inline_IntMinus(Vector *args, TagVal *idDefInstrOpt);
   TagVal *Inline_RefAssign(Vector *args, TagVal *idDefInstrOpt);
@@ -125,6 +162,15 @@ private:
   void CompileCCC(u_int inArity,Vector *rets);
   void CompileInstr(TagVal *pc);
   void CompileApplyPrimitive(Closure *closure, Vector *args, bool isTailcall);
+
+  // inlining
+  void CompileInlineCCC(Vector *formalArgs, Vector *args, bool isReturn);
+  TagVal *CompileInlineFunction(TagVal *abstractCode, 
+				InlineInfo *info,
+				Vector *subst,		   
+				u_int offset,
+				Vector *args,
+				TagVal *idDefsInstrOpt);
 
 public:
   ByteCodeJitter();

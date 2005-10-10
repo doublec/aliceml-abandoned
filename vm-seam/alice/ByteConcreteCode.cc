@@ -107,6 +107,7 @@ LazyByteCompileClosure *LazyByteCompileClosure::New(TagVal *abstractCode) {
   closure->Init(ABSTRACT_CODE, abstractCode->ToWord());
   // closure->Init(BYNEED_POS, byneed) done in ByteConcreteCode::New
   closure->Init(N_LOCALS_POS, Store::IntToWord(-1));
+  closure->Init(INLINE_INFO_POS, Store::IntToWord(Types::NONE));
   return STATIC_CAST(LazyByteCompileClosure *, closure);
 }
 
@@ -116,7 +117,8 @@ LazyByteCompileClosure *LazyByteCompileClosure::New(TagVal *abstractCode) {
 ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 						Chunk *code,
 						word immediateEnv,
-						word nbLocals) {
+						word nbLocals,
+						word inlineInfo) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(ByteCodeInterpreter::self, SIZE);
   Chunk *name =
@@ -132,6 +134,7 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
   word outArity = ((outArityOpt == INVALID_POINTER) 
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Init(OUT_ARITY_POS, outArity);
+  concreteCode->Init(INLINE_INFO_POS, inlineInfo);
 
   return STATIC_CAST(ByteConcreteCode *, concreteCode);
 }

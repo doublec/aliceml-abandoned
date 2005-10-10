@@ -56,6 +56,9 @@ public:
   static u_int GetSize() {
     return size;
   }
+  static void Shrink(u_int offset) {
+    top -= offset;
+  }
   static Chunk *FlushCode() {
     // copy code into chunk
     Chunk *code = Store::AllocChunk(top * CODE_SLOT_SIZE, STORE_GEN_OLDEST);

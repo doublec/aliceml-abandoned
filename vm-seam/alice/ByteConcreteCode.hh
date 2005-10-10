@@ -21,10 +21,11 @@
 
 #include "alice/Data.hh"
 #include "alice/ByteCodeInterpreter.hh"
+#include "alice/ByteCodeInliner.hh"
 
 class LazyByteCompileClosure : public Closure {
 protected:
-  enum { ABSTRACT_CODE, BYNEED_POS, N_LOCALS_POS, SIZE };
+  enum { ABSTRACT_CODE, BYNEED_POS, N_LOCALS_POS, INLINE_INFO_POS, SIZE };
 public:
   TagVal *GetAbstractCode() {
     return TagVal::FromWordDirect(Sub(ABSTRACT_CODE));
@@ -38,7 +39,14 @@ public:
   void SetNLocals(s_int nLocals) {
     Update(N_LOCALS_POS, nLocals);
   }
-
+  void SetInlineInfo(InlineInfo *info) {
+    TagVal *some = TagVal::New(Types::SOME,1);
+    some->Init(0,info->ToWord());
+    Update(INLINE_INFO_POS,some->ToWord());
+  }
+  TagVal *GetInlineInfoOpt() {
+    return TagVal::FromWord(Sub(INLINE_INFO_POS));
+  }
   static LazyByteCompileClosure *New(TagVal *abstractCode);
   static LazyByteCompileClosure *FromWordDirect(word wClosure) {
     return STATIC_CAST(LazyByteCompileClosure *, 
@@ -68,7 +76,9 @@ class AliceDll ByteConcreteCode : private ConcreteCode {
 protected:
     enum {
     TRANSFORM_POS, BYTE_CODE_POS, IMMEDIATE_ENV_POS, 
-    IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS, SIZE
+    IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS, 
+    INLINE_INFO_POS,
+    SIZE
   };
 public:
   using Block::ToWord;
@@ -93,6 +103,9 @@ public:
   s_int GetOutArity() {
     return Store::DirectWordToInt(Get(OUT_ARITY_POS));
   }
+  InlineInfo *GetInlineInfo() {
+    return InlineInfo::FromWordDirect(Get(INLINE_INFO_POS));
+  }
   void Disassemble(std::FILE *file);
   void UpdateCode(Chunk *chunk, word immediateEnv) {
     ConcreteCode::Init(BYTE_CODE_POS, chunk->ToWord());
@@ -103,7 +116,8 @@ public:
   static ByteConcreteCode *NewInternal(TagVal *abstractCode,
 				       Chunk *code,
 				       word immediateEnv,
-				       word nbLocals);
+				       word nbLocals,
+				       word inlineInfo);
   // ByteConcreteCode Untagging
   static ByteConcreteCode *FromWord(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);

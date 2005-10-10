@@ -31,8 +31,9 @@
 #define BCI_DEBUG(s,...)
 #define DEBUG_INSTR()
 
-// #define BCI_DEBUG(s,...) fprintf(stderr,s, ##__VA_ARGS__)
-// #define DEBUG_INSTR() ByteCode::DisassembleOne(stderr,PC,code,IP)
+// extern u_int invocations;
+// #define BCI_DEBUG(s,...) /*if(invocations > 600)*/ fprintf(stderr,s, ##__VA_ARGS__)
+// #define DEBUG_INSTR() /*if(invocations > 600) */ByteCode::DisassembleOne(stderr,PC,code,IP)
 
 class ByteCodeFrame;
 class ReadBuffer;
@@ -88,9 +89,9 @@ public:
 	Tuple *tuple = Tuple::New(nArgs);
 	BCI_DEBUG("Construct build tuple %p\n",tuple);	
 	for (u_int i = 0; i<nArgs; i++ ) {
-	  Block *b = Store::WordToBlock(Scheduler::GetCurrentArg(i));
-	  BCI_DEBUG("val %p - label %d\n",Scheduler::GetCurrentArg(i),
-		    b == INVALID_POINTER ? -1 : b->GetLabel());
+// 	  Block *b = Store::WordToBlock(Scheduler::GetCurrentArg(i));
+// 	  BCI_DEBUG("val %p - label %d\n",Scheduler::GetCurrentArg(i),
+// 		    b == INVALID_POINTER ? -1 : b->GetLabel());
 	  tuple->Init(i, Scheduler::GetCurrentArg(i));
 	}
 	Scheduler::SetNArgs(1);
