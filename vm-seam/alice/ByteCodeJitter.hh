@@ -105,6 +105,8 @@ private:
 #endif
   }
 
+  word ExtractImmediate(word idRef);
+
   TagVal *LookupSubst(u_int index) {
     return TagVal::FromWordDirect(globalSubst->Sub(index));
   }

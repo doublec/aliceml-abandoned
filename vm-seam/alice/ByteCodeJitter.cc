@@ -65,8 +65,12 @@ static inline Vector *ShiftIdDefs(Vector *srcs, s_int offset) {
   return dsts;
 }
 
-static inline word ExtractImmediate(word idRef) {
+inline word ByteCodeJitter::ExtractImmediate(word idRef) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
+
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
     return tagVal->Sel(0);
@@ -441,10 +445,12 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
     } 
     Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
     TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
-    if(ret0 != INVALID_POINTER && IdToReg(ret0->Sel(0)) == x) {
-      SET_INSTR_1R(PC,iinc,x);
-      return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
-    }    
+    u_int S = (ret0 == INVALID_POINTER) ? 
+      GetNewScratch() : IdToReg(ret0->Sel(0));
+    if(S != x)
+      SET_INSTR_2R(PC,load_reg,S,x);
+    SET_INSTR_1R(PC,iinc,S);
+    return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
   }
 
   word wX = ExtractImmediate(args->Sub(0));
@@ -457,11 +463,12 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
     } 
     Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
     TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
-    if(ret0 != INVALID_POINTER && IdToReg(ret0->Sel(0)) == y) {
-      SET_INSTR_1R(PC,iinc,y);
-      return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
-    }
-    // else: inline iadd
+    u_int S = (ret0 == INVALID_POINTER) ? 
+      GetNewScratch() : IdToReg(ret0->Sel(0));
+    if(S != y)
+      SET_INSTR_2R(PC,load_reg,S,y);
+    SET_INSTR_1R(PC,iinc,S);
+    return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
   }
   
   // normal case
@@ -485,11 +492,11 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
 					       TagVal *idDefInstrOpt) {
   // TODO: we might need a CCC
 
-  u_int x = LoadIdRefKill(args->Sub(0));
-  word wY = ExtractImmediate(args->Sub(1));
-
   // try first to compile the special case
+
+  word wY = ExtractImmediate(args->Sub(1));
   if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
+    u_int x = LoadIdRefKill(args->Sub(0));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_1R(PC,idec,x);
       InlinePrimitiveReturn(x);
@@ -497,14 +504,34 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
     } 
     Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
     TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
-    if(ret0 != INVALID_POINTER && IdToReg(ret0->Sel(0)) == x) {
-      SET_INSTR_1R(PC,idec,x);
-      return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
-    }
-    // else: inline iadd
+    u_int S = (ret0 == INVALID_POINTER) ? 
+      GetNewScratch() : IdToReg(ret0->Sel(0));
+    if(S != x)
+      SET_INSTR_2R(PC,load_reg,S,x);
+    SET_INSTR_1R(PC,idec,S);
+    return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
+  }
+
+  word wX = ExtractImmediate(args->Sub(0));
+  if(wX != INVALID_POINTER && Store::DirectWordToInt(wX) == 1) {
+    u_int y = LoadIdRefKill(args->Sub(1));
+    if(idDefInstrOpt == INVALID_POINTER) { // tailcall
+      SET_INSTR_1R(PC,idec,y);
+      InlinePrimitiveReturn(y);
+      return INVALID_POINTER;
+    } 
+    Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
+    TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
+    u_int S = (ret0 == INVALID_POINTER) ? 
+      GetNewScratch() : IdToReg(ret0->Sel(0));
+    if(S != y)
+      SET_INSTR_2R(PC,load_reg,S,y);
+    SET_INSTR_1R(PC,idec,S);
+    return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
   }
   
   // normal case
+  u_int x = LoadIdRefKill(args->Sub(0));
   u_int y = LoadIdRefKill(args->Sub(1));
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
     DEFINE_PRIMITIVE_RETURN_REG(S);
@@ -961,6 +988,15 @@ inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
       u_int arg1 = LoadIdRefKill(args->Sub(1));
       u_int callInstr = isTailcall ? seam_tailcall_prim2 : seam_call_prim2;
       SET_INSTR_2R1I(PC,callInstr,arg0,arg1,interpreterAddr);
+    }
+    break;
+  case 3:
+    {
+      u_int arg0 = LoadIdRefKill(args->Sub(0));
+      u_int arg1 = LoadIdRefKill(args->Sub(1));
+      u_int arg2 = LoadIdRefKill(args->Sub(2));
+      u_int callInstr = isTailcall ? seam_tailcall_prim3 : seam_call_prim3;
+      SET_INSTR_3R1I(PC,callInstr,arg0,arg1,arg2,interpreterAddr);
     }
     break;
   default:

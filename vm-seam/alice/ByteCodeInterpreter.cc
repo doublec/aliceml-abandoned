@@ -330,12 +330,6 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define SET_ARGS2() SET_ARGS1(); SETREG(1,arg1)
 #define SET_ARGS3() SET_ARGS2(); SETREG(2,arg2)
 
-#ifdef DO_REWRITING
-#define REWRITE_SEAM_CALL(NOA)
-#else
-#define REWRITE_SEAM_CALL(NOA) 	/* dummy */
-#endif
-
 #define BCI_CALL(NOA) {							\
         PREPARE_CALL##NOA();						\
 	SAVEPC(PC);							\
@@ -365,7 +359,6 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	SAVEPC(PC);							\
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);			\
-        REWRITE_SEAM_CALL(NOA);						\
         if(closure == CP) {						\
 	  PushCall(closure);						\
           frame = (ByteCodeFrame*) Scheduler::GetFrame();		\
@@ -406,18 +399,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      ***************************/
 
     // specialized self tailcall instructions
-    // rewriting has to be cleaned up
 
 #define PREPARE_DIRECTCALL() /* dummy */
 #define PREPARE_DIRECTCALL1() SETREG(0,GETREG(r0))
 #define PREPARE_DIRECTCALL2() { PREPARE_DIRECTCALL1(); SETREG(1,GETREG(r1)); }
 #define PREPARE_DIRECTCALL3() { PREPARE_DIRECTCALL2(); SETREG(2,GETREG(r2)); }
-
-#ifdef DO_REWRITING
-#define REWRITE_SEAM_TAILCALL(NOA)    					
-#else
-#define REWRITE_SEAM_TAILCALL(NOA) /* dummy */
-#endif 
 
     // skip CCC
       Case(self_tailcall_direct0): 
@@ -466,7 +452,6 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       PREPARE_CALL##NOA();						\
       word wClosure = GETREG(reg);					\
       Closure *closure = Closure::FromWord(wClosure);			\
-      REWRITE_SEAM_TAILCALL(NOA);					\
       if(closure == CP) {						\
 	SETPC(0);							\
 	CHECK_PREEMPT();						\
@@ -518,28 +503,32 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       u_int nArgs = 2;				\
       GET_2R1I(codeBuffer,PC,r0,r1,primAddr);	\
       SET_SCHEDULER_ARGS2(r0,r1)
+#define PREPARE_PRIMCALL3()				\
+      u_int nArgs = 3;					\
+      GET_3R1I(codeBuffer,PC,r0,r1,r2,primAddr);	\
+      SET_SCHEDULER_ARGS3(r0,r1,r2)
 
     /**************************
      * normal primitive call
      *************************/
 
-#define SEAM_CALL_PRIM(NOA) {						 \
-      PREPARE_PRIMCALL##NOA();						 \
-      SAVEPC(PC);					 \
-      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	 \
-      /*Worker::Result res = Primitive::Execute(interpreter);*/		 \
-      NEW_STACK_FRAME(primFrame, interpreter, 0);			 \
-      Worker::Result res = interpreter->GetCFunction()();		 \
-      StackFrame *newFrame = Scheduler::GetFrame();			 \
-      /* test if we can skip the scheduler */				 \
-      if(res == CONTINUE && !StatusWord::GetStatus()			 \
-         && newFrame->GetWorker() == this) {				 \
-	frame = (ByteCodeFrame*) newFrame;				 \
+#define SEAM_CALL_PRIM(NOA) {						\
+      PREPARE_PRIMCALL##NOA();						\
+      SAVEPC(PC);							\
+      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	\
+      /*Worker::Result res = Primitive::Execute(interpreter);*/		\
+      NEW_STACK_FRAME(primFrame, interpreter, 0);			\
+      Worker::Result res = interpreter->GetCFunction()();		\
+      StackFrame *newFrame = Scheduler::GetFrame();			\
+      /* test if we can skip the scheduler */				\
+      if(res == CONTINUE && !StatusWord::GetStatus()			\
+         && newFrame->GetWorker() == this) {				\
+	frame = (ByteCodeFrame*) newFrame;				\
 	code = frame->GetCode();					\
 	LOADSTATE(PC,CP,IP);						\
-	DISPATCH(PC);							 \
-      }									 \
-      return res;							 \
+	DISPATCH(PC);							\
+      }									\
+      return res;							\
     }									
 
       
@@ -547,6 +536,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(seam_call_prim0): SEAM_CALL_PRIM(0);
     Case(seam_call_prim1): SEAM_CALL_PRIM(1);
     Case(seam_call_prim2): SEAM_CALL_PRIM(2);
+    Case(seam_call_prim3): SEAM_CALL_PRIM(3);
 
 
     /*******************************
@@ -576,6 +566,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(seam_tailcall_prim0):  SEAM_TAILCALL_PRIM(0);
     Case(seam_tailcall_prim1):  SEAM_TAILCALL_PRIM(1);
     Case(seam_tailcall_prim2):  SEAM_TAILCALL_PRIM(2);
+    Case(seam_tailcall_prim3):  SEAM_TAILCALL_PRIM(3);
 
 
     /*****************************

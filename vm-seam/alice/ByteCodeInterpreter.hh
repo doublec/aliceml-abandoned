@@ -22,10 +22,6 @@
 #define GETREG(x) frame->GetLocal(x)
 #define SETREG(x,w) frame->SetLocal(x,w)
 
-// switch optimizing rewriting on and off
-//#define DO_REWRITING
-#undef DO_REWRITING
-
 // debug output
 
 #define BCI_DEBUG(s,...)

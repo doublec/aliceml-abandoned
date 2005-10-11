@@ -342,6 +342,12 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"seam_call_prim2 R%d, R%d, %d\n",r0,r1,prim);
     }
     return PC;
+  case seam_call_prim3: // r0,r1,r2,prim
+    {
+      GET_3R1I(codeBuffer,PC,r0,r1,r2,prim);
+      fprintf(f,"seam_call_prim3 R%d, R%d, R%d, %d\n",r0,r1,r2,prim);
+    }
+    return PC;
  case seam_tailcall_prim: // r,n
     {
       GET_2I(codeBuffer,PC,n,prim);
@@ -366,6 +372,12 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"seam_tailcall_prim2 R%d, R%d, %d\n",r0,r1,prim);
     }
     return PC; 
+  case seam_tailcall_prim3: // r0,r1,r2,prim
+    {
+      GET_3R1I(codeBuffer,PC,r0,r1,r2,prim);
+      fprintf(f,"seam_tailcall_prim3 R%d, R%d, R%d, %d\n",r0,r1,r2,prim);
+    }
+    return PC;
   case seam_return: // n
     {
       GET_1I(codeBuffer,PC,n);
