@@ -15,7 +15,7 @@ esac
 case `uname -s` in
     CYGWIN*)
 	AML2SML="sh \"$dir/aml2sml\""
-	sml="cmd /c sml-cm"
+	sml="bash -c sml"
 	;;
     *)
 	AML2SML=$dir/aml2sml

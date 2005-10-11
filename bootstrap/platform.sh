@@ -18,7 +18,7 @@ case $system in
    ;;
    *i[3456]86*CYGWIN*)
 	OZARCH=win32-i486
-	SMLNJARCH=x86-win32
+	SMLNJARCH=x86-cygwin
    ;;
    *Power*Mac*Darwin*)
         OZARCH=powermac-darwin

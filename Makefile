@@ -27,7 +27,7 @@ else
 endif
 
 PLATFORM = $(shell bootstrap/platform.sh smlnj)
-ifeq ($(PLATFORM:%win32=win32), win32)
+ifeq ($(PLATFORM:%cygwin=win32), win32)
     WINDOWS = 1
 else
     WINDOWS = 0

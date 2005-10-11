@@ -75,7 +75,7 @@ DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeCore.cc NativeUtils.hh MyN
 DISTDIR=alice-gtk-$(VERSION)
 
 ifeq ($(WINDOWS),1)
-    CC_OPTS=-mms-bitfields
+    CC_OPTS=-mms-bitfields -DCYGWIN
 else
     CC_OPTS=
 endif

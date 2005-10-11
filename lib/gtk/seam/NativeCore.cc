@@ -14,6 +14,9 @@
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 #include "ExtraMarshaller.hh"
+#ifdef CYGWIN
+#include <windows.h>
+#endif
 
 static word eventStream;
 static word weakDict;
