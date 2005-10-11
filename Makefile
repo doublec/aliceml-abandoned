@@ -1,19 +1,22 @@
 #
-# Global Makefile for building Alice and Seam under Windows
+# Global Makefile for building Alice and Seam under Windows/Linux
 # 2004-2005 Andreas Rossberg
-#
-# Note: Building under Windows is a PITA: it is horribly slow and very fragile.
 #
 # Usage:
 # - 'make setup' to checkout everything from CVS and create an appropriate
 #   directory structure.
 # - 'make update' to update from CVS.
-# - 'make build' to build everything.
+# - 'make build-windows' to build everything for Windows.
+# - 'make build-linux' to build everything for Linux.
+# - 'make all' to build Alice for Windows (incl. .exe wrappers) 
+#              and the documentation
 # - 'make clean' to remove everything built.
 # - 'make cleanbuild' to build from scratch.
 # After setup you must include seam-support in your path to be able to build:
 #   PATH=$(PREFIX)/seam-support/install/bin:$PATH
 # (See $PREFIX below.)
+#
+# Make sure, you have set the SMLNJ_HOME variable, before build starts.
 #
 # The system consists of several parts:
 # - seam: the virtual machine framework (uses autoconf)
@@ -30,31 +33,53 @@
 # properly:
 #   PATH=<dir>/distro/bin:<dir>/distro/lib/seam:$PATH
 #   ALICE_HOME=<dir>/distro/share/alice
-# For Gtk to function properly you must also have its installation directory in
-# path:
-#   PATH=<gtk-dir>/bin:<gtk-dir>/lib:$PATH
 #
-# To build the documentation, the generated HTML pages must be prepared in the
+#### WINDOWS #####
+#
+# Note: Building under Windows is a PITA: it is horribly slow and very fragile.
+#
+# You need to have SMLNJ Version >110.55 - Cygwin-Installation
+# on your system and the SMLNJ-bin dir in your PATH variable.
+#
+# You also need:
+#	autoconf  v. 2.57, 
+#	automake  v. 1.7.6
+#	gmp       v. 4.1.3
+#	lightning v. 1.2
+#	libtool   v. 1.5.20
+#
+# For Gtk to function properly you have to set:
+#
+# GTK_DIR=<install-dir>/WinGtk2
+# PKG_CONFIG_PATH=$GTK_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
+# PC_OPTS="gtk+-2.0 glib-2.0 libgnomecanvas-2.0 --define-variable=prefix=$GTK_DIR"
+# PATH=$GTK_DIR/bin:$GTK_DIR/lib:$PATH
+#
+# To build the documentation - without having PHP installed -
+# the generated HTML pages must be prepared in the
 # $DOC directory specified below. The actual generation is not done in this
 # Makefile, since it requires PHP. Invoking 'make docs' builds a compiled
-# help file (.chm) from it.
+# help file (.chm) from it (Windows).
 #
 # To prepare the distribution, you must have a build and the documentation.
-# Invoking 'make distro' will build special Windows .exe wrappers (to be able to
-# use Alice without Cygwin) and copy everything to the InstallShield directory.
+# Invoking 'make distro' will build special Windows .exe wrappers 
+# (to be able to use Alice without Cygwin) 
+# and copy everything to the InstallShield directory.
+#
+#########
 #
 # Troubleshooting:
 # - Check $PATH and $ALICE_HOME. In particular, $ALICE_HOME must use proper
 #   Windows syntax, not Cygwin (e.g. for drives)!
 # - After having performed 'make distro' it is no longer possible to invoke
 #   Alice from a Cygwin shell or do a 'make build-alice-bootstrap', because
-#   the shell scripts have been replaced by .exe files. Invoke 'make unbuild-win'
-#   to enable it again.
-# - Sometimes something just keeps failing for incomprehensible reasons. In that
-#   case it's best to do a 'make cleanbuild'.
+#   the shell scripts have been replaced by .exe files. 
+#   Invoke 'make unbuild-win-exec' to enable it again.
+# - Sometimes something just keeps failing for incomprehensible reasons. 
+#   In that case it's best to do a 'make cleanbuild'.
 # - If your system becomes notably slower you might have some orphaned Alice
-#   processes hanging around (e.g. because some Ctrl-C might have failed to kill
-#   subprocesses properly, which is a frequent problem on Windows/Cygwin).
+#   processes hanging around (e.g. because some Ctrl-C might have failed to 
+#   kill subprocesses properly, which is a frequent problem on Windows/Cygwin).
 #   Kill them.
 #
 
@@ -68,6 +93,14 @@ DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
 PWD := $(shell pwd)
 PREFIX = $(PWD)/distro
+
+UNAME := $(shell if [ -x /bin/uname ]; then echo "/bin/uname"; \
+		 elif [ -x /usr/bin/uname ]; then echo "/usr/bin/uname"; \
+		 else echo "uname"; \
+		 fi)
+
+# make it lowercase for easier comparing
+SYSTEM := $(shell echo "`$(UNAME) -m` `$(UNAME) -s` `$(UNAME) -r`" | tr [A-Z] [a-z])
 
 PKG_CONFIG_PATH := $(PWD)/seam-support/install/lib/pkgconfig:$(PWD)/gecode/install/lib/pkgconfig:$(PKG_CONFIG_PATH)
 export PKG_CONFIG_PATH
@@ -85,10 +118,10 @@ info:
 setup:
 	cvs -d $(CVSROOT) login
 	cvs -d $(CVSROOT) get seam-support
-	(cd seam-support && build.sh)
-	mkdir gecode
-	mkdir gecode/build
-	(cd gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
+	make build-seam-support
+# TODO	mkdir gecode
+# TODO	mkdir gecode/build
+# TODO	(cd gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
 	mkdir seam
 	mkdir seam/build
 	(cd seam && cvs -d $(CVSROOT) get seam && mv seam sources)
@@ -108,22 +141,59 @@ update:
 .PHONY:	clean
 clean: clean-distro clean-gecode clean-seam clean-alice-ll clean-alice-bootstrap
 
-.PHONY:	build
-build: build-gecode build-seam build-alice-ll build-alice-bootstrap
+.PHONY:	cleanbuild
+cleanbuild: clean all
+
+.PHONY:	build-windows build-linux build-freebsd build-ppc-darwin
+build-windows: build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap build-suffix
+
+build-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap build-suffix 
+
+build-freebsd:
+	@echo TODO
+
+build-ppc-darwin:
+	@echo TODO
+
+build-suffix:
 	@echo Build complete.
 	@echo Try running $(PREFIX)/bin/alice.
 	@echo You probably have to set:
 	@echo PATH=$(PREFIX)/bin:PATH
 	@echo ALICE_HOME=$(PREFIX)/share/alice
 
-.PHONY: all
-all:	build docs distro
+.PHONY: all windows linux freebsd ppc-darwin
+windows:    build-windows
+linux:	    build-linux
+freebsd:    build-freebsd
+ppc-darwin: build-ppc-darwin
+
+# remember: values in SYSTEM are lowercase (see setting SYSTEM)
+all:
+	@case " $(SYSTEM) " in \
+	   i[3456]86*linux*) \
+		make linux ; \
+	   	;; \
+	   i[3456]86*freebsd*) \
+	        make freebsd ; \
+	   	;; \
+	   *i[3456]86*cygwin*) \
+		make windows ; \
+	   	;; \
+	   *power*mac*darwin*) \
+	        make ppc-darwin ; \
+	   	;; \
+	   *) \
+		echo "Non-supported OS: $(SYSTEM)"; \
+		exit 1 \
+	   	;; \
+	esac
 
 ########### Support ############
 
 .PHONY:	build-seam-support
 build-seam-support:
-	(cd seam-support && build.sh)
+	(cd seam-support && ./build.sh)
 
 ########### Gecode ############
 
@@ -135,8 +205,8 @@ clean-gecode:
 setup-gecode:
 	(cd gecode/sources && autoconf)
 
-.PHONY:	configure-gecode
-configure-gecode:
+.PHONY:	configure-gecode-windows
+configure-gecode-windows:
 	(cd gecode/build && \
 	 ../sources/configure \
 		CXX='g++ -mno-cygwin' \
@@ -145,12 +215,21 @@ configure-gecode:
 		--disable-examples --disable-search --disable-minimodel \
 		--prefix='$(PWD)/gecode/install')
 
+.PHONY:	configure-gecode-linux
+configure-gecode-linux:
+	(cd gecode/build && \
+	 ../sources/configure \
+		--enable-static \
+		--disable-examples --disable-search --disable-minimodel \
+		--prefix='$(PWD)/gecode/install')
+
 .PHONY:	rebuild-gecode
 rebuild-gecode:
 	(cd gecode/build && make install)
 
-.PHONY:	build-gecode
-build-gecode: setup-gecode configure-gecode rebuild-gecode
+.PHONY:	build-gecode-windows build-gecode-linux
+build-gecode-windows: setup-gecode configure-gecode-windows rebuild-gecode
+build-gecode-linux: setup-gecode configure-gecode-linux rebuild-gecode
 
 ########### Seam ############
 
@@ -162,14 +241,20 @@ clean-seam:
 setup-seam:
 	(cd seam/sources && make -f Makefile.cvs)
 
-.PHONY:	configure-seam
-configure-seam:
+.PHONY:	configure-seam-windows
+configure-seam-windows:
 	(cd seam/build && \
 	 ../sources/configure \
 		CXX='g++ -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
-		CXXFLAGS='-mcpu=pentium3 -march=pentium3' \
 		CC='gcc -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
-		CFLAGS='-mcpu=pentium3 -march=pentium3' \
+		--prefix='$(PREFIX)' \
+		--with-warnings=yes \
+		--with-zlib='$(PWD)/seam-support/install')
+
+.PHONY:	configure-seam-linux
+configure-seam-linux:
+	(cd seam/build && \
+	 ../sources/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
 		--with-zlib='$(PWD)/seam-support/install')
@@ -178,8 +263,9 @@ configure-seam:
 rebuild-seam:
 	(cd seam/build && make install)
 
-.PHONY:	build-seam
-build-seam: setup-seam configure-seam rebuild-seam
+.PHONY:	build-seam-windows build-seam-linux
+build-seam-windows: setup-seam configure-seam-windows rebuild-seam
+build-seam-linux: setup-seam configure-seam-linux rebuild-seam
 
 ########### Alice Language Layer ############
 
@@ -191,8 +277,8 @@ clean-alice-ll:
 setup-alice-ll:
 	(cd alice/sources/vm-seam && make -f Makefile.cvs)
 
-.PHONY:	configure-alice-ll
-configure-alice-ll:
+.PHONY:	configure-alice-ll-windows
+configure-alice-ll-windows:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/build && \
 	 ../sources/vm-seam/configure \
@@ -200,17 +286,26 @@ configure-alice-ll:
 		--with-warnings=yes \
 		--with-gmp='$(PWD)/seam-support/install')
 
+.PHONY:	configure-alice-ll-linux
+configure-alice-ll-linux:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
+	(cd alice/build && \
+	 ../sources/vm-seam/configure \
+		--prefix='$(PREFIX)' \
+		--with-warnings=yes)
+
 .PHONY:	rebuild-alice-ll
 rebuild-alice-ll:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/build && make install)
 
-.PHONY:	build-alice-ll
-build-alice-ll: setup-alice-ll configure-alice-ll rebuild-alice-ll
+.PHONY:	build-alice-ll-windows build-alice-ll-linux
+build-alice-ll-windows: setup-alice-ll configure-alice-ll-windows rebuild-alice-ll
+build-alice-ll-linux: setup-alice-ll configure-alice-ll-linux rebuild-alice-ll
 
 ########### Alice Compiler & Library ############
 
-.PHONY:	clean-alice-bootstrap
+.PHONY:	clean-alice-bootstrap # TODO: hier war noch was kaputt glaub ich
 clean-alice-bootstrap:
 	(cd alice/sources && make distclean)
 
@@ -251,13 +346,13 @@ docs-offline:
 
 ########### Windows Binaries ############
 
-.PHONY:	build-win
-build-win:
+.PHONY:	build-win-exec
+build-win-exec:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/sources/vm-seam/bin/windows && make all PREFIX=$(PREFIX) install)
 
-.PHONY:	unbuild-win
-unbuild-win:
+.PHONY:	unbuild-win-exec
+unbuild-win-exec:
 	rm -f $(PREFIX)/bin/alice*.exe &&
 	make rebuild-alice-ll
 
@@ -272,7 +367,7 @@ build-xml-dll:
 	cp $(PWD)/seam-support/install/bin/cygxml2-2.dll distro/bin
 
 .PHONY: distro
-distro: build-win build-xml-dll
+distro: build-win-exec build-xml-dll
 	(rm -rf ../InstallShield/Files/Alice) && \
 	(cp -r distro ../InstallShield/Files/Alice) && \
 	(mkdir ../InstallShield/Files/Alice/doc) && \
