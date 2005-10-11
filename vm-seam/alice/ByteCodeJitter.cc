@@ -273,6 +273,16 @@ void ByteCodeJitter::Init() {
 
 // helpers to inline common primitives
 
+#define DEFINE_PRIMITIVE_RETURN_REG(X)					\
+  u_int X;								\
+  if(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {		\
+    TagVal *argOpt = TagVal::FromWord(currentFormalArgs->Sub(0));	\
+    X = (argOpt != INVALID_POINTER) ?					\
+      IdToReg(argOpt->Sel(0)) : GetNewScratch();			\
+  } else								\
+    X = GetNewScratch();
+
+
 inline void ByteCodeJitter::InlinePrimitiveReturn(u_int reg) {
 #ifdef DO_INLINING
   if(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
@@ -317,7 +327,7 @@ inline TagVal *ByteCodeJitter::Inline_HoleHole(Vector *args,
     SET_INSTR_1R(PC,await,GetNewScratch());
   }
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-    u_int S = GetNewScratch();
+    DEFINE_PRIMITIVE_RETURN_REG(S);
     SET_INSTR_1R(PC,inlined_hole_hole,S);
     InlinePrimitiveReturn(S);
     return INVALID_POINTER;
@@ -360,7 +370,7 @@ inline TagVal *ByteCodeJitter::Inline_HoleFill(Vector *args,
   }
   SET_INSTR_2R(PC,inlined_hole_fill,arg0,arg1);
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall --> return unit
-    u_int S = GetNewScratch();
+    DEFINE_PRIMITIVE_RETURN_REG(S);
     SET_INSTR_1R(PC,load_zero,S);
     InlinePrimitiveReturn(S);
     return INVALID_POINTER;
@@ -401,7 +411,7 @@ inline TagVal *ByteCodeJitter::Inline_FutureByneed(Vector *args,
   }
   u_int src = LoadIdRefKill(args->Sub(0));
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-    u_int S = GetNewScratch();
+    DEFINE_PRIMITIVE_RETURN_REG(S);
     SET_INSTR_2R(PC,inlined_future_byneed,S,src);
     InlinePrimitiveReturn(S);
     return INVALID_POINTER;
@@ -458,7 +468,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
   u_int x = LoadIdRefKill(args->Sub(0));
   u_int y = LoadIdRefKill(args->Sub(1));
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-    u_int S = GetNewScratch();
+    DEFINE_PRIMITIVE_RETURN_REG(S);
     SET_INSTR_3R(PC,iadd,S,x,y);
     InlinePrimitiveReturn(S);
     return INVALID_POINTER;
@@ -497,7 +507,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
   // normal case
   u_int y = LoadIdRefKill(args->Sub(1));
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-    u_int S = GetNewScratch();
+    DEFINE_PRIMITIVE_RETURN_REG(S);
     SET_INSTR_3R(PC,isub,S,x,y);
     InlinePrimitiveReturn(S);
     return INVALID_POINTER;
@@ -517,12 +527,28 @@ inline TagVal *ByteCodeJitter::Inline_RefAssign(Vector *args,
   u_int val = LoadIdRefKill(args->Sub(1));
   SET_INSTR_2R(PC,set_cell,ref,val);
   if(idDefInstrOpt == INVALID_POINTER) { // tailcall
+    // try to avoid load zero instruction
+    if(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
+      TagVal *argOpt = TagVal::FromWord(currentFormalArgs->Sub(0));
+      if(argOpt != INVALID_POINTER) {
+	u_int dst = IdToReg(argOpt->Sel(0));
+	SET_INSTR_1R(PC,load_zero,dst);
+      }              
+      patchTable->Add(PC);    
+      SET_INSTR_1I(PC,jump,0);
+      return INVALID_POINTER;
+    }
     u_int S = GetNewScratch();
     SET_INSTR_1R(PC,load_zero,S);
     InlinePrimitiveReturn(S); // return unit
     return INVALID_POINTER;
   }
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
+  TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
+  if(ret0 != INVALID_POINTER) {
+    u_int dst = IdToReg(ret0->Sel(0));
+    SET_INSTR_1R(PC,load_zero,dst);
+  }
   return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
 }
 

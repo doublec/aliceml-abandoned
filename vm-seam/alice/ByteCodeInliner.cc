@@ -379,15 +379,9 @@ InlineInfo *ByteCodeInliner::AnalyseInlining(TagVal *abstractCode) {
 //   AbstractCode::Disassemble(stderr,
 // 			    TagVal::FromWordDirect(abstractCode->Sel(5)));
 
+  InlineAnalyser inliner(abstractCode);
   inlineCandidates->Put(abstractCode->ToWord(),Store::IntToWord(0));
-  InlineAnalyser *inliner = new InlineAnalyser(abstractCode);
-  TagVal *root = TagVal::FromWordDirect(abstractCode->Sel(5));
-  Driver(root,inliner);
-  InlineInfo *info = InlineInfo::New(inliner->GetInlineMap(),
-				     inliner->MergeLiveness(),
-				     inliner->GetNLocals(),
-				     inliner->GetCounter());
-  delete inliner;
+  Driver(TagVal::FromWordDirect(abstractCode->Sel(5)),&inliner); // start from root
   inlineCandidates->Remove(abstractCode->ToWord());
-  return info;
+  return inliner.ComputeInlineInfo();
 }

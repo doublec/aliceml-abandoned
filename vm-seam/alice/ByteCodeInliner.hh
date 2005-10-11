@@ -75,7 +75,7 @@ public:
   using Tuple::ToWord;
 
   static InlineInfo *New(Map *inlineMap, Vector *liveness, 
-			 u_int nLocals, u_int nNodes) { 
+			 u_int nLocals, u_int nNodes) {
     Tuple *tup = Tuple::New(SIZE); 
     tup->Init(INLINE_MAP_POS,inlineMap->ToWord());
     tup->Init(LIVENESS_POS,liveness->ToWord());
@@ -117,6 +117,7 @@ private:
     ByteCodeInliner_Internal::Container livenessInfo;
     void Append(TagVal *acc, Closure *closure, word idDefsInstrOpt,
 		InlineInfo *inlineInfo);
+    Vector *MergeLiveness();
   public:
     InlineAnalyser(TagVal *ac) : abstractCode(ac), counter(0) {
       subst = Vector::FromWordDirect(abstractCode->Sel(1));
@@ -129,10 +130,9 @@ private:
     bool CheckCycle(TagVal *acc);
     void Count(TagVal *instr);
     void AnalyseAppVar(TagVal *instr);
-    Vector *MergeLiveness();
-    Map *GetInlineMap() { return inlineMap; }
-    u_int GetNLocals() { return nLocals; }
-    u_int GetCounter() { return counter; }
+    InlineInfo *ComputeInlineInfo() {
+      return InlineInfo::New(inlineMap,MergeLiveness(),nLocals,counter);
+    } 
   };
   // The driver implements a depth-first search from the root and applies 
   // the analysers to every node exactly ones
