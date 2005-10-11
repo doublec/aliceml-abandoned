@@ -2142,8 +2142,7 @@ sig
     structure TreeStore :
     sig
         (* constructors *)
-        val newv : int * object -> object
-        val new : int -> object
+        val newv : (gtype vector) -> object
         (* methods *)
         val moveBefore : object * object * object -> unit
         val moveAfter : object * object * object -> unit
@@ -3098,7 +3097,6 @@ sig
     sig
         (* constructors *)
         val newv : (gtype vector) -> object
-        val new : int -> object
         (* methods *)
         val moveBefore : object * object * object -> unit
         val moveAfter : object * object * object -> unit
