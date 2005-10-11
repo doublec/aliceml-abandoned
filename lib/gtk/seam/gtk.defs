@@ -8580,16 +8580,6 @@
   (return-type "GType")
 )
 
-(define-function gtk_list_store_new
-  (c-name "gtk_list_store_new")
-  (is-constructor-of "GtkListStore")
-  (return-type "GtkListStore*")
-  (parameters
-    '("gint" "n_columns")
-  )
-  (varargs #t)
-)
-
 (define-function gtk_list_store_newv
   (c-name "gtk_list_store_newv")
   (is-constructor-of "GtkListStore")
@@ -8606,7 +8596,7 @@
   (return-type "none")
   (parameters
     '("gint" "n_columns")
-    '("GType*" "types")
+    '("GType*" "columns")
   )
 )
 
@@ -17456,23 +17446,13 @@
   (return-type "GType")
 )
 
-(define-function gtk_tree_store_new
-  (c-name "gtk_tree_store_new")
-  (is-constructor-of "GtkTreeStore")
-  (return-type "GtkTreeStore*")
-  (parameters
-    '("gint" "n_columns")
-  )
-  (varargs #t)
-)
-
 (define-function gtk_tree_store_newv
   (c-name "gtk_tree_store_newv")
   (is-constructor-of "GtkTreeStore")
   (return-type "GtkTreeStore*")
   (parameters
     '("gint" "n_columns")
-    '("GType*" "types")
+    '("GType*" "columns")
   )
 )
 
@@ -17482,7 +17462,7 @@
   (return-type "none")
   (parameters
     '("gint" "n_columns")
-    '("GType*" "types")
+    '("GType*" "columns")
   )
 )
 
