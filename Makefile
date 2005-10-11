@@ -171,16 +171,20 @@ ppc-darwin: build-ppc-darwin
 # remember: values in SYSTEM are lowercase (see setting SYSTEM)
 all:
 	@case " $(SYSTEM) " in \
-	   i[3456]86*linux*) \
+	   *i[3456]86*linux*) \
+		echo "building for Linux" ; \
 		make linux ; \
 	   	;; \
-	   i[3456]86*freebsd*) \
+	   *i[3456]86*freebsd*) \
+		echo "building for FreeBSD" ; \
 	        make freebsd ; \
 	   	;; \
 	   *i[3456]86*cygwin*) \
+		echo "building for Win32/Cygwin" ; \
 		make windows ; \
 	   	;; \
 	   *power*mac*darwin*) \
+		echo "building for Power Mac Darwin" ; \
 	        make ppc-darwin ; \
 	   	;; \
 	   *) \
