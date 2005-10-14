@@ -84,7 +84,6 @@ import structure TestSocket      from "lib/fundamental/Socket"
 import structure TestUnix        from "lib/fundamental/Unix"
 *)
 import structure TestLock        from "lib/data/Lock"
-import structure TestResolver    from "lib/system/Resolver"
 import structure TestComponent   from "lib/system/Component"
 import structure TestComponentManager
 		                 from "lib/system/ComponentManager"
@@ -114,7 +113,6 @@ fun randomizeTests () =
 			TestLock.randomize,
 			TestLock.randomize,
 			TestUrl.randomize,
-			TestResolver.randomize,
 			TestOSFileSys.randomize,
 			TestOSProcess.randomize,
 			TestPickle.randomize,
@@ -122,6 +120,7 @@ fun randomizeTests () =
 			TestComponentManager.randomize,
 			TestDate.randomize,
 			TestStringCvt.randomize,(*
+			TestResolver.randomize,
 			TestResolverHandler.randomize,
 			TestRemote.randomize,
 			TestHttp.randomize,
@@ -231,12 +230,11 @@ fun allTests b = [TestRegressions.suite b,
 		  TestOSProcess.suite,
 		  TestPickle.suite,
 		  TestComponent.suite,
-		  TestResolver.suite,
 		  TestCompiler.suite,
 		  TestComponentManager.suite,
 		  TestDate.suite,
-		  TestResolver.suite,
 		  (*TestResolverHandler.suite,
+		  TestResolver.suite,
 		  TestRemote.suite,
 		  TestHttp.suite,
 		  TestHttpClient.suite,
