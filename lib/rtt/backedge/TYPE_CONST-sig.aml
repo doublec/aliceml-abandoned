@@ -1,0 +1,50 @@
+(*
+ * Authors:
+ *   Niko Paltzer <nikopp@ps.uni-sb.de>
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Type from "Type"
+import structure Label from "x-alice:/lib/rtt/Label"
+
+signature TYPE_CONST =
+sig
+
+    infixr 4 -->
+    infixr 5 :#
+    infix 6 ?
+    infix 7 ~
+    infix 8 @
+
+    infixr ==>
+
+    val V : Type.var -> Type.typ                (* variable      *)
+    val C : string -> Type.kind -> Type.typ     (* constant      *)
+    val --> : Type.typ * Type.typ -> Type.typ   (* t1 -> t2      *)
+    val || : Type.typ vector -> Type.typ        (* t1 x ... x tn *)
+    val P : Type.row -> Type.typ                (* product       *)
+    val S : Type.row -> Type.typ                (* sum           *)
+    val E : Type.var -> Type.typ -> Type.typ    (* exist  v . t  *)
+    val A : Type.var -> Type.typ -> Type.typ    (* forall v . t  *)
+    val L : Type.var -> Type.typ -> Type.typ    (* lambda v . t  *)
+    val @ : Type.typ * Type.typ -> Type.typ     (* application   *)
+    val ~ : Type.typ * Type.typ -> Type.typ     (* abbreviation  *)
+
+    val T : Type.kind                             (* star kind        *)
+    val Ex : Type.kind                            (* existential kind *)
+    val ==> : Type.kind * Type.kind -> Type.kind  (* arrow kind       *)
+    val Si : Type.typ -> Type.kind                (* singleton kind   *)
+
+    val ## : Type.row                                      (* empty row  *)
+    val :# : (Label.lab * Type.typ) * Type.row -> Type.row (* extend row *)
+    val ? : string * Type.typ -> Label.lab * Type.typ      (* label type *)
+
+    val nV : Type.kind -> Type.var    (* new (unconstrained) variable *)
+    val nU : unit -> Type.typ         (* new Unknown                  *)
+
+    val i : Type.typ -> Type.desc     (* inspect a type *)
+
+end
