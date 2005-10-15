@@ -48,13 +48,6 @@
 #	lightning v. 1.2
 #	libtool   v. 1.5.20
 #
-# For Gtk to function properly you have to set:
-#
-# GTK_DIR=<install-dir>/WinGtk2
-# PKG_CONFIG_PATH=$GTK_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
-# PC_OPTS="gtk+-2.0 glib-2.0 libgnomecanvas-2.0 --define-variable=prefix=$GTK_DIR"
-# PATH=$GTK_DIR/bin:$GTK_DIR/lib:$PATH
-#
 # To build the documentation - without having PHP installed -
 # the generated HTML pages must be prepared in the
 # $DOC directory specified below. The actual generation is not done in this
@@ -69,6 +62,9 @@
 #########
 #
 # Troubleshooting:
+# - Gecode is not available in a CVS Version, download the package at 
+#   http://www.gecode.org and unpack it in PWD/gecode/sources
+#   disable the respective calls in 'make setup'
 # - Check $PATH and $ALICE_HOME. In particular, $ALICE_HOME must use proper
 #   Windows syntax, not Cygwin (e.g. for drives)!
 # - After having performed 'make distro' it is no longer possible to invoke
@@ -102,8 +98,14 @@ UNAME := $(shell if [ -x /bin/uname ]; then echo "/bin/uname"; \
 # make it lowercase for easier comparing
 SYSTEM := $(shell echo "`$(UNAME) -m` `$(UNAME) -s` `$(UNAME) -r`" | tr [A-Z] [a-z])
 
-PKG_CONFIG_PATH := $(PWD)/seam-support/install/lib/pkgconfig:$(PWD)/gecode/install/lib/pkgconfig:$(PKG_CONFIG_PATH)
+# can stand here, because PWD/WinGtk2 is not build under non-windows systems
+WIN_GTK_DIR := $(PWD)/WinGtk2
+PKG_CONFIG_PATH := $(PWD)/seam-support/install/lib/pkgconfig:$(PWD)/gecode/install/lib/pkgconfig:$(WIN_GTK_DIR)/lib/pkgconfig:$(PKG_CONFIG_PATH)
+PC_OPTS := "gtk+-2.0 glib-2.0 libgnomecanvas-2.0 --define-variable=prefix=$(WIN_GTK_DIR)"
+PATH := $(WIN_GTK_DIR)/bin:$(WIN_GTK_DIR)/lib:$(PATH)
 export PKG_CONFIG_PATH
+export PC_OPTS
+export PATH
 
 ########### Global ############
 
@@ -114,22 +116,29 @@ info:
 	@echo Optionally, \`make update\' first.
 	@echo For initial checkout, \`make setup\'.
 
-.PHONY:	setup
+.PHONY:	setup setup-wingtk
 setup:
 	cvs -d $(CVSROOT) login
 	cvs -d $(CVSROOT) get seam-support
 	make build-seam-support
-# TODO	mkdir gecode
-# TODO	mkdir gecode/build
-# TODO	(cd gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
 	mkdir seam
 	mkdir seam/build
 	(cd seam && cvs -d $(CVSROOT) get seam && mv seam sources)
+	mkdir gecode
+	mkdir gecode/build
+	(cd gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
 	mkdir alice
 	mkdir alice/build
 	(cd alice && cvs -d $(CVSROOT) get alice && mv alice sources)
 	@echo Setup complete.
 	@echo Include `pwd`/seam-support/install/bin into your PATH.
+
+setup-wingtk:
+	cp $(PWD)/seam-support/windows/WinGtk2.tgz $(PWD)
+	(cd $(PWD) && tar xvfz WinGtk2.tgz)
+	(cd $(PWD)/WinGtk2 && ./patch.sh)
+	rm $(PWD)/WinGtk2.tgz
+
 
 .PHONY:	update
 update:
@@ -163,7 +172,7 @@ build-suffix:
 	@echo ALICE_HOME=$(PREFIX)/share/alice
 
 .PHONY: all windows linux freebsd ppc-darwin
-windows:    build-windows
+windows:    setup-wingtk build-windows
 linux:	    build-linux
 freebsd:    build-freebsd
 ppc-darwin: build-ppc-darwin
