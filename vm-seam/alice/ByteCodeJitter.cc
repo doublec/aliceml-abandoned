@@ -2517,7 +2517,11 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   imEnv.Init();
 
   // prepare control data structures
+#ifdef DO_INLINING
   sharedTable = IntMap::New(inlineInfo->GetNNodes());
+#else
+  sharedTable = IntMap::New(256);
+#endif
  
   // prepare substituation
   Vector *substInfo = Vector::FromWordDirect(abstractCode->Sel(1));

@@ -19,7 +19,7 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/ByteConcreteCode.hh"
 
-#define INLINE_LIMIT 5
+#define INLINE_LIMIT 4
 
 using namespace ByteCodeInliner_Internal;
 
@@ -41,6 +41,12 @@ void ByteCodeInliner::InlineAnalyser::Count(TagVal *instr) {
   switch(AbstractCode::GetInstr(instr)) {
   case AbstractCode::Kill:
   case AbstractCode::EndHandle:
+    break;
+  case AbstractCode::Close:
+    // Avoid to inline Close instruction as this will
+    // increase the number of compiler calls 
+    // significantly and can cause the system to diverge.
+    counter += INLINE_LIMIT + 1;
     break;
   default:
     counter++; 
