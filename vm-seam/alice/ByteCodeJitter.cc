@@ -38,6 +38,30 @@
 
 using namespace ByteCodeInstr;
 
+// produces the right call instruction after the analysis of AppVar
+u_int ChooseCallInstr(u_int instr, u_int nArgs) {
+#define RETURN_INSTR(instr) {			\
+  switch(nArgs) {				\
+  case 0: return instr##0;			\
+  case 1: return instr##1;			\
+  case 2: return instr##2;			\
+  case 3: return instr##3;			\
+  default: return instr;			\
+  }						\
+}
+  switch(instr) {
+  case seam_call:     RETURN_INSTR(seam_call);
+  case seam_tailcall: RETURN_INSTR(seam_tailcall);
+  case self_call:     RETURN_INSTR(self_call);
+  case self_tailcall: RETURN_INSTR(self_tailcall);
+//   case bci_call:      RETURN_INSTR(bci_call);
+//   case bci_tailcall:  RETURN_INSTR(bci_tailcall) 
+  default:
+    fprintf(stderr,"instr %d\n",instr);
+    Error("ByteCodeJitter: tried to choose unkown call instruction");
+  }
+}
+
 static inline u_int GetNumberOfLocals(TagVal *abstractCode) {
   TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
   switch (AbstractCode::GetAnnotation(annotation)) {
@@ -1087,6 +1111,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER);
 #endif
 
+  u_int baseCallInstr = (isTailcall) ? seam_tailcall : seam_call;
 
   TagVal *tagVal = TagVal::FromWordDirect(pc->Sel(0));
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
@@ -1121,7 +1146,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
       // check if we can inline a primitive
       Closure *closure = Closure::FromWord(wClosure);       
       if(closure != INVALID_POINTER) {
-	word wConcreteCode = closure->GetConcreteCode();
+	word wConcreteCode = closure->GetConcreteCode();	
 	ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
 	if(concreteCode != INVALID_POINTER) {
 	  Interpreter *interpreter = concreteCode->GetInterpreter();
@@ -1154,6 +1179,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	    // we directly call the primitive function
 	    CompileApplyPrimitive(closure,args,isTailcall);
 #ifdef DO_INLINING
+	    //	    if(isTailcall) {
 	    if(idDefInstrOpt == INVALID_POINTER
 	       && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
 	      u_int inArity = currentFormalArgs->GetLength();
@@ -1176,7 +1202,10 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	    } 
 	    return continuation;
 	  } 
-	}
+	} else if (wConcreteCode == currentConcreteCode) {
+	  // this is a self recursive call
+	  baseCallInstr = (isTailcall) ? self_tailcall : self_call;
+	} 
       }
     }
     break;
@@ -1192,34 +1221,34 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   switch(nArgs) {
   case 0: 
     {
-      u_int callInstr = isTailcall ? seam_tailcall0 : seam_call0;
+      u_int callInstr = ChooseCallInstr(baseCallInstr,nArgs);
       u_int closure = LoadIdRefKill(pc->Sel(0));
       SET_INSTR_1R(PC,callInstr,closure);
     }
     break;
   case 1: 
     {
+      u_int callInstr = ChooseCallInstr(baseCallInstr,nArgs);
       u_int arg0 = LoadIdRefKill(args->Sub(0));
-      u_int callInstr = isTailcall ? seam_tailcall1 : seam_call1;
       u_int closure = LoadIdRefKill(pc->Sel(0));
       SET_INSTR_2R(PC,callInstr,closure,arg0);
     }
     break;
   case 2:
     {
+      u_int callInstr = ChooseCallInstr(baseCallInstr,nArgs);
       u_int arg0 = LoadIdRefKill(args->Sub(0));
       u_int arg1 = LoadIdRefKill(args->Sub(1));
-      u_int callInstr = isTailcall ? seam_tailcall2 : seam_call2;
       u_int closure = LoadIdRefKill(pc->Sel(0));
       SET_INSTR_3R(PC,callInstr,closure,arg0,arg1);
     }
     break;
   case 3:
     {
+      u_int callInstr = ChooseCallInstr(baseCallInstr,nArgs);
       u_int arg0 = LoadIdRefKill(args->Sub(0));
       u_int arg1 = LoadIdRefKill(args->Sub(1));
       u_int arg2 = LoadIdRefKill(args->Sub(2));
-      u_int callInstr = isTailcall ? seam_tailcall3 : seam_call3;
       u_int closure = LoadIdRefKill(pc->Sel(0));
       SET_INSTR_4R(PC,callInstr,closure,arg0,arg1,arg2);
     }
@@ -1233,6 +1262,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	  reg = LoadIdRefKill(args->Sub(i),true);
 	  SET_INSTR_1R1I(PC,seam_set_sreg,reg,i);
 	}
+	// to be optimized
 	u_int callInstr = isTailcall ? seam_tailcall : seam_call;
 	u_int closure = LoadIdRefKill(pc->Sel(0));
 	SET_INSTR_1R1I(PC,callInstr,closure,nArgs);     
@@ -1243,7 +1273,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	  u_int src = LoadIdRefKill(args->Sub(i),true);
 	  SET_INSTR_2R1I(PC,init_tup,S,src,i);
 	}
-	u_int callInstr = isTailcall ? seam_tailcall1 : seam_call1;
+	u_int callInstr = ChooseCallInstr(baseCallInstr,1);
 	u_int closure = LoadIdRefKill(pc->Sel(0));
 	SET_INSTR_2R(PC,callInstr,closure,S);
       }
@@ -2477,6 +2507,8 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   AbstractCode::Disassemble(stderr,
 			    TagVal::FromWordDirect(abstractCode->Sel(5)));
 #endif    
+
+  currentConcreteCode = lazyCompileClosure->GetByneed();
 
 // do inline anaysis
   currentFormalArgs = INVALID_POINTER;

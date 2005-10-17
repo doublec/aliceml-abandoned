@@ -191,6 +191,30 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"seam_tailcall3 R%d, R%d, R%d, R%d\n",reg,r0,r1,r2);
     }
     return PC;
+  case self_call: // r,n
+    {
+      GET_1R1I(codeBuffer,PC,r,n);
+      fprintf(f,"self_call R%d, %d\n",r,n);
+    }
+    return PC;
+  case self_call1: // reg,r0
+    {
+      GET_2R(codeBuffer,PC,reg,r0);
+      fprintf(f,"self_call1 R%d, R%d\n",reg,r0);
+    }
+    return PC;
+  case self_call2: // reg,r0,r1
+    {
+      GET_3R(codeBuffer,PC,reg,r0,r1);
+      fprintf(f,"self_call2 R%d, R%d, R%d\n",reg,r0,r1);
+    }
+    return PC;
+  case self_call3: // reg,r0,r1,r2
+    {
+      GET_4R(codeBuffer,PC,reg,r0,r1,r2);
+      fprintf(f,"self_call3 R%d, R%d, R%d, R%d\n",reg,r0,r1,r2);
+    }
+    return PC;
   case self_tailcall: // r,n
     {
       GET_1R1I(codeBuffer,PC,r,n);

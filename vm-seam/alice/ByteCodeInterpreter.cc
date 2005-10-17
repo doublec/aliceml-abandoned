@@ -331,14 +331,44 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define SET_ARGS2() SET_ARGS1(); SETREG(1,arg1)
 #define SET_ARGS3() SET_ARGS2(); SETREG(2,arg2)
 
-#define BCI_CALL(NOA) {							\
+#define SELF_CALL(NOA) {						\
         PREPARE_CALL##NOA();						\
 	SAVEPC(PC);							\
 	ByteCodeInterpreter::PushCall(Closure::FromWord(GETREG(reg)));	\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
 	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
+        SETPC(0);                                                       \
+        DISPATCH(PC);							\
+      }
+
+    Case(self_call):  SELF_CALL();
+    Case(self_call0): SELF_CALL(0);
+    Case(self_call1): SELF_CALL(1);
+    Case(self_call2): SELF_CALL(2);
+    Case(self_call3): SELF_CALL(3);
+
+// #define BCI_CALL(NOA) {						\
+//         PREPARE_CALL##NOA();						\
+// 	SAVEPC(PC);							\
+// 	ByteCodeInterpreter::PushCall(Closure::FromWord(GETREG(reg)));	\
+// 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
+// 	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
+// 	code = frame->GetCode();					\
+// 	LOADSTATE(PC,CP,IP);						\
+//         DISPATCH(PC);						\
+//       }
+
+#define BCI_CALL(NOA) {							\
+        PREPARE_CALL##NOA();						\
+	SAVEPC(PC);					\
+	word wClosure = GETREG(reg);					\
+	REQUEST_WORD(Closure,closure,wClosure);				\
+	ByteCodeInterpreter::PushCall(closure);				\
+	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
+	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
+	LOADSTATE(PC,CP,IP);					        \
 	code = frame->GetCode();					\
-	LOADSTATE(PC,CP,IP);						\
+	codeBuffer = ReadBuffer::New(code);				\
         DISPATCH(PC);							\
       }
 
@@ -431,11 +461,33 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     // bci tailcalls
 
-      Case(bci_tailcall):  Error("bci_tailcall not yet implemented");
-      Case(bci_tailcall0): Error("bci_tailcall0 not yet implemented");
-      Case(bci_tailcall1): Error("bci_tailcall1 not yet implemented");
-      Case(bci_tailcall2): Error("bci_tailcall2 not yet implemented");
-      Case(bci_tailcall3): Error("bci_tailcall3 not yet implemented");
+#define BCI_TAILCALL(NOA) {						\
+      PREPARE_CALL##NOA();						\
+      Scheduler::PopFrame(frame->GetSize());				\
+      word wClosure = GETREG(reg);					\
+      REQUEST_WORD(Closure,closure,wClosure);				\
+      /*      Closure *closure = Closure::FromWordDirect(GETREG(reg));*/ \
+      PushCall(closure);						\
+      if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
+      frame = (ByteCodeFrame *) Scheduler::GetFrame();			\
+      LOADSTATE(PC,CP,IP); 					        \
+      code = frame->GetCode();						\
+      codeBuffer = ReadBuffer::New(code);				\
+      DISPATCH(PC);							\
+    }
+
+      Case(bci_tailcall):  BCI_TAILCALL();
+      Case(bci_tailcall0): BCI_TAILCALL(0)
+      Case(bci_tailcall1): BCI_TAILCALL(1);
+      Case(bci_tailcall2): BCI_TAILCALL(2);
+      Case(bci_tailcall3): BCI_TAILCALL(3); 
+
+
+//       Case(bci_tailcall):  Error("bci_tailcall not yet implemented");
+//       Case(bci_tailcall0): Error("bci_tailcall0 not yet implemented");
+//       Case(bci_tailcall1): Error("bci_tailcall1 not yet implemented");
+//       Case(bci_tailcall2): Error("bci_tailcall2 not yet implemented");
+//       Case(bci_tailcall3): Error("bci_tailcall3 not yet implemented");
 
       Case(bci_tailcall_direct0): 
 	Error("bci_tailcall_direct0 not yet implemented");

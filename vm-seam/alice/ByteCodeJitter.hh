@@ -40,6 +40,8 @@ private:
   ImmediateEnv imEnv;
   IntMap *sharedTable;
   Vector *globalSubst;
+
+  word currentConcreteCode;
   
   // offset for inline functions
   u_int localOffset;
