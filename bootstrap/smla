@@ -12,10 +12,14 @@ case `echo 'OS.Process.exit OS.Process.sucess' | sml | grep "110\.0\.[0-9]"` in
 	;;
 esac
 
-case `uname -s` in
-    CYGWIN*)
+case `./platform.sh smlnj` in
+    *win32)
 	AML2SML="sh \"$dir/aml2sml\""
-	sml="bash -c sml"
+	sml="cmd /c sml-cm"
+	;;
+    *cygwin)
+	AML2SML="sh \"$dir/aml2sml\""
+	sml=sml
 	;;
     *)
 	AML2SML=$dir/aml2sml

@@ -122,6 +122,7 @@ fun randomizeTests () =
 			TestStringCvt.randomize,(*
 			TestResolver.randomize,
 			TestResolverHandler.randomize,
+			TestResolver.randomize,
 			TestRemote.randomize,
 			TestHttp.randomize,
 			TestHttpClient.randomize,

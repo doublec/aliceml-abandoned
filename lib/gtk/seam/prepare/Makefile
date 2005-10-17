@@ -14,9 +14,13 @@ PLATFORM := $(shell ../platform.sh smlnj)
 ifeq ("$(PLATFORM)", "")
   $(error Unknown platform)
 endif
+ifeq ("$(PLATFORM)", "x86-win32")
+EXTRA_CC_OPTS = -DGLIB_HAVE_ALLOCA_H -D__IEEE_LITTLE_ENDIAN
+SML = cmd /c sml
+else
 ifeq ("$(PLATFORM)", "x86-cygwin")
 EXTRA_CC_OPTS = -DGLIB_HAVE_ALLOCA_H -D__IEEE_LITTLE_ENDIAN
-SML = bash -c sml
+SML = sml
 else
 ifeq ("$(PLATFORM)", "ppc-darwin")
 EXTRA_CC_OPTS = -D__ppc__
@@ -24,6 +28,7 @@ SML = sml
 else
 EXTRA_CC_OPTS =
 SML = sml
+endif
 endif
 endif
 

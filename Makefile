@@ -27,10 +27,14 @@ else
 endif
 
 PLATFORM = $(shell bootstrap/platform.sh smlnj)
-ifeq ($(PLATFORM:%cygwin=win32), win32)
+ifeq ($(PLATFORM:%win32=win32), win32)
+    WINDOWS = 1
+else
+ifeq ($(PLATFORM:%cygwin=cygwin), cygwin)
     WINDOWS = 1
 else
     WINDOWS = 0
+endif
 endif
 
 TIME = /usr/bin/time

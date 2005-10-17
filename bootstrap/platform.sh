@@ -18,7 +18,13 @@ case $system in
    ;;
    *i[3456]86*CYGWIN*)
 	OZARCH=win32-i486
-	SMLNJARCH=x86-cygwin
+	which sml.bat >/dev/null 2>/dev/null
+	if [ $? = 0 ]
+	then
+	    SMLNJARCH=x86-win32
+	else
+	    SMLNJARCH=x86-cygwin
+	fi
    ;;
    *Power*Mac*Darwin*)
         OZARCH=powermac-darwin
