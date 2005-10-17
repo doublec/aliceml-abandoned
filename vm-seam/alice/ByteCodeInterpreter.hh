@@ -28,8 +28,11 @@
 #define DEBUG_INSTR()
 
 // extern u_int invocations;
-// #define BCI_DEBUG(s,...) /*if(invocations > 600)*/ fprintf(stderr,s, ##__VA_ARGS__)
-// #define DEBUG_INSTR() /*if(invocations > 600) */ByteCode::DisassembleOne(stderr,PC,code,IP)
+// #define BCI_DEBUG(s,...) fprintf(stderr,s, ##__VA_ARGS__)
+// #define DEBUG_INSTR() {					\
+//   ProgramCounter debugPC = PC;				\
+//   ByteCode::DisassembleOne(stderr,debugPC,code,IP);	\
+// }
 
 class ByteCodeFrame;
 class ReadBuffer;

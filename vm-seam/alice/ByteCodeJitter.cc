@@ -2221,9 +2221,6 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
 	  SET_INSTR_1R(PC,seam_ccc1,dst);
 	}
       } 
-//       else {
-// 	SET_INSTR(PC,seam_ccc1_wildcard); // DO WE NEED THIS ????
-//       }
     }
     break;
   default:
@@ -2239,13 +2236,18 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
       if(isFastCCCN) {
 	SET_INSTR_1I(PC,cccn,inArity);
       } else {	  
-	SET_INSTR_1I(PC,seam_cccn,inArity);
+	Vector *args = Vector::New(inArity);
+	u_int argsAddr = imEnv.Register(args->ToWord());
+	SET_INSTR_1I(PC,seam_cccn,argsAddr);
 	for(u_int i=0; i<inArity; i++) {
-	  TagVal *idDef = TagVal::FromWord(rets->Sub(i));
-	  if(idDef != INVALID_POINTER) {
-	    u_int reg = IdToReg(idDef->Sel(0));
-	    SET_INSTR_1R1I(PC,seam_load_sreg,reg,i);
-	  }
+ 	  TagVal *idDef = TagVal::FromWord(rets->Sub(i));
+ 	  if(idDef != INVALID_POINTER) {
+ 	    u_int reg = IdToReg(idDef->Sel(0));
+	    TagVal *argOpt = TagVal::New(Types::SOME,1);
+	    argOpt->Init(0,Store::IntToWord(reg));
+	    args->Init(i,argOpt->ToWord());
+ 	  } else
+	    args->Init(i,Store::IntToWord(Types::NONE));
 	}
       }
     }

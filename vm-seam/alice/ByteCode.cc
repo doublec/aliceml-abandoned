@@ -115,15 +115,20 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"seam_ccc1 R%d\n",reg);
     }
     return PC;
-  case seam_ccc1_wildcard: 
+  case seam_cccn: // args
     {
-      fprintf(f,"seam_ccc1_wildcard\n");
-    }
-    return PC;
-  case seam_cccn: // nArgs
-    {
-      GET_1I(codeBuffer,PC,nArgs);
-      fprintf(f,"seam_cccn %d\n",nArgs);
+      GET_1I(codeBuffer,PC,argsAddr);
+      Vector *args = Vector::FromWordDirect(imEnv->Sel(argsAddr));
+      fprintf(f,"seam_cccn [");
+      for(u_int i=0; i<args->GetLength(); i++) {
+	if(i>0) fprintf(stderr,",");
+	TagVal *argOpt = TagVal::FromWord(args->Sub(i));
+	if(argOpt != INVALID_POINTER) {
+	  fprintf(stderr,"%d",Store::DirectWordToInt(argOpt->Sel(0)));
+	} else
+	  fprintf(stderr,"_");
+      }
+      fprintf(stderr,"]\n");
     }
     return PC;
   case seam_call: // r, n
@@ -774,8 +779,10 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
     return PC;
   case init_closure:
     {
+      fprintf(stderr,"PC %d\n",PC);
       GET_2R1I(codeBuffer,PC,r0,r1,index);
       fprintf(f,"init_closure R%d, R%d, %d\n",r0,r1,index);      
+      fprintf(stderr,"next PC %d\n",PC);
     }
     return PC;
   case debug_msg:

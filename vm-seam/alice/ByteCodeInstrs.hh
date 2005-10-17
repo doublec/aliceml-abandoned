@@ -100,7 +100,6 @@ INSTR(seam_call_prim1)
 INSTR(seam_call_prim2)
 INSTR(seam_call_prim3)
 INSTR(seam_ccc1)
-INSTR(seam_ccc1_wildcard)
 INSTR(seam_cccn)
 INSTR(seam_load_sreg)	// load scheduler register
 INSTR(seam_return)	

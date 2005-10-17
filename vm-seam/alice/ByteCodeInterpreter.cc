@@ -258,19 +258,20 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(seam_ccc1_wildcard):
+    Case(seam_cccn): // args
       {
-	ByteCodeInterpreter::Construct();       
-      }
-      DISPATCH(PC);
-
-    Case(seam_cccn): // nArgs
-      {
-	GET_1I(codeBuffer,PC,nArgs);
+	GET_1I(codeBuffer,PC,argsAddr);
 	if(ByteCodeInterpreter::Deconstruct())
 	  return Worker::REQUEST;
-	
-	Assert(Scheduler::GetNArgs() == nArgs);
+
+	Vector *args = Vector::FromWordDirect(IP->Sel(argsAddr));
+	for(u_int i = args->GetLength(); i--; ) {
+	  TagVal *argOpt = TagVal::FromWord(args->Sub(i));
+	  if(argOpt != INVALID_POINTER) {
+	    u_int dst = Store::DirectWordToInt(argOpt->Sel(0));
+	    SETREG(dst, Scheduler::GetCurrentArg(i));
+	  }
+	}
       }
       DISPATCH(PC);
 
