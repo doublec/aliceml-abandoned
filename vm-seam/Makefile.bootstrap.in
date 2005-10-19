@@ -200,7 +200,8 @@ LIBSYSTEMSOURCES0 = \
 	ComponentManager.aml Boot.aml PP_VALUE-sig.aml PPValue.aml \
 	PP_COMPONENT-sig.aml PPComponent.aml \
 	COMPILER-sig.aml Compiler.aml \
-	UnsafeDebugger.asig DEBUGGER-sig.aml Debugger.aml
+	UnsafeDebugger.asig DEBUGGER-sig.aml Debugger.aml \
+	UnsafeByteCode.asig BYTE_CODE-sig.aml ByteCode.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
