@@ -87,7 +87,7 @@ DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
 # From here on no change should be needed
 
-PWD := $(shell pwd)
+PWD := $(shell pwd)/..
 PREFIX = $(PWD)/distro
 
 UNAME := $(shell if [ -x /bin/uname ]; then echo "/bin/uname"; \
@@ -119,17 +119,17 @@ info:
 .PHONY:	setup setup-wingtk
 setup:
 	cvs -d $(CVSROOT) login
-	cvs -d $(CVSROOT) get seam-support
+	(cd $(PWD) && cvs -d $(CVSROOT) get seam-support)
 	make build-seam-support
-	mkdir seam
-	mkdir seam/build
-	(cd seam && cvs -d $(CVSROOT) get seam && mv seam sources)
-	mkdir gecode
-	mkdir gecode/build
-	(cd gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
-	mkdir alice
-	mkdir alice/build
-	(cd alice && cvs -d $(CVSROOT) get alice && mv alice sources)
+	mkdir $(PWD)/seam
+	mkdir $(PWD)/seam/build
+	(cd $(PWD)/seam && cvs -d $(CVSROOT) get seam && mv seam sources)
+#	mkdir $(PWD)/gecode
+#	mkdir $(PWD)/gecode/build
+#	(cd $(PWD)/gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
+	mkdir $(PWD)/alice
+	mkdir $(PWD)/alice/build
+	(cd $(PWD)/alice && cvs -d $(CVSROOT) get alice && mv alice sources)
 	@echo Setup complete.
 	@echo Include `pwd`/seam-support/install/bin into your PATH.
 
@@ -142,10 +142,10 @@ setup-wingtk:
 
 .PHONY:	update
 update:
-	(cd seam-support && cvs -q -d $(CVSROOT) update -dP) && \
-	(cd gecode/sources && cvs -q -d $(GECODECVSROOT) update -dP) && \
-	(cd seam/sources && cvs -q -d $(CVSROOT) update -dP) && \
-	(cd alice/sources && cvs -q -d $(CVSROOT) update -dP)
+	(cd $(PWD)/seam-support && cvs -q -d $(CVSROOT) update -dP) && \
+	(cd $(PWD)/gecode/sources && cvs -q -d $(GECODECVSROOT) update -dP) && \
+	(cd $(PWD)/seam/sources && cvs -q -d $(CVSROOT) update -dP) && \
+	(cd $(PWD)/alice/sources && cvs -q -d $(CVSROOT) update -dP)
 
 .PHONY:	clean
 clean: clean-distro clean-gecode clean-seam clean-alice-ll clean-alice-bootstrap
@@ -206,21 +206,21 @@ all:
 
 .PHONY:	build-seam-support
 build-seam-support:
-	(cd seam-support && ./build.sh)
+	(cd $(PWD)/seam-support && ./build.sh)
 
 ########### Gecode ############
 
 .PHONY:	clean-gecode
 clean-gecode:
-	(cd gecode/build && rm -rf *)
+	(cd $(PWD)/gecode/build && rm -rf *)
 
 .PHONY: setup-gecode
 setup-gecode:
-	(cd gecode/sources && autoconf)
+	(cd $(PWD)/gecode/sources && autoconf)
 
 .PHONY:	configure-gecode-windows
 configure-gecode-windows:
-	(cd gecode/build && \
+	(cd $(PWD)/gecode/build && \
 	 ../sources/configure \
 		CXX='g++ -mno-cygwin' \
 		CC='gcc -mno-cygwin' \
@@ -230,7 +230,7 @@ configure-gecode-windows:
 
 .PHONY:	configure-gecode-linux
 configure-gecode-linux:
-	(cd gecode/build && \
+	(cd $(PWD)/gecode/build && \
 	 ../sources/configure \
 		--enable-static \
 		--disable-examples --disable-search --disable-minimodel \
@@ -238,7 +238,7 @@ configure-gecode-linux:
 
 .PHONY:	rebuild-gecode
 rebuild-gecode:
-	(cd gecode/build && make install)
+	(cd $(PWD)/gecode/build && make install)
 
 .PHONY:	build-gecode-windows build-gecode-linux
 build-gecode-windows: setup-gecode configure-gecode-windows rebuild-gecode
@@ -248,15 +248,15 @@ build-gecode-linux: setup-gecode configure-gecode-linux rebuild-gecode
 
 .PHONY:	clean-seam
 clean-seam:
-	(cd seam/build && rm -rf *)
+	(cd $(PWD)/seam/build && rm -rf *)
 
 .PHONY: setup-seam
 setup-seam:
-	(cd seam/sources && make -f Makefile.cvs)
+	(cd $(PWD)/seam/sources && make -f Makefile.cvs)
 
 .PHONY:	configure-seam-windows
 configure-seam-windows:
-	(cd seam/build && \
+	(cd $(PWD)/seam/build && \
 	 ../sources/configure \
 		CXX='g++ -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
 		CC='gcc -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
@@ -266,7 +266,7 @@ configure-seam-windows:
 
 .PHONY:	configure-seam-linux
 configure-seam-linux:
-	(cd seam/build && \
+	(cd $(PWD)/seam/build && \
 	 ../sources/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
@@ -274,7 +274,7 @@ configure-seam-linux:
 
 .PHONY:	rebuild-seam
 rebuild-seam:
-	(cd seam/build && make install)
+	(cd $(PWD)/seam/build && make install)
 
 .PHONY:	build-seam-windows build-seam-linux
 build-seam-windows: setup-seam configure-seam-windows rebuild-seam
@@ -284,16 +284,16 @@ build-seam-linux: setup-seam configure-seam-linux rebuild-seam
 
 .PHONY:	clean-alice-ll
 clean-alice-ll:
-	(cd alice/build && rm -rf *)
+	(cd $(PWD)/alice/build && rm -rf *)
 
 .PHONY: setup-alice-ll
 setup-alice-ll:
-	(cd alice/sources/vm-seam && make -f Makefile.cvs)
+	(cd $(PWD)/alice/sources/vm-seam && make -f Makefile.cvs)
 
 .PHONY:	configure-alice-ll-windows
 configure-alice-ll-windows:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd alice/build && \
+	(cd $(PWD)/alice/build && \
 	 ../sources/vm-seam/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
@@ -302,7 +302,7 @@ configure-alice-ll-windows:
 .PHONY:	configure-alice-ll-linux
 configure-alice-ll-linux:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd alice/build && \
+	(cd $(PWD)/alice/build && \
 	 ../sources/vm-seam/configure \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes)
@@ -310,7 +310,7 @@ configure-alice-ll-linux:
 .PHONY:	rebuild-alice-ll
 rebuild-alice-ll:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd alice/build && make install)
+	(cd $(PWD)/alice/build && make install)
 
 .PHONY:	build-alice-ll-windows build-alice-ll-linux
 build-alice-ll-windows: setup-alice-ll configure-alice-ll-windows rebuild-alice-ll
@@ -318,15 +318,15 @@ build-alice-ll-linux: setup-alice-ll configure-alice-ll-linux rebuild-alice-ll
 
 ########### Alice Compiler & Library ############
 
-.PHONY:	clean-alice-bootstrap # TODO: hier war noch was kaputt glaub ich
+.PHONY:	clean-alice-bootstrap
 clean-alice-bootstrap:
-	(cd alice/sources && make distclean)
+	(cd $(PWD)/alice/sources && make distclean)
 
 .PHONY: setup-alice-bootstrap
 setup-alice-bootstrap:
-	(cp alice/build/Makefile.bootstrap alice/sources/vm-seam) && \
+	(cp $(PWD)/alice/build/Makefile.bootstrap $(PWD)/alice/sources/vm-seam) && \
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd alice/sources && \
+	(cd $(PWD)/alice/sources && \
 	 make PREFIX="$(PREFIX)" \
 	      TARGET=seam \
 	      bootstrap-smlnj)
@@ -334,7 +334,7 @@ setup-alice-bootstrap:
 .PHONY:	rebuild-alice-bootstrap
 rebuild-alice-bootstrap:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd alice/sources && \
+	(cd $(PWD)/alice/sources && \
 	 make PREFIX="$(PREFIX)" \
 	      TARGET=seam \
 	      reinstall-seam)
@@ -346,23 +346,23 @@ build-alice-bootstrap: setup-alice-bootstrap rebuild-alice-bootstrap
 
 .PHONY: docs
 docs:
-	rm -rf docs && \
-	cp -r $(DOC) docs && \
-	cp alice/sources/doc/manual/Alice.hh? docs && \
-	(cd docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true) && \
+	rm -rf $(PWD)/docs && \
+	cp -r $(DOC) $(PWD)/docs && \
+	cp $(PWD)/alice/sources/doc/manual/Alice.hh? $(PWD)/docs && \
+	(cd $(PWD)/docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true) && \
 	echo Docs built.
 
 .PHONY:	docs-offline
 docs-offline:
-	cp alice/sources/doc/manual/Alice.hh? docs && \
-	(cd docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true)
+	cp $(PWD)/alice/sources/doc/manual/Alice.hh? $(PWD)/docs && \
+	(cd $(PWD)/docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true)
 
 ########### Windows Binaries ############
 
 .PHONY:	build-win-exec
 build-win-exec:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
-	(cd alice/sources/vm-seam/bin/windows && make all PREFIX=$(PREFIX) install)
+	(cd $(PWD)/alice/sources/vm-seam/bin/windows && make all PREFIX=$(PREFIX) install)
 
 .PHONY:	unbuild-win-exec
 unbuild-win-exec:
@@ -373,18 +373,18 @@ unbuild-win-exec:
 
 .PHONY:	clean-distro
 clean-distro:
-	rm -rf distro
+	rm -rf $(PWD)/distro
 
 .PHONY:	build-xml-dll
 build-xml-dll:
-	cp $(PWD)/seam-support/install/bin/cygxml2-2.dll distro/bin
+	cp $(PWD)/seam-support/install/bin/cygxml2-2.dll $(PWD)/distro/bin
 
 .PHONY: distro
 distro: build-win-exec build-xml-dll
-	(rm -rf ../InstallShield/Files/Alice) && \
-	(cp -r distro ../InstallShield/Files/Alice) && \
-	(mkdir ../InstallShield/Files/Alice/doc) && \
-	(cp docs/Alice.chm ../InstallShield/Files/Alice/doc/) && \
+	(rm -rf $(PWD)/../InstallShield/Files/Alice) && \
+	(cp -r $(PWD)/distro $(PWD)/../InstallShield/Files/Alice) && \
+	(mkdir $(PWD)/../InstallShield/Files/Alice/doc) && \
+	(cp $(PWD)/docs/Alice.chm $(PWD)/../InstallShield/Files/Alice/doc/) && \
 	echo Distro prepared. Run InstallShield/Scripts/Alice/Alice.ism.
 
 ########### Test Run ############
