@@ -23,7 +23,7 @@
 #include "alice/NativeConcreteCode.hh"
 
 #include <cstdio>
-#define DEBUG_PRINT(S) /* printf S */
+#define DEBUG_PRINT(S) /*printf S*/
 
 #define DECLARE_MYBLOCKTYPE(t, a, x)		\
   t *a = t::FromWord(x);			
@@ -146,17 +146,17 @@ class PatchTable {
 private:  
   u_int size;
   Label **labels;
-  int *addrs;
+  u_int *addrs;
 public:
   PatchTable(u_int s) : size(s) {
     labels = new (Label*)[size];
     for(u_int i=0; i<size; i++) {
       labels[i] = NULL;
     }
-    addrs = new int[size];
+    addrs = new u_int[size];
   }
   ~PatchTable() {
-    for(int i=0; i<size; i++) {
+    for(u_int i=0; i<size; i++) {
       Label *label = labels[i];
       while(label != NULL) {
 	Label *tmp = label->GetNext();
@@ -183,7 +183,7 @@ public:
   void setConcreteAddr(u_int IC, u_int PC) {
     addrs[IC] = PC;
   }
-  int computeBackwardJump(u_int absJumpAddr, u_int PC) {
+  u_int computeBackwardJump(u_int absJumpAddr, u_int PC) {
     DEBUG_PRINT(("jump back from %d to %d\n",PC,addrs[absJumpAddr]));
     return addrs[absJumpAddr] - PC; 
   }
@@ -195,12 +195,15 @@ public:
 word assemble(Vector *code, Vector *imVec, word nbLocals) {
   DEBUG_PRINT(("assemble given code ...\n"));
   Tuple *imEnv = Tuple::New(imVec->GetLength());
+  Vector *args = Vector::New(0);
   u_int len = code->GetLength();
   u_int PC = 0;
   PatchTable patchTable(len);
 
   WriteBuffer::Init();
+
   for(u_int IC = 0; IC < len; IC++) {
+    DEBUG_PRINT(("IC %d. ",IC));
     // label handling
     patchTable.setConcreteAddr(IC,PC);
     patchTable.patchForwardJumps(IC,PC,imEnv);
@@ -225,7 +228,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	  u_int oldJumpTablePC = jumpTablePC;
 	  SET_1I(jumpTablePC,0);	  
 	  if(jumpTarget < IC) {  // backward jump
-	    int offset = patchTable.computeBackwardJump(jumpTarget,PC);
+	    s_int offset = patchTable.computeBackwardJump(jumpTarget,PC);
 	    SET_1I(oldJumpTablePC,offset);
 	  }
 	  else
@@ -251,7 +254,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	  word key = pair->Sel(0);
 	  int jumpTarget = Store::WordToInt(pair->Sel(1));
 	  if(jumpTarget < IC) { // backward jump
-	    int offset = patchTable.computeBackwardJump(jumpTarget,PC);
+	    s_int offset = patchTable.computeBackwardJump(jumpTarget,PC);
 	    map->Put(key,Store::IntToWord(offset)); 
 	  }
 	  else {
@@ -296,9 +299,9 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	for (u_int i = nTests; i--;) {
 	  DECLARE_TUP(pair, tests->Sub(i));
 	  word key = pair->Sel(0);
-	  int jumpTarget = Store::WordToInt(pair->Sel(1));
+	  s_int jumpTarget = Store::WordToInt(pair->Sel(1));
 	  if(jumpTarget < IC) { // backward jump
-	    int offset = patchTable.computeBackwardJump(jumpTarget,PC);
+	    s_int offset = patchTable.computeBackwardJump(jumpTarget,PC);
 	    map->Put(key,Store::IntToWord(offset)); 		     
 	  }
 	  else {
@@ -325,11 +328,11 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	u_int jumpTablePC = PC;
 
 	for(u_int i=0; i<nTests; i++) {
-	  int jumpTarget = Store::WordToInt(tests->Sub(i));
+	  s_int jumpTarget = Store::WordToInt(tests->Sub(i));
 	  u_int oldJumpTablePC = jumpTablePC;
 	  SET_1I(jumpTablePC,0);	  
 	  if(jumpTarget < IC) {  // backward jump
-	    int offset = patchTable.computeBackwardJump(jumpTarget,PC);
+	    s_int offset = patchTable.computeBackwardJump(jumpTarget,PC);
 	    SET_1I(oldJumpTablePC,offset);
 	  }
 	  else
@@ -424,7 +427,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       break;
     case ByteCodeInstr::jump:
       {
-	int jumpTarget = Store::DirectWordToInt(insVec->Sub(1));
+	s_int jumpTarget = Store::DirectWordToInt(insVec->Sub(1));
 	u_int oldPC = PC;
 	SET_INSTR_1I(PC,instr,0);
 
@@ -440,10 +443,29 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       {
 	u_int iaddr = Store::DirectWordToInt(insVec->Sub(1));
 	imEnv->Init(iaddr, imVec->Sub(iaddr));
+	Vector *regs = Vector::FromWordDirect(imVec->Sub(iaddr));
+	u_int nargs = regs->GetLength();
+	args = Vector::New(nargs);
+	for(u_int i=nargs; i--; ) {
+	  TagVal *idDef = TagVal::New(Types::SOME,1);
+	  idDef->Init(0,regs->Sub(i));
+	  args->Init(i,idDef->ToWord());
+	}
 	SET_INSTR_1R(PC,instr,iaddr);
       }
       break;
     case ByteCodeInstr::cccn:
+      {
+	u_int nargs = Store::DirectWordToInt(insVec->Sub(1));
+	SET_INSTR_1I(PC,instr,nargs);
+	args = Vector::New(nargs);
+	for(u_int i=nargs; i--; ) {
+	  TagVal *idDef = TagVal::New(Types::SOME,1);
+	  idDef->Init(0,Store::IntToWord(i));
+	  args->Init(i,idDef->ToWord());
+	}
+      }
+      break;
     case ByteCodeInstr::seam_return:
     case ByteCodeInstr::seam_set_nargs:
       {
@@ -452,6 +474,14 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       }
       break;
     case ByteCodeInstr::ccc1:
+      {
+	SET_INSTR(PC,instr);
+	args = Vector::New(1);
+	TagVal *idDef = TagVal::New(Types::SOME,1);
+	idDef->Init(0,Store::IntToWord(0));
+	args->Init(0,idDef->ToWord());
+      }
+      break;
     case ByteCodeInstr::remove_handler:
       {
 	SET_INSTR(PC,instr);
@@ -482,6 +512,15 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       }
       break;
     case ByteCodeInstr::seam_ccc1:
+      {
+	u_int reg = Store::WordToInt(insVec->Sub(1));	
+	SET_INSTR_1R(PC,instr,reg);
+	args = Vector::New(1);
+	TagVal *idDef = TagVal::New(Types::SOME,1);
+	idDef->Init(0,Store::IntToWord(reg));
+	args->Init(0,idDef->ToWord());
+      }
+      break;
     case ByteCodeInstr::await:
     case ByteCodeInstr::seam_return1:
     case ByteCodeInstr::raise_normal:
@@ -497,7 +536,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     case ByteCodeInstr::seam_tailcall0:
       {
 	u_int reg = Store::WordToInt(insVec->Sub(1));
-	SET_INSTR_1R(PC,instr,reg);;
+	SET_INSTR_1R(PC,instr,reg);
       }
       break;
     case ByteCodeInstr::rjump_eq:
@@ -505,7 +544,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       {
 	u_int reg = Store::DirectWordToInt(insVec->Sub(1));
 	u_int iaddr = Store::WordToInt(insVec->Sub(2));
-	int jumpTarget = Store::WordToInt(insVec->Sub(3));
+	s_int jumpTarget = Store::WordToInt(insVec->Sub(3));
 	imEnv->Init(iaddr,imVec->Sub(iaddr));
 	u_int oldPC = PC;
 	SET_INSTR_1R2I(PC,instr,0,0,0);
@@ -523,7 +562,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       {
 	u_int reg = Store::DirectWordToInt(insVec->Sub(1));
 	u_int x = Store::WordToInt(insVec->Sub(2));
-	int jumpTarget = Store::WordToInt(insVec->Sub(3));
+	s_int jumpTarget = Store::WordToInt(insVec->Sub(3));
 	u_int oldPC = PC;
 	SET_INSTR_1R2I(PC,instr,0,0,0);
 
@@ -733,6 +772,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	      instr);
     }
   }
+
   Chunk *codeChunk = WriteBuffer::FlushCode();
 
   // debug output
@@ -747,6 +787,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
   // create a dummy abstract code value
   // you probably have to add several other information if some
   // function tries to access an undefined field
+
   Vector *liveness = Vector::New(0);
   TagVal *abstractCode =
     TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
@@ -755,6 +796,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
   coord->Init(1,Store::IntToWord(0));
   coord->Init(2,Store::IntToWord(0));
   abstractCode->Init(0,coord->ToWord());
+  abstractCode->Init(3,args->ToWord());
+  abstractCode->Init(4,Store::IntToWord(0)); // outArityOpt == NONE
   abstractCode->Init(6,liveness->ToWord());
 
   // fake inline info, prevent assembled function from beeing inlined
@@ -762,6 +805,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     InlineInfo::New(Map::New(0),liveness,
 		    Store::DirectWordToInt(nbLocals),
 		    100000);
+
 
   ByteConcreteCode *bcc = 
     ByteConcreteCode::NewInternal(abstractCode,
@@ -781,14 +825,13 @@ DEFINE4(UnsafeByteCode_assemble) {
   word nbLocals = x3;
 
   DEBUG_PRINT(("number of locals = %d\n",Store::DirectWordToInt(nbLocals)));
-  DEBUG_PRINT(("build closure ...\n"));
   word bcc = assemble(codeVec,imVec,nbLocals);
   u_int nGlobals = globals->GetLength();
+  DEBUG_PRINT(("build closure ...\n"));
   Closure *closure = Closure::New(bcc,nGlobals+1);
   closure->Init(0,closure->ToWord());
   for(u_int i=1; i<=nGlobals; i++) 
     closure->Init(i,globals->Sub(i-1));
-
   DEBUG_PRINT(("return closure\n"));
   RETURN(closure->ToWord());
 } END
