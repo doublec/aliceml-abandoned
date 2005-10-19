@@ -1,0 +1,12 @@
+(*-*-sml-*-*)
+
+signature UNSAFE_BYTE_CODE_COMPONENT =
+    sig
+	structure UnsafeByteCode:
+	    sig
+		val assemble : 'a * 'b vector * 'c vector * int -> ('d -> 'e)
+		val preAssemble : 'a * 'b vector * int -> 'c
+		val compile : ('a -> 'b) -> unit
+		val lazyCompile : ('a -> 'b) -> unit
+	    end
+    end

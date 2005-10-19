@@ -1,0 +1,161 @@
+signature BYTE_CODE_SIG =
+sig
+    datatype reg = R0 | R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9
+    datatype immediate = S of string | R of real
+    type addr = int
+    type tag = int
+    type index = int
+    type out_arity = int
+    type rlabel = string
+    type jlabel = string
+    type concrete_code
+
+    exception LabelUsedTwice of string
+    exception LabelUnknown
+
+datatype instr =
+         Await of reg
+       | Bci_call of reg * int
+       | Bci_call0 of reg
+       | Bci_call1 of reg * reg
+       | Bci_call2 of reg * reg * reg
+       | Bci_call3 of reg * reg * reg * reg
+       | Bci_call_direct0 of reg
+       | Bci_call_direct1 of reg * reg
+       | Bci_call_direct2 of reg * reg * reg
+       | Bci_call_direct3 of reg * reg * reg * reg
+       | Bci_tailcall of reg * int
+       | Bci_tailcall0 of reg
+       | Bci_tailcall1 of reg * reg
+       | Bci_tailcall2 of reg * reg * reg
+       | Bci_tailcall3 of reg * reg * reg * reg
+       | Bci_tailcall_direct0 of reg
+       | Bci_tailcall_direct1 of reg * reg
+       | Bci_tailcall_direct2 of reg * reg * reg
+       | Bci_tailcall_direct3 of reg * reg * reg * reg
+       | Bigtagtest of reg * (tag * jlabel) vector
+       | Bigtagtest1 of reg * tag * jlabel
+       | Cbigtagtest of reg * jlabel vector
+       | Cbigtagtest_direct of reg * jlabel vector
+       | Ccc1
+       | CccN of int
+       | Citest of reg * (jlabel vector) * int
+       | Contest of reg * reg * jlabel
+       | Ctagtest of reg * jlabel vector
+       | Ctagtest_direct of reg * jlabel vector
+       | Debug_msg of string
+       | Iadd of reg * reg * reg
+       | Idec of reg
+       | Iinc of reg
+       | Ijump_eq of reg * int * jlabel
+       | Init_bigtagval of reg * reg * int
+       | Init_closure of reg * reg * int
+       | Init_con of reg * reg * int	 
+       | Init_polyrec of reg * reg * int
+       | Init_tagval of reg * reg * int
+       | Init_tup of reg * reg * int
+       | Init_vec of reg * reg * int
+       | Inlined_future_byneed of reg * reg
+       | Inlined_hole_fill of reg * reg
+       | Inlined_hole_hole of reg
+       | Install_handler of reg * reg * jlabel
+       | Isub of reg * reg * reg
+       | Itest of reg * (int * jlabel) vector
+       | Jump of jlabel
+       | Lazyselect_polyrec of reg * reg * rlabel
+       | Lazyselect_polyrec_n of reg * reg vector * rlabel vector
+       | Load_bigtagval of reg * reg * int 
+       | Load_cell of reg * reg
+       | Load_con of reg * reg * int
+       | Load_global of reg * addr
+       | Load_immediate of reg * immediate
+       | Load_int of reg * int
+       | Load_local of reg * addr
+       | Load_reg of reg * reg
+       | Load_tagval of reg * reg * int
+       | Load_vec of reg * reg * int
+       | Load_zero of reg
+       | Mk_closure of reg * concrete_code * int
+       | New_bigtagval of reg * int * tag
+       | New_cell of reg * reg
+       | New_con of reg * string
+       | New_polyrec of reg * rlabel vector
+       | New_tagval of reg * int * tag
+       | New_tup of reg * int
+       | New_vec of reg * int
+       | Prepare_con of reg * reg * int
+       | Raise_direct of reg
+       | Raise_normal of reg
+       | Remove_handler 
+       | Rjump_eq of reg * real * jlabel 
+       | Rtest of reg * (real * jlabel) vector
+       | Seam_call of reg * int
+       | Seam_call0 of reg
+       | Seam_call1 of reg * reg
+       | Seam_call2 of reg * reg * reg
+       | Seam_call3 of reg * reg * reg * reg
+       | Seam_call_prim of string * int
+       | Seam_call_prim0 of string
+       | Seam_call_prim1 of string * reg
+       | Seam_call_prim2 of string * reg * reg      
+       | Seam_call_prim3 of string * reg * reg * reg     
+       | Seam_ccc1 of reg
+       | Seam_cccn of reg vector
+       | Seam_load_sreg of reg * addr
+       | Seam_return of int
+       | Seam_return1 of reg
+       | Seam_return2 of reg * reg
+       | Seam_return3 of reg * reg * reg
+       | Seam_return4 of reg * reg * reg * reg
+       | Seam_set_nargs of int
+       | Seam_set_sreg of reg * int
+       | Seam_tailcall of reg * int
+       | Seam_tailcall0 of reg
+       | Seam_tailcall1 of reg * reg
+       | Seam_tailcall2 of reg * reg * reg
+       | Seam_tailcall3 of reg * reg * reg * reg
+       | Seam_tailcall_prim of string * int
+       | Seam_tailcall_prim0 of string
+       | Seam_tailcall_prim1 of string * reg
+       | Seam_tailcall_prim2 of string * reg * reg
+       | Seam_tailcall_prim3 of string * reg * reg * reg
+       | Select_tup of reg * reg * index
+       | Select_tup0 of reg * reg
+       | Select_tup1 of reg * reg
+       | Select_tup2 of reg * reg
+       | Self_call of reg * int
+       | Self_call0 of reg
+       | Self_call1 of reg * reg
+       | Self_call2 of reg * reg * reg
+       | Self_call3 of reg * reg * reg * reg       
+       | Self_tailcall of reg * int
+       | Self_tailcall0 of reg
+       | Self_tailcall1 of reg * reg
+       | Self_tailcall2 of reg * reg * reg
+       | Self_tailcall3 of reg * reg * reg * reg       
+       | Self_tailcall_direct0 of reg
+       | Self_tailcall_direct1 of reg * reg
+       | Self_tailcall_direct2 of reg * reg * reg
+       | Self_tailcall_direct3 of reg * reg * reg * reg       
+       | Set_cell of reg * reg
+       | Set_global of reg * int
+       | Set_local of reg * int
+       | Sjump_eq of reg * string * jlabel
+       | Spec_closure of reg * reg * template * int
+       | Stest of reg * (string * jlabel) vector
+       | Tagtest of reg * (tag * jlabel) vector
+       | Tagtest1 of reg * tag * jlabel
+       | Vectest of reg * (int * jlabel) vector
+       | XLabel of jlabel (* must be the lexocraphically last element *)
+		       
+     and template = Template of reg vector * out_arity * instr list
+	
+    val registerGlobal : 'a -> int
+    val resetGlobals: unit -> unit
+ 
+    val assemble : instr list * int -> ('a -> 'b)
+    val preAssemble : instr list * int -> concrete_code
+
+    val compile : ('a -> 'b) -> unit
+    val lazyCompile : ('a -> 'b) -> unit
+end

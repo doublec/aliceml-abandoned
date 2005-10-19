@@ -1,0 +1,603 @@
+import structure UnsafeByteCode from "UnsafeByteCode"
+import signature BYTE_CODE_SIG from "BYTE_CODE-sig"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+
+structure ByteCode :> BYTE_CODE_SIG =
+struct
+
+open UnsafeValue
+
+datatype reg = R0 | R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9
+datatype value = Reg of reg | Im of int
+datatype immediate = S of string | R of real
+type addr = int
+type tag = int
+type index = int
+type out_arity = int
+type rlabel = string
+type jlabel = string
+type concrete_code = int (* shadows the real type of preAssemble *)
+
+datatype instr =
+         Await of reg
+       | Bci_call of reg * int
+       | Bci_call0 of reg
+       | Bci_call1 of reg * reg
+       | Bci_call2 of reg * reg * reg
+       | Bci_call3 of reg * reg * reg * reg
+       | Bci_call_direct0 of reg
+       | Bci_call_direct1 of reg * reg
+       | Bci_call_direct2 of reg * reg * reg
+       | Bci_call_direct3 of reg * reg * reg * reg
+       | Bci_tailcall of reg * int
+       | Bci_tailcall0 of reg
+       | Bci_tailcall1 of reg * reg
+       | Bci_tailcall2 of reg * reg * reg
+       | Bci_tailcall3 of reg * reg * reg * reg
+       | Bci_tailcall_direct0 of reg
+       | Bci_tailcall_direct1 of reg * reg
+       | Bci_tailcall_direct2 of reg * reg * reg
+       | Bci_tailcall_direct3 of reg * reg * reg * reg
+       | Bigtagtest of reg * (tag * jlabel) vector
+       | Bigtagtest1 of reg * tag * jlabel
+       | Cbigtagtest of reg * jlabel vector
+       | Cbigtagtest_direct of reg * jlabel vector
+       | Ccc1
+       | CccN of int
+       | Citest of reg * (jlabel vector) * int
+       | Contest of reg * reg * jlabel
+       | Ctagtest of reg * jlabel vector
+       | Ctagtest_direct of reg * jlabel vector
+       | Debug_msg of string
+       | Iadd of reg * reg * reg
+       | Idec of reg
+       | Iinc of reg
+       | Ijump_eq of reg * int * jlabel
+       | Init_bigtagval of reg * reg * int
+       | Init_closure of reg * reg * int
+       | Init_con of reg * reg * int	 
+       | Init_polyrec of reg * reg * int
+       | Init_tagval of reg * reg * int
+       | Init_tup of reg * reg * int
+       | Init_vec of reg * reg * int
+       | Inlined_future_byneed of reg * reg
+       | Inlined_hole_fill of reg * reg
+       | Inlined_hole_hole of reg
+       | Install_handler of reg * reg * jlabel
+       | Isub of reg * reg * reg
+       | Itest of reg * (int * jlabel) vector
+       | Jump of jlabel
+       | Lazyselect_polyrec of reg * reg * rlabel
+       | Lazyselect_polyrec_n of reg * reg vector * rlabel vector
+       | Load_bigtagval of reg * reg * int 
+       | Load_cell of reg * reg
+       | Load_con of reg * reg * int
+       | Load_global of reg * addr
+       | Load_immediate of reg * immediate
+       | Load_int of reg * int
+       | Load_local of reg * addr
+       | Load_reg of reg * reg
+       | Load_tagval of reg * reg * int
+       | Load_vec of reg * reg * int
+       | Load_zero of reg
+       | Mk_closure of reg * concrete_code * int
+       | New_bigtagval of reg * int * tag
+       | New_cell of reg * reg
+       | New_con of reg * string
+       | New_polyrec of reg * rlabel vector
+       | New_tagval of reg * int * tag
+       | New_tup of reg * int
+       | New_vec of reg * int
+       | Prepare_con of reg * reg * int
+       | Raise_direct of reg
+       | Raise_normal of reg
+       | Remove_handler 
+       | Rjump_eq of reg * real * jlabel 
+       | Rtest of reg * (real * jlabel) vector
+       | Seam_call of reg * int
+       | Seam_call0 of reg
+       | Seam_call1 of reg * reg
+       | Seam_call2 of reg * reg * reg
+       | Seam_call3 of reg * reg * reg * reg
+       | Seam_call_prim of string * int
+       | Seam_call_prim0 of string
+       | Seam_call_prim1 of string * reg
+       | Seam_call_prim2 of string * reg * reg      
+       | Seam_call_prim3 of string * reg * reg * reg     
+       | Seam_ccc1 of reg
+       | Seam_cccn of reg vector
+       | Seam_load_sreg of reg * addr
+       | Seam_return of int
+       | Seam_return1 of reg
+       | Seam_return2 of reg * reg
+       | Seam_return3 of reg * reg * reg
+       | Seam_return4 of reg * reg * reg * reg
+       | Seam_set_nargs of int
+       | Seam_set_sreg of reg * int
+       | Seam_tailcall of reg * int
+       | Seam_tailcall0 of reg
+       | Seam_tailcall1 of reg * reg
+       | Seam_tailcall2 of reg * reg * reg
+       | Seam_tailcall3 of reg * reg * reg * reg
+       | Seam_tailcall_prim of string * int
+       | Seam_tailcall_prim0 of string
+       | Seam_tailcall_prim1 of string * reg
+       | Seam_tailcall_prim2 of string * reg * reg
+       | Seam_tailcall_prim3 of string * reg * reg * reg
+       | Select_tup of reg * reg * index
+       | Select_tup0 of reg * reg
+       | Select_tup1 of reg * reg
+       | Select_tup2 of reg * reg
+       | Self_call of reg * int
+       | Self_call0 of reg
+       | Self_call1 of reg * reg
+       | Self_call2 of reg * reg * reg
+       | Self_call3 of reg * reg * reg * reg       
+       | Self_tailcall of reg * int
+       | Self_tailcall0 of reg
+       | Self_tailcall1 of reg * reg
+       | Self_tailcall2 of reg * reg * reg
+       | Self_tailcall3 of reg * reg * reg * reg       
+       | Self_tailcall_direct0 of reg
+       | Self_tailcall_direct1 of reg * reg
+       | Self_tailcall_direct2 of reg * reg * reg
+       | Self_tailcall_direct3 of reg * reg * reg * reg       
+       | Set_cell of reg * reg
+       | Set_global of reg * int
+       | Set_local of reg * int
+       | Sjump_eq of reg * string * jlabel
+       | Spec_closure of reg * reg * template * int
+       | Stest of reg * (string * jlabel) vector
+       | Tagtest of reg * (tag * jlabel) vector
+       | Tagtest1 of reg * tag * jlabel
+       | Vectest of reg * (int * jlabel) vector
+       | XLabel of jlabel (* must be the lexocraphically last element *)
+		       
+     and template = Template of reg vector * out_arity * instr list
+
+fun reg r = case r of R0=>0|R1=>1|R2=>2|R3=>3|R4=>4|R5=>5|R6=>6
+		    | R7=>7|R8=>8|R9=>9 
+
+(* compute abstract absolute jumps *)
+
+exception LabelUsedTwice of string
+exception LabelUnknown
+
+structure LMap = MkRedBlackMap(String)
+
+fun setLabel lmap label pc =  
+    LMap.insertDisjoint (lmap, label, pc)
+    handle LMap.Collision l => raise LabelUsedTwice l
+
+fun lookupLabel lmap l = LMap.lookupExistent(lmap, l)
+
+fun compLabels lmap nil pc = lmap
+  | compLabels lmap (XLabel l::ir) pc = 
+    compLabels (setLabel lmap l pc) ir pc
+  | compLabels lmap (instr::ir) pc =
+    compLabels lmap ir (pc + 1)
+  
+fun patch lmap l = lookupLabel lmap l
+fun patchTT1 lmap v = Vector.map (patch lmap) v
+fun patchTT2 lmap v = 
+    Vector.map (fn (x,l) => (x, lookupLabel lmap l)) v
+    handle LMap.Unknown _ => raise LabelUnknown
+
+(* flatten instr list to a vector *)
+val instrNB = 500 (* upper bound - change this if the real number is greater *)
+val dummyLabelVec = Vector.tabulate(instrNB,fn i => i)
+fun tag x = UnsafeValue.tag(x,dummyLabelVec)
+
+fun assemble' lmap nil ass im _ = (Vector.fromList (List.rev ass),
+			     	   Vector.fromList (List.rev im)) 
+  | assemble' lmap (instr::is) ass im iaddr = 
+    case instr of
+	Await r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Bci_call (r,n) => 
+	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
+      | Bci_call0 r =>
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Bci_call1 (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Bci_call2 (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
+      | Bci_call3 (r0,r1,r2,r3) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
+	im iaddr
+      | Bci_tailcall (r,n) => 
+	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
+      | Bci_tailcall0 r =>
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Bci_tailcall1 (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Bci_tailcall2 (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
+      | Bci_tailcall3 (r0,r1,r2,r3) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
+	im iaddr
+      | Bigtagtest (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT2 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Bigtagtest1 (r,t,label) => 
+	assemble' lmap is (#[tag instr,reg r,patch lmap label] :: ass) im iaddr
+      | Cbigtagtest (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT1 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Cbigtagtest_direct (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT1 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Ccc1 => assemble' lmap is (#[tag instr]::ass) im iaddr
+      | CccN n => assemble' lmap is (#[tag instr,n]::ass) im iaddr
+      | Citest (r,tests,offset) =>
+	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT1 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr', offset] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end
+      | Contest (r0,r1,label) => 
+	let val ass' = #[tag instr,reg r0,reg r1,patch lmap label] :: ass
+	in assemble' lmap is ass' im iaddr
+	end
+      | Ctagtest (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT1 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Ctagtest_direct (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT1 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Debug_msg s => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast s :: im
+	    val ass' = #[tag instr, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end
+      | Iadd (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0, reg r1,reg r2]::ass) im iaddr
+      | Idec r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Iinc r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Ijump_eq (r,i,l) => 
+	let val ass' = #[tag instr, reg r, i, patch lmap l] :: ass
+	in assemble' lmap is ass' im iaddr
+	end
+      | Init_bigtagval (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Init_closure (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Init_con (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Init_polyrec (r0,r1,index) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Init_tagval (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Init_tup (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Init_vec (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Inlined_future_byneed (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Inlined_hole_fill (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Inlined_hole_hole r =>
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Install_handler (r0,r1,l) =>
+	let val iaddr' = iaddr + 1
+	    val im' = cast (tuple #[reg r0, reg r1, patch lmap l]) :: im
+	    val ass' = #[tag instr,iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end
+      | Isub (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0, reg r1,reg r2]::ass) im iaddr
+      | Itest (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT2 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Jump l =>
+	assemble' lmap is (#[tag instr, patch lmap l] :: ass) im iaddr
+      | Lazyselect_polyrec (r1,r2,l) =>
+	let val iaddr' = iaddr + 1
+	    val im' = cast l :: im
+	    val ass' = #[tag instr,reg r1,reg r2, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Lazyselect_polyrec_n (r,regs,labels) =>
+	let val iaddr' = iaddr + 2
+	    val im' = cast labels :: cast (Vector.map reg regs) :: im
+	    val ass' = #[tag instr,reg r,iaddr+1,iaddr+2] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Load_bigtagval (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Load_cell (r1,r2) => 
+       	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
+      | Load_con (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Load_global (r,i) => 
+	assemble' lmap is (#[tag instr,reg r,i]::ass) im iaddr
+      | Load_immediate(r,S s) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast s :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Load_immediate(r,R n) =>  
+	let val iaddr' = iaddr + 1
+	    val im' = cast n :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Load_int(r,i) => assemble' lmap is (#[tag instr,reg r,i]::ass) im iaddr
+      | Load_local(r,addr) => 
+	assemble' lmap is (#[tag instr,reg r,addr]::ass) im iaddr 
+      | Load_reg (r1,r2)  => 
+       	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
+      | Load_tagval (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Load_vec (r0,r1,index) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,index]::ass) im iaddr
+      | Load_zero r  => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Mk_closure (r,cc,size) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast cc :: im
+	    val ass' = #[tag instr, reg r, iaddr', size] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end
+      | New_bigtagval (r,size,bigtag) => 
+	assemble' lmap is (#[tag instr,reg r,size,bigtag]::ass) im iaddr
+      | New_cell (r1,r2) => 
+       	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
+      | New_con (r,name) =>
+	let val iaddr' = iaddr + 1
+	    val im' = cast name :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end
+      | New_polyrec (r,labels) =>
+	let val iaddr' = iaddr + 1
+	    val im' = cast labels :: im
+	    val ass' = #[tag instr,reg r,iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr' 
+	end
+      | New_tagval (r,size,normaltag) => 
+	assemble' lmap is (#[tag instr,reg r,size,normaltag]::ass) im iaddr
+      | New_tup (r,size) => 
+	assemble' lmap is (#[tag instr,reg r,size]::ass) im iaddr
+      | New_vec (r,size) => 
+	assemble' lmap is (#[tag instr,reg r,size]::ass) im iaddr
+      | Prepare_con (r0,r1,size) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1,size]::ass) im iaddr
+      | Raise_normal r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Raise_direct r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr 
+      | Remove_handler => assemble' lmap is (#[tag instr] :: ass) im iaddr
+      | Rjump_eq (r,x,l) => 
+	let val iaddr' = iaddr+1
+	    val im' = cast x :: im
+	    val ass' = #[tag instr,reg r,iaddr',patch lmap l] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end
+      | Rtest (r,tt) =>
+	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT2 lmap tt) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Seam_call (r,n) => 
+	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
+      | Seam_call0 r => 
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Seam_call1 (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Seam_call2 (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
+      | Seam_call3 (r0,r1,r2,r3) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
+		  im iaddr
+      | Seam_call_prim (s,n) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr', n] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_call_prim0 s => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_call_prim1 (s,r) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr',reg r] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_call_prim2 (s,r0,r1) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr',reg r0,reg r1] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_call_prim3 (s,r0,r1,r2) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr',reg r0,reg r1,reg r2] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_ccc1 r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Seam_cccn vec => 
+	let val vec' = Vector.map reg vec
+	    val iaddr' = iaddr + 1
+	    val im' = cast vec' :: im
+	    val ass' = #[tag instr, iaddr'] :: ass
+	in
+	    assemble' lmap is ass' im' iaddr'
+	end
+      | Seam_load_sreg (r,index) => 
+	assemble' lmap is (#[tag instr,reg r,index]::ass) im iaddr
+      | Seam_return n => assemble' lmap is (#[tag instr,n]::ass) im iaddr
+      | Seam_return1 r => 
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Seam_return2 (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Seam_return3 (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
+      | Seam_return4 (r0,r1,r2,r3) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
+		  im iaddr
+      | Seam_set_nargs nargs => 
+	assemble' lmap is (#[tag instr,nargs]::ass) im iaddr
+      | Seam_set_sreg (r,index) => 
+	assemble' lmap is (#[tag instr,reg r,index]::ass) im iaddr
+      | Seam_tailcall (r,n) => 
+	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
+      | Seam_tailcall0 r => 
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Seam_tailcall1 (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Seam_tailcall2 (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
+      | Seam_tailcall3 (r0,r1,r2,r3) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
+		  im iaddr
+      | Seam_tailcall_prim (s,n) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr', n] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_tailcall_prim0 s => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_tailcall_prim1 (s,r) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr',reg r] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_tailcall_prim2 (s,r0,r1) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr',reg r0,reg r1] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Seam_tailcall_prim3 (s,r0,r1,r2) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast (prim s) :: im
+	    val ass' = #[tag instr, iaddr',reg r0,reg r1,reg r2] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end  
+      | Select_tup (r1,r2,index) => 
+	assemble' lmap is (#[tag instr,reg r1,reg r2,index]::ass) im iaddr
+      | Select_tup0 (r1,r2) => 
+       	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
+      | Select_tup1 (r1,r2) => 
+       	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
+      | Select_tup2 (r1,r2) => 
+       	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
+      | Self_call (r,n) => 
+	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
+      | Self_call0 r =>
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Self_call1 (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Self_call2 (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
+      | Self_call3 (r0,r1,r2,r3) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
+		  im iaddr
+      | Self_tailcall (r,n) => 
+	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
+      | Self_tailcall0 r =>
+	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Self_tailcall1 (r0,r1) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Self_tailcall2 (r0,r1,r2) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
+      | Self_tailcall3 (r0,r1,r2,r3) =>
+	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
+		  im iaddr
+      | Set_cell (r0,r1) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Set_global (r,i) => 
+	assemble' lmap is (#[tag instr,reg r,i]::ass) im iaddr
+      | Set_local(r,addr) => 
+	assemble' lmap is (#[tag instr,reg r,addr]::ass) im iaddr 
+      | Sjump_eq (r,s,l) => 
+	let val iaddr' = iaddr + 1
+	    val im' = cast s :: im
+	    val ass' = #[tag instr,reg r,iaddr',patch lmap l] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end
+      | Spec_closure (r0,r1,template,size) => raise Subscript	
+      | Stest (r,tt) => 
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT2 lmap tt) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Tagtest (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT2 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | Tagtest1 (r,t,label) => 
+	assemble' lmap is (#[tag instr,reg r,patch lmap label] :: ass) im iaddr
+      | Vectest (r,tests) =>
+ 	let val iaddr' = iaddr + 1
+	    val im' = cast (patchTT2 lmap tests) :: im
+	    val ass' = #[tag instr, reg r, iaddr'] :: ass
+	in assemble' lmap is ass' im' iaddr'
+	end 
+      | XLabel _ => assemble' lmap is ass im iaddr
+      | _ => raise Subscript (* call_direct instructions not yet implemented *)
+
+fun assembleCode is = 
+    let val lmap = compLabels LMap.empty is 0
+    in assemble' lmap is nil nil ~1
+    end
+
+(* procedures that are visible from outside *)
+
+val globals = ref []
+
+fun registerGlobal x = (globals := cast x :: (!globals); 
+			List.length (!globals))(*addr 0 is for recursive call*)
+
+fun resetGlobals () = globals := nil
+
+fun assemble (is,nLocals) = 
+    let val (code,immediateEnv) = assembleCode is
+    in UnsafeByteCode.assemble (code,
+				immediateEnv,
+				Vector.fromList (List.rev(!globals)),
+				nLocals)
+    end
+
+fun preAssemble (is,nLocals) =
+    let val (code,immediateEnv) = assembleCode is
+    in UnsafeByteCode.preAssemble (code,immediateEnv,nLocals)
+    end
+
+fun compile closure = UnsafeByteCode.compile closure
+fun lazyCompile closure = UnsafeByteCode.lazyCompile closure
+
+end
