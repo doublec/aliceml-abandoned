@@ -170,6 +170,7 @@ build-suffix:
 	@echo You probably have to set:
 	@echo PATH=$(PREFIX)/bin:PATH
 	@echo ALICE_HOME=$(PREFIX)/share/alice
+	@echo for Windows: PATH=$(WIN_GTK_DIR)/bin:$(WIN_GTK_DIR)/lib:PATH
 
 .PHONY: all windows linux freebsd ppc-darwin
 windows:    setup-wingtk build-windows
