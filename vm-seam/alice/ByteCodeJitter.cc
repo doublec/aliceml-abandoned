@@ -34,7 +34,7 @@
 
 #define RELATIVE_JUMP
 #define DO_INLINING
-// #undef DO_INLINING
+//#undef DO_INLINING
 
 using namespace ByteCodeInstr;
 

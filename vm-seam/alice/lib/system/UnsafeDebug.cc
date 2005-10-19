@@ -27,6 +27,18 @@ DEFINE1(UnsafeDebug_unimplemented) {
   Error("UnsafeDebug: unimplemented");
 } END
 
+void PrintLiveness(TagVal *abstractCode) {
+  Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
+  u_int size = liveness->GetLength();
+  fprintf(stderr,"print liveness of size %d:\n",size/3);
+  for(u_int i = 0, j = 1; i<size; i+=3, j++) {
+    u_int index = Store::DirectWordToInt(liveness->Sub(i));
+    u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
+    u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
+    fprintf(stderr,"%d. %d -> [%d, %d]\n",j,index,start,end);
+  }
+}
+
 DEFINE1(UnsafeDebug_disassemble) {
   DECLARE_CLOSURE(closure, x0);
   word cc = closure->GetConcreteCode();
@@ -34,19 +46,29 @@ DEFINE1(UnsafeDebug_disassemble) {
   if (b == INVALID_POINTER) {
     REQUEST(cc);
   }
-  
+ 
   Interpreter *interpreter = b->GetInterpreter();
   if (interpreter == AbstractCodeInterpreter::self) {
     AliceConcreteCode *acc = AliceConcreteCode::FromWord(cc);
+    TagVal *abstractCode = acc->GetAbstractCode();
+    PrintLiveness(abstractCode);
     acc->Disassemble(stderr);
   } 
   else if (interpreter == ByteCodeInterpreter::self) {
     ByteConcreteCode *bcc = ByteConcreteCode::FromWord(cc);
+    Transform *transform =
+      STATIC_CAST(Transform *, bcc->GetAbstractRepresentation());
+    TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+    PrintLiveness(abstractCode);
     bcc->Disassemble(stderr);
   }
 #if HAVE_LIGHTNING
   else if (interpreter == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
+    Transform *transform =
+      STATIC_CAST(Transform *, ncc->GetAbstractRepresentation());
+    TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+    PrintLiveness(abstractCode);
     ncc->Disassemble(stderr);
   }
 #endif
@@ -134,7 +156,6 @@ DEFINE1(UnsafeDebug_lazyByteCompile) {
 
   RETURN_UNIT;
 } END
-
 
 AliceDll word UnsafeDebug() {
   Record *record = Record::New(12);

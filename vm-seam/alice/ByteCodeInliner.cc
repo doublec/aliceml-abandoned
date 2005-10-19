@@ -19,7 +19,7 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/ByteConcreteCode.hh"
 
-#define INLINE_LIMIT 4
+#define INLINE_LIMIT 10
 
 using namespace ByteCodeInliner_Internal;
 
