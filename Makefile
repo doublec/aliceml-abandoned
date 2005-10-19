@@ -128,7 +128,7 @@ clean-mozart: clean-common
 
 clean-seam: clean-common
 	rm -f bootstrap/alicec-seam.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
-	(cd vm-seam && make clean WINDOWS=$(WINDOWS)) || exit
+	(cd vm-seam && make -f Makefile.bootstrap clean WINDOWS=$(WINDOWS)) || exit
 	(cd vm-seam && make -f Makefile.bootstrap distclean) || exit 1
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
