@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Christian Mueller <cmueller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Christian Mueller, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 (*-*-sml-*-*)
 
 signature UNSAFE_BYTE_CODE_COMPONENT =

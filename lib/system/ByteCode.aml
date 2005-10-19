@@ -1,7 +1,19 @@
+(*
+ * Author:
+ *   Christian Mueller <cmueller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Christian Mueller, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 import structure UnsafeByteCode from "UnsafeByteCode"
 import signature BYTE_CODE_SIG from "BYTE_CODE-sig"
-import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+import structure UnsafeValue from "UnsafeValue"
+import functor MkRedBlackMap from "../data/MkRedBlackMap"
 
 structure ByteCode :> BYTE_CODE_SIG =
 struct
