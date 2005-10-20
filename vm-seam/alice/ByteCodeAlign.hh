@@ -51,7 +51,12 @@ class ByteCode; // forward declaration
  *
  * So registers and immediates are encoded in the same way
  */                                             
-        
+
+// This compiler switch changes the code layout insofar that it packs
+// two registers into one code slot.        
+//#define SMALL_REGS
+#undef SMALL_REGS
+
 // set immediates
 #define ENCODE_1I(index,i)			\
   WriteBuffer::SetSlot(index++,i)
@@ -82,6 +87,58 @@ class ByteCode; // forward declaration
   DECODE_1I(buffer,index,i3)
 
 
+// set registers
+#define ENCODE_1R(index,r) {			\
+  u_int slot = r & 0xFFFF;			\
+  ENCODE_1I(index,slot);			\
+}
+
+#ifdef SMALL_REGS
+#define ENCODE_2R(index,r1,r2) {		\
+  u_int slot = (r1 << 16) | (r2 & 0xFFFF);	\
+  ENCODE_1I(index,slot);			\
+}
+#else
+#define ENCODE_2R(index,r1,r2) {		\
+  ENCODE_1I(index,r1); 				\
+  ENCODE_1I(index,r2);				\
+}
+#endif
+
+#define ENCODE_3R(index,r1,r2,r3)		\
+  ENCODE_2R(index,r1,r2);			\
+  ENCODE_1R(index,r3)
+
+#define ENCODE_4R(index,r1,r2,r3,r4)		\
+  ENCODE_2R(index,r1,r2);			\
+  ENCODE_2R(index,r3,r4)
+
+// get registers
+#define DECODE_1R(buffer,index,r) 		\
+  DECODE_1I(buffer,index,r)
+
+#ifdef SMALL_REGS
+#define DECODE_2R(buffer,index,r1,r2) {		\
+  u_int slot;					\
+  DECODE_1I(buffer,index,slot);			\
+  r1 = slot >> 16;				\
+  r2 = slot & 0xFFFF;				\
+}
+#else
+#define DECODE_2R(buffer,index,r1,r2) {		\
+  DECODE_1I(buffer,index,r1); 			\
+  DECODE_1I(buffer,index,r2);			\
+}
+#endif
+
+#define DECODE_3R(buffer,index,r1,r2,r3)	\
+  DECODE_2R(buffer,index,r1,r2);		\
+  DECODE_1R(buffer,index,r3);
+
+#define DECODE_4R(buffer,index,r1,r2,r3,r4)	\
+  DECODE_2R(buffer,index,r1,r2);		\
+  DECODE_2R(buffer,index,r3,r4);
+
 #ifdef THREADED
 // ensure that the lookup table is initialized
 #define ENCODE_INSTR(index,instr) \
@@ -109,19 +166,25 @@ class ByteCode; // forward declaration
   SET_INSTR(index,instr);			\
   ENCODE_2I(index,i1,i2); }
 							
-#define SET_INSTR_1R(index,instr,r) 		\
-  SET_INSTR_1I(index,instr,r)
+#define SET_INSTR_1R(index,instr,r) {		\
+  SET_INSTR(index,instr);			\
+  ENCODE_1R(index,r);				\
+}
 
-#define SET_INSTR_2R(index,instr,r1,r2)		\
-  SET_INSTR_2I(index,instr,r1,r2)
+#define SET_INSTR_2R(index,instr,r1,r2) {	\
+  SET_INSTR(index,instr);			\
+  ENCODE_2R(index,r1,r2);			\
+}
 
 #define SET_INSTR_3R(index,instr,r1,r2,r3) {	\
-  SET_INSTR_2I(index,instr,r1,r2);		\
-  ENCODE_1I(index,r3); }
+  SET_INSTR(index,instr);			\
+  ENCODE_3R(index,r1,r2,r3);			\
+}
 
 #define SET_INSTR_4R(index,instr,r1,r2,r3,r4) {	\
-  SET_INSTR_3R(index,instr,r1,r2,r3);		\
-  ENCODE_1I(index,r4); }
+  SET_INSTR(index,instr);			\
+  ENCODE_4R(index,r1,r2,r3,r4);			\
+}
 
 #define SET_INSTR_1R1I(index,instr,r,i) {		\
   SET_INSTR_1R(index,instr,r);			        \
@@ -165,17 +228,20 @@ class ByteCode; // forward declaration
   DECODE_3I(buffer,index,i1,i2, i3)   
 
 #define GET_1R(buffer,index,r)			\
-  GET_1I(buffer,index,r)
+  u_int r;					\
+  DECODE_1R(buffer,index,r)
 
-#define GET_2R(buffer,index,r1,r2)     		\
-  GET_2I(buffer,index,r1,r2)
+#define GET_2R(buffer,index,r1,r2)		\
+  u_int r1, r2;					\
+  DECODE_2R(buffer,index,r1,r2)
 
-#define GET_3R(buffer,index,r1,r2,r3)  		\
-  GET_3I(buffer,index,r1,r2,r3)
+#define GET_3R(buffer,index,r1,r2,r3)		\
+  u_int r1, r2, r3;				\
+  DECODE_3R(buffer,index,r1,r2,r3)
 
 #define GET_4R(buffer,index,r1,r2,r3,r4)	\
-  GET_3I(buffer,index,r1,r2,r3);       		\
-  GET_1I(buffer,index,r4)
+  u_int r1, r2, r3, r4;				\
+  DECODE_4R(buffer,index,r1,r2,r3,r4)
 
 #define GET_1R1I(buffer,index,r,i)		\
   GET_1R(buffer,index,r);			\

@@ -207,8 +207,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
   register ProgramCounter PC;
   ProgramCounter startPC; // save position before current instr
   SETPC(frame->GetPC());
-  Closure *CP = frame->GetCP();
-  Tuple *IP = frame->GetIP();  
+  register Closure *CP = frame->GetCP();
+  register Tuple *IP = frame->GetIP();  
 
   BCI_DEBUG("BCI::Run: start execution at PC %d\n",frame->GetPC());
 #ifdef THREADED	
@@ -1374,7 +1374,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     Case(lazyselect_polyrec_n): // r0, regs, labels
       {
-	GET_2R1I(codeBuffer,PC,r0,regsAddr,labelsAddr);
+	GET_1R2I(codeBuffer,PC,r0,regsAddr,labelsAddr);
 	Vector *regs = Vector::FromWordDirect(IP->Sel(regsAddr));
 	Vector *labels = Vector::FromWordDirect(IP->Sel(labelsAddr));
 	word wRecord = GETREG(r0);
