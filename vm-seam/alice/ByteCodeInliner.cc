@@ -42,6 +42,17 @@ void ByteCodeInliner::InlineAnalyser::Count(TagVal *instr) {
   case AbstractCode::Kill:
   case AbstractCode::EndHandle:
     break;
+  case AbstractCode::GetTup:
+    {
+      // Only count this instruction if a real selection is 
+      // preformed. Otherwise this instruction forces evaluation.
+      // In this case the compiler may detect it and skip the
+      // instruction.
+      Vector *regs = Vector::FromWordDirect(instr->Sel(0));
+      if(regs->GetLength() > 0)
+	counter++;
+    }
+    break;
   case AbstractCode::Close:
     // Avoid to inline Close instruction as this will
     // increase the number of compiler calls 

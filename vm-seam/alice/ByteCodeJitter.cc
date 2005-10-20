@@ -211,6 +211,54 @@ public:
 };
 #endif // DO_REG_ALLOC
 
+class PeepHoleOptimizer {
+public:
+  // This function optimizes a common case that occurs in procedure
+  // inlining:
+  // - The callee expects unit as argument, but only uses
+  //   it to request the unit value.
+  // - The caller does not pass a value, so the CCC has to insert a 
+  //   load_zero instruction.
+  // In this case it is obvious that we can skip both the load_zero
+  // instruction and the following request on it.
+  static TagVal *optimizeInlineInCCC(Vector *formalArgs, Vector *args,
+				     TagVal *instr) {
+    if(formalArgs->GetLength() == 1 && args->GetLength() == 0) {
+      if(AbstractCode::GetInstr(instr) == AbstractCode::GetTup) {
+	Vector *regs = Vector::FromWordDirect(instr->Sel(0));
+	if(regs->GetLength() == 0) {
+	  TagVal *idRef = TagVal::FromWordDirect(instr->Sel(1));
+	  switch(AbstractCode::GetIdRef(idRef)) {
+	  case AbstractCode::LastUseLocal:
+	    {
+	      // this case does not seem to occur
+	      return TagVal::FromWordDirect(instr->Sel(2));
+	    }
+	    break;
+	  case AbstractCode::Local:
+	    {
+	      word local = idRef->Sel(0);
+	      instr = TagVal::FromWordDirect(instr->Sel(2));
+	      if(AbstractCode::GetInstr(instr) == AbstractCode::Kill) {
+		Vector *regs = Vector::FromWordDirect(instr->Sel(0));
+		for(u_int i = regs->GetLength(); i--; ) {
+		  if(regs->Sub(i) == local) {
+		    return TagVal::FromWordDirect(instr->Sel(1));
+		  }
+		}
+	      }
+	    }
+	    break;
+	  default:
+	    ;
+	  }
+	}
+      }
+    }
+    return INVALID_POINTER;
+  }
+};
+
 // instruction helpers
 u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
@@ -2408,7 +2456,6 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode,
   inlineInfo = info;
   
   // prepare the exit of the inline function
-  //  patchTable.Clear();
   PatchTable *oldPatchTable = patchTable;
   patchTable = new PatchTable();
 
@@ -2434,10 +2481,16 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode,
   BCJIT_DEBUG("compile in CCC\n");
   // shift formal args -> look for better solution
   Vector *formalArgsShifted = ShiftIdDefs(formalArgs,offset);
-  CompileInlineCCC(formalArgsShifted,args);
+
+  TagVal *root = TagVal::FromWordDirect(abstractCode->Sel(5));
+  TagVal *newRoot =
+    PeepHoleOptimizer::optimizeInlineInCCC(formalArgsShifted,args,root);
+  if(newRoot != INVALID_POINTER)
+    root = newRoot;
+  else
+    CompileInlineCCC(formalArgsShifted,args);  
 
   // save jitter state
-//   u_int oldLocalOffset = localOffset;
   Vector *oldGlobalSubst = globalSubst;
   IntMap *oldSharedTable = sharedTable;
 
@@ -2446,7 +2499,7 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode,
   sharedTable = IntMap::New(inlineInfo->GetNNodes());
 
   BCJIT_DEBUG("compile instr\n");
-  CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
+  CompileInstr(root);
   u_int jumpInstrSize = patchTable->GetJumpInstrSize();
   u_int nPatches = patchTable->GetLength();
   BCJIT_DEBUG("start patch with nPatches %d\n",nPatches);
