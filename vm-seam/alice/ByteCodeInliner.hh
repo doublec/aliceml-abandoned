@@ -115,7 +115,8 @@ private:
     Vector *liveness;
     Map *inlineMap;
     ByteCodeInliner_Internal::Container livenessInfo;
-    void Append(TagVal *acc, Closure *closure, word idDefsInstrOpt,
+    void Append(word key,
+		TagVal *acc, Closure *closure, word idDefsInstrOpt,
 		InlineInfo *inlineInfo);
     Vector *MergeLiveness();
   public:
