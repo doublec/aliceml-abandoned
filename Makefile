@@ -6,10 +6,7 @@
 # - 'make setup' to checkout everything from CVS and create an appropriate
 #   directory structure.
 # - 'make update' to update from CVS.
-# - 'make build-windows' to build everything for Windows.
-# - 'make build-linux' to build everything for Linux.
-# - 'make all' to build Alice for Windows (incl. .exe wrappers) 
-#              and the documentation
+# - 'make all' to build Alice for the actual OS
 # - 'make clean' to remove everything built.
 # - 'make cleanbuild' to build from scratch.
 # After setup you must include seam-support in your path to be able to build:
