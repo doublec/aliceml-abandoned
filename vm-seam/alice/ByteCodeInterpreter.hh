@@ -31,7 +31,7 @@
 // #define BCI_DEBUG(s,...) fprintf(stderr,s, ##__VA_ARGS__)
 // #define DEBUG_INSTR() {					\
 //   ProgramCounter debugPC = PC;				\
-//   ByteCode::DisassembleOne(stderr,debugPC,code,IP);	\
+//   if (invocations > 1000) ByteCode::DisassembleOne(stderr,debugPC,code,IP); \
 // }
 
 class ByteCodeFrame;

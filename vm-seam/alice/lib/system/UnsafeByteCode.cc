@@ -488,7 +488,6 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       }
       break;     
 
-    case ByteCodeInstr::set_local:
     case ByteCodeInstr::set_global:
     case ByteCodeInstr::seam_set_sreg:
     case ByteCodeInstr::seam_load_sreg:
@@ -496,7 +495,6 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     case ByteCodeInstr::new_tup:
     case ByteCodeInstr::load_immediate:
     case ByteCodeInstr::load_global:
-    case ByteCodeInstr::load_local:
     case ByteCodeInstr::load_int:
     case ByteCodeInstr::seam_call:
     case ByteCodeInstr::bci_call:

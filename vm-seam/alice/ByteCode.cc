@@ -68,12 +68,6 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"iinc R%d\n",r0);
     }
     return PC;
-  case set_local: // reg, index
-    {
-      GET_1R1I(codeBuffer,PC,reg,index);
-      fprintf(f,"set_local R%d, %d\n",reg,index);
-    }
-    return PC;
   case set_global: // reg, index
     {
       GET_1R1I(codeBuffer,PC,reg,index);
@@ -191,70 +185,52 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"seam_tailcall3 R%d, R%d, R%d, R%d\n",reg,r0,r1,r2);
     }
     return PC;
-  case self_call: // r,n
+  case self_call: // n
     {
-      GET_1R1I(codeBuffer,PC,r,n);
-      fprintf(f,"self_call R%d, %d\n",r,n);
+      GET_1I(codeBuffer,PC,n);
+      fprintf(f,"self_call %d\n",n);
     }
     return PC;
-  case self_call1: // reg,r0
+  case self_call1: // r0
     {
-      GET_2R(codeBuffer,PC,reg,r0);
-      fprintf(f,"self_call1 R%d, R%d\n",reg,r0);
+      GET_1R(codeBuffer,PC,r0);
+      fprintf(f,"self_call1 R%d\n",r0);
     }
     return PC;
-  case self_call2: // reg,r0,r1
+  case self_call2: // r0,r1
     {
-      GET_3R(codeBuffer,PC,reg,r0,r1);
-      fprintf(f,"self_call2 R%d, R%d, R%d\n",reg,r0,r1);
+      GET_2R(codeBuffer,PC,r0,r1);
+      fprintf(f,"self_call2 R%d, R%d\n",r0,r1);
     }
     return PC;
-  case self_call3: // reg,r0,r1,r2
+  case self_call3: // r0,r1,r2
     {
-      GET_4R(codeBuffer,PC,reg,r0,r1,r2);
-      fprintf(f,"self_call3 R%d, R%d, R%d, R%d\n",reg,r0,r1,r2);
+      GET_3R(codeBuffer,PC,r0,r1,r2);
+      fprintf(f,"self_call3 R%d, R%d, R%d\n",r0,r1,r2);
     }
     return PC;
-  case self_tailcall: // r,n
+  case self_tailcall: // n
     {
-      GET_1R1I(codeBuffer,PC,r,n);
-      fprintf(f,"self_tailcall R%d, %d\n",r,n);
+      GET_1I(codeBuffer,PC,n);
+      fprintf(f,"self_tailcall %d\n",n);
     }
     return PC;
-  case self_tailcall1: // reg,r0
+  case self_tailcall1: // r0
     {
-      GET_2R(codeBuffer,PC,reg,r0);
-      fprintf(f,"self_tailcall1 R%d, R%d\n",reg,r0);
+      GET_1R(codeBuffer,PC,r0);
+      fprintf(f,"self_tailcall1 R%d\n",r0);
     }
     return PC;
-  case self_tailcall2: // reg,r0,r1
+  case self_tailcall2: // r0,r1
     {
-      GET_3R(codeBuffer,PC,reg,r0,r1);
-      fprintf(f,"self_tailcall2 R%d, R%d, R%d\n",reg,r0,r1);
+      GET_2R(codeBuffer,PC,r0,r1);
+      fprintf(f,"self_tailcall2 R%d, R%d\n",r0,r1);
     }
     return PC;
-  case self_tailcall3: // reg,r0,r1,r2
+  case self_tailcall3: // r0,r1,r2
     {
-      GET_4R(codeBuffer,PC,reg,r0,r1,r2);
-      fprintf(f,"self_tailcall3 R%d, R%d, R%d, R%d\n",reg,r0,r1,r2);
-    }
-    return PC;
-  case self_tailcall_direct1: // reg,r0
-    {
-      GET_2R(codeBuffer,PC,reg,r0);
-      fprintf(f,"self_tailcall_direct1 R%d, R%d\n",reg,r0);
-    }
-    return PC;
-  case self_tailcall_direct2: // reg,r0,r1
-    {
-      GET_3R(codeBuffer,PC,reg,r0,r1);
-      fprintf(f,"self_tailcalldirect2 R%d, R%d, R%d\n",reg,r0,r1);
-    }
-    return PC;
-  case self_tailcall_direct3: // reg,r0,r1,r2
-    {
-      GET_4R(codeBuffer,PC,reg,r0,r1,r2);
-      fprintf(f,"self_tailcalldirect3 R%d, R%d, R%d, R%d\n",reg,r0,r1,r2);
+      GET_3R(codeBuffer,PC,r0,r1,r2);
+      fprintf(f,"self_tailcall3 R%d, R%d, R%d\n",r0,r1,r2);
     }
     return PC;
   case bci_call: // r,n
@@ -484,12 +460,6 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"load_int R%d, %d\n",reg,(int)i);
     }
     return PC;
-  case load_local: // r, addr
-    {
-      GET_1R1I(codeBuffer,PC,reg,addr);
-      fprintf(f,"load_local R%d, %d\n",reg,addr);
-    }
-    return PC;
   case load_zero: // r
     {
       GET_1R(codeBuffer,PC,reg);
@@ -500,6 +470,12 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
     {
       GET_2R(codeBuffer,PC,r1,r2);
       fprintf(f,"load_reg R%d, R%d\n",r1,r2);
+    }
+    return PC;
+  case swap_regs: // r0, r1
+    {
+      GET_2R(codeBuffer,PC,r1,r2);
+      fprintf(f,"swap_regs R%d, R%d\n",r1,r2);
     }
     return PC;
   case load_cell:
@@ -805,8 +781,6 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
     {
       fprintf(stderr,"PC %d\n",PC);
       GET_2R1I(codeBuffer,PC,r0,r1,index);
-      fprintf(f,"init_closure R%d, R%d, %d\n",r0,r1,index);      
-      fprintf(stderr,"next PC %d\n",PC);
     }
     return PC;
   case debug_msg:

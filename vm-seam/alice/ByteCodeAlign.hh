@@ -54,8 +54,8 @@ class ByteCode; // forward declaration
 
 // This compiler switch changes the code layout insofar that it packs
 // two registers into one code slot.        
-//#define SMALL_REGS
-#undef SMALL_REGS
+#define SMALL_REGS
+//#undef SMALL_REGS
 
 // set immediates
 #define ENCODE_1I(index,i)			\

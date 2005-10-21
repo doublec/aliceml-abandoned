@@ -321,20 +321,24 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     // specialized calls
 
-#define SAVE_ARGS() /* dummy */
-#define SAVE_ARGS1() word arg0 = GETREG(r0)
-#define SAVE_ARGS2() SAVE_ARGS1(); word arg1 = GETREG(r1)
-#define SAVE_ARGS3() SAVE_ARGS2(); word arg2 = GETREG(r2)
-
-#define SET_ARGS() /* dummy */
-#define SET_ARGS1() SETREG(0,arg0)
-#define SET_ARGS2() SET_ARGS1(); SETREG(1,arg1)
-#define SET_ARGS3() SET_ARGS2(); SETREG(2,arg2)
+#define PREPARE_SELFCALL()			\
+      GET_1I(codeBuffer,PC,nArgs)
+#define PREPARE_SELFCALL0()			\
+      Scheduler::SetNArgs(0)
+#define PREPARE_SELFCALL1()			\
+      GET_1R(codeBuffer,PC,r0);			\
+      SET_SCHEDULER_ARGS1(r0)
+#define PREPARE_SELFCALL2()			\
+      GET_2R(codeBuffer,PC,r0,r1);		\
+      SET_SCHEDULER_ARGS2(r0,r1)
+#define PREPARE_SELFCALL3()			\
+      GET_3R(codeBuffer,PC,r0,r1,r2);		\
+      SET_SCHEDULER_ARGS3(r0,r1,r2)
 
 #define SELF_CALL(NOA) {						\
-        PREPARE_CALL##NOA();						\
+        PREPARE_SELFCALL##NOA();					\
 	SAVEPC(PC);							\
-	ByteCodeInterpreter::PushCall(Closure::FromWord(GETREG(reg)));	\
+	ByteCodeInterpreter::PushCall(CP);				\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
 	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
         SETPC(0);                                                       \
@@ -431,23 +435,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     // specialized self tailcall instructions
 
-#define PREPARE_DIRECTCALL() /* dummy */
-#define PREPARE_DIRECTCALL1() SETREG(0,GETREG(r0))
-#define PREPARE_DIRECTCALL2() { PREPARE_DIRECTCALL1(); SETREG(1,GETREG(r1)); }
-#define PREPARE_DIRECTCALL3() { PREPARE_DIRECTCALL2(); SETREG(2,GETREG(r2)); }
-
-    // skip CCC
-      Case(self_tailcall_direct0): 
-	Error("self_tailcall_direct0 not yet implemented\n");
-      Case(self_tailcall_direct1): 
-	Error("self_tailcall_direct1 not yet implemented\n");
-      Case(self_tailcall_direct2): 
-	Error("self_tailcall_direct1 not yet implemented\n");
-      Case(self_tailcall_direct3): 
-	Error("self_tailcall_direct1 not yet implemented\n");
-
 #define SELF_TAILCALL(NOA) {			\
-      PREPARE_CALL##NOA();			\
+      PREPARE_SELFCALL##NOA();			\
       SETPC(0);					\
       CHECK_PREEMPT();				\
       DISPATCH(PC);				\
@@ -934,13 +923,6 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(load_local): // r, i
-      {
-	GET_1R1I(codeBuffer,PC,reg,index);
-	SETREG(reg, frame->GetLocal(index));
-      }
-      DISPATCH(PC);
-
     Case(load_immediate): // r, i
       {
 	GET_1R1I(codeBuffer,PC,reg,iaddr);
@@ -969,17 +951,18 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
+    Case(swap_regs): // r0, r1
+      {
+	GET_2R(codeBuffer,PC,r0,r1);
+	word tmp = GETREG(r0);	
+	SETREG(r0, GETREG(r1));
+	SETREG(r1, tmp);
+      }
+      DISPATCH(PC);
+
       /*******************************
        * basic register sets (stores)
        *******************************/
-
-    // this is equal to load_reg if registers == locals
-    Case(set_local): // reg, addr
-      {
-	GET_1R1I(codeBuffer,PC,reg,addr);
-	frame->SetLocal(addr,GETREG(reg));
-      }
-      DISPATCH(PC);
 
     Case(set_global): // reg, addr
       {

@@ -260,6 +260,56 @@ public:
 };
 
 // instruction helpers
+void ByteCodeJitter::LoadIdRefInto(u_int dst, word idRef) {
+  TagVal *tagVal = TagVal::FromWordDirect(idRef);
+
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+
+  switch (AbstractCode::GetIdRef(tagVal)) {
+  case AbstractCode::LastUseLocal:
+  case AbstractCode::Local:
+    {    
+      u_int src = IdToReg(tagVal->Sel(0));
+      if(src != dst) {
+	SET_INSTR_2R(PC,load_reg,dst,src);
+      }
+    }
+    break;
+  case AbstractCode::Global:
+    {
+      SET_INSTR_1R1I(PC,load_global,dst,
+		     Store::DirectWordToInt(tagVal->Sel(0)));
+    }
+    break;
+  case AbstractCode::Immediate:
+    {
+      word val = tagVal->Sel(0);
+      if (PointerOp::IsInt(val)) {
+	s_int x = Store::DirectWordToInt(val);
+	if(x == 0) {
+	  SET_INSTR_1R(PC,load_zero,dst);
+	} else {
+	  SET_INSTR_1R1I(PC,load_int,dst,x);
+	}
+      }
+      else {
+	u_int index;
+	if(imMap->IsMember(val)) {
+	  index = Store::DirectWordToInt(imMap->Get(val));
+	} else {
+	  index = imEnv.Register(val);
+	  imMap->Put(val,Store::IntToWord(index));
+	}
+	SET_INSTR_1R1I(PC,load_immediate,dst,index);
+      }
+    }
+    break;
+  default:
+    Error("ByteCodeJitter::LoadIdRef: invalid idRef Tag");
+  }
+}
+
 u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
     
@@ -303,7 +353,13 @@ u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
 	}
       }
       else {
-	u_int index = imEnv.Register(val);
+	u_int index;
+	if(imMap->IsMember(val)) {
+	  index = Store::DirectWordToInt(imMap->Get(val));
+	} else {
+	  index = imEnv.Register(val);
+	  imMap->Put(val,Store::IntToWord(index));
+	}
 	SET_INSTR_1R1I(PC,load_immediate,S,index);
       }
       return S;
@@ -697,48 +753,7 @@ inline TagVal *ByteCodeJitter::InstrKill(TagVal *pc) {
 // PutVar of id * idRef  * instr
 inline TagVal *ByteCodeJitter::InstrPutVar(TagVal *pc) {
   u_int dst = IdToReg(pc->Sel(0));
-  TagVal *tagVal = TagVal::FromWordDirect(pc->Sel(1));
-
-  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
-    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
-
-  switch (AbstractCode::GetIdRef(tagVal)) {
-  case AbstractCode::LastUseLocal:
-  case AbstractCode::Local:
-    {    
-      u_int src = IdToReg(tagVal->Sel(0));
-      if(src != dst) {
-	SET_INSTR_2R(PC,load_reg,dst,src);
-      }
-    }
-    break;
-  case AbstractCode::Global:
-    {
-      SET_INSTR_1R1I(PC,load_global,dst,
-		     Store::DirectWordToInt(tagVal->Sel(0)));
-    }
-    break;
-  case AbstractCode::Immediate:
-    {
-      word val = tagVal->Sel(0);
-      if (PointerOp::IsInt(val)) {
-	s_int x = Store::DirectWordToInt(val);
-	if(x == 0) {
-	  SET_INSTR_1R(PC,load_zero,dst);
-	} else {
-	  SET_INSTR_1R1I(PC,load_int,dst,x);
-	}
-      }
-      else {
-	u_int index = imEnv.Register(val);
-	SET_INSTR_1R1I(PC,load_immediate,dst,index);
-      }
-    }
-    break;
-  default:
-    Error("ByteCodeJitter::LoadIdRef: invalid idRef Tag");
-  }
-
+  LoadIdRefInto(dst,pc->Sel(1));
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
@@ -1144,6 +1159,149 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
 }
 
+void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
+  Assert(AbstractCode::GetInstr(instr) == AbstractCode::AppVar);
+  Vector *args = Vector::FromWordDirect(instr->Sel(1));
+  u_int nArgs = args->GetLength();
+
+  // This is the best case: self tailcall for which we can skip
+  // the calling conversion convention.
+  if(isTailcall && nArgs == currentFormalInArgs->GetLength()) {
+    switch(nArgs) {
+    case 0:
+      break;
+    case 1:
+      {
+	TagVal *idDefOpt = TagVal::FromWord(currentFormalInArgs->Sub(0));
+	if(idDefOpt != INVALID_POINTER) {
+	  u_int addr = Store::DirectWordToInt(idDefOpt->Sel(0)) - localOffset;
+	  u_int dst = IdToReg(Store::IntToWord(addr));
+	  LoadIdRefInto(dst,args->Sub(0));
+	}
+      }
+      break;
+    default:
+      {
+	// collect information
+	u_int setting[nArgs];
+	u_int normalLoads[2*nArgs];
+	u_int nNormalLoads = 0;
+	for(u_int i = nArgs; i--; ) setting[i] = i;
+	for(u_int i = 0; i<nArgs; i++) {
+	  TagVal *idDefOpt = TagVal::FromWord(currentFormalInArgs->Sub(i));
+	  if(idDefOpt != INVALID_POINTER) {
+	    u_int addr = Store::DirectWordToInt(idDefOpt->Sel(0)) - localOffset;
+	    u_int dst = IdToReg(Store::IntToWord(addr));
+	    TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
+	    switch(AbstractCode::GetIdRef(tagVal)) {
+	    case AbstractCode::Local:
+	    case AbstractCode::LastUseLocal:
+	      {
+		u_int src = IdToReg(tagVal->Sel(0));
+		if(src < nArgs) 
+		  setting[src] = dst;
+		else {		  
+		  normalLoads[nNormalLoads++] = i;
+		  normalLoads[nNormalLoads++] = dst;
+		}
+	      }
+	      break;
+	    case AbstractCode::Global:
+	    case AbstractCode::Immediate:
+	      {
+		normalLoads[nNormalLoads++] = i;
+		normalLoads[nNormalLoads++] = dst;
+	      }
+	      break;
+	    default:
+	      Error("wrong idRef");
+	    }
+	  }
+	}
+	// compile swap chains
+// 	for(u_int i=0; i<nArgs; i++) 
+// 	  if(setting[i] != i)
+// 	    fprintf(stderr," %d -> %d\n",i,setting[i]);
+	for(u_int i = 0; i<nArgs; i++) {
+	  if(setting[i] != i) goto EXIT;
+// 	  u_int j = i;
+// 	  while(setting[j] != j) {
+// 	    u_int tmp = j;
+// 	    j = setting[j];
+// 	    setting[tmp] = tmp; // clear this field
+// 	    fprintf(stderr," swap R%d, R%d\n",i,j);
+// 	    //	    SET_INSTR_2R(PC,swap_regs,i,j);
+// 	  }
+	}
+	// compile the normal instructions
+	for(u_int i = 0; i<nNormalLoads; i+=2) {
+	  word idRef = args->Sub(normalLoads[i]);
+	  u_int dst = normalLoads[i+1];
+	  LoadIdRefInto(dst,idRef);
+	}
+      }
+    }
+    u_int oldPC = PC;
+    SET_INSTR_1I(PC,jump,0);
+    s_int offset = skipCCCPC - PC;
+    SET_INSTR_1I(oldPC,jump,offset);
+    return;
+  }
+ EXIT: 
+  switch(nArgs) {
+  case 0:
+    {
+      u_int callInstr = (isTailcall) ? self_tailcall0 : self_call0;
+      SET_INSTR(PC,callInstr);
+    }
+    break;
+  case 1:
+    {
+      u_int callInstr = (isTailcall) ? self_tailcall1 : self_call1;
+      u_int arg0 = LoadIdRefKill(args->Sub(0));
+      SET_INSTR_1R(PC,callInstr,arg0);
+    }
+    break;
+  case 2:
+    {
+      u_int callInstr = (isTailcall) ? self_tailcall2 : self_call2;
+      u_int arg0 = LoadIdRefKill(args->Sub(0));
+      u_int arg1 = LoadIdRefKill(args->Sub(1));
+      SET_INSTR_2R(PC,callInstr,arg0,arg1);
+    }
+    break;
+  case 3:
+    {
+      u_int callInstr = (isTailcall) ? self_tailcall3 : self_call3;
+      u_int arg0 = LoadIdRefKill(args->Sub(0));
+      u_int arg1 = LoadIdRefKill(args->Sub(1));
+      u_int arg2 = LoadIdRefKill(args->Sub(2));
+      SET_INSTR_3R(PC,callInstr,arg0,arg1,arg2);
+    }
+    break;
+  default:
+    {
+      if(nArgs <= Scheduler::maxArgs) {
+	SET_INSTR_1I(PC,seam_set_nargs,nArgs);
+	for(u_int i=0; i<nArgs; i++) {
+	  u_int reg = LoadIdRefKill(args->Sub(i),true);
+	  SET_INSTR_1R1I(PC,seam_set_sreg,reg,i);
+	}
+	u_int callInstr = isTailcall ? self_tailcall : self_call;
+	SET_INSTR_1I(PC,callInstr,nArgs);     
+      } else {
+	u_int S = GetNewScratch();
+	SET_INSTR_1R1I(PC,new_tup,S,nArgs);
+	for(u_int i=nArgs; i--; ) {
+	  u_int src = LoadIdRefKill(args->Sub(i),true);
+	  SET_INSTR_2R1I(PC,init_tup,S,src,i);
+	}
+	u_int callInstr = isTailcall ? self_tailcall1 : self_call1;
+	SET_INSTR_1R(PC,callInstr,S);
+      }      
+    }
+  }
+}
 
 // AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
 /*inline*/ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
@@ -1252,18 +1410,18 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 	  } 
 	} else if (wConcreteCode == currentConcreteCode) {
 	  // this is a self recursive call
-	  baseCallInstr = (isTailcall) ? self_tailcall : self_call;
-	} 
+	  CompileSelfCall(pc,isTailcall);
+	  if(isTailcall)
+	    return INVALID_POINTER;
+	  else
+	    goto compile_continuation;
+	}
       }
     }
     break;
   default:
     ;
   }
-
-  // TODO: try to find out more about closure to optimize
-  //       - skip call CCC
-  //       - call primitives
 
   // compile argument setting and call instructions
   switch(nArgs) {
@@ -2342,42 +2500,7 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
       TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(i));
       if(argOpt != INVALID_POINTER) {
 	u_int dst = IdToReg(argOpt->Sel(0));
-	TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
-	if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
-	  tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
-	switch (AbstractCode::GetIdRef(tagVal)) {
-	case AbstractCode::LastUseLocal:
-	case AbstractCode::Local:
-	  {    
-	    u_int src = IdToReg(tagVal->Sel(0));	      
-	    if(src != dst) { 
-	      SET_INSTR_2R(PC,load_reg,dst,src);
-	    }
-	  }
-	  break;
-	case AbstractCode::Global:
-	  {
-	    Assert(!isReturn);
-	    SET_INSTR_1R1I(PC,load_global,dst,
-			   Store::DirectWordToInt(tagVal->Sel(0)));
-	  }
-	  break;
-	case AbstractCode::Immediate:
-	  {
-	    word val = tagVal->Sel(0);
-	    if (PointerOp::IsInt(val)) {
-	      s_int x = Store::DirectWordToInt(val);
-	      if(x == 0) { SET_INSTR_1R(PC,load_zero,dst);} 
-	      else { SET_INSTR_1R1I(PC,load_int,dst,x); }
-	    } else {
-	      u_int index = imEnv.Register(val);
-	      SET_INSTR_1R1I(PC,load_immediate,dst,index);
-	    }
-	  }
-	  break;
-	default:
-	  Error("invalid idRef Tag");
-	}
+	LoadIdRefInto(dst,args->Sub(i));
       }
     }
     return;
@@ -2626,6 +2749,9 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
     globalSubst->Init(i, subst->ToWord());
   }
 
+  // prepare immediate map
+  imMap = Map::New(100);
+  
   // prepare ByteCode WriteBuffer
   WriteBuffer::Init(); 
   PC = 0;
@@ -2633,6 +2759,8 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   // compile calling convention conversion
   Vector *args = Vector::FromWordDirect(abstractCode->Sel(3));
   CompileCCC(args->GetLength(),args);
+  skipCCCPC = PC;
+  currentFormalInArgs = args;
 
   // compile function body
   CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));

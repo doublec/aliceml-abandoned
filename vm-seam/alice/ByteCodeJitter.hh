@@ -1,4 +1,3 @@
-
 //
 // Author:
 //   Christian Mueller <cmueller@ps.uni-sb.de>
@@ -38,10 +37,12 @@ private:
   u_int currentNLocals;
   u_int PC;
   ImmediateEnv imEnv;
+  Map *imMap;
   IntMap *sharedTable;
   Vector *globalSubst;
-
   word currentConcreteCode;
+  u_int skipCCCPC;
+  Vector *currentFormalInArgs;
   
   // offset for inline functions
   u_int localOffset;
@@ -113,6 +114,7 @@ private:
     return TagVal::FromWordDirect(globalSubst->Sub(index));
   }
 
+  void LoadIdRefInto(u_int dst, word idRef);
   u_int LoadIdRefKill(word idRef, bool doIncScratch);
 
   // inlined primitives
@@ -166,7 +168,7 @@ private:
   void CompileCCC(u_int inArity,Vector *rets);
   void CompileInstr(TagVal *pc);
   void CompileApplyPrimitive(Closure *closure, Vector *args, bool isTailcall);
-
+  void CompileSelfCall(TagVal *instr, bool isTailcall);
   // inlining
   void CompileInlineCCC(Vector *formalArgs, Vector *args, bool isReturn);
   TagVal *CompileInlineFunction(TagVal *abstractCode, 
