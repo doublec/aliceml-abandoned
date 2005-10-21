@@ -167,4 +167,14 @@
     (code 
         "((GnomeCanvasPoints*)a0)->coords[a1] = a2;"))
 
+
+(define-method connect_special_signals
+    (of-object "GtkTextBuffer")
+    (c-name "GtkTextBufferConnectSpecialSignals")
+    (code
+        "g_signal_connect ((GtkTextBuffer*)a0, \"delete_range\", 
+            (GCallback)specialDeleteRangeEvent, NULL);"))
+
+
+
 (include "canvas-properties.defs")

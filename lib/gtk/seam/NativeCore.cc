@@ -1051,6 +1051,13 @@ DEFINE3(NativeCore_propRawSet) {
 
 ////////////////////////////////////////////////////////////////////////
 
+void specialDeleteRangeEvent (GObject *obj, GtkTextIter *i1, GtkTextIter *i2, gpointer ) {
+    g_signal_emit_by_name (obj, "delete-text", gtk_text_iter_get_offset (i1),
+                                gtk_text_iter_get_offset (i2), 
+                                gtk_text_iter_get_text (i1, i2));
+}
+
+
 GnomeCanvasItem *alice_gnome_canvas_item_new (GnomeCanvasGroup *group, GtkType type) {
     GnomeCanvasItem *item;
     item = gnome_canvas_item_new (group, type, NULL);

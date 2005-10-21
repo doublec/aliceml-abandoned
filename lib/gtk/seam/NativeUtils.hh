@@ -377,4 +377,5 @@ GnomeCanvasItem *alice_gnome_canvas_item_new (GnomeCanvasGroup *gr, GtkType t);
 
 word NativeCore_SignalConnect (void *ob, char *sig, bool after);
     
+void specialDeleteRangeEvent (GObject *obj, GtkTextIter *i1, GtkTextIter *i2, gpointer);
 #endif
