@@ -18,6 +18,7 @@ import structure Config from "Config"
 import structure BufferHighlight from "BufferHighlight"
 import structure BufferAnnotate from "BufferAnnotate"
 
+
 structure Buffer =
    struct
       open Config
@@ -509,7 +510,7 @@ structure Buffer =
                    Gtk.TextBuffer.placeCursor(buf, iter)
 	       end) ();
               Gtk.signalConnect(buf, "modified-changed", modifiedChanged id);
-              (* Gtk.TextBuffer.connectSpecialSignals buf; *)
+              Gtk.TextBuffer.connectSpecialSignals buf; 
               Gtk.signalConnect(buf, "delete-text", deleteText id);
               Gtk.signalConnect(buf, "insert-text", insertText id);
               Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
