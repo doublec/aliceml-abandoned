@@ -466,6 +466,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	}
       }
       break;
+    case ByteCodeInstr::self_call:
+    case ByteCodeInstr::self_tailcall:
     case ByteCodeInstr::seam_return:
     case ByteCodeInstr::seam_set_nargs:
       {
@@ -482,6 +484,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	args->Init(0,idDef->ToWord());
       }
       break;
+    case ByteCodeInstr::self_call0:
     case ByteCodeInstr::remove_handler:
       {
 	SET_INSTR(PC,instr);
@@ -498,10 +501,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     case ByteCodeInstr::load_int:
     case ByteCodeInstr::seam_call:
     case ByteCodeInstr::bci_call:
-    case ByteCodeInstr::self_call:
     case ByteCodeInstr::bci_tailcall:
     case ByteCodeInstr::seam_tailcall:
-    case ByteCodeInstr::self_tailcall:
       {
 	u_int reg = Store::WordToInt(insVec->Sub(1));
 	u_int im = Store::WordToInt(insVec->Sub(2));
@@ -526,11 +527,11 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     case ByteCodeInstr::load_zero:
     case ByteCodeInstr::iinc:
     case ByteCodeInstr::idec:
+    case ByteCodeInstr::self_call1:
+    case ByteCodeInstr::self_tailcall1:
     case ByteCodeInstr::bci_call0:
-    case ByteCodeInstr::self_call0:
     case ByteCodeInstr::seam_call0:
     case ByteCodeInstr::bci_tailcall0:
-    case ByteCodeInstr::self_tailcall0:
     case ByteCodeInstr::seam_tailcall0:
       {
 	u_int reg = Store::WordToInt(insVec->Sub(1));
@@ -619,15 +620,16 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     case ByteCodeInstr::load_cell:
     case ByteCodeInstr::set_cell:  
     case ByteCodeInstr::load_reg:
+    case ByteCodeInstr::swap_regs:
     case ByteCodeInstr::select_tup0:
     case ByteCodeInstr::select_tup1:
     case ByteCodeInstr::select_tup2:
+    case ByteCodeInstr::self_call2:
+    case ByteCodeInstr::self_tailcall2:
     case ByteCodeInstr::seam_call1:
     case ByteCodeInstr::bci_call1:
-    case ByteCodeInstr::self_call1:
     case ByteCodeInstr::bci_tailcall1:
     case ByteCodeInstr::seam_tailcall1:
-    case ByteCodeInstr::self_tailcall1:
     case ByteCodeInstr::seam_return2:
       {
 	u_int r1 = Store::DirectWordToInt(insVec->Sub(1));
@@ -687,10 +689,10 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       break;
     case ByteCodeInstr::seam_call2:
     case ByteCodeInstr::bci_call2:
-    case ByteCodeInstr::self_call2:
+    case ByteCodeInstr::self_call3:
     case ByteCodeInstr::bci_tailcall2:
     case ByteCodeInstr::seam_tailcall2:
-    case ByteCodeInstr::self_tailcall2:
+    case ByteCodeInstr::self_tailcall3:
     case ByteCodeInstr::seam_return3:
     case ByteCodeInstr::iadd:
     case ByteCodeInstr::isub:
@@ -704,10 +706,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       break;
     case ByteCodeInstr::seam_call3:
     case ByteCodeInstr::bci_call3:
-    case ByteCodeInstr::self_call3:
     case ByteCodeInstr::bci_tailcall3:
     case ByteCodeInstr::seam_tailcall3:
-    case ByteCodeInstr::self_tailcall3:
     case ByteCodeInstr::seam_return4:
       {
 	u_int r0 = Store::DirectWordToInt(insVec->Sub(1));
