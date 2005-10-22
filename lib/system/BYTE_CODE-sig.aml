@@ -82,7 +82,6 @@ datatype instr =
        | Load_global of reg * addr
        | Load_immediate of reg * immediate
        | Load_int of reg * int
-       | Load_local of reg * addr
        | Load_reg of reg * reg
        | Load_tagval of reg * reg * int
        | Load_vec of reg * reg * int
@@ -135,26 +134,21 @@ datatype instr =
        | Select_tup0 of reg * reg
        | Select_tup1 of reg * reg
        | Select_tup2 of reg * reg
-       | Self_call of reg * int
-       | Self_call0 of reg
-       | Self_call1 of reg * reg
-       | Self_call2 of reg * reg * reg
-       | Self_call3 of reg * reg * reg * reg       
-       | Self_tailcall of reg * int
-       | Self_tailcall0 of reg
-       | Self_tailcall1 of reg * reg
-       | Self_tailcall2 of reg * reg * reg
-       | Self_tailcall3 of reg * reg * reg * reg       
-       | Self_tailcall_direct0 of reg
-       | Self_tailcall_direct1 of reg * reg
-       | Self_tailcall_direct2 of reg * reg * reg
-       | Self_tailcall_direct3 of reg * reg * reg * reg       
+       | Self_call of int
+       | Self_call0
+       | Self_call1 of reg
+       | Self_call2 of reg * reg
+       | Self_call3 of reg * reg * reg       
+       | Self_tailcall of int
+       | Self_tailcall1 of reg
+       | Self_tailcall2 of reg * reg
+       | Self_tailcall3 of reg * reg * reg       
        | Set_cell of reg * reg
        | Set_global of reg * int
-       | Set_local of reg * int
        | Sjump_eq of reg * string * jlabel
        | Spec_closure of reg * reg * template * int
        | Stest of reg * (string * jlabel) vector
+       | Swap_regs of reg * reg
        | Tagtest of reg * (tag * jlabel) vector
        | Tagtest1 of reg * tag * jlabel
        | Vectest of reg * (int * jlabel) vector

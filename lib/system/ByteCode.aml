@@ -88,7 +88,6 @@ datatype instr =
        | Load_global of reg * addr
        | Load_immediate of reg * immediate
        | Load_int of reg * int
-       | Load_local of reg * addr
        | Load_reg of reg * reg
        | Load_tagval of reg * reg * int
        | Load_vec of reg * reg * int
@@ -141,26 +140,21 @@ datatype instr =
        | Select_tup0 of reg * reg
        | Select_tup1 of reg * reg
        | Select_tup2 of reg * reg
-       | Self_call of reg * int
-       | Self_call0 of reg
-       | Self_call1 of reg * reg
-       | Self_call2 of reg * reg * reg
-       | Self_call3 of reg * reg * reg * reg       
-       | Self_tailcall of reg * int
-       | Self_tailcall0 of reg
-       | Self_tailcall1 of reg * reg
-       | Self_tailcall2 of reg * reg * reg
-       | Self_tailcall3 of reg * reg * reg * reg       
-       | Self_tailcall_direct0 of reg
-       | Self_tailcall_direct1 of reg * reg
-       | Self_tailcall_direct2 of reg * reg * reg
-       | Self_tailcall_direct3 of reg * reg * reg * reg       
+       | Self_call of int
+       | Self_call0
+       | Self_call1 of reg
+       | Self_call2 of reg * reg
+       | Self_call3 of reg * reg * reg       
+       | Self_tailcall of int
+       | Self_tailcall1 of reg
+       | Self_tailcall2 of reg * reg
+       | Self_tailcall3 of reg * reg * reg       
        | Set_cell of reg * reg
        | Set_global of reg * int
-       | Set_local of reg * int
        | Sjump_eq of reg * string * jlabel
        | Spec_closure of reg * reg * template * int
        | Stest of reg * (string * jlabel) vector
+       | Swap_regs of reg * reg
        | Tagtest of reg * (tag * jlabel) vector
        | Tagtest1 of reg * tag * jlabel
        | Vectest of reg * (int * jlabel) vector
@@ -197,9 +191,9 @@ fun patchTT2 lmap v =
     handle LMap.Unknown _ => raise LabelUnknown
 
 (* flatten instr list to a vector *)
-val instrNB = 500 (* upper bound - change this if the real number is greater *)
-val dummyLabelVec = Vector.tabulate(instrNB,fn i => i)
-fun tag x = UnsafeValue.tag(x,dummyLabelVec)
+(* val instrNB = 500 (\* upper bound - change this if the real number is greater *\) *)
+(* val dummyLabelVec = Vector.tabulate(instrNB,fn i => i) *)
+fun tag x = UnsafeValue.tag(x,#[])
 
 fun assemble' lmap nil ass im _ = (Vector.fromList (List.rev ass),
 			     	   Vector.fromList (List.rev im)) 
@@ -355,8 +349,6 @@ fun assemble' lmap nil ass im _ = (Vector.fromList (List.rev ass),
 	in assemble' lmap is ass' im' iaddr'
 	end 
       | Load_int(r,i) => assemble' lmap is (#[tag instr,reg r,i]::ass) im iaddr
-      | Load_local(r,addr) => 
-	assemble' lmap is (#[tag instr,reg r,addr]::ass) im iaddr 
       | Load_reg (r1,r2)  => 
        	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
       | Load_tagval (r0,r1,index) => 
@@ -524,34 +516,28 @@ fun assemble' lmap nil ass im _ = (Vector.fromList (List.rev ass),
        	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
       | Select_tup2 (r1,r2) => 
        	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
-      | Self_call (r,n) => 
-	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
-      | Self_call0 r =>
-	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
-      | Self_call1 (r0,r1) =>
+      | Self_call n => 
+	assemble' lmap is (#[tag instr,n]::ass) im iaddr
+      | Self_call0 =>
+	assemble' lmap is (#[tag instr]::ass) im iaddr
+      | Self_call1 r0 =>
+	assemble' lmap is (#[tag instr,reg r0]::ass) im iaddr
+      | Self_call2 (r0,r1) =>
 	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
-      | Self_call2 (r0,r1,r2) =>
+      | Self_call3 (r0,r1,r2) =>
 	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
-      | Self_call3 (r0,r1,r2,r3) =>
-	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
-		  im iaddr
-      | Self_tailcall (r,n) => 
-	assemble' lmap is (#[tag instr,reg r,n]::ass) im iaddr
-      | Self_tailcall0 r =>
-	assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
-      | Self_tailcall1 (r0,r1) =>
+      | Self_tailcall n => 
+	assemble' lmap is (#[tag instr,n]::ass) im iaddr
+      | Self_tailcall1 r0 =>
+	assemble' lmap is (#[tag instr,reg r0]::ass) im iaddr
+      | Self_tailcall2 (r0,r1) =>
 	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
-      | Self_tailcall2 (r0,r1,r2) =>
+      | Self_tailcall3 (r0,r1,r2) =>
 	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2]::ass) im iaddr
-      | Self_tailcall3 (r0,r1,r2,r3) =>
-	assemble' lmap is (#[tag instr,reg r0,reg r1,reg r2,reg r3]::ass) 
-		  im iaddr
       | Set_cell (r0,r1) => 
 	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
       | Set_global (r,i) => 
 	assemble' lmap is (#[tag instr,reg r,i]::ass) im iaddr
-      | Set_local(r,addr) => 
-	assemble' lmap is (#[tag instr,reg r,addr]::ass) im iaddr 
       | Sjump_eq (r,s,l) => 
 	let val iaddr' = iaddr + 1
 	    val im' = cast s :: im
@@ -565,6 +551,8 @@ fun assemble' lmap nil ass im _ = (Vector.fromList (List.rev ass),
 	    val ass' = #[tag instr, reg r, iaddr'] :: ass
 	in assemble' lmap is ass' im' iaddr'
 	end 
+      | Swap_regs (r1,r2)  => 
+	assemble' lmap is (#[tag instr,reg r1,reg r2]::ass) im iaddr
       | Tagtest (r,tests) =>
  	let val iaddr' = iaddr + 1
 	    val im' = cast (patchTT2 lmap tests) :: im
