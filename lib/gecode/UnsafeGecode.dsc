@@ -1,7 +1,7 @@
 // Spaces
 
 class Space {
-  IntVar new_intvar(DomSpec&); new_intvar;
+  IntVar new_intvar(IntSet&); new_intvar;
   BoolVar new_boolvar(void); new_boolvar;
   SetVar new_setvar(void); new_setvar;
   void commit(int, BranchingDesc*); commit;
@@ -29,8 +29,8 @@ class SetVar {
 };
 
 // Domain
-void dom(IntVar, DomSpec&); int_dom;
-void dom(IntVar, DomSpec&, BoolVar); int_domR;
+void dom(IntVar, IntSet&); int_dom;
+void dom(IntVar, IntSet&, BoolVar); int_domR;
 // Propagators
 void rel(IntVar, IntRelType, IntVar); int_rel;
 void rel(IntVar, IntRelType, int); int_relI;
@@ -97,8 +97,8 @@ void branch(const IntVarArgs&, BvarSel, BvalSel); int_branch;
 
 // Finite Set Propagators
 
-void dom(SetVar, SetRelType, DomSpec&); set_dom;
-void dom(SetVar, SetRelType, DomSpec&, BoolVar); set_domR;
+void dom(SetVar, SetRelType, IntSet&); set_dom;
+void dom(SetVar, SetRelType, IntSet&, BoolVar); set_domR;
 void cardinality(SetVar, unsigned int, unsigned int); set_cardRange;
 
 void rel(SetVar, SetRelType, SetVar); set_rel;
@@ -108,12 +108,12 @@ void rel(SetVar, SetRelType, IntVar); set_relI;
 void rel(SetVar, SetRelType, IntVar, BoolVar); set_relIR;
 void rel(SetVar, IntRelType, IntVar); set_relII;
 void rel(const SetVarArgs&, SetOpType, SetVar); set_relN;
-void rel(DomSpec&, SetOpType, SetVar, SetRelType, SetVar); set_relCSS;
-void rel(SetVar, SetOpType, DomSpec&, SetRelType, SetVar); set_relSCS;
-void rel(SetVar, SetOpType, SetVar, SetRelType, DomSpec&); set_relSSC;
-void rel(DomSpec&, SetOpType, DomSpec&, SetRelType, SetVar); set_relCCS;
-void rel(DomSpec&, SetOpType, SetVar, SetRelType, DomSpec&); set_relCSC;
-void rel(SetVar, SetOpType, DomSpec&, SetRelType, DomSpec&); set_relSCC;
+void rel(IntSet&, SetOpType, SetVar, SetRelType, SetVar); set_relCSS;
+void rel(SetVar, SetOpType, IntSet&, SetRelType, SetVar); set_relSCS;
+void rel(SetVar, SetOpType, SetVar, SetRelType, IntSet&); set_relSSC;
+void rel(IntSet&, SetOpType, IntSet&, SetRelType, SetVar); set_relCCS;
+void rel(IntSet&, SetOpType, SetVar, SetRelType, IntSet&); set_relCSC;
+void rel(SetVar, SetOpType, IntSet&, SetRelType, IntSet&); set_relSCC;
 
 void convex(SetVar); set_convex;
 void convexHull(SetVar, SetVar); set_convexHull;
@@ -127,7 +127,7 @@ void cardinality(SetVar, IntVar); set_cardinality;
 
 void selectUnion(const SetVarArgs&, SetVar, SetVar); set_selectUnion;
 void selectInter(const SetVarArgs&, SetVar, SetVar); set_selectInter;
-void selectInterIn(const SetVarArgs&, SetVar, SetVar, DomSpec&); set_selectInterIn;
+void selectInterIn(const SetVarArgs&, SetVar, SetVar, IntSet&); set_selectInterIn;
 void selectDisjoint(const SetVarArgs&, SetVar); set_selectDisjoint;
 void selectSets(const SetVarArgs&, IntVar, SetVar); set_selectSets;
 

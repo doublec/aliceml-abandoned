@@ -81,7 +81,7 @@ public:
     return new GecodeSpace(*this,share); 
   }
 
-  intvar new_intvar(DomSpec&);
+  intvar new_intvar(IntSet&);
   boolvar new_boolvar(void);
   setvar new_setvar(void);
 

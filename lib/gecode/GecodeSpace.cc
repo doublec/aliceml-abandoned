@@ -13,7 +13,7 @@
 
 #include "GecodeSpace.hh"
 
-int GecodeSpace::new_intvar(DomSpec& ds) {
+int GecodeSpace::new_intvar(IntSet& ds) {
   if (noOfIntVars >= intArraySize) {
     EnlargeIntVarArray();
   }

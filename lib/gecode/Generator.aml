@@ -20,7 +20,7 @@ structure Generator =
       (TextIO.output(f, "  DECLARE_SPACE(s, stamp, pstamp, x0);\n");
        TextIO.output(f, "  CHECK_SPACE(s);\n"))
 
-  fun outputDomSpec(n, f) =
+  fun outputIntSet(n, f) =
       let val n = Int.toString n in
           TextIO.output(f,
             "  DECLARE_VECTOR(v"^n^", x"^n^");\n" ^
@@ -39,7 +39,7 @@ structure Generator =
             "    pairs"^n^"[j][1] = tmp1;\n" ^
             "  }\n" ^
 	    "  }\n" ^
-            "  DomSpec ds"^n^"(pairs"^n^", noOfPairs"^n^");\n")
+            "  IntSet ds"^n^"(pairs"^n^", noOfPairs"^n^");\n")
       end
 
   fun outputIntRel(n, f) =
@@ -138,8 +138,8 @@ structure Generator =
     | outputInArgs n f ((Var v)::ar) =
       (outputVarDec(n, f, v);
        outputInArgs (n+1) f ar)
-    | outputInArgs n f (DomSpec::ar) =
-      (outputDomSpec(n,f);outputInArgs (n+1) f ar)
+    | outputInArgs n f (IntSet::ar) =
+      (outputIntSet(n,f);outputInArgs (n+1) f ar)
     | outputInArgs n f (IntRel::ar) =
       (outputIntRel(n, f); outputInArgs (n+1) f ar)
     | outputInArgs n f (SetRel::ar) =
@@ -170,7 +170,7 @@ structure Generator =
       let val n = Int.toString (i+1) in
           case arg of Var (List _) => "vars"^n
                     | Var _ => "var"^n
-                    | DomSpec => "ds"^n
+                    | IntSet => "ds"^n
                     | IntRel => "UnsafeGecode::int2intreltype[intrel"^n^"]"
                     | SetRel => "UnsafeGecode::int2setreltype[setrel"^n^"]"
 		    | SetOp => "UnsafeGecode::int2setoptype[setop"^n^"]"
@@ -343,7 +343,7 @@ structure Generator =
     | argToType add (Var (List IntVar)) = (addMark add)^"intvar vector"
     | argToType add (Var (List BoolVar)) = (addMark add)^"boolvar vector"
     | argToType add (Var (List SetVar)) = (addMark add)^"setvar vector"
-    | argToType add DomSpec = (addMark add)^"domain"
+    | argToType add IntSet = (addMark add)^"domain"
     | argToType add IntRel = (addMark add)^"intrel"
     | argToType add SetRel = (addMark add)^"setrel"
     | argToType add SetOp = (addMark add)^"setop"
