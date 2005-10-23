@@ -1,7 +1,7 @@
 Source: alice-gecode
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 4.0.0), alice-dev, gecode
+Build-Depends: debhelper (>= 4.0.0), alice-dev
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
 Standards-Version: 3.6.0
 
