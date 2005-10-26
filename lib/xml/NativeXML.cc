@@ -173,15 +173,19 @@ DEFINE1(xml_name) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
 
-  int len = strlen((const char*)node->name);
-  int inlen = len;
-
-  Chunk *buffer = Store::AllocChunk(len);
-  UTF8Toisolat1 ((unsigned char*) buffer->GetBase(), &len,
-		 node->name, &inlen);
-
-  String *retName = String::New((char*) buffer->GetBase(),len);
-  RETURN(retName->ToWord());
+  if (node->name) {
+    int len = strlen((const char*)node->name);
+    int inlen = len;
+    
+    Chunk *buffer = Store::AllocChunk(len);
+    UTF8Toisolat1 ((unsigned char*) buffer->GetBase(), &len,
+		   node->name, &inlen);
+    
+    String *retName = String::New((char*) buffer->GetBase(),len);
+    RETURN(retName->ToWord());
+  } else {
+    RETURN(String::New("")->ToWord());
+  }
 } END
 
 DEFINE2(xml_nodeListGetString) {
