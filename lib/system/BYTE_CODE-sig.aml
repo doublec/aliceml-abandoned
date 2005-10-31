@@ -51,14 +51,15 @@ datatype instr =
        | Cbigtagtest_direct of reg * jlabel vector
        | Ccc1
        | CccN of int
+       | Check_preempt_jump of jlabel
        | Citest of reg * (jlabel vector) * int
        | Contest of reg * reg * jlabel
        | Ctagtest of reg * jlabel vector
        | Ctagtest_direct of reg * jlabel vector
        | Debug_msg of string
        | Iadd of reg * reg * reg
-       | Idec of reg
-       | Iinc of reg
+       | Idec of reg * reg
+       | Iinc of reg * reg
        | Ijump_eq of reg * int * jlabel
        | Init_bigtagval of reg * reg * int
        | Init_closure of reg * reg * int

@@ -14,6 +14,8 @@ import structure UnsafeByteCode from "UnsafeByteCode"
 import signature BYTE_CODE_SIG from "BYTE_CODE-sig"
 import structure UnsafeValue from "UnsafeValue"
 import functor MkRedBlackMap from "../data/MkRedBlackMap"
+(* import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue" *)
+(* import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap" *)
 
 structure ByteCode :> BYTE_CODE_SIG =
 struct
@@ -57,14 +59,15 @@ datatype instr =
        | Cbigtagtest_direct of reg * jlabel vector
        | Ccc1
        | CccN of int
+       | Check_preempt_jump of jlabel
        | Citest of reg * (jlabel vector) * int
        | Contest of reg * reg * jlabel
        | Ctagtest of reg * jlabel vector
        | Ctagtest_direct of reg * jlabel vector
        | Debug_msg of string
        | Iadd of reg * reg * reg
-       | Idec of reg
-       | Iinc of reg
+       | Idec of reg * reg
+       | Iinc of reg * reg 
        | Ijump_eq of reg * int * jlabel
        | Init_bigtagval of reg * reg * int
        | Init_closure of reg * reg * int
@@ -274,8 +277,10 @@ fun assemble' lmap nil ass im _ = (Vector.fromList (List.rev ass),
 	end
       | Iadd (r0,r1,r2) =>
 	assemble' lmap is (#[tag instr,reg r0, reg r1,reg r2]::ass) im iaddr
-      | Idec r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
-      | Iinc r => assemble' lmap is (#[tag instr,reg r]::ass) im iaddr
+      | Idec (r0,r1) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
+      | Iinc (r0,r1) => 
+	assemble' lmap is (#[tag instr,reg r0,reg r1]::ass) im iaddr
       | Ijump_eq (r,i,l) => 
 	let val ass' = #[tag instr, reg r, i, patch lmap l] :: ass
 	in assemble' lmap is ass' im iaddr
@@ -315,6 +320,8 @@ fun assemble' lmap nil ass im _ = (Vector.fromList (List.rev ass),
 	in assemble' lmap is ass' im' iaddr'
 	end 
       | Jump l =>
+	assemble' lmap is (#[tag instr, patch lmap l] :: ass) im iaddr
+      | Check_preempt_jump l =>
 	assemble' lmap is (#[tag instr, patch lmap l] :: ass) im iaddr
       | Lazyselect_polyrec (r1,r2,l) =>
 	let val iaddr' = iaddr + 1
