@@ -425,6 +425,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_1I(PC,instr,iaddr);	
       }
       break;
+    case ByteCodeInstr::check_preempt_jump:
     case ByteCodeInstr::jump:
       {
 	s_int jumpTarget = Store::DirectWordToInt(insVec->Sub(1));
@@ -525,8 +526,6 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     case ByteCodeInstr::raise_normal:
     case ByteCodeInstr::raise_direct: 
     case ByteCodeInstr::load_zero:
-    case ByteCodeInstr::iinc:
-    case ByteCodeInstr::idec:
     case ByteCodeInstr::self_call1:
     case ByteCodeInstr::self_tailcall1:
     case ByteCodeInstr::bci_call0:
@@ -613,7 +612,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	}
 	imEnv->Init(iaddr1, regs->ToWord());
 	imEnv->Init(iaddr2, ulabels->ToWord());
-	SET_INSTR_2R1I(PC,instr,reg,iaddr1,iaddr2);
+	SET_INSTR_1R2I(PC,instr,reg,iaddr1,iaddr2);
       }
       break;
     case ByteCodeInstr::new_cell:
@@ -631,6 +630,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     case ByteCodeInstr::bci_tailcall1:
     case ByteCodeInstr::seam_tailcall1:
     case ByteCodeInstr::seam_return2:
+    case ByteCodeInstr::iinc:
+    case ByteCodeInstr::idec:
       {
 	u_int r1 = Store::DirectWordToInt(insVec->Sub(1));
 	u_int r2 = Store::DirectWordToInt(insVec->Sub(2));
@@ -803,7 +804,6 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
     InlineInfo::New(Map::New(0),liveness,
 		    Store::DirectWordToInt(nbLocals),
 		    100000);
-
 
   ByteConcreteCode *bcc = 
     ByteConcreteCode::NewInternal(abstractCode,

@@ -230,7 +230,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     Case(ccc1):
       {
-	ByteCodeInterpreter::Construct();       
+	ByteCodeInterpreter::Construct();     
 	SETREG(0, Scheduler::GetCurrentArg(0));
       }
       DISPATCH(PC);
@@ -728,6 +728,23 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
+    
+    Case(check_preempt_jump): // target
+      {
+#ifdef DO_RELATIVE_JUMP
+	GET_1I(codeBuffer,PC,offset);
+	PC += (s_int)offset;
+#else
+	GET_1I(codeBuffer,PC,jumpTarget);
+	SETPC(jumpTarget);
+#endif
+	if(StatusWord::GetStatus()) {
+	  SAVEPC(PC);
+	  return Worker::PREEMPT;
+	}
+      }
+      DISPATCH(PC);
+
 
       /**********************************
        * integer instructions
@@ -809,27 +826,27 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(iinc): // reg
+    Case(iinc): // r0, r1
       {
-	GET_1R(codeBuffer,PC,reg);
-	REQUEST_INT(x,GETREG(reg));
+	GET_2R(codeBuffer,PC,r0,r1);
+	REQUEST_INT(x,GETREG(r1));
 	s_int result = x+1;
 	if (result > MAX_VALID_INT) 
 	  RAISE(PrimitiveTable::General_Overflow) 	
 	else
-	  SETREG(reg, Store::IntToWord(result));	
+	  SETREG(r0, Store::IntToWord(result));	
       }
       DISPATCH(PC);
 
-    Case(idec): // reg
+    Case(idec): // r0, r1
       {
-	GET_1R(codeBuffer,PC,reg);
-	REQUEST_INT(x,GETREG(reg));
+	GET_2R(codeBuffer,PC,r0,r1);
+	REQUEST_INT(x,GETREG(r1));
 	s_int result = x-1;
 	if (result < MIN_VALID_INT) 
 	  RAISE(PrimitiveTable::General_Overflow) 	
 	else
-	  SETREG(reg, Store::IntToWord(result));	
+	  SETREG(r0, Store::IntToWord(result));	
       }
       DISPATCH(PC); 
 

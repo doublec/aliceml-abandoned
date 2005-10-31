@@ -24,19 +24,32 @@
 
 #define BCJIT_DEBUG(s,...) /*fprintf(stderr,s, ##__VA_ARGS__)*/
 //#define DEBUG_DISASSEMBLE
+//#define DEBUG_INLINE_CCC
 
-#define INSERT_DEBUG_MSG(msg)  {		\
-    String *s = String::New(msg);		\
-    u_int addr = imEnv.Register(s->ToWord());	\
-    SET_INSTR_1I(PC,debug_msg,addr);		\
-  }
+#define INSERT_DEBUG_MSG(msg)
 
+// #define INSERT_DEBUG_MSG(msg)  {		\
+//     String *s = String::New(msg);		\
+//     u_int addr = imEnv.Register(s->ToWord());	\
+//     SET_INSTR_1I(PC,debug_msg,addr);		\
+//   }
 
 #define RELATIVE_JUMP
 #define DO_INLINING
 // #undef DO_INLINING
 
 using namespace ByteCodeInstr;
+
+void Jitter_PrintLiveness(Vector *liveness) {
+  u_int size = liveness->GetLength();
+  fprintf(stderr,"size = %d\n",size/3);
+  for(u_int i = 0, j = 1; i<size; i+=3, j++) {
+    u_int index = Store::DirectWordToInt(liveness->Sub(i));
+    u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
+    u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
+    fprintf(stderr,"%d. %d -> [%d, %d]\n",j,index,start,end);
+  }
+}
 
 static inline u_int GetNumberOfLocals(TagVal *abstractCode) {
   TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
@@ -270,13 +283,7 @@ void ByteCodeJitter::LoadIdRefInto(u_int dst, word idRef) {
 	}
       }
       else {
-	u_int index;
-	if(imMap->IsMember(val)) {
-	  index = Store::DirectWordToInt(imMap->Get(val));
-	} else {
-	  index = imEnv.Register(val);
-	  imMap->Put(val,Store::IntToWord(index));
-	}
+	u_int  index = imEnv.Register(val);
 	SET_INSTR_1R1I(PC,load_immediate,dst,index);
       }
     }
@@ -329,13 +336,7 @@ u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
 	}
       }
       else {
-	u_int index;
-	if(imMap->IsMember(val)) {
-	  index = Store::DirectWordToInt(imMap->Get(val));
-	} else {
-	  index = imEnv.Register(val);
-	  imMap->Put(val,Store::IntToWord(index));
-	}
+	u_int index = imEnv.Register(val);
 	SET_INSTR_1R1I(PC,load_immediate,S,index);
       }
       return S;
@@ -543,7 +544,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
   if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
     u_int x = LoadIdRefKill(args->Sub(0));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-      SET_INSTR_1R(PC,iinc,x);
+      SET_INSTR_2R(PC,iinc,x,x);
       InlinePrimitiveReturn(x);
       return INVALID_POINTER;
     } 
@@ -551,9 +552,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
     TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
     u_int S = (ret0 == INVALID_POINTER) ? 
       GetNewScratch() : IdToReg(ret0->Sel(0));
-    if(S != x)
-      SET_INSTR_2R(PC,load_reg,S,x);
-    SET_INSTR_1R(PC,iinc,S);
+    SET_INSTR_2R(PC,iinc,S,x);
     return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
   }
 
@@ -561,7 +560,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
   if(wX != INVALID_POINTER && Store::DirectWordToInt(wX) == 1) {
     u_int y = LoadIdRefKill(args->Sub(1));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-      SET_INSTR_1R(PC,iinc,y);
+      SET_INSTR_2R(PC,iinc,y,y);
       InlinePrimitiveReturn(y);
       return INVALID_POINTER;
     } 
@@ -569,9 +568,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
     TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
     u_int S = (ret0 == INVALID_POINTER) ? 
       GetNewScratch() : IdToReg(ret0->Sel(0));
-    if(S != y)
-      SET_INSTR_2R(PC,load_reg,S,y);
-    SET_INSTR_1R(PC,iinc,S);
+    SET_INSTR_2R(PC,iinc,S,y);
     return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
   }
   
@@ -602,7 +599,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
   if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
     u_int x = LoadIdRefKill(args->Sub(0));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-      SET_INSTR_1R(PC,idec,x);
+      SET_INSTR_2R(PC,idec,x,x);
       InlinePrimitiveReturn(x);
       return INVALID_POINTER;
     } 
@@ -610,9 +607,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
     TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
     u_int S = (ret0 == INVALID_POINTER) ? 
       GetNewScratch() : IdToReg(ret0->Sel(0));
-    if(S != x)
-      SET_INSTR_2R(PC,load_reg,S,x);
-    SET_INSTR_1R(PC,idec,S);
+    SET_INSTR_2R(PC,idec,S,x);
     return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
   }
 
@@ -620,7 +615,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
   if(wX != INVALID_POINTER && Store::DirectWordToInt(wX) == 1) {
     u_int y = LoadIdRefKill(args->Sub(1));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
-      SET_INSTR_1R(PC,idec,y);
+      SET_INSTR_2R(PC,idec,y,y);
       InlinePrimitiveReturn(y);
       return INVALID_POINTER;
     } 
@@ -628,9 +623,7 @@ inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args,
     TagVal *ret0 = TagVal::FromWord(idDefInstr->Sel(0));
     u_int S = (ret0 == INVALID_POINTER) ? 
       GetNewScratch() : IdToReg(ret0->Sel(0));
-    if(S != y)
-      SET_INSTR_2R(PC,load_reg,S,y);
-    SET_INSTR_1R(PC,idec,S);
+    SET_INSTR_2R(PC,idec,S,y);
     return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
   }
   
@@ -1140,97 +1133,23 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   Vector *args = Vector::FromWordDirect(instr->Sel(1));
   u_int nArgs = args->GetLength();
 
-  // This is the best case: self tailcall for which we can skip
-  // the calling conversion convention.
-  if(isTailcall && nArgs == currentFormalInArgs->GetLength()) {
-    switch(nArgs) {
-    case 0:
-      break;
-    case 1:
-      {
-	TagVal *idDefOpt = TagVal::FromWord(currentFormalInArgs->Sub(0));
-	if(idDefOpt != INVALID_POINTER) {
-	  u_int addr = Store::DirectWordToInt(idDefOpt->Sel(0)) - localOffset;
-	  u_int dst = IdToReg(Store::IntToWord(addr));
-	  LoadIdRefInto(dst,args->Sub(0));
-	}
-      }
-      break;
-    default:
-      {
-	// collect information
-	u_int setting[nArgs];
-	u_int normalLoads[2*nArgs];
-	u_int nNormalLoads = 0;
-	for(u_int i = nArgs; i--; ) setting[i] = i;
-	for(u_int i = 0; i<nArgs; i++) {
-	  TagVal *idDefOpt = TagVal::FromWord(currentFormalInArgs->Sub(i));
-	  if(idDefOpt != INVALID_POINTER) {
-	    u_int addr = Store::DirectWordToInt(idDefOpt->Sel(0)) - localOffset;
-	    u_int dst = IdToReg(Store::IntToWord(addr));
-	    TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
-	    switch(AbstractCode::GetIdRef(tagVal)) {
-	    case AbstractCode::Local:
-	    case AbstractCode::LastUseLocal:
-	      {
-		u_int src = IdToReg(tagVal->Sel(0));
-		if(src < nArgs) 
-		  setting[src] = dst;
-		else {		  
-		  normalLoads[nNormalLoads++] = i;
-		  normalLoads[nNormalLoads++] = dst;
-		}
-	      }
-	      break;
-	    case AbstractCode::Global:
-	    case AbstractCode::Immediate:
-	      {
-		normalLoads[nNormalLoads++] = i;
-		normalLoads[nNormalLoads++] = dst;
-	      }
-	      break;
-	    default:
-	      Error("wrong idRef");
-	    }
-	  }
-	}
-	// compile swap chains
-// 	for(u_int i=0; i<nArgs; i++) 
-// 	  if(setting[i] != i)
-// 	    fprintf(stderr," %d -> %d\n",i,setting[i]);
-	for(u_int i = 0; i<nArgs; i++) {
-	  if(setting[i] != i) goto EXIT;
-// 	  u_int j = i;
-// 	  while(setting[j] != j) {
-// 	    u_int tmp = j;
-// 	    j = setting[j];
-// 	    setting[tmp] = tmp; // clear this field
-// 	    fprintf(stderr," swap R%d, R%d\n",i,j);
-// 	    //	    SET_INSTR_2R(PC,swap_regs,i,j);
-// 	  }
-	}
-	// compile the normal instructions
-	for(u_int i = 0; i<nNormalLoads; i+=2) {
-	  word idRef = args->Sub(normalLoads[i]);
-	  u_int dst = normalLoads[i+1];
-	  LoadIdRefInto(dst,idRef);
-	}
-      }
-    }
+  if(isTailcall) {
+    CompileInlineCCC(currentFormalInArgs,args,false);
     u_int oldPC = PC;
-    SET_INSTR_1I(PC,jump,0);
+    SET_INSTR_1I(PC,check_preempt_jump,0);
     s_int offset = skipCCCPC - PC;
-    SET_INSTR_1I(oldPC,jump,offset);
+    SET_INSTR_1I(oldPC,check_preempt_jump,offset);
     return;
   }
- EXIT: 
+
   switch(nArgs) {
   case 0:
     {
       if(isTailcall) {
+	// we could skip ccc, but I don't think that it is worth doing so
 	u_int oldPC = PC;
 	SET_INSTR_1I(PC,jump,0);
-	s_int offset = -PC; 
+	s_int offset = - PC; 
 	SET_INSTR_1I(oldPC,jump,offset);
       } else {
 	SET_INSTR(PC,self_call0);
@@ -1299,21 +1218,14 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER);
 #endif
 
-  TagVal *tagVal = TagVal::FromWordDirect(pc->Sel(0));
-  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
-    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));  
-
-  switch (AbstractCode::GetIdRef(tagVal)) {
-  case AbstractCode::Immediate:
-    {
-      BCJIT_DEBUG("AppVar: entered immediate\n");
-      // check if the immediate is an inline candidate
-      word wClosure = tagVal->Sel(0);
 #ifdef DO_INLINING
+      // check if the immediate is an inline candidate
       Map *inlineMap = inlineInfo->GetInlineMap();
-      if(//inlineDepth < 1 &&
-	 inlineMap->IsMember(wClosure)) {
-	Tuple *tup = Tuple::FromWordDirect(inlineMap->Get(wClosure));
+      if(// inlineDepth < 1 &&
+	 // inlineMap->IsMember(wClosure)) {
+	 inlineMap->IsMember(pc->ToWord())) {
+	//	Tuple *tup = Tuple::FromWordDirect(inlineMap->Get(wClosure));
+	Tuple *tup = Tuple::FromWordDirect(inlineMap->Get(pc->ToWord()));
 	TagVal *abstractCode = TagVal::FromWordDirect(tup->Sel(0));
 	// break compile cycle (check moved to ByteCodeInliner)
 	Vector *subst = Vector::FromWordDirect(tup->Sel(1));
@@ -1329,6 +1241,16 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	return continuation;
       }
 #endif
+
+  TagVal *tagVal = TagVal::FromWordDirect(pc->Sel(0));
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));  
+
+  switch (AbstractCode::GetIdRef(tagVal)) {
+  case AbstractCode::Immediate:
+    {
+      BCJIT_DEBUG("AppVar: entered immediate\n");
+      word wClosure = tagVal->Sel(0);
       // check if we can inline a primitive
       Closure *closure = Closure::FromWord(wClosure);       
       if(closure != INVALID_POINTER) {
@@ -1390,11 +1312,11 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	  } 
 	} else if (wConcreteCode == currentConcreteCode) {
 	  // this is a self recursive call
-// 	  CompileSelfCall(pc,isTailcall);
-// 	  if(isTailcall)
-// 	    return INVALID_POINTER;
-// 	  else
-// 	    goto compile_continuation;
+	  CompileSelfCall(pc,isTailcall);
+	  if(isTailcall)
+	    return INVALID_POINTER;
+	  else
+	    goto compile_continuation;
 	}
       }
     }
@@ -1473,6 +1395,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
     CompileCCC(inArity,currentFormalArgs);
     patchTable->Add(PC);    
     SET_INSTR_1I(PC,jump,0);
+    INSERT_DEBUG_MSG("return from tailcall");
     return INVALID_POINTER;
   }
 #endif
@@ -2279,6 +2202,7 @@ inline TagVal *ByteCodeJitter::InstrShared(TagVal *pc) {
     CompileInlineCCC(currentFormalArgs,returnIdRefs,true);
     patchTable->Add(PC);    
     SET_INSTR_1I(PC,jump,0);
+    INSERT_DEBUG_MSG("inlined return");
     return INVALID_POINTER;
   }
 //   fprintf(stderr,"compile return %p; inlineDepth %d, formalArgs %p\n",
@@ -2469,21 +2393,377 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
   }
 }
 
+
+class AssignmentMarker {
+public:
+  enum {CYCLE, LEAF};
+};
+
+class UIntSet {
+protected:
+  bool *set;
+  u_int size;
+public:
+  UIntSet(u_int x) : size(x) {
+    set = new bool[size];
+    for(u_int i=size; i--; )
+      set[i] = false;    
+  }
+  ~UIntSet() { delete [] set; }
+  void Put(u_int key) { set[key] = true; }
+  bool IsMember(u_int key) { return set[key]; }
+};
+class UIntMap : private UIntSet {
+private:
+  word *map;
+public:
+  using UIntSet::IsMember;
+  UIntMap(u_int x) : UIntSet(x) { map = new word[size]; }
+  ~UIntMap() { delete [] map; }
+  void Put(u_int key, word item) { UIntSet::Put(key); map[key] = item; }
+  word Get(u_int key) { return map[key]; }
+  void Print() {
+    for(u_int i=0; i<size; i++)
+      if(IsMember(i))
+	fprintf(stderr," %d -> %p\n",i,map[i]);
+  }
+};
+
 void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs, 
 				      Vector *args, bool isReturn=false) {
   u_int nFormalArgs = formalArgs->GetLength();
   u_int nArgs = args->GetLength();
   // argument match
+  // this is the complicated case, as we have to consider for example
+  // cycles in assignment
+#ifdef DEBUG_INLINE_CCC
+  s_int control[currentNLocals];
+  for(u_int i = currentNLocals; i--; )
+    control[i] = -1;
+#endif
   if(nFormalArgs == nArgs) {
+    // treat special cases efficiently
+    switch(nArgs) {
+    case 0:
+      return;
+    case 1:
+      {
+	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
+	if(argOpt != INVALID_POINTER) {
+	  u_int dst = IdToReg(argOpt->Sel(0));
+	  LoadIdRefInto(dst,args->Sub(0));
+	}
+	return;
+      }
+    default:
+#ifdef DEBUG_INLINE_CCC
+      {
+	Vector *newArgs = Vector::New(nArgs);
+	//	SET_INSTR_1I(PC,seam_set_nargs,nArgs);
+	for(u_int i = nArgs; i--; ) {
+	  u_int src = LoadIdRefKill(args->Sub(i),true);
+	  //	  SET_INSTR_1R1I(PC,seam_set_sreg,src,i);
+	  TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(i));
+	  if(argOpt != INVALID_POINTER) {
+	    u_int dst = IdToReg(argOpt->Sel(0));
+	    TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
+	    u_int idRefTag = AbstractCode::GetIdRef(tagVal);
+	    if(idRefTag == AbstractCode::Local ||
+	       idRefTag == AbstractCode::LastUseLocal) {
+	      u_int mySrc = IdToReg(tagVal->Sel(0));
+	      if(dst!= mySrc)
+		control[dst] = mySrc;
+	    } else {
+	      control[dst] = 47114711;
+	    }
+	    TagVal *newOpt = TagVal::New(Types::SOME,1);
+	    newOpt->Init(0,Store::IntToWord(dst));
+	    newArgs->Init(i,newOpt->ToWord());
+	  } else {
+	    newArgs->Init(i,formalArgs->Sub(i));
+	  }
+	}
+	//	u_int argsAddr = imEnv.Register(newArgs->ToWord());
+	//	SET_INSTR_1I(PC,seam_cccn,argsAddr);
+	//	return;
+      }
+#endif
+      ; // continue with complicated case
+    }
+    INSERT_DEBUG_MSG("argument number matches");
+#ifdef DEBUG_INLINE_CCC
+    fprintf(stderr,"start inline ccc for argument match\n");
+#endif    
+    u_int size = 0;
+    Vector *assignmentChains = Vector::New(3*nArgs);
+    // build the chains
+    UIntMap definedBy(currentNLocals);
+    UIntMap usedBy(currentNLocals);
+    UIntSet visited(currentNLocals);
+#ifdef DEBUG_INLINE_CCC
+    fprintf(stderr,"collect def-use information ... \n");
+#endif
     for(u_int i=0; i<nArgs; i++) {
       TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(i));
       if(argOpt != INVALID_POINTER) {
 	u_int dst = IdToReg(argOpt->Sel(0));
-	LoadIdRefInto(dst,args->Sub(i));
+	TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
+	u_int idRefTag = AbstractCode::GetIdRef(tagVal);
+	if(idRefTag == AbstractCode::Local ||
+	   idRefTag == AbstractCode::LastUseLocal) {
+	  u_int src = IdToReg(tagVal->Sel(0));
+	  if(src != dst) {
+	    definedBy.Put(dst, tagVal->ToWord());	
+	    usedBy.Put(src,Store::IntToWord(dst));
+#ifdef DEBUG_INLINE_CCC
+ 	    fprintf(stderr," add R%d <- R%d\n",dst,src);
+#endif
+	  } else {
+	    visited.Put(dst);
+	  }
+	} else {
+	  definedBy.Put(dst, tagVal->ToWord());	
+#ifdef DEBUG_INLINE_CCC
+ 	  fprintf(stderr," add R%d <- %p\n",dst,tagVal->ToWord());
+#endif
+	}
       }
     }
+    for(u_int i=0; i<nArgs; i++) {
+#ifdef DEBUG_INLINE_CCC
+      fprintf(stderr,"%d. loop through assignments\n",i);
+#endif
+      TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(i));
+      if(argOpt != INVALID_POINTER) {
+	u_int dst = IdToReg(argOpt->Sel(0));
+	if(visited.IsMember(dst))
+	  continue;
+	else
+	  visited.Put(dst);
+	TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
+	// create an empty chain
+	u_int bottom = nArgs;
+	u_int top = nArgs;
+	Vector *chain = Vector::New(2*nArgs + 1);
+	// walk through the use chain
+	u_int key = dst;
+#ifdef DEBUG_INLINE_CCC
+ 	fprintf(stderr,"\nwalk through uses: R%d",dst);
+#endif
+	bool skipDefChains = false;
+	while(usedBy.IsMember(key)) {
+	  key = Store::DirectWordToInt(usedBy.Get(key));
+	  chain->Init(--bottom,Store::IntToWord(key));
+	  visited.Put(key);
+	  if(key == dst) { // cycle found, don't walk through def chains
+#ifdef DEBUG_INLINE_CCC
+ 	    fprintf(stderr," -> R%d (cycle)\n",dst);
+#endif
+	    TagVal *marker = TagVal::New(AssignmentMarker::CYCLE,0);
+	    chain->Init(top,marker->ToWord());
+	    skipDefChains = true;
+	    break;
+	  }
+#ifdef DEBUG_INLINE_CCC
+ 	  fprintf(stderr," -> R%d",key);
+#endif
+	}	    
+	// walk through the definition chain
+	if(!skipDefChains) {
+#ifdef DEBUG_INLINE_CCC
+ 	  fprintf(stderr," \nwalk through defs: R%d",dst);
+#endif
+	  key = dst;
+	  if(definedBy.IsMember(key)) {
+	    for(;;) {
+	      TagVal *tagVal = TagVal::FromWordDirect(definedBy.Get(key));
+	      u_int idRefTag = AbstractCode::GetIdRef(tagVal);
+	      if(idRefTag == AbstractCode::Local ||
+		 idRefTag == AbstractCode::LastUseLocal) {
+		u_int id = IdToReg(tagVal->Sel(0));
+		if(id == key)
+		  break;
+		if(definedBy.IsMember(id)) {
+		  key = id;
+		  chain->Init(++top,Store::IntToWord(key));
+#ifdef DEBUG_INLINE_CCC
+ 		  fprintf(stderr," <- R%d",key);
+#endif
+		  visited.Put(key);	    
+		  continue;
+		}
+	      }
+	      // stop chain here
+#ifdef DEBUG_INLINE_CCC
+ 	      fprintf(stderr," <- %p\n",tagVal->ToWord());
+#endif
+	      TagVal *marker = TagVal::New(AssignmentMarker::LEAF,1);
+	      marker->Init(0,tagVal->ToWord());
+	      chain->Init(++top,marker->ToWord());
+	      break;
+	    }
+	  }
+	  if(top > nArgs) {
+	    chain->Init(nArgs,Store::IntToWord(dst));
+	  } else {
+	    TagVal *idRef = TagVal::New(AbstractCode::Local,1);
+	    idRef->Init(0,Store::IntToWord(key));
+	    TagVal *marker = TagVal::New(AssignmentMarker::LEAF,1);
+	    marker->Init(0,idRef->ToWord());
+	    chain->Init(top,marker->ToWord());
+	  }
+	}
+	// register the new chain
+	if(top-bottom > 0) { // only append non empty chains
+	  assignmentChains->Init(size++,Store::IntToWord(bottom));
+	  assignmentChains->Init(size++,Store::IntToWord(top));
+	  assignmentChains->Init(size++,chain->ToWord());	  
+	}
+      }
+    }
+#ifdef DEBUG_INLINE_CCC
+    fprintf(stderr,"[DONE]\n create code for %d chains:\n",size/3);
+    bool wasSet[currentNLocals];
+    for(u_int i = 0; i<currentNLocals; i++) wasSet[i] = false;
+    for(u_int i = 0; i<size; i+=3) {      
+      u_int bottom = Store::DirectWordToInt(assignmentChains->Sub(i));
+      u_int top = Store::DirectWordToInt(assignmentChains->Sub(i+1));
+      Vector *chain = Vector::FromWordDirect(assignmentChains->Sub(i+2));
+      fprintf(stderr,"%d. chain [%d,%d]:\n",i/3,bottom,top);
+      u_int startDst = Store::DirectWordToInt(chain->Sub(bottom));
+      for(u_int j=bottom; j<top; j++) {
+	u_int dst = Store::DirectWordToInt(chain->Sub(j));
+	wasSet[dst] = true;
+	fprintf(stderr,"R%d <- ",dst);
+      }
+      TagVal *marker = TagVal::FromWordDirect(chain->Sub(top));
+      switch(marker->GetTag()) {
+      case AssignmentMarker::CYCLE:
+	{
+	  fprintf(stderr,"cycle\n");
+	}
+	break;
+      case AssignmentMarker::LEAF:
+	{
+	  TagVal *tagVal = TagVal::FromWordDirect(marker->Sel(0));
+	  switch(AbstractCode::GetIdRef(tagVal)) {
+	  case AbstractCode::Local:
+	  case AbstractCode::LastUseLocal:
+	    {
+	      u_int localId = Store::DirectWordToInt(tagVal->Sel(0));
+	      u_int id = IdToReg(tagVal->Sel(0));
+	      fprintf(stderr,"Local(%d)=R%d\n",localId,id);
+	      if(localId != startDst && wasSet[id]) {
+		fprintf(stderr,"POSSIBLE BUG IN INLINE CCC\n");
+	      }
+	    }
+	    break;
+	  case AbstractCode::Immediate:
+	    fprintf(stderr,"Immediate(%p)\n",tagVal->Sel(0));
+	    break;
+	  case AbstractCode::Global:
+	    fprintf(stderr,"Global(%d)\n",
+		    Store::DirectWordToInt(tagVal->Sel(0)));
+	    break;	
+	  default:
+	    Error("ERRORRRRR");
+	  }
+	}     
+	break;
+      default:
+	fprintf(stderr,"internal constistancy error, unkown tag %d\n",
+		marker->GetTag());
+      }
+    }
+    fprintf(stderr,"--------\n");
+    char str[100];
+    sprintf(str,"there are %d chains collected",size);
+    INSERT_DEBUG_MSG(str);
+    s_int ass[currentNLocals];
+    for(u_int i = currentNLocals; i--; )
+      ass[i] = -1;
+#endif
+    for(u_int i = 0; i<size; i+=3) {
+      u_int bottom = Store::DirectWordToInt(assignmentChains->Sub(i));
+      u_int top = Store::DirectWordToInt(assignmentChains->Sub(i+1));
+      Vector *chain = Vector::FromWordDirect(assignmentChains->Sub(i+2));
+      TagVal *marker = TagVal::FromWordDirect(chain->Sub(top));
+      // cycle, e.g. x<-y, y<-z, z<-x 
+      switch(marker->GetTag()) {
+      case AssignmentMarker::CYCLE:
+	{
+	  u_int startId = Store::DirectWordToInt(chain->Sub(bottom));
+#ifdef DEBUG_INLINE_CCC
+	  if(top-bottom>2) {
+	    fprintf(stderr,"big cycle\n");
+	  }
+	  fprintf(stderr,"unroll cycle\n");
+#endif
+	  // unroll cycle from right to left!
+	  for(u_int j = top-1; j>bottom; j--) {
+	    u_int id = Store::DirectWordToInt(chain->Sub(j));
+#ifdef DEBUG_INLINE_CCC
+	    fprintf(stderr,"swap R%d, R%d\n",startId,id);
+#endif
+	    SET_INSTR_2R(PC,swap_regs,startId,id);	    
+	  }
+#ifdef DEBUG_INLINE_CCC
+	  // only for debugging
+	  for(u_int j = bottom; j<top-1; j++) {
+	    u_int dst = Store::DirectWordToInt(chain->Sub(j));
+	    u_int src = Store::DirectWordToInt(chain->Sub(j+1));
+	    ass[dst] = src;
+	  }
+	  u_int myDst = Store::DirectWordToInt(chain->Sub(top-1));
+	  ass[myDst] = startId;
+#endif
+	}
+	break;
+      case AssignmentMarker::LEAF:
+	{
+#ifdef DEBUG_INLINE_CCC
+	  fprintf(stderr,"unroll linear chain\n");
+#endif
+	  // cycle free assignment chain of form x<-1, y<-x, z<-y, ...
+	  for(u_int j = bottom; j<top-1; j++) {
+	    u_int dst = Store::DirectWordToInt(chain->Sub(j));
+	    u_int src = Store::DirectWordToInt(chain->Sub(j+1));
+	    SET_INSTR_2R(PC,load_reg,dst,src);
+#ifdef DEBUG_INLINE_CCC
+	    ass[dst] = src;
+#endif
+	  }
+	  u_int dst = Store::DirectWordToInt(chain->Sub(top-1));
+	  LoadIdRefInto(dst,marker->Sel(0));
+#ifdef DEBUG_INLINE_CCC
+	  {
+	    TagVal *tagVal = TagVal::FromWordDirect(marker->Sel(0));
+	    u_int idRefTag = AbstractCode::GetIdRef(tagVal);
+	    if(idRefTag == AbstractCode::Local ||
+	       idRefTag == AbstractCode::LastUseLocal) {
+	      u_int id = IdToReg(tagVal->Sel(0));
+	      ass[dst] = id;
+	    } else {
+	      ass[dst] = 47114711;      
+	    }
+	  }
+#endif
+	}
+	break;
+      default:
+	fprintf(stderr,"unkown tag %d\n",marker->GetTag());
+	Error("internal consistancy error");
+      }
+    }
+#ifdef DEBUG_INLINE_CCC
+    for(u_int i = currentNLocals; i--; )
+      if(ass[i] != control[i])
+	fprintf(stderr,"ERROR: ass[%d] = %d != %d = control[%d]\n",
+		i,ass[i],control[i],i);
+#endif
     return;
   }
+
   // argument mismatch
   switch(nFormalArgs) {
   case 0:
@@ -2509,10 +2789,28 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
 	if(argOpt != INVALID_POINTER) {
 	  u_int dst = IdToReg(argOpt->Sel(0));
-	  SET_INSTR_1R1I(PC,new_tup,dst,nArgs);
+	  // analyse for conflicts
+	  u_int conflict = false;
+	  for(u_int i=nArgs; i--; ) {
+	    TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
+	    u_int idRefTag = AbstractCode::GetIdRef(tagVal);
+	    if(idRefTag == AbstractCode::Local ||
+	       idRefTag == AbstractCode::LastUseLocal) {
+	      u_int src = IdToReg(tagVal->Sel(0));
+	      if(src == dst) {
+		conflict = true;
+		break;
+	      }
+	    }
+	  }
+	  u_int tupReg = conflict ? GetNewScratch() : dst;
+	  SET_INSTR_1R1I(PC,new_tup,tupReg,nArgs);
 	  for(u_int i=nArgs; i--; ) {
 	    u_int src = LoadIdRefKill(args->Sub(i),true);
-	    SET_INSTR_2R1I(PC,init_tup,dst,src,i);
+	    SET_INSTR_2R1I(PC,init_tup,tupReg,src,i);
+	  }
+	  if(conflict) {
+	    SET_INSTR_2R(PC,load_reg,dst,tupReg);
 	  }
 	}
       }
@@ -2526,6 +2824,11 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(i));
 	if(argOpt != INVALID_POINTER) {
 	  u_int dst = IdToReg(argOpt->Sel(0));
+	  if(dst == src) {
+	    u_int S = GetNewScratch();
+	    SET_INSTR_2R(PC,load_reg,S,src);
+	    src = S;
+	  }
 	  SET_INSTR_2R1I(PC,select_tup,dst,src,i);
 	}	  
       }
@@ -2541,6 +2844,7 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode,
 					      u_int offset,
 					      Vector *args,
 					      TagVal *idDefsInstrOpt) {
+  INSERT_DEBUG_MSG("inline entry")
 #ifdef DEBUG_DISASSEMBLE
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   std::fprintf(stderr, "inline function at %s:%d.%d depth %d\n",
@@ -2554,12 +2858,15 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode,
 
   inlineDepth++;
   Vector *oldFormalArgs = currentFormalArgs;
+  Vector *oldFormalInArgs = currentFormalInArgs;
   InlineInfo *oldInlineInfo = inlineInfo;
   inlineInfo = info;
   
   // prepare the exit of the inline function
   PatchTable *oldPatchTable = patchTable;
   patchTable = new PatchTable();
+
+  currentFormalInArgs = ShiftIdDefs(currentFormalInArgs,-offset);
 
   TagVal *continuation;
   if(idDefsInstrOpt != INVALID_POINTER) {
@@ -2629,6 +2936,7 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode,
   localOffset -= offset;//oldLocalOffset;
   globalSubst = oldGlobalSubst;;
   currentFormalArgs = oldFormalArgs;
+  currentFormalInArgs = oldFormalInArgs;
   inlineInfo = oldInlineInfo;
   sharedTable = oldSharedTable;
   delete patchTable;
@@ -2646,7 +2954,6 @@ u_int invocations = 0;
 word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 //    timeval startTime;
 //    gettimeofday(&startTime,0);
-
   BCJIT_DEBUG("start compilation (%d times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
@@ -2692,7 +2999,17 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 #endif
   u_int local_mapping[currentNLocals];
   mapping = local_mapping;
+//   if(currentNLocals != liveness->GetLength()/3) {
+//     fprintf(stderr,"! currentNLocals %d, liveness length %d\n",
+// 	    currentNLocals,liveness->GetLength()/3);
+//   }
+//   fprintf(stderr,"original liveness:\n");
+//   Jitter_PrintLiveness(Vector::FromWordDirect(abstractCode->Sel(6)));
+//   fprintf(stderr,"Liveness Information:\n");
+//   Jitter_PrintLiveness(liveness);
+//   fprintf(stderr,"run register allocation ... ");
   RegisterAllocator::Run(liveness,mapping,&currentNLocals);
+  //  fprintf(stderr,"[DONE]\n");
 #endif
 
   // now prepare scratch registers
@@ -2728,9 +3045,6 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
     globalSubst->Init(i, subst->ToWord());
   }
 
-  // prepare immediate map
-  imMap = Map::New(100);
-  
   // prepare ByteCode WriteBuffer
   WriteBuffer::Init(); 
   PC = 0;
@@ -2768,6 +3082,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 //   codeSize += code->GetSize();
 //   fprintf(stderr,"codeSize %d\n",codeSize);
 #ifdef DEBUG_DISASSEMBLE
+  //  if(invocations>600) {
   fprintf(stderr,"-----------------\ncompiled code:\n");
 #ifdef THREADED
   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
@@ -2778,6 +3093,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 #endif
   fprintf(stderr,"-------------\n");
 #endif
+  //}
 //   static double totalTime = 0;
 //   timeval stopTime;
 //   gettimeofday(&stopTime,0);

@@ -19,7 +19,6 @@
 
 #include "alice/Base.hh"
 #include "alice/Data.hh"
-#include "alice/JitterImmediateEnv.hh"
 #include "alice/ByteCodeInliner.hh"
 
 #define DO_REG_ALLOC
@@ -32,12 +31,55 @@
 
 class LazyByteCompileClosure;
 
+class ByteCodeImmediateEnv {
+protected:
+  u_int index;
+  u_int size;
+  Tuple *values;
+  Map *map;
+public:
+  ByteCodeImmediateEnv() {}
+
+  void Init() {
+    index  = 0;
+    size   = 5;
+    values = Tuple::New(size);
+    // remember addresses for sharing
+    map = Map::New(size);
+  }
+  u_int Register(word item) {
+    Assert(item != (word) 0);
+    if(map->IsMember(item))
+      return Store::DirectWordToInt(map->Get(item));
+    if (index >= size) {
+      u_int oldsize = size;
+      size = ((size * 3) >> 1); 
+      Tuple *newValues = Tuple::New(size);
+      for (u_int i = oldsize; i--;)
+	newValues->Init(i, values->Sel(i));
+      values = newValues;
+    }
+    values->Init(index, item);
+    map->Put(item,Store::IntToWord(index));
+    return index++;
+  }
+  word Sel(u_int index) {
+    return values->Sel(index);
+  }
+  void Replace(u_int index, word item) {
+    values->Init(index, item);
+  }
+  word ExportEnv() {
+    return values->ToWord();
+  }
+};
+
+
 class AliceDll ByteCodeJitter {
 private:
   u_int currentNLocals;
   u_int PC;
-  ImmediateEnv imEnv;
-  Map *imMap;
+  ByteCodeImmediateEnv imEnv;
   IntMap *sharedTable;
   Vector *globalSubst;
   word currentConcreteCode;
@@ -102,6 +144,10 @@ private:
 
   u_int IdToReg(word id) {
 #ifdef DO_REG_ALLOC
+//     fprintf(stderr,"localOffset %d, id %d, %d -> %d\n",
+// 	    localOffset,Store::DirectWordToInt(id),
+// 	    Store::DirectWordToInt(id) + localOffset,
+// 	    mapping[Store::DirectWordToInt(id) + localOffset]);
     return mapping[Store::DirectWordToInt(id) + localOffset];
 #else
     return Store::DirectWordToInt(id) + localOffset;

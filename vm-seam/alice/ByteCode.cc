@@ -58,14 +58,14 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
     return PC;
   case idec:
     {
-      GET_1R(codeBuffer,PC,r0);
-      fprintf(f,"idec R%d\n",r0);
+      GET_2R(codeBuffer,PC,r0,r1);
+      fprintf(f,"idec R%d, R%d\n",r0,r1);
     }
     return PC;
   case iinc:
     {
-      GET_1R(codeBuffer,PC,r0);
-      fprintf(f,"iinc R%d\n",r0);
+      GET_2R(codeBuffer,PC,r0,r1);
+      fprintf(f,"iinc R%d, R%d\n",r0,r1);
     }
     return PC;
   case set_global: // reg, index
@@ -118,7 +118,7 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
 	if(i>0) fprintf(stderr,",");
 	TagVal *argOpt = TagVal::FromWord(args->Sub(i));
 	if(argOpt != INVALID_POINTER) {
-	  fprintf(stderr,"%d",Store::DirectWordToInt(argOpt->Sel(0)));
+	  fprintf(stderr,"R%d",Store::DirectWordToInt(argOpt->Sel(0)));
 	} else
 	  fprintf(stderr,"_");
       }
@@ -640,6 +640,12 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"jump %d\n",(int)jumpTarget);
     }
     return PC;
+  case check_preempt_jump: // target
+    {
+      GET_1I(codeBuffer,PC,jumpTarget);
+      fprintf(f,"check_preempt_jump %d\n",(int)jumpTarget);
+    }
+    return PC;
   case itest:
     {
       GET_1R1I(codeBuffer,PC,reg,iaddr);
@@ -779,15 +785,15 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
     return PC;
   case init_closure:
     {
-      fprintf(stderr,"PC %d\n",PC);
       GET_2R1I(codeBuffer,PC,r0,r1,index);
+      fprintf(stderr,"init_closure R%d, R%d, %d\n",r0,r1,index);
     }
     return PC;
   case debug_msg:
     {
       GET_1I(codeBuffer,PC,iaddr);
-      //String *s = String::FromWordDirect(IP->Sel(iaddr));
-      fprintf(f,"debug_msg %d\n", iaddr); //s->ExportC());
+      String *s = String::FromWordDirect(imEnv->Sel(iaddr));
+      fprintf(f,"debug_msg %d -> %s\n",iaddr, s->ExportC());
     }
     return PC;
   case inlined_future_byneed:

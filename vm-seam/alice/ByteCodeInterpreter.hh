@@ -28,10 +28,11 @@
 #define DEBUG_INSTR()
 
 // extern u_int invocations;
-// #define BCI_DEBUG(s,...) fprintf(stderr,s, ##__VA_ARGS__)
+// #define INVOC_LIMIT 1786
+// #define BCI_DEBUG(s,...)  if (invocations>INVOC_LIMIT) fprintf(stderr,s, ##__VA_ARGS__)
 // #define DEBUG_INSTR() {					\
 //   ProgramCounter debugPC = PC;				\
-//   if (invocations > 1000) ByteCode::DisassembleOne(stderr,debugPC,code,IP); \
+//   if (invocations > INVOC_LIMIT) ByteCode::DisassembleOne(stderr,debugPC,code,IP); \
 // }
 
 class ByteCodeFrame;

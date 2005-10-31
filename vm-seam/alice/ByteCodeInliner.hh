@@ -36,16 +36,12 @@ namespace ByteCodeInliner_Internal {
   }
 
   class Container {
-  private:
+  protected:
     u_int size;
-    u_int flattenedSize;
     u_int top;
     Tuple *container;
-  public:
-    Container() : size(10), flattenedSize(0), top(0) { 
-      container = Tuple::New(size); 
-    }
-    void Append(word item, u_int itemSize = 1) {
+
+    bool CheckResize() {
       if(top >= size) {
 	u_int newSize = size * 3 / 2;
 	Tuple *newContainer = Tuple::New(newSize);
@@ -53,17 +49,89 @@ namespace ByteCodeInliner_Internal {
 	  newContainer->Init(i,container->Sel(i));
 	size = newSize;
 	container = newContainer;
+	return true;
       }
-      flattenedSize += itemSize;
+      return false;
+    }
+  public:
+    Container() : size(10), top(0) {       
+      container = Tuple::New(size); 
+    }
+    void Append(word item) {
+      CheckResize();
       container->Init(top++,item);
     }
-    word Sub(u_int i) { return container->Sel(i); }
-    void Clear() { 
-      container = Tuple::New(20);
-      top = 0; 
-      flattenedSize = 0; 
+    void Sort() {
     }
+    word Sub(u_int i) { return container->Sel(i); }
     u_int GetLength() { return top; }
+  };
+  class LivenessContainer : private Container {
+  private:
+    class Element {
+    public:
+      u_int key;
+      u_int pos;
+      Element(u_int k, u_int p) : key(k), pos(p) {}
+    };
+
+    u_int flattenedSize;
+    u_int sortedPos;
+    Element **keys;
+
+    void swap(Element *a[], u_int i, u_int j) {
+      Element *t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+    void qsort(Element *a[], u_int beg, u_int end)
+    {
+      if (end > beg + 1) {
+	u_int piv = a[beg]->key, l = beg + 1, r = end;
+	while (l < r) {
+	  if (a[l]->key <= piv)
+	    l++;
+	  else
+	    swap(a,l,--r);
+	}
+	swap(a,--l,beg);
+	qsort(a,beg,l);
+	qsort(a,r,end);
+      }
+    }
+
+  public:
+    using Container::Sub;
+    using Container::GetLength;
+
+    LivenessContainer() : Container(), flattenedSize(0) {
+      keys = new Element*[size];
+    }
+    ~LivenessContainer() {
+      for(u_int i=0; i<top; i++)
+	delete keys[i];
+      delete [] keys;
+    }
+    void Append(u_int key, word item, u_int itemSize) {
+      if(CheckResize()) {
+	Element **newKeys = new Element*[size];
+	memcpy(newKeys, keys, size * sizeof(u_int));
+	delete [] keys;
+	keys = newKeys;
+      }
+      container->Init(top,item);
+      keys[top] = new Element(key,top);
+      top++;
+      flattenedSize += itemSize;
+    }
+    void Sort() {
+      sortedPos=0;
+      qsort(keys,0,top);
+    }
+    word Pop() {
+      Assert(sortedPos<top);
+      return Sub(keys[sortedPos++]->pos);
+    }
     u_int GetFlattenedLength() { return flattenedSize; }
   };
 };
@@ -114,13 +182,16 @@ private:
     TagVal *abstractCode;
     Vector *liveness;
     Map *inlineMap;
-    ByteCodeInliner_Internal::Container livenessInfo;
-    void Append(word key,
-		TagVal *acc, Closure *closure, word idDefsInstrOpt,
+    Map *appVarPPs;
+    u_int callerMaxPP;
+    ByteCodeInliner_Internal::LivenessContainer livenessInfo;
+    void Append(word key, TagVal *instr,
+		TagVal *acc, Closure *closure,
 		InlineInfo *inlineInfo);
     Vector *MergeLiveness();
   public:
-    InlineAnalyser(TagVal *ac) : abstractCode(ac), counter(0) {
+    InlineAnalyser(TagVal *ac, Map *map, u_int pp) 
+      : abstractCode(ac), counter(0), appVarPPs(map), callerMaxPP(pp) {
       subst = Vector::FromWordDirect(abstractCode->Sel(1));
       liveness = Vector::FromWordDirect(abstractCode->Sel(6));
       inlineMap = Map::New(20); 
