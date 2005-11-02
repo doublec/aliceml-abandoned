@@ -24,6 +24,21 @@
 
 using namespace ByteCodeInliner_Internal;
 
+void LivenessContainer::qsort(Element *a[], u_int beg, u_int end) {
+  if (end > beg + 1) {
+    u_int piv = a[beg]->key, l = beg + 1, r = end;
+    while (l < r) {
+      if (a[l]->key <= piv)
+	l++;
+      else
+	swap(a,l,--r);
+    }
+    swap(a,--l,beg);
+	qsort(a,beg,l);
+	qsort(a,r,end);
+  }
+}
+
 // compute program points of appvar instructions
 
 // main control for computing liveness intervals
@@ -823,139 +838,139 @@ void ByteCodeInliner::InlineAnalyser::Append(word key, TagVal *instr,
   nLocals += inlineInfo->GetNLocals();
 }
 
-Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
-  u_int size = livenessInfo.GetLength();
-  if(size == 0) // nothing can be inlined
-    return liveness;
-  u_int flattenedSize = livenessInfo.GetFlattenedLength();
-  Vector *newLiveness = Vector::New(liveness->GetLength() + flattenedSize);
-  u_int index = flattenedSize;
-  u_int maxEndPoint = 0;
-  // copy the caller intervals
-  for(u_int i=0; i<liveness->GetLength(); i+=3, index+=3) {
-    newLiveness->Init(index,liveness->Sub(i));
-    newLiveness->Init(index+1,liveness->Sub(i+1));
-    newLiveness->Init(index+2,liveness->Sub(i+2));
-    u_int endPoint = Store::DirectWordToInt(liveness->Sub(i+2));
-    if(maxEndPoint < endPoint) maxEndPoint = endPoint;	
-  }
-  // copy intervals of the inlinable functions
-  index = 0;
-  for(u_int i=0; i<size; i++) {
-    u_int offset = maxEndPoint + 1; // intervals mustn't overlap
-    Tuple *tup = Tuple::FromWordDirect(livenessInfo.Sub(i));
-    Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
-    u_int numOffset = Store::WordToInt(tup->Sel(1));
-    for(u_int j=0; j<calleeLiveness->GetLength(); j+=3, index+=3) {
-      u_int num = 
-	Store::DirectWordToInt(calleeLiveness->Sub(j)) + numOffset;      
-      u_int startPoint = 0; // hack <-- look for better solution
-      u_int endPoint = 
-	Store::DirectWordToInt(calleeLiveness->Sub(j+2)) + offset;      
-      if(maxEndPoint < endPoint) maxEndPoint = endPoint;
-      newLiveness->Init(index,Store::IntToWord(num));
-      newLiveness->Init(index+1,Store::IntToWord(startPoint));
-      newLiveness->Init(index+2,Store::IntToWord(endPoint));
-    }
-  }
-  return newLiveness;  
-}
-
-
 // Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
 //   u_int size = livenessInfo.GetLength();
 //   if(size == 0) // nothing can be inlined
 //     return liveness;
-//   // copy intervals of the inlinable functions
-//   u_int offset = 0;
-//   u_int offsetTable[callerMaxPP];
-//   std::memset(offsetTable,0,callerMaxPP*sizeof(u_int));
-//   u_int l1Length = livenessInfo.GetFlattenedLength();
-//   u_int liveness1[l1Length];
-//   livenessInfo.Sort();
-//   for(u_int i=0, index=0; i<size; i++) {
-//     Tuple *tup = Tuple::FromWordDirect(livenessInfo.Pop());
-//     Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
-//     u_int idOffset = Store::WordToInt(tup->Sel(1));
-//     u_int appVarPP = Store::DirectWordToInt(tup->Sel(2));
-//     u_int maxEndPoint = 0;
-// //     fprintf(stderr,"%d. calleeLiveness, appVarPP %d:\n",i,appVarPP);
-// //     PrintLiveness(calleeLiveness);
-// //     fprintf(stderr,"offset %d, appVarPP %d\n",offset,appVarPP);
-//     for(u_int j=0; j<calleeLiveness->GetLength(); j+=3) {
-//       u_int identifier =
-// 	Store::DirectWordToInt(calleeLiveness->Sub(j)) + idOffset;      
-//       u_int startPoint =
-// 	Store::DirectWordToInt(calleeLiveness->Sub(j+1)) + offset + appVarPP; 
-//       u_int endPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+2));      
-//       if(maxEndPoint < endPoint) 
-// 	maxEndPoint = endPoint;
-//       endPoint += offset + appVarPP;
-//       liveness1[index++] = identifier;
-//       liveness1[index++] = startPoint;
-//       liveness1[index++] = endPoint; 
-//     }    
-//     offsetTable[appVarPP] = maxEndPoint+1; // + 1 ???
-//     offset += maxEndPoint + 1;
-// //     fprintf(stderr,"offset %d, maxEndPoint %d\n",offset,maxEndPoint);
-//   }
-//   // compute offsets for caller intervals
-// //   fprintf(stderr,"compute offsets:\n");
-//   for(u_int i=1; i<callerMaxPP; i++) {
-//     offsetTable[i] += offsetTable[i-1];
-// //     fprintf(stderr,"pp %d -> %d\n",i,offsetTable[i]);
-//   }
+//   u_int flattenedSize = livenessInfo.GetFlattenedLength();
+//   Vector *newLiveness = Vector::New(liveness->GetLength() + flattenedSize);
+//   u_int index = flattenedSize;
+//   u_int maxEndPoint = 0;
 //   // copy the caller intervals
-//   u_int l2Length = liveness->GetLength();
-//   u_int liveness2[l2Length];
-//   for(u_int i=0, j=0; i<l2Length; i+=3, j+=3) {
-//     u_int identifier = Store::DirectWordToInt(liveness->Sub(i));
-//     u_int startPoint = Store::DirectWordToInt(liveness->Sub(i+1));
+//   for(u_int i=0; i<liveness->GetLength(); i+=3, index+=3) {
+//     newLiveness->Init(index,liveness->Sub(i));
+//     newLiveness->Init(index+1,liveness->Sub(i+1));
+//     newLiveness->Init(index+2,liveness->Sub(i+2));
 //     u_int endPoint = Store::DirectWordToInt(liveness->Sub(i+2));
-//     liveness2[j] = identifier;
-//     liveness2[j+1] = startPoint + offsetTable[startPoint];
-//     liveness2[j+2] = endPoint + offsetTable[endPoint];
+//     if(maxEndPoint < endPoint) maxEndPoint = endPoint;	
 //   }
-//   // merge the adjusted the liveness arrays
-//   Vector *newLiveness = Vector::New(l1Length + l2Length);
-//   u_int i1 = 0, i2 = 0, i3 = 0;
-//   while( i1 < l1Length && i2 < l2Length ) {
-//     if(liveness1[i1+1] < liveness2[i2+1]) {
-//       newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
-//       newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
-//       newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
-//     } else {
-//       newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
-//       newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
-//       newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
+//   // copy intervals of the inlinable functions
+//   index = 0;
+//   for(u_int i=0; i<size; i++) {
+//     u_int offset = maxEndPoint + 1; // intervals mustn't overlap
+//     Tuple *tup = Tuple::FromWordDirect(livenessInfo.Sub(i));
+//     Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
+//     u_int numOffset = Store::WordToInt(tup->Sel(1));
+//     for(u_int j=0; j<calleeLiveness->GetLength(); j+=3, index+=3) {
+//       u_int num = 
+// 	Store::DirectWordToInt(calleeLiveness->Sub(j)) + numOffset;      
+//       u_int startPoint = 0; // hack <-- look for better solution
+//       u_int endPoint = 
+// 	Store::DirectWordToInt(calleeLiveness->Sub(j+2)) + offset;      
+//       if(maxEndPoint < endPoint) maxEndPoint = endPoint;
+//       newLiveness->Init(index,Store::IntToWord(num));
+//       newLiveness->Init(index+1,Store::IntToWord(startPoint));
+//       newLiveness->Init(index+2,Store::IntToWord(endPoint));
 //     }
 //   }
-//   while(i1 < l1Length) {
-//     newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
-//     newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
-//     newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
-//   }
-//   while(i2 < l2Length) {
-//     newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
-//     newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
-//     newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
-//   }
-// //   fprintf(stderr,"liveness1:\n");
-// //   for(u_int i=0; i<l1Length; i+=3)
-// //     fprintf(stderr," %d -> [%d,%d]\n",liveness1[i],liveness1[i+1],liveness1[i+2]);
-// //   fprintf(stderr,"\n");
-// //   fprintf(stderr,"newLiveness:\n");
-// //   PrintLiveness(newLiveness);    
-// //   u_int oldStart = 0;
-// //   for(u_int i=1; i<l1Length+l2Length; i+=3) {
-// //     u_int start = Store::DirectWordToInt(newLiveness->Sub(i));
-// //     if(oldStart > start) {
-// //       fprintf(stderr,"liveness interval is NOT sorted!\n");
-// //     }
-// //     oldStart = start;
-// //   }
 //   return newLiveness;  
 // }
+
+
+Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
+  u_int size = livenessInfo.GetLength();
+  if(size == 0) // nothing can be inlined
+    return liveness;
+  // copy intervals of the inlinable functions
+  u_int offset = 0;
+  u_int offsetTable[callerMaxPP];
+  std::memset(offsetTable,0,callerMaxPP*sizeof(u_int));
+  u_int l1Length = livenessInfo.GetFlattenedLength();
+  u_int liveness1[l1Length];
+  livenessInfo.Sort();
+  for(u_int i=0, index=0; i<size; i++) {
+    Tuple *tup = Tuple::FromWordDirect(livenessInfo.Pop());
+    Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
+    u_int idOffset = Store::WordToInt(tup->Sel(1));
+    u_int appVarPP = Store::DirectWordToInt(tup->Sel(2));
+    u_int maxEndPoint = 0;
+//     fprintf(stderr,"%d. calleeLiveness, appVarPP %d:\n",i,appVarPP);
+//     PrintLiveness(calleeLiveness);
+//     fprintf(stderr,"offset %d, appVarPP %d\n",offset,appVarPP);
+    for(u_int j=0; j<calleeLiveness->GetLength(); j+=3) {
+      u_int identifier =
+	Store::DirectWordToInt(calleeLiveness->Sub(j)) + idOffset;      
+      u_int startPoint =
+	Store::DirectWordToInt(calleeLiveness->Sub(j+1)) + offset + appVarPP; 
+      u_int endPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+2));      
+      if(maxEndPoint < endPoint) 
+	maxEndPoint = endPoint;
+      endPoint += offset + appVarPP;
+      liveness1[index++] = identifier;
+      liveness1[index++] = startPoint;
+      liveness1[index++] = endPoint; 
+    }    
+    offsetTable[appVarPP] = maxEndPoint; // + 1 ???
+    offset += maxEndPoint; // + 1;
+//     fprintf(stderr,"offset %d, maxEndPoint %d\n",offset,maxEndPoint);
+  }
+  // compute offsets for caller intervals
+//   fprintf(stderr,"compute offsets:\n");
+  for(u_int i=1; i<callerMaxPP; i++) {
+    offsetTable[i] += offsetTable[i-1];
+//     fprintf(stderr,"pp %d -> %d\n",i,offsetTable[i]);
+  }
+  // copy the caller intervals
+  u_int l2Length = liveness->GetLength();
+  u_int liveness2[l2Length];
+  for(u_int i=0, j=0; i<l2Length; i+=3, j+=3) {
+    u_int identifier = Store::DirectWordToInt(liveness->Sub(i));
+    u_int startPoint = Store::DirectWordToInt(liveness->Sub(i+1));
+    u_int endPoint = Store::DirectWordToInt(liveness->Sub(i+2));
+    liveness2[j] = identifier;
+    liveness2[j+1] = startPoint + offsetTable[startPoint];
+    liveness2[j+2] = endPoint + offsetTable[endPoint];
+  }
+  // merge the adjusted the liveness arrays
+  Vector *newLiveness = Vector::New(l1Length + l2Length);
+  u_int i1 = 0, i2 = 0, i3 = 0;
+  while( i1 < l1Length && i2 < l2Length ) {
+    if(liveness1[i1+1] < liveness2[i2+1]) {
+      newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
+      newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
+      newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
+    } else {
+      newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
+      newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
+      newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
+    }
+  }
+  while(i1 < l1Length) {
+    newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
+    newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
+    newLiveness->Init(i3++,Store::IntToWord(liveness1[i1++]));
+  }
+  while(i2 < l2Length) {
+    newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
+    newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
+    newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
+  }
+//   fprintf(stderr,"liveness1:\n");
+//   for(u_int i=0; i<l1Length; i+=3)
+//     fprintf(stderr," %d -> [%d,%d]\n",liveness1[i],liveness1[i+1],liveness1[i+2]);
+//   fprintf(stderr,"\n");
+//   fprintf(stderr,"newLiveness:\n");
+//   PrintLiveness(newLiveness);    
+//   u_int oldStart = 0;
+//   for(u_int i=1; i<l1Length+l2Length; i+=3) {
+//     u_int start = Store::DirectWordToInt(newLiveness->Sub(i));
+//     if(oldStart > start) {
+//       fprintf(stderr,"liveness interval is NOT sorted!\n");
+//     }
+//     oldStart = start;
+//   }
+  return newLiveness;  
+}
 
 class DriverStack {
 private:

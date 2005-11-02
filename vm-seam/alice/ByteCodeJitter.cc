@@ -22,6 +22,8 @@
 #include "alice/ByteCodeBuffer.hh"
 #include "alice/ByteCode.hh"
 
+#include <sys/time.h>
+
 #define BCJIT_DEBUG(s,...) /*fprintf(stderr,s, ##__VA_ARGS__)*/
 //#define DEBUG_DISASSEMBLE
 //#define DEBUG_INLINE_CCC
@@ -36,7 +38,7 @@
 
 #define RELATIVE_JUMP
 #define DO_INLINING
-// #undef DO_INLINING
+//#undef DO_INLINING
 
 using namespace ByteCodeInstr;
 
@@ -535,7 +537,7 @@ inline TagVal *ByteCodeJitter::Inline_FutureByneed(Vector *args,
 }
 
 
-inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args, 
+/*inline*/ TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args, 
 					      TagVal *idDefInstrOpt) {
   // TODO: we might need a CCC
   
@@ -589,7 +591,7 @@ inline TagVal *ByteCodeJitter::Inline_IntPlus(Vector *args,
   return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
 }
 
-inline TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args, 
+/*inline*/ TagVal *ByteCodeJitter::Inline_IntMinus(Vector *args, 
 					       TagVal *idDefInstrOpt) {
   // TODO: we might need a CCC
 
@@ -1419,7 +1421,7 @@ inline TagVal *ByteCodeJitter::InstrGetRef(TagVal *pc) {
 }
 
 // GetTup of idDef vector * idRef * instr
-inline TagVal *ByteCodeJitter::InstrGetTup(TagVal *pc) {
+/*inline*/ TagVal *ByteCodeJitter::InstrGetTup(TagVal *pc) {
   Vector *idDefs = Vector::FromWordDirect(pc->Sel(0));
   u_int size = idDefs->GetLength();
   u_int src = LoadIdRefKill(pc->Sel(1));
@@ -1927,7 +1929,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
 
 // TODO: check for optimizations
 // CompactTagTest of idRef * int * tagTests * instr option  
-inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
+/*inline*/ TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   Vector *tests = Vector::FromWordDirect(pc->Sel(2));
@@ -2065,7 +2067,7 @@ inline TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
 
 // Contest of idRef * (idRef * instr) vector 
 //          * (idRef * idDef vector * instr) vector * instr    
-inline TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
+/*inline*/ TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   Vector *nullaryTests = Vector::FromWordDirect(pc->Sel(1));
   Vector *naryTests = Vector::FromWordDirect(pc->Sel(2));
@@ -2984,6 +2986,10 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   } else
     inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
 #endif
+
+//    timeval startTime;
+//    gettimeofday(&startTime,0);
+
   // perform register allocation
 #ifdef DO_INLINING
   currentNLocals = inlineInfo->GetNLocals();

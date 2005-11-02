@@ -61,8 +61,6 @@ namespace ByteCodeInliner_Internal {
       CheckResize();
       container->Init(top++,item);
     }
-    void Sort() {
-    }
     word Sub(u_int i) { return container->Sel(i); }
     u_int GetLength() { return top; }
   };
@@ -84,21 +82,7 @@ namespace ByteCodeInliner_Internal {
       a[i] = a[j];
       a[j] = t;
     }
-    void qsort(Element *a[], u_int beg, u_int end)
-    {
-      if (end > beg + 1) {
-	u_int piv = a[beg]->key, l = beg + 1, r = end;
-	while (l < r) {
-	  if (a[l]->key <= piv)
-	    l++;
-	  else
-	    swap(a,l,--r);
-	}
-	swap(a,--l,beg);
-	qsort(a,beg,l);
-	qsort(a,r,end);
-      }
-    }
+    void qsort(Element *a[], u_int beg, u_int end);
 
   public:
     using Container::Sub;
