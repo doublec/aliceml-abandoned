@@ -1789,12 +1789,12 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
       // compile binding
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       u_int idDefsLength = idDefs->GetLength();
-      for (u_int j=0; j<idDefsLength; j++) {
+      for (u_int j = idDefsLength; j--; ) {
 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
 	if( idDef != INVALID_POINTER ) { // not wildcard
 	  u_int dst = IdToReg(idDef->Sel(0));
 #ifdef DO_REG_ALLOC
-	  if(dst == testVal) {
+	  if(dst == testVal && j > 0) {
 	    u_int S = GetNewScratch();
 	    SET_INSTR_2R(PC,load_reg,S,testVal);
 	    testVal = S;
@@ -1833,7 +1833,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     }
     
     // compile n-ary tests
-    for(u_int i=0; i<narySize; i++) {
+    for(u_int i = narySize; i--; ) {
       Tuple *triple = Tuple::FromWordDirect(naryTests->Sub(i));
 #ifdef RELATIVE_JUMP
       map->Put(triple->Sel(0),Store::IntToWord(PC - instrPC));
@@ -1844,12 +1844,12 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       u_int idDefsLength = idDefs->GetLength();
       u_int src = testVal;
-      for (u_int j=0; j<idDefsLength; j++) {
+      for (u_int j = idDefsLength; j--; ) {
 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
 	if( idDef != INVALID_POINTER ) { // not wildcard
 	  u_int dst = IdToReg(idDef->Sel(0));
 #ifdef DO_REG_ALLOC
-	  if(dst == src) {
+	  if(dst == src && j > 0) {
 	    u_int S = GetNewScratch();
 	    SET_INSTR_2R(PC,load_reg,S,src);
 	    src = S;
@@ -1882,7 +1882,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     CompileInstr(TagVal::FromWordDirect(pc->Sel(4))); // compile else branch  
     
     // compile nullary tests
-    for(u_int i=0; i<nullarySize; i++) {
+    for(u_int i = nullarySize; i--; ) {
       Tuple *pair = Tuple::FromWordDirect(nullaryTests->Sub(i));
       u_int index = jumpTablePC + Store::DirectWordToInt(pair->Sel(0));
 #ifdef RELATIVE_JUMP
@@ -1894,7 +1894,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     }
     
     // compile n-ary tests
-    for(u_int i=0; i<narySize; i++) {
+    for(u_int i=narySize; i--; ) {
       Tuple *triple = Tuple::FromWordDirect(naryTests->Sub(i));
       u_int index = jumpTablePC + Store::DirectWordToInt(triple->Sel(0));
 #ifdef RELATIVE_JUMP
@@ -1906,12 +1906,12 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       u_int idDefsLength = idDefs->GetLength();
       u_int src = testVal;
-      for (u_int j=0; j<idDefsLength; j++) {
+      for (u_int j = idDefsLength; j--; ) {
 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
 	if( idDef != INVALID_POINTER ) { // not wildcard
 	  u_int dst = IdToReg(idDef->Sel(0));
 #ifdef DO_REG_ALLOC
-	  if(dst == src) {
+	  if(dst == src && j > 0) {
 	    u_int S = GetNewScratch();
 	    SET_INSTR_2R(PC,load_reg,S,src);
 	    src = S;
@@ -2036,12 +2036,12 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
       Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
       u_int idDefsLength = idDefs->GetLength();
       u_int src = testVal;
-      for (u_int j=0; j<idDefsLength; j++) {
+      for (u_int j = idDefsLength; j--; ) {
 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
 	if( idDef != INVALID_POINTER ) { // not wildcard
 	  u_int dst = IdToReg(idDef->Sel(0));
 #ifdef DO_REG_ALLOC
-	  if(dst == src) {
+	  if(dst == src && j > 0) {
 	    u_int S = GetNewScratch();
 	    SET_INSTR_2R(PC,load_reg,S,src);
 	    src = S;
@@ -2104,12 +2104,12 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
     u_int idDefsLength = idDefs->GetLength();
     u_int testValReg = testVal;
-    for (u_int j=0; j<idDefsLength; j++) {
+    for (u_int j = idDefsLength; j--; ) {
       TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
       if( idDef != INVALID_POINTER ) { // not wildcard
 	u_int dst = IdToReg(idDef->Sel(0));
 #ifdef DO_REG_ALLOC
-	  if(dst == testValReg) {
+	  if(dst == testValReg && j > 0) {
 	    u_int S = GetNewScratch();
 	    SET_INSTR_2R(PC,load_reg,S,testValReg);
 	    testValReg = S;
@@ -2153,12 +2153,12 @@ inline TagVal *ByteCodeJitter::InstrVecTest(TagVal *pc) {
     // compile binding
     u_int idDefsLength = idDefs->GetLength();
     u_int src = testVal;
-    for (u_int j=0; j<idDefsLength; j++) {
+    for (u_int j = idDefsLength; j--; ) {
       TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
       if( idDef != INVALID_POINTER ) { // not wildcard
 	u_int dst = IdToReg(idDef->Sel(0));
 #ifdef DO_REG_ALLOC
-	if(dst == testVal) {
+	if(dst == testVal && j > 0) {
 	  u_int S = GetNewScratch();
 	  SET_INSTR_2R(PC,load_reg,S,testVal);
 	  src = S;
