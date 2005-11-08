@@ -22,626 +22,81 @@
 
 #define INLINE_LIMIT 10
 
-using namespace ByteCodeInliner_Internal;
-
-void LivenessContainer::qsort(Element *a[], u_int beg, u_int end) {
-  if (end > beg + 1) {
-    u_int piv = a[beg]->key, l = beg + 1, r = end;
-    while (l < r) {
-      if (a[l]->key <= piv)
-	l++;
-      else
-	swap(a,l,--r);
-    }
-    swap(a,--l,beg);
-	qsort(a,beg,l);
-	qsort(a,r,end);
+static inline u_int GetNumberOfLocals(TagVal *abstractCode) {
+  TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
+  switch (AbstractCode::GetAnnotation(annotation)) {
+  case AbstractCode::Simple:
+    return Store::DirectWordToInt(annotation->Sel(0));
+  case AbstractCode::Debug:
+    return Vector::FromWordDirect(annotation->Sel(0))->GetLength();
   }
 }
 
-// compute program points of appvar instructions
-
-// main control for computing liveness intervals
-class ControlStack {
+class LivenessContainer {
 private:
-  u_int *stack;
   u_int size;
-  s_int top;
-  void Push(u_int item) {
-    if( ++top >= size ) {	
-      u_int oldSize = size;
-      size = size * 3 / 2;
-      u_int *newStack = new u_int[size];
-      memcpy(newStack,stack,oldSize * sizeof(u_int));
-      delete[] stack;
-      stack = newStack;
-    }
-    stack[top] = item;
-  }
-  u_int Pop() { return stack[top--]; }
+  u_int top;
+  Tuple *container;
+  u_int flattenedSize;
 public:
-  enum { 
-    VISIT, INC, ID, IDS, IDDEF, IDDEFS, IDREF, IDREFS,
-    REGISTER_APPVAR_PP,
-    STATE, STOP
-  };
-  ControlStack(u_int s = 400) : size(s), top(-1) { stack = new u_int[size]; }
-  u_int PopCommand() { return Pop(); }
-  TagVal *PopInstr() { return (TagVal *) Pop(); }
-  Vector *PopVector() { return (Vector *) Pop(); }
-  word PopWord() { return (word) Pop(); }
-  void PopState(IntMap **shared, u_int *programPoint) {
-    *programPoint = Pop();
-    *shared = (IntMap *) Pop();
+  LivenessContainer() : size(10), top(0), flattenedSize(0) {       
+    container = Tuple::New(size); 
   }
-  TagVal *PopTagVal() { return (TagVal *) Pop(); }
-  void PushInstr(word instr) {
-    Push((u_int) (TagVal::FromWordDirect(instr)));
-    Push(VISIT);
+  void Append(word item, u_int itemSize) {
+    if(top >= size) {
+      u_int newSize = size * 3 / 2;
+      Tuple *newContainer = Tuple::New(newSize);
+      for(u_int i=size; i--; ) 
+	newContainer->Init(i,container->Sel(i));
+      size = newSize;
+      container = newContainer;
+    }
+    container->Init(top++,item);
+    flattenedSize += itemSize;
   }
-  void PushInc() { Push(INC); }
-  void PushId(word id) { 
-    Push((u_int) id);
-    Push(ID);
-  }
-  void PushIds(word ids) {
-    Push((u_int) (TagVal::FromWordDirect(ids)));
-    Push(IDS);
-  }
-  void PushIdDef(word idDef) {
-    Push((u_int) (TagVal::FromWord(idDef)));
-    Push(IDDEF);
-  }
-  void PushIdDefs(word idDefs) {
-    Push((u_int) (Vector::FromWordDirect(idDefs)));
-    Push(IDDEFS);
-  }
-  void PushIdRef(word idRef) {
-    Push((u_int) (TagVal::FromWordDirect(idRef)));
-    Push(IDREF);
-  }
-  void PushIdRefs(word idRefs) {
-    Push((u_int) (Vector::FromWordDirect(idRefs)));
-    Push(IDREFS);
-  }
-  void PushState(IntMap *shared, u_int programPoint) {
-    Push((u_int) shared);
-    Push(programPoint);
-    //      Push(STATE);
-  }
-  void PushAppVarPP(TagVal *instr) {
-    Push((u_int) instr);
-    Push(REGISTER_APPVAR_PP);
-  }
-  void PushStop() { Push(STOP); }
-  bool Empty() { return top == -1; }
-  s_int GetTopIndex() { return top; }
-  void SetTopIndex(s_int index) { top = index; }
+  word Sub(u_int i) { return container->Sel(i); }
+  u_int GetLength() { return top; }
+  u_int GetFlattenedLength() { return flattenedSize; }
 };
 
-class LivenessAnalyser {
+class InlineAnalyser {
 private:
-  u_int programPoint;
-  TagVal *abstractCode;
+  u_int counter;
   u_int nLocals;
-  s_int *ranges;
-  u_int rangesSize;
-  Container appVarPPs;
-  ControlStack stack;
-  
-  void AdjustInterval(word id);
-  void RunAnalysis();
-  Vector *GetLiveness();
-  Map *GetAppVarPPs();
-  u_int GetProgramPoint() { return programPoint; }
-  
-  LivenessAnalyser(TagVal *ac) : programPoint(0), abstractCode(ac) {
-    nLocals = GetNumberOfLocals(abstractCode);
-    rangesSize = nLocals * 2; 
-    ranges = new s_int[rangesSize];
-    std::memset(ranges,-1,2 * nLocals * sizeof(s_int));
-  }
-  ~LivenessAnalyser() {
-    delete ranges;
-  }
+  Vector *subst;
+  TagVal *abstractCode;
+  Vector *liveness;
+  Map *inlineMap;
+  u_int callerMaxPP;
+  Map *inlineCandidates;
+  LivenessContainer livenessInfo;
+  void Append(word key, TagVal *instr, u_int appVarPP,
+	      TagVal *acc, Closure *closure,
+	      InlineInfo *inlineInfo);
+  Vector *MergeLiveness();
 public:
-  static Tuple *ComputeLiveness(TagVal *abstractCode);
-  static bool Check(Vector *liveness1, Vector *liveness2);
+  InlineAnalyser(TagVal *ac, Map* map) 
+    : abstractCode(ac), counter(0), inlineCandidates(map) {
+    subst = Vector::FromWordDirect(abstractCode->Sel(1));
+    liveness = Vector::FromWordDirect(abstractCode->Sel(6));
+    inlineMap = Map::New(20); 
+    nLocals = GetNumberOfLocals(abstractCode);
+  }
+  void SetMaxPP(u_int pp) { callerMaxPP = pp; }
+  // This functions breaks an inline analysis cycle introduced by 
+  // mutual recursive functions.
+  bool CheckCycle(TagVal *acc) {
+    return inlineCandidates->IsMember(acc->Sel(5));
+  }  
+  void Count(TagVal *instr);
+  void AnalyseAppVar(TagVal *instr, u_int pp);
+  InlineInfo *ComputeInlineInfo() {
+    Assert(counter >= 0);
+    return InlineInfo::New(inlineMap,MergeLiveness(),nLocals,counter);
+  } 
 };
 
-Tuple *LivenessAnalyser::ComputeLiveness(TagVal *abstractCode) {
-  LivenessAnalyser a(abstractCode);
-  a.RunAnalysis();
-  Vector *liveness = a.GetLiveness();
-  Map *appVarPPs = a.GetAppVarPPs();
-  u_int pp = a.GetProgramPoint();
-  Tuple *triple = Tuple::New(3);
-  triple->Init(0,liveness->ToWord());
-  triple->Init(1,appVarPPs->ToWord());
-  triple->Init(2,Store::IntToWord(pp));
-  return triple;
-}
-
-bool LivenessAnalyser::Check(Vector *liveness1, Vector *liveness2) {
-  if(liveness1->GetLength() != liveness2->GetLength()) {
-    fprintf(stderr,"different number of liveness intervals\n");
-    return false;
-  }
-  for(u_int i = 0; i<liveness1->GetLength(); i += 3) {
-    u_int id1 = Store::DirectWordToInt(liveness1->Sub(i));
-    u_int s1  = Store::DirectWordToInt(liveness1->Sub(i+1));
-    u_int e1  = Store::DirectWordToInt(liveness1->Sub(i+2));
-    u_int id2 = Store::DirectWordToInt(liveness2->Sub(i));
-    u_int s2  = Store::DirectWordToInt(liveness2->Sub(i+1));
-    u_int e2  = Store::DirectWordToInt(liveness2->Sub(i+2));
-    if(id1 != id2) {
-      fprintf(stderr,"%d. id1 %d != id2 %d\n",i,id1,id2);
-      return false;
-    }
-    if(s1 != s2 || e1 != e2) {
-      fprintf(stderr,"%d. [%d,%d] != [%d,%d]\n",id1,s1,e1,s2,e2);
-      return false;
-    }
-  }
-  return true;
-}
-
-Vector *LivenessAnalyser::GetLiveness() {
-  u_int size = 0;
-  u_int sizeOfRanges = nLocals * 2;
-  u_int cranges[sizeOfRanges * 3 / 2];
-  // counting sort
-  u_int max = programPoint+1;
-  u_int counts[max];
-  std::memset(counts,0,max * sizeof(u_int));
-  for(u_int i=0; i<sizeOfRanges; i+=2) {
-    if(ranges[i] > 0) {
-      // adjust
-      cranges[size] = i / 2;
-      cranges[size + 1] = programPoint - ranges[i + 1];
-      cranges[size + 2] = programPoint - ranges[i];
-      // count
-      counts[cranges[size+1]]++;
-      size += 3;
-    }
-  }
-  Vector *liveness = Vector::New(size);
-  for(u_int i=1; i<max; i++) counts[i] += counts[i-1];
-  for(u_int i=0; i<size; i+=3) {
-    u_int id = cranges[i];
-    u_int x = cranges[i + 1];
-    u_int y = cranges[i + 2];
-    u_int index = 3 * (--counts[x]);
-    liveness->Init(index,Store::IntToWord(id));
-    liveness->Init(index+1,Store::IntToWord(x));
-    liveness->Init(index+2,Store::IntToWord(y));
-  }
-  return liveness;
-}
-
-Map *LivenessAnalyser::GetAppVarPPs() {
-  u_int length = appVarPPs.GetLength();
-  Map *map = Map::New(2 * length);
-//   if(length > 0)
-//     fprintf(stderr,"appvar program points:\n");
-  for (u_int i = length; i--; ) {
-    Tuple *pair = Tuple::FromWordDirect(appVarPPs.Sub(i));
-    // adjust program point
-    u_int pp = programPoint - Store::DirectWordToInt(pair->Sel(1));
-//     fprintf(stderr," %p -> %d\n",pair->Sel(0),pp); 
-    map->Put(pair->Sel(0),Store::IntToWord(pp));
-  }
-  return map;
-}
-
-inline void LivenessAnalyser::AdjustInterval(word id) {
-  u_int index = Store::DirectWordToInt(id) * 2;
-  s_int min = ranges[index];
-  if(min >= 0) { // is already there
-    if(programPoint < min) ranges[index] = programPoint;
-    s_int max = ranges[index | 1];
-    if(programPoint > max) ranges[index + 1] = programPoint;    
-  } else {
-    ranges[index] = programPoint;
-    ranges[index + 1] = programPoint;
-  }
-}
-
-void LivenessAnalyser::RunAnalysis() {
-  IntMap *stamps = IntMap::New(100); // remember control flow merge points
-  stack.PushStop();
-  stack.PushIdDefs(abstractCode->Sel(3)); // arguments
-  stack.PushInstr(abstractCode->Sel(5));
-  for(;;) {
-    switch(stack.PopCommand()) {
-    case ControlStack::REGISTER_APPVAR_PP:
-      {
-	TagVal *instr = stack.PopInstr();
-	Tuple *pair = Tuple::New(2);
-	pair->Init(0,instr->ToWord());
-	pair->Init(1,Store::IntToWord(programPoint));
-	appVarPPs.Append(pair->ToWord());
-      }
-      break;
-    case ControlStack::STOP:
-      return;
-    case ControlStack::INC:
-      programPoint++;
-      break;	
-      // adjust invervals
-    case ControlStack::ID:
-      AdjustInterval(stack.PopWord());
-      break;
-    case ControlStack::IDS:
-      {
-	Vector *ids = stack.PopVector();
-	u_int nIds = ids->GetLength();
-	for(u_int i=0; i<nIds; i++)
-	  AdjustInterval(ids->Sub(i));
-      }
-      break;
-    case ControlStack::IDDEF:
-      {
-	TagVal *idDefOpt = stack.PopTagVal();
-	if(idDefOpt != INVALID_POINTER)
-	  AdjustInterval(idDefOpt->Sel(0));	
-      }
-      break;
-    case ControlStack::IDDEFS:
-      {
-	Vector *idDefs = stack.PopVector();
-	u_int nIdDefs = idDefs->GetLength();
-	for(u_int i=0; i<nIdDefs; i++) {
-	  TagVal *idDefOpt = TagVal::FromWord(idDefs->Sub(i));
-	  if(idDefOpt != INVALID_POINTER)
-	    AdjustInterval(idDefOpt->Sel(0));
-	}
-      }
-      break;
-    case ControlStack::IDREF:
-      {
-	TagVal *idRef = stack.PopTagVal();
-	switch(AbstractCode::GetIdRef(idRef)) {
-	case AbstractCode::Local:
-	case AbstractCode::LastUseLocal:
-	  AdjustInterval(idRef->Sel(0));
-	  break;
-	default:
-	  // do nothing
-	  // later versions should include liveness for globals and
-	  // immediates
-	  ;
-	}
-      }
-      break;
-    case ControlStack::IDREFS:
-      {
-	Vector *idRefs = stack.PopVector();
-	u_int nIdRefs = idRefs->GetLength();
-	for(u_int i=0; i<nIdRefs; i++) {
-	  TagVal *idRef = TagVal::FromWordDirect(idRefs->Sub(i));
-	  switch(AbstractCode::GetIdRef(idRef)) {
-	  case AbstractCode::Local:
-	  case AbstractCode::LastUseLocal:
-	    AdjustInterval(idRef->Sel(0));
-	    break;
-	  default:
-	    // do nothing
-	    // later versions should include liveness for globals and
-	    // immediates
-	    ;
-	  }
-	}
-      }
-      break;
-      // visit nodes and count program points
-    case ControlStack::VISIT: 
-      {
-	TagVal *instr = stack.PopInstr();
-	switch(AbstractCode::GetInstr(instr)) {
-	case AbstractCode::EndTry:
-	case AbstractCode::EndHandle:
-	  stack.PushInstr(instr->Sel(0));
-	  break;
-	case AbstractCode::Kill:
-	  stack.PushInstr(instr->Sel(1));
-	  break;
-	case AbstractCode::PutVar:
-	  stack.PushIdRef(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(2));
-	  break;
-	case AbstractCode::PutNew:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(2));
-	  break;
-	case AbstractCode::PutTag:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRefs(instr->Sel(3));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(4)); 
-	  break;
-	case AbstractCode::PutCon:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRef(instr->Sel(1));
-	  stack.PushIdRefs(instr->Sel(2));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(3)); 
-	  break;
-	case AbstractCode::PutRef:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRef(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(2));
-	  break;
-	case AbstractCode::PutTup:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRefs(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(2));
-	  break;
-	case AbstractCode::PutPolyRec:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRefs(instr->Sel(2));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(3));
-	  break;
-	case AbstractCode::PutVec:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRefs(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(2));
-	  break;
-	case AbstractCode::Close:
-	case AbstractCode::Specialize:
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRefs(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(3));
-	  break;
-	case AbstractCode::AppPrim:
-	  {
-	    TagVal *idDefInstrOpt = TagVal::FromWord(instr->Sel(2));
-	    if(idDefInstrOpt == INVALID_POINTER) {
-	      programPoint++;
-	      stack.PushIdRefs(instr->Sel(1));
-	    } else {
-	      Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
-	      stack.PushIdRefs(instr->Sel(1));
-	      stack.PushInc();
-	      stack.PushIdDef(idDefInstr->Sel(0));
-	      stack.PushInc();
-	      stack.PushInstr(idDefInstr->Sel(1));
-	    }
-	  }
-	  break;
-	case AbstractCode::AppVar:
-	  {
-	    TagVal *idDefsInstrOpt = TagVal::FromWord(instr->Sel(3));
-	    if(idDefsInstrOpt == INVALID_POINTER) {
-	      //	      programPoint++;
-	      stack.PushIdRef(instr->Sel(0));
-	      stack.PushIdRefs(instr->Sel(1));
-	      stack.PushInc();
-	      stack.PushAppVarPP(instr);
-	    } else {
-	      Tuple *idDefsInstr = 
-		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
-	      stack.PushIdRef(instr->Sel(0));
-	      stack.PushIdRefs(instr->Sel(1));
-	      stack.PushInc();
-	      stack.PushIdDefs(idDefsInstr->Sel(0));
-	      stack.PushAppVarPP(instr);
-	      stack.PushInc();
-	      stack.PushInstr(idDefsInstr->Sel(1));
-	    }
-	  }
-	  break;
-	case AbstractCode::GetRef:
-	  stack.PushIdRef(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(2)); 
-	  break;
-	case AbstractCode::GetTup:
-	  stack.PushIdDefs(instr->Sel(0));
-	  stack.PushIdRef(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(2));
-	  break;
-	case AbstractCode::Sel:
-	  stack.PushIdRef(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushId(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(3)); 
-	  break;
-	case AbstractCode::LazyPolySel:
-	  stack.PushIds(instr->Sel(0));
-	  stack.PushInc();
-	  stack.PushIdRef(instr->Sel(1));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(3)); 
-	  break;
-	case AbstractCode::Raise:
-	case AbstractCode::Reraise:
-	  programPoint++;
-	  stack.PushIdRef(instr->Sel(0));
-	  break;
-	case AbstractCode::Try:
-	  stack.PushInstr(instr->Sel(0));
-	  stack.PushIdDef(instr->Sel(1));
-	  stack.PushIdDef(instr->Sel(2));
-	  stack.PushInc();
-	  stack.PushInstr(instr->Sel(3));
-	  break;
-	case AbstractCode::CompactIntTest:
-	  {
-	    stack.PushIdRef(instr->Sel(0));
-	    stack.PushInc();
-	    Vector *tests = Vector::FromWordDirect(instr->Sel(2)); 
-	    u_int nTests = tests->GetLength();
-	    for(u_int i=0; i<nTests; i++)
-	      stack.PushInstr(tests->Sub(i));
-	    stack.PushInstr(instr->Sel(3));
-	  }
-	  break;
-	case AbstractCode::IntTest:
-	case AbstractCode::RealTest:
-	case AbstractCode::StringTest:
-	  {
-	    stack.PushIdRef(instr->Sel(0));
-	    stack.PushInc();
-	    Vector *tests = Vector::FromWordDirect(instr->Sel(1)); 
-	    u_int nTests = tests->GetLength();
-	    for(u_int i=0; i<nTests; i++) {
-	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	      stack.PushInstr(pair->Sel(1));
-	    }
-	    stack.PushInstr(instr->Sel(2));
-	  }
-	  break;
-	case AbstractCode::TagTest:
-	  {	  
-	    stack.PushIdRef(instr->Sel(0));
-	    stack.PushInc();
-	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
-	    u_int nTests0 = tests0->GetLength(); 
-	    for(u_int i=0; i<nTests0; i++) {
-	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));
-	      stack.PushInstr(pair->Sel(1));
-	    }	  
-	    Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
-	    u_int nTestsN = testsN->GetLength(); 
-	    for(u_int i=0; i<nTestsN; i++) {
-	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	      stack.PushIdDefs(triple->Sel(1));
-	      stack.PushInc();
-	      stack.PushInstr(triple->Sel(2));
-	    }
-	    stack.PushInstr(instr->Sel(4));
-	  }
-	  break;
-	case AbstractCode::CompactTagTest:
-	  {
-	    stack.PushIdRef(instr->Sel(0));
-	    stack.PushInc();
-	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	    u_int nTests = tests->GetLength(); 
-	    for(u_int i = 0; i<nTests; i++) {
-	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	      TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
-	      if(idDefsOpt != INVALID_POINTER) {
-		stack.PushIdDefs(idDefsOpt->Sel(0));
-		stack.PushInc();
-	      }
-	      stack.PushInstr(pair->Sel(1));
-	    }
-	    TagVal *elseInstrOpt = TagVal::FromWord(instr->Sel(3));
-	    if(elseInstrOpt != INVALID_POINTER)
-	      stack.PushInstr(elseInstrOpt->Sel(0));
-	  }
-	  break;
-	case AbstractCode::ConTest:
-	  {
-	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(1));
-	    u_int nTests0 = tests0->GetLength(); 
-	    Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
-	    u_int nTestsN = testsN->GetLength(); 
-	    stack.PushIdRef(instr->Sel(0));
-	    for(u_int i=0; i<nTests0; i++) {
-	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));
-	      stack.PushIdRef(pair->Sel(0));
-	    }	  
-	    for(u_int i=0; i<nTestsN; i++) {
-	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	      stack.PushIdRef(triple->Sel(0));
-	    }
-	    stack.PushInc();
-	    // compute program points
-	    for(u_int i=0; i<nTests0; i++) {
-	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));
-	      stack.PushInstr(pair->Sel(1));
-	    }	  
-	    for(u_int i=0; i<nTestsN; i++) {
-	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	      stack.PushIdDefs(triple->Sel(1));
-	      stack.PushInc();
-	      stack.PushInstr(triple->Sel(2));
-	    }
-	    stack.PushInstr(instr->Sel(3));
-	  }
-	  break;
-	case AbstractCode::VecTest:
-	  {
-	    stack.PushIdRef(instr->Sel(0));
-	    stack.PushInc();	  
-	    Vector *tests = Vector::FromWordDirect(instr->Sel(1));
-	    u_int nTests = tests->GetLength(); 
-	    for(u_int i=0; i<nTests; i++) {
-	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	      Vector *idDefs = Vector::FromWordDirect(pair->Sel(0));
-	      if(idDefs->GetLength() > 0) {
-		stack.PushIdDefs(idDefs->ToWord());
-		stack.PushInc();
-	      }
-	      stack.PushInstr(pair->Sel(1));
-	    }
-	    stack.PushInstr(instr->Sel(2));
-	  }
-	  break;
-	case AbstractCode::Shared:
-	  {
-	    word stamp = instr->Sel(0);
-	    if(!stamps->IsMember(stamp)) {
-	      stamps->Put(stamp,Store::IntToWord(programPoint));
-	      stack.PushInstr(instr->Sel(1));
-	    }
-	  }
-	  break;
-	case AbstractCode::Return:
-	  {
-	    stack.PushIdRefs(instr->Sel(0));
-	    programPoint++;
-	  }
-	  break;
-	default:
-	  fprintf(stderr,"invalid abstractCode tag %d\n",
-		  (u_int)AbstractCode::GetInstr(instr));
-	  return;
-	}
-      }
-    }
-  }
-}
-
-// END
-
-Map *ByteCodeInliner::inlineCandidates;
-
-void PrintLiveness(Vector *liveness) {
-  u_int size = liveness->GetLength();
-  fprintf(stderr,"size = %d\n",size/3);
-  for(u_int i = 0, j = 1; i<size; i+=3, j++) {
-    u_int index = Store::DirectWordToInt(liveness->Sub(i));
-    u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
-    u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
-    fprintf(stderr,"%d. %d -> [%d, %d]\n",j,index,start,end);
-  }
-}
-
-void ByteCodeInliner::InlineAnalyser::Count(TagVal *instr) {
+void InlineAnalyser::Count(TagVal *instr) {
   Assert(instr != INVALID_POINTER);
   switch(AbstractCode::GetInstr(instr)) {
   case AbstractCode::Kill:
@@ -671,7 +126,7 @@ void ByteCodeInliner::InlineAnalyser::Count(TagVal *instr) {
   }
 }
 
-void ByteCodeInliner::InlineAnalyser::AnalyseAppVar(TagVal *instr) {
+void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
   Assert(instr != INVALID_POINTER);
   Assert(AbstractCode::GetInstr(instr) == AbstractCode::AppVar);
   TagVal *idRef = TagVal::FromWordDirect(instr->Sel(0));
@@ -733,7 +188,7 @@ void ByteCodeInliner::InlineAnalyser::AnalyseAppVar(TagVal *instr) {
       InlineInfo *inlineInfo = bcc->GetInlineInfo();
       u_int nNodes = inlineInfo->GetNNodes();
       if(nNodes <= INLINE_LIMIT) {
-	Append(key,instr,acc,closure,inlineInfo);
+	Append(key,instr,appVarPP,acc,closure,inlineInfo);
 	// adjust counter
 	counter += nNodes - 1; // substract 1 for AppVar instr
       }
@@ -754,23 +209,20 @@ void ByteCodeInliner::InlineAnalyser::AnalyseAppVar(TagVal *instr) {
 	InlineInfo *inlineInfo;
 	if(inlineInfoOpt == INVALID_POINTER) {
 	  // recursively analyse callee
-	  inlineInfo = AnalyseInlining(acc);
+	  inlineInfo = ByteCodeInliner::AnalyseInlining(acc);
 	  lazyBCC->SetInlineInfo(inlineInfo);
 	} else
 	  inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
 	u_int nNodes = inlineInfo->GetNNodes();
 	if(nNodes <= INLINE_LIMIT) {
-	  Append(key,instr,lazyBCC->GetAbstractCode(),closure,inlineInfo);
+	  Append(key,instr,appVarPP,lazyBCC->GetAbstractCode(),
+		 closure,inlineInfo);
 	  // adjust counter
 	  counter += nNodes - 1;
 	}
       }
     }
   }
-}
-
-bool ByteCodeInliner::InlineAnalyser::CheckCycle(TagVal *acc) {
-  return inlineCandidates->IsMember(acc->Sel(5));
 }
 
 s_int ExtractPP(TagVal *instr, Vector *liveness) {
@@ -793,30 +245,22 @@ s_int ExtractPP(TagVal *instr, Vector *liveness) {
   return -1;
 }
 
-void ByteCodeInliner::InlineAnalyser::Append(word key, TagVal *instr,
-					     TagVal *acc, Closure *closure,
-					     InlineInfo *inlineInfo) {
-  // check if closure was already added
-//   if(inlineMap->IsMember(key))
-//     return;
-
+void InlineAnalyser::Append(word key, TagVal *instr,
+			    u_int appVarPP,
+			    TagVal *acc, Closure *closure,
+			    InlineInfo *inlineInfo) {
+  // there can be a strange situation
+  // there can be an implicit merge point in the abstract code introduced
+  // be an compacttagtest. to me it is not clear which appVarPP i have to
+  // choose for the appvar instruction.
   // append liveness
   Vector *calleeLiveness = inlineInfo->GetLiveness();
   word wCalleeLiveness = calleeLiveness->ToWord();
   Tuple *tup = Tuple::New(3);
   tup->Init(0,wCalleeLiveness);
   tup->Init(1,Store::IntToWord(nLocals));
-  u_int appVarPP = Store::DirectWordToInt(appVarPPs->Get(instr->ToWord()));
-//   s_int cval = ExtractPP(instr,liveness);
-//   if(cval != -1 && cval != appVarPP) {
-//     fprintf(stderr,"ERROR: cval %d != appVarPP %d\n",cval,appVarPP);
-//     appVarPP = cval;
-//   } else if( cval == appVarPP) {
-//     fprintf(stderr,"program points match\n");
-//   }
   tup->Init(2,Store::IntToWord(appVarPP));
-  livenessInfo.Append(appVarPP,tup->ToWord(),calleeLiveness->GetLength());
-  u_int offset = livenessInfo.GetFlattenedLength() / 3;
+  livenessInfo.Append(tup->ToWord(),calleeLiveness->GetLength());
   // add closure to substitution, i.e. do specialize
   // TODO: ensure that newSubst matches existing oldSubst
   u_int nGlobals = closure->GetSize();
@@ -838,46 +282,7 @@ void ByteCodeInliner::InlineAnalyser::Append(word key, TagVal *instr,
   nLocals += inlineInfo->GetNLocals();
 }
 
-// Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
-//   u_int size = livenessInfo.GetLength();
-//   if(size == 0) // nothing can be inlined
-//     return liveness;
-//   u_int flattenedSize = livenessInfo.GetFlattenedLength();
-//   Vector *newLiveness = Vector::New(liveness->GetLength() + flattenedSize);
-//   u_int index = flattenedSize;
-//   u_int maxEndPoint = 0;
-//   // copy the caller intervals
-//   for(u_int i=0; i<liveness->GetLength(); i+=3, index+=3) {
-//     newLiveness->Init(index,liveness->Sub(i));
-//     newLiveness->Init(index+1,liveness->Sub(i+1));
-//     newLiveness->Init(index+2,liveness->Sub(i+2));
-//     u_int endPoint = Store::DirectWordToInt(liveness->Sub(i+2));
-//     if(maxEndPoint < endPoint) maxEndPoint = endPoint;	
-//   }
-//   // copy intervals of the inlinable functions
-//   index = 0;
-//   for(u_int i=0; i<size; i++) {
-//     u_int offset = maxEndPoint + 1; // intervals mustn't overlap
-//     Tuple *tup = Tuple::FromWordDirect(livenessInfo.Sub(i));
-//     Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
-//     u_int numOffset = Store::WordToInt(tup->Sel(1));
-//     for(u_int j=0; j<calleeLiveness->GetLength(); j+=3, index+=3) {
-//       u_int num = 
-// 	Store::DirectWordToInt(calleeLiveness->Sub(j)) + numOffset;      
-//       u_int startPoint = 0; // hack <-- look for better solution
-//       u_int endPoint = 
-// 	Store::DirectWordToInt(calleeLiveness->Sub(j+2)) + offset;      
-//       if(maxEndPoint < endPoint) maxEndPoint = endPoint;
-//       newLiveness->Init(index,Store::IntToWord(num));
-//       newLiveness->Init(index+1,Store::IntToWord(startPoint));
-//       newLiveness->Init(index+2,Store::IntToWord(endPoint));
-//     }
-//   }
-//   return newLiveness;  
-// }
-
-
-Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
+Vector *InlineAnalyser::MergeLiveness() {
   u_int size = livenessInfo.GetLength();
   if(size == 0) // nothing can be inlined
     return liveness;
@@ -887,16 +292,12 @@ Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
   std::memset(offsetTable,0,callerMaxPP*sizeof(u_int));
   u_int l1Length = livenessInfo.GetFlattenedLength();
   u_int liveness1[l1Length];
-  livenessInfo.Sort();
-  for(u_int i=0, index=0; i<size; i++) {
-    Tuple *tup = Tuple::FromWordDirect(livenessInfo.Pop());
+  for(u_int i = size, index = 0; i--; ) {
+    Tuple *tup = Tuple::FromWordDirect(livenessInfo.Sub(i));
     Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
     u_int idOffset = Store::WordToInt(tup->Sel(1));
-    u_int appVarPP = Store::DirectWordToInt(tup->Sel(2));
+    u_int appVarPP = callerMaxPP - Store::DirectWordToInt(tup->Sel(2));
     u_int maxEndPoint = 0;
-//     fprintf(stderr,"%d. calleeLiveness, appVarPP %d:\n",i,appVarPP);
-//     PrintLiveness(calleeLiveness);
-//     fprintf(stderr,"offset %d, appVarPP %d\n",offset,appVarPP);
     for(u_int j=0; j<calleeLiveness->GetLength(); j+=3) {
       u_int identifier =
 	Store::DirectWordToInt(calleeLiveness->Sub(j)) + idOffset;      
@@ -912,13 +313,10 @@ Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
     }    
     offsetTable[appVarPP] = maxEndPoint; // + 1 ???
     offset += maxEndPoint; // + 1;
-//     fprintf(stderr,"offset %d, maxEndPoint %d\n",offset,maxEndPoint);
   }
   // compute offsets for caller intervals
-//   fprintf(stderr,"compute offsets:\n");
   for(u_int i=1; i<callerMaxPP; i++) {
     offsetTable[i] += offsetTable[i-1];
-//     fprintf(stderr,"pp %d -> %d\n",i,offsetTable[i]);
   }
   // copy the caller intervals
   u_int l2Length = liveness->GetLength();
@@ -955,203 +353,319 @@ Vector *ByteCodeInliner::InlineAnalyser::MergeLiveness() {
     newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
     newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
   }
-//   fprintf(stderr,"liveness1:\n");
-//   for(u_int i=0; i<l1Length; i+=3)
-//     fprintf(stderr," %d -> [%d,%d]\n",liveness1[i],liveness1[i+1],liveness1[i+2]);
-//   fprintf(stderr,"\n");
-//   fprintf(stderr,"newLiveness:\n");
-//   PrintLiveness(newLiveness);    
-//   u_int oldStart = 0;
-//   for(u_int i=1; i<l1Length+l2Length; i+=3) {
-//     u_int start = Store::DirectWordToInt(newLiveness->Sub(i));
-//     if(oldStart > start) {
-//       fprintf(stderr,"liveness interval is NOT sorted!\n");
-//     }
-//     oldStart = start;
-//   }
   return newLiveness;  
 }
 
-class DriverStack {
+// compute program points of appvar instructions
+
+class ControlStack {
 private:
-  TagVal **stack;
-  s_int top, size;
-public:
-  DriverStack(u_int s = 100) : top(-1), size(s) {
-    stack = new TagVal*[size];
-  }
-  ~DriverStack() {
-    delete[] stack;
-  }
-  void Push(TagVal *v) {
-    if(v == INVALID_POINTER)
-      return;
-    if( ++top >= size ) {
+  u_int *stack;
+  u_int size;
+  s_int top;
+  void Push(u_int item) {
+    if( ++top >= size ) {	
+      u_int oldSize = size;
       size = size * 3 / 2;
-      TagVal **newStack = new TagVal*[size];
-      memcpy(newStack,stack,size * sizeof(TagVal*));
+      u_int *newStack = new u_int[size];
+      memcpy(newStack,stack,oldSize * sizeof(u_int));
       delete[] stack;
       stack = newStack;
     }
-    stack[top] = v;
+    stack[top] = item;
   }
-  TagVal *Top() {
-    return stack[top];
+  u_int Pop() { return stack[top--]; }
+public:
+  enum { VISIT, INC, ANALYSE_APPVAR,STOP };
+  ControlStack(u_int s = 400) : size(s), top(-1) { stack = new u_int[size]; }
+  u_int PopInt() { return Pop(); }
+  u_int PopCommand() { return Pop(); }
+  TagVal *PopInstr() { return (TagVal *) Pop(); }
+  word PopWord() { return (word) Pop(); }
+  TagVal *PopTagVal() { return (TagVal *) Pop(); }
+  void PushInstr(word instr) {
+    Push((u_int) (TagVal::FromWordDirect(instr)));
+    Push(VISIT);
   }
-  TagVal *Pop() {
-    return stack[top--];
+  void PushInc() { Push(1); Push(INC); }
+  void PushInc(u_int i) { Push(i); Push(INC); }
+  void PushAnalyseAppVar(TagVal *instr) {
+    Push((u_int) instr);
+    Push(ANALYSE_APPVAR);
   }
-  bool Empty() {
-    return (top < 0);
-  }
+  void PushStop() { Push(STOP); }
+  bool Empty() { return top == -1; }
+  s_int GetTopIndex() { return top; }
+  void SetTopIndex(s_int index) { top = index; }
 };
 
-void ByteCodeInliner::Driver(TagVal *instr, InlineAnalyser *analyser) {
-  DriverStack stack;
+class PPAnalyser {
+private:
+  u_int programPoint;
+  ControlStack stack;
+    
+public:
+  PPAnalyser() : programPoint(0) {}
+  void RunAnalysis(TagVal *instr, InlineAnalyser *analyser);
+  u_int GetMaxPP() { return programPoint; }
+};
+
+void PPAnalyser::RunAnalysis(TagVal *instr, InlineAnalyser *analyser) {
   IntMap *stamps = IntMap::New(100); // remember control flow merge points
-  stack.Push(instr);
-  while( !stack.Empty() ) {
-    instr = stack.Pop();
-    analyser->Count(instr);
-    switch (AbstractCode::GetInstr(instr)) {
-    case AbstractCode::Raise:
-    case AbstractCode::Reraise:
-    case AbstractCode::Return:
-      break;
-    case AbstractCode::EndHandle:
-    case AbstractCode::EndTry:
-      stack.Push(TagVal::FromWordDirect(instr->Sel(0))); 
-      break;
-    case AbstractCode::Kill:
-      stack.Push(TagVal::FromWordDirect(instr->Sel(1)));
-      break;
-    case AbstractCode::GetRef:
-    case AbstractCode::GetTup:
-    case AbstractCode::PutNew:
-    case AbstractCode::PutRef:
-    case AbstractCode::PutTup:
-    case AbstractCode::PutVar:
-    case AbstractCode::PutVec:
-      stack.Push(TagVal::FromWordDirect(instr->Sel(2))); 
-      break;
-    case AbstractCode::Close:
-    case AbstractCode::LazyPolySel:
-    case AbstractCode::PutCon:
-    case AbstractCode::PutPolyRec:
-    case AbstractCode::Sel: 
-    case AbstractCode::Specialize:
-      stack.Push(TagVal::FromWordDirect(instr->Sel(3))); 
-      break;
-    case AbstractCode::PutTag:
-      stack.Push(TagVal::FromWordDirect(instr->Sel(4))); 
-      break;
-    case AbstractCode::AppPrim:
+  stack.PushStop();
+  stack.PushInstr(instr->ToWord());
+  for(;;) {
+    switch(stack.PopCommand()) {
+    case ControlStack::ANALYSE_APPVAR:
       {
-	TagVal *contOpt = TagVal::FromWord(instr->Sel(2));
-	if(contOpt != INVALID_POINTER) {
-	  Tuple *tup = Tuple::FromWordDirect(contOpt->Sel(0));
-	  stack.Push(TagVal::FromWordDirect(tup->Sel(1)));
-	}
+	TagVal *instr = stack.PopInstr();
+	analyser->AnalyseAppVar(instr,programPoint);
       }
       break;
-    case AbstractCode::AppVar:
-      {
-	analyser->AnalyseAppVar(instr);
-	TagVal *contOpt = TagVal::FromWord(instr->Sel(3));
-	if(contOpt != INVALID_POINTER) {
-	  Tuple *tup = Tuple::FromWordDirect(contOpt->Sel(0));
-	  stack.Push(TagVal::FromWordDirect(tup->Sel(1)));
-	}
-      }
-      break;
-    case AbstractCode::Try:
-      stack.Push(TagVal::FromWordDirect(instr->Sel(3)));
-      stack.Push(TagVal::FromWordDirect(instr->Sel(0)));
-      break;
-    case AbstractCode::IntTest:
-    case AbstractCode::RealTest:
-    case AbstractCode::StringTest:
-    case AbstractCode::VecTest:
-      {
-	stack.Push(TagVal::FromWordDirect(instr->Sel(2)));
-	Vector *tests = Vector::FromWordDirect(instr->Sel(1));
-	for (u_int i = tests->GetLength(); i--; ) {
-	  Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	  stack.Push(TagVal::FromWordDirect(pair->Sel(1)));
-	}
-      }
-      break;
-    case AbstractCode::CompactIntTest:
-      {
-	stack.Push(TagVal::FromWordDirect(instr->Sel(3)));
-	Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	for (u_int i = tests->GetLength(); i--; ) {
-	  stack.Push(TagVal::FromWordDirect(tests->Sub(i)));
-	}	
-      }
-      break;
-    case AbstractCode::ConTest:
-      {
-	stack.Push(TagVal::FromWordDirect(instr->Sel(3)));
-	Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
-	for(u_int i = testsN->GetLength(); i--; ) {
-	  Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	  stack.Push(TagVal::FromWordDirect(triple->Sel(2)));
-	}
-	Vector *tests0 = Vector::FromWordDirect(instr->Sel(1));
-	for(u_int i = tests0->GetLength(); i--; ) {
-	  Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-	  stack.Push(TagVal::FromWordDirect(pair->Sel(1)));
-	}
-      }
-      break;
-    case AbstractCode::TagTest:
-      {
-	stack.Push(TagVal::FromWordDirect(instr->Sel(4)));
-	Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
-	for(u_int i = testsN->GetLength(); i--; ) {
-	  Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	  stack.Push(TagVal::FromWordDirect(triple->Sel(2)));
-	}
-	Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
-	for(u_int i = tests0->GetLength(); i--; ) {
-	  Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-	  stack.Push(TagVal::FromWordDirect(pair->Sel(1)));
-	}
-      }
-      break;
-    case AbstractCode::CompactTagTest:
-      {
-	TagVal *elseInstrOpt = TagVal::FromWord(instr->Sel(3));
-	if(elseInstrOpt != INVALID_POINTER)
-	  stack.Push(TagVal::FromWordDirect(elseInstrOpt->Sel(0)));
-	Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	for(u_int i = tests->GetLength(); i--; ) {
-	  Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	  stack.Push(TagVal::FromWordDirect(pair->Sel(1)));
-	}	
-      }
-      break;
-    case AbstractCode::Shared:
-      {
-	word stamp = instr->Sel(0);
-	if(!stamps->IsMember(stamp)) {
-	  stamps->Put(stamp,Store::IntToWord(0)); 
-	  stack.Push(TagVal::FromWordDirect(instr->Sel(1)));
-	}
-      }
-      break;
-    default:
-      fprintf(stderr,"ByteCodeInliner::Driver: invalid abstractCode tag %d\n",
-	      (u_int)AbstractCode::GetInstr(instr));
+    case ControlStack::STOP:
       return;
+    case ControlStack::INC:
+      {
+	u_int increment = stack.PopInt();
+	programPoint += increment;
+      }
+      break;	
+      // visit nodes and count program points
+    case ControlStack::VISIT: 
+      {
+	TagVal *instr = stack.PopInstr();
+	analyser->Count(instr);
+	switch(AbstractCode::GetInstr(instr)) {
+	case AbstractCode::EndTry:
+	case AbstractCode::EndHandle:
+	  stack.PushInstr(instr->Sel(0));
+	  break;
+	case AbstractCode::Kill:
+	  stack.PushInstr(instr->Sel(1));
+	  break;
+	case AbstractCode::PutVar:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(2));
+	  break;
+	case AbstractCode::PutNew:
+	  stack.PushInc();
+	  stack.PushInstr(instr->Sel(2));
+	  break;
+	case AbstractCode::PutTag:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(4)); 
+	  break;
+	case AbstractCode::PutCon:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(3)); 
+	  break;
+	case AbstractCode::PutRef:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(2));
+	  break;
+	case AbstractCode::PutTup:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(2));
+	  break;
+	case AbstractCode::PutPolyRec:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(3));
+	  break;
+	case AbstractCode::PutVec:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(2));
+	  break;
+	case AbstractCode::Close:
+	case AbstractCode::Specialize:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(3));
+	  break;
+	case AbstractCode::AppPrim:
+	  {
+	    TagVal *idDefInstrOpt = TagVal::FromWord(instr->Sel(2));
+	    if(idDefInstrOpt == INVALID_POINTER) {
+	      programPoint++;
+	    } else {
+	      Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
+	      stack.PushInc(2);
+	      stack.PushInstr(idDefInstr->Sel(1));
+	    }
+	  }
+	  break;
+	case AbstractCode::AppVar:
+	  {
+	    TagVal *idDefsInstrOpt = TagVal::FromWord(instr->Sel(3));
+	    if(idDefsInstrOpt == INVALID_POINTER) {
+	      stack.PushInc();
+	      stack.PushAnalyseAppVar(instr);
+	    } else {
+	      Tuple *idDefsInstr = 
+		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+	      stack.PushInc();
+	      stack.PushAnalyseAppVar(instr);
+	      stack.PushInc();
+	      stack.PushInstr(idDefsInstr->Sel(1));
+	    }
+	  }
+	  break;
+	case AbstractCode::GetRef:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(2)); 
+	  break;
+	case AbstractCode::GetTup:
+	  stack.PushInc();
+	  stack.PushInstr(instr->Sel(2));
+	  break;
+	case AbstractCode::Sel:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(3)); 
+	  break;
+	case AbstractCode::LazyPolySel:
+	  stack.PushInc(2);
+	  stack.PushInstr(instr->Sel(3)); 
+	  break;
+	case AbstractCode::Raise:
+	case AbstractCode::Reraise:
+	  programPoint++;
+	  break;
+	case AbstractCode::Try:
+	  stack.PushInstr(instr->Sel(0));
+	  stack.PushInc();
+	  stack.PushInstr(instr->Sel(3));
+	  break;
+	case AbstractCode::CompactIntTest:
+	  {
+	    stack.PushInc();
+	    Vector *tests = Vector::FromWordDirect(instr->Sel(2)); 
+	    u_int nTests = tests->GetLength();
+	    for(u_int i=0; i<nTests; i++)
+	      stack.PushInstr(tests->Sub(i));
+	    stack.PushInstr(instr->Sel(3));
+	  }
+	  break;
+	case AbstractCode::IntTest:
+	case AbstractCode::RealTest:
+	case AbstractCode::StringTest:
+	  {
+	    stack.PushInc();
+	    Vector *tests = Vector::FromWordDirect(instr->Sel(1)); 
+	    u_int nTests = tests->GetLength();
+	    for(u_int i=0; i<nTests; i++) {
+	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+	      stack.PushInstr(pair->Sel(1));
+	    }
+	    stack.PushInstr(instr->Sel(2));
+	  }
+	  break;
+	case AbstractCode::TagTest:
+	  {	  
+	    stack.PushInc();
+	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
+	    u_int nTests0 = tests0->GetLength(); 
+	    for(u_int i=0; i<nTests0; i++) {
+	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));
+	      stack.PushInstr(pair->Sel(1));
+	    }	  
+	    Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
+	    u_int nTestsN = testsN->GetLength(); 
+	    for(u_int i=0; i<nTestsN; i++) {
+	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
+	      stack.PushInc();
+	      stack.PushInstr(triple->Sel(2));
+	    }
+	    stack.PushInstr(instr->Sel(4));
+	  }
+	  break;
+	case AbstractCode::CompactTagTest:
+	  {
+	    stack.PushInc();
+	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
+	    u_int nTests = tests->GetLength(); 
+	    for(u_int i = 0; i<nTests; i++) {
+	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+	      TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
+	      if(idDefsOpt != INVALID_POINTER) {
+		stack.PushInc();
+	      }
+	      stack.PushInstr(pair->Sel(1));
+	    }
+	    TagVal *elseInstrOpt = TagVal::FromWord(instr->Sel(3));
+	    if(elseInstrOpt != INVALID_POINTER)
+	      stack.PushInstr(elseInstrOpt->Sel(0));
+	  }
+	  break;
+	case AbstractCode::ConTest:
+	  {
+	    stack.PushInc();
+	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(1));
+	    u_int nTests0 = tests0->GetLength(); 
+	    Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
+	    u_int nTestsN = testsN->GetLength(); 
+	    for(u_int i=0; i<nTests0; i++) {
+	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));
+	      stack.PushInstr(pair->Sel(1));
+	    }	  
+	    for(u_int i=0; i<nTestsN; i++) {
+	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
+	      stack.PushInc();
+	      stack.PushInstr(triple->Sel(2));
+	    }
+	    stack.PushInstr(instr->Sel(3));
+	  }
+	  break;
+	case AbstractCode::VecTest:
+	  {
+	    stack.PushInc();	  
+	    Vector *tests = Vector::FromWordDirect(instr->Sel(1));
+	    u_int nTests = tests->GetLength(); 
+	    for(u_int i=0; i<nTests; i++) {
+	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+	      Vector *idDefs = Vector::FromWordDirect(pair->Sel(0));
+	      if(idDefs->GetLength() > 0) {
+		stack.PushInc();
+	      }
+	      stack.PushInstr(pair->Sel(1));
+	    }
+	    stack.PushInstr(instr->Sel(2));
+	  }
+	  break;
+	case AbstractCode::Shared:
+	  {
+	    word stamp = instr->Sel(0);
+	    if(!stamps->IsMember(stamp)) {
+	      stamps->Put(stamp,Store::IntToWord(programPoint));
+	      stack.PushInstr(instr->Sel(1));
+	    }
+	  }
+	  break;
+	case AbstractCode::Return:
+	  {
+	    programPoint++;
+	  }
+	  break;
+	default:
+	  fprintf(stderr,"invalid abstractCode tag %d\n",
+		  (u_int)AbstractCode::GetInstr(instr));
+	  return;
+	}
+      }
     }
   }
 }
 
+Map *ByteCodeInliner::inlineCandidates;
+
+void ByteCodeInliner::Driver(TagVal *instr, InlineAnalyser *analyser) {
+  PPAnalyser a;
+  a.RunAnalysis(instr,analyser);
+  analyser->SetMaxPP(a.GetMaxPP());
+}
+
 InlineInfo *ByteCodeInliner::AnalyseInlining(TagVal *abstractCode) {
+//   static u_int c = 0;
 //   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-//   std::fprintf(stderr, "analyse inlining for %p %s:%d.%d, nLocals %d\n",
+//   std::fprintf(stderr, "%d. analyse inlining for %p %s:%d.%d, nLocals %d\n",
+// 	       ++c,
 // 	       abstractCode,
 // 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
 // 	       Store::DirectWordToInt(coord->Sel(1)),
@@ -1159,24 +673,10 @@ InlineInfo *ByteCodeInliner::AnalyseInlining(TagVal *abstractCode) {
 // 	       GetNumberOfLocals(abstractCode)); 
 //   AbstractCode::Disassemble(stderr,
 // 			    TagVal::FromWordDirect(abstractCode->Sel(5)));
-
-  Tuple *triple = LivenessAnalyser::ComputeLiveness(abstractCode);
-  Map *appVarPPs = Map::FromWordDirect(triple->Sel(1));
-  u_int maxPP = Store::DirectWordToInt(triple->Sel(2));
-
-//     Vector *liveness2 = LivenessAnalyser::ComputeLiveness(abstractCode);
-//     Vector *liveness1 = Vector::FromWordDirect(abstractCode->Sel(6));
-//   if(!LivenessAnalyser::Check(liveness1,liveness2)) {
-//     fprintf(stderr,"original liveness:\n");
-//     PrintLiveness(liveness1);
-//     fprintf(stderr,"computed liveness:\n");
-//     PrintLiveness(liveness2);
-//     fprintf(stderr,"\n\n");
-//   }
   
-  InlineAnalyser inliner(abstractCode,appVarPPs,maxPP);
   inlineCandidates->Put(abstractCode->Sel(5),Store::IntToWord(0));  
+  InlineAnalyser inliner(abstractCode,inlineCandidates);
   Driver(TagVal::FromWordDirect(abstractCode->Sel(5)),&inliner);
-  inlineCandidates->Remove(abstractCode->ToWord());
+  inlineCandidates->Remove(abstractCode->Sel(5));
   return inliner.ComputeInlineInfo();
 }
