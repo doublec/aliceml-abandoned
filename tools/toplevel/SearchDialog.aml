@@ -12,6 +12,7 @@
  *)
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure DialogUtils from "DialogUtils"
 import structure Buffer from "Buffer"
 import structure Gui from "Gui"
 
@@ -67,6 +68,7 @@ structure SearchDialog =
               | SOME s => (searchSignal := SOME (Gtk.signalConnect(Gui.search_ok_button, "clicked", doSearch id));
                            Gtk.signalDisconnect(Gui.search_ok_button, s))
 
+
         fun search id =
             (reconnect id;
              case Buffer.getSelection id of
@@ -81,6 +83,7 @@ structure SearchDialog =
              Gtk.Widget.showAll searchDialog;
              Gtk.Widget.map searchDialog;
 	     Gtk.Window.present searchDialog;
+             DialogUtils.moveToMouse searchDialog;
 	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
 	     Gtk.Widget.grabFocus Gui.searchString)
 
@@ -105,6 +108,7 @@ structure SearchDialog =
              Gtk.Widget.showAll searchDialog;
              Gtk.Widget.map searchDialog;
 	     Gtk.Window.present searchDialog;
+	     DialogUtils.moveToMouse searchDialog;
 	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
 	     Gtk.Widget.grabFocus Gui.searchString)
 

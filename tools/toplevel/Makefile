@@ -4,6 +4,7 @@ INSTALLBINTO = `alice-config --alicebindir`
 SOURCES = \
 	Main.aml \
 	CORE_TOPLEVEL-sig.aml CoreToplevel.aml \
+	DialogUtils.aml \
 	TOPLEVEL-sig.aml \
 	TextToplevel.aml \
 	GuiToplevel.aml \

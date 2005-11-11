@@ -12,9 +12,10 @@
  *
  *)
 
-import structure Gui    from "Gui"
-import structure Gtk    from "x-alice:/lib/gtk/Gtk"
-import structure Config from "x-alice:/lib/system/Config"
+import structure Gui            from "Gui"
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Config         from "x-alice:/lib/system/Config"
+import structure DialogUtils    from "DialogUtils"
 
 structure AboutDialog =
     struct
@@ -76,6 +77,7 @@ structure AboutDialog =
        fun openDialog() =
                (Gtk.Window.setPosition (dialog, Gtk.WindowPosition.MOUSE);
 		Gtk.Widget.showAll dialog;
-                Gtk.Widget.map dialog)
+                Gtk.Widget.map dialog;
+                DialogUtils.moveToMouse dialog)
 
     end
