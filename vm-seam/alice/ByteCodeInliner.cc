@@ -187,6 +187,8 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
       if(CheckCycle(acc)) return; // break inline cycle
       InlineInfo *inlineInfo = bcc->GetInlineInfo();
       u_int nNodes = inlineInfo->GetNNodes();
+      // assert that shared appvar nodes are not inlined
+      // TODO: solve this problem
       if(nNodes <= INLINE_LIMIT) {
 	Append(key,instr,appVarPP,acc,closure,inlineInfo);
 	// adjust counter
@@ -214,6 +216,8 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
 	} else
 	  inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
 	u_int nNodes = inlineInfo->GetNNodes();
+	// assert that shared appvar nodes are not inlined
+	// TODO: solve this problem
 	if(nNodes <= INLINE_LIMIT) {
 	  Append(key,instr,appVarPP,lazyBCC->GetAbstractCode(),
 		 closure,inlineInfo);
@@ -225,25 +229,25 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
   }
 }
 
-s_int ExtractPP(TagVal *instr, Vector *liveness) {
-  TagVal *idDefsInstrOpt = TagVal::FromWord(instr->Sel(3));
-  if(idDefsInstrOpt == INVALID_POINTER)
-    return -1;
-  Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
-  Vector *fargs = Vector::FromWordDirect(idDefsInstr->Sel(0));
-  for(u_int i = 0; i<fargs->GetLength(); i++) {
-    TagVal *idDefOpt = TagVal::FromWord(fargs->Sub(i));
-    if(idDefOpt != INVALID_POINTER) {
-      u_int id = Store::DirectWordToInt(idDefOpt->Sel(0));
-      for(u_int j = 0; i<liveness->GetLength(); i+=3) {
-	if(Store::DirectWordToInt(liveness->Sub(j)) == id) {
-	  return Store::DirectWordToInt(liveness->Sub(j+1));
-	}
-      }
-    }
-  }
-  return -1;
-}
+// s_int ExtractPP(TagVal *instr, Vector *liveness) {
+//   TagVal *idDefsInstrOpt = TagVal::FromWord(instr->Sel(3));
+//   if(idDefsInstrOpt == INVALID_POINTER)
+//     return -1;
+//   Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+//   Vector *fargs = Vector::FromWordDirect(idDefsInstr->Sel(0));
+//   for(u_int i = 0; i<fargs->GetLength(); i++) {
+//     TagVal *idDefOpt = TagVal::FromWord(fargs->Sub(i));
+//     if(idDefOpt != INVALID_POINTER) {
+//       u_int id = Store::DirectWordToInt(idDefOpt->Sel(0));
+//       for(u_int j = 0; i<liveness->GetLength(); i+=3) {
+// 	if(Store::DirectWordToInt(liveness->Sub(j)) == id) {
+// 	  return Store::DirectWordToInt(liveness->Sub(j+1));
+// 	}
+//       }
+//     }
+//   }
+//   return -1;
+// }
 
 void InlineAnalyser::Append(word key, TagVal *instr,
 			    u_int appVarPP,
@@ -296,14 +300,14 @@ Vector *InlineAnalyser::MergeLiveness() {
     Tuple *tup = Tuple::FromWordDirect(livenessInfo.Sub(i));
     Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
     u_int idOffset = Store::WordToInt(tup->Sel(1));
-    u_int appVarPP = callerMaxPP - Store::DirectWordToInt(tup->Sel(2));
+    u_int appVarPP = callerMaxPP - Store::DirectWordToInt(tup->Sel(2)) + 1;
     u_int maxEndPoint = 0;
     for(u_int j=0; j<calleeLiveness->GetLength(); j+=3) {
       u_int identifier =
 	Store::DirectWordToInt(calleeLiveness->Sub(j)) + idOffset;      
-      u_int startPoint =
-	Store::DirectWordToInt(calleeLiveness->Sub(j+1)) + offset + appVarPP; 
-      u_int endPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+2));      
+      u_int startPoint = 
+	Store::DirectWordToInt(calleeLiveness->Sub(j+1)) + offset + appVarPP;
+      u_int endPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+2)); 
       if(maxEndPoint < endPoint) 
 	maxEndPoint = endPoint;
       endPoint += offset + appVarPP;
@@ -311,10 +315,10 @@ Vector *InlineAnalyser::MergeLiveness() {
       liveness1[index++] = startPoint;
       liveness1[index++] = endPoint; 
     }    
-    offsetTable[appVarPP] = maxEndPoint; // + 1 ???
-    offset += maxEndPoint; // + 1;
+    offsetTable[appVarPP] = maxEndPoint + 1;
+    offset += maxEndPoint + 1;
   }
-  // compute offsets for caller intervals
+  // propagate offsets
   for(u_int i=1; i<callerMaxPP; i++) {
     offsetTable[i] += offsetTable[i-1];
   }
@@ -496,14 +500,13 @@ void PPAnalyser::RunAnalysis(TagVal *instr, InlineAnalyser *analyser) {
 	  {
 	    TagVal *idDefsInstrOpt = TagVal::FromWord(instr->Sel(3));
 	    if(idDefsInstrOpt == INVALID_POINTER) {
-	      stack.PushInc();
+	      programPoint++;
 	      stack.PushAnalyseAppVar(instr);
 	    } else {
 	      Tuple *idDefsInstr = 
 		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
-	      stack.PushInc();
 	      stack.PushAnalyseAppVar(instr);
-	      stack.PushInc();
+	      stack.PushInc(2);
 	      stack.PushInstr(idDefsInstr->Sel(1));
 	    }
 	  }
