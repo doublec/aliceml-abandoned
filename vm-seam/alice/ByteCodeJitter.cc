@@ -21,6 +21,7 @@
 #include "alice/ByteCodeAlign.hh"
 #include "alice/ByteCodeBuffer.hh"
 #include "alice/ByteCode.hh"
+#include "alice/ByteCodeConstProp.hh"
 
 #include <sys/time.h>
 
@@ -37,8 +38,6 @@
 //   }
 
 #define RELATIVE_JUMP
-#define DO_INLINING
-//#undef DO_INLINING
 
 using namespace ByteCodeInstr;
 
@@ -2007,7 +2006,34 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     loadInstr = load_tagval;
     testInstr = isFastTest ? ctagtest_direct : ctagtest;
   }
-
+#ifdef DO_CONSTANT_PROPAGATION
+  // check first if constant propagation has found out something interesting
+  if(tagtestInfo->IsMember(pc->ToWord())) {
+    Tuple *pair = Tuple::FromWordDirect(tagtestInfo->Get(pc->ToWord()));
+    // compile binding
+    TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
+    if(idDefsOpt != INVALID_POINTER) {
+      Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
+      u_int src = testVal;
+      for (u_int j = idDefs->GetLength(); j--; ) {
+	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
+	if( idDef != INVALID_POINTER ) { // not wildcard
+	  u_int dst = IdToReg(idDef->Sel(0));
+#ifdef DO_REG_ALLOC
+	  if(dst == src && j > 0) {
+	    u_int S = GetNewScratch();
+	    SET_INSTR_2R(PC,load_reg,S,src);
+	    src = S;
+	  }
+#endif
+	  SET_INSTR_2R1I(PC,loadInstr,dst,src,j);
+	}
+      }
+    }
+    return TagVal::FromWordDirect(pair->Sel(1));
+  }
+#endif
+  // this is the normal case
   // create needed datastructures
   u_int newTestsSize = isFastTest ? maxTag : size;
   SET_INSTR_1R1I(PC,testInstr,testVal,newTestsSize);
@@ -2849,7 +2875,7 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *abstractCode,
   INSERT_DEBUG_MSG("inline entry")
 #ifdef DEBUG_DISASSEMBLE
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  std::fprintf(stderr, "inline function at %s:%d.%d depth %d\n",
+  std::fprintf(stderr, "  inline function at %s:%d.%d depth %d\n",
 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
 	       Store::DirectWordToInt(coord->Sel(1)),
 	       Store::DirectWordToInt(coord->Sel(2)),
@@ -2961,7 +2987,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
 #ifdef DEBUG_DISASSEMBLE 
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  std::fprintf(stderr, "%d. compile function (%p) at %s:%d.%d nArgs=%d\n\n",
+  std::fprintf(stderr, "\n%d. compile function (%p) at %s:%d.%d nArgs=%d\n",
 	       ++invocations, abstractCode->ToWord(),
 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
 	       Store::DirectWordToInt(coord->Sel(1)),
@@ -2985,6 +3011,10 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
     inlineInfo = ByteCodeInliner::AnalyseInlining(abstractCode);
   } else
     inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
+  // run constant propagation
+#ifdef DO_CONSTANT_PROPAGATION
+  tagtestInfo = ByteCodeConstProp::RunAnalysis(abstractCode, inlineInfo);
+#endif
 #endif
 
 //    timeval startTime;
@@ -3088,7 +3118,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 //   codeSize += code->GetSize();
 //   fprintf(stderr,"codeSize %d\n",codeSize);
 #ifdef DEBUG_DISASSEMBLE
-  //  if(invocations>600) {
+//  if(invocations>600) {
   fprintf(stderr,"-----------------\ncompiled code:\n");
 #ifdef THREADED
   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
@@ -3099,7 +3129,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 #endif
   fprintf(stderr,"-------------\n");
 #endif
-  //}
+  //  }
 //   static double totalTime = 0;
 //   timeval stopTime;
 //   gettimeofday(&stopTime,0);

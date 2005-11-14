@@ -24,6 +24,16 @@
 #define DO_REG_ALLOC
 //#undef DO_REG_ALLOC
 
+#define DO_INLINING
+//#undef DO_INLINING
+
+// #ifdef DO_INLINING
+// #define DO_CONSTANT_PROPAGATION
+// #else
+// #undef DO_CONSTANT_PROPAGATION
+// #endif
+#undef DO_CONSTANT_PROPAGATION
+
 // We can try to omit a range check if we fill the missing slots in the
 // jump table with the PC of the "else" part. This optimization is used if
 // actualNumberOfTests * OPTIMIZE_TAGTEST_LEVEL > maxTag
@@ -90,6 +100,10 @@ private:
   u_int localOffset;
   Vector *currentFormalArgs;
 
+  // result of constant propagation
+#ifdef DO_CONSTANT_PROPAGATION
+  Map *tagtestInfo;
+#endif
   // patch forward jumps in CompileInlineFunctions
   class PatchTable {
   private:
