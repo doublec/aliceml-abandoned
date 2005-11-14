@@ -25,7 +25,8 @@ libalicebase_a_SOURCES = \
 	ByteConcreteCode.cc \
 	ByteCodeInterpreter.cc \
 	ByteCodeJitter.cc \
-	ByteCodeInliner.cc
+	ByteCodeInliner.cc \
+	ByteCodeConstProp.cc
 
 pkginclude_HEADERS = \
 	AbstractCode.hh \
@@ -56,5 +57,6 @@ pkginclude_HEADERS = \
 	ByteCodeFrame.hh \
 	ByteCodeInterpreter.hh \
 	ByteCodeJitter.hh \
-	ByteCodeInliner.hh
+	ByteCodeInliner.hh \
+	ByteCodeConstProp.hh
 
