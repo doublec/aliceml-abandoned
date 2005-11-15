@@ -274,20 +274,8 @@ class ConstProp_MainPass {
 private:
   enum const_kind { 
     INT,
-    REAL,
-    STRING,
-    CELL,              // stores cell content
-    TUPLE,             // stores size of tuple
     TAGVAL,            // stores the tag     
-    // BIGTAGVAL, 
-    CONSTRUCTOR,       // stores contructor
-    CONVAL,            //   --- " -- " --
-    VECTOR,            // stores length of vector
-    POLYRECORD,
-    CLOSURE,    
-    IMMEDIATE, // untyped value
     UNKNOWN       
-    // , UNKNOWN_CONST
   };
 
   u_int nLocals;
@@ -307,8 +295,7 @@ private:
 
   // some helpers
   u_int IdToId(word id) {
-    u_int index = Store::DirectWordToInt(id);
-    return index + localOffset;
+    return Store::DirectWordToInt(id) + localOffset;
   }
   TagVal *LookupSubst(word idRef) {
     TagVal *tagVal = TagVal::FromWordDirect(idRef);
@@ -400,16 +387,23 @@ private:
     Assert(constants->GetLength() == constants2->GetLength());
     // this currently only works for tag values
     for(u_int i = constants->GetLength(); i--; ) {
-      if(ExtractKind(i) == TAGVAL && ExtractKind(constants2,i) == TAGVAL) {	
+      u_int kind1 = ExtractKind(i);
+      u_int kind2 = ExtractKind(constants2,i);
+      if(kind1 == TAGVAL && kind2 == TAGVAL) {	
 	TagVal *info1 = TagVal::FromWordDirect(constants->Sub(i));
 	TagVal *info2 = TagVal::FromWordDirect(constants2->Sub(i));
 	u_int tag1 = Store::DirectWordToInt(info1->Sel(0));
 	u_int tag2 = Store::DirectWordToInt(info2->Sel(0));	
 	if(tag1 == tag2) // keep the information
 	  continue;
+      } else if (kind1 == INT && kind2 == INT) {
+	TagVal *info1 = TagVal::FromWordDirect(constants->Sub(i));
+	TagVal *info2 = TagVal::FromWordDirect(constants2->Sub(i));
+	if(Store::DirectWordToInt(info1->Sel(0)) == 
+	   Store::DirectWordToInt(info2->Sel(0))) {
+	  continue; // keep this information
+	}
       }
-      // TODO: can we do something with untyped immediates ???
-      // Perhaps we could compare the blocks.
       constants->Update(i, wUnkownVal); // reset
     }
   }
@@ -494,25 +488,23 @@ void ConstProp_MainPass::InlineCCC(Vector *args, Vector *formalArgs) {
 	    constants->Update(id, constants->Sub(index));
 	  }
 	  break;
-	case AbstractCode::Immediate:
-	  {
-	    // We simply store the (untyped) immediate in the constant
-	    // table. If it is used in a typed context, e.g. tag test, we
-	    // transform it into a typed constant and update the constant
-	    // table.
-	    TagVal *info = TagVal::New(IMMEDIATE, 1);
-	    info->Init(0, idRef->Sel(0));
-	    constants->Update(id, info->ToWord());
-	  }
-	  break;
 	case AbstractCode::Global:
 	  {
 	    u_int index = Store::DirectWordToInt(idRef->Sel(0));
 	    TagVal *valOpt = TagVal::FromWord(subst->Sub(index));
-	    if(valOpt != INVALID_POINTER) {
-	      TagVal *info = TagVal::New(IMMEDIATE, 1);
-	      info->Init(0, valOpt->Sel(0));
-	      constants->Update(id, info->ToWord());	    
+	    if(valOpt == INVALID_POINTER)
+	      break;
+	    idRef = valOpt;
+	    // fall through
+	  }
+	case AbstractCode::Immediate:
+	  {
+	    word val = idRef->Sel(0);
+	    if (PointerOp::IsInt(val)) {
+	      // an integer can also be a nullary constructor
+	      TagVal *info = TagVal::New(INT, 1);
+	      info->Init(0, val);
+	      constants->Update(id, info->ToWord());
 	    }
 	  }
 	  break;
@@ -522,25 +514,25 @@ void ConstProp_MainPass::InlineCCC(Vector *args, Vector *formalArgs) {
       }
     }
   } else {
-    switch(nFormalArgs) {
-    case 0:
-      break;
-    case 1:
-      {
-	if(nArgs == 0) { // this should mainly an assertion
-	  // in this case argument 0 is set to unit
-	  TagVal *info = TagVal::New(INT,1);
-	  info->Init(0, Store::IntToWord(0));
-	  u_int index = IdToId(0);
-	  constants->Update(index, info->ToWord());
-	}
-      }
-      break;
-    default:
-      // We could pass some information about the constructed or 
-      // deconstructed tuple.
-      ;
-    }
+//     switch(nFormalArgs) {
+//     case 0:
+//       break;
+//     case 1:
+//       {
+// 	if(nArgs == 0) { // this should mainly an assertion
+// 	  // in this case argument 0 is set to unit
+// 	  TagVal *info = TagVal::New(INT,1);
+// 	  info->Init(0, Store::IntToWord(0));
+// 	  u_int index = IdToId(0);
+// 	  constants->Update(index, info->ToWord());
+// 	}
+//       }
+//       break;
+//     default:
+//       // We could pass some information about the constructed or 
+//       // deconstructed tuple.
+//       ;
+//     }
   }
 }
 
@@ -760,19 +752,132 @@ void ConstProp_MainPass::Run() {
 	  break;
 	case AbstractCode::TagTest:
 	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4)));
-	    stack.PushConstTable(CloneConstants());
-	    Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
-	    for(u_int i = testsN->GetLength(); i--; ) {
-	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	      stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
-	      stack.PushConstTable(CloneConstants());
+	    TagVal *idRef = TagVal::FromWordDirect(instr->Sel(0));
+	    u_int tag;
+	    bool isValue = false;
+	    u_int localIndex;
+	    bool isLocal = false;
+	    switch(AbstractCode::GetIdRef(idRef)) {
+	    case AbstractCode::LastUseLocal:
+	    case AbstractCode::Local:
+	      {
+		u_int index = IdToId(idRef->Sel(0));
+		switch(ExtractKind(index)) {
+		case INT:
+		case TAGVAL:
+		  {	
+		    tag = Store::DirectWordToInt(ExtractValue(index));
+		    isValue = true;
+		  }
+		  break;
+		default:
+		  ;
+		}
+		isLocal = true;
+		localIndex = index;
+	      }
+	      break;
+	    case AbstractCode::Global:
+	      {
+		u_int addr = Store::DirectWordToInt(idRef->Sel(0));
+		TagVal *valueOpt = TagVal::FromWord(subst->Sub(addr));
+		if(valueOpt == INVALID_POINTER)
+		  break;
+		idRef = valueOpt;
+		// fall through
+	      }
+	    case AbstractCode::Immediate:
+	      {
+		word immediate = idRef->Sel(0);
+		if(PointerOp::IsInt(immediate)) {
+		  tag = Store::DirectWordToInt(immediate);
+		} else {
+		  Block *block = Store::WordToBlock(immediate);
+		  if (block->GetLabel() == Alice::BIG_TAG) {
+		    BigTagVal *bigTagVal = 
+		      BigTagVal::FromWordDirect(immediate);
+		    tag = bigTagVal->GetTag();
+		  } else {
+		    TagVal *tagVal = TagVal::FromWordDirect(immediate);
+		    tag = tagVal->GetTag();
+		  }
+		}
+		isValue = true;
+	      }
+	      break;
+	    default:
+	      ;
 	    }
-	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
-	    for(u_int i = tests0->GetLength(); i--; ) {
-	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-	      stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
+	    if(isValue) {
+	      static u_int counter = 0;
+	      Vector *tests = Vector::FromWordDirect(instr->Sel(2));
+	      bool tagFound = false;
+	      Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
+	      for(u_int i = testsN->GetLength(); i--; ) {
+		Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
+		if(Store::DirectWordToInt(triple->Sel(0)) == tag) {
+		  fprintf(stderr,"%d. could eliminate tag test %p:",
+			  ++counter,instr);
+		  fprintf(stderr," value has tag %d\n",tag);		  
+		  tagFound = true;
+		  break;
+		}
+	      }
+	      Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
+	      for(u_int i = tests0->GetLength(); i--; ) {
+		Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
+		if(Store::DirectWordToInt(pair->Sel(0)) == tag) {
+		  fprintf(stderr,"%d. could eliminate tag test %p:",
+			  ++counter,instr);
+		  fprintf(stderr," value has tag %d\n",tag);		  
+		  tagFound = true;
+		  break;
+		}
+	      }
+	      if(!tagFound) {
+		// choose else branch
+		fprintf(stderr,"%d. could eliminate tag test %p:",
+			++counter,instr);		  
+		fprintf(stderr," value has tag %d\n",tag);
+	      }
+	    } else if (isLocal) {
+	      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4)));
 	      stack.PushConstTable(CloneConstants());
+	      Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
+	      for(u_int i = testsN->GetLength(); i--; ) {
+		Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
+		Array *constantsCopy = CloneConstants();
+		TagVal *info = TagVal::New(TAGVAL,1);
+		info->Init(0, triple->Sel(0));
+		constantsCopy->Update(localIndex, info->ToWord());
+		stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
+		stack.PushConstTable(constantsCopy);
+	      }
+	      Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
+	      for(u_int i = tests0->GetLength(); i--; ) {
+		Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
+		Array *constantsCopy = CloneConstants();
+		TagVal *info = TagVal::New(TAGVAL,1);
+		info->Init(0, pair->Sel(0));
+		constantsCopy->Update(localIndex, info->ToWord());
+		stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
+		stack.PushConstTable(constantsCopy);
+	      }
+	    } else {
+	      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4)));
+	      stack.PushConstTable(CloneConstants());
+	      Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
+	      for(u_int i = testsN->GetLength(); i--; ) {
+		Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
+		stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
+		stack.PushConstTable(CloneConstants());
+	      }
+	      Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
+	      for(u_int i = tests0->GetLength(); i--; ) {
+		Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
+		stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
+		stack.PushConstTable(CloneConstants());
+	      }
 	    }
 	  }
 	  break;
@@ -789,26 +894,10 @@ void ConstProp_MainPass::Run() {
 	      {
 		u_int index = IdToId(idRef->Sel(0));
 		switch(ExtractKind(index)) {
+		case INT:
 		case TAGVAL:
-		  {		    
+		  {	
 		    tag = Store::DirectWordToInt(ExtractValue(index));
-		    isValue = true;
-		  }
-		  break;
-		case IMMEDIATE:
-		  {
-		    // transform the untyped value into a typed value
-		    word unknown = ExtractValue(index);
-		    TagVal *tagVal = TagVal::FromWord(unknown);
-		    if(tagVal != INVALID_POINTER)
-		      tag = tagVal->GetTag();
-		    else
-		      tag = Store::DirectWordToInt(unknown);
-		    // update the context table with the more specific
-		    // information
-		    TagVal *info = TagVal::New(TAGVAL,1);
-		    info->Init(0, Store::IntToWord(tag));
-		    constants->Update(index, info->ToWord());
 		    isValue = true;
 		  }
 		  break;
@@ -819,30 +908,32 @@ void ConstProp_MainPass::Run() {
 		localIndex = index;
 	      }
 	      break;
-	    case AbstractCode::Immediate:
-	      {
-		word immediate = idRef->Sel(0);
-		TagVal *testTagVal = TagVal::FromWord(immediate);
-		if(testTagVal != INVALID_POINTER)
-		  tag = testTagVal->GetTag();
-		else
-		  tag = Store::DirectWordToInt(immediate);
-		isValue = true;
-	      }
-	      break;
 	    case AbstractCode::Global:
 	      {
 		u_int addr = Store::DirectWordToInt(idRef->Sel(0));
 		TagVal *valueOpt = TagVal::FromWord(subst->Sub(addr));
-		if(valueOpt != INVALID_POINTER) {
-		  word immediate = valueOpt->Sel(0);
-		  TagVal *testTagVal = TagVal::FromWord(immediate);
-		  if(testTagVal != INVALID_POINTER)
-		    tag = testTagVal->GetTag();
-		  else
-		    tag = Store::DirectWordToInt(immediate);
-		  isValue = true;
+		if(valueOpt == INVALID_POINTER)
+		  break;
+		idRef = valueOpt;
+		// fall through
+	      }
+	    case AbstractCode::Immediate:
+	      {
+		word immediate = idRef->Sel(0);
+		if(PointerOp::IsInt(immediate)) {
+		  tag = Store::DirectWordToInt(immediate);
+		} else {
+		  Block *block = Store::WordToBlock(immediate);
+		  if (block->GetLabel() == Alice::BIG_TAG) {
+		    BigTagVal *bigTagVal = 
+		      BigTagVal::FromWordDirect(immediate);
+		    tag = bigTagVal->GetTag();
+		  } else {
+		    TagVal *tagVal = TagVal::FromWordDirect(immediate);
+		    tag = tagVal->GetTag();
+		  }
 		}
+		isValue = true;
 	      }
 	      break;
 	    default:
@@ -870,6 +961,10 @@ void ConstProp_MainPass::Run() {
 		  fprintf(stderr,"%d. could eliminate compact tag %p test:",
 			  ++counter,instr);		  
 		  fprintf(stderr," value has tag %d\n",tag);
+		  Tuple *pair = Tuple::New(2);
+		  pair->Init(0, Store::IntToWord(0));
+		  pair->Init(1, elseInstrOpt->Sel(0));
+		  tagtestInfo->Put(instr->ToWord(),pair->ToWord());
 		} else {
 		  fprintf(stderr,"ERROR: tag %d\n",tag);
 		  AbstractCode::Disassemble(stderr,instr);
