@@ -53,7 +53,8 @@ sig
     val relI : space * setvar * setrel * intvar -> unit
     val relIR : space * setvar * setrel * intvar * boolvar -> unit
     val relII : space * setvar * intrel * intvar -> unit
-    val relN : space * setvar vector * setop * setvar -> unit
+    val relN : space * setop * setvar vector * setvar -> unit
+    val relNI : space * setop * intvar vector * setvar -> unit
 
     val relCSS : space * domain * setop * setvar * setrel * setvar -> unit
     val relSCS : space * setvar * setop * domain * setrel * setvar -> unit

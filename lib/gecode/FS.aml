@@ -88,6 +88,7 @@ struct
    val relIR = UnsafeGecode.set_relIR
    val relII = UnsafeGecode.set_relII
    val relN = UnsafeGecode.set_relN
+   val relNI = UnsafeGecode.set_relNI
 
    val relCSS = UnsafeGecode.set_relCSS
    val relSCS = UnsafeGecode.set_relSCS

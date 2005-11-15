@@ -63,7 +63,8 @@ sig
     val relI : space * setvar * setrel * intvar -> unit
     val relIR : space * setvar * setrel * intvar * boolvar -> unit
     val relII : space * setvar * intrel * intvar -> unit
-    val relN : space * setvar vector * setop * setvar -> unit
+    val relN : space * setop * setvar vector * setvar -> unit
+    val relNI : space * setop * intvar vector * setvar -> unit
 
     val relCSS : space * domain * setop * setvar * setrel * setvar -> unit
     val relSCS : space * setvar * setop * domain * setrel * setvar -> unit
@@ -336,12 +337,22 @@ end
     </P></DD>
 
     <DT>
-      <TT>relN (<I>s, xs, oper, y</I>)</TT>
+      <TT>relN (<I>s, oper, xs, y</I>)</TT>
     </DT>
     <DD>
       <P> Creates a new propagator in <I>s</I> to
 	constrain <I>y</I> to be the result of the n-ary
 	operation <I>oper</I> on the elements of <I>xs</I>.
+    </P></DD>
+
+    <DT>
+      <TT>relNI (<I>s, oper, xs, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	constrain <I>y</I> to be the result of the n-ary
+	operation <I>oper</I> on the elements of <I>xs</I>, which
+	are FD variables treated as singleton sets.
     </P></DD>
 
     <DT>

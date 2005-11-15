@@ -86,7 +86,6 @@ void min(const IntVarArgs&, IntVar); int_min;
 void max(const IntVarArgs&, IntVar); int_max;
 void abs(IntVar, IntVar, IntConLevel); int_abs;
 void mult(IntVar, IntVar, IntVar, IntConLevel); int_mult;
-//void pow(IntVar, IntVar, IntVar, IntConLevel); int_power;
 
 // Value assignment
 
@@ -107,7 +106,8 @@ void rel(SetVar, SetOpType, SetVar, SetRelType, SetVar); set_relOp;
 void rel(SetVar, SetRelType, IntVar); set_relI;
 void rel(SetVar, SetRelType, IntVar, BoolVar); set_relIR;
 void rel(SetVar, IntRelType, IntVar); set_relII;
-void rel(const SetVarArgs&, SetOpType, SetVar); set_relN;
+void rel(SetOpType, const SetVarArgs&, SetVar); set_relN;
+void rel(SetOpType, const IntVarArgs&, SetVar); set_relNI;
 void rel(IntSet&, SetOpType, SetVar, SetRelType, SetVar); set_relCSS;
 void rel(SetVar, SetOpType, IntSet&, SetRelType, SetVar); set_relSCS;
 void rel(SetVar, SetOpType, SetVar, SetRelType, IntSet&); set_relSSC;
