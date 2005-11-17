@@ -27,6 +27,7 @@
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeInterpreter.hh"
 #include "alice/ByteCodeJitter.hh"
+#include "alice/HotSpotConcreteCode.hh"
 #if DEBUGGER
 #include "alice/DebugEnvironment.hh"
 #include "alice/AliceDebuggerEvent.hh"
@@ -135,6 +136,8 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   PrimitiveTable::Init();
   ByteCodeInterpreter::Init();
   ByteCodeJitter::Init();
+  HotSpotInterpreter::Init();
+
   const char *jitMode = std::getenv("ALICE_JIT_MODE");
 #if HAVE_LIGHTNING
   NativeCodeInterpreter::Init();
@@ -148,6 +151,8 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   if (jitMode != NULL) { 
     if (!strcmp(jitMode,"2")) 
       concreteCodeConstructor = ByteConcreteCode::New;
+    else if (!strcmp(jitMode, "3"))
+      concreteCodeConstructor = HotSpotConcreteCode::New;
     else if (!strcmp(jitMode, "0"))
       concreteCodeConstructor = AliceConcreteCode::New;
     else
@@ -156,8 +161,13 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
     concreteCodeConstructor = NativeConcreteCode::New;
 
 #else
-  if (jitMode != NULL && !strcmp(jitMode, "2")) 
-    concreteCodeConstructor = ByteConcreteCode::New;
+  if (jitMode != NULL) {
+    if(!strcmp(jitMode, "2")) 
+      concreteCodeConstructor = ByteConcreteCode::New;
+    else if(!strcmp(jitMode, "3"))
+      concreteCodeConstructor = HotSpotConcreteCode::New;
+    else
+      concreteCodeConstructor = AliceConcreteCode::New;
   else
     concreteCodeConstructor = AliceConcreteCode::New;
 

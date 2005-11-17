@@ -37,7 +37,7 @@
 // We can try to omit a range check if we fill the missing slots in the
 // jump table with the PC of the "else" part. This optimization is used if
 // actualNumberOfTests * OPTIMIZE_TAGTEST_LEVEL > maxTag
-#define OPTIMIZE_TAGTEST_LEVEL 5
+#define OPTIMIZE_TAGTEST_LEVEL 10
 
 class LazyByteCompileClosure;
 

@@ -2010,24 +2010,28 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
   // check first if constant propagation has found out something interesting
   if(tagtestInfo->IsMember(pc->ToWord())) {
     Tuple *pair = Tuple::FromWordDirect(tagtestInfo->Get(pc->ToWord()));
+    fprintf(stderr,"-> compiler could eliminate tagtest %p, next %p\n",
+	    pc,pair->Sel(1));
     // compile binding
     TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
     if(idDefsOpt != INVALID_POINTER) {
       Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
       u_int src = testVal;
       for (u_int j = idDefs->GetLength(); j--; ) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
-	if( idDef != INVALID_POINTER ) { // not wildcard
-	  u_int dst = IdToReg(idDef->Sel(0));
+ 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
+ 	if( idDef != INVALID_POINTER ) { // not wildcard
+	  fprintf(stderr,"--> compile binding\n");
+ 	  u_int dst = IdToReg(idDef->Sel(0));
 #ifdef DO_REG_ALLOC
-	  if(dst == src && j > 0) {
-	    u_int S = GetNewScratch();
-	    SET_INSTR_2R(PC,load_reg,S,src);
-	    src = S;
-	  }
+ 	  if(dst == src && j > 0) {
+ 	    u_int S = GetNewScratch();
+ 	    SET_INSTR_2R(PC,load_reg,S,src);
+	    fprintf(stderr,"---> move tag val to a temporary\n");
+ 	    src = S;
+ 	  }
 #endif
-	  SET_INSTR_2R1I(PC,loadInstr,dst,src,j);
-	}
+ 	  SET_INSTR_2R1I(PC,loadInstr,dst,src,j);
+ 	}
       }
     }
     return TagVal::FromWordDirect(pair->Sel(1));

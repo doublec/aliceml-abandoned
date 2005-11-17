@@ -947,7 +947,7 @@ void ConstProp_MainPass::Run() {
 	      for(u_int i = tests->GetLength(); i--; ) {
 		Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
 		if(i == tag) {
-		  fprintf(stderr,"%d. could eliminate compact tag %p test:",
+		  fprintf(stderr,"%d. eliminate compact tag %p test:",
 			  ++counter,instr);
 		  fprintf(stderr," value has tag %d\n",tag);		  
 		  // save information
@@ -958,7 +958,7 @@ void ConstProp_MainPass::Run() {
 	      }
 	      if(!tagFound) {
 		if(elseInstrOpt != INVALID_POINTER) {
-		  fprintf(stderr,"%d. could eliminate compact tag %p test:",
+		  fprintf(stderr,"%d. eliminate compact tag %p test:",
 			  ++counter,instr);		  
 		  fprintf(stderr," value has tag %d\n",tag);
 		  Tuple *pair = Tuple::New(2);
