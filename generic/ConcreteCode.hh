@@ -25,6 +25,7 @@ public:
   using ConcreteRepresentation::ToWord;
   using ConcreteRepresentation::Init;
   using ConcreteRepresentation::Get;
+  using ConcreteRepresentation::Replace;
 
   // ConcreteCode Constructor
   static ConcreteCode *New(Interpreter *interpreter, u_int size) {
