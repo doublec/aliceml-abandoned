@@ -17,10 +17,9 @@
 #pragma interface "alice/HotSpotConcreteCode.hh"
 #endif
 
-#include "Seam.hh" // do we need this ?
+#include "Seam.hh"
 #include "alice/Base.hh"
 #include "alice/Data.hh"
-
 
 class AliceDll HotSpotConcreteCode : private ConcreteCode {
 protected:

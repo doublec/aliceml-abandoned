@@ -148,26 +148,37 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   u_int codeSizeInChunks = 50; // was 40
 #endif
   NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
-  if (jitMode != NULL) { 
-    if (!strcmp(jitMode,"2")) 
-      concreteCodeConstructor = ByteConcreteCode::New;
-    else if (!strcmp(jitMode, "3"))
-      concreteCodeConstructor = HotSpotConcreteCode::New;
-    else if (!strcmp(jitMode, "0"))
+  if (jitMode != NULL)
+    switch(atoi(jitMode)) {
+    case 0:
       concreteCodeConstructor = AliceConcreteCode::New;
-    else
+      break;
+    case 2:
+      concreteCodeConstructor = ByteConcreteCode::New;
+      break;
+    case 3:
+      concreteCodeConstructor = HotSpotConcreteCode::New;
+      break;
+    case 1:
+    default:
       concreteCodeConstructor = NativeConcreteCode::New;    
-  } else
+    }
+  else
     concreteCodeConstructor = NativeConcreteCode::New;
 
 #else
-  if (jitMode != NULL) {
-    if(!strcmp(jitMode, "2")) 
+  if (jitMode != NULL)
+    switch(atoi(jitMode)) {
+    case 2:
       concreteCodeConstructor = ByteConcreteCode::New;
-    else if(!strcmp(jitMode, "3"))
+      break;
+    case 3:
       concreteCodeConstructor = HotSpotConcreteCode::New;
-    else
+      break;
+    case 0:
+    default:
       concreteCodeConstructor = AliceConcreteCode::New;
+    }
   else
     concreteCodeConstructor = AliceConcreteCode::New;
 

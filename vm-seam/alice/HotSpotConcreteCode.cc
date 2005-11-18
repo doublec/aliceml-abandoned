@@ -25,7 +25,7 @@
 // initialization of the state machine
 typedef enum state { ABSTRACT_CODE, BYTE_CODE, NSTATES };
 
-#define ABSTRACT_CODE_COUNTER_INIT 5 // execute abstract code ones
+#define ABSTRACT_CODE_COUNTER_INIT 5 // execute abstract code five times
 
 word HotSpotConcreteCode::New(TagVal *abstractCode) {
   ConcreteCode *concreteCode = 
@@ -45,27 +45,27 @@ void HotSpotInterpreter::Init() {
 }
 
 void HotSpotInterpreter::PushCall(Closure *closure) {
-  HotSpotConcreteCode *concreteCode =
+  HotSpotConcreteCode *wrapper =
     HotSpotConcreteCode::FromWordDirect(closure->GetConcreteCode());
-  switch(concreteCode->GetState()) {
+  switch(wrapper->GetState()) {
   case ABSTRACT_CODE:
     {
-      if(concreteCode->GetCounter() > 0) {
-	concreteCode->DecCounter();
+      if(wrapper->GetCounter() > 0) {
+	wrapper->DecCounter();
 	// create a copy of the closure with a real concrete code
-	// TODO: store this new closure if counter threshold is greater 1
+	// TODO: store this new closure somewhere if counter threshold is greater 1
 	u_int size = closure->GetSize();
-	Closure *newClosure = Closure::New(concreteCode->GetCode(), size);
+	Closure *newClosure = Closure::New(wrapper->GetCode(), size);
 	for(u_int i = size; i--; )
 	  newClosure->Init(i, closure->Sub(i));
 	AbstractCodeInterpreter::self->PushCall(newClosure);
       } else {	
 	// go to next state
-	concreteCode->SetState(BYTE_CODE);
+	wrapper->SetState(BYTE_CODE);
 	// reset the counter if the next state is not a final one
 	// TODO: remove the indirection over the lazy compile closure
 	AliceConcreteCode *acc = 
-	  AliceConcreteCode::FromWordDirect(concreteCode->GetCode());
+	  AliceConcreteCode::FromWordDirect(wrapper->GetCode());
 	LazyByteCompileClosure *compileClosure = 
 	  LazyByteCompileClosure::New(acc->GetAbstractCode());
 	word byneed = Byneed::New(compileClosure->ToWord())->ToWord();
@@ -73,7 +73,7 @@ void HotSpotInterpreter::PushCall(Closure *closure) {
 	ByteCodeJitter jitter;
 	word wByteConcreteCode = jitter.Compile(compileClosure);
 	// remove the hot spot indirection from the current closure
-	concreteCode->SetCode(wByteConcreteCode);
+	wrapper->SetCode(wByteConcreteCode);
 	closure->SetConcreteCode(wByteConcreteCode);
 	// push the updated closure
 	ByteCodeInterpreter::self->PushCall(closure);
@@ -83,7 +83,9 @@ void HotSpotInterpreter::PushCall(Closure *closure) {
   case BYTE_CODE:
     {
       // remove indirection
-      closure->SetConcreteCode(concreteCode->GetCode());
+      // Of course it would be better to adopt the mechanism of transients, i.e.
+      // to transform the wrapper into a ref node onto the real concrete code.
+      closure->SetConcreteCode(wrapper->GetCode());
       ByteCodeInterpreter::self->PushCall(closure);      
     }
     break;
@@ -128,24 +130,26 @@ void HotSpotInterpreter::DumpFrame(StackFrame *sFrame) {
 }
 
 u_int HotSpotInterpreter::GetInArity(ConcreteCode *concreteCode) {
-  switch(((HotSpotConcreteCode *) concreteCode)->GetState()) {
+  HotSpotConcreteCode *wrapper = STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+  ConcreteCode *realConcreteCode = ConcreteCode::FromWordDirect(wrapper->GetCode());
+  switch(wrapper->GetState()) {
   case ABSTRACT_CODE:
-    return AbstractCodeInterpreter::self->GetInArity(concreteCode);
+    return AbstractCodeInterpreter::self->GetInArity(realConcreteCode);
   case BYTE_CODE:
-    Error("final state should not be reached as the indirection is removed");
-    break;
+    return ByteCodeInterpreter::self->GetInArity(realConcreteCode);
   default:
     Error("internal consistancy error: wrong code state");
   };
 }
 
 u_int HotSpotInterpreter::GetOutArity(ConcreteCode *concreteCode) {
-  switch(((HotSpotConcreteCode *) concreteCode)->GetState()) {
+  HotSpotConcreteCode *wrapper = STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+  ConcreteCode *realConcreteCode = ConcreteCode::FromWordDirect(wrapper->GetCode());
+  switch(wrapper->GetState()) {
   case ABSTRACT_CODE:
-    return AbstractCodeInterpreter::self->GetOutArity(concreteCode);
+    return AbstractCodeInterpreter::self->GetOutArity(realConcreteCode);
   case BYTE_CODE:
-    Error("final state should not be reached as the indirection is removed");
-    break;
+    return ByteCodeInterpreter::self->GetOutArity(realConcreteCode);
   default:
     Error("internal consistancy error: wrong code state");
   };
