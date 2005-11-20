@@ -38,6 +38,18 @@ word HotSpotConcreteCode::New(TagVal *abstractCode) {
   return concreteCode->ToWord();
 }
 
+
+Transform *HotSpotConcreteCode::GetAbstractRepresentation() {
+  switch(GetState()) {
+  case ABSTRACT_CODE:
+    return AliceConcreteCode::FromWordDirect(GetCode())->GetAbstractRepresentation();
+  case BYTE_CODE:
+    return ByteConcreteCode::FromWordDirect(GetCode())->GetAbstractRepresentation();
+  default:
+    Error("wrong state");
+  }
+}
+
 HotSpotInterpreter *HotSpotInterpreter::self;
 
 void HotSpotInterpreter::Init() {
@@ -65,7 +77,7 @@ void HotSpotInterpreter::PushCall(Closure *closure) {
 	// reset the counter if the next state is not a final one
 	// TODO: remove the indirection over the lazy compile closure
 	AliceConcreteCode *acc = 
-	  AliceConcreteCode::FromWordDirect(wrapper->GetCode());
+	  AliceConcreteCode::FromWord(wrapper->GetCode());
 	LazyByteCompileClosure *compileClosure = 
 	  LazyByteCompileClosure::New(acc->GetAbstractCode());
 	word byneed = Byneed::New(compileClosure->ToWord())->ToWord();
@@ -103,6 +115,11 @@ Worker::Result HotSpotInterpreter::Run(StackFrame *) {
   // current state.
 }
 
+Transform *
+HotSpotInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
+  return STATIC_CAST(HotSpotConcreteCode *, b)->GetAbstractRepresentation();
+}
+
 const char *HotSpotInterpreter::Identify() {
   return "HotSpotInterpreter";
 }
@@ -131,7 +148,7 @@ void HotSpotInterpreter::DumpFrame(StackFrame *sFrame) {
 
 u_int HotSpotInterpreter::GetInArity(ConcreteCode *concreteCode) {
   HotSpotConcreteCode *wrapper = STATIC_CAST(HotSpotConcreteCode *, concreteCode);
-  ConcreteCode *realConcreteCode = ConcreteCode::FromWordDirect(wrapper->GetCode());
+  ConcreteCode *realConcreteCode = ConcreteCode::FromWord(wrapper->GetCode());
   switch(wrapper->GetState()) {
   case ABSTRACT_CODE:
     return AbstractCodeInterpreter::self->GetInArity(realConcreteCode);
@@ -144,7 +161,7 @@ u_int HotSpotInterpreter::GetInArity(ConcreteCode *concreteCode) {
 
 u_int HotSpotInterpreter::GetOutArity(ConcreteCode *concreteCode) {
   HotSpotConcreteCode *wrapper = STATIC_CAST(HotSpotConcreteCode *, concreteCode);
-  ConcreteCode *realConcreteCode = ConcreteCode::FromWordDirect(wrapper->GetCode());
+  ConcreteCode *realConcreteCode = ConcreteCode::FromWord(wrapper->GetCode());
   switch(wrapper->GetState()) {
   case ABSTRACT_CODE:
     return AbstractCodeInterpreter::self->GetOutArity(realConcreteCode);

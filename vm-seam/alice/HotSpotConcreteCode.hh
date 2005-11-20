@@ -33,6 +33,8 @@ public:
 
   static word New(TagVal *abstractCode);
 
+  Transform *GetAbstractRepresentation();
+
   u_int GetCounter() { return Store::DirectWordToInt(Get(COUNTER)); }
   u_int GetState() { return Store::DirectWordToInt(Get(STATE)); }
   word GetCode() { return Get(CODE); }
@@ -44,8 +46,7 @@ public:
   void SetState(u_int state) {
     Replace(STATE, Store::IntToWord(state));
   }
-  void SetCode(word code) { Replace(CODE, code); }
-  
+  void SetCode(word code) { Replace(CODE, code); }  
 
  // HotSpotConcreteCode Untagging
   static HotSpotConcreteCode *FromWord(word code) {
@@ -68,6 +69,8 @@ public:
   static HotSpotInterpreter *self;
   
   static void Init();
+
+  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *b);
 
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Worker::Result Run(StackFrame *sFrame);
