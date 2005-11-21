@@ -187,8 +187,6 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
       if(CheckCycle(acc)) return; // break inline cycle
       InlineInfo *inlineInfo = bcc->GetInlineInfo();
       u_int nNodes = inlineInfo->GetNNodes();
-      // assert that shared appvar nodes are not inlined
-      // TODO: solve this problem
       if(nNodes <= INLINE_LIMIT) {
 	Append(key,instr,appVarPP,acc,closure,inlineInfo);
 	// adjust counter
@@ -216,8 +214,6 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
 	} else
 	  inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
 	u_int nNodes = inlineInfo->GetNNodes();
-	// assert that shared appvar nodes are not inlined
-	// TODO: solve this problem
 	if(nNodes <= INLINE_LIMIT) {
 	  Append(key,instr,appVarPP,lazyBCC->GetAbstractCode(),
 		 closure,inlineInfo);

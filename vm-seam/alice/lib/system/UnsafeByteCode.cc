@@ -688,6 +688,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_2R1I(PC,instr,r0,r1,index);
       }
       break;
+    case ByteCodeInstr::get_tup2:
+    case ByteCodeInstr::new_pair:
     case ByteCodeInstr::seam_call2:
     case ByteCodeInstr::bci_call2:
     case ByteCodeInstr::self_call3:
@@ -705,6 +707,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_3R(PC,instr,r0,r1,r2);
       }
       break;
+    case ByteCodeInstr::get_tup3:
+    case ByteCodeInstr::new_triple:
     case ByteCodeInstr::seam_call3:
     case ByteCodeInstr::bci_call3:
     case ByteCodeInstr::bci_tailcall3:

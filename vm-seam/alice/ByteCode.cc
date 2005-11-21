@@ -532,6 +532,18 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"new_tup R%d, %d\n",r,addr);	
     }
     return PC;
+  case new_pair:
+    {
+      GET_3R(codeBuffer,PC,r0,r1,r2);
+      fprintf(f,"new_pair R%d <- (R%d,R%d)\n",r0,r1,r2);	
+    }
+    return PC;
+  case new_triple:
+    {
+      GET_4R(codeBuffer,PC,r0,r1,r2,r3);
+      fprintf(f,"new_triple R%d <- (R%d,R%d,R%d)\n",r0,r1,r2,r3);	
+    }
+    return PC;
   case new_tagval:
     {  
       GET_1R2I(codeBuffer,PC,r,addr,tag);
@@ -620,6 +632,18 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
     {
       GET_2R(codeBuffer,PC,r1,r2);
       fprintf(f,"select_tup2 R%d, R%d\n",r1,r2);
+    }
+    return PC;
+  case get_tup2:
+    {
+      GET_3R(codeBuffer,PC,r0,r1,r2);
+      fprintf(f,"get_tup2 (R%d,R%d) <- R%d\n",r0,r1,r2);
+    }
+    return PC;
+  case get_tup3:
+    {
+      GET_4R(codeBuffer,PC,r0,r1,r2,r3);
+      fprintf(f,"get_tup3 (R%d,R%d,R%d) <- R%d\n",r0,r1,r2,r3);
     }
     return PC;
   case lazyselect_polyrec:

@@ -394,16 +394,16 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	SAVEPC(PC);							\
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);			\
+        /* dynamic self call test */                                    \
         if(closure == CP) {						\
 	  PushCall(closure);						\
           frame = (ByteCodeFrame*) Scheduler::GetFrame();		\
 	  SETPC(0);							\
 	  CHECK_PREEMPT();						\
-	  /*	  if(StatusWord::GetStatus()) return Worker::PREEMPT;*/ \
 	  DISPATCH(PC);							\
 	}								\
 	/* dynamic byte code call test */				\
-	if(closure !=INVALID_POINTER) {					\
+	if(closure != INVALID_POINTER) {				\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
 	  if(cc != INVALID_POINTER) {					\
@@ -1098,15 +1098,52 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(init_tup): // r0, r1, index 
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
-	Tuple *tuple = Tuple::FromWord(GETREG(r0));
-	tuple->Init(index,GETREG(r1));
+	Tuple *tuple = Tuple::FromWordDirect(GETREG(r0));
+	tuple->Init(index, GETREG(r1));
       }
       DISPATCH(PC);
 
       // specialized instructions
 
-      // TODO: add: new_tup2, new_tup3 
+    Case(new_pair): // r0 <- (r1,r2)
+      {
+	GET_3R(codeBuffer,PC,r0,r1,r2);
+	Tuple *pair = Tuple::New(2);
+	pair->Init(0, GETREG(r1));
+	pair->Init(1, GETREG(r2));
+	SETREG(r0, pair->ToWord());	
+      }
+      DISPATCH(PC);
 
+    Case(new_triple): // r0 <- (r1,r2,r3)
+      {
+	GET_4R(codeBuffer,PC,r0,r1,r2,r3);
+	Tuple *triple = Tuple::New(3);
+	triple->Init(0, GETREG(r1));
+	triple->Init(1, GETREG(r2));
+	triple->Init(2, GETREG(r3));
+	SETREG(r0, triple->ToWord());	
+      }
+      DISPATCH(PC);
+
+    Case(get_tup2): // (r0,r1) <- r2
+      {
+	GET_3R(codeBuffer,PC,r0,r1,r2);
+	REQUEST_WORD(Tuple,pair,GETREG(r2));
+	SETREG(r0, pair->Sel(0));
+	SETREG(r1, pair->Sel(1));
+      }
+      DISPATCH(PC);
+
+    Case(get_tup3): // (r0,r1,r2) <- r3
+      {
+	GET_4R(codeBuffer,PC,r0,r1,r2,r3);
+	REQUEST_WORD(Tuple,triple,GETREG(r3));
+	SETREG(r0, triple->Sel(0));
+	SETREG(r1, triple->Sel(1));
+	SETREG(r2, triple->Sel(2));
+      }
+      DISPATCH(PC);
 
 #define SELECT_TUP(index) {			\
 	GET_2R(codeBuffer,PC,r1,r2);		\

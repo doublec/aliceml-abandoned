@@ -198,6 +198,7 @@ private:
   TagVal *InstrPutTag(TagVal *pc);
   TagVal *InstrPutCon(TagVal *pc);
   TagVal *InstrPutRef(TagVal *pc);
+  void NewTup(u_int dst, Vector *idRefs);
   TagVal *InstrPutTup(TagVal *pc);
   TagVal *InstrPutPolyRec(TagVal *pc);
   TagVal *InstrPutVec(TagVal *pc);
