@@ -57,6 +57,8 @@ datatype instr =
        | Ctagtest of reg * jlabel vector
        | Ctagtest_direct of reg * jlabel vector
        | Debug_msg of string
+       | Get_tup2 of reg * reg * reg
+       | Get_tup3 of reg * reg * reg * reg
        | Iadd of reg * reg * reg
        | Idec of reg * reg
        | Iinc of reg * reg
@@ -91,8 +93,10 @@ datatype instr =
        | New_bigtagval of reg * int * tag
        | New_cell of reg * reg
        | New_con of reg * string
+       | New_pair of reg * reg * reg
        | New_polyrec of reg * rlabel vector
        | New_tagval of reg * int * tag
+       | New_triple of reg * reg * reg * reg
        | New_tup of reg * int
        | New_vec of reg * int
        | Prepare_con of reg * reg * int
