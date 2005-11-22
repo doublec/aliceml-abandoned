@@ -64,16 +64,23 @@ private:
   u_int counter;
   u_int nLocals;
   Vector *subst;
+  Vector *endPoints;
   TagVal *abstractCode;
   Vector *liveness;
   Map *inlineMap;
   u_int callerMaxPP;
   Map *inlineCandidates;
-  LivenessContainer livenessInfo;
+  LivenessContainer livenessInfo;  
+  u_int GetEndPoint(u_int id) {
+    return Store::DirectWordToInt(endPoints->Sub(id));
+  }
   void Append(word key, TagVal *instr, u_int appVarPP,
 	      TagVal *acc, Closure *closure,
 	      InlineInfo *inlineInfo);
-  Vector *MergeLiveness();
+  bool IsAlias(Array *aliases, 
+	       u_int identifier, u_int offset, u_int startPoint,
+	       Vector *formalArgs, Vector *args);
+  Tuple *MergeLiveness();
 public:
   InlineAnalyser(TagVal *ac, Map* map) 
     : abstractCode(ac), counter(0), inlineCandidates(map) {
@@ -81,6 +88,13 @@ public:
     liveness = Vector::FromWordDirect(abstractCode->Sel(6));
     inlineMap = Map::New(20); 
     nLocals = GetNumberOfLocals(abstractCode);
+    // prepare end points lookup
+    endPoints = Vector::New(nLocals);
+    u_int livenessLength = liveness->GetLength();
+    for(u_int i=0, j=0; i<livenessLength; i+=3) {
+      u_int identifier = Store::DirectWordToInt(liveness->Sub(i));
+      endPoints->Init(identifier, liveness->Sub(i+2));
+    }
   }
   void SetMaxPP(u_int pp) { callerMaxPP = pp; }
   // This functions breaks an inline analysis cycle introduced by 
@@ -92,7 +106,10 @@ public:
   void AnalyseAppVar(TagVal *instr, u_int pp);
   InlineInfo *ComputeInlineInfo() {
     Assert(counter >= 0);
-    return InlineInfo::New(inlineMap,MergeLiveness(),nLocals,counter);
+    Tuple *pair = MergeLiveness();
+    Vector *liveness = Vector::FromWordDirect(pair->Sel(0));
+    Array *aliases = Array::FromWordDirect(pair->Sel(1));
+    return InlineInfo::New(inlineMap,liveness,aliases,nLocals,counter);
   } 
 };
 
@@ -225,26 +242,6 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
   }
 }
 
-// s_int ExtractPP(TagVal *instr, Vector *liveness) {
-//   TagVal *idDefsInstrOpt = TagVal::FromWord(instr->Sel(3));
-//   if(idDefsInstrOpt == INVALID_POINTER)
-//     return -1;
-//   Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
-//   Vector *fargs = Vector::FromWordDirect(idDefsInstr->Sel(0));
-//   for(u_int i = 0; i<fargs->GetLength(); i++) {
-//     TagVal *idDefOpt = TagVal::FromWord(fargs->Sub(i));
-//     if(idDefOpt != INVALID_POINTER) {
-//       u_int id = Store::DirectWordToInt(idDefOpt->Sel(0));
-//       for(u_int j = 0; i<liveness->GetLength(); i+=3) {
-// 	if(Store::DirectWordToInt(liveness->Sub(j)) == id) {
-// 	  return Store::DirectWordToInt(liveness->Sub(j+1));
-// 	}
-//       }
-//     }
-//   }
-//   return -1;
-// }
-
 void InlineAnalyser::Append(word key, TagVal *instr,
 			    u_int appVarPP,
 			    TagVal *acc, Closure *closure,
@@ -256,10 +253,13 @@ void InlineAnalyser::Append(word key, TagVal *instr,
   // append liveness
   Vector *calleeLiveness = inlineInfo->GetLiveness();
   word wCalleeLiveness = calleeLiveness->ToWord();
-  Tuple *tup = Tuple::New(3);
+  Tuple *tup = Tuple::New(6);
   tup->Init(0,wCalleeLiveness);
-  tup->Init(1,Store::IntToWord(nLocals));
-  tup->Init(2,Store::IntToWord(appVarPP));
+  tup->Init(1,inlineInfo->GetAliases()->ToWord());
+  tup->Init(2,Store::IntToWord(nLocals));
+  tup->Init(3,Store::IntToWord(appVarPP));
+  tup->Init(4,acc->Sel(3)); // formal arguments
+  tup->Init(5,instr->Sel(1)); // actual arguments
   livenessInfo.Append(tup->ToWord(),calleeLiveness->GetLength());
   // add closure to substitution, i.e. do specialize
   // TODO: ensure that newSubst matches existing oldSubst
@@ -282,43 +282,117 @@ void InlineAnalyser::Append(word key, TagVal *instr,
   nLocals += inlineInfo->GetNLocals();
 }
 
-Vector *InlineAnalyser::MergeLiveness() {
+inline bool InlineAnalyser::IsAlias(Array *aliases,
+				    u_int identifier, 
+				    u_int offset, 
+				    u_int startPoint,
+				    Vector *formalArgs, 
+				    Vector *actualArgs) {
+  // check if identifier is a formal arg
+  // formal args are numbers from 0 .. n intermixed with wildcards
+  // e.g.: _, _, 0, _, 1
+  // so we have to do a lookup
+  u_int nFormalArgs = formalArgs->GetLength();
+  for(u_int i = identifier; i<nFormalArgs; i++) {
+    TagVal *idDef = TagVal::FromWord(formalArgs->Sub(i));
+    if(idDef != INVALID_POINTER
+       && Store::DirectWordToInt(idDef->Sel(0)) == identifier) {
+	TagVal *arg = TagVal::FromWordDirect(actualArgs->Sub(i));
+	switch(AbstractCode::GetIdRef(arg)) {
+	case AbstractCode::Local:
+	case AbstractCode::LastUseLocal:
+	  {
+	    u_int argId = Store::DirectWordToInt(arg->Sel(0));
+	    u_int argEndPoint = GetEndPoint(argId);
+	    // check if intervals overlap
+	    if(argEndPoint > startPoint) {
+	      aliases->Update(identifier+offset,Store::IntToWord(argId));
+	      return true;
+	    }
+	  }
+	  break;
+	default:
+	  ;
+	}
+    }
+  }
+  return false;
+}
+
+Tuple *InlineAnalyser::MergeLiveness() {
   u_int size = livenessInfo.GetLength();
-  if(size == 0) // nothing can be inlined
-    return liveness;
+  if(size == 0) { // nothing can be inlined
+    Tuple *pair = Tuple::New(2);
+    pair->Init(0, liveness->ToWord());  
+    pair->Init(1, Array::New(0)->ToWord());
+    return pair;
+  }
+  // prepare aliases
+  Array *aliases = Array::New(nLocals);
+  for(u_int i = nLocals; i--; )
+    aliases->Init(i, Store::IntToWord(i));
   // copy intervals of the inlinable functions
   u_int offset = 0;
   u_int offsetTable[callerMaxPP];
   std::memset(offsetTable,0,callerMaxPP*sizeof(u_int));
   u_int l1Length = livenessInfo.GetFlattenedLength();
   u_int liveness1[l1Length];
-  for(u_int i = size, index = 0; i--; ) {
+  u_int index = 0;
+  for(u_int i = size; i--; ) {
     Tuple *tup = Tuple::FromWordDirect(livenessInfo.Sub(i));
     Vector *calleeLiveness = Vector::FromWordDirect(tup->Sel(0));
-    u_int idOffset = Store::WordToInt(tup->Sel(1));
-    u_int appVarPP = callerMaxPP - Store::DirectWordToInt(tup->Sel(2)) + 1;
+    Array *calleeAliases = Array::FromWordDirect(tup->Sel(1));
+    u_int idOffset = Store::WordToInt(tup->Sel(2));
+    u_int appVarPP = callerMaxPP - Store::DirectWordToInt(tup->Sel(3)) + 1;
+    Vector *formalArgs = Vector::FromWordDirect(tup->Sel(4));
+    Vector *actualArgs = Vector::FromWordDirect(tup->Sel(5));
     u_int maxEndPoint = 0;
-    for(u_int j=0; j<calleeLiveness->GetLength(); j+=3) {
-      u_int identifier =
-	Store::DirectWordToInt(calleeLiveness->Sub(j)) + idOffset;      
-      u_int startPoint = 
-	Store::DirectWordToInt(calleeLiveness->Sub(j+1)) + offset + appVarPP;
-      u_int endPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+2)); 
-      if(maxEndPoint < endPoint) 
-	maxEndPoint = endPoint;
-      endPoint += offset + appVarPP;
-      liveness1[index++] = identifier;
-      liveness1[index++] = startPoint;
-      liveness1[index++] = endPoint; 
-    }    
+    // adjust aliases
+    u_int uptoId = calleeAliases->GetLength() + idOffset;
+    for(u_int i = idOffset; i<uptoId; i++) {
+      u_int src = 
+	Store::DirectWordToInt(calleeAliases->Sub(i-idOffset)) + idOffset;
+      aliases->Update(i, Store::IntToWord(src));
+    }
+    // adjust callee intervals
+    // do not check for aliasing if a CCC is needed
+    if(formalArgs->GetLength() != actualArgs->GetLength()) {
+      for(u_int j=0; j<calleeLiveness->GetLength(); j+=3) {
+	u_int identifier = Store::DirectWordToInt(calleeLiveness->Sub(j));
+	u_int startPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+1));
+	u_int endPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+2));      
+	if(maxEndPoint < endPoint) 
+	  maxEndPoint = endPoint;
+	liveness1[index++] = identifier + idOffset;
+	liveness1[index++] = startPoint + appVarPP + offset;
+	liveness1[index++] = endPoint + appVarPP + offset; 
+      }
+    } else {
+      // TODO: stop alias checking if all formal args have been visited
+      for(u_int j=0; j<calleeLiveness->GetLength(); j+=3) {
+	u_int identifier = Store::DirectWordToInt(calleeLiveness->Sub(j));
+	u_int newStartPoint = 
+	  Store::DirectWordToInt(calleeLiveness->Sub(j+1)) + offset + appVarPP;
+	u_int endPoint = Store::DirectWordToInt(calleeLiveness->Sub(j+2));      
+	if(!IsAlias(aliases,identifier,idOffset,newStartPoint,
+		    formalArgs,actualArgs)) {
+	  if(maxEndPoint < endPoint) 
+	    maxEndPoint = endPoint;
+	  liveness1[index++] = identifier + idOffset;
+	  liveness1[index++] = newStartPoint;
+	  liveness1[index++] = endPoint + appVarPP + offset; 
+	}
+      }    
+    }
     offsetTable[appVarPP] = maxEndPoint + 1;
     offset += maxEndPoint + 1;
   }
+  l1Length = index; // set it to the actual length
   // propagate offsets
   for(u_int i=1; i<callerMaxPP; i++) {
     offsetTable[i] += offsetTable[i-1];
   }
-  // copy the caller intervals
+  // adjust caller intervals
   u_int l2Length = liveness->GetLength();
   u_int liveness2[l2Length];
   for(u_int i=0, j=0; i<l2Length; i+=3, j+=3) {
@@ -353,7 +427,10 @@ Vector *InlineAnalyser::MergeLiveness() {
     newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
     newLiveness->Init(i3++,Store::IntToWord(liveness2[i2++]));
   }
-  return newLiveness;  
+  Tuple *pair = Tuple::New(2);
+  pair->Init(0, newLiveness->ToWord());  
+  pair->Init(1, aliases->ToWord());
+  return pair;
 }
 
 // compute program points of appvar instructions
