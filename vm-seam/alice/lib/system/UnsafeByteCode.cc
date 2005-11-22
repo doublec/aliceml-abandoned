@@ -805,7 +805,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 
   // fake inline info, prevent assembled function from beeing inlined
   InlineInfo *inlineInfo = 
-    InlineInfo::New(Map::New(0),liveness,
+    InlineInfo::New(Map::New(0),liveness,Array::New(0),
 		    Store::DirectWordToInt(nbLocals),
 		    100000);
 
