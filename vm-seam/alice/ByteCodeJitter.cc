@@ -3120,17 +3120,13 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 #endif
   u_int local_mapping[currentNLocals];
   mapping = local_mapping;
-//   if(currentNLocals != liveness->GetLength()/3) {
-//     fprintf(stderr,"! currentNLocals %d, liveness length %d\n",
-// 	    currentNLocals,liveness->GetLength()/3);
-//   }
-//   fprintf(stderr,"original liveness:\n");
-//   Jitter_PrintLiveness(Vector::FromWordDirect(abstractCode->Sel(6)));
-//   fprintf(stderr,"Liveness Information:\n");
-//   Jitter_PrintLiveness(liveness);
-//   fprintf(stderr,"run register allocation ... ");
   RegisterAllocator::Run(liveness,mapping,&currentNLocals);
-  //  fprintf(stderr,"[DONE]\n");
+  // add the alias analysis
+  Array *aliases = inlineInfo->GetAliases();
+  u_int nAliases = aliases->GetLength();
+  // the loop direction is important !
+  for(u_int i = 0; i<nAliases; i++)
+    mapping[i] = mapping[Store::DirectWordToInt(aliases->Sub(i))];
 #endif
 
   // now prepare scratch registers
@@ -3203,7 +3199,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 //   codeSize += code->GetSize();
 //   fprintf(stderr,"codeSize %d\n",codeSize);
 #ifdef DEBUG_DISASSEMBLE
-//  if(invocations>600) {
+//   if(invocations>100) {
   fprintf(stderr,"-----------------\ncompiled code:\n");
 #ifdef THREADED
   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
@@ -3214,7 +3210,7 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 #endif
   fprintf(stderr,"-------------\n");
 #endif
-  //  }
+//   }
 //   static double totalTime = 0;
 //   timeval stopTime;
 //   gettimeofday(&stopTime,0);
