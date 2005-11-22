@@ -1,10 +1,22 @@
+Interactive Toplevel:
+
+* [FIX] Several bug fixes (including bug 163).
+
 Basic Library:
 
 * [FIX] OS.FileSys: filter out current and parent arc with `readDir'.
 
+Constraint Library:
+
+* [CHG] Adapted to Gecode changes.
+
 Gtk Library:
 
 * [FIX] Gtk.{List,Tree}Store: fixed type of constructor functions.
+
+Other Libraries:
+
+* [FIX] XML: fix crash on nodes with empty names.
 
 
 Alice 1.2 (Kraftwerk 'Boost Your G-Thing' Album) - 2005/09/02
