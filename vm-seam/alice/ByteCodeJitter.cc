@@ -1295,6 +1295,14 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
       Closure *closure = Closure::FromWord(wClosure);       
       if(closure != INVALID_POINTER) {
 	word wConcreteCode = closure->GetConcreteCode();	
+	if(wConcreteCode == currentConcreteCode) {
+	  // this is a self recursive call
+	  CompileSelfCall(pc,isTailcall);
+	  if(isTailcall)
+	    return INVALID_POINTER;
+	  else
+	    goto compile_continuation;
+	}
 	ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
 	if(concreteCode != INVALID_POINTER) {
 	  Interpreter *interpreter = concreteCode->GetInterpreter();
@@ -1350,13 +1358,6 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	    } 
 	    return continuation;
 	  } 
-	} else if (wConcreteCode == currentConcreteCode) {
-	  // this is a self recursive call
-	  CompileSelfCall(pc,isTailcall);
-	  if(isTailcall)
-	    return INVALID_POINTER;
-	  else
-	    goto compile_continuation;
 	}
       }
     }

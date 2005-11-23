@@ -21,11 +21,20 @@
 #include "alice/Base.hh"
 #include "alice/Data.hh"
 
+/*
+ * The idea is that HotSpotConcrete (HSC) is a wrapper around the real concrete
+ * code. The handlers, e.g. HotSpotInterpreter, implement the transisitions
+ * from one code into another. In every transition the current HSC is converted
+ * in-place into another concrete code. As soon as we are in the final state, 
+ * there is no indirection anymore.
+ * ATTENTION: Since the HSC is converted in-place, you have to allocate 
+ * enough space. So the size of the HSC in the start state must be the maximum
+ * size over all states.
+ */
+
 class AliceDll HotSpotConcreteCode : private ConcreteCode {
 protected:
-  using ConcreteCode::Replace;
-
-  enum { STATE, CODE, COUNTER, SIZE };
+  enum { CODE, COUNTER, SIZE };
 
 public:
   using Block::ToWord;
@@ -36,15 +45,11 @@ public:
   Transform *GetAbstractRepresentation();
 
   u_int GetCounter() { return Store::DirectWordToInt(Get(COUNTER)); }
-  u_int GetState() { return Store::DirectWordToInt(Get(STATE)); }
   word GetCode() { return Get(CODE); }
 
   void DecCounter() {
     u_int counter = GetCounter();
     Replace(COUNTER, Store::IntToWord(--counter));
-  }
-  void SetState(u_int state) {
-    Replace(STATE, Store::IntToWord(state));
   }
   void SetCode(word code) { Replace(CODE, code); }  
 

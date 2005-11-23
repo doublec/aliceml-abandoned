@@ -74,15 +74,18 @@ public:
 
 class AliceDll ByteConcreteCode : private ConcreteCode {
 protected:
-    enum {
+  enum {
     TRANSFORM_POS, BYTE_CODE_POS, IMMEDIATE_ENV_POS, 
     IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS, 
     INLINE_INFO_POS,
-    SIZE
+    SIZE_INTERNAL
   };
 public:
   using Block::ToWord;
   using ConcreteCode::GetInterpreter;
+
+  // the size is needed in HotSpotConcreteCode
+  enum { SIZE = SIZE_INTERNAL };
  
   // ByteConcreteCode Accessors
   Chunk *GetByteCode() {
