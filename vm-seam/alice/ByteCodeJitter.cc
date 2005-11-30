@@ -2900,31 +2900,35 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
       {
 	Assert(nArgs > 1); // construct tuple into formal arg 0
 	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
+	u_int dst = IdToReg(argOpt->Sel(0));
 	if(argOpt != INVALID_POINTER) {
-	  u_int dst = IdToReg(argOpt->Sel(0));
-	  // analyse for conflicts
-	  u_int conflict = false;
-	  for(u_int i=nArgs; i--; ) {
-	    TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
-	    u_int idRefTag = AbstractCode::GetIdRef(tagVal);
-	    if(idRefTag == AbstractCode::Local ||
-	       idRefTag == AbstractCode::LastUseLocal) {
-	      u_int src = IdToReg(tagVal->Sel(0));
-	      if(src == dst) {
-		conflict = true;
-		break;
+	  switch(nArgs) {
+	  case 2:
+	  case 3:	    
+	    NewTup(dst, args); // special instr for pairs and triples
+	    break;
+	  default:
+	    {
+	      // analyse for conflicts
+	      u_int conflict = false;
+	      for(u_int i=nArgs; i--; ) {
+		TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
+		u_int idRefTag = AbstractCode::GetIdRef(tagVal);
+		if(idRefTag == AbstractCode::Local ||
+		   idRefTag == AbstractCode::LastUseLocal) {
+		  u_int src = IdToReg(tagVal->Sel(0));
+		  if(src == dst) {
+		    conflict = true;
+		    break;
+		  }
+		}
+	      }
+	      u_int tupReg = conflict ? GetNewScratch() : dst;
+	      NewTup(tupReg, args);
+	      if(conflict) {
+		SET_INSTR_2R(PC,load_reg,dst,tupReg);
 	      }
 	    }
-	  }
-	  u_int tupReg = conflict ? GetNewScratch() : dst;
-	  NewTup(tupReg, args);
-// 	  SET_INSTR_1R1I(PC,new_tup,tupReg,nArgs);
-// 	  for(u_int i=nArgs; i--; ) {
-// 	    u_int src = LoadIdRefKill(args->Sub(i),true);
-// 	    SET_INSTR_2R1I(PC,init_tup,tupReg,src,i);
-// 	  }
-	  if(conflict) {
-	    SET_INSTR_2R(PC,load_reg,dst,tupReg);
 	  }
 	}
       }
