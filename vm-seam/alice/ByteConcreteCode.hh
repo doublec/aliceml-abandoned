@@ -1,10 +1,8 @@
 //
 // Author:
-//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //   Christian Mueller <cmueller@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2002
 //   Christian Mueller, 2005
 //
 // Last Change:
@@ -23,61 +21,18 @@
 #include "alice/ByteCodeInterpreter.hh"
 #include "alice/ByteCodeInliner.hh"
 
-class LazyByteCompileClosure : public Closure {
-protected:
-  enum { ABSTRACT_CODE, BYNEED_POS, N_LOCALS_POS, INLINE_INFO_POS, SIZE };
-public:
-  TagVal *GetAbstractCode() {
-    return TagVal::FromWordDirect(Sub(ABSTRACT_CODE));
-  }
-  word GetByneed() {
-    return Sub(BYNEED_POS);
-  }
-  s_int GetNLocals() {
-    return Store::DirectWordToInt(Sub(N_LOCALS_POS));
-  }
-  void SetNLocals(s_int nLocals) {
-    Update(N_LOCALS_POS, nLocals);
-  }
-  void SetInlineInfo(InlineInfo *info) {
-    TagVal *some = TagVal::New(Types::SOME,1);
-    some->Init(0,info->ToWord());
-    Update(INLINE_INFO_POS,some->ToWord());
-  }
-  TagVal *GetInlineInfoOpt() {
-    return TagVal::FromWord(Sub(INLINE_INFO_POS));
-  }
-  static LazyByteCompileClosure *New(TagVal *abstractCode);
-  static LazyByteCompileClosure *FromWordDirect(word wClosure) {
-    return STATIC_CAST(LazyByteCompileClosure *, 
-		       Closure::FromWordDirect(wClosure));
-  }
-};
-
-class LazyByteCompileInterpreter : public Interpreter {
-private:
-  LazyByteCompileInterpreter(): Interpreter() {}
-public:
-  static LazyByteCompileInterpreter *self;
-  static word concreteCode;
-
-  static void Init();
-
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  virtual Result Run(StackFrame *sFrame);
-  virtual u_int GetInArity(ConcreteCode *concreteCode);
-  virtual u_int GetOutArity(ConcreteCode *concreteCode);
-  virtual void PushCall(Closure *closure);
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-};
+class HotSpotCode;
 
 class AliceDll ByteConcreteCode : private ConcreteCode {
 protected:
   enum {
-    TRANSFORM_POS, BYTE_CODE_POS, IMMEDIATE_ENV_POS, 
-    IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS, 
-    INLINE_INFO_POS,
+    // ATTENTION:
+    // Assure that the first three fields have the same layout as the fields
+    // from HotSpotCode. Otherwise the Transform methode will not work.
+    TRANSFORM_POS,
+    INLINE_INFO_POS,  
+    BYTE_CODE_POS, 
+    IMMEDIATE_ENV_POS, IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS, 
     SIZE_INTERNAL
   };
 public:
@@ -121,6 +76,11 @@ public:
 				       word immediateEnv,
 				       word nbLocals,
 				       word inlineInfo);
+  static void Convert(HotSpotCode *hsc,
+		      Chunk *code,
+		      word immediateEnv,
+		      word nbLocals,
+		      word inlineInfo);			
   // ByteConcreteCode Untagging
   static ByteConcreteCode *FromWord(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);

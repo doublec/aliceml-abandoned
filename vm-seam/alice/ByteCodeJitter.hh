@@ -39,7 +39,8 @@
 // actualNumberOfTests * OPTIMIZE_TAGTEST_LEVEL > maxTag
 #define OPTIMIZE_TAGTEST_LEVEL 10
 
-class LazyByteCompileClosure;
+//class LazyByteCompileClosure;
+class HotSpotCode;
 
 class ByteCodeImmediateEnv {
 protected:
@@ -243,7 +244,8 @@ public:
   ByteCodeJitter();
   ~ByteCodeJitter();
   static void Init(); // initializes static variables
-  word Compile(LazyByteCompileClosure *compClosure);
+  //  word Compile(LazyByteCompileClosure *compClosure);
+  void Compile(HotSpotCode *hsc);
 };
 
 #endif

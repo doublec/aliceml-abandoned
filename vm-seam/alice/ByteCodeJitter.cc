@@ -17,6 +17,7 @@
 #include "alice/PrimitiveTable.hh"
 #include "alice/ByteCodeJitter.hh"
 #include "alice/ByteConcreteCode.hh"
+#include "alice/HotSpotConcreteCode.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/ByteCodeAlign.hh"
 #include "alice/ByteCodeBuffer.hh"
@@ -359,7 +360,6 @@ void *ByteCodeJitter::inlineTable[INLINE_TABLE_SIZE];
 
 void ByteCodeJitter::Init() {
   PatchTable::Init();
-  LazyByteCompileInterpreter::Init();
 
   // prepare inlineTable
 #define INIT_INLINE_TABLE(primitiveName,primitiveNumber) {		\
@@ -3069,12 +3069,15 @@ u_int invocations = 0;
 
 // Function of coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
-word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
+void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 //    timeval startTime;
 //    gettimeofday(&startTime,0);
   BCJIT_DEBUG("start compilation (%d times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
-  TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
+  Transform *transform =
+    STATIC_CAST(Transform *, hsc->GetAbstractRepresentation());
+  TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+
 #ifdef DEBUG_DISASSEMBLE 
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   std::fprintf(stderr, "\n%d. compile function (%p) at %s:%d.%d nArgs=%d\n",
@@ -3088,14 +3091,14 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 			    TagVal::FromWordDirect(abstractCode->Sel(5)));
 #endif    
 
-  currentConcreteCode = lazyCompileClosure->GetByneed();
+  currentConcreteCode = hsc->ToWord();
 
 // do inline anaysis
   currentFormalArgs = INVALID_POINTER;
   localOffset = 0;
   inlineDepth = 0;
 #ifdef DO_INLINING
-  TagVal *inlineInfoOpt = lazyCompileClosure->GetInlineInfoOpt();
+  TagVal *inlineInfoOpt = hsc->GetInlineInfoOpt();
   if(inlineInfoOpt == INVALID_POINTER) {
     ByteCodeInliner::ResetRoot();
     inlineInfo = ByteCodeInliner::AnalyseInlining(abstractCode);
@@ -3183,17 +3186,17 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
   // create compiled concrete code
   Chunk *code = WriteBuffer::FlushCode();
 
-  ByteConcreteCode *bcc = 
-    ByteConcreteCode::NewInternal(abstractCode,
-				  code,
-				  imEnv.ExportEnv(),
-				  Store::IntToWord(nRegisters),
+  // convert hot spot code to byte code
+  ByteConcreteCode::Convert(hsc,
+			    code,
+			    imEnv.ExportEnv(),
+			    Store::IntToWord(nRegisters),
 #ifdef DO_INLINING
-				  inlineInfo->ToWord()
+			    inlineInfo->ToWord()
 #else
-                                  Store::IntToWord(0)
+			    Store::IntToWord(0)
 #endif
-				  );
+			    );
 
 //   static u_int sumNRegisters = 0;
 //   sumNRegisters += nRegisters;
@@ -3222,7 +3225,5 @@ word ByteCodeJitter::Compile(LazyByteCompileClosure *lazyCompileClosure) {
 //   totalTime += 0.000001 * ((double) (stopTime.tv_usec - startTime.tv_usec))
 //     + ((double) (stopTime.tv_sec - startTime.tv_sec));
 //   fprintf(stderr,"compile time %f seconds\n",totalTime);
-
-  return bcc->ToWord();
 }
 

@@ -19,6 +19,7 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/ByteConcreteCode.hh"
 #include "alice/LazySelInterpreter.hh"
+#include "alice/HotSpotConcreteCode.hh"
 
 #define INLINE_LIMIT 10
 
@@ -192,52 +193,40 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
     return;
   }
 
-  word wcc = closure->GetConcreteCode();
-  ConcreteCode *cc = ConcreteCode::FromWord(wcc);
-  if(cc != INVALID_POINTER) { // concrete code determined
-    Interpreter *interpreter = cc->GetInterpreter();
-    if(interpreter == ByteCodeInterpreter::self) {
-      ByteConcreteCode *bcc = ByteConcreteCode::FromWord(cc->ToWord());
-      Transform *transform =
-	STATIC_CAST(Transform *, bcc->GetAbstractRepresentation());
-      TagVal *acc = TagVal::FromWordDirect(transform->GetArgument());
-      if(CheckCycle(acc)) return; // break inline cycle
-      InlineInfo *inlineInfo = bcc->GetInlineInfo();
-      u_int nNodes = inlineInfo->GetNNodes();
-      if(nNodes <= INLINE_LIMIT) {
-	Append(key,instr,appVarPP,acc,closure,inlineInfo);
-	// adjust counter
-	counter += nNodes - 1; // substract 1 for AppVar instr
-      }
+  ConcreteCode *cc = ConcreteCode::FromWordDirect(closure->GetConcreteCode());
+  Interpreter *interpreter = cc->GetInterpreter();
+  if(interpreter == ByteCodeInterpreter::self) {
+    ByteConcreteCode *bcc = ByteConcreteCode::FromWordDirect(cc->ToWord());
+    Transform *transform =
+      STATIC_CAST(Transform *, bcc->GetAbstractRepresentation());
+    TagVal *acc = TagVal::FromWordDirect(transform->GetArgument());
+    if(CheckCycle(acc)) return; // break inline cycle
+    InlineInfo *inlineInfo = bcc->GetInlineInfo();
+    u_int nNodes = inlineInfo->GetNNodes();
+    if(nNodes <= INLINE_LIMIT) {
+      Append(key,instr,appVarPP,acc,closure,inlineInfo);
+      counter += nNodes - 1; // adjust counter: substract 1 for AppVar instr
+    }    
+  } else if(interpreter == HotSpotInterpreter::self) {
+    HotSpotConcreteCode *hscc = 
+      HotSpotConcreteCode::FromWordDirect(cc->ToWord());
+    Transform *transform = 
+      STATIC_CAST(Transform *, hscc->GetAbstractRepresentation());
+    TagVal *acc = TagVal::FromWordDirect(transform->GetArgument());
+    if(CheckCycle(acc)) return; // break inline cycle
+    TagVal *inlineInfoOpt = hscc->GetInlineInfoOpt();
+    InlineInfo *inlineInfo;
+    if(inlineInfoOpt == INVALID_POINTER) {
+      // recursively analyse callee
+      inlineInfo = ByteCodeInliner::AnalyseInlining(acc);
+      hscc->SetInlineInfo(inlineInfo);
+    } else {
+      inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
     }
-  } else { // lazy compile closure
-    Transient *transient = Store::WordToTransient(wcc);
-    if ((transient != INVALID_POINTER) &&
-	(transient->GetLabel() == BYNEED_LABEL)) {
-      Closure *byneedClosure =
-	STATIC_CAST(Byneed *, transient)->GetClosure();
-      wcc = byneedClosure->GetConcreteCode();
-      if (wcc == LazyByteCompileInterpreter::concreteCode) {
-	LazyByteCompileClosure *lazyBCC =
-	  LazyByteCompileClosure::FromWordDirect(byneedClosure->ToWord());
-	TagVal *acc = lazyBCC->GetAbstractCode();
-	if(CheckCycle(acc)) return; // break inline cycle
-	TagVal *inlineInfoOpt = lazyBCC->GetInlineInfoOpt();
-	InlineInfo *inlineInfo;
-	if(inlineInfoOpt == INVALID_POINTER) {
-	  // recursively analyse callee
-	  inlineInfo = ByteCodeInliner::AnalyseInlining(acc);
-	  lazyBCC->SetInlineInfo(inlineInfo);
-	} else
-	  inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
-	u_int nNodes = inlineInfo->GetNNodes();
-	if(nNodes <= INLINE_LIMIT) {
-	  Append(key,instr,appVarPP,lazyBCC->GetAbstractCode(),
-		 closure,inlineInfo);
-	  // adjust counter
-	  counter += nNodes - 1;
-	}
-      }
+    u_int nNodes = inlineInfo->GetNNodes();
+    if(nNodes <= INLINE_LIMIT) {
+      Append(key,instr,appVarPP,acc,closure,inlineInfo);
+      counter += nNodes - 1; // adjust counter
     }
   }
 }

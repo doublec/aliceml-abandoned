@@ -408,15 +408,15 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
 	  if(cc != INVALID_POINTER) {					\
 	    Interpreter *interpreter = cc->GetInterpreter();		\
-	    if(interpreter == this) {					\
-	      PushCall(closure);					\
+	      if(interpreter == this) {				\
+      PushCall(closure);					\
 	      if(StatusWord::GetStatus()) return Worker::PREEMPT;	\
 	      frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
 	      code = frame->GetCode();					\
 	      LOADSTATE(PC,CP,IP);					\
 	      DISPATCH(PC);						\
 	    }								\
-	  }								\
+	      }							\
 	}								\
 	/* preemption test happens in Scheduler::PushCall */		\
       	return Scheduler::PushCall(wClosure);				\

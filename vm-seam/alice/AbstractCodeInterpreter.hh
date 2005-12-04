@@ -22,6 +22,8 @@
 #include "Seam.hh"
 #include "alice/Base.hh"
 
+class AliceConcreteCode;
+
 class AliceDll AbstractCodeInterpreter: public Interpreter {
 private:
   AbstractCodeInterpreter(): Interpreter() {}
@@ -38,6 +40,7 @@ public:
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
+  void PushCall_Internal(AliceConcreteCode *concreteCode, Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
 #if PROFILE

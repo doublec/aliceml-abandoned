@@ -21,6 +21,7 @@
 #include "alice/AbstractCodeInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/NativeConcreteCode.hh"
+#include "alice/HotSpotConcreteCode.hh"
 
 #include <cstdio>
 #define DEBUG_PRINT(S) /*printf S*/
@@ -874,11 +875,12 @@ DEFINE1(UnsafeByteCode_compile) {
     RETURN_UNIT;
   }
 
-  fprintf(stderr,"VM.compile: abstractCode %p\n",abstractCode->ToWord());
-  LazyByteCompileClosure *lbcClos = LazyByteCompileClosure::New(abstractCode);
+  word w = HotSpotConcreteCode::New(abstractCode);
+  HotSpotConcreteCode *hsc = HotSpotConcreteCode::FromWordDirect(w);
   ByteCodeJitter jitter;
-  word wConcreteCode = jitter.Compile(lbcClos);
-  closure->SetConcreteCode(wConcreteCode);
+  fprintf(stderr,"start byte code jitter\n");
+  jitter.Compile(hsc);
+  closure->SetConcreteCode(hsc->ToWord());
   fprintf(stderr,"changed concrete code to byte code\n");
 
   RETURN_UNIT;
@@ -912,9 +914,8 @@ DEFINE1(UnsafeByteCode_lazyCompile) {
     RETURN_UNIT;
   }
 
-  fprintf(stderr,"change concrete code to lazy compile closure code\n");
-  word byneed = ByteConcreteCode::New(abstractCode); 
-  closure->SetConcreteCode(byneed);
+  fprintf(stderr,"lazy byte concrete code created\n");
+  closure->SetConcreteCode(ByteConcreteCode::New(abstractCode));
 
   RETURN_UNIT;
 } END

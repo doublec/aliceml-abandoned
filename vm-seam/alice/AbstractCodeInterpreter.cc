@@ -275,12 +275,11 @@ AbstractCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   return STATIC_CAST(AliceConcreteCode *, b)->GetAbstractRepresentation();
 }
 
-void AbstractCodeInterpreter::PushCall(Closure *closure) {
-  AliceConcreteCode *concreteCode =
-    AliceConcreteCode::FromWord(closure->GetConcreteCode());
+void AbstractCodeInterpreter::PushCall_Internal(AliceConcreteCode *acc,
+						Closure *closure) {
   // Function of coord * int * int * idDef vector *
   //   outArity option * instr * liveness
-  TagVal *abstractCode = concreteCode->GetAbstractCode();
+  TagVal *abstractCode = acc->GetAbstractCode();
   switch (AbstractCode::GetAbstractCode(abstractCode)) {
   case AbstractCode::Function:
     {
@@ -314,6 +313,12 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
   default:
     Error("AbstractCodeInterpreter::PushCall: invalid abstractCode tag");
   }
+}
+
+void AbstractCodeInterpreter::PushCall(Closure *closure) {
+  AliceConcreteCode *concreteCode =
+    AliceConcreteCode::FromWord(closure->GetConcreteCode());
+  PushCall_Internal(concreteCode, closure);
 }
 
 #undef REQUEST

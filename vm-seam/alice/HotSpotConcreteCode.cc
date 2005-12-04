@@ -22,27 +22,14 @@
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AbstractCode.hh"
 
-// initialization of the state machine
-typedef enum state { ABSTRACT_CODE, BYTE_CODE, NSTATES };
-
 #define ABSTRACT_CODE_COUNTER_INIT 5 // execute abstract code five times
 
 word HotSpotConcreteCode::New(TagVal *abstractCode) {
-  // reserve enough space for final state
-  ConcreteCode *concreteCode = 
-    ConcreteCode::New(HotSpotInterpreter::self, ByteConcreteCode::SIZE);
-  // start with abstract code
-  concreteCode->Init(CODE, AliceConcreteCode::New(abstractCode));
-  concreteCode->Init(COUNTER, Store::IntToWord(ABSTRACT_CODE_COUNTER_INIT));
-  // set all other arguments to 0
-  word zero = Store::IntToWord(0);
-  for(u_int i=SIZE; i<ByteConcreteCode::SIZE; i++)
-    concreteCode->Init(i, zero);
-  return concreteCode->ToWord();
-}
-
-Transform *HotSpotConcreteCode::GetAbstractRepresentation() {
-  return AliceConcreteCode::FromWordDirect(GetCode())->GetAbstractRepresentation();
+  return HotSpot_StartState::New(HotSpotInterpreter::self, 
+				 abstractCode,
+				 ByteConcreteCode::SIZE,
+				 AliceConcreteCode::New,
+				 ABSTRACT_CODE_COUNTER_INIT);
 }
 
 HotSpotInterpreter *HotSpotInterpreter::self;
@@ -57,27 +44,12 @@ void HotSpotInterpreter::PushCall(Closure *closure) {
     HotSpotConcreteCode::FromWordDirect(closure->GetConcreteCode());
   if(wrapper->GetCounter() > 0) {
     wrapper->DecCounter();
-    // temporary remove indirection to use the real push call method
-    closure->SetConcreteCode(wrapper->GetCode());
-    AbstractCodeInterpreter::self->PushCall(closure);
-    closure->SetConcreteCode(wrapper->ToWord());
-  } else {	
-    // go to next state
-    // reset the counter if the next state is not a final one
-    // TODO: remove the indirection over the lazy compile closure
     AliceConcreteCode *acc = 
-      AliceConcreteCode::FromWord(wrapper->GetCode());
-    LazyByteCompileClosure *compileClosure = 
-      LazyByteCompileClosure::New(acc->GetAbstractCode());
-    compileClosure->Init(1, wrapper->ToWord()); // set self call pointer
+      AliceConcreteCode::FromWordDirect(wrapper->GetCode());
+    AbstractCodeInterpreter::self->PushCall_Internal(acc, closure);
+  } else {	
     ByteCodeJitter jitter;
-    word wByteConcreteCode = jitter.Compile(compileClosure);
-    // convert the wrapper into byte concrete code
-    Block *src = Store::DirectWordToBlock(wByteConcreteCode);
-    Block *dst = Store::DirectWordToBlock(wrapper->ToWord());
-    for(u_int i = src->GetSize(); i--; )
-      dst->ReplaceArg(i, src->GetArg(i));
-    // push the closure
+    jitter.Compile(wrapper);
     ByteCodeInterpreter::self->PushCall(closure);
   }
 }

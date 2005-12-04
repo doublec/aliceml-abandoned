@@ -20,6 +20,8 @@
 #include "Seam.hh"
 #include "alice/Base.hh"
 #include "alice/Data.hh"
+#include "alice/AliceLanguageLayer.hh"
+#include "alice/ByteCodeInliner.hh"
 
 /*
  * The idea is that HotSpotConcrete (HSC) is a wrapper around the real concrete
@@ -32,40 +34,80 @@
  * size over all states.
  */
 
-class AliceDll HotSpotConcreteCode : private ConcreteCode {
-protected:
-  enum { CODE, COUNTER, SIZE };
+//
+// abstract states of hot spot code
+//
 
+class AliceDll HotSpotCode : protected ConcreteCode {
+protected:
+  enum { TRANSFORM, INLINE_INFO, CODE, COUNTER, SIZE };
+  
 public:
   using Block::ToWord;
   using ConcreteCode::GetInterpreter;
 
-  static word New(TagVal *abstractCode);
-
-  Transform *GetAbstractRepresentation();
+  Transform *GetAbstractRepresentation() {
+    return Transform::FromWordDirect(Get(TRANSFORM));    
+  }
 
   u_int GetCounter() { return Store::DirectWordToInt(Get(COUNTER)); }
   word GetCode() { return Get(CODE); }
+  TagVal *GetInlineInfoOpt() { return TagVal::FromWord(Get(INLINE_INFO));}
 
   void DecCounter() {
     u_int counter = GetCounter();
     Replace(COUNTER, Store::IntToWord(--counter));
   }
   void SetCode(word code) { Replace(CODE, code); }  
-
- // HotSpotConcreteCode Untagging
-  static HotSpotConcreteCode *FromWord(word code) {
-    ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
-    Assert(concreteCode == INVALID_POINTER ||
-	   concreteCode->GetInterpreter() == HotSpotInterpreter::self);
-    return STATIC_CAST(HotSpotConcreteCode *, concreteCode);
-  }
-  static HotSpotConcreteCode *FromWordDirect(word code) {
-    ConcreteCode *concreteCode = ConcreteCode::FromWordDirect(code);
-    Assert(concreteCode->GetInterpreter() == HotSpotInterpreter::self);
-    return STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+  void SetInlineInfo(InlineInfo *info) {
+    TagVal *some = TagVal::New(Types::SOME, 1);
+    some->Init(0, info->ToWord());
+    Replace(INLINE_INFO, some->ToWord());
   }
 };
+
+
+class AliceDll HotSpot_State : public HotSpotCode {
+public:  
+  // replaces the interpreter, code and counter
+  static void Convert(HotSpotCode *hsc,
+		      Interpreter *interpreter,
+		      concrete_constructor construct,
+		      int counter) {
+    Error("not yet implemented");
+  }
+};
+
+class AliceDll HotSpot_StartState : public HotSpotCode {
+public:
+  static word New(Interpreter *interpreter, 
+		  TagVal *abstractCode,
+		  int size, 
+		  concrete_constructor construct,
+		  int counter) {
+    Assert(size >= HotSpotCode::SIZE);
+    // reserve enough space for final state
+    ConcreteCode *concreteCode = ConcreteCode::New(interpreter, size);
+    // create transform
+    Chunk *name =
+      Store::DirectWordToChunk(AliceLanguageLayer::TransformNames::function);
+    Transform *transform = Transform::New(name, abstractCode->ToWord());
+    concreteCode->Init(TRANSFORM, transform->ToWord());
+    // construct code
+    concreteCode->Init(CODE, construct(abstractCode));
+    concreteCode->Init(COUNTER, Store::IntToWord(counter));
+    concreteCode->Init(INLINE_INFO, Store::IntToWord(Types::NONE));
+    // set all other arguments to 0
+    word zero = Store::IntToWord(0);
+    for(u_int i=SIZE; i<size; i++)
+      concreteCode->Init(i, zero);
+    return concreteCode->ToWord();
+  }
+};
+
+//
+// the real hot spot concrete code
+//
 
 class AliceDll HotSpotInterpreter : public Interpreter {
 private:
@@ -84,6 +126,27 @@ public:
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
+
+  
+  void Request();
+};
+
+class AliceDll HotSpotConcreteCode : public HotSpot_StartState {
+public:
+  static word New(TagVal *abstractCode);
+
+  // Untagging
+  static HotSpotConcreteCode *FromWord(word code) {
+    ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
+    Assert(concreteCode == INVALID_POINTER ||
+	   concreteCode->GetInterpreter() == HotSpotInterpreter::self);
+    return STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+  }
+  static HotSpotConcreteCode *FromWordDirect(word code) {
+    ConcreteCode *concreteCode = ConcreteCode::FromWordDirect(code);
+    Assert(concreteCode->GetInterpreter() == HotSpotInterpreter::self);
+    return STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+  }
 };
 
 #endif

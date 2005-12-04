@@ -17,6 +17,7 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeJitter.hh"
+#include "alice/HotSpotConcreteCode.hh"
 
 DEFINE1(UnsafeDebug_print) {
   Debug::Dump(x0);
@@ -109,11 +110,12 @@ DEFINE1(UnsafeDebug_byteCompile) {
     RETURN_UNIT;
   }
 
-  LazyByteCompileClosure *lbcClos = LazyByteCompileClosure::New(abstractCode);
+  word w = HotSpotConcreteCode::New(abstractCode);
+  HotSpotConcreteCode *hsc = HotSpotConcreteCode::FromWordDirect(w);
   ByteCodeJitter jitter;
   fprintf(stderr,"start byte code jitter\n");
-  word wConcreteCode = jitter.Compile(lbcClos);
-  closure->SetConcreteCode(wConcreteCode);
+  jitter.Compile(hsc);
+  closure->SetConcreteCode(hsc->ToWord());
   fprintf(stderr,"changed concrete code to byte code\n");
 
   RETURN_UNIT;
@@ -150,9 +152,8 @@ DEFINE1(UnsafeDebug_lazyByteCompile) {
     RETURN_UNIT;
   }
 
-  fprintf(stderr,"lazy compile closure created\n");
-  word byneed = ByteConcreteCode::New(abstractCode); 
-  closure->SetConcreteCode(byneed);
+  fprintf(stderr,"lazy byte concrete code created\n");
+  closure->SetConcreteCode(ByteConcreteCode::New(abstractCode));
 
   RETURN_UNIT;
 } END
