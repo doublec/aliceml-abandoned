@@ -46,6 +46,9 @@ public:
   ConcreteRepresentationHandler *GetHandler() {
     return STATIC_CAST(ConcreteRepresentationHandler *, Store::DirectWordToUnmanagedPointer(GetArg(HANDLER_POS)));
   }
+  void ReplaceHandler(ConcreteRepresentationHandler *handler) {
+    ReplaceArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
+  }
   void Init(u_int index, word value) {
     InitArg(BASE_SIZE + index, value);
   }

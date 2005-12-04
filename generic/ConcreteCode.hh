@@ -43,6 +43,9 @@ public:
   Interpreter *GetInterpreter() {
     return STATIC_CAST(Interpreter *, GetHandler());
   }
+  void ReplaceInterpreter(Interpreter *interpreter) {
+    ReplaceHandler(interpreter);
+  }
 };
 
 #endif
