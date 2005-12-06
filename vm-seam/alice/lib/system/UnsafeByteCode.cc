@@ -150,7 +150,7 @@ private:
   u_int *addrs;
 public:
   PatchTable(u_int s) : size(s) {
-    labels = new (Label*)[size];
+    labels = new Label*[size];
     for(u_int i=0; i<size; i++) {
       labels[i] = NULL;
     }
