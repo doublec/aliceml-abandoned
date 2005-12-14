@@ -2876,7 +2876,6 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 #endif
     return;
   }
-
   // argument mismatch
   switch(nFormalArgs) {
   case 0:
@@ -2900,11 +2899,11 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
       {
 	Assert(nArgs > 1); // construct tuple into formal arg 0
 	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
-	u_int dst = IdToReg(argOpt->Sel(0));
 	if(argOpt != INVALID_POINTER) {
+	  u_int dst = IdToReg(argOpt->Sel(0));
 	  switch(nArgs) {
 	  case 2:
-	  case 3:	    
+	  case 3:
 	    NewTup(dst, args); // special instr for pairs and triples
 	    break;
 	  default:
