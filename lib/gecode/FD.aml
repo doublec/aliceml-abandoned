@@ -94,7 +94,13 @@ struct
    val distinct = UnsafeGecode.int_distinct
    val sortedness = UnsafeGecode.int_sortedness
    val permsort = UnsafeGecode.int_permsort
-   val gcc = UnsafeGecode.int_gcc
+   val gcc1 = UnsafeGecode.int_gcc1
+   val gcc2 = UnsafeGecode.int_gcc2
+   val gcc3 = UnsafeGecode.int_gcc3
+   val gcc4 = UnsafeGecode.int_gcc4
+   val gcc5 = UnsafeGecode.int_gcc5
+   val gcc6 = UnsafeGecode.int_gcc6
+   val gcc7 = UnsafeGecode.int_gcc7
 
    fun distinctOffset(s, v, cl) =
        let

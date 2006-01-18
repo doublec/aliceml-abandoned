@@ -50,7 +50,19 @@ void sortedness(const IntVarArgs&, const IntVarArgs&, IntConLevel); int_sortedne
 void sortedness(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, IntConLevel); int_permsort;
 
 // Global cardinality
-void gcc(const IntVarArgs&, const IntArgs&, const IntArgs&, IntConLevel); int_gcc;
+
+void gcc(const IntVarArgs&, const IntArgs&, int, int, int, int, IntConLevel); int_gcc1;
+
+void gcc(const IntVarArgs&, const IntArgs&, int, int, int, int, int, IntConLevel); int_gcc2;
+
+void gcc(const IntVarArgs&, int, IntConLevel); int_gcc3;
+
+void gcc(const IntVarArgs&, int, int, IntConLevel); int_gcc4;
+
+void gcc(const IntVarArgs&, const IntVarArgs&, int, int, IntConLevel); int_gcc5;
+void gcc(const IntVarArgs&, const IntArgs&, const IntVarArgs&, int, int, bool, int, int, IntConLevel); int_gcc6;
+
+void gcc(const IntVarArgs&, const IntArgs&, const IntVarArgs&, int, int, int, bool, int, int, IntConLevel); int_gcc7;
 
 // Linear equations
 void linear(const IntArgs&, const IntVarArgs&, IntRelType, int, IntConLevel); int_linear;

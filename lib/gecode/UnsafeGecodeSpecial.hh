@@ -84,6 +84,64 @@
     word x5 = Scheduler::GetCurrentArg(5);              \
     word x6 = Scheduler::GetCurrentArg(6);
 
+#define DEFINE8(name)					\
+  static Worker::Result name() {			\
+    Assert(Scheduler::GetNArgs() == 8);			\
+    POP_PRIM_SELF(); \
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);		\
+    word x4 = Scheduler::GetCurrentArg(4);              \
+    word x5 = Scheduler::GetCurrentArg(5);              \
+    word x6 = Scheduler::GetCurrentArg(6);              \
+    word x7 = Scheduler::GetCurrentArg(7);
+
+#define DEFINE9(name)					\
+  static Worker::Result name() {			\
+    Assert(Scheduler::GetNArgs() == 9);			\
+    POP_PRIM_SELF(); \
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);		\
+    word x4 = Scheduler::GetCurrentArg(4);              \
+    word x5 = Scheduler::GetCurrentArg(5);              \
+    word x6 = Scheduler::GetCurrentArg(6);              \
+    word x7 = Scheduler::GetCurrentArg(7);              \
+    word x8 = Scheduler::GetCurrentArg(8);
+
+#define DEFINE10(name)					\
+  static Worker::Result name() {			\
+    Assert(Scheduler::GetNArgs() == 10);		\
+    POP_PRIM_SELF(); \
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);		\
+    word x4 = Scheduler::GetCurrentArg(4);              \
+    word x5 = Scheduler::GetCurrentArg(5);              \
+    word x6 = Scheduler::GetCurrentArg(6);              \
+    word x7 = Scheduler::GetCurrentArg(7);              \
+    word x8 = Scheduler::GetCurrentArg(8);              \
+    word x9 = Scheduler::GetCurrentArg(9);
+
+#define DEFINE11(name)					\
+  static Worker::Result name() {			\
+    Assert(Scheduler::GetNArgs() == 11);		\
+    POP_PRIM_SELF(); \
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);		\
+    word x4 = Scheduler::GetCurrentArg(4);              \
+    word x5 = Scheduler::GetCurrentArg(5);              \
+    word x6 = Scheduler::GetCurrentArg(6);              \
+    word x7 = Scheduler::GetCurrentArg(7);              \
+    word x8 = Scheduler::GetCurrentArg(8);              \
+    word x9 = Scheduler::GetCurrentArg(9);              \
+    word x10 = Scheduler::GetCurrentArg(10);
+
 #define CHECK_SPACE(s) if (!s) RAISE(UnsafeGecode::InvalidSpaceConstructor);
 
 #define DECLARE_INTVAR(v, s, stamp, pstamp, x)                  \

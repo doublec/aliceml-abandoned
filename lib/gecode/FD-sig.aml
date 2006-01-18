@@ -86,8 +86,18 @@ sig
     val permsort : space * intvar vector * intvar vector * intvar vector * conlevel -> unit
 
     (* Global cardinality *)
-    val gcc : space * intvar vector * int vector * int vector *
-              conlevel -> unit
+    val gcc1 : space * intvar vector * int vector * int * int * int * int *
+	conlevel -> unit
+    val gcc2 : space * intvar vector * int vector * int * int * int * int *
+	int * conlevel -> unit
+    val gcc3 : space * intvar vector * int * conlevel -> unit
+    val gcc4 : space * intvar vector * int * int * conlevel -> unit
+    val gcc5 : space * intvar vector * intvar vector * int * int *
+	conlevel -> unit
+    val gcc6 : space * intvar vector * int vector * intvar vector * int *
+	int * bool * int * int * conlevel -> unit
+    val gcc7 : space * intvar vector * int vector * intvar vector * int *
+	int * int * bool * int * int * conlevel -> unit
 
     (* Counting constraints *)
     val countII : space * intvar vector * 
