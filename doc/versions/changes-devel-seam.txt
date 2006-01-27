@@ -5,6 +5,7 @@ Interactive Toplevel:
 Basic Library:
 
 * [FIX] OS.FileSys: filter out current and parent arc with `readDir'.
+* [FIX] Remote.{run,eval}: fixed treatment of ALICE_REMOTE_LOG.
 
 Constraint Library:
 
