@@ -16,7 +16,9 @@
 #include <cstring> 
 #include "alice/Data.hh"
 
-#ifdef __GNUC__ // GNUC allows labels as values for direct threaded code
+// GNUC allows labels as values for direct threaded code
+// NOTE: for some misterious reason direct threaded code is slower on PowerPC
+#if defined(__GNUC__) && !defined(__ppc__)
 #define THREADED
 #else
 #undef THREADED

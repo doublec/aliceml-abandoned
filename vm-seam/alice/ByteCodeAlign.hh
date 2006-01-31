@@ -154,7 +154,8 @@ class ByteCode; // forward declaration
 #define SKIP_INSTR(PC) PC++
 
 // set instructions + arguments
-#define SET_1I(index,i)   ENCODE_1I(index,i)
+#define SET_1I(index,i) ENCODE_1I(index,i)
+#define SET_1R(index,r) SET_1I(index,r)  
 
 #define SET_INSTR(index,instr) ENCODE_INSTR(index,instr)	
 							
@@ -271,7 +272,7 @@ class ByteCode; // forward declaration
 
 #ifdef THREADED
 #define REWRITE_INSTR(buffer,index,instr) {				\
-    buffer->RewriteSlot(index,(u_int) ByteCode::LookupInstr(instr));	\
+    *index = (u_int) ByteCode::LookupInstr(instr);			\
   }
 #else
 #define REWRITE_INSTR(buffer,index,instr) {	\

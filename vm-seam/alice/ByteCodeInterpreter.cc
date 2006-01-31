@@ -29,22 +29,8 @@
 
 using namespace ByteCodeInstr;
 
-#define DO_RELATIVE_JUMP
-
 #ifdef THREADED // is defined in ByteCodeBuffer.hh
 
-#ifdef DO_RELATIVE_JUMP
-#define SETPC(x) PC = ((CodeSlot *)code->GetBase()) + x
-#define SAVEPC(PC) {							\
-    u_int offset = (u_int)(((u_int)PC) - ((u_int)(code->GetBase())));	\
-    frame->SavePC(offset / sizeof(u_int));				\
-}
-#define LOADSTATE(PC,CP,IP) {			\
-    SETPC(frame->GetPC());			\
-    CP = frame->GetCP();			\
-    IP = frame->GetIP();			\
-}
-#else
 #define SETPC(x) PC = codeBase + x
 #define SAVEPC(PC) {						\
     u_int offset = (u_int)(((u_int)PC) - ((u_int)codeBase));	\
@@ -56,14 +42,10 @@ using namespace ByteCodeInstr;
     CP = frame->GetCP();			\
     IP = frame->GetIP();			\
 }
-#endif
-#define Case(INSTR) INSTR##LBL
+#define Case(INSTR) INSTR##LBL: startPC = PC; SKIP_INSTR(PC);
 
 #define DISPATCH(PC)				\
-  DEBUG_INSTR();				\
-  startPC = PC;					\
-  SKIP_INSTR(PC);				\
-  goto *((void *)(*startPC))
+  goto *((void *)(*PC))
   
 #define INSTR(instr) && instr##LBL,
 
@@ -78,7 +60,7 @@ using namespace ByteCodeInstr;
     IP = frame->GetIP();			\
 }
 
-#define Case(INSTR) case INSTR
+#define Case(INSTR) case INSTR:
 
 #define DISPATCH(PC) break
 
@@ -184,11 +166,11 @@ Worker::Result ByteCodeInterpreter::Handle(word data) {
 Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
 #ifdef THREADED
+  static void* instrTable[] = {
+    #include "alice/ByteCodeInstrs.hh"
+    NULL
+  };
   if(sFrame == NULL) {
-    static void* instrTable[] = {
-      #include "alice/ByteCodeInstrs.hh"
-      NULL
-    };
     ByteCode::RegisterInstrTable(instrTable);
     return Worker::CONTINUE; // return value doesn't matter
   }
@@ -198,17 +180,16 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   Chunk *code = frame->GetCode();
 
-#if defined(THREADED) && !defined(DO_RELATIVE_JUMP)
+  register ProgramCounter startPC; // save position before current instr
+  register ProgramCounter PC;
+#if defined(THREADED)
   u_int *codeBase = (u_int *) (code->GetBase());
 #else
-  ReadBuffer *codeBuffer = ReadBuffer::New(code);
+  register ReadBuffer *codeBuffer = ReadBuffer::New(code);
 #endif
-
-  register ProgramCounter PC;
-  ProgramCounter startPC; // save position before current instr
   SETPC(frame->GetPC());
-  register Closure *CP = frame->GetCP();
   register Tuple *IP = frame->GetIP();  
+  register Closure *CP = frame->GetCP();
 
   BCI_DEBUG("BCI::Run: start execution at PC %d\n",frame->GetPC());
 #ifdef THREADED	
@@ -228,29 +209,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * calling convention conversion
        *********************************/
 
-    Case(ccc1):
+    Case(ccc1)
       {
-	ByteCodeInterpreter::Construct();     
-	SETREG(0, Scheduler::GetCurrentArg(0));
+	ByteCodeInterpreter::Construct(); 
+	SETREG(0,Scheduler::GetCurrentArg(0));    
       }
       DISPATCH(PC);
 
-    Case(cccn): // nArgs
-      {
-	GET_1I(codeBuffer,PC,nArgs);
-	if(ByteCodeInterpreter::Deconstruct())
-	  return Worker::REQUEST;
-	
-	Assert(Scheduler::GetNArgs() == nArgs);
-
-	// invariant: 0 .. n-1 are the target registers
-	for(u_int i = nArgs; i--;) {
-	  SETREG(i,Scheduler::GetCurrentArg(i));
-	}
-      }
-      DISPATCH(PC);
-
-    Case(seam_ccc1): // reg
+    Case(seam_ccc1) // reg
       {
 	GET_1R(codeBuffer,PC,reg);
 	ByteCodeInterpreter::Construct();       
@@ -258,7 +224,20 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(seam_cccn): // args
+    Case(cccn) // nArgs
+      {
+	GET_1I(codeBuffer,PC,nArgs);
+	if(ByteCodeInterpreter::Deconstruct())
+	  return Worker::REQUEST;	
+	Assert(Scheduler::GetNArgs() == nArgs);
+	// invariant: 0 .. n-1 are the target registers
+	for(u_int i = nArgs; i--;) {
+	  SETREG(i,Scheduler::GetCurrentArg(i));
+	}
+      }
+      DISPATCH(PC);
+
+    Case(seam_cccn) // args
       {
 	GET_1I(codeBuffer,PC,argsAddr);
 	if(ByteCodeInterpreter::Deconstruct())
@@ -280,117 +259,46 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * macro definition for function calls/returns
        **********************************************/
 
-#define SET_SCHEDULER_ARGS1(r0)			\
-	Scheduler::SetNArgs(1);			\
-	Scheduler::SetCurrentArg(0,GETREG(r0));
-#define SET_SCHEDULER_ARGS2(r0,r1)		\
-	Scheduler::SetNArgs(2);			\
-	Scheduler::SetCurrentArg(0,GETREG(r0));	\
-	Scheduler::SetCurrentArg(1,GETREG(r1));
-#define SET_SCHEDULER_ARGS3(r0,r1,r2)		\
-	Scheduler::SetNArgs(3);			\
-	Scheduler::SetCurrentArg(0,GETREG(r0));	\
-	Scheduler::SetCurrentArg(1,GETREG(r1));	\
-	Scheduler::SetCurrentArg(2,GETREG(r2));
-#define SET_SCHEDULER_ARGS4(r0,r1,r2,r3)	\
-	Scheduler::SetNArgs(4);			\
-	Scheduler::SetCurrentArg(0,GETREG(r0));	\
-	Scheduler::SetCurrentArg(1,GETREG(r1));	\
-	Scheduler::SetCurrentArg(2,GETREG(r2));	\
-	Scheduler::SetCurrentArg(3,GETREG(r3));
-
-#define PREPARE_CALL() 				\
-      GET_1R1I(codeBuffer,PC,reg,nArgs)
-#define PREPARE_CALL0()				\
-      GET_1R(codeBuffer,PC,reg);		\
-      Scheduler::SetNArgs(0)
-#define PREPARE_CALL1()				\
-      GET_2R(codeBuffer,PC,reg,r0);		\
-      SET_SCHEDULER_ARGS1(r0)
-#define PREPARE_CALL2()				\
-      GET_3R(codeBuffer,PC,reg,r0,r1);		\
-      SET_SCHEDULER_ARGS2(r0,r1)
-#define PREPARE_CALL3()				\
-      GET_4R(codeBuffer,PC,reg,r0,r1,r2);	\
-      SET_SCHEDULER_ARGS3(r0,r1,r2)
+#define SET_ARGS0() Scheduler::SetNArgs(0)
+#define SET_ARGS1()                             \
+    Scheduler::SetNArgs(1);                     \
+    GET_1R(codeBuffer,PC,r);                    \
+    Scheduler::SetCurrentArg(0, GETREG(r))
+#define SET_ARGS2()                             \
+    Scheduler::SetNArgs(2);                     \
+    GET_1R(codeBuffer,PC,r0);                   \
+    Scheduler::SetCurrentArg(1, GETREG(r0));    \
+    GET_1R(codeBuffer,PC,r1);                   \
+    Scheduler::SetCurrentArg(0, GETREG(r1))
+#define SET_ARGS3()                             \
+    Scheduler::SetNArgs(3);                     \
+    GET_1R(codeBuffer,PC,r0);                   \
+    Scheduler::SetCurrentArg(2, GETREG(r0));    \
+    GET_1R(codeBuffer,PC,r1);                   \
+    Scheduler::SetCurrentArg(1, GETREG(r1));    \
+    GET_1R(codeBuffer,PC,r2);                   \
+    Scheduler::SetCurrentArg(0, GETREG(r2))
+#define SET_ARGS()                              \
+    Scheduler::SetNArgs(nArgs);                 \
+    for(u_int i = nArgs; i--; ) {               \
+      GET_1R(codeBuffer,PC,r);                  \
+      Scheduler::SetCurrentArg(i, GETREG(r));   \
+    }
       
 
       /**************************
        * normal function call
        *************************/
 
-    // specialized calls
-
-#define PREPARE_SELFCALL()			\
-      GET_1I(codeBuffer,PC,nArgs)
-#define PREPARE_SELFCALL0()			\
-      Scheduler::SetNArgs(0)
-#define PREPARE_SELFCALL1()			\
-      GET_1R(codeBuffer,PC,r0);			\
-      SET_SCHEDULER_ARGS1(r0)
-#define PREPARE_SELFCALL2()			\
-      GET_2R(codeBuffer,PC,r0,r1);		\
-      SET_SCHEDULER_ARGS2(r0,r1)
-#define PREPARE_SELFCALL3()			\
-      GET_3R(codeBuffer,PC,r0,r1,r2);		\
-      SET_SCHEDULER_ARGS3(r0,r1,r2)
-
-#define SELF_CALL(NOA) {						\
-        PREPARE_SELFCALL##NOA();					\
-	SAVEPC(PC);							\
-	ByteCodeInterpreter::PushCall(CP);				\
-	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
-	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
-        SETPC(0);                                                       \
-        DISPATCH(PC);							\
-      }
-
-    Case(self_call):  SELF_CALL();
-    Case(self_call0): SELF_CALL(0);
-    Case(self_call1): SELF_CALL(1);
-    Case(self_call2): SELF_CALL(2);
-    Case(self_call3): SELF_CALL(3);
-
-// #define BCI_CALL(NOA) {						\
-//         PREPARE_CALL##NOA();						\
-// 	SAVEPC(PC);							\
-// 	ByteCodeInterpreter::PushCall(Closure::FromWord(GETREG(reg)));	\
-// 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
-// 	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
-// 	code = frame->GetCode();					\
-// 	LOADSTATE(PC,CP,IP);						\
-//         DISPATCH(PC);						\
-//       }
-
-#define BCI_CALL(NOA) {							\
-        PREPARE_CALL##NOA();						\
-	SAVEPC(PC);					\
-	word wClosure = GETREG(reg);					\
-	REQUEST_WORD(Closure,closure,wClosure);				\
-	ByteCodeInterpreter::PushCall(closure);				\
-	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
-	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
-	LOADSTATE(PC,CP,IP);					        \
-	code = frame->GetCode();					\
-	codeBuffer = ReadBuffer::New(code);				\
-        DISPATCH(PC);							\
-      }
-
-    Case(bci_call):  BCI_CALL();
-    Case(bci_call0): BCI_CALL(0);
-    Case(bci_call1): BCI_CALL(1);
-    Case(bci_call2): BCI_CALL(2);
-    Case(bci_call3): BCI_CALL(3);
-
-    Case(bci_call_direct0): Error("bci_call_direct0 not yet implemented\n");
-    Case(bci_call_direct1): Error("bci_call_direct1 not yet implemented\n");
-    Case(bci_call_direct2): Error("bci_call_direct2 not yet implemented\n");
-    Case(bci_call_direct3): Error("bci_call_direct3 not yet implemented\n");
-
-      // normal calls
+#define PRELUDE_SEAMCALL0() GET_1R(codeBuffer,PC,reg)
+#define PRELUDE_SEAMCALL1() PRELUDE_SEAMCALL0()
+#define PRELUDE_SEAMCALL2() PRELUDE_SEAMCALL0()
+#define PRELUDE_SEAMCALL3() PRELUDE_SEAMCALL0()
+#define PRELUDE_SEAMCALL() GET_1R1I(codeBuffer,PC,reg,nArgs)
 
 #define SEAM_CALL(NOA) {						\
-        PREPARE_CALL##NOA();						\
+	PRELUDE_SEAMCALL##NOA();					\
+        SET_ARGS##NOA();						\
 	SAVEPC(PC);							\
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);			\
@@ -408,100 +316,46 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
 	  if(cc != INVALID_POINTER) {					\
 	    Interpreter *interpreter = cc->GetInterpreter();		\
-	      if(interpreter == this) {				\
-      PushCall(closure);					\
+	    if(interpreter == this) {					\
+	      PushCall(closure);					\
 	      if(StatusWord::GetStatus()) return Worker::PREEMPT;	\
 	      frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
 	      code = frame->GetCode();					\
 	      LOADSTATE(PC,CP,IP);					\
 	      DISPATCH(PC);						\
 	    }								\
-	      }							\
+	  }								\
 	}								\
 	/* preemption test happens in Scheduler::PushCall */		\
       	return Scheduler::PushCall(wClosure);				\
-    }
+      }
 
-    Case(seam_call):  SEAM_CALL();
-    Case(seam_call0): SEAM_CALL(0);
-    Case(seam_call1): SEAM_CALL(1);
-    Case(seam_call2): SEAM_CALL(2);
-    Case(seam_call3): SEAM_CALL(3);
+    Case(seam_call)  SEAM_CALL();
+    Case(seam_call0) SEAM_CALL(0);
+    Case(seam_call1) SEAM_CALL(1);
+    Case(seam_call2) SEAM_CALL(2);
+    Case(seam_call3) SEAM_CALL(3);
 
 
     /***************************
      * function tailcall
      ***************************/
 
-    // specialized self tailcall instructions
-
-#define SELF_TAILCALL(NOA) {			\
-      PREPARE_SELFCALL##NOA();			\
-      SETPC(0);					\
-      CHECK_PREEMPT();				\
-      DISPATCH(PC);				\
-}
-      
-      Case(self_tailcall):  SELF_TAILCALL();
-      Case(self_tailcall0): SELF_TAILCALL(0);
-      Case(self_tailcall1): SELF_TAILCALL(1);
-      Case(self_tailcall2): SELF_TAILCALL(2);
-      Case(self_tailcall3): SELF_TAILCALL(3);
-
-    // bci tailcalls
-
-#define BCI_TAILCALL(NOA) {						\
-      PREPARE_CALL##NOA();						\
-      Scheduler::PopFrame(frame->GetSize());				\
-      word wClosure = GETREG(reg);					\
-      REQUEST_WORD(Closure,closure,wClosure);				\
-      /*      Closure *closure = Closure::FromWordDirect(GETREG(reg));*/ \
-      PushCall(closure);						\
-      if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
-      frame = (ByteCodeFrame *) Scheduler::GetFrame();			\
-      LOADSTATE(PC,CP,IP); 					        \
-      code = frame->GetCode();						\
-      codeBuffer = ReadBuffer::New(code);				\
-      DISPATCH(PC);							\
-    }
-
-      Case(bci_tailcall):  BCI_TAILCALL();
-      Case(bci_tailcall0): BCI_TAILCALL(0)
-      Case(bci_tailcall1): BCI_TAILCALL(1);
-      Case(bci_tailcall2): BCI_TAILCALL(2);
-      Case(bci_tailcall3): BCI_TAILCALL(3); 
-
-
-//       Case(bci_tailcall):  Error("bci_tailcall not yet implemented");
-//       Case(bci_tailcall0): Error("bci_tailcall0 not yet implemented");
-//       Case(bci_tailcall1): Error("bci_tailcall1 not yet implemented");
-//       Case(bci_tailcall2): Error("bci_tailcall2 not yet implemented");
-//       Case(bci_tailcall3): Error("bci_tailcall3 not yet implemented");
-
-      Case(bci_tailcall_direct0): 
-	Error("bci_tailcall_direct0 not yet implemented");
-      Case(bci_tailcall_direct1): 
-	Error("bci_tailcall_direct1 not yet implemented");
-      Case(bci_tailcall_direct2): 
-	Error("bci_tailcall_direct2 not yet implemented");
-      Case(bci_tailcall_direct3): 
-	Error("bci_tailcall_direct3 not yet implemented");
-
-
     // normal tailcalls
 
 #define SEAM_TAILCALL(NOA) {						\
-      PREPARE_CALL##NOA();						\
-      word wClosure = GETREG(reg);					\
-      Closure *closure = Closure::FromWord(wClosure);			\
-      if(closure == CP) {						\
-	SETPC(0);							\
-	CHECK_PREEMPT();						\
-	DISPATCH(PC);							\
-      }									\
-      /* dynamic byte code call test */					\
-      Scheduler::PopFrame(frame->GetSize());				\
-      if(closure != INVALID_POINTER) {					\
+	PRELUDE_SEAMCALL##NOA();					\
+        SET_ARGS##NOA();						\
+	word wClosure = GETREG(reg);					\
+	Closure *closure = Closure::FromWord(wClosure);			\
+	if(closure == CP) {						\
+	  SETPC(0);							\
+	  CHECK_PREEMPT();						\
+	  DISPATCH(PC);							\
+	}								\
+	/* dynamic byte code call test */				\
+	Scheduler::PopFrame(frame->GetSize());				\
+	if(closure != INVALID_POINTER) {				\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
 	  if(cc != INVALID_POINTER) {					\
@@ -516,69 +370,213 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	    }								\
 	  }								\
 	}								\
-      /* preemption check happens in Scheduler::PushCall */		\
-      return  Scheduler::PushCall(wClosure);				\
-    }
+	/* preemption check happens in Scheduler::PushCall */		\
+	return  Scheduler::PushCall(wClosure);				\
+      }
 
-    Case(seam_tailcall):  SEAM_TAILCALL();
-    Case(seam_tailcall0): SEAM_TAILCALL(0);
-    Case(seam_tailcall1): SEAM_TAILCALL(1);
-    Case(seam_tailcall2): SEAM_TAILCALL(2);
-    Case(seam_tailcall3): SEAM_TAILCALL(3);
+    Case(seam_tailcall)  SEAM_TAILCALL();
+    Case(seam_tailcall0) SEAM_TAILCALL(0);
+    Case(seam_tailcall1) SEAM_TAILCALL(1);
+    Case(seam_tailcall2) SEAM_TAILCALL(2);
+    Case(seam_tailcall3) SEAM_TAILCALL(3);
+
+
+      /*****************************
+       * specialized function calls
+       *****************************/
+    
+      // ATTENTION: some specialized calls require that the immediate
+      //            closure argument can be obtained with 
+      //            "Closure::FromWordDirect"
+      //            The compiler performs the dereferencing.
+    
+      // self calls
+
+#define PRELUDE_SELFCALL0() 
+#define PRELUDE_SELFCALL1() PRELUDE_SELFCALL0()
+#define PRELUDE_SELFCALL2() PRELUDE_SELFCALL0()
+#define PRELUDE_SELFCALL3() PRELUDE_SELFCALL0()
+#define PRELUDE_SELFCALL() GET_1I(codeBuffer,PC,nArgs)
+
+#define SELF_CALL(NOA) {					\
+	PRELUDE_SELFCALL##NOA();				\
+        SET_ARGS##NOA();					\
+	SAVEPC(PC);						\
+	ByteCodeInterpreter::PushCall(CP);			\
+	if(StatusWord::GetStatus()) return Worker::PREEMPT;	\
+	frame = (ByteCodeFrame *) Scheduler::GetFrame();	\
+        SETPC(0);						\
+        DISPATCH(PC);						\
+      }
+
+    Case(self_call)  SELF_CALL();
+    Case(self_call0) SELF_CALL(0);
+    Case(self_call1) SELF_CALL(1);
+    Case(self_call2) SELF_CALL(2);
+    Case(self_call3) SELF_CALL(3);
+
+      // rewrite calls
+
+#define REWRITE_TEST(wClosure,instr)				\
+    Closure *closure = Closure::FromWordDirect(wClosure);	\
+    ConcreteCode *cc =						\
+      ConcreteCode::FromWord(closure->GetConcreteCode());	\
+    Interpreter *interpreter = cc->GetInterpreter();		\
+    if(interpreter == ByteCodeInterpreter::self) {		\
+      REWRITE_INSTR(codeBuffer,startPC,instr);			\
+      PC = startPC;						\
+      DISPATCH(PC);						\
+    }								
+
+#define PRELUDE_IMMEDIATE_CALL0() GET_1I(codeBuffer,PC,closureAddr)
+#define PRELUDE_IMMEDIATE_CALL1() PRELUDE_IMMEDIATE_CALL0()
+#define PRELUDE_IMMEDIATE_CALL2() PRELUDE_IMMEDIATE_CALL0()
+#define PRELUDE_IMMEDIATE_CALL3() PRELUDE_IMMEDIATE_CALL0()
+#define PRELUDE_IMMEDIATE_CALL()  GET_2I(codeBuffer,PC,closureAddr,nArgs)	
+
+#define REWRITE_CALL(N) {					\
+	PRELUDE_IMMEDIATE_CALL##N();				\
+	word wClosure = IP->Sel(closureAddr);			\
+	REWRITE_TEST(wClosure,ByteCodeInstr::bci_call##N);	\
+	SET_ARGS##N();						\
+	SAVEPC(PC);						\
+	return Scheduler::PushCall(wClosure);			\
+      }
+
+    Case(rewrite_call)  REWRITE_CALL();
+    Case(rewrite_call0) REWRITE_CALL(0);
+    Case(rewrite_call1) REWRITE_CALL(1);
+    Case(rewrite_call2) REWRITE_CALL(2);
+    Case(rewrite_call3) REWRITE_CALL(3);
+
+#define REWRITE_TAILCALL(N) {						\
+	PRELUDE_IMMEDIATE_CALL##N();					\
+	word wClosure = IP->Sel(closureAddr);				\
+	REWRITE_TEST(wClosure,ByteCodeInstr::bci_tailcall##N);	\
+	SET_ARGS##N();							\
+	Scheduler::PopFrame(frame->GetSize());				\
+	return Scheduler::PushCall(wClosure);				\
+      }
+      
+    Case(rewrite_tailcall)  REWRITE_TAILCALL();
+    Case(rewrite_tailcall0) REWRITE_TAILCALL(0);
+    Case(rewrite_tailcall1) REWRITE_TAILCALL(1);
+    Case(rewrite_tailcall2) REWRITE_TAILCALL(2);
+    Case(rewrite_tailcall3) REWRITE_TAILCALL(3);
+
+      // immediate call
+
+#define IMMEDIATE_CALL(N) {			\
+	PRELUDE_IMMEDIATE_CALL##N();		\
+	SET_ARGS##N();				\
+	SAVEPC(PC);				\
+	word wClosure = IP->Sel(closureAddr);	\
+	return Scheduler::PushCall(wClosure);	\
+      }
+
+    Case(immediate_call)  IMMEDIATE_CALL();
+    Case(immediate_call0) IMMEDIATE_CALL(0);
+    Case(immediate_call1) IMMEDIATE_CALL(1);
+    Case(immediate_call2) IMMEDIATE_CALL(2);
+    Case(immediate_call3) IMMEDIATE_CALL(3);
+
+#define IMMEDIATE_TAILCALL(N) {			\
+	PRELUDE_IMMEDIATE_CALL##N();		\
+	SET_ARGS##N();				\
+	word wClosure = IP->Sel(closureAddr);	\
+	Scheduler::PopFrame(frame->GetSize());	\
+	return Scheduler::PushCall(wClosure);	\
+      } 
+
+    Case(immediate_tailcall)  IMMEDIATE_TAILCALL();
+    Case(immediate_tailcall0) IMMEDIATE_TAILCALL(0);
+    Case(immediate_tailcall1) IMMEDIATE_TAILCALL(1);
+    Case(immediate_tailcall2) IMMEDIATE_TAILCALL(2);
+    Case(immediate_tailcall3) IMMEDIATE_TAILCALL(3);
+
+      // immediate byte code call
+      
+#define BCI_CALL(N) {							\
+	PRELUDE_IMMEDIATE_CALL##N();					\
+	SET_ARGS##N();							\
+	SAVEPC(PC);							\
+	/* invariant: closure is determined */				\
+	Closure *closure =						\
+	  Closure::FromWordDirect(IP->Sel(closureAddr));		\
+	ByteCodeInterpreter::PushCall(closure);				\
+	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
+	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
+	code = frame->GetCode();					\
+	LOADSTATE(PC,CP,IP);						\
+	DISPATCH(PC);							\
+      } 
+  
+    Case(bci_call)  BCI_CALL();
+    Case(bci_call0) BCI_CALL(0);
+    Case(bci_call1) BCI_CALL(1);
+    Case(bci_call2) BCI_CALL(2);
+    Case(bci_call3) BCI_CALL(3);
+
+#define BCI_TAILCALL(N) {						\
+	PRELUDE_IMMEDIATE_CALL##N();					\
+	SET_ARGS##N();							\
+	/* invariant: closure is determined */				\
+	Closure *closure =						\
+	  Closure::FromWordDirect(IP->Sel(closureAddr));		\
+	Scheduler::PopFrame(frame->GetSize());				\
+	ByteCodeInterpreter::PushCall(closure);				\
+	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
+	frame = (ByteCodeFrame *) Scheduler::GetFrame();		\
+	code = frame->GetCode();					\
+	LOADSTATE(PC,CP,IP);						\
+	DISPATCH(PC);							\
+      }
+    
+    Case(bci_tailcall)  BCI_TAILCALL();
+    Case(bci_tailcall0) BCI_TAILCALL(0);
+    Case(bci_tailcall1) BCI_TAILCALL(1);
+    Case(bci_tailcall2) BCI_TAILCALL(2);
+    Case(bci_tailcall3) BCI_TAILCALL(3);
 
 
     /****************************************
      * macro definitions for primitve calls
      ***************************************/
 
-#define PREPARE_PRIMCALL()			\
-      GET_2I(codeBuffer,PC,nArgs,primAddr)
-#define PREPARE_PRIMCALL0()			\
-      u_int nArgs = 0;				\
-      GET_1I(codeBuffer,PC,primAddr);		\
-      Scheduler::SetNArgs(0)
-#define PREPARE_PRIMCALL1()			\
-      u_int nArgs = 1;				\
-      GET_1R1I(codeBuffer,PC,r0,primAddr);	\
-      SET_SCHEDULER_ARGS1(r0)
-#define PREPARE_PRIMCALL2()			\
-      u_int nArgs = 2;				\
-      GET_2R1I(codeBuffer,PC,r0,r1,primAddr);	\
-      SET_SCHEDULER_ARGS2(r0,r1)
-#define PREPARE_PRIMCALL3()				\
-      u_int nArgs = 3;					\
-      GET_3R1I(codeBuffer,PC,r0,r1,r2,primAddr);	\
-      SET_SCHEDULER_ARGS3(r0,r1,r2)
+#define PRELUDE_PRIMCALL0() GET_1I(codeBuffer,PC,primAddr);
+#define PRELUDE_PRIMCALL1() PRELUDE_PRIMCALL0()
+#define PRELUDE_PRIMCALL2() PRELUDE_PRIMCALL0()
+#define PRELUDE_PRIMCALL3() PRELUDE_PRIMCALL0()
+#define PRELUDE_PRIMCALL()  GET_2I(codeBuffer,PC,primAddr,nArgs)
 
     /**************************
      * normal primitive call
      *************************/
 
 #define SEAM_CALL_PRIM(NOA) {						\
-      PREPARE_PRIMCALL##NOA();						\
-      SAVEPC(PC);							\
-      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	\
-      /*Worker::Result res = Primitive::Execute(interpreter);*/		\
-      NEW_STACK_FRAME(primFrame, interpreter, 0);			\
-      Worker::Result res = interpreter->GetCFunction()();		\
-      StackFrame *newFrame = Scheduler::GetFrame();			\
-      /* test if we can skip the scheduler */				\
-      if(res == CONTINUE && !StatusWord::GetStatus()			\
-         && newFrame->GetWorker() == this) {				\
-	frame = (ByteCodeFrame*) newFrame;				\
-	code = frame->GetCode();					\
-	LOADSTATE(PC,CP,IP);						\
-	DISPATCH(PC);							\
-      }									\
-      return res;							\
-    }									
-
+	PRELUDE_PRIMCALL##NOA();					\
+        SET_ARGS##NOA();						\
+	SAVEPC(PC);							\
+	Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	\
+	NEW_STACK_FRAME(primFrame, interpreter, 0);			\
+	Worker::Result res = interpreter->GetCFunction()();		\
+	StackFrame *newFrame = Scheduler::GetFrame();			\
+	/* test if we can skip the scheduler */				\
+	if(res == CONTINUE && !StatusWord::GetStatus()			\
+	   && newFrame->GetWorker() == this) {				\
+	  frame = (ByteCodeFrame*) newFrame;				\
+	  code = frame->GetCode();					\
+	  LOADSTATE(PC,CP,IP);						\
+	  DISPATCH(PC);							\
+	}								\
+	return res;							\
+      }									
       
-    Case(seam_call_prim):  SEAM_CALL_PRIM();
-    Case(seam_call_prim0): SEAM_CALL_PRIM(0);
-    Case(seam_call_prim1): SEAM_CALL_PRIM(1);
-    Case(seam_call_prim2): SEAM_CALL_PRIM(2);
-    Case(seam_call_prim3): SEAM_CALL_PRIM(3);
+    Case(seam_call_prim)  SEAM_CALL_PRIM();
+    Case(seam_call_prim0) SEAM_CALL_PRIM(0);
+    Case(seam_call_prim1) SEAM_CALL_PRIM(1);
+    Case(seam_call_prim2) SEAM_CALL_PRIM(2);
+    Case(seam_call_prim3) SEAM_CALL_PRIM(3);
 
 
     /*******************************
@@ -586,53 +584,45 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      *******************************/
 
 #define SEAM_TAILCALL_PRIM(NOA) {					\
-      PREPARE_PRIMCALL##NOA();						\
-      Scheduler::PopFrame(frame->GetSize());				\
-      Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	\
-      /*Worker::Result res = Primitive::Execute(interpreter);*/		\
-      NEW_STACK_FRAME(primFrame, interpreter, 0);			\
-      Worker::Result res = interpreter->GetCFunction()();		\
-      StackFrame *newFrame = Scheduler::GetFrame();			\
-      /* test if we can skip the scheduler */				\
-      if(res == CONTINUE && !StatusWord::GetStatus()			\
-         && newFrame->GetWorker() == this) {				\
+	PRELUDE_PRIMCALL##NOA();					\
+        SET_ARGS##NOA();						\
+	Scheduler::PopFrame(frame->GetSize());				\
+	Interpreter *interpreter = STATIC_CAST(Interpreter*,primAddr);	\
+	/*Worker::Result res = Primitive::Execute(interpreter);*/	\
+	NEW_STACK_FRAME(primFrame, interpreter, 0);			\
+	Worker::Result res = interpreter->GetCFunction()();		\
+	StackFrame *newFrame = Scheduler::GetFrame();			\
+	/* test if we can skip the scheduler */				\
+	if(res == CONTINUE && !StatusWord::GetStatus()			\
+	   && newFrame->GetWorker() == this) {				\
 	  frame = (ByteCodeFrame*) newFrame;				\
 	  code = frame->GetCode();					\
 	  LOADSTATE(PC,CP,IP);						\
 	  DISPATCH(PC);							\
-      }									\
-      return res;							\
-    }
+	}								\
+	return res;							\
+      }
     
-    Case(seam_tailcall_prim):   SEAM_TAILCALL_PRIM();
-    Case(seam_tailcall_prim0):  SEAM_TAILCALL_PRIM(0);
-    Case(seam_tailcall_prim1):  SEAM_TAILCALL_PRIM(1);
-    Case(seam_tailcall_prim2):  SEAM_TAILCALL_PRIM(2);
-    Case(seam_tailcall_prim3):  SEAM_TAILCALL_PRIM(3);
+    Case(seam_tailcall_prim)   SEAM_TAILCALL_PRIM();
+    Case(seam_tailcall_prim0)  SEAM_TAILCALL_PRIM(0);
+    Case(seam_tailcall_prim1)  SEAM_TAILCALL_PRIM(1);
+    Case(seam_tailcall_prim2)  SEAM_TAILCALL_PRIM(2);
+    Case(seam_tailcall_prim3)  SEAM_TAILCALL_PRIM(3);
 
 
     /*****************************
      * return from function call
      *****************************/
 
-#define PREPARE_RETURN()			\
-      GET_1I(codeBuffer,PC,nArgs);		\
-      Scheduler::SetNArgs(nArgs)
-#define PREPARE_RETURN1()			\
-    GET_1R(codeBuffer,PC,r0);			\
-    SET_SCHEDULER_ARGS1(r0)
-#define PREPARE_RETURN2()			\
-    GET_2R(codeBuffer,PC,r0,r1);		\
-    SET_SCHEDULER_ARGS2(r0,r1)
-#define PREPARE_RETURN3()			\
-    GET_3R(codeBuffer,PC,r0,r1,r2);		\
-    SET_SCHEDULER_ARGS3(r0,r1,r2)
-#define PREPARE_RETURN4()			\
-    GET_4R(codeBuffer,PC,r0,r1,r2,r3);		\
-    SET_SCHEDULER_ARGS4(r0,r1,r2,r3)
+#define PRELUDE_RETURN0() 
+#define PRELUDE_RETURN1() PRELUDE_RETURN0()
+#define PRELUDE_RETURN2() PRELUDE_RETURN0()
+#define PRELUDE_RETURN3() PRELUDE_RETURN0()
+#define PRELUDE_RETURN()  GET_1I(codeBuffer,PC,nArgs)
 
 #define SEAM_RETURN(NOA) {						\
-	PREPARE_RETURN##NOA();						\
+	PRELUDE_RETURN##NOA();						\
+        SET_ARGS##NOA();						\
 	Scheduler::PopFrame(frame->GetSize());				\
 	StackFrame *newFrame = Scheduler::GetFrame();			\
 	/* test if we can skip the scheduler */				\
@@ -646,18 +636,18 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
         return Worker::CONTINUE;					\
       }
 
-    Case(seam_return):  SEAM_RETURN();
-    Case(seam_return1): SEAM_RETURN(1);
-    Case(seam_return2): SEAM_RETURN(2);
-    Case(seam_return3): SEAM_RETURN(3);
-    Case(seam_return4): SEAM_RETURN(4);
+    Case(seam_return)  SEAM_RETURN();
+    Case(seam_return0) SEAM_RETURN(0);
+    Case(seam_return1) SEAM_RETURN(1);
+    Case(seam_return2) SEAM_RETURN(2);
+    Case(seam_return3) SEAM_RETURN(3);
 
 
       /**************************************
        * closure building and initialization 
        **************************************/
 
-    Case(mk_closure): // reg, code, size
+    Case(mk_closure) // reg, code, size
       {
 	GET_1R2I(codeBuffer,PC,reg,codeAddr,size);
 	Closure *closure = Closure::New(IP->Sel(codeAddr),size);
@@ -665,7 +655,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(init_closure): // r0, r1, index
+    Case(init_closure) // r0, r1, index
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	Closure *closure = Closure::FromWord(GETREG(r0));
@@ -673,7 +663,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(spec_closure): // r0, r1, template, size
+    Case(spec_closure) // r0, r1, template, size
       {
 	GET_2R2I(codeBuffer,PC,r0,r1,tempAddr,size);
 	TagVal *templ = TagVal::FromWordDirect(IP->Sel(tempAddr));
@@ -697,7 +687,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      * handling of external requests
      *******************************/
 
-    Case(await): // reg
+    Case(await) // reg
       {
 	GET_1R(codeBuffer,PC,reg);
 	word requestWord = GETREG(reg);
@@ -716,28 +706,18 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      * basic jumps
      **************************************/
 
-    Case(jump): // target
+    Case(jump) // target
       {
-#ifdef DO_RELATIVE_JUMP
 	GET_1I(codeBuffer,PC,offset);
 	PC += (s_int)offset;
-#else
-	GET_1I(codeBuffer,PC,jumpTarget);
-	SETPC(jumpTarget);
-#endif
       }
       DISPATCH(PC);
 
     
-    Case(check_preempt_jump): // target
+    Case(check_preempt_jump) // target
       {
-#ifdef DO_RELATIVE_JUMP
 	GET_1I(codeBuffer,PC,offset);
 	PC += (s_int)offset;
-#else
-	GET_1I(codeBuffer,PC,jumpTarget);
-	SETPC(jumpTarget);
-#endif
 	if(StatusWord::GetStatus()) {
 	  SAVEPC(PC);
 	  return Worker::PREEMPT;
@@ -750,7 +730,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * integer instructions
        **********************************/
 
-    Case(itest): // r, map
+    Case(itest) // r, map
       {
 	GET_1R1I(codeBuffer,PC,reg,iaddr);
 	IntMap *map = IntMap::FromWordDirect(IP->Sel(iaddr));
@@ -759,15 +739,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	// this is needed due to possible pointer chains
 	testVal = Store::IntToWord(dummy); 
 	if(map->IsMember(testVal)) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += Store::DirectWordToInt(map->Get(testVal));
-#else
-	  SETPC(Store::DirectWordToInt(map->Get(testVal)));
-#endif
       }
       DISPATCH(PC);
 
-    Case(citest): // reg, size, offset
+    Case(citest) // reg, size, offset
       {
 	GET_1R2I(codeBuffer,PC,reg,size,offset);
 	REQUEST_INT(relJump,GETREG(reg));
@@ -775,31 +751,23 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	if(index < size) {
 	  ProgramCounter addr = PC + index;
 	  GET_1I(codeBuffer,addr,target);
-#ifdef DO_RELATIVE_JUMP
 	  PC += target;
-#else
-	  SETPC(target);
-#endif
 	} else {
 	  PC += size; // jump over the jump table
 	}
       }
       DISPATCH(PC);
 
-    Case(ijump_eq): // r, val, target
+    Case(ijump_eq) // r, val, target
       {
 	GET_1R2I(codeBuffer,PC,reg,number,jumpTarget);
 	REQUEST_INT(cmpNumber,GETREG(reg));
 	if(cmpNumber == number) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += jumpTarget;
-#else
-	  SETPC(jumpTarget);
-#endif
       }
       DISPATCH(PC);
 
-    Case(isub): // r0, r1, r2
+    Case(isub) // r0, r1, r2
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);		
 	REQUEST_INT(x,GETREG(r1));
@@ -813,7 +781,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 	
-    Case(iadd): // r0, r1, r2
+    Case(iadd) // r0, r1, r2
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);
 	REQUEST_INT(x,GETREG(r1));
@@ -826,7 +794,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(iinc): // r0, r1
+    Case(iinc) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 	REQUEST_INT(x,GETREG(r1));
@@ -838,7 +806,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(idec): // r0, r1
+    Case(idec) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 	REQUEST_INT(x,GETREG(r1));
@@ -854,7 +822,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * real instructions
        **********************************/
 
-    Case(rtest): // r, map
+    Case(rtest) // r, map
       {
 	GET_1R1I(codeBuffer,PC,reg,iaddr);
 	ChunkMap *map = ChunkMap::FromWordDirect(IP->Sel(iaddr));
@@ -862,25 +830,17 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	REQUEST_WORD(Real,dummy,testVal);
 	testVal = dummy->ToWord();
 	if(map->IsMember(testVal)) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += Store::DirectWordToInt(map->Get(testVal));
-#else
-	  SETPC(Store::DirectWordToInt(map->Get(testVal)));
-#endif
       }
       DISPATCH(PC);
 
-    Case(rjump_eq): // r, val, target
+    Case(rjump_eq) // r, val, target
       {
 	GET_1R2I(codeBuffer,PC,reg,iaddr,jumpOffset);
 	REQUEST_WORD(Real,cmpValue,GETREG(reg));
 	Real *real = Real::FromWordDirect(IP->Sel(iaddr));
 	if(cmpValue->GetValue() == real->GetValue()) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += jumpOffset;
-#else
-	  SETPC(jumpOffset);
-#endif
       }
       DISPATCH(PC);
 
@@ -889,7 +849,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * string instructions
        *********************************/
 
-    Case(stest): // r, map
+    Case(stest) // r, map
       {
 	GET_1R1I(codeBuffer,PC,reg,iaddr);
 	ChunkMap *map = ChunkMap::FromWordDirect(IP->Sel(iaddr));
@@ -897,15 +857,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	REQUEST_WORD(String,dummy,testVal);
 	testVal = dummy->ToWord();
 	if(map->IsMember(testVal)) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += Store::DirectWordToInt(map->Get(testVal));
-#else
-	  SETPC(Store::DirectWordToInt(map->Get(testVal)));
-#endif
       }
       DISPATCH(PC);
 
-    Case(sjump_eq): // r, val, target
+    Case(sjump_eq) // r, val, target
       {
 	GET_1R2I(codeBuffer,PC,reg,iaddr,jumpOffset);
 	REQUEST_WORD(String,s2,GETREG(reg));
@@ -913,11 +869,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	u_int s1Size = s1->GetSize();
 	if (s1Size == s2->GetSize() &&
 	      !std::memcmp(s1->GetValue(), s2->GetValue(), s1Size)) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += jumpOffset;
-#else
-	  SETPC(jumpOffset);
-#endif
       }
       DISPATCH(PC);
 
@@ -926,49 +878,42 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * basic register loads
        *****************************************/
 
-    Case(seam_load_sreg): // r, index
-      {
-	GET_1R1I(codeBuffer,PC,reg,index);
-	SETREG(reg, Scheduler::GetCurrentArg(index));
-      }
-      DISPATCH(PC);
-
-    Case(load_global): // r, i
+    Case(load_global) // r, i
       {
 	GET_1R1I(codeBuffer,PC,reg,index);
 	SETREG(reg, CP->Sub(index));
       }
       DISPATCH(PC);
 
-    Case(load_immediate): // r, i
+    Case(load_immediate) // r, i
       {
 	GET_1R1I(codeBuffer,PC,reg,iaddr);
 	SETREG(reg, IP->Sel(iaddr));
       }
       DISPATCH(PC);
 
-    Case(load_int): // r, int
+    Case(load_int) // r, int
       {
 	GET_1R1I(codeBuffer,PC,reg,number);
 	SETREG(reg, Store::IntToWord((int)number)); 
       }
       DISPATCH(PC);
 
-    Case(load_zero): // r
+    Case(load_zero) // r
       {
 	GET_1R(codeBuffer,PC,reg);
 	SETREG(reg, Store::IntToWord(0));
       }
       DISPATCH(PC);
 
-    Case(load_reg): // r0, r1
+    Case(load_reg) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 	SETREG(r0, GETREG(r1));
       }
       DISPATCH(PC);
 
-    Case(swap_regs): // r0, r1
+    Case(swap_regs) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 	word tmp = GETREG(r0);	
@@ -981,24 +926,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * basic register sets (stores)
        *******************************/
 
-    Case(set_global): // reg, addr
+    Case(set_global) // reg, addr
       {
 	GET_1R1I(codeBuffer,PC,reg,addr);
 	CP->Init(addr,GETREG(reg)); // or Update ???
-      }
-      DISPATCH(PC);
-
-    Case(seam_set_nargs): // nargs
-      {
-	GET_1I(codeBuffer,PC,nargs);
-	Scheduler::SetNArgs(nargs);
-      }
-      DISPATCH(PC);
-
-    Case(seam_set_sreg): // reg, index
-      {
-	GET_1R1I(codeBuffer,PC,reg,index);
-	Scheduler::SetCurrentArg(index,GETREG(reg));
       }
       DISPATCH(PC);
 
@@ -1007,7 +938,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * reference cells
        ***************************/
 
-    Case(load_cell): // r0, r1
+    Case(load_cell) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 	REQUEST_WORD(Cell,cell,GETREG(r1));
@@ -1015,7 +946,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }  
       DISPATCH(PC);
 
-    Case(set_cell): // r0, r1
+    Case(set_cell) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 	REQUEST_WORD(Cell,cell,GETREG(r0));
@@ -1023,7 +954,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(new_cell): // r0, r1
+    Case(new_cell) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 	SETREG(r0, Cell::New(GETREG(r1))->ToWord());
@@ -1035,14 +966,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * vector instructions
        *****************************/
 
-    Case(new_vec): // r, size
+    Case(new_vec) // r, size
       {
 	GET_1R1I(codeBuffer,PC,reg,size);
 	SETREG(reg, Vector::New(size)->ToWord());
       }
       DISPATCH(PC);
 
-    Case(init_vec): // r0, r1, index
+    Case(init_vec) // r0, r1, index
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	Vector *vec = Vector::FromWord(GETREG(r0));
@@ -1050,7 +981,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(load_vec): // r0, r1, index
+    Case(load_vec) // r0, r1, index
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	Vector *vec = Vector::FromWord(GETREG(r1));
@@ -1058,18 +989,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(vectest): // r, map
+    Case(vectest) // r, map
       {
 	GET_1R1I(codeBuffer,PC,reg,iaddr);
 	IntMap *map = IntMap::FromWord(IP->Sel(iaddr));
 	REQUEST_WORD(Vector,vec,GETREG(reg));
 	word size = Store::IntToWord(vec->GetLength());
 	if(map->IsMember(size)) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += Store::DirectWordToInt(map->Get(size));
-#else
-	  SETPC(Store::DirectWordToInt(map->Get(size)));
-#endif
       }
       DISPATCH(PC);      
 
@@ -1080,14 +1007,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
       // basic instructions
 
-    Case(new_tup): // r, size
+    Case(new_tup) // r, size
       {
 	GET_1R1I(codeBuffer,PC,reg,size);
 	SETREG(reg, Tuple::New(size)->ToWord());	
       }
       DISPATCH(PC);
 
-    Case(select_tup): // r0, r1, index
+    Case(select_tup) // r0, r1, index
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	REQUEST_WORD(Tuple,tuple,GETREG(r1));
@@ -1095,7 +1022,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(init_tup): // r0, r1, index 
+    Case(init_tup) // r0, r1, index 
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	Tuple *tuple = Tuple::FromWordDirect(GETREG(r0));
@@ -1105,7 +1032,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
       // specialized instructions
 
-    Case(new_pair): // r0 <- (r1,r2)
+    Case(new_pair) // r0 <- (r1,r2)
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);
 	Tuple *pair = Tuple::New(2);
@@ -1115,7 +1042,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(new_triple): // r0 <- (r1,r2,r3)
+    Case(new_triple) // r0 <- (r1,r2,r3)
       {
 	GET_4R(codeBuffer,PC,r0,r1,r2,r3);
 	Tuple *triple = Tuple::New(3);
@@ -1126,7 +1053,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(get_tup2): // (r0,r1) <- r2
+    Case(get_tup2) // (r0,r1) <- r2
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);
 	REQUEST_WORD(Tuple,pair,GETREG(r2));
@@ -1135,7 +1062,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(get_tup3): // (r0,r1,r2) <- r3
+    Case(get_tup3) // (r0,r1,r2) <- r3
       {
 	GET_4R(codeBuffer,PC,r0,r1,r2,r3);
 	REQUEST_WORD(Tuple,triple,GETREG(r3));
@@ -1152,9 +1079,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	DISPATCH(PC);				\
       }
 
-    Case(select_tup0): SELECT_TUP(0);
-    Case(select_tup1): SELECT_TUP(1);
-    Case(select_tup2): SELECT_TUP(2);
+    Case(select_tup0) SELECT_TUP(0);
+    Case(select_tup1) SELECT_TUP(1);
+    Case(select_tup2) SELECT_TUP(2);
 
       // TODO: add a deconstr_tup instruction
 
@@ -1169,8 +1096,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	DISPATCH(PC);					\
       }
 
-    Case(new_tagval):    NEW_TAGVAL(TagVal);
-    Case(new_bigtagval): NEW_TAGVAL(BigTagVal);
+    Case(new_tagval)    NEW_TAGVAL(TagVal);
+    Case(new_bigtagval) NEW_TAGVAL(BigTagVal);
 
 #define INIT_TAGVAL(TagValType) {				\
 	GET_2R1I(codeBuffer,PC,r0,r1,index);			\
@@ -1179,8 +1106,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	DISPATCH(PC);						\
       }
 
-    Case(init_tagval):    INIT_TAGVAL(TagVal);
-    Case(init_bigtagval): INIT_TAGVAL(BigTagVal);
+    Case(init_tagval)    INIT_TAGVAL(TagVal);
+    Case(init_bigtagval) INIT_TAGVAL(BigTagVal);
 
 #define LOAD_TAGVAL(TagValType) {				\
 	GET_2R1I(codeBuffer,PC,r0,r1,index);			\
@@ -1189,14 +1116,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	DISPATCH(PC);						\
       }
 
-    Case(load_tagval):    LOAD_TAGVAL(TagVal);
-    Case(load_bigtagval): LOAD_TAGVAL(BigTagVal);
-
-#ifdef DO_RELATIVE_JUMP
-#define TAGTEST_ADJUSTPC(x) PC += x
-#else
-#define TAGTEST_ADJUSTPC(x) SETPC(x)
-#endif
+    Case(load_tagval)    LOAD_TAGVAL(TagVal);
+    Case(load_bigtagval) LOAD_TAGVAL(BigTagVal);
 
 #define TAGTEST(TagValType) {						\
 	GET_1R1I(codeBuffer,PC,reg,iaddr);				\
@@ -1212,19 +1133,13 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  tag = Store::IntToWord(tagVal->GetTag());			\
 	}								\
 	if(map->IsMember(tag))						\
-	  TAGTEST_ADJUSTPC(Store::DirectWordToInt(map->Get(tag)));	\
+	  PC += Store::DirectWordToInt(map->Get(tag));			\
 	DISPATCH(PC);							\
       }
 
-    Case(tagtest):    TAGTEST(TagVal);
-    Case(bigtagtest): TAGTEST(BigTagVal);
+    Case(tagtest)    TAGTEST(TagVal);
+    Case(bigtagtest) TAGTEST(BigTagVal);
 
-#ifdef DO_RELATIVE_JUMP
-#define TAGTEST1_ADJUSTPC(x) PC += x
-#else
-#define TAGTEST1_ADJUSTPC(x) SETPC(x)
-#endif
-      
 #define TAGTEST1(TagValType)       {				\
       GET_1R2I(codeBuffer,PC,reg,tag,target);			\
       word testVal = GETREG(reg);				\
@@ -1238,18 +1153,12 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	testTag = tagVal->GetTag();				\
       }								\
       if(testTag == tag)					\
-	TAGTEST1_ADJUSTPC(target);				\
+	PC += target;						\
       DISPATCH(PC);						\
     }
 
-    Case(tagtest1):    TAGTEST1(TagVal);
-    Case(bigtagtest1): TAGTEST1(BigTagVal);
-
-#ifdef DO_RELATIVE_JUMP
-#define CTAGTEST_ADJUSTPC(x) PC += x
-#else
-#define CTAGTEST_ADJUSTPC(x) SETPC(x)
-#endif
+    Case(tagtest1)    TAGTEST1(TagVal);
+    Case(bigtagtest1) TAGTEST1(BigTagVal);
 
 #define CTAGTEST(TagValType)    {				\
       GET_1R1I(codeBuffer,PC,reg,size);				\
@@ -1266,21 +1175,15 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       if(tag < size) {						\
 	ProgramCounter addr = PC + tag;				\
 	GET_1I(codeBuffer,addr,target);				\
-	CTAGTEST_ADJUSTPC(target);				\
+	PC += target;						\
       } else {							\
 	PC += size; /* jump over the jump table */		\
       }								\
       DISPATCH(PC);						\
     }
 
-    Case(ctagtest): CTAGTEST(TagVal);
-    Case(cbigtagtest): CTAGTEST(BigTagVal);
-
-#ifdef DO_RELATIVE_JUMP
-#define CTAGTEST_DIRECT_ADJUSTPC(x) PC += x
-#else
-#define CTAGTEST_DIRECT_ADJUSTPC(x) SETPC(x)
-#endif
+    Case(ctagtest) CTAGTEST(TagVal);
+    Case(cbigtagtest) CTAGTEST(BigTagVal);
 
 #define CTAGTEST_DIRECT(TagValType) {				\
       GET_1R1I(codeBuffer,PC,reg,size);				\
@@ -1295,19 +1198,19 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	tag = tagVal->GetTag();					\
       ProgramCounter addr = PC+tag;				\
       GET_1I(codeBuffer,addr,target);				\
-      CTAGTEST_DIRECT_ADJUSTPC(target);				\
+      PC += target;						\
       DISPATCH(PC);						\
     }								
 								
-    Case(ctagtest_direct): CTAGTEST_DIRECT(TagVal);		
-    Case(cbigtagtest_direct): CTAGTEST_DIRECT(BigTagVal);
+    Case(ctagtest_direct) CTAGTEST_DIRECT(TagVal);		
+    Case(cbigtagtest_direct) CTAGTEST_DIRECT(BigTagVal);
 
 
       /*****************************
        * constructor instructions
        *****************************/
 
-    Case(new_con): // r, name
+    Case(new_con) // r, name
       {
 	GET_1R1I(codeBuffer,PC,r,nameAddr);
 	Constructor *constructor = 
@@ -1316,7 +1219,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(prepare_con): // r0, r1, size
+    Case(prepare_con) // r0, r1, size
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,size);
 	word requestWord = GETREG(r1);
@@ -1328,7 +1231,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(init_con): // r0, r1, index
+    Case(init_con) // r0, r1, index
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	ConVal *conVal = ConVal::FromWord(GETREG(r0)); // or Direct ???
@@ -1336,7 +1239,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(load_con): // r0, r1, index
+    Case(load_con) // r0, r1, index
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	ConVal *conVal = ConVal::FromWord(GETREG(r1));
@@ -1344,7 +1247,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(contest): // r0, r1, target
+    Case(contest) // r0, r1, target
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,target);
 	REQUEST_WORD(ConVal,conVal,GETREG(r0));
@@ -1358,11 +1261,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  constructor = Store::DirectWordToBlock(conVal->ToWord());
 	
 	if(testConstructor != constructor) 
-#ifdef DO_RELATIVE_JUMP
 	  PC += target;
-#else
-	  SETPC(target);
-#endif
       }
       DISPATCH(PC);
 
@@ -1373,7 +1272,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * polymorphic records
        ***************************/
 
-    Case(new_polyrec): // reg, labelVec
+    Case(new_polyrec) // reg, labelVec
       {
 	GET_1R1I(codeBuffer,PC,reg,labelsAddr);
 	Vector *labels = Vector::FromWordDirect(IP->Sel(labelsAddr));
@@ -1382,7 +1281,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(init_polyrec): // r0,r1,index (according to labelVec from new_polyrec)
+    Case(init_polyrec) // r0,r1,index (according to labelVec from new_polyrec)
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
 	Record *record = Record::FromWord(GETREG(r0));
@@ -1390,7 +1289,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(lazyselect_polyrec): // r0, r1, labelAddr
+    Case(lazyselect_polyrec) // r0, r1, labelAddr
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,labelAddr);
 	word wRecord = GETREG(r1);
@@ -1409,7 +1308,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(lazyselect_polyrec_n): // r0, regs, labels
+    Case(lazyselect_polyrec_n) // r0, regs, labels
       {
 	GET_1R2I(codeBuffer,PC,r0,regsAddr,labelsAddr);
 	Vector *regs = Vector::FromWordDirect(IP->Sel(regsAddr));
@@ -1443,20 +1342,20 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * exceptions
        ****************************/
 
-    Case(install_handler): // handler
+    Case(install_handler) // handler
        {
 	GET_1I(codeBuffer,PC,handlerAddr);
 	Scheduler::PushHandler(Store::IntToWord(handlerAddr)); 
        }
        DISPATCH(PC);      
 
-    Case(remove_handler):
+    Case(remove_handler)
        {
 	Scheduler::PopHandler();
        }
        DISPATCH(PC);      
       
-    Case(raise_normal): // reg
+    Case(raise_normal) // reg
        {
 	GET_1R(codeBuffer,PC,reg);
 	word val = GETREG(reg);
@@ -1469,7 +1368,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        }
        DISPATCH(PC);      
       
-     Case(raise_direct): // reg
+     Case(raise_direct) // reg
        {
 	GET_1R(codeBuffer,PC,reg);
 	Tuple *package = Tuple::FromWordDirect(GETREG(reg));
@@ -1486,21 +1385,21 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * some inlined primitives
        ***************************************/
 
-     Case(inlined_future_byneed): // r0, r1
+     Case(inlined_future_byneed) // r0, r1
        {
 	 GET_2R(codeBuffer,PC,r0,r1);
 	 SETREG(r0, Byneed::New(GETREG(r1))->ToWord());
        }
        DISPATCH(PC);
 
-     Case(inlined_hole_hole): // reg
+     Case(inlined_hole_hole) // reg
        {
 	 GET_1R(codeBuffer,PC,reg);
 	 SETREG(reg, Hole::New()->ToWord());
        }
        DISPATCH(PC);
 
-     Case(inlined_hole_fill): // r0, r1
+     Case(inlined_hole_fill) // r0, r1
        {
 	 GET_2R(codeBuffer,PC,r0,r1);
 	 Transient *transient = Store::WordToTransient(GETREG(r0));
@@ -1518,7 +1417,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * debug support
        ***************************************/
 
-    Case(debug_msg):
+    Case(debug_msg)
       {
 	GET_1I(codeBuffer,PC,iaddr);
 	String *s = String::FromWordDirect(IP->Sel(iaddr));

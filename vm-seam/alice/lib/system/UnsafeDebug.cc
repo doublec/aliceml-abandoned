@@ -55,6 +55,14 @@ DEFINE1(UnsafeDebug_disassemble) {
     PrintLiveness(abstractCode);
     acc->Disassemble(stderr);
   } 
+  else if (interpreter == HotSpotInterpreter::self) {
+    HotSpotConcreteCode *hscc = HotSpotConcreteCode::FromWord(cc);
+    Transform *transform =
+      STATIC_CAST(Transform *, hscc->GetAbstractRepresentation());
+    TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+    AbstractCode::Disassemble(stderr,
+			      TagVal::FromWordDirect(abstractCode->Sel(5)));
+  }
   else if (interpreter == ByteCodeInterpreter::self) {
     ByteConcreteCode *bcc = ByteConcreteCode::FromWord(cc);
     Transform *transform =
