@@ -28,7 +28,7 @@
 #define DEBUG_INSTR()
 
 // extern u_int invocations;
-// #define INVOC_LIMIT 1786
+// #define INVOC_LIMIT 1560
 // #define BCI_DEBUG(s,...)  if (invocations>INVOC_LIMIT) fprintf(stderr,s, ##__VA_ARGS__)
 // #define DEBUG_INSTR() {					\
 //   ProgramCounter debugPC = PC;				\

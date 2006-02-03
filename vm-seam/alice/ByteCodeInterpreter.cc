@@ -42,7 +42,7 @@ using namespace ByteCodeInstr;
     CP = frame->GetCP();			\
     IP = frame->GetIP();			\
 }
-#define Case(INSTR) INSTR##LBL: startPC = PC; SKIP_INSTR(PC);
+#define Case(INSTR) INSTR##LBL: DEBUG_INSTR(); startPC = PC; SKIP_INSTR(PC);
 
 #define DISPATCH(PC)				\
   goto *((void *)(*PC))
@@ -553,7 +553,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      * normal primitive call
      *************************/
 
-#define SEAM_CALL_PRIM(NOA) {						\
+#define SEAM_PRIM_CALL(NOA) {						\
 	PRELUDE_PRIMCALL##NOA();					\
         SET_ARGS##NOA();						\
 	SAVEPC(PC);							\
@@ -572,18 +572,18 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	return res;							\
       }									
       
-    Case(seam_call_prim)  SEAM_CALL_PRIM();
-    Case(seam_call_prim0) SEAM_CALL_PRIM(0);
-    Case(seam_call_prim1) SEAM_CALL_PRIM(1);
-    Case(seam_call_prim2) SEAM_CALL_PRIM(2);
-    Case(seam_call_prim3) SEAM_CALL_PRIM(3);
+    Case(seam_prim_call)  SEAM_PRIM_CALL();
+    Case(seam_prim_call0) SEAM_PRIM_CALL(0);
+    Case(seam_prim_call1) SEAM_PRIM_CALL(1);
+    Case(seam_prim_call2) SEAM_PRIM_CALL(2);
+    Case(seam_prim_call3) SEAM_PRIM_CALL(3);
 
 
     /*******************************
      * tail primitive call
      *******************************/
 
-#define SEAM_TAILCALL_PRIM(NOA) {					\
+#define SEAM_PRIM_TAILCALL(NOA) {					\
 	PRELUDE_PRIMCALL##NOA();					\
         SET_ARGS##NOA();						\
 	Scheduler::PopFrame(frame->GetSize());				\
@@ -603,11 +603,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	return res;							\
       }
     
-    Case(seam_tailcall_prim)   SEAM_TAILCALL_PRIM();
-    Case(seam_tailcall_prim0)  SEAM_TAILCALL_PRIM(0);
-    Case(seam_tailcall_prim1)  SEAM_TAILCALL_PRIM(1);
-    Case(seam_tailcall_prim2)  SEAM_TAILCALL_PRIM(2);
-    Case(seam_tailcall_prim3)  SEAM_TAILCALL_PRIM(3);
+    Case(seam_prim_tailcall)   SEAM_PRIM_TAILCALL();
+    Case(seam_prim_tailcall0)  SEAM_PRIM_TAILCALL(0);
+    Case(seam_prim_tailcall1)  SEAM_PRIM_TAILCALL(1);
+    Case(seam_prim_tailcall2)  SEAM_PRIM_TAILCALL(2);
+    Case(seam_prim_tailcall3)  SEAM_PRIM_TAILCALL(3);
 
 
     /*****************************

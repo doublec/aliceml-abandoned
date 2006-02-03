@@ -351,8 +351,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_1R1I(PC,instr,reg,iaddr);
       }
       break;
-    case ByteCodeInstr::seam_call_prim1:
-    case ByteCodeInstr::seam_tailcall_prim1:
+    case ByteCodeInstr::seam_prim_call1:
+    case ByteCodeInstr::seam_prim_tailcall1:
       {
 	u_int iaddr = Store::DirectWordToInt(insVec->Sub(1));
 	u_int reg = Store::DirectWordToInt(insVec->Sub(2));
@@ -393,8 +393,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_1I(PC,instr,iaddr);
       }
       break;
-    case ByteCodeInstr::seam_call_prim:
-    case ByteCodeInstr::seam_tailcall_prim:
+    case ByteCodeInstr::seam_prim_call:
+    case ByteCodeInstr::seam_prim_tailcall:
       {
 	u_int iaddr = Store::DirectWordToInt(insVec->Sub(1));
 	u_int nArgs = Store::DirectWordToInt(insVec->Sub(2));
@@ -706,8 +706,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_4R(PC,instr,r0,r1,r2,r3);
       }
       break;
-    case ByteCodeInstr::seam_call_prim0:
-    case ByteCodeInstr::seam_tailcall_prim0:
+    case ByteCodeInstr::seam_prim_call0:
+    case ByteCodeInstr::seam_prim_tailcall0:
       {
 	u_int iaddr = Store::DirectWordToInt(insVec->Sub(1));
 
@@ -720,8 +720,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_1I(PC,instr,(u_int) interpreter);	
       }
       break;
-    case ByteCodeInstr::seam_call_prim2:
-    case ByteCodeInstr::seam_tailcall_prim2:
+    case ByteCodeInstr::seam_prim_call2:
+    case ByteCodeInstr::seam_prim_tailcall2:
       {
 	u_int iaddr = Store::DirectWordToInt(insVec->Sub(1));
 	u_int r0 = Store::DirectWordToInt(insVec->Sub(2));
@@ -736,8 +736,8 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	SET_INSTR_2R1I(PC,instr,r0,r1,(u_int) interpreter);	
       }
       break;
-    case ByteCodeInstr::seam_call_prim3:
-    case ByteCodeInstr::seam_tailcall_prim3:
+    case ByteCodeInstr::seam_prim_call3:
+    case ByteCodeInstr::seam_prim_tailcall3:
       {
 	u_int iaddr = Store::DirectWordToInt(insVec->Sub(1));
 	u_int r0 = Store::DirectWordToInt(insVec->Sub(2));

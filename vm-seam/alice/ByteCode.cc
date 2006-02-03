@@ -197,64 +197,64 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
       fprintf(f,"self_call3 R%d, R%d, R%d\n",r0,r1,r2);
     }
     return PC;
-  case seam_call_prim: // n,prim
+  case seam_prim_call: // n,prim
     {
       GET_2I(codeBuffer,PC,n,prim);
-      fprintf(f,"seam_call_prim %d, %d\n",n,prim);
+      fprintf(f,"seam_prim_call %d, %d\n",n,prim);
     }
     return PC;
-  case seam_call_prim0: // prim
+  case seam_prim_call0: // prim
     {
       GET_1I(codeBuffer,PC,prim);
-      fprintf(f,"seam_call_prim0 %d\n",prim);
+      fprintf(f,"seam_prim_call0 %d\n",prim);
     }
     return PC;
-  case seam_call_prim1: // r0,prim
+  case seam_prim_call1: // r0,prim
     {
       GET_1R1I(codeBuffer,PC,r0,prim);
-      fprintf(f,"seam_call_prim1 R%d, %d\n",r0,prim);
+      fprintf(f,"seam_prim_call1 R%d, %d\n",r0,prim);
     }
     return PC;
-  case seam_call_prim2: // r0,r1,prim
+  case seam_prim_call2: // r0,r1,prim
     {
       GET_2R1I(codeBuffer,PC,r0,r1,prim);
-      fprintf(f,"seam_call_prim2 R%d, R%d, %d\n",r0,r1,prim);
+      fprintf(f,"seam_prim_call2 R%d, R%d, %d\n",r0,r1,prim);
     }
     return PC;
-  case seam_call_prim3: // r0,r1,r2,prim
+  case seam_prim_call3: // r0,r1,r2,prim
     {
       GET_3R1I(codeBuffer,PC,r0,r1,r2,prim);
-      fprintf(f,"seam_call_prim3 R%d, R%d, R%d, %d\n",r0,r1,r2,prim);
+      fprintf(f,"seam_prim_call3 R%d, R%d, R%d, %d\n",r0,r1,r2,prim);
     }
     return PC;
- case seam_tailcall_prim: // r,n
+ case seam_prim_tailcall: // r,n
     {
       GET_2I(codeBuffer,PC,n,prim);
-      fprintf(f,"seam_tailcall_prim %d, %d\n",n,prim);
+      fprintf(f,"seam_prim_tailcall %d, %d\n",n,prim);
     }
     return PC;
-  case seam_tailcall_prim0: // prim
+  case seam_prim_tailcall0: // prim
     {
       GET_1I(codeBuffer,PC,prim);
-      fprintf(f,"seam_tailcall_prim0 %d\n",prim);
+      fprintf(f,"seam_prim_tailcall0 %d\n",prim);
     }
     return PC;
-  case seam_tailcall_prim1: // r0,prim
+  case seam_prim_tailcall1: // r0,prim
     {
       GET_1R1I(codeBuffer,PC,r0,prim);
-      fprintf(f,"seam_tailcall_prim1 R%d, %d\n",r0,prim);
+      fprintf(f,"seam_prim_tailcall1 R%d, %d\n",r0,prim);
     }
     return PC;
-  case seam_tailcall_prim2: // r0,r1,prim
+  case seam_prim_tailcall2: // r0,r1,prim
     {
       GET_2R1I(codeBuffer,PC,r0,r1,prim);
-      fprintf(f,"seam_tailcall_prim2 R%d, R%d, %d\n",r0,r1,prim);
+      fprintf(f,"seam_prim_tailcall2 R%d, R%d, %d\n",r0,r1,prim);
     }
     return PC; 
-  case seam_tailcall_prim3: // r0,r1,r2,prim
+  case seam_prim_tailcall3: // r0,r1,r2,prim
     {
       GET_3R1I(codeBuffer,PC,r0,r1,r2,prim);
-      fprintf(f,"seam_tailcall_prim3 R%d, R%d, R%d, %d\n",r0,r1,r2,prim);
+      fprintf(f,"seam_prim_tailcall3 R%d, R%d, R%d, %d\n",r0,r1,r2,prim);
     }
     return PC;
   case seam_return: // n
@@ -698,6 +698,66 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
     {
       GET_2R(codeBuffer,PC,r0,r1);
       fprintf(f,"inlined_hole_fill R%d, R%d\n",r0,r1);
+    }
+    return PC;
+  case bci_call:
+  case bci_call0:
+  case bci_call1:
+  case bci_call2:
+  case bci_call3:
+    {
+      // TODO: fetch arguments
+      fprintf(stderr,"bci_call?\n");
+    }
+    return PC;
+  case bci_tailcall:
+  case bci_tailcall0:
+  case bci_tailcall1:
+  case bci_tailcall2:
+  case bci_tailcall3:
+    {
+      // TODO: fetch arguments
+      fprintf(stderr,"bci_tailcall?\n");
+    }
+    return PC;
+  case immediate_call:
+  case immediate_call0:
+  case immediate_call1:
+  case immediate_call2:
+  case immediate_call3:
+    {
+      // TODO: fetch arguments
+      fprintf(stderr,"immediate_call?\n");
+    }
+    return PC;
+  case immediate_tailcall:
+  case immediate_tailcall0:
+  case immediate_tailcall1:
+  case immediate_tailcall2:
+  case immediate_tailcall3:
+    {
+      // TODO: fetch arguments
+      fprintf(stderr,"immediate_tailcall?\n");
+    }
+    return PC;
+  case rewrite_call:
+  case rewrite_call0:
+  case rewrite_call1:
+  case rewrite_call2:
+  case rewrite_call3:
+    {
+      // TODO: fetch arguments
+      fprintf(stderr,"rewrite_call?\n");
+    }
+    return PC;
+  case rewrite_tailcall:
+  case rewrite_tailcall0:
+  case rewrite_tailcall1:
+  case rewrite_tailcall2:
+  case rewrite_tailcall3:
+    {
+      // TODO: fetch arguments
+      fprintf(stderr,"rewrite_tailcall?\n");
     }
     return PC;
   default:

@@ -953,6 +953,26 @@ inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
+#define CHOOSE_CALL_INSTR(instr,instr_prefix)				\
+  switch(nActualArgs) {							\
+  case 0:								\
+    instr = isTailcall ? instr_prefix##_tailcall0 : instr_prefix##_call0; \
+    break;								\
+  case 1:								\
+    instr = isTailcall ? instr_prefix##_tailcall1 : instr_prefix##_call1; \
+    break;								\
+  case 2:								\
+    instr = isTailcall ? instr_prefix##_tailcall2 : instr_prefix##_call2; \
+    break;								\
+  case 3:								\
+    instr =								\
+      isTailcall ? instr_prefix##_tailcall3 : instr_prefix##_call3;	\
+	break;								\
+  default:								\
+    instr =								\
+      isTailcall ? instr_prefix##_tailcall : instr_prefix##_call;	\
+  }
+
 // AppPrim of value * idRef vector * (idDef * instr) option   
 /*inline*/ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure, 
 						      Vector *args, 
@@ -965,129 +985,83 @@ inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
   // we can directly store the address in the code as chunks are not GC'd
   u_int interpreterAddr = (u_int) interpreter;
 
-  // The CCC for primitives is normally done in  primitive interpreter->Run.
-  // As we want to skip this and directly call the primitive, we must
-  // compile the CCC manually.
   u_int inArity = interpreter->GetInArity(concreteCode);
-  if(nArgs != inArity) {
-    fprintf(stderr,"ups, we need to compile an explicit CCC here\n");
-    Error("internal error");
-  }
-//   bool needCCC = false;
-//   if(inArity != nArgs) {
-//     BCJIT_DEBUG("primitive CCC: %d --> %d\n",nArgs,inArity);
-//     switch(inArity) {							
-//     case 0:
-//       {
-// 	if(nArgs == 1) { // request unit
-// 	  u_int arg0 = LoadIdRefKill(args->Sub(0));
-// 	  SET_INSTR_1R(PC,await,arg0);
-// 	  needCCC = true;
-// 	}
-//       }
-//       break;
-//     case 1:
-//       {
-// 	switch(nArgs) {
-// 	case 0: // set unit as argument
-// 	  {
-// 	    u_int S = GetNewScratch();
-// 	    SET_INSTR_1I(PC,seam_set_nargs,1);	    
-// 	    SET_INSTR_1R(PC,load_zero,S);
-// 	    SET_INSTR_1R1I(PC,seam_set_sreg,S,0);
-// 	    needCCC = true;
-// 	  }
-// 	  break;
-// 	case 1:
-// 	  Assert(false); // must not be reached as inArity!=nArgs
-// 	  break;
-// 	default: // construct a tuple
-// 	  {
-// 	    u_int S = GetNewScratch();
-// 	    NewTup(S, args);
-// 	    SET_INSTR_1I(PC,seam_set_nargs,1);
-// 	    SET_INSTR_1R1I(PC,seam_set_sreg,S,0); 
-// 	    needCCC = true;
-// 	  }
-// 	}
-//       }
-//       break;							
-//     default:							
-//       {
-// 	if(nArgs > Scheduler::maxArgs) {
-// 	  /* In this case we are lost :-( We cannot do a direct call. 
-// 	   * Since we must pass a tuple, the primitive must do the CCC 
-// 	   * internally. We solve this by translating the primitive call 
-// 	   * as a normal call. This is not optimal, but this case should 
-// 	   * almost never happen. 
-// 	   * I have never seen a primitive with more than 16 arguments ;-)
-// 	   */
-// 	  u_int S0 = GetNewScratch();
-// 	  u_int S1 = GetNewScratch();
-// 	  NewTup(S0, args);
-// 	  u_int primAddr = imEnv.Register(closure->ToWord());
-// 	  SET_INSTR_1R1I(PC,load_immediate,S1,primAddr); // primitive in S1
-// 	  SET_INSTR_1R1I(PC,seam_call1,S1,S0);
-// 	  return;
-// 	} else if(nArgs == 1) { // deconstruct tuple
-// 	  u_int tuple = LoadIdRefKill(args->Sub(0));
-// 	  // trust the static compiler that 
-// 	  // inArity == length of deconstructed tuple
-// 	  SET_INSTR_1R(PC,seam_set_nargs,inArity);
-// 	  u_int S = GetNewScratch();
-// 	  for(u_int i=inArity; i--; ) {
-// 	    SET_INSTR_2R1I(PC,select_tup,S,tuple,i);
-// 	    SET_INSTR_1R1I(PC,seam_set_sreg,S,i);
-// 	  }
-// 	  needCCC = true;
-// 	}
-//       }
-//     }
-//   }
-
-//   // If a CCC was compiled, we know that all arguments are already in 
-//   // Scheduler registers. So we only need to set the call instruction.
-//   if(needCCC) {
-//     fprintf(stderr,"attention! we need a primitive CCC\n");
-//     fprintf(stderr,"this is not properly implemented!!!\n");
-//     u_int callInstr = isTailcall ? seam_tailcall_prim : seam_call_prim;
-//     SET_INSTR_2I(PC,callInstr,nArgs,interpreterAddr);     
-//     return;
-//   }
-
+  u_int argRegs[inArity];
   bool overflow = nArgs > Scheduler::maxArgs;
-  u_int nActualArgs = overflow ? 1 : nArgs;
-  u_int argRegs[nActualArgs];
-    
-  // load arguments into registers
-    
-  if(overflow) { // construct tuple
+
+  u_int callInstr;
+  u_int nActualArgs;
+
+  if(!overflow) {
+    // The CCC for primitives is normally done in  primitive interpreter->Run.
+    // As we want to skip this and directly call the primitive, we must
+    // compile the CCC manually.
+    switch(inArity) {
+    case 0:
+      {
+	if(nArgs == 1) { // request unit argument
+	  u_int arg0 = LoadIdRefKill(args->Sub(0));
+	  SET_INSTR_1R(PC,await,arg0);
+	}
+      }
+      break;
+    case 1:
+      {
+	u_int dst;
+	switch(nArgs) {
+	case 0:
+	  {
+	    dst = GetNewScratch();
+	    SET_INSTR_1R(PC,load_zero,dst);
+	  } 
+	  break;
+	case 1:
+	  {
+	    dst = LoadIdRefKill(args->Sub(0));
+	  }
+	  break;
+	default: // nArgs > 1 --> construct tuple
+	  {
+	    dst = GetNewScratch();
+	    NewTup(dst,args);
+	  }
+	}
+	argRegs[0] = dst;
+      }
+      break;
+    default:
+      {
+	if(nArgs == 1) { // deconstruct tuple
+	  u_int tup = LoadIdRefKill(args->Sub(0));
+	  for(u_int i=inArity; i--; ) {
+	    u_int dst = GetNewScratch();
+	    SET_INSTR_2R1I(PC,select_tup,dst,tup,i);
+	    argRegs[i] = dst;
+	  }
+	} else {
+	  Assert(nArgs == inArity);
+	  for(u_int i = nArgs; i--; )
+	    argRegs[i] = LoadIdRefKill(args->Sub(i));
+	}
+      }
+    }
+    // generate call instruction
+    nActualArgs = inArity;
+    CHOOSE_CALL_INSTR(callInstr,seam_prim);
+  } else { // overflow
+    // If there are more arguments than registers in the global register bank, we
+    // cannot hardwire the CCC into the code. Therefore, we have to use a normal
+    // immediate call instead of a primitive call, and pack all arguments into one 
+    // tuple.
     u_int S = GetNewScratch();
     NewTup(S, args);
     argRegs[0] = S;
-  } else {
-    for(u_int i = nArgs; i--; )
-      argRegs[i] = LoadIdRefKill(args->Sub(i));
+    nActualArgs = 1;
+    // use closure instead of interpreter address
+    interpreterAddr = imEnv.Register(closure->ToWord());
+    CHOOSE_CALL_INSTR(callInstr,immediate);
   }
-    
-  // generate call instruction
-  u_int callInstr;
-  switch(nActualArgs) {
-  case 0:  
-    callInstr = isTailcall ? seam_tailcall_prim0 : seam_call_prim0; 
-    break;
-  case 1:
-    callInstr = isTailcall ? seam_tailcall_prim1 : seam_call_prim1; 
-    break;
-  case 2: 
-    callInstr = isTailcall ? seam_tailcall_prim2 : seam_call_prim2; 
-    break;
-  case 3: 
-    callInstr = isTailcall ? seam_tailcall_prim3 : seam_call_prim3; 
-    break;
-  default: callInstr = self_call;
-    callInstr = isTailcall ? seam_tailcall_prim : seam_call_prim; 
-  }
+   
   if(nActualArgs < 4) {
     SET_INSTR_1I(PC,callInstr,interpreterAddr);
   } else {
@@ -1195,27 +1169,6 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
     SET_1R(PC,r);
   }
 }
-
-#define CHOOSE_CALL_INSTR(instr,instr_prefix)				\
-  switch(nActualArgs) {							\
-  case 0:								\
-    instr = isTailcall ? instr_prefix##_tailcall0 : instr_prefix##_call0; \
-    break;								\
-  case 1:								\
-    instr = isTailcall ? instr_prefix##_tailcall1 : instr_prefix##_call1; \
-    break;								\
-  case 2:								\
-    instr = isTailcall ? instr_prefix##_tailcall2 : instr_prefix##_call2; \
-    break;								\
-  case 3:								\
-    instr =								\
-      isTailcall ? instr_prefix##_tailcall3 : instr_prefix##_call3;	\
-	break;								\
-  default:								\
-    instr =								\
-      isTailcall ? instr_prefix##_tailcall : instr_prefix##_call;	\
-  }
-
 
 // AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
 /*inline*/ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
@@ -2778,7 +2731,6 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   Transform *transform =
     STATIC_CAST(Transform *, hsc->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-
 #ifdef DEBUG_DISASSEMBLE 
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   std::fprintf(stderr, "\n%d. compile function (%p) at %s:%d.%d nArgs=%d\n",
@@ -2793,8 +2745,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 #endif    
 
   currentConcreteCode = hsc->ToWord();
-
-// do inline anaysis
+  // do inline anaysis
   currentFormalArgs = INVALID_POINTER;
   localOffset = 0;
   inlineDepth = 0;
@@ -2830,12 +2781,14 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   u_int local_mapping[currentNLocals];
   mapping = local_mapping;
   RegisterAllocator::Run(liveness,mapping,&currentNLocals);
+#ifdef DO_INLINING
   // add the alias analysis
   Array *aliases = inlineInfo->GetAliases();
   u_int nAliases = aliases->GetLength();
   // the loop direction is important !
   for(u_int i = 0; i<nAliases; i++)
     mapping[i] = mapping[Store::DirectWordToInt(aliases->Sub(i))];
+#endif
 #endif
 
   // now prepare scratch registers
@@ -2886,7 +2839,6 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 
   // create compiled concrete code
   Chunk *code = WriteBuffer::FlushCode();
-
   // convert hot spot code to byte code
   ByteConcreteCode::Convert(hsc,
 			    code,
