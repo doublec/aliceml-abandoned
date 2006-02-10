@@ -220,6 +220,7 @@ private:
   TagVal *InstrCompactIntTest(TagVal *pc);
   TagVal *InstrRealTest(TagVal *pc);
   TagVal *InstrStringTest(TagVal *pc);
+  void LoadTagVal(u_int testVal, Vector *idDefs, bool isBig);
   TagVal *InstrTagTest(TagVal *pc);
   TagVal *InstrCompactTagTest(TagVal *pc);
   TagVal *InstrConTest(TagVal *pc);

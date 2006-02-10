@@ -1089,6 +1089,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        * tagval instructions
        ****************************/
 
+    // generic construction and initialisation
+
 #define NEW_TAGVAL(TagValType) {			\
 	GET_1R2I(codeBuffer,PC,reg,size,tag);		\
 	TagValType *tagVal = TagValType::New(tag,size);	\
@@ -1109,6 +1111,48 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(init_tagval)    INIT_TAGVAL(TagVal);
     Case(init_bigtagval) INIT_TAGVAL(BigTagVal);
 
+    // super-instructions for construction+initialisation
+
+#define INIT_TAG(tagVal,index) {		\
+      GET_1R(codeBuffer,PC,reg);		\
+      tagVal->Init(index,GETREG(reg));		\
+    }
+#define INIT_TAGV1(tagVal) INIT_TAG(tagVal,0)
+#define INIT_TAGV2(tagVal) INIT_TAG(tagVal,1); INIT_TAGV1(tagVal); 
+#define INIT_TAGV3(tagVal) INIT_TAG(tagVal,2); INIT_TAGV2(tagVal) 
+#define INIT_TAGV4(tagVal) INIT_TAG(tagVal,3); INIT_TAGV3(tagVal) 
+#define INIT_TAGV(tagVal) {			\
+  for(u_int i=size; i--; ) INIT_TAG(tagVal,i)	\
+}
+
+#define TV_PRELUDE1() u_int size = 1; GET_1R1I(codeBuffer,PC,reg,tag);
+#define TV_PRELUDE2() u_int size = 2; GET_1R1I(codeBuffer,PC,reg,tag);
+#define TV_PRELUDE3() u_int size = 3; GET_1R1I(codeBuffer,PC,reg,tag);
+#define TV_PRELUDE4() u_int size = 4; GET_1R1I(codeBuffer,PC,reg,tag);
+#define TV_PRELUDE()  GET_1R2I(codeBuffer,PC,reg,size,tag);
+
+#define NEW_TAGVAL_INIT(TagValType,N) {			\
+      TV_PRELUDE##N();                                  \
+      TagValType *tagVal = TagValType::New(tag,size);	\
+      INIT_TAGV##N(tagVal);				\
+      SETREG(reg, tagVal->ToWord());			\
+      DISPATCH(PC);					\
+    }
+
+    Case(new_tagval_init)  NEW_TAGVAL_INIT(TagVal, );
+    Case(new_tagval_init1) NEW_TAGVAL_INIT(TagVal,1);
+    Case(new_tagval_init2) NEW_TAGVAL_INIT(TagVal,2);
+    Case(new_tagval_init3) NEW_TAGVAL_INIT(TagVal,3);
+    Case(new_tagval_init4) NEW_TAGVAL_INIT(TagVal,4);
+
+    Case(new_bigtagval_init)  NEW_TAGVAL_INIT(BigTagVal, );
+    Case(new_bigtagval_init1) NEW_TAGVAL_INIT(BigTagVal,1);
+    Case(new_bigtagval_init2) NEW_TAGVAL_INIT(BigTagVal,2);
+    Case(new_bigtagval_init3) NEW_TAGVAL_INIT(BigTagVal,3);
+    Case(new_bigtagval_init4) NEW_TAGVAL_INIT(BigTagVal,4);
+
+    // generic load instructions
+
 #define LOAD_TAGVAL(TagValType) {				\
 	GET_2R1I(codeBuffer,PC,r0,r1,index);			\
 	TagValType *tagVal = TagValType::FromWord(GETREG(r1));	\
@@ -1118,6 +1162,43 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     Case(load_tagval)    LOAD_TAGVAL(TagVal);
     Case(load_bigtagval) LOAD_TAGVAL(BigTagVal);
+
+    // super-instructions for simultaneous loading of several fields
+
+#define LOAD_TAGVAL1(TagValType) {				\
+	GET_2R(codeBuffer,PC,r0,r1);				\
+	TagValType *tagVal = TagValType::FromWord(GETREG(r1));	\
+	SETREG(r0, tagVal->Sel(0));				\
+	DISPATCH(PC);						\
+      }
+
+    Case(load_tagval1)    LOAD_TAGVAL1(TagVal);
+    Case(load_bigtagval1) LOAD_TAGVAL1(BigTagVal);
+
+#define LOAD_TAGVAL2(TagValType) {				\
+	GET_3R(codeBuffer,PC,r0,r1,r2);				\
+	TagValType *tagVal = TagValType::FromWord(GETREG(r2));	\
+	SETREG(r0, tagVal->Sel(0));				\
+	SETREG(r1, tagVal->Sel(1));				\
+	DISPATCH(PC);						\
+      }
+
+    Case(load_tagval2)    LOAD_TAGVAL2(TagVal);
+    Case(load_bigtagval2) LOAD_TAGVAL2(BigTagVal);
+
+#define LOAD_TAGVAL3(TagValType) {				\
+	GET_4R(codeBuffer,PC,r0,r1,r2,r3);			\
+	TagValType *tagVal = TagValType::FromWord(GETREG(r3));	\
+	SETREG(r0, tagVal->Sel(0));				\
+	SETREG(r1, tagVal->Sel(1));				\
+	SETREG(r2, tagVal->Sel(2));				\
+	DISPATCH(PC);						\
+      }
+
+    Case(load_tagval3)    LOAD_TAGVAL3(TagVal);
+    Case(load_bigtagval3) LOAD_TAGVAL3(BigTagVal);
+
+    // general tagtest instructions
 
 #define TAGTEST(TagValType) {						\
 	GET_1R1I(codeBuffer,PC,reg,iaddr);				\
@@ -1140,6 +1221,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(tagtest)    TAGTEST(TagVal);
     Case(bigtagtest) TAGTEST(BigTagVal);
 
+    // special case: test table of size 1
+
 #define TAGTEST1(TagValType)       {				\
       GET_1R2I(codeBuffer,PC,reg,tag,target);			\
       word testVal = GETREG(reg);				\
@@ -1159,6 +1242,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     Case(tagtest1)    TAGTEST1(TagVal);
     Case(bigtagtest1) TAGTEST1(BigTagVal);
+
+    // compact tag tests with inlined test table
 
 #define CTAGTEST(TagValType)    {				\
       GET_1R1I(codeBuffer,PC,reg,size);				\

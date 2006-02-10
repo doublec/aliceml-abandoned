@@ -770,31 +770,73 @@ inline TagVal *ByteCodeJitter::InstrPutCon(TagVal *pc) {
 }
 
 // PutTag of id * int * int * idRef vector * instr 
-inline TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
+/*inline*/ TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   u_int tag  = Store::DirectWordToInt(pc->Sel(2));  
-  u_int newtagInstr;
-  u_int inittagInstr;
 
-  if (Alice::IsBigTagVal(maxTag)) {
-    newtagInstr  = new_bigtagval;
-    inittagInstr = init_bigtagval;
-  } else {
-    newtagInstr  = new_tagval;
-    inittagInstr = init_tagval;
-  }
+  u_int tagInstr = (Alice::IsBigTagVal(maxTag)) ? 
+    new_bigtagval_init : new_tagval_init;
 
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(3));
   u_int nargs = idRefs->GetLength();
   u_int dst = IdToReg(pc->Sel(0));
 
-  SET_INSTR_1R2I(PC,newtagInstr,dst,nargs,tag);    
-  for (u_int i = nargs; i--; ) {
-    u_int reg = LoadIdRefKill(idRefs->Sub(i),true);
-    SET_INSTR_2R1I(PC,inittagInstr,dst,reg,i);
+  // load arguments
+  u_int regs[nargs];
+  for (u_int i = 0; i<nargs; i++) {
+    u_int reg = LoadIdRefKill(idRefs->Sub(i));
+    regs[i] = reg;
+  }
+  // set instruction
+  if(Alice::IsBigTagVal(maxTag)) {
+    switch(nargs) {
+    case 1:  SET_INSTR_1R1I(PC,new_bigtagval_init1,dst,tag); break;
+    case 2:  SET_INSTR_1R1I(PC,new_bigtagval_init2,dst,tag); break;
+    case 3:  SET_INSTR_1R1I(PC,new_bigtagval_init3,dst,tag); break;
+    case 4:  SET_INSTR_1R1I(PC,new_bigtagval_init4,dst,tag); break;
+    default: SET_INSTR_1R2I(PC,new_bigtagval_init,dst,nargs,tag);    
+    }
+  } else {
+    switch(nargs) {
+    case 1:  SET_INSTR_1R1I(PC,new_tagval_init1,dst,tag); break;
+    case 2:  SET_INSTR_1R1I(PC,new_tagval_init2,dst,tag); break;
+    case 3:  SET_INSTR_1R1I(PC,new_tagval_init3,dst,tag); break;
+    case 4:  SET_INSTR_1R1I(PC,new_tagval_init4,dst,tag); break;
+    default: SET_INSTR_1R2I(PC,new_tagval_init,dst,nargs,tag);    
+    }
+  }
+  // set arguments
+  for(u_int i = nargs; i--; ) {
+    u_int reg = regs[i];
+    SET_1R(PC,reg);
   }
   
   return TagVal::FromWordDirect(pc->Sel(4));
+
+//   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
+//   u_int tag  = Store::DirectWordToInt(pc->Sel(2));  
+//   u_int newtagInstr;
+//   u_int inittagInstr;
+
+//   if (Alice::IsBigTagVal(maxTag)) {
+//     newtagInstr  = new_bigtagval;
+//     inittagInstr = init_bigtagval;
+//   } else {
+//     newtagInstr  = new_tagval;
+//     inittagInstr = init_tagval;
+//   }
+
+//   Vector *idRefs = Vector::FromWordDirect(pc->Sel(3));
+//   u_int nargs = idRefs->GetLength();
+//   u_int dst = IdToReg(pc->Sel(0));
+
+//   SET_INSTR_1R2I(PC,newtagInstr,dst,nargs,tag);    
+//   for (u_int i = nargs; i--; ) {
+//     u_int reg = LoadIdRefKill(idRefs->Sub(i),true);
+//     SET_INSTR_2R1I(PC,inittagInstr,dst,reg,i);
+//   }
+  
+//   return TagVal::FromWordDirect(pc->Sel(4));
 }
 
 // PutRef of id * idRef * instr
@@ -1745,6 +1787,72 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
   return INVALID_POINTER;
 }
 
+// helper to compile tagval selection
+void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
+  u_int idDefsLength = idDefs->GetLength();
+  switch(idDefsLength) {
+  case 1: 
+    {
+      u_int loadInstr = isBig ? load_bigtagval1 : load_tagval1;
+      TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
+      if(idDef != INVALID_POINTER) { // no wildcard
+	u_int dst = IdToReg(idDef->Sel(0));
+	SET_INSTR_2R(PC,loadInstr,dst,testVal);	  
+      }
+      return;
+    }
+  case 2:
+    {
+      u_int loadInstr = isBig ? load_bigtagval2 : load_tagval2;
+      TagVal *idDef1 = TagVal::FromWord(idDefs->Sub(0));
+      TagVal *idDef2 = TagVal::FromWord(idDefs->Sub(1));
+      if(idDef1 != INVALID_POINTER && idDef2 != INVALID_POINTER) {
+	u_int dst1 = IdToReg(idDef1->Sel(0));
+	u_int dst2 = IdToReg(idDef2->Sel(0));
+	SET_INSTR_3R(PC,loadInstr,dst1,dst2,testVal);
+	return;
+      }
+    }
+    break; // goto default translation
+  case 3:
+    {
+      u_int loadInstr = isBig ? load_bigtagval3 : load_tagval3;
+      TagVal *idDef1 = TagVal::FromWord(idDefs->Sub(0));
+      TagVal *idDef2 = TagVal::FromWord(idDefs->Sub(1));
+      TagVal *idDef3 = TagVal::FromWord(idDefs->Sub(2));
+      if(idDef1 != INVALID_POINTER && 
+	 idDef2 != INVALID_POINTER &&
+	 idDef3 != INVALID_POINTER) {
+	u_int dst1 = IdToReg(idDef1->Sel(0));
+	u_int dst2 = IdToReg(idDef2->Sel(0));
+	u_int dst3 = IdToReg(idDef3->Sel(0));
+	SET_INSTR_4R(PC,loadInstr,dst1,dst2,dst3,testVal);
+	return;
+      }
+    }
+    break; // goto default translation
+  default:
+    ;
+  }
+  // default translation
+  u_int loadInstr = isBig ? load_bigtagval : load_tagval;
+  for(u_int i = idDefsLength; i--; ) {
+    TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
+    if(idDef != INVALID_POINTER) { // no wildcard
+      u_int dst = IdToReg(idDef->Sel(0));
+#ifdef DO_REG_ALLOC
+      // check if the test value is overwritten although it is still needed
+      if(dst == testVal && i > 0) {
+	u_int S = GetNewScratch();
+	SET_INSTR_2R(PC,load_reg,S,testVal);
+	testVal = S;
+      }
+#endif
+      SET_INSTR_2R1I(PC,loadInstr,dst,testVal,i);
+    }
+  }
+}
+
 // TagTest of idRef * int * (int * instr) vector
 //          * (int * idDef vector * instr) vector * instr   
 /*inline*/ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
@@ -1778,21 +1886,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
       SET_INSTR_1R2I(patchInstrPC,testInstr,testVal,tag,PC-jmpPC);
       // compile binding
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
-      u_int idDefsLength = idDefs->GetLength();
-      for (u_int j = idDefsLength; j--; ) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
-	if( idDef != INVALID_POINTER ) { // not wildcard
-	  u_int dst = IdToReg(idDef->Sel(0));
-#ifdef DO_REG_ALLOC
-	  if(dst == testVal && j > 0) {
-	    u_int S = GetNewScratch();
-	    SET_INSTR_2R(PC,load_reg,S,testVal);
-	    testVal = S;
-	  }
-#endif
-	  SET_INSTR_2R1I(PC,loadInstr,dst,testVal,j);
-	}
-      }
+      LoadTagVal(testVal,idDefs,isBigTag);
       return TagVal::FromWordDirect(triple->Sel(2)); // compile branch   
     }
   }
@@ -1822,22 +1916,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
       map->Put(triple->Sel(0),Store::IntToWord(PC - instrPC));
       // compile binding
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
-      u_int idDefsLength = idDefs->GetLength();
-      u_int src = testVal;
-      for (u_int j = idDefsLength; j--; ) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
-	if( idDef != INVALID_POINTER ) { // not wildcard
-	  u_int dst = IdToReg(idDef->Sel(0));
-#ifdef DO_REG_ALLOC
-	  if(dst == src && j > 0) {
-	    u_int S = GetNewScratch();
-	    SET_INSTR_2R(PC,load_reg,S,src);
-	    src = S;
-	  }
-#endif
-	  SET_INSTR_2R1I(PC,loadInstr,dst,src,j);
-	}
-      }
+      LoadTagVal(testVal,idDefs,isBigTag);
       CompileInstr(TagVal::FromWordDirect(triple->Sel(2))); // compile branch
     }
   } else { // fast test
@@ -1870,22 +1949,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
       SET_1I(index,PC-jmpPC);
       // compile binding
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
-      u_int idDefsLength = idDefs->GetLength();
-      u_int src = testVal;
-      for (u_int j = idDefsLength; j--; ) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
-	if( idDef != INVALID_POINTER ) { // not wildcard
-	  u_int dst = IdToReg(idDef->Sel(0));
-#ifdef DO_REG_ALLOC
-	  if(dst == src && j > 0) {
-	    u_int S = GetNewScratch();
-	    SET_INSTR_2R(PC,load_reg,S,src);
-	    src = S;
-	  }
-#endif
-	  SET_INSTR_2R1I(PC,loadInstr,dst,src,j);
-	}
-      }
+      LoadTagVal(testVal,idDefs,isBigTag);
       CompileInstr(TagVal::FromWordDirect(triple->Sel(2))); // compile branch
     }
   }
@@ -1965,7 +2029,8 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
   // specify instructions
   u_int testInstr;
   u_int loadInstr;
-  if(Alice::IsBigTagVal(maxTag)) {
+  bool isBigTag = Alice::IsBigTagVal(maxTag);
+  if(isBigTag) {
     loadInstr = load_bigtagval;
     testInstr = isFastTest ? cbigtagtest_direct : cbigtagtest;
   }
@@ -1983,23 +2048,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
     if(idDefsOpt != INVALID_POINTER) {
       Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
-      u_int src = testVal;
-      for (u_int j = idDefs->GetLength(); j--; ) {
- 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
- 	if( idDef != INVALID_POINTER ) { // not wildcard
-	  fprintf(stderr,"--> compile binding\n");
- 	  u_int dst = IdToReg(idDef->Sel(0));
-#ifdef DO_REG_ALLOC
- 	  if(dst == src && j > 0) {
- 	    u_int S = GetNewScratch();
- 	    SET_INSTR_2R(PC,load_reg,S,src);
-	    fprintf(stderr,"---> move tag val to a temporary\n");
- 	    src = S;
- 	  }
-#endif
- 	  SET_INSTR_2R1I(PC,loadInstr,dst,src,j);
- 	}
-      }
+      LoadTagVal(testVal, idDefs,isBigTag);
     }
     return TagVal::FromWordDirect(pair->Sel(1));
   }
@@ -2025,22 +2074,7 @@ inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
     TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
     if(idDefsOpt != INVALID_POINTER) {
       Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
-      u_int idDefsLength = idDefs->GetLength();
-      u_int src = testVal;
-      for (u_int j = idDefsLength; j--; ) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
-	if( idDef != INVALID_POINTER ) { // not wildcard
-	  u_int dst = IdToReg(idDef->Sel(0));
-#ifdef DO_REG_ALLOC
-	  if(dst == src && j > 0) {
-	    u_int S = GetNewScratch();
-	    SET_INSTR_2R(PC,load_reg,S,src);
-	    src = S;
-	  }
-#endif
-	  SET_INSTR_2R1I(PC,loadInstr,dst,src,j);
-	}
-      }
+      LoadTagVal(testVal, idDefs, isBigTag);
     }
     CompileInstr(TagVal::FromWordDirect(pair->Sel(1))); // compile branch
   }
