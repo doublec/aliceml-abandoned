@@ -205,9 +205,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     switch(instr) {
 #endif
    
-      /*********************************
-       * calling convention conversion
-       *********************************/
+      /*********************
+       * calling convention
+       *********************/
+
+      // with conversion
 
     Case(ccc1)
       {
@@ -253,6 +255,44 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	}
       }
       DISPATCH(PC);
+
+      // without conversion
+
+      Case(get_arg0) // dst
+	{
+	  GET_1R(codeBuffer,PC,dst);
+	  SETREG(dst, Scheduler::GetCurrentArg(0));
+	}
+        DISPATCH(PC);
+
+      Case(get_arg0_direct) 
+	{
+	  SETREG(0, Scheduler::GetCurrentArg(0));
+	}
+        DISPATCH(PC);
+
+      Case(get_args_direct) // nArgs
+	{
+	  GET_1I(codeBuffer,PC,nArgs);
+	  for(u_int i = nArgs; i--;) {
+	    SETREG(i, Scheduler::GetCurrentArg(i));
+	  }
+	}
+        DISPATCH(PC);
+
+      Case(get_args) // args
+	{
+	  GET_1I(codeBuffer,PC,argsAddr);
+	  Vector *args = Vector::FromWordDirect(IP->Sel(argsAddr));
+	  for(u_int i = args->GetLength(); i--; ) {
+	    TagVal *argOpt = TagVal::FromWord(args->Sub(i));
+	    if(argOpt != INVALID_POINTER) {
+	      u_int dst = Store::DirectWordToInt(argOpt->Sel(0));
+	      SETREG(dst, Scheduler::GetCurrentArg(i));
+	    }
+	  }
+	}
+        DISPATCH(PC);
 
 
       /**********************************************
@@ -743,9 +783,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(citest) // reg, size, offset
+    Case(citest) // reg, offset, size
       {
-	GET_1R2I(codeBuffer,PC,reg,size,offset);
+	GET_1R2I(codeBuffer,PC,reg,offset,size);
 	REQUEST_INT(relJump,GETREG(reg));
 	int index = relJump - offset; 
 	if(index < size) {

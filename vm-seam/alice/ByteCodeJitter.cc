@@ -1091,10 +1091,10 @@ inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
     nActualArgs = inArity;
     CHOOSE_CALL_INSTR(callInstr,seam_prim);
   } else { // overflow
-    // If there are more arguments than registers in the global register bank, we
-    // cannot hardwire the CCC into the code. Therefore, we have to use a normal
-    // immediate call instead of a primitive call, and pack all arguments into one 
-    // tuple.
+    // If there are more arguments than registers in the global register bank,
+    // we cannot hardwire the CCC into the code. Therefore, we have to use a 
+    // normal immediate call instead of a primitive call, and pack all 
+    // arguments into one tuple.
     u_int S = GetNewScratch();
     NewTup(S, args);
     argRegs[0] = S;
@@ -1132,6 +1132,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   ConcreteCode *concreteCode = 
     ConcreteCode::FromWord(closure->GetConcreteCode());		
   Interpreter *interpreter = concreteCode->GetInterpreter();
+  u_int outArity = interpreter->GetOutArity(concreteCode);
   void *cFunction = (void*) interpreter->GetCFunction();
 
   TagVal *continuation;
@@ -1145,7 +1146,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   if(idDefInstrOpt == INVALID_POINTER
      && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
     u_int inArity = currentFormalArgs->GetLength();
-    CompileCCC(inArity,currentFormalArgs);
+    CompileCCC(currentFormalArgs,outArity);
     patchTable->Add(PC);    
     SET_INSTR_1I(PC,jump,0);
     return INVALID_POINTER;
@@ -1158,7 +1159,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
   Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
   Vector *rets = Vector::New(1);
   rets->Init(0,idDefInstr->Sel(0));
-  CompileCCC(1,rets); // TODO: optimize if we can skip CCC
+  CompileCCC(rets,outArity); // TODO: optimize if we can skip CCC
   // compile continuation
   return TagVal::FromWordDirect(idDefInstr->Sel(1)); 
 }
@@ -1217,6 +1218,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   Vector *args = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs = args->GetLength();
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
+  u_int outArity = INVALID_INT;
 
 #ifdef DO_INLINING
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER
@@ -1251,13 +1253,12 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
     tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));  
 
-
-
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
     {
       BCJIT_DEBUG("AppVar: entered immediate\n");
       word wClosure = tagVal->Sel(0);
+      // extract the closure
       Closure *closure;
       while ((closure = Closure::FromWord(wClosure)) == INVALID_POINTER) {
 	Transient *transient = Store::WordToTransient(wClosure);
@@ -1281,12 +1282,13 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	}
 	break;
       }
-      // check if we can inline a primitive
+      // check which kind of immediate closure we got
       if(closure != INVALID_POINTER) {
 	word wConcreteCode = closure->GetConcreteCode();	
 	if(wConcreteCode == currentConcreteCode) {
 	  // this is a self recursive call
 	  CompileSelfCall(pc,isTailcall);
+	  outArity = currentOutArity;
 	  if(isTailcall)
 	    return INVALID_POINTER;
 	  else
@@ -1295,6 +1297,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
 	if(concreteCode != INVALID_POINTER) {
 	  Interpreter *interpreter = concreteCode->GetInterpreter();
+	  outArity = interpreter->GetOutArity(concreteCode);
 	  void *cFunction = (void*) interpreter->GetCFunction();
 	  // check if this is a primitive
 	  if(cFunction != NULL) { 
@@ -1321,15 +1324,14 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	    }
 	    if(InlinePrimitive(cFunction,args,idDefInstrOpt,&continuation))
 	      return continuation;
-	    
+	    // else: couldn't inline primitve; try somthing else
 	    // we directly call the primitive function
 	    CompileApplyPrimitive(closure,args,isTailcall);
 #ifdef DO_INLINING
 	    //	    if(isTailcall) {
 	    if(idDefInstrOpt == INVALID_POINTER
 	       && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
-	      u_int inArity = currentFormalArgs->GetLength();
-	      CompileCCC(inArity,currentFormalArgs);
+	      CompileCCC(currentFormalArgs,outArity);
 	      patchTable->Add(PC);    
 	      SET_INSTR_1I(PC,jump,0);
 	      continuation = INVALID_POINTER;
@@ -1342,13 +1344,15 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	      Tuple *idDefsInstr = 
 		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
 	      Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
-	      u_int inArity = rets->GetLength();
-	      CompileCCC(inArity,rets); 
+	      CompileCCC(rets,outArity); 
 	      continuation = TagVal::FromWordDirect(idDefsInstr->Sel(1));
 	    } 
 	    return continuation;
 	  } else {
-	    // immediate calls
+	    // ok, it wasn't a primitive
+	    // but we are sure that is an immediate calls
+	    // so we can use specialized call instructions
+
 	    bool overflow = nArgs > Scheduler::maxArgs;
 	    u_int nActualArgs = overflow ? 1 : nArgs;
 	    u_int argRegs[nActualArgs];
@@ -1439,7 +1443,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   if(idDefsInstrOpt == INVALID_POINTER
      && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
     u_int inArity = currentFormalArgs->GetLength();
-    CompileCCC(inArity,currentFormalArgs);
+    CompileCCC(currentFormalArgs,outArity);
     patchTable->Add(PC);    
     SET_INSTR_1I(PC,jump,0);
     INSERT_DEBUG_MSG("return from tailcall");
@@ -1451,8 +1455,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   // non-tailcall
   Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
   Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
-  u_int inArity = rets->GetLength();
-  CompileCCC(inArity,rets); 
+  CompileCCC(rets,outArity); 
 
   return TagVal::FromWordDirect(idDefsInstr->Sel(1)); // compile continuation
 }
@@ -1710,7 +1713,7 @@ inline TagVal *ByteCodeJitter::InstrCompactIntTest(TagVal *pc) {
   }
   
   // size > 1
-  SET_INSTR_1R2I(PC,citest,testVal,size,offset);
+  SET_INSTR_1R2I(PC,citest,testVal,offset,size);
   u_int jumpTablePC = PC;
   u_int jmpPC = PC;
   PC += size;
@@ -2328,7 +2331,9 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
   scratch = oldScratch;
 }
 
-void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
+void ByteCodeJitter::CompileCCC(Vector *rets, u_int outArity) {
+  u_int inArity = rets->GetLength();
+  bool match = outArity != INVALID_INT && inArity == outArity;
   switch(inArity) {
   case 0: 
     break;
@@ -2338,9 +2343,11 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
       if(idDef != INVALID_POINTER) {
 	u_int dst = IdToReg(idDef->Sel(0));
 	if (dst == 0) {
-	  SET_INSTR(PC,ccc1);
+	  u_int instr = match ? get_arg0_direct : ccc1;
+	  SET_INSTR(PC,instr);
 	} else { 
-	  SET_INSTR_1R(PC,seam_ccc1,dst);
+	  u_int instr = match ? get_arg0 : seam_ccc1;
+	  SET_INSTR_1R(PC,instr,dst);
 	}
       } 
     }
@@ -2356,11 +2363,13 @@ void ByteCodeJitter::CompileCCC(u_int inArity, Vector *rets) {
 	}
       }
       if(isFastCCCN) {
-	SET_INSTR_1I(PC,cccn,inArity);
+	u_int instr = match ? get_args_direct : cccn;
+	SET_INSTR_1I(PC,instr,inArity);
       } else {	  
 	Vector *args = Vector::New(inArity);
 	u_int argsAddr = imEnv.Register(args->ToWord());
-	SET_INSTR_1I(PC,seam_cccn,argsAddr);
+	u_int instr = match ? get_args : seam_cccn;
+	SET_INSTR_1I(PC,instr,argsAddr);
 	for(u_int i=0; i<inArity; i++) {
  	  TagVal *idDef = TagVal::FromWord(rets->Sub(i));
  	  if(idDef != INVALID_POINTER) {
@@ -2863,8 +2872,11 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   PC = 0;
 
   // compile calling convention conversion
+  TagVal *outArityOpt = TagVal::FromWord(abstractCode->Sel(4));
+  currentOutArity = ((outArityOpt == INVALID_POINTER) ? INVALID_INT :
+		     Store::DirectWordToInt(outArityOpt->Sel(0)));
   Vector *args = Vector::FromWordDirect(abstractCode->Sel(3));
-  CompileCCC(args->GetLength(),args);
+  CompileCCC(args,INVALID_INT);
   skipCCCPC = PC;
   currentFormalInArgs = args;
 

@@ -89,6 +89,7 @@ public:
 class AliceDll ByteCodeJitter {
 private:
   u_int currentNLocals;
+  u_int currentOutArity;
   u_int PC;
   ByteCodeImmediateEnv imEnv;
   IntMap *sharedTable;
@@ -228,7 +229,7 @@ private:
   TagVal *InstrShared(TagVal *pc);
   TagVal *InstrReturn(TagVal *pc);
 
-  void CompileCCC(u_int inArity,Vector *rets);
+  void CompileCCC(Vector *rets, u_int outArity);
   void CompileInstr(TagVal *pc);
   void CompileApplyPrimitive(Closure *closure, Vector *args, bool isTailcall);
   void CompileSelfCall(TagVal *instr, bool isTailcall);
