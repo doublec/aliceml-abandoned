@@ -2333,7 +2333,10 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
 
 void ByteCodeJitter::CompileCCC(Vector *rets, u_int outArity) {
   u_int inArity = rets->GetLength();
-  bool match = outArity != INVALID_INT && inArity == outArity;
+  bool match = 
+    outArity != INVALID_INT && 
+    inArity == outArity &&
+    outArity <= Scheduler::maxArgs;
   switch(inArity) {
   case 0: 
     break;
