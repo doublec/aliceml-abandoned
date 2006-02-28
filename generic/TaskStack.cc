@@ -240,6 +240,10 @@ TaskStack *TaskStack::New(u_int size) {
 TaskStack *TaskStack::Enlarge() {
   u_int size = GetSize();
   u_int newSize = size * 3 / 2;
+  if (newSize > MAX_BIGBLOCKSIZE) {
+    fprintf(stderr, "Stack limit exceeded. Aborting.\n");
+    exit(2);
+  }
   TaskStack *newTaskStack = TaskStack::New(newSize);
   std::memcpy(newTaskStack->GetBase(), GetBase(), size * sizeof(u_int));
   Block *p = (Block *) this;
