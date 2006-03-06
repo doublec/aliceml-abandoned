@@ -39,6 +39,10 @@ struct
 	   | B_MIN_MAX
 	   | B_MIN_MIN
 	   | B_NONE
+	   | B_REGRET_MAX_MAX
+	   | B_REGRET_MAX_MIN
+	   | B_REGRET_MIN_MAX
+	   | B_REGRET_MIN_MIN
 	   | B_SIZE_MAX
 	   | B_SIZE_MIN
 	     
