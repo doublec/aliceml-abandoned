@@ -84,6 +84,17 @@ case "${with_jit:-${ac_seam_default_jit}}" in
      ;;
 esac
 
+AC_MSG_CHECKING(whether to use inline assembly for arithmetic)
+case "${host_cpu}" in
+     i*86)
+     AC_MSG_RESULT(yes)
+     CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-DX86INLINEASSEMBLY"
+     ;;
+     *)
+     AC_MSG_RESULT(no)
+     ;;
+esac
+
 # checks for header files
 
 AC_SEAM_CHECK_CXXFLAGS([-fPIC])

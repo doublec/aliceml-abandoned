@@ -810,6 +810,31 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(isub) // r0, r1, r2
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);		
+#ifdef X86INLINEASSEMBLY
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	word yw = GETREG(r2);
+	if (PointerOp::IsTransient(yw))
+	  REQUEST(yw);
+	
+	__asm__ __volatile__("sub %[yw],%[xw]\n\t"
+			     "jno isub_no_overflow\n\t"
+			     "orl $1, %[xw]\n\t"
+			     "isub_no_overflow:\t"
+			     : [xw] "+r"(xw)
+			     : [yw] "g"(yw)
+			     : "cc"
+			     );
+
+	if (PointerOp::IsInt(xw)) {
+	  RAISE(PrimitiveTable::General_Overflow)
+	} else {
+	  __asm__ __volatile__("incl %0"
+			       : "+r"(xw));
+	  SETREG(r0, xw);
+	}
+#else
 	REQUEST_INT(x,GETREG(r1));
 	REQUEST_INT(y,GETREG(r2));
 	s_int diff = x-y;
@@ -818,43 +843,113 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	}	  
 	else
 	  SETREG(r0, Store::IntToWord(diff));
+#endif
       }
       DISPATCH(PC);
-	
+
     Case(iadd) // r0, r1, r2
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);
+
+#ifdef X86INLINEASSEMBLY
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	word yw = GETREG(r2);
+	if (PointerOp::IsTransient(yw))
+	  REQUEST(yw);
+	
+	__asm__ __volatile__("add %[yw],%[xw]\n\t"
+			     "jno iadd_no_overflow\n\t"
+			     "orl $1, %[xw]\n\t"
+			     "iadd_no_overflow:\t"
+			     : [xw] "+r"(xw)
+			     : [yw] "g"(yw)
+			     : "cc"
+			     );
+
+	if (PointerOp::IsInt(xw)) {
+	  RAISE(PrimitiveTable::General_Overflow)
+	} else {
+	  __asm__ __volatile__("decl %0"
+			       : "+r"(xw));
+	  SETREG(r0, xw);
+	}
+#else
 	REQUEST_INT(x,GETREG(r1));
 	REQUEST_INT(y,GETREG(r2));
 	s_int sum = x + y;
-	if (sum < MIN_VALID_INT || sum > MAX_VALID_INT) 
-	  RAISE(PrimitiveTable::General_Overflow) 	
+	if (sum < MIN_VALID_INT || sum > MAX_VALID_INT)
+	  RAISE(PrimitiveTable::General_Overflow)
 	else
 	  SETREG(r0, Store::IntToWord(sum));
+#endif
       }
       DISPATCH(PC);
 
     Case(iinc) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
+#ifdef X86INLINEASSEMBLY
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	
+	__asm__ __volatile__("add $2,%[xw]\n\t"
+			     "jno iinc_no_overflow\n\t"
+			     "sub $1, %[xw]\n\t"
+			     "iinc_no_overflow:\t"
+			     : [xw] "+r"(xw)
+			     :
+			     : "cc"
+			     );
+
+	if (PointerOp::IsInt(xw)) {
+	  SETREG(r0, xw);
+	} else {
+	  RAISE(PrimitiveTable::General_Overflow)
+	}
+#else
 	REQUEST_INT(x,GETREG(r1));
 	s_int result = x+1;
 	if (result > MAX_VALID_INT) 
 	  RAISE(PrimitiveTable::General_Overflow) 	
 	else
 	  SETREG(r0, Store::IntToWord(result));	
+#endif
       }
       DISPATCH(PC);
 
     Case(idec) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
+#ifdef X86INLINEASSEMBLY
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	
+	__asm__ __volatile__("sub $2,%[xw]\n\t"
+			     "jno idec_no_overflow\n\t"
+			     "sub $1, %[xw]\n\t"
+			     "idec_no_overflow:\t"
+			     : [xw] "+r"(xw)
+			     :
+			     : "cc"
+			     );
+
+	if (PointerOp::IsInt(xw)) {
+	  SETREG(r0, xw);
+	} else {
+	  RAISE(PrimitiveTable::General_Overflow)
+	}
+#else
 	REQUEST_INT(x,GETREG(r1));
 	s_int result = x-1;
 	if (result < MIN_VALID_INT) 
 	  RAISE(PrimitiveTable::General_Overflow) 	
 	else
 	  SETREG(r0, Store::IntToWord(result));	
+#endif
       }
       DISPATCH(PC); 
 

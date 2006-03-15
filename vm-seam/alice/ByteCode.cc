@@ -38,7 +38,7 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
   switch(instr) {
     // use automatically generated code
     // It is constructed from the comments in ByteCodeInstrs.hh
-#include "bytecode_disassembler_body.hh";
+#include "bytecode_disassembler_body.hh"
   }
 }
 
