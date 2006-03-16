@@ -810,7 +810,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(isub) // r0, r1, r2
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);		
-#ifdef X86INLINEASSEMBLY
+#if defined(__i386__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
@@ -844,7 +844,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);
 
-#ifdef X86INLINEASSEMBLY
+#if defined(__i386__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
@@ -875,7 +875,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(iinc) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
-#ifdef X86INLINEASSEMBLY
+#if defined(__i386__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
@@ -902,7 +902,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(idec) // r0, r1
       {
 	GET_2R(codeBuffer,PC,r0,r1);
-#ifdef X86INLINEASSEMBLY
+#if defined(__i386__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
