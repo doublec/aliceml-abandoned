@@ -819,21 +819,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  REQUEST(yw);
 	
 	__asm__ __volatile__("sub %[yw],%[xw]\n\t"
-			     "jno isub_no_overflow\n\t"
-			     "orl $1, %[xw]\n\t"
-			     "isub_no_overflow:\t"
+			     "jo asm_raiseoverflow\n\t"
+			     "incl %0"
 			     : [xw] "+r"(xw)
 			     : [yw] "g"(yw)
 			     : "cc"
 			     );
 
-	if (PointerOp::IsInt(xw)) {
-	  RAISE(PrimitiveTable::General_Overflow)
-	} else {
-	  __asm__ __volatile__("incl %0"
-			       : "+r"(xw));
-	  SETREG(r0, xw);
-	}
+	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
 	REQUEST_INT(y,GETREG(r2));
@@ -858,23 +851,15 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	word yw = GETREG(r2);
 	if (PointerOp::IsTransient(yw))
 	  REQUEST(yw);
-	
+
 	__asm__ __volatile__("add %[yw],%[xw]\n\t"
-			     "jno iadd_no_overflow\n\t"
-			     "orl $1, %[xw]\n\t"
-			     "iadd_no_overflow:\t"
+			     "jo asm_raiseoverflow\n\t"
+			     "decl %0\n\t"
 			     : [xw] "+r"(xw)
 			     : [yw] "g"(yw)
 			     : "cc"
 			     );
-
-	if (PointerOp::IsInt(xw)) {
-	  RAISE(PrimitiveTable::General_Overflow)
-	} else {
-	  __asm__ __volatile__("decl %0"
-			       : "+r"(xw));
-	  SETREG(r0, xw);
-	}
+	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
 	REQUEST_INT(y,GETREG(r2));
@@ -896,19 +881,13 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  REQUEST(xw);
 	
 	__asm__ __volatile__("add $2,%[xw]\n\t"
-			     "jno iinc_no_overflow\n\t"
-			     "sub $1, %[xw]\n\t"
-			     "iinc_no_overflow:\t"
+			     "jo asm_raiseoverflow\n\t"
 			     : [xw] "+r"(xw)
 			     :
 			     : "cc"
 			     );
 
-	if (PointerOp::IsInt(xw)) {
-	  SETREG(r0, xw);
-	} else {
-	  RAISE(PrimitiveTable::General_Overflow)
-	}
+	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
 	s_int result = x+1;
@@ -929,19 +908,13 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  REQUEST(xw);
 	
 	__asm__ __volatile__("sub $2,%[xw]\n\t"
-			     "jno idec_no_overflow\n\t"
-			     "sub $1, %[xw]\n\t"
-			     "idec_no_overflow:\t"
+			     "jo asm_raiseoverflow\n\t"
 			     : [xw] "+r"(xw)
 			     :
 			     : "cc"
 			     );
 
-	if (PointerOp::IsInt(xw)) {
-	  SETREG(r0, xw);
-	} else {
-	  RAISE(PrimitiveTable::General_Overflow)
-	}
+	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
 	s_int result = x-1;
@@ -1645,6 +1618,16 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
+      /****************************************
+       * dummy instruction to prevent dead code
+       * elimination for raiseoverflow label
+       ***************************************/
+    Case(dummy_raiseoverflow)
+      {
+	goto raiseoverflow;
+      }
+      DISPATCH(PC);
+
 #ifndef THREADED
     default:
       {
@@ -1654,6 +1637,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     }
   }
 #endif
+ raiseoverflow:
+  __asm__ __volatile__ ("asm_raiseoverflow:");
+  RAISE(PrimitiveTable::General_Overflow);
 }
 
 
