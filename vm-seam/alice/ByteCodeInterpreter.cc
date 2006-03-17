@@ -827,6 +827,22 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     );
 
 	SETREG(r0, xw);
+#elif defined(__powerpc__)
+	blublu
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	register word yw = GETREG(r2);
+	if (PointerOp::IsTransient(yw))
+	  REQUEST(yw);
+	__asm__ __volatile__("subfo. %[xw],%[yw],%[xw]\n\t"
+			     "bso asm_raiseoverflow\n\t"
+			     "addi %[xw],%[xw],1"
+			     : [xw] "+r"(xw)
+			     : [yw] "r"(yw)
+			     : "cc"
+			     );
+	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
 	REQUEST_INT(y,GETREG(r2));
@@ -860,6 +876,21 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     : "cc"
 			     );
 	SETREG(r0, xw);
+#elif defined(__powerpc__)
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	register word yw = GETREG(r2);
+	if (PointerOp::IsTransient(yw))
+	  REQUEST(yw);
+	__asm__ __volatile__("addo. %[xw],%[xw],%[yw]\n\t"
+			     "bso asm_raiseoverflow\n\t"
+			     "addi %[xw],%[xw],-1"
+			     : [xw] "+r"(xw)
+			     : [yw] "r"(yw)
+			     : "cc"
+			     );
+	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
 	REQUEST_INT(y,GETREG(r2));
@@ -888,6 +919,18 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     );
 
 	SETREG(r0, xw);
+#elif defined(__powerpc__)
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	register int yw = 2;
+	__asm__ __volatile__("addo. %[xw],%[xw],%[yw]\n\t"
+			     "bso asm_raiseoverflow\n\t"
+			     : [xw] "+r"(xw)
+			     : [yw] "r"(yw)
+			     : "cc"
+			     );
+	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
 	s_int result = x+1;
@@ -914,6 +957,18 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     : "cc"
 			     );
 
+	SETREG(r0, xw);
+#elif defined(__powerpc__)
+	word xw = GETREG(r1);
+	if (PointerOp::IsTransient(xw))
+	  REQUEST(xw);
+	register int yw = 2;
+	__asm__ __volatile__("subfo. %[xw],%[yw],%[xw]\n\t"
+			     "bso asm_raiseoverflow\n\t"
+			     : [xw] "+r"(xw)
+			     : [yw] "r"(yw)
+			     : "cc"
+			     );
 	SETREG(r0, xw);
 #else
 	REQUEST_INT(x,GETREG(r1));
