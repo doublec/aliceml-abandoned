@@ -341,8 +341,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
         SET_ARGS##NOA();						\
 	SAVEPC(PC);							\
 	word wClosure = GETREG(reg);					\
-	Closure *closure = Closure::FromWord(wClosure);			\
-        /* dynamic self call test */                                    \
+	/*	Closure *closure = Closure::FromWord(wClosure);		\
         if(closure == CP) {						\
 	  PushCall(closure);						\
           frame = (ByteCodeFrame*) Scheduler::GetFrame();		\
@@ -350,7 +349,6 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  CHECK_PREEMPT();						\
 	  DISPATCH(PC);							\
 	}								\
-	/* dynamic byte code call test */				\
 	if(closure != INVALID_POINTER) {				\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
@@ -366,7 +364,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	    }								\
 	  }								\
 	}								\
-	/* preemption test happens in Scheduler::PushCall */		\
+	*//* preemption test happens in Scheduler::PushCall */		\
       	return Scheduler::PushCall(wClosure);				\
       }
 
@@ -387,14 +385,13 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_SEAMCALL##NOA();					\
         SET_ARGS##NOA();						\
 	word wClosure = GETREG(reg);					\
-	Closure *closure = Closure::FromWord(wClosure);			\
+	/*	Closure *closure = Closure::FromWord(wClosure);		\
 	if(closure == CP) {						\
 	  SETPC(0);							\
 	  CHECK_PREEMPT();						\
 	  DISPATCH(PC);							\
-	}								\
-	/* dynamic byte code call test */				\
-	Scheduler::PopFrame(frame->GetSize());				\
+	  }*/								\
+	Scheduler::PopFrame(frame->GetSize());/*			\
 	if(closure != INVALID_POINTER) {				\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
@@ -410,7 +407,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	    }								\
 	  }								\
 	}								\
-	/* preemption check happens in Scheduler::PushCall */		\
+	*//* preemption check happens in Scheduler::PushCall */		\
 	return  Scheduler::PushCall(wClosure);				\
       }
 
@@ -664,15 +661,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_RETURN##NOA();						\
         SET_ARGS##NOA();						\
 	Scheduler::PopFrame(frame->GetSize());				\
-	StackFrame *newFrame = Scheduler::GetFrame();			\
-	/* test if we can skip the scheduler */				\
+	/*	StackFrame *newFrame = Scheduler::GetFrame();		\
 	if(newFrame->GetWorker() == this) {				\
 	  frame = (ByteCodeFrame*) newFrame;				\
 	  code = frame->GetCode();					\
 	  LOADSTATE(PC,CP,IP);						\
 	  DISPATCH(PC);							\
 	}								\
-	/*preempt check only in call instructions*/			\
+	*//*preempt check only in call instructions*/			\
         return Worker::CONTINUE;					\
       }
 
@@ -827,8 +823,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     );
 
 	SETREG(r0, xw);
-#elif defined(__powerpc__)
-	blublu
+#elif defined(__ppc__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
@@ -876,7 +871,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     : "cc"
 			     );
 	SETREG(r0, xw);
-#elif defined(__powerpc__)
+#elif defined(__ppc__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
@@ -919,7 +914,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     );
 
 	SETREG(r0, xw);
-#elif defined(__powerpc__)
+#elif defined(__ppc__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
@@ -958,7 +953,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     );
 
 	SETREG(r0, xw);
-#elif defined(__powerpc__)
+#elif defined(__ppc__)
 	word xw = GETREG(r1);
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
