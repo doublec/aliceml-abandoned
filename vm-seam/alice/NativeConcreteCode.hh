@@ -76,7 +76,7 @@ protected:
     CCC_PC_POS, SKIP_CCC_PC_POS, SIZE
   };
 public:
-  using Block::ToWord;
+  using ConcreteCode::ToWord;
   using ConcreteCode::GetInterpreter;
   // NativeConcreteCode Accessors
   Chunk *GetNativeCode() {

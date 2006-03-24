@@ -36,7 +36,7 @@ protected:
     SIZE_INTERNAL
   };
 public:
-  using Block::ToWord;
+  using ConcreteCode::ToWord;
   using ConcreteCode::GetInterpreter;
 
   // the size is needed in HotSpotConcreteCode

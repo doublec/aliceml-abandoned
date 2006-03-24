@@ -25,7 +25,7 @@ class AliceDll AliceConcreteCode: private ConcreteCode {
 private:
   enum { ABSTRACT_CODE_POS, TRANSFORM_POS, SIZE };
 public:
-  using Block::ToWord;
+  using ConcreteCode::ToWord;
 
   static word New(TagVal *abstractCode);
   TagVal *GetAbstractCode() {

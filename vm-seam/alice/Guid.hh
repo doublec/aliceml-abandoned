@@ -21,7 +21,7 @@
 
 class AliceDll Guid: private String {
 public:
-  using Block::ToWord;
+  using String::ToWord;
   using String::Hash;
 
   static word vmGuid;

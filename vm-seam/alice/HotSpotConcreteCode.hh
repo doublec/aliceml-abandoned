@@ -43,7 +43,7 @@ protected:
   enum { TRANSFORM, INLINE_INFO, CODE, COUNTER, SIZE };
   
 public:
-  using Block::ToWord;
+  using ConcreteCode::ToWord;
   using ConcreteCode::GetInterpreter;
 
   Transform *GetAbstractRepresentation() {
