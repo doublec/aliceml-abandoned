@@ -25,7 +25,7 @@ private:
 	 SIZE };
   
 public:
-  using Block::ToWord;
+  using DynamicArray::ToWord;
 
   static PBlock *New(s_int start, s_int end);
   static PBlock *FromWord(word x);
@@ -248,7 +248,7 @@ private:
   static int compare(PNode *n1, PNode *n2);
 
 public:
-  using Block::ToWord;
+  using DynamicArray::ToWord;
 
   static PNode *New(word node);
   static PNode *FromWord(word x);
