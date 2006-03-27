@@ -1,10 +1,11 @@
-\documentclass[a4paper]{scrartcl}
+\documentclass[a4paper,halfparskip]{scrartcl}
 
 \usepackage{epsfig,amssymb,times,graphicx,color,listings}
 
 \usepackage{html,makeidx}
 %\usepackage[dvips]{hyperref}
 \usepackage[]{hyperref}
+\usepackage{amsmath}
 %\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
 %\usepackage{hyperlatex}
 \pagestyle{myheadings}
@@ -12,11 +13,11 @@
 \evensidemargin0.1in
 \textwidth6.4in
 
+\newcommand{\Store}{\ensuremath{\mathit{Store}}}
+\newcommand{\dom}[2]{\ensuremath{\{#1,\dots,#2\}}}
+\newcommand{\sdom}[2]{\ensuremath{\{#1,#2\}}}
+
 \begin{document}
-
-
-
-
 
 
 %begin{latexonly}
@@ -46,9 +47,9 @@
 \renewcommand{\labelitemiii}{$\bullet$}
 
 
-\markboth{\it {\bf Constraint Programming in Alice. A tutorial.} - Dominik
+\markboth{\emph\textbf{Constraint Programming in Alice. A tutorial.} - Dominik
   Brill}
-         {\it {\bf Constraint Programming in Alice. A tutorial.} - Dominik
+         {\emph\textbf{Constraint Programming in Alice. A tutorial.} - Dominik
   Brill}
 
 \begin{titlepage}
@@ -61,7 +62,7 @@ Fachrichtung 6.2 - Informatik
 \vspace{3cm}
 \end{latexonly}
 \Huge
-{\bf Constraint Programming in Alice. A tutorial.}\\
+\textbf{Constraint Programming in Alice. A tutorial.}\\
 \begin{htmlonly}
 \vspace{1cm}
 \end{htmlonly}
@@ -70,7 +71,7 @@ Fachrichtung 6.2 - Informatik
 \end{latexonly}
 \LARGE
 by \\
-{\it Christian Schulte, Gert Smolka, Tobias M\"uller, Dominik Brill}
+\emph{Christian Schulte, Gert Smolka, Tobias M\"uller, Dominik Brill}
 \end{center}
 \begin{latexonly}
 \vspace{6cm}
@@ -83,8 +84,6 @@ by \\
 \today
 \end{latexonly}
 
-
-
 \end{titlepage}
 
 \newpage
@@ -93,68 +92,59 @@ by \\
 
 \listoffigures
 
+%begin{latexonly}
 \lstlistoflistings
-
+%end{latexonly}
 
 \newpage
 
 \section{Introduction}
-This document is a first introduction to {\it Constraint Programming}
+This document is a first introduction to \emph{Constraint Programming}
 in Alice.
-\par
-{\it Constraint Progamming } is a problem-solving technique for
-{\it combinatorial problems} that works by 
-incorporating constraints into a
-{\it programming environment} (after \cite{3}
-{\it Principles of Constraint Programming.} by 
-{\it Krysztof R. Apt}).
-\par
+
+\emph{Constraint Progamming} is a problem-solving technique for
+\emph{combinatorial problems} that works by incorporating constraints
+into a \emph{programming environment} (after \cite{3} \emph{Principles
+  of Constraint Programming.} by \emph{Krysztof R. Apt}).
+
 Combinatorial problems question about properties (constraints) of a
-class of {\it combinatorial structures} which are characterized in
+class of \emph{combinatorial structures} which are characterized in
 terms of a finite set of variables and a finite value for each
 variable.
-\par
+
 Finally, the constraint programming features of Alice that are build
-upon the {\it Gecode} \cite{12}
-constraint library realize the
+upon the \emph{Gecode}~\cite{12} constraint library realize the
 requirements of Apt's definition.
-\par
+
 First, this document covers combinatorial problems that can be
 stated with variables ranging over finite domains of
 integers. Later, those problems are expanded by allowing variables to
 range over finite sets of integers.
 Problems in this class range from puzzles to real world applications as 
-diverse as scheduling, ware house allocation, configuration and placement.\\
-\par
-The two basic techniques of constraint programming are 
-{\it constraint propagation} and 
-{\it branching}. Constraint propagation is 
-an efficient inference mechanism 
-obtained with concurrent propagators accumulating information 
-in a
-{\it constraint store}. 
-Branching splits a problem into complementary 
-cases once constraint 
-propagation cannot advance further, i.e. it reaches a fixpoint. 
-By iterating propagation and branching, 
-propagation will eventually determine the solutions of a problem.
-\par
-Branching can easily lead to an exponential 
-growth of the number of 
-subproblems to be considered. Fortunately, this potential 
-combinatorial explosion can 
-often be contained by combining strong propagation mechanisms 
-with problem specific 
-heuristics for selecting branching steps.
-\par
-The following puzzles give a first idea of the combinatorial 
-problems
-that will be solved in this document:
-\begin{itemize}
+diverse as scheduling, ware house allocation, configuration and placement.
 
+The two basic techniques of constraint programming are
+\emph{constraint propagation} and \emph{branching}. Constraint
+propagation is an efficient inference mechanism obtained with
+concurrent propagators accumulating information in a \emph{constraint
+  store}.  Branching splits a problem into complementary cases once
+constraint propagation cannot advance further, i.e. it reaches a
+fixpoint.  By iterating propagation and branching, propagation will
+eventually determine the solutions of a problem.
+
+Branching can easily lead to an exponential growth of the number of
+subproblems to be considered. Fortunately, this potential
+combinatorial explosion can often be contained by combining strong
+propagation mechanisms with problem specific heuristics for selecting
+branching steps.
+
+The following puzzles give a first idea of the combinatorial problems
+that will be solved in this document:
+
+\begin{itemize}
 \item
-{\bf Money}
-\par
+\textbf{Money}
+
 The Send More Money Problem consists in finding distinct 
 digits for the letters 
 D, E, M, N, O, R, S, Y such that S and M are different 
@@ -165,8 +155,8 @@ is satisfied. The unique solution of the problem is
 9567 + 1085 = 10652.
 
 \item
-{\bf Safe}
-\par
+\textbf{Safe}
+
 The code of Professor Smart's safe is a sequence of 9 
 distinct nonzero digits 
 $ C_1,\ldots,C_9 $ such that the following equations 
@@ -176,12 +166,12 @@ and inequations are satisfied:\\
      C_2 + C_3 + C_6 < C_8 \\ 
      C_9 < C_8 \\ 
      C_1 \neq 1,\ldots, C_9 \neq 9 $
-\par
+
 Can you determine the code?
 
 \item
-{\bf Coloring}
-\par
+\textbf{Coloring}
+
 Given a map showing the West European countries Netherlands, 
 Belgium, France, Spain, 
 Portugal, Germany, Luxemburg, Switzerland, Austria, and Italy, 
@@ -190,26 +180,26 @@ that neighboring countries have different color and a minimal
 number of colors is used.
 
 \item
-\par
-{\bf Grocery}
-\par
+
+\textbf{Grocery}
+
 A kid goes into a grocery store and buys four items. The cashier 
 charges \$ 7.11, the kid 
 pays and is about to leave when the cashier calls the kid back, 
-and says \\
+and says
+
 `` Hold on, I multiplied the four items instead of adding them; 
 I'll try again; 
-Hah, with adding them the price still comes to \$ 7.11 .'' \\
+Hah, with adding them the price still comes to \$ 7.11 .''
+
 What were the prices of the four items?
 
 \item
-\par
-{\bf Queens}
-\par
+\textbf{Queens}
+
 Place 8 queens on a chess board such that no two queens attack 
 each other.
 \end{itemize}
-\par
 
 The problems have in common that they can be stated with variables 
 that are a priori 
@@ -234,7 +224,7 @@ As an introduction for functional programming in Alice I suggest the
 \cite{4} ``\htmladdnormallink
 {\textcolor{blue}{Short Tour to Alice}}
 {http://www.ps.uni-sb.de/alice/manual/tour.html}
-`` by {\it Andreas Rossberg}.
+`` by \emph{Andreas Rossberg}.
 
 \subsection{The Examples}
 
@@ -251,17 +241,17 @@ file:
 \subsection{Acknowledgements}
 
 The tutorial is based on the documents\\
-\htmladdnormallink{\cite{1} {\it Finite Domain Constraint Programming in Oz. 
+\htmladdnormallink{\cite{1} \emph{Finite Domain Constraint Programming in Oz. 
 A Tutorial.} \\
-by {\it Christian Schulte and Gert Smolka}}
+by \emph{Christian Schulte and Gert Smolka}}
 {http://www.mozart-oz.org/documentation/fdt/index.html} 
 \\ 
 and\\
 %\href
 \htmladdnormallink
-{\cite{2} {\it Problem Solving with 
+{\cite{2} \emph{Problem Solving with 
 Finite Set Constraints in Oz. A Tutorial.} \\
-by {\it Tobias M\"uller}}
+by \emph{Tobias M\"uller}}
 {http://www.mozart-oz.org/documentation/fst/index.html}
 
 
@@ -273,7 +263,7 @@ by {\it Tobias M\"uller}}
 \label{sec 2}
 This section presents the architecture of constraint-based problem 
 solving at the
-{\bf concrete instance of finite domain problems}. 
+\textbf{concrete instance of finite domain problems}. 
 I will often refer to the 
 underlying solution method with 
 the slogan ``propagate and branch''. The slogan recalls the 
@@ -281,29 +271,28 @@ two inference rules of the method,
 constraint propagation and branching.
 
 \subsection{Finite Domains and Constraints}
-A {\it finite domain} is a finite set of integers. 
-The notation m \# n stands for the finite 
-domain \{ m, \ldots, n\}. A constraint is a formula of predicate logic. 
+A \emph{finite domain} is a finite set of integers. 
+A constraint is a formula of predicate logic. 
 Here are typical examples of 
-constraints occurring with finite domain problems:\\
+constraints occurring with finite domain problems:
 \begin{quote}
-          $ X=67 \hspace{5mm} X\in0\#9 \hspace{5mm} X=Y $\\ 
+          $ X=67 \hspace{5mm} X\in\dom{0}{9} \hspace{5mm} X=Y $\\ 
           $ X^2-Y^2=Z^2  \hspace{5mm} X+Y+Z<U \hspace{5mm} X+Y\neq5\cdot Z $ \\ 
           $ X_1,\ldots,X_9 $ \hspace{2mm} are pairwise distinct \\
 \end{quote}
-\par
-A {\it domain constraint} (also called basic constraint) takes the form
-$ x \in D $, where D is a finite domain.\\
 
-A {\it finite domain problem} is a finite set P of quantifier-free 
+A \emph{domain constraint} (also called basic constraint) takes the form
+$ x \in D $, where D is a finite domain.
+
+A \emph{finite domain problem} is a finite set P of quantifier-free 
 constraints such that P 
 contains a domain constraint for every variable occurring in a 
 constraint of P. A variable 
-assignment is a function mapping variables to integers.\\
+assignment is a function mapping variables to integers.
 
-A {\it solution} of a finite domain problem P is a variable 
+A \emph{solution} of a finite domain problem P is a variable 
 assignment that satisfies every 
-constraint in P.\\
+constraint in P.
 
 Notice that a finite domain problem has at most finitely 
 many solutions, provided we consider
@@ -315,96 +304,93 @@ for every variable occurring in it).
 \label{section2-2}
 Constraint propagation is an inference rule for finite domain 
 problems that narrows the domains 
-of variables. For instance, given the inequation\\
+of variables. For instance, given the inequation
 \begin{quote}
 $ X < Y $
 \end{quote}
-and the basic constraints\\
+and the basic constraints
 \begin{quote}
-$ X \in 23\#100 $
+$ X \in \dom{23}{100} $
 \end{quote}
 and
 \begin{quote}
-$ Y \in 1\#33 $
+$ Y \in \dom{1}{33} $
 \end{quote}
-constraint propagation can narrow the domains of X and Y to\\
+constraint propagation can narrow the domains of X and Y to
 \begin{quote}
-$ X \in 23\#32 $
+$ X \in \dom{23}{32} $
 \end{quote}
 and
 \begin{quote}
-$ Y \in 24\#33 $
+$ Y \in \dom{24}{33} $
 \end{quote}
 
 \subsection{Spaces, Propagators, and Constraint Stores}
 The computational architecture for constraint propagation is 
-called a {\it space}\label{space} and consists 
-of a number of propagators connected to a constraint store:\\
-
+called a \emph{space}\label{space} and consists 
+of a number of propagators connected to a constraint store:
 
 \begin{figure}[htpb]
 
 \centerline{
 \includegraphics*[scale=0.4]{figs/cp_2_new.eps}}
-\caption{{\bf A computational architecture for Constraint Propagation}}
+\caption{\textbf{A computational architecture for Constraint Propagation}}
 \label{figure1}
 \end{figure}
 
-\par
-The {\it constraint store} stores a conjunction of basic 
+The \emph{constraint store} stores a conjunction of basic 
 constraints up to logical equivalence. 
-An example for such a conjunction is\\
+An example for such a conjunction is
 \begin{quote}
-$  X \in 0\#5  \hspace{2mm}\wedge{} \hspace{2mm}Y=8 \hspace{2mm} 
-\wedge{}\hspace{2mm} Z \in 13\#23.$\\
+$  X \in \dom{0}{5}  \hspace{2mm}\wedge{} \hspace{2mm}Y=8 \hspace{2mm} 
+\wedge{}\hspace{2mm} Z \in \dom{13}{23}.$
 \end{quote}
-The {\it propagators} impose {\it nonbasic} constraints, 
-for instance,\\
+The \emph{propagators} impose \emph{nonbasic} constraints, 
+for instance,
 \begin{quote}
-$ X < Y $ , $ X = Y $ or $ X^2 + Y^2 = Z^2 $.\\
+$ X < Y $ , $ X = Y $ or $ X^2 + Y^2 = Z^2 $.
 \end{quote}
 
 A propagator for a constraint C is a computational 
 agent that tries to narrow 
-the domains of the variables occurring in C.\\
-
+the domains of the variables occurring in C.
 
 Two propagators that share a variable X can communicate with 
 each other through the constraint store. 
 To see an example for communicating propagators, suppose we 
-have two propagators imposing the constraints\\
+have two propagators imposing the constraints
 \begin{quote}
-$ X+Y=9 \hspace{5mm} 2 \cdot X + 4\cdot Y = 24 $\\
+$ X+Y=9 \hspace{5mm} 2 \cdot X + 4\cdot Y = 24 $
 \end{quote}
 over a constraint store containing the following information 
-about X and Y:\\
+about X and Y:
 \begin{quote}
-$ X \in 0\#9 \hspace{4mm} Y \in 0\#9 $\\
+$ X \in \dom{0}{9} \hspace{4mm} Y \in \dom{0}{9} $
 \end{quote}
 
 As is, the first propagator cannot do anything. The second 
 propagator, however, can narrow the domains 
-of both X and Y:\\
+of both X and Y:
 \begin{quote}
-$ X \in 0\#8 \hspace{4mm} Y \in 2\#6 $\\
+$ X \in \dom{0}{8} \hspace{4mm} Y \in \dom{2}{6} $
 \end{quote}
-Now the first propagator can narrow the domain of X:\\
+Now the first propagator can narrow the domain of X:
 \begin{quote}
-$ X \in 3\#7 \hspace{4mm} Y \in 2\#6 $\\
+$ X \in \dom{3}{7} \hspace{4mm} Y \in \dom{2}{6} $
 \end{quote}
-Now the second propagator can narrow the domains of both X and Y:\\
+Now the second propagator can narrow the domains of both X and Y:
 \begin{quote}
-$ X \in 4\#6 \hspace{4mm} Y \in 3\#4 $ \\
+$ X \in \dom{4}{6} \hspace{4mm} Y \in \sdom{3}{4} $
 \end{quote}
 This once more activates the first propagator, which narrows 
-the domain of X:\\
+the domain of X:
 \begin{quote}
-$ X \in 5\#6 \hspace{4mm} Y \in 3\#4 $\\
+$ X \in \dom{5}{6} \hspace{4mm} Y \in \sdom{3}{4} $
 \end{quote}
 Now the second propagator gets active once more and determines 
-the values of X and Y:\\
+the values of X and Y:
 \begin{quote}
-$ X=6  \hspace{4mm} Y=3 $ \\
+$ X=6  \hspace{4mm} Y=3 $
 \end{quote}
 
 Given a constraint store storing a constraint S and a propagator 
@@ -412,54 +398,53 @@ imposing a constraint P,
 the propagator can tell to the constraint store a basic 
 constraint B if the conjunction $ S \wedge{} P$ 
 entails B and B adds new and consistent information to the 
-store. To {\it tell} a constraint B to a 
+store. To \emph{tell} a constraint B to a 
 constraint store storing the constraint S means to update 
 the store so that it holds the 
-conjunction $ S \wedge{} B$.\\
-\par
-The {\it operational semantics} of a propagator determines 
+conjunction $ S \wedge{} B$.
+
+The \emph{operational semantics} of a propagator determines 
 whether the propagator can tell the store 
 a basic constraint or not. The operational semantics of a 
 propagator must of course respect 
-the {\it declarative semantics} of the propagator, which is 
-given by the constraint the propagator imposes.\\ 
-\par
-We require that the constraint store be always {\it consistent}; 
+the \emph{declarative semantics} of the propagator, which is 
+given by the constraint the propagator imposes.
+
+We require that the constraint store be always \emph{consistent}; 
 that is, there must always be at least 
 one variable assignment that satisfies all constraints in the 
-constraint store.\\
-\par
-We say that the constraint store {\it determines} a variable 
+constraint store.
+
+We say that the constraint store \emph{determines} a variable 
 x if the constraint store knows the value of x, 
 that is, if there exists an integer n such that the constraint 
-store entails x = n.\\
-\par
-We say that a propagator is {\it inconsistent} if there is 
+store entails x = n.
+
+We say that a propagator is \emph{inconsistent} if there is 
 no variable assignment that satisfies 
 both the constraint store and the constraint imposed by the 
 propagator 
-(e.g., $ X + Y = 6 $ over $ X \in 3\#9 $ and $ Y \in 4\#9 $). 
-We say that a propagator is {\it failed} if its 
-operational semantics realizes that it is inconsistent.\\
-\par
-We say that a propagator is {\it entailed} if every variable 
+(e.g., $ X + Y = 6 $ over $ X \in \dom{3}{9} $ and $ Y \in \dom{4}{9} $). 
+We say that a propagator is \emph{failed} if its 
+operational semantics realizes that it is inconsistent.
+
+We say that a propagator is \emph{entailed} if every variable 
 assignment that satisfies the constraint 
 store also satisfies the constraint imposed by the propagator 
-(e.g., $ X < Y $ over $ X \in 3\#5 $ and $ Y \in 6\#9 $). 
+(e.g., $ X < Y $ over $ X \in \dom{3}{5} $ and $ Y \in \dom{6}{9} $). 
 As soon as the operational semantics of a 
 propagator realizes that the propagator is entailed, the 
-propagator ceases to exist.\\
-\par
+propagator ceases to exist.
+
 We require that the operational semantics of a propagator 
 detects inconsistency and entailment at the 
 latest when the store determines all variables of the 
-propagator.\\
-\par
+propagator.
 
-We say that a space is {\it failed} if one of its propagators 
+We say that a space is \emph{failed} if one of its propagators 
 is failed. 
 
-We say that a space is {\it solved} if all variables occuring 
+We say that a space is \emph{solved} if all variables occuring 
 in it are determined.
 
 When a space is created, its propagators start to tell basic 
@@ -471,49 +456,46 @@ in which the propagators tell information
 to the store does not matter. When we start a space repeatedly 
 from the same state, it will either 
 always fail or always arrive at the same constraint store 
-(up to logical equivalence).\\
-\par
-A variable assignment is called a {\it solution} of a space 
+(up to logical equivalence).
+
+A variable assignment is called a \emph{solution} of a space 
 if it satisfies the constraints in the 
 constraint store and all constraints imposed by the propagators. 
 The solutions of a space stay invariant 
-under constraint propagation and deletion of entailed propagators. \\
+under constraint propagation and deletion of entailed propagators.
 
 \subsection{Interval and Domain Propagation}
 There are two established schemes for the operational semantics 
-of a propagator. {\it Domain propagation}
+of a propagator. \emph{Domain propagation}
 narrows the domains of the variables as much as possible, i.e. all
 values that are not consistent with the constraint are removed; 
-{\it interval propagation} only narrows the 
-bounds of a domain.\\
-\par
-Consider a propagator for the constraint\\
+\emph{interval propagation} only narrows the 
+bounds of a domain.
+
+Consider a propagator for the constraint
 \begin{quote}
-$  2\cdot X = Y $\\
+$  2\cdot X = Y $
 \end{quote}
-over a constraint store\\
+over a constraint store
 \begin{quote}
-$ X \in 1\#10 \hspace{4mm} Y \in 1\#7 $\\
+$ X \in \dom{1}{10} \hspace{4mm} Y \in \dom{1}{7} $
 \end{quote}
 Under domain propagation, the propagator can narrow the 
-domains to\\
+domains to
 \begin{quote}
-$ X \in 1\#3 \hspace{4mm}  Y \in \{2,4,6\}$\\
+$ X \in \dom{1}{3} \hspace{4mm}  Y \in \{2,4,6\}$
 \end{quote}
 Under interval propagation, the propagator can narrow 
-only the domain bounds, which yields\\
+only the domain bounds, which yields
 \begin{quote}
-$ X \in 1\#3 \hspace{4mm}  Y \in 2\#6$ \\
+$ X \in \dom{1}{3} \hspace{4mm}  Y \in \dom{2}{6}$
 \end{quote}
 
-
-In practice, interval propagation is usually preferable 
-over domain propagation because of its 
-lower computational costs. But domain propagation often 
-leads to
-considerably smaller search trees (figure \ref{figure2}). 
-In Alice, some propagators have an additional argument
-{\it conlevel}. There you can specify the propagators
+In practice, interval propagation is usually preferable over domain
+propagation because of its lower computational costs. But domain
+propagation often leads to considerably smaller search trees (figure
+\ref{figure2}).  In Alice, some propagators have an additional
+argument \emph{conlevel}. There you can specify the propagators
 consistency level.
 
 
@@ -530,39 +512,39 @@ It may happen that a space has a unique
 solution and that constraint propagation does not find it. 
 It may also happen that a space has no 
 solution and that constraint propagation does not lead to 
-a failed propagator.\\
-\par
+a failed propagator.
+
 A straightforward example for the second case consists of 
-three propagators for\\
+three propagators for
 \begin{quote}
- $ X \neq Y \hspace{4mm} X \neq Z \hspace{4mm} Y \neq Z $\\
+ $ X \neq Y \hspace{4mm} X \neq Z \hspace{4mm} Y \neq Z $
 \end{quote}
-and a constraint store\\
+and a constraint store
 \begin{quote}
-    $ X \in 0\#1 \hspace{4mm} Y \in 0\#1 \hspace{4mm} Z \in 0\#1.$\\
+    $ X \in \sdom{0}{1} \hspace{4mm} Y \in \sdom{0}{1} \hspace{4mm} Z \in \sdom{0}{1}.$
 \end{quote}
-This space has no solution. Nevertheless, none of the 
-propagators is inconsistent or can tell
-something to the constraint store.
-\par
-To see an example for the case where a unique solution is 
-not found by constraint propagation, 
-suppose we have interval propagators for the constraints\\
+This space has no solution. Nevertheless, none of the propagators is
+inconsistent or can tell something to the constraint store.
+
+To see an example for the case where a unique solution is not found by
+constraint propagation, suppose we have interval propagators for the
+constraints
 \begin{quote}
 $ 3 \cdot X + 3 \cdot Y = 5 \cdot Z \hspace{4mm} X - Y = Z 
-\hspace{4mm} X + Y = Z + 2 $\\
+\hspace{4mm} X + Y = Z + 2 $
 \end{quote}
-and a constraint store\\
+and a constraint store
 \begin{quote}
-   $ X \in 4\#10 \hspace{4mm} Y \in 1\#7 \hspace{4mm} Z 
-\in 3\#9$\\
+   $ X \in \dom{4}{10} \hspace{4mm} Y \in \dom{1}{7} \hspace{4mm} Z 
+\in \dom{3}{9}$
 \end{quote}
 This space has the unique solution X = 4, Y = 1, Z = 3. 
 Nevertheless, none of the propagators can 
-narrow a variable domain.\\
-If we narrow the domains to\\
+narrow a variable domain.
+
+If we narrow the domains to
 \begin{quote}
-   $ X \in 5\#10 \hspace{4mm} Y \in 1\#6 \hspace{4mm} Z \in 4\#9$ \\
+   $ X \in \dom{5}{10} \hspace{4mm} Y \in \dom{1}{6} \hspace{4mm} Z \in \dom{4}{9}$
 \end{quote}
 the space becomes unsatisfiable. Still, none of the above 
 propagators is inconsistent or can 
@@ -572,15 +554,15 @@ narrow a variable domain.
 To solve a finite domain problem P, we can always choose 
 a constraint C and solve both 
 $ P\cup\{C\}$ and $ P\cup\{\neg C\}$. We say that we 
-have {\it branched} P with C.\\
-\par
+have \emph{branched} P with C.
+
 We can apply the idea to spaces. Suppose S is a space 
 in which at least one variable is not determined. 
-Then we can choose a constraint C and {\it branch} 
+Then we can choose a constraint C and \emph{branch} 
 S with C. Branching yields two spaces, one 
 obtained by adding a propagator for C, and one obtained 
-by adding a propagator for $\neg C$.\\
-\par
+by adding a propagator for $\neg C$.
+
 The combination of constraint propagation and branching 
 yields a complete solution method 
 for finite domain problems. Given a problem, we set up a 
@@ -595,20 +577,20 @@ with the constraint store and branch the space
 with the constraint x = n. Since we can tell both 
 x = n and $ x \neq n $ to the constraint store (the store 
 already knows a domain for x), chances are 
-that constraint propagation can restart in both spaces.\\
-\par
-By proceeding this way we obtain a {\it search tree} as
+that constraint propagation can restart in both spaces.
+
+By proceeding this way we obtain a \emph{search tree} as
 shown in figure \ref{figure2}. Each node of the tree 
 corresponds to a space. Each leaf of the tree corresponds 
 to a space that is either solved or failed. 
 The search tree is always finite since there are only 
 finitely many variables all a priori constrained 
-to finite domains. \\
+to finite domains.
 
 \begin{figure}[htpb]
 
 \centerline{\includegraphics*[scale=0.5]{figs/search-tree.eps}}
-\caption{{\bf A search tree}. Diamonds represent solved spaces 
+\caption{\textbf{A search tree}. Diamonds represent solved spaces 
 and boxes represent failed spaces.}
 \label{figure2}
 \end{figure}
@@ -619,8 +601,8 @@ To see the outlined propagate and branch method at a
 concrete example, consider the problem
  specified by the following constraints:
 \begin{quote}
-$ X \neq 7 \hspace{4mm} Z \neq 2 \hspace{4mm} X-Z = 3\cdot Y $ \\ 
-$ X \in 1\#8 \hspace{4mm} Y \in 1\#10 \hspace{4mm} Z \in 1\#10 $ \\
+$ X \neq 7 \hspace{4mm} Z \neq 2 \hspace{4mm} X-Z = 3\cdot Y $ \\
+$ X \in \dom{1}{8} \hspace{4mm} Y \in \dom{1}{10} \hspace{4mm} Z \in \dom{1}{10} $
 \end{quote}
 To solve the problem, we start with a space whose store 
 constrains the variables X, Y, and Z to 
@@ -629,21 +611,21 @@ imposing the constraints $ X \neq 7, Z \neq 2$, and
 $ X - Z = 3 \cdot Y$ . We assume that the propagator 
 for $ X - Z = 3\cdot Y$ realizes interval propagation, 
 and that the propagators for the disequations $ X \neq 7 $ 
-and $ Z \neq 2 $ realize domain propagation.\\
-\par
+and $ Z \neq 2 $ realize domain propagation.
+
 The propagators for the disequations immediately write 
 all their information into the store and 
-disappear. The store then knows the domains\\
+disappear. The store then knows the domains
 \begin{quote}
-    $ X \in [1\#6 ; 8] \hspace{4mm} Y \in 1\#10 
-\hspace{4mm} Z \in [1 ; 3\#10]$\\
+    $ X \in [\dom{1}{6} ; 8] \hspace{4mm} Y \in \dom{1}{10} 
+\hspace{4mm} Z \in [1 ; \dom{3}{10}]$
 \end{quote}
-where $ [1 ; 3\#10]$ denotes the finite domain 
+where $ [1 ; \dom{3}{10}]$ denotes the finite domain 
 $ \{1\}\cup\{3,\ldots,10\}$. The interval propagator 
-for $ X-Z = 3\cdot Y $ can now further narrow the domains to\\
+for $ X-Z = 3\cdot Y $ can now further narrow the domains to
 \begin{quote}
-    $ X\in[4\#6 ; 8] \hspace{4mm} Y \in 1\#2 
-\hspace{4mm} Z\in[1 ; 3\#5].$\\
+    $ X\in[\dom{4}{6} ; 8] \hspace{4mm} Y \in \sdom{1}{2} 
+\hspace{4mm} Z\in[1 ; \dom{3}{5}].$
 \end{quote}
 Now propagation has reached a fixpoint. Thus, we continue 
 with a first branching 
@@ -653,7 +635,7 @@ Figure \ref{figure3} shows the resulting search tree.
 \begin{figure}[htpb]
 
 \centerline{\includegraphics*[scale=0.7]{figs/search-tree-exmpl.eps}}
-\caption{{\bf A search tree containing 3 choice nodes, 
+\caption{\textbf{A search tree containing 3 choice nodes, 
 1 failure node, and 3 solution nodes.}}
 \label{figure3}
 \end{figure}
@@ -663,44 +645,44 @@ Figure \ref{figure3} shows the resulting search tree.
 
 
 The space obtained by adding a propagator for X = 4 can be 
-solved by propagation and yields the solution\\
+solved by propagation and yields the solution
 \begin{quote}
-    $ X=4  \hspace{4mm} Y=1  \hspace{4mm} Z=1$\\
+    $ X=4  \hspace{4mm} Y=1  \hspace{4mm} Z=1$
 \end{quote}
 The space obtained by adding a propagator for $ X\neq 4 $ 
 reaches a fixpoint immediately after this propagator 
 has written its information into the constraint store, 
-which then looks as follows:\\
+which then looks as follows:
 \begin{quote}
-    $ X \in [5\#6 ; 8]  \hspace{4mm} Y \in 1\#2  
-\hspace{4mm} Z \in [1 \; 3\#5]$\\
+    $ X \in [\dom{5}{6} ; 8]  \hspace{4mm} Y \in \sdom{1}{2}  
+\hspace{4mm} Z \in [1 \; \dom{3}{5}]$
 \end{quote}
-This time we branch with respect to the constraint X = 5.\\
-\par
+This time we branch with respect to the constraint X = 5.
+
 The space obtained by adding a propagator for X = 5 fails 
 since $ X-Z= 3\cdot Y $ is inconsistent with 
-the store obtained by adding X = 5.\\
-\par
+the store obtained by adding X = 5.
+
 The space obtained by adding a propagator for $ X \neq 5$ 
 reaches a fixpoint immediately after this propagator 
 has written its information into the constraint store, 
-which then looks as follows:\\
+which then looks as follows:
 \begin{quote}
-    $ X \in [6 \; 8]  \hspace{4mm} Y \in 1\#2  
-\hspace{4mm} Z \in [1 \; 3\#5]$\\
+    $ X \in [6 \; 8]  \hspace{4mm} Y \in \sdom{1}{2}  
+\hspace{4mm} Z \in [1 \; \dom{3}{5}]$
 \end{quote}
 Now we branch with respect to the constraint X = 6.
-\par
+
 The space obtained by adding a propagator for X = 6 can be 
-solved by propagation and yields the solution\\
+solved by propagation and yields the solution
 \begin{quote}
-    $ X = 6  \hspace{4mm} Y = 1  \hspace{4mm} Z = 3$ \\
+    $ X = 6  \hspace{4mm} Y = 1  \hspace{4mm} Z = 3$
 \end{quote}
 Finally, the space obtained by adding a propagator for 
 $ X\neq 6$ can also be solved by propagation, yielding 
 the third and final solution
 \begin{quote}
- $ X = 8  \hspace{4mm} Y = 1  \hspace{4mm} Z = 5$\\
+ $ X = 8  \hspace{4mm} Y = 1  \hspace{4mm} Z = 5$
 \end{quote}
 An alternative to the propagate and branch method 
 is a naive enumerate and test method, 
@@ -714,20 +696,20 @@ of the search tree considerably.
 
 
 \subsection{Branching Strategies}
-A {\it branching} is a computational agent implementing 
-a {\it branching strategy}. If a thread 
+A \emph{branching} is a computational agent implementing 
+a \emph{branching strategy}. If a thread 
 creates a branching, the thread is blocked until the 
 branching has done its job. If a 
 branching step is needed, the branching becomes 
 active and generates the constraint 
-with which the space will be branched.\\
-\par
+with which the space will be branched.
+
 Usually, a branching strategy is defined on a sequence 
 $ x_1,\ldots,x_n $ of variables. When a 
 branching step is necessary, the strategy selects a not 
 yet determined variable in the sequence 
-and branches on this variable.\\
-\par
+and branches on this variable.
+
 There are a few standard possibilities to branch on a 
 variable x:
 \begin{itemize}
@@ -745,13 +727,13 @@ largest possible value for x.
 branch with $ x \le m$ , where m is a possible 
 value for x that is in the middle of the 
 least and largest possible value for x (so called 
-{\it domain splitting}).\\
+\emph{domain splitting}).
 \end{itemize}
-\par
-A {\it naive branching strategy} will select the 
-leftmost undetermined variable in the sequence.\\
-\par
-A {\it first-fail branching strategy} will select 
+
+A \emph{naive branching strategy} will select the 
+leftmost undetermined variable in the sequence.
+
+A \emph{first-fail branching strategy} will select 
 the leftmost undetermined variable in the 
 sequence whose domain in the constraint store has minimal 
 size. In other words, it will select 
@@ -780,14 +762,14 @@ whether we explore the tree in depth-first or breadth-first
 manner will make a big difference 
 in the memory needed. The memory requirements of breadth-first 
 exploration are typically 
-exponentially larger than those of depth-first exploration.\\
+exponentially larger than those of depth-first exploration.
 \end{itemize}
 We will assume that the search engine explores the search 
 trees always in a depth-first fashion. 
 Moreover, when the engine branches with a constraint C, 
 it explores the space obtained with C 
-first and the space obtained with $ \neg C$ second.\\
-\par
+first and the space obtained with $ \neg C$ second.
+
 The above assumptions ensure that the exploration of a 
 search tree is a deterministic process, 
 provided the branching strategy generating the 
@@ -802,13 +784,13 @@ constraint problems have been introduced. In practice,
 the first step, once confronted with a problem, is to think
 of how this problem can be modeled, i.e. what variables, what
 domains for these variables and what constraint propagators
-should be used to encode the problem to a {\it constraint
+should be used to encode the problem to a \emph{constraint
 satisfaction problem}. Additional underlying concepts
-are {\it viewpoints} and {\it models}, and will be 
+are \emph{viewpoints} and \emph{models}, and will be 
 presented in the following.
 
 \subsection{Constraint Satisfaction Problem(CSP) and Models}
-A {\it Constraint Satisfaction Problem}(CSP), is a triple
+A \emph{Constraint Satisfaction Problem}(CSP), is a triple
 $<$ X, D, C $>$ with: 
 \begin{itemize}
 \item
@@ -819,23 +801,26 @@ of associated domains for all $x_i \in$ X
 \item
 C is a set of constraints
 \end{itemize}
-A CSP {\it M} is called {\it model} for a problem {\it P}
-if every solution of {\it P} is also determined by
-the solutions to {\it M}.\\ 
+A CSP \emph{M} is called \emph{model} for a problem \emph{P}
+if every solution of \emph{P} is also determined by
+the solutions to \emph{M}.
+
 The first two elements of the triple have a special
 meaning because they are the first thing we have to think
 about when modeling a constraint problem. These two 
-sets X, D can be defined as the {\it viewpoint} of a
+sets X, D can be defined as the \emph{viewpoint} of a
 problem, presented next.
   
 \subsection{Viewpoint}
 \label{viewp}
-The term {\it viewpoint} goes back to Geelen \cite{6} when
+The term \emph{viewpoint} goes back to Geelen \cite{6} when
 discussing permutation problems. Lee and Law \cite{7} adopted
-that concept and formally defined it.\\
-A {\it viewpoint} is a pair (X,D), where X = \{$x_1, \ldots, x_n$\} 
+that concept and formally defined it.
+
+A \emph{viewpoint} is a pair (X,D), where X = \{$x_1, \ldots, x_n$\} 
 is a set of variables, and D = \{$ D_1, \ldots, D_n$\} is a set 
-of associated domains for all $x_i \in$ X. \\
+of associated domains for all $x_i \in$ X.
+
 Once having choosen the variables and their domains, the next
 step is to search for a set of constraints such that the solutions 
 to the problem are determined by the solution to the constraints.
@@ -862,9 +847,7 @@ different. Below are given two tables (taken from the paper
 is showing a Sudoku Problem
 and the second (\ref{sudoku-sol}) a solution to this problem.
 By choosing  a 'good' viewpoint, most instances of the Sudoku Puzzle can be
-solved without search.\\
-\par
-\par
+solved without search.
 
 \begin{tabular}{||c|c|c||c|c|c||c|c|c||}
 \hline
@@ -891,7 +874,7 @@ solved without search.\\
 \hline
   & 3 & 8 &   &   &   & 4 & 6 &  \\
 \hline   
-\end{tabular}\\[1.0cm]
+\end{tabular}
 
 \begin{tabular}{||c|c|c||c|c|c||c|c|c||}
 \hline
@@ -922,7 +905,7 @@ solved without search.\\
 
 \subsubsection{Viewpoints for the Sudoku Problem}
 In the following two different approaches to model
-the {\it Sudoku Problem} are shown:
+the \emph{Sudoku Problem} are shown:
 \begin{enumerate}
 \item
 the variables $x_1, \ldots, x_{81}$ represent all boxes
@@ -931,20 +914,21 @@ of integers \{1, $\ldots$, 9\}, i.e. the values every box
 can have; an assignment $x_i$ = c means that the i-th box
 has the value c.
 \item
-the variables $nb_1, \ldots, nb_9$ represent the numbers
+the variables $\mathit{nb}_1, \ldots, \mathit{nb}_9$ represent the numbers
 1, $\ldots$, 9, and the domain of every number is the power set
-{\it P}\{1, $\ldots$, 81\}, i.e. the boxes a number occurs; an
-assignment $nb_i$ = \{$c_1, \ldots, c_n $\} means that number i occurs
+$\mathcal{P}\{1, \dots, 81\}$, i.e. the boxes a number occurs; an
+assignment $\mathit{nb}_i$ = \{$c_1, \ldots, c_n $\} means that number i occurs
 in box $c_1, \ldots, c_n$ and \{$c_1, \ldots, c_n $ \} is a subset of 
 \{1, $\ldots$, 81\}.
 \end{enumerate}
-\db{In the first viewpoint you only need the propagator {\it distinct(s,v)}
+\db{In the first viewpoint you only need the propagator \emph{distinct(s,v)}
 that is already implemented in the Alice library and that ensures
-that all elements of the vector {\it v} are distinct in space
-{\it s}, i.e. pairwise non-equal}. 
+that all elements of the vector \emph{v} are distinct in space
+\emph{s}, i.e. pairwise non-equal}. 
 To achieve the requirements of the Sudoku Problem you have to
 use the distinct propagator for each row, each column and each
-3 x 3 box.\\
+3 x 3 box.
+
 In the second viewpoint, rules are more awkward to express.
 You have to guarantee that the cardinality of every set representing
 a number is 9, that all those sets are disjoint, that every number
@@ -958,7 +942,8 @@ result in completely different models for a problem. Since these
 resulting models often need sets of constraints that both differ 
 in size and complexity of their propagators, the art in constraint 
 programming consists in finding viewpoints that maximize the CSP's
-efficiency.\\ 
+efficiency.
+
 When modeling a problem, you should prefer a viewpoint that needs
 the fewest set of constraints. In addition, it does not only suffice
 to have a smallest set of constraints, these constraints are also
@@ -974,9 +959,9 @@ We are now well-prepared to write and run our first finite
 domain problem solvers in Alice. 
 For running, analyzing, and debugging problem solvers we 
 will use the Explorer, a graphical 
-tool of the Alice programming environment.\\
-\par
-A {\it script} for a finite domain problem is a program 
+tool of the Alice programming environment.
+
+A \emph{script} for a finite domain problem is a program 
 that implements a model for the problem. 
 In Alice, scripts will be run on predefined 
 search engines implementing the propagate 
@@ -992,8 +977,8 @@ predefined abstractions available in Alice.
 
 
 \subsection{Format of Scripts}
-In Alice a script is a function $ f : space \rightarrow $ {\it t} 
-that takes the following form:\\
+In Alice a script is a function $ f : space \rightarrow $ \emph{t} 
+that takes the following form:
 \begin{quote}
 fun f space = let
 \begin{quote}
@@ -1013,21 +998,21 @@ fun f space = let
 \end{quote}             
 \end{quote}
 
-\par
+
 The procedure declares the variables needed, 
 posts the constraints modeling the problem, 
-and specifies the branching strategy.\\
-The argument {\it space} stands for the 
+and specifies the branching strategy.
+The argument \emph{space} stands for the 
 computational architecture mentioned in 
-\ref{space}.\\
-The result type {\it t} is called 
-the {\it interface} and is used to specify
+\ref{space}.
+The result type \emph{t} is called 
+the \emph{interface} and is used to specify
 a solution of the problem.
 Often, the result type is just a record of the 
-problem variables.\\
-\par
+problem variables.
+
 There are two ways to obtain the solutions of a 
-CSP. \db{One way is by {\it off-line search}
+CSP. \db{One way is by \emph{off-line search}
 using the functions from the
 \htmladdnormallink{\textcolor{blue}{Search}}
 {http://www.ps.uni-sb.de/alice/manual/library/search.html}
@@ -1038,28 +1023,28 @@ induced search tree by using the
 \htmladdnormallink{\textcolor{blue}{Explorer}}
 {http://www.ps.uni-sb.de/alice/manual/library/explorer.html}.
 
-The Explorer  must first be imported:\\
+The Explorer  must first be imported:
 \begin{quote}
-import structure Explorer from ''x-alice:/lib/tools/Explorer''\\
+import structure Explorer from ''x-alice:/lib/tools/Explorer''
 \end{quote}
 If you want to get all solutions of the problem, 
-you use:\\
+you use:
 \begin{quote}
-Explorer.exploreAll (script)\\
+Explorer.exploreAll (script)
 \end{quote}
 and the script will be run until the entire 
-search tree is explored.\\
+search tree is explored.
 With 
 \begin{quote}
-Explorer.exploreOne (script)\\
+Explorer.exploreOne (script)
 \end{quote}
-you obtain a tree with just one solution.\\
-\par
+you obtain a tree with just one solution.
+
 Now, by double-clicking on a solution node 
 (green diamond) of the search tree, a window
-will open, called the {\it Inspector}. The 
+will open, called the \emph{Inspector}. The 
 inspector shows the variable assignments of
-this solution.\\
+this solution.
 If you double-click on an inner node, the 
 inspector will display the information available 
 at the respective point of the search tree.
@@ -1085,7 +1070,7 @@ We model the problem by having a variable for
 every letter, where the variable 
 stands for the digit associated with the letter,
 i.e. every variable has the integer set 
-\{0, $\ldots$, 9\} as domain.\\
+\{0, $\ldots$, 9\} as domain.
  The constraints are obvious 
 from the problem specification.
 
@@ -1099,7 +1084,7 @@ The strategy tries the least possible value
 of the selected variable. 
 
 \subsubsection{Script}
-\lstset{caption = {\bf A script for the Send More Money
+\lstset{caption = \textbf{A script for the Send More Money
     Puzzle},label=listing 1,frame=trbl}
 \begin{myverbatim}
 import structure FD from "x-alice:/lib/gecode/FD"
@@ -1132,7 +1117,7 @@ fun money space =
 
 \db{Listing \ref{listing 1} shows a script realizing the model and
 branching strategy just discussed. In the first three lines of 
-the script the structures {\it FD}, {\it Linear} and {\it Explorer}
+the script the structures \emph{FD}, \emph{Linear} and \emph{Explorer}
 are imported. This is important to be able to use the methods of the
 respective structures. In the following scripts these imports are omitted
 for the sake of readability. Be sure not to forget them when testing
@@ -1140,30 +1125,30 @@ the example scripts.\footnote{You find the necessary imports for scripts in the
 \htmladdnormallink{Alice sources}{http://www.ps.uni-sb.de/~brill/Beispielprogramme}.}}
 The script first declares a vector of finite domain variables,one for every letter. 
 This is done via
-the function {\it fdtermVec: space * int * domain $ \rightarrow $ term vector}
+the function \emph{fdtermVec: space * int * domain $ \rightarrow $ term vector}
 included in the structure
 \htmladdnormallink{\textcolor{blue}{Linear}}
 {http://www.ps.uni-sb.de/alice/manual/library/linear.html} from the Gecode 
-library. \db{ The function {\it fdtermVec(s,i,d)} creates a 
+library. \db{ The function \emph{fdtermVec(s,i,d)} creates a 
 new vector of finite domain variables 
-with lenght {\it i}
+with lenght \emph{i}
 and every variable has to range over a finte 
 set of integers specified by
-{\it d} ( so it is a basic constraint)}. 
+\emph{d} ( so it is a basic constraint)}. 
 Then the script posts the
 following constraints:
 \begin{itemize}
 \item
-The fields of the vector {\it letters} are pairwise 
+The fields of the vector \emph{letters} are pairwise 
 distinct. This is
 realized with the predefined propagator \\
-{\it distinct : space * term vector * conlevel $ \rightarrow $ 
+\emph{distinct : space * term vector * conlevel $ \rightarrow $ 
 unit}, also included
-in the Linear library. {\it Conlevel} refers to 
+in the Linear library. \emph{Conlevel} refers to 
 the strength of
 propagation, i.e. for most propagators you can select 
-{\it interval propagation} (FD.BND)
-or {\it domain propagation} (FD.DOM). 
+\emph{interval propagation} (FD.BND)
+or \emph{domain propagation} (FD.DOM). 
 This constraint 
 is nonbasic.
 \item
@@ -1180,30 +1165,31 @@ Posting of constraints is defined differently for basic and
 nonbasic constraints. Basic constraints are posted by telling 
 them to the constraint store. Nonbasic constraints are posted 
 by creating propagators implementing them.
-\par
+
 \db{Note that the modelling tools for $ S \neq 0 $ and $ M \neq 0$ can 
 immediately write their complete information into the constraint 
 store since the store already knows domains for S and M}. 
-\par
-The line {\it branch (space, letters, $ FD.B\_SIZE\_MIN, FD.B\_MIN$)} posts 
+
+The line \emph{branch (space, letters, $ FD.B\_SIZE\_MIN, FD.B\_MIN$)} posts 
 a branching that will branch on the vector letters with the 
-{\bf first-fail} strategy (specified by $FD.B\_SIZE\_MIN$ and $FD.B\_MIN$). 
-${\it FD.B\_SIZE\_MIN}$ controls which undetermined variable will be
-selected and {\it $ FD.B\_MIN $} determines which value of that variable
-will be selected.\\
+\textbf{first-fail} strategy (specified by $FD.B\_SIZE\_MIN$ and $FD.B\_MIN$). 
+$\emph{FD.B\_SIZE\_MIN}$ controls which undetermined variable will be
+selected and \emph{$ FD.B\_MIN $} determines which value of that variable
+will be selected.
+
 If you now import for example the structure
 \htmladdnormallink{\textcolor{blue}{Search}}
 {http://www.ps.uni-sb.de/alice/manual/library/search.html}
-from the Gecode library with:\\
+from the Gecode library with:
 \begin{quote}
-import structure Search from ``x-alice:/lib/Gecode/Search``\\
+import structure Search from ``x-alice:/lib/Gecode/Search``
 \end{quote}
-and you type in the command:\\
+and you type in the command:
 \begin{quote}
-Search.searchAll smm\\
+Search.searchAll smm
 \end{quote}
 you obtain the list of all solutions and the result record
-(by depth-first search). \\
+(by depth-first search):
 \begin{quote}
 Space.space list *
 \begin{quote}
@@ -1222,9 +1208,9 @@ The actual solutions could now be extracted from the result
 record using the functions from the
 \htmladdnormallink{\textcolor{blue}{FD.Reflect}}
 {http://www.ps.uni-sb.de/alice/manual/library/fd.html}
-library structure.\\
+library structure.
 
-To understand the search process defined by {\it smm}, we need more 
+To understand the search process defined by \emph{smm}, we need more 
 information than just the list of solutions found. Obviously, it would 
 be useful to see a graphical representation of the search tree. It
 would also be nice if we could see for every node of the search tree 
@@ -1232,7 +1218,7 @@ what information about the solution was accumulated in the constraint
 store when the respective space became stable. Finally, it would be
 nice to see for every arc of the tree with which constraint it was 
 branched.
-\par
+
 Figure \ref{figure4} shows the search tree explored by smm together 
 with the information just mentioned. This gives us a good
 understanding of the search process defined by smm. Note that the 
@@ -1242,7 +1228,7 @@ generate and test method would have to consider.
 
 \begin{figure}[htpb]
 \centerline{\includegraphics*[scale=0.3]{figs/fig5.eps}}
-\caption{{\bf The search tree explored by smm}}
+\caption{\textbf{The search tree explored by smm}}
 \label{figure4}
 \end{figure}
 
@@ -1250,10 +1236,11 @@ generate and test method would have to consider.
 The Explorer is a graphical tool of the Alice programming
 environment. It can run scripts and display the explored search
 trees. It can also display the information in the constraint stores 
-associated with the nodes of the search tree.\\
-The statement:\\
+associated with the nodes of the search tree.
+
+The statement:
 \begin{quote}
-Explorer.ExploreAll smm\\
+Explorer.ExploreAll smm
 \end{quote}
 tells the Explorer to run the script smm and explore the entire search 
 tree. The Explorer will pop up a window and display the explored nodes 
@@ -1264,7 +1251,7 @@ are collapsed into a single red triangle.
 
 \begin{figure}[htpb]
 \centerline{\includegraphics*[scale=0.5]{figs/smm1.eps}}
-\caption{{\bf The Explorer with the compact search tree of smm.}}
+\caption{\textbf{The Explorer with the compact search tree of smm.}}
 \label{figure5}
 \end{figure}
 
@@ -1277,36 +1264,36 @@ is actually selected with the command (Ctrl + Up), the left child node
 (the selected node is an open choice node) with the command (Ctrl + Down). 
 Is the left child a failure node, the right child is selected. Further, you can select
 a left sibling (resp. right sibling) with the command (Ctrl + Left) (resp.
-(Ctrl + Right)). Again, none of the commands above can select a failure node!}\\
+(Ctrl + Right)). Again, none of the commands above can select a failure node!}
 
 \subsubsection{Hiding nodes}
-\db{Select the red triangle and type the command {\it H} (hide/unhide). 
+\db{Select the red triangle and type the command \emph{H} (hide/unhide). 
 This will replace the triangle with the 
 actual nodes of the tree (see Figure \ref{figure6}). 
 You now see the full search tree of smm , which consists of three choice nodes, 
 three failure nodes, and one solution node. Typing the command h once 
 more will switch back to the compact representation of the failed
 subtree. It is not only failed subtrees that you can hide with
-the command {\it H}. If you hide a subtree with command {\it H} and
+the command \emph{H}. If you hide a subtree with command \emph{H} and
 there is a solution node in that subtree, a big green triangle replaces
 that subtree. If there is an open choice node in the subtree, a big
 green triangle with a small grey triangle appears. The command
-{\it F} just hides failed subtrees.}
+\emph{F} just hides failed subtrees.}
 \begin{figure}[htpb]
 \centerline{\includegraphics*[scale=0.5]{figs/smm2.eps}}
-\caption{{\bf The Explorer with the full search tree of smm}}
+\caption{\textbf{The Explorer with the full search tree of smm}}
 \label{figure6}
 \end{figure}
 
 
 \subsubsection{Double clicking nodes}
 Next, double-click the green solution node with the left mouse button.
-\db{A new window is popped - up by the {\it Alice Inspector}.
+\db{A new window is popped - up by the \emph{Alice Inspector}.
 It will display the unique solution 
 of the Money Puzzle (see figure \ref{figure7})}. 
 \begin{figure}[htpb]
 \centerline{\includegraphics*[scale=1.0]{figs/inspector1.eps}}
-\caption{{\bf The Inspector showing the solution of smm}}
+\caption{\textbf{The Inspector showing the solution of smm}}
 \label{figure7}
 \end{figure}
 You can also double click a blue choice node. 
@@ -1316,11 +1303,11 @@ branched. Double clicking the top node of the tree, for instance,
 results in figure \ref{figure8}.
 \begin{figure}[htpb]
 \centerline{\includegraphics*[scale=0.8]{figs/inspector2.eps}}
-\caption{{\bf The Inspector showing the result at the first choice node}}
+\caption{\textbf{The Inspector showing the result at the first choice node}}
 \label{figure8}
 \end{figure}
 This way, the Explorer and the Inspector can display the 
-annotated search tree shown in Figure \ref{figure4}.\\
+annotated search tree shown in Figure \ref{figure4}.
 
 \subsubsection{Open and closed choice nodes}
 The statement
@@ -1330,38 +1317,38 @@ Explorer.exploreOne smm
 tells the Explorer to run the script smm until the first solution is 
 found. \db{This time the Explorer will show a partial search tree that 
 contains the solution node in the lefttmost position}, and also
-contains an {\it open choice node}. An open choice node is a choice 
+contains an \emph{open choice node}. An open choice node is a choice 
 node for which not all direct descendents have been explored yet. A 
 closed choice node is a choice node for which all direct descendents 
 have been explored already. \db{While closed choice nodes are displayed 
 as blue circles, open choice nodes are displayed as grey triangles}. Not yet 
-explored descendents of an open choice node are not displayed.\\
-\par
+explored descendents of an open choice node are not displayed.
+
 To check whether there are further solutions, you can resume the 
-search process by selecting the root node and typing the command {\it N}
+search process by selecting the root node and typing the command \emph{N}
 (next). This will resume the search until either the next solution 
 is found or all nodes of the search tree are explored.
 
 \subsubsection{Stopping exploration}
-\db{You can stop the exploring Explorer at any time with the command {\it Ctrl + C}}.
+\db{You can stop the exploring Explorer at any time with the command \emph{Ctrl + C}}.
 
 \subsubsection{Resuming exploration}
 \db{You can resume the exploration of a partial search tree by selecting 
-any choice node and typing the command {\it N} or {\it A}}. The command {\it N} (next) 
+any choice node and typing the command \emph{N} or \emph{A}}. The command \emph{N} (next) 
 will resume the exploration of the selected subtree until a further 
-solution is found or the subtree is fully explored. The command {\it A}
+solution is found or the subtree is fully explored. The command \emph{A}
 (all) will resume the exploration of the selected subtree until it 
-is fully explored.\\
+is fully explored.
 
 \subsubsection{Resetting the Explorer}
-\db{The command {\it Ctrl + R} will reset the Explorer and show only the root node of 
+\db{The command \emph{Ctrl + R} will reset the Explorer and show only the root node of 
 the search tree (grey triangle). You 
-can request the exploration of the seach tree by typing {\it N} or {\it A}}.
+can request the exploration of the seach tree by typing \emph{N} or \emph{A}}.
 
 \subsubsection{Hand-guided exploration}
 \db{You can guide the search of the Explorer by hand. Reset the Explorer 
-by typing {\it Ctrl + R}. This will select the root node, which is an open choice 
-node. Now type the command {\it S} to compute the first descendents of 
+by typing \emph{Ctrl + R}. This will select the root node, which is an open choice 
+node. Now type the command \emph{S} to compute the first descendents of 
 the root. Now, you can select another open choice node and compute its first 
 descendants. You can repeat this exploration until no open choice nodes are left.}
 
@@ -1374,14 +1361,16 @@ vertical scroll bar with the left mouse button}.
 
 \subsection{Example: Safe}
 \subsubsection{Problem Specification}
-The code of Professor Smart's safe is a sequence of 9 distinct nonzero digits 
-$ C_1,\ldots,C_9 $ such that the following equations and inequations are satisfied:
-   $ \begin{array}{c} C_4 - C_6 = C_7 \\ 
-         C_1 * C_2 * C_3 = C_8 + C_9 \\ 
-                C_2 + C_3 + C_6 < C_8 \\ 
-                             C_9 < C_8 \\ 
-           C_1\neq 1,\ldots, C_9\neq 9 
-    \end{array}$\\
+The code of Professor Smart's safe is a sequence of 9 distinct nonzero
+digits $ C_1,\ldots,C_9 $ such that the following equations and
+inequations are satisfied:
+\begin{eqnarray*}{c}
+  C_4 - C_6 & = & C_7 \\
+  C_1 * C_2 * C_3 & = & C_8 + C_9 \\
+  C_2 + C_3 + C_6 & < & C_8 \\
+  C_9 & < & C_8 \\
+  C_1\neq 1,\ldots, C_9\neq 9
+\end{eqnarray*}
 
 
 Can you determine the code?
@@ -1389,14 +1378,14 @@ Can you determine the code?
 \subsubsection{Viewpoint and Branching Strategy}
 You should model the problem by choosing a variable for every digit $
 C_1,\ldots,C_9 $ and branch over these variables with the standard
-first-fail strategy. This time, the domains of the variables range over
+first-fail strategy. This time, the variables range over
 \{1, $\ldots$, 9\}.
 
 
 \subsubsection{Script}
 
 
-\lstset{caption = {\bf A script for the Safe Puzzle},label=listing 2,frame=trbl}
+\lstset{caption = \textbf{A script for the Safe Puzzle},label=listing 2,frame=trbl}
 \begin{myverbatim}
 fun safe space = 
    let
@@ -1421,28 +1410,30 @@ fun safe space =
 
 
 \db{Listing \ref{listing 2} shows a simple script for the Safe Puzzle.
-First, the script introduces a vector of type {\it intvar}, with one 
+First, the script introduces a vector of type \emph{intvar}, with one 
 finite domain variable for every digit. The script also defines two additional
 temporary finite domain variables whose use will be explained later and a help
 function that posts the constraint $c.i \neq i\hspace{2mm}$ for every 
 $\hspace{2mm} i = 1,\ldots,9$. In the application
-part of the {\it let -  construct}, the first constraint ensures that all digits
+part of the \emph{let -  construct}, the first constraint ensures that all digits
 are distinct. The next six constraints that are posted guarantee that the 
 equations and inequations of the Safe problem are satisfied \footnote{Sometimes
-you recognize a {\it FD} with the finite domain variables. This is important because the {\it
-post} method gets besides the others one argument of type {\it term}. {\it FD} transfers
-variables of type {\it intvar} into type {\it term} }.}
-Finally the branching strategy branches over the vector {\it letters}.\\
+you recognize a \emph{FD} with the finite domain variables. This is important because the {\it
+post} method gets besides the others one argument of type \emph{term}. \emph{FD} transfers
+variables of type \emph{intvar} into type \emph{term} }.}
+Finally the branching strategy branches over the vector
+\emph{letters}.
+
 The following two figures \ref{figure9} and \ref{figure10} show the 
 resulting search-tree of the Safe Puzzle and its unique solution \{4 3 1 8 9 2 6 7 5\}.
 \begin{figure}[htpb]
 \centerline{\includegraphics*[scale=1.0]{figs/explorer_safe_expl.eps}}
-\caption{{\bf Search-tree of the Safe Puzzle}}
+\caption{\textbf{Search-tree of the Safe Puzzle}}
 \label{figure9}
 \end{figure}
 \begin{figure}[htpb]
 \centerline{\includegraphics*[scale=1.0]{figs/solution_safe2.eps}}
-\caption{{\bf Solution of the Safe Puzzle}}
+\caption{\textbf{Solution of the Safe Puzzle}}
 \label{figure10}
 \end{figure}
 
@@ -1451,9 +1442,9 @@ resulting search-tree of the Safe Puzzle and its unique solution \{4 3 1 8 9 2 6
 \newpage
 \section{Elimination of Symmetries and Defined Constraints}
 In this section you will learn two basic constraint programming techniques. 
-The first technique consists in {\bf eliminating symmetries} in the model, 
+The first technique consists in \textbf{eliminating symmetries} in the model, 
 which often leads to scripts with smaller search trees. The second technique 
-introduces {\bf defined constraints}, which for programmers is not a big
+introduces \textbf{defined constraints}, which for programmers is not a big
 surprise, but still is a means for writing modular and concise scripts.
 
 \subsection{Example: Grocery}
@@ -1465,10 +1456,12 @@ the size of search trees.
 A kid goes into a grocery store and buys four items. 
 The cashier charges \$ 7.11, the kid 
 pays and is about to leave when the cashier calls the kid back, 
-and says \\
+and says
+
 ``Hold on, I multiplied the four items instead of adding them; 
 I'll try again; 
-Hah, with adding them the price still comes to \$ 7.11 .'' \\
+Hah, with adding them the price still comes to \$ 7.11 .''
+
 What were the prices of the four items?
 
 \subsubsection{Viewpoint}
@@ -1507,22 +1500,22 @@ possible value of the selected variable first.
 \db{
 \subsubsection{The use of defined constraints}
 In Listing \ref{listing 4} you will recognize that a new function is 
-used - {\it constrain}. It demands for further explanation. 
+used - \emph{constrain}. It demands for further explanation. 
 Listing \ref{listing 3} shows an example how defined constraints are
-realized. A new datatype - {\it constraint} - to modularize propagators 
+realized. A new datatype - \emph{constraint} - to modularize propagators 
 is declared. Here, a constraint
 can be a sum, a product or a '$<$' - relation. 
-The \db{procedure} {\it post(space,SUMV(xs) `= `c,FD.BND)} creates a propagator that 
+The \db{procedure} \emph{post(space,SUMV(xs) `= `c,FD.BND)} creates a propagator that 
 propagates $ \sum_{i=1}^n x_i   = c $ where the $ x_i $ are the elements of xs
 and c is an integer constant.
 The other \db{procedure} productRelI propagates $ \pi_{i=1}^n x_i  = c $. To realize this
-you need a temporary variable for every product of two variables because {\it FD.mult}
+you need a temporary variable for every product of two variables because \emph{FD.mult}
 only can propagate x * y = z. Both procedures use predefined propagators from the
 \htmladdnormallink{\textcolor{blue}{FD}}
 {http://www.ps.uni-sb.de/alice/manual/library/fd.html}
 library.}
 
-\lstset{caption = {\bf Defined Constraints},label=listing 3,frame=trbl}
+\lstset{caption = \textbf{Defined Constraints},label=listing 3,frame=trbl}
 \begin{myverbatim}
 
 fun product'(space,  _, 0, _) = FD.range(space, (1, 1))
@@ -1557,7 +1550,7 @@ fun constrain(space, SUM(xs, c)) =
 
 
 \subsubsection{Script}
-\lstset{caption = {\bf A script for the Grocery Puzzle},
+\lstset{caption = \textbf{A script for the Grocery Puzzle},
 label=listing 4,frame=trbl}
 \begin{myverbatim}
 fun grocery space =
@@ -1629,12 +1622,12 @@ Maria and Clara are both heads of households, and both families
 have three boys and three girls. Neither family includes any children closer 
 in age than one year, and all children are under age 10. The youngest child 
 in Maria's family is a girl, and Clara has just given birth to a little girl.
-\par
+
 In each family, the sum of the ages of the boys equals the sum of the ages 
 of the girls, and the sum of the squares of the ages of the boys equals the 
 sum of the the squares of ages of the girls. The sum of the ages of all children 
 is 60.
-\par
+
 What are the ages of the children in each family? 
 
 \subsubsection{Viewpoint}
@@ -1649,7 +1642,7 @@ where the variables B1, B2 and B3 stand for the ages of the boys in descending
 order (i. e., B3 is the age of the youngest boy in the family), and the variables 
 G1, G2 and G3 stand for the ages of the girls, also in descending order. This 
 representation of a family avoids possible symmetries. The constraints that must 
-hold for a family will be posted by the defined constraint {\it makefamily}.
+hold for a family will be posted by the defined constraint \emph{makefamily}.
 A solution is a pair consisting of Maria's and Clara's family. 
 
 \subsubsection{Branching Stratgey}
@@ -1659,7 +1652,7 @@ tries the lower part of the domain first.
 
 \subsubsection{Script}
 
-\lstset{caption = {\bf Script for the Family Puzzle},
+\lstset{caption = \textbf{Script for the Family Puzzle},
 label=listing 5,frame=trbl}
 \begin{myverbatim}
 fun age_list space =
@@ -1716,7 +1709,7 @@ fun family space =
  
 \end{myverbatim}
 
-The procedure {\it age\_list} ensures that
+The procedure \emph{age\_list} ensures that
 the elements in the list of boys or girls appear in 
 descending order.
 
@@ -1788,9 +1781,9 @@ We branch on the variables for the properties with the
 standard first-fail strategy. 
 
 \subsubsection{Script}
-The defined constraint {\it adjacent} in Listing \ref{listing 6}
+The defined constraint \emph{adjacent} in Listing \ref{listing 6}
 creates a propagator for $|$ X - Y $|$ = 1.
-\lstset{caption = {\bf Script for the Zebra Puzzle},
+\lstset{caption = \textbf{Script for the Zebra Puzzle},
 label=listing 6,frame=trbl}
 \begin{myverbatim}
 fun adjacent (space,#[a,b])=
@@ -1870,7 +1863,7 @@ fun zebra_puzzle space =
  end
 \end{myverbatim}
 
-\par
+
 The script defines a search tree with 29 nodes. 
 The unique solution is the record\\
 \{animal = \{dog = 2, fox = 4, horse = 3, snails = 1, zebra = 0\},\\ 
@@ -1893,20 +1886,20 @@ Place N queens on an $ N \times N $ chess board such that no two queens
 attack each other. The parameter of the problem is N. A solution for the 
 4 - queens problem looks as follows:
 \begin{figure}[htpb]
-\centerline{\includegraphics*[scale=0.3]{figs2/queens-4.eps}}
-\caption{{\bf A solution to the Queens Problem}}
+\centerline{\includegraphics*[scale=0.3]{figs/queens-4.eps}}
+\caption{\textbf{A solution to the Queens Problem}}
 \label{figure 11}
 \end{figure}
 
 \subsubsection{Viewpoint}
 We will use a clever viewpoint avoiding possible symmetries and minimizing 
-the number of propagators.\\
+the number of propagators.
 
 Since we want to put one queen into each column, we use the problem
 variables $ row[ 0 ], \ldots, row[ N - 1 ]$, one for each column on
 the chessboard. Every variable has the set $ \{ 0, \ldots, N - 1 \} $
 as initial domain. Now, an assignment $ row[ i ] = j $ means that the
-queen in the {\it i}th column should be placed into the {\it j}th row.
+queen in the \emph{i}th column should be placed into the \emph{j}th row.
 A solution to the N-queens problem is an assignment that satisfies the
 following constraints:
 \begin{itemize}
@@ -1933,10 +1926,11 @@ the selected variable first. This strategy works well even for large N.
 
 \subsubsection{Script}
 Listing \ref{listing 7} shows a script for the N - queens problem.
-Besides the argument {\it space} the script now has an additional
+Besides the argument \emph{space} the script now has an additional
 parameter n. This parameter is both used to create the vector row of
-size n and as an argument to the {\it upperTriangle} function.\\
-\lstset{caption = {\bf Script for the N-queens Problem},
+size n and as an argument to the \emph{upperTriangle} function.
+
+\lstset{caption = \textbf{Script for the N-queens Problem},
 label=listing 7,frame=trbl}
 \begin{myverbatim}
 fun queens n space =
@@ -1957,20 +1951,20 @@ fun queens n space =
    end
 \end{myverbatim}
 
-\par
+
 
 The \db{procedure} upperTriangle you see in Listing \ref{listing 8} is used
 to create the list of all pairs (i , j) of integers such that:
 \begin{quote}
 $ 0 \leq i \le j \le N $
 \end{quote}  
-This list is given as parameter to the {\it List.app} \db{procedure} and
+This list is given as parameter to the \emph{List.app} \db{procedure} and
 is used to satisfy the constraint that no two queens are on the
 same diagonal. So the resulting list of upperTriangle ensures
 that the sequences $ row[ 0 ] - 1, \ldots, row[ N - 1 ] - (N - 1)  $ and
 $ row[ 0 ] + 1, \ldots, row[ N - 1] + (N - 1) $ are both
 nonrepetitive and therefore reduce the amount of propagators.
-\lstset{caption = {\bf Help functions for the N-queens Problem},
+\lstset{caption = \textbf{Help functions for the N-queens Problem},
 label=listing 8,frame=trbl}
 \begin{myverbatim}
 fun loop i n f = if i >= n then nil else f i :: loop (i + 1) n f
@@ -1986,16 +1980,16 @@ The script presented in Listing \ref{listing 7} is not optimal.
 For a problem of size 9, the Explorer already needs very long to
 search the tree. One problem is that in the script for every
 pair of the upperTriangle list two propagators are created. This
-is really waste of computational space and time.\\
+is really waste of computational space and time.
 
 \db{In Listing \ref{listing 9} you see an improved script that uses
 three vectors, where the first vector is the already known row vector.
-The vectors {\it add} and {\it sub} are used to build the constraints
+The vectors \emph{add} and \emph{sub} are used to build the constraints
 $ \forall i,j : row[i] + i  \neq row[j] + j $ and $\forall i,j: 
 row[i] - i  \neq row[j] - j $, i.e. there are no two queens placed 
 on the same diagonal}.
 The optimization now is realized through the use
-of the propagator {\it distinctOffset} of the 
+of the propagator \emph{distinctOffset} of the 
 \htmladdnormallink{\textcolor{blue}{\it FD}}
 {http://www.ps.uni-sb.de/alice/manual/library/fd.html}
 library. DistinctOffset is an extension
@@ -2012,7 +2006,7 @@ i \neq j  : x_i + c_i \neq x_j + c_j $
 This propagator applied to the zipped vectors row with add and row with sub optimizes
 the script because the new formulation of the constraint, that no two
 queens are placed on the same diagonal, requires only two propagators.
-\lstset{caption = {\bf Optimization of the script for the N-queens Problem},
+\lstset{caption = \textbf{Optimization of the script for the N-queens Problem},
 label=listing 9,frame=trbl}
 \begin{myverbatim}
 fun betterqueens n space =
@@ -2044,7 +2038,7 @@ To avoid conversions, we assume that the amount to be paid and all
 denominations are specified in the same currency unit (e.g., cents). 
 The data is specified by variables $ a_1, \ldots, a_k $ specifying 
 the available denominations $ d_i $ and the number $ a_i $ of available 
-respective coins or bills.\\ 
+respective coins or bills.
 
 The viewpoint has a variable for ever available denomination saying how many 
 of the corresponding bills or coins we will use to pay the amount. For all i, 
@@ -2061,14 +2055,14 @@ and, with second priority, to larger values.
 \subsubsection{Script}
 In Listing \ref{listing 10} 
 The procedure changeMoney takes three parameters. Besides the standard
-argument {\it space}, it needs a vector of records - {\it billsandcoins}
+argument \emph{space}, it needs a vector of records - \emph{billsandcoins}
 where each field specifies a denomination's value in cents and how many 
 coints of that denomination are available. The second argument 
-{\it amount} specifies the result of the linear equation mentioned above.
+\emph{amount} specifies the result of the linear equation mentioned above.
  It is assumed that the 
-bills and coins are specified in denomination decreasing order.\\
+bills and coins are specified in denomination decreasing order.
 
-\lstset{caption = {\bf A script for the Changing Money
+\lstset{caption = \textbf{A script for the Changing Money
       Problem},label=listing 10,frame=trbl}
 \begin{myverbatim}
 (* billsandcoins is a vector of pairs where the first component
@@ -2115,7 +2109,7 @@ of integers \{1, $\ldots$, 9\}, i.e. the values every box
 can have; an assignment $x_i$ = c means that the i-th box
 has the value c.}
 
-Given the following tabular for example, the domain
+In the following example, the domain
 of the variables $x_1, x_4, x_5, x_6, x_9, x_{11}, 
 x_{12}, x_{14}, x_{16}, x_{17}$ is unrestricted, i.e. 
 values of the set \{1, $\ldots$, 9\} ( in
@@ -2124,7 +2118,7 @@ By contrast, the domain of the variables in the first two rows,
 that are not already mentioned above, is determined.
 
 \begin{tabular}{||c|c|c||c|c|c||c|c|c||}
-\hline
+\hline\\
 \multicolumn{9}{||c||}{A Sudoku Puzzle}\\
 \hline
 \hline
@@ -2162,12 +2156,12 @@ possible value of the selected variable first}.
 
 
 \subsubsection{Script}
-The procedure {\it sukoku1} gets as argument a list of
+The procedure \emph{sukoku1} gets as argument a list of
 triples (a,b,c), where (a,b) is the address of the variable 
 in the grid and c is its value. It first constrains the
 boxes to the input and then it posts the constraints given in
 the problem description. 
-\lstset{caption = {\bf A script for Sudoku Puzzle},
+\lstset{caption = \textbf{A script for Sudoku Puzzle},
 label=listing 11,frame=trbl}
 \begin{myverbatim}
 (* the inputlist is a list of triples(a,b,c) where
@@ -2231,10 +2225,10 @@ without any search at all.
 In many applications one is interested in solutions 
 that minimize a given cost function. If the cost function 
 is simple enough, we can obtain the minimization effect by 
-employing a two-dimensional branching strategy.\\
+employing a two-di\-men\-sio\-nal branching strategy.
 
 This section will present two examples, map coloring and 
-conference scheduling, for which a two-dimensional branching 
+conference scheduling, for which a two-di\-men\-sio\-nal branching 
 strategy suffices. 
 
 \subsection{Example: Coloring a Map}
@@ -2246,8 +2240,8 @@ countries have different color and a minimal number of colors is used.
 
 \subsubsection{Viewpoint}
 This viewpoint's variable set consists of eleven elements:
-we have a variable {\it nbColors} saying how many different colors we can use. 
-Moreover, we have a vector {\it countries1 }, containing a variable for every country .
+we have a variable \emph{nbColors} saying how many different colors we can use. 
+Moreover, we have a vector \emph{countries1 }, containing a variable for every country .
 We represent colors as numbers. Hence we constrain all variables 
 for countries to integers in 1 $\#$ nbColors. 
 
@@ -2257,10 +2251,11 @@ After nbColors is determined, we branch on the variables for the
 countries using the usual first-fail strategy. 
 
 \subsubsection{Script}
-The script in Listing \ref{listing 12} uses the procedure {\it borderTo}
+The script in Listing \ref{listing 12} uses the procedure \emph{borderTo}
 to guarantee that no two countries that have a common border can
-have the same color.\\
-\lstset{caption = {\bf A script for the Map Coloring Problem},
+have the same color.
+
+\lstset{caption = \textbf{A script for the Map Coloring Problem},
 label=listing 12,frame=trbl}
 \begin{myverbatim}
 fun mapColoring space =
@@ -2288,13 +2283,14 @@ fun mapColoring space =
  end
 \end{myverbatim}
 
-\par
-The search tree of {\it mapColoring} is interesting.First, 
+
+The search tree of \emph{mapColoring} is interesting.First, 
 colorings with 1, 2 and 3 colors are searched and not found. 
 Then a coloring with 4 colors is searched. Now a solution is 
 found quickly, without going through further failure nodes. 
 There are many solutions using 4 colors since the particular 
-color given to a country does not matter.\\
+color given to a country does not matter.
+
 The statement
 \begin{quote}
 Explorer.exploreOne(mapColoring);
@@ -2349,29 +2345,30 @@ Session 8 must not be in parallel with Session 10.
 The time table should minimize the number of slots.  
 
 \subsubsection{Viewpoint}
-The model has a variable {\it nbSlots} saying how many slots 
+The model has a variable \emph{nbSlots} saying how many slots 
 the conference has. Here, nbSlots can be constrained to the finite 
-domain $ 4\#11 $. The model also has a variable ${\it plan}_i $ for 
-every session {\it i}, where ${\it plan}_i $ stands 
+domain $ \dom{4}{11} $. The model also has a variable $\emph{plan}_i $ for 
+every session \emph{i}, where $\emph{plan}_i $ stands 
 for the number of the slot in which Session i will take place. 
-Every variable ${\it plan}_i $ can be constrained to the finite 
+Every variable $\emph{plan}_i $ can be constrained to the finite 
 domain $ 1 \# $ nbSlots. The remaining constraints are obvious from 
 the problem description. 
 
 \subsubsection{Branching Strategy}
 We use a two-dimensional branching strategy. 
 We first branch on nbSlots, trying smaller values first. 
-Once nbSlots is determined, we branch on the variables ${\it plan}_i $  
+Once nbSlots is determined, we branch on the variables $\emph{plan}_i $  
 using the standard first-fail strategy. 
 
 \subsubsection{Script}
 The script in Listing \ref{listing 13} first creates a local
 variable nbSlots specifying the number of slots used by the 
-conference. It also defines two procedures {\it precedes} and
-{\it notparallel} that realize scheduling constraints and
+conference. It also defines two procedures \emph{precedes} and
+\emph{notparallel} that realize scheduling constraints and
 should be easy to understand. It then branches naively on
 nbSlots. After nbSlots is determined, it constrains its 
-variable {\it plan}.\\
+variable \emph{plan}.
+
 The statement 
 \begin{quote}
 Explorer.exploreOne(conference)
@@ -2395,7 +2392,7 @@ This plan says that the conference requires 4 slots,
 where the sessions 1, 4 and 9 take place in slot 1, the sessions 2, 
 5 and 6 take place in slot 2, the sessions 3, 7 and 10 take place in 
 slot 3, and the sessions 8 and 11 take place in slot 4. 
-\lstset{caption = {\bf A script for conference scheduling},
+\lstset{caption = \textbf{A script for conference scheduling},
 label=listing 13,frame=trbl}
 \begin{myverbatim}
 fun conference space =
@@ -2435,7 +2432,7 @@ fun conference space =
 \label{redundant}
 For some problems, the performance of a script can 
 be drastically improved by introducing propagators 
-for redundant constraints. {\it Redundant constraints} are 
+for redundant constraints. \emph{Redundant constraints} are 
 constraints that are entailed by the constraints specifying 
 the problem. Additional propagators for redundant constraints 
 may decrease the size of the search tree by strengthening 
@@ -2471,7 +2468,7 @@ We branch on the list of letters using the standard
 first-fail strategy.
 
 \subsubsection{Script}
-\lstset{caption = {\bf Script for the Fractions Problem},
+\lstset{caption = \textbf{Script for the Fractions Problem},
 label=listing 14,frame=trbl}
 \begin{myverbatim}
 fun fractions space =
@@ -2513,7 +2510,7 @@ variable.
 Not all propagators exploit coreferences in products 
 (e.g. $ x * x + y * y = z * z $). For the example of 
 this section it will be essential to exploit such 
-coreferences, and you will learn how to do it.\\
+coreferences, and you will learn how to do it.
 
 The example also illustrates the case where a propagator 
 for a redundant constraint improves the performance of a 
@@ -2527,7 +2524,7 @@ and $ A \le B \le C \le 1000 $?
 \subsubsection{Viewpoint and Constraints}
 The model has three variables A, B and C. Each variable is 
 constrained to the finite domain 1 $\#$ 1000. The model imposes 
-the constraints  $ A^2 + B^2 = C^2 $ and $ A \le B \le C $.\\ 
+the constraints  $ A^2 + B^2 = C^2 $ and $ A \le B \le C $.
 
 The script will also create a propagator for the redundant 
 constraint 2 * $B^2 \ge C^2$. 
@@ -2537,7 +2534,7 @@ We branch on the variables A, B, C  using the standard
 first-fail strategy.
 
 \subsubsection{Script}
-\lstset{caption = {\bf A script that enumerates Pythagoras triples},
+\lstset{caption = \textbf{A script that enumerates Pythagoras triples},
 label=listing 15,frame=trbl}
 \begin{myverbatim}
 fun pythagoras space =
@@ -2567,10 +2564,10 @@ fun pythagoras space =
    end
 \end{myverbatim}
 
-You can see, that for all squares new variables {\it aa, bb, cc}
+You can see, that for all squares new variables \emph{aa, bb, cc}
 are introduced in Listing \ref{listing 15}. This is a very important
 step in this script. As you already know, it is also possible to
-\db{use the {\it post} - modelling tool}. Then you would not need to write:
+\db{use the \emph{post} - modelling tool}. Then you would not need to write:
 \begin{quote}
  val aa = FD.range (space, (0, maxValue))\\
  val bb = FD.range (space, (0, maxValue))\\
@@ -2593,11 +2590,12 @@ with
 \begin{quote}
 post(space,`2 `* FD(b) `* FD(b) `$>$ FD(b) `* FD(b), FD.DOM);
 \end{quote}
-\par
+
 This would result in a more readable and convenient script, but
 comparing the search trees of the two versions, the new version
-is worse. But why?\\
-It is because of the variables {\it aa, bb, cc}. In the first
+is worse. But why?
+
+It is because of the variables \emph{aa, bb, cc}. In the first
 version( Listing \ref{listing 15}), the redundant constraint
 propagates stronger, because its variables are connected to
 the propagator ensuring the squares. In the second version they
@@ -2638,7 +2636,7 @@ nodes to find a solution.
 We model the problem by having a variable $F_{ij}$ for every field 
 (i,j) of the matrix. Moreover, we have one additional variable S 
 and require that the sum of every row, column, and main diagonal 
-equals S.\\
+equals S.
 
 Without loss of generality, we can impose the following order 
 constraints eliminating symmetries: 
@@ -2662,7 +2660,7 @@ strategy splitting the domain of the selected variable and trying
 the lower half first. 
 
 \subsubsection{Script}
-\lstset{caption = {\bf Script for the Magic Square Puzzle},
+\lstset{caption = \textbf{Script for the Magic Square Puzzle},
 label=listing 16,frame=trbl}
 \begin{myverbatim}
 val maxValue = (valOf (Int.maxInt))div 2
@@ -2728,7 +2726,7 @@ order of magnitude.
 \newpage
 \section{Reified Constraints}
 In this section we will see a new class of constraints called 
-{\it reified constraints}. {\it Reified constraints} make it possible to 
+\emph{reified constraints}. \emph{Reified constraints} make it possible to 
 express constraints involving logical connectives such as 
 disjunction, implication, and negation. Reified constraints 
 also make it possible to solve overconstrained problems, 
@@ -2736,12 +2734,13 @@ for which only some of the stated constraints can be satisfied.
 
 \subsection{Getting Started}
 \subsubsection{Reification of a constraint}
-The {\it reification of a constraint} C with respect to a variable
+The \emph{reification of a constraint} C with respect to a variable
 x is the constraint 
 \begin{quote}
 ( C $ \leftrightarrow $ x = 1) $ \wedge $ x $\in $ 0$\#$1
 \end{quote}
-where it is assumed that x does not occur free in C.\\ 
+where it is assumed that x does not occur free in C.
+
 The operational semantics of a propagator for the reification of a
 constraint C with respect to x is given by the following rules:
 \begin{enumerate} 
@@ -2763,7 +2762,7 @@ To understand these rules, you need to be familiar with the definitions
 in Section \ref{section2-2}. 
 
 \subsubsection{0/1-variables}
-A {\it 0/1-variable} is a variable that is constrained to the finite 
+A \emph{0/1-variable} is a variable that is constrained to the finite 
 domain 0$\#$1. The control variables of reified constraints are 0/1-variables. 
 
 \subsubsection{Posting reified constraints}
@@ -2834,10 +2833,11 @@ constraint
 \end{quote}
 Finally, there is a variable
 \begin{quote}
-    {\it Satisfaction} = $S_1 $ + $\ldots$ + $S_8$
+    \emph{Satisfaction} = $S_1 $ + $\ldots$ + $S_8$
 \end{quote}
 denoting the number of satisfied preferences. We want to find a solution 
-that maximizes the value of {\it Satisfaction}.\\
+that maximizes the value of \emph{Satisfaction}.
+
 The experienced constraint programmer will note that we can eliminate a 
 symmetry by picking two persons p and q and imposing the order constraint 
 \begin{quote}
@@ -2845,14 +2845,14 @@ symmetry by picking two persons p and q and imposing the order constraint
 \end{quote}
 
 \subsubsection{Branching Strategy}
-To maximize {\it Satisfaction}, we employ a two-dimensional branching 
-strategy, which first branches on {\it Satisfaction}, trying the values 
-8,7,$ \ldots $ ,1 in this order. Once {\it Satisfaction} is determined, we 
+To maximize \emph{Satisfaction}, we employ a two-dimensional branching 
+strategy, which first branches on \emph{Satisfaction}, trying the values 
+8,7,$ \ldots $ ,1 in this order. Once \emph{Satisfaction} is determined, we 
 branch on the variables $pers$ using a first-fail strategy that splits 
 the domain of the selected variable.
 
 \subsubsection{Script}
-\lstset{caption = {\bf A script for the Photo Puzzle},
+\lstset{caption = \textbf{A script for the Photo Puzzle},
 label=listing 17,frame=trbl}
 \begin{myverbatim}
 fun photo space =
@@ -2919,7 +2919,7 @@ preferences that can be satisfied simultaneously.
 This example illustrates three issues: expressing complex 
 propositional formulas as reified constraints, improving 
 performance and presentation by elimination of common subconstraints, 
-and using the symbolic constraint posted by {\it FD.element}.
+and using the symbolic constraint posted by \emph{FD.element}.
 
 \subsubsection{Problem Specification}
 The self-referential aptitude test (which is taken from \cite{10}) 
@@ -2929,7 +2929,8 @@ For each of the 50 possible answers, a condition is specified.
 For each question, exactly one of the conditions associated with 
 its possible answers must hold. A solution of the test is a function 
 assigning to every question a letter such that the condition selected 
-by the assigned letter holds.\\
+by the assigned letter holds.
+
 Here are the questions and their possible answers:
 \begin{itemize}
 \item
@@ -2990,7 +2991,7 @@ $D_i$ = 1 iff the answer to Question i is d
 $E_i$ = 1 iff the answer to Question i is e
 \end{enumerate}
 To obtain a compact representation of the questions, 
-we also have variables $Q_i \in $ 1$\#$ 5 for i$\in$ 1 $\#$ 10 such that\\
+we also have variables $Q_i \in $ 1$\#$ 5 for i$\in$ 1 $\#$ 10 such that
 \begin{quote}
 $Q_i$ = 1 $\leftrightarrow A_i$ = 1\\
 $Q_i$ = 2 $\leftrightarrow B_i$ = 1\\
@@ -2998,7 +2999,7 @@ $Q_i$ = 3 $\leftrightarrow C_i$ = 1\\
 $Q_i$ = 4 $\leftrightarrow D_i$ = 1\\
 $Q_i$ = 5 $\leftrightarrow E_i$ = 1
 \end{quote}
-The first question can now be expressed by means of five equivalences:\\
+The first question can now be expressed by means of five equivalences:
 \begin{quote}
 $ A_1 = B_2$ \\
 $B_1 = (B_3\land (B_2=0))$ \\ 
@@ -3007,9 +3008,9 @@ $D_1 = (B_5\land (B_2+B_3+B_4=0))$\\
 $E_1 = (B_6\land (B_2+B_3+B_4+B_5=0))$
 \end{quote}
 These equivalences can be expressed by reifying the 
-nested equality constraints.\\
+nested equality constraints.
 
-The second question can be expressed with the following constraints:\\
+The second question can be expressed with the following constraints:
 \begin{quote}
 $Q_1\neq Q_2,\quad Q_7\neq Q_8,$
 $\quad Q_8\neq Q_9,\quad Q_9\neq Q_10$ \\ 
@@ -3025,13 +3026,14 @@ $ D_3=(Q_7=Q_3),\quad E_3=(Q_6=Q_3)$
 
 The fourth question can be elegantly expressed with the constraint
 \begin{quote}
-    {\it element}($Q_4$,(0,1,2,3,4)) = $\sum_{i=1}^{10}{A_i}$
+    \emph{element}($Q_4$,(0,1,2,3,4)) = $\sum_{i=1}^{10}{A_i}$
 \end{quote}
-where the function {\it element}(k,x) yields the k-th component 
-of the tuple x.\\
+where the function \emph{element}(k,x) yields the k-th component 
+of the tuple x.
+
 We choose this formulation since Alice provides a propagator 
-{\it FD.element} 
-for the constraint {\it element}(k,x)= y.
+\emph{FD.element} 
+for the constraint \emph{element}(k,x)= y.
 
 \subsubsection{Reified Membership Constraints}
 The nineth question can be expressed with the following equations
@@ -3050,7 +3052,7 @@ This time we use reified membership constraints of the form x$\in$ D.
 We branch on the variables $Q_1,Q_2,\ldots$ using the standard first-fail strategy.
 
 \subsubsection{Script}
-\lstset{caption = {\bf A script for the self-referential aptitude test},
+\lstset{caption = \textbf{A script for the self-referential aptitude test},
 label=listing 18,frame=trbl}
 \begin{myverbatim}
 (* bsum ensures that the sum of the boolean vector 
@@ -3209,11 +3211,11 @@ constraints and nontrivial defined constraints.
 \subsubsection{Problem Specification}
 Given a supply of components and bins of different types, 
 compile a packing lists such that a minimal number of bins 
-is used and given constraints on the contents of bins are satisfied.\\
+is used and given constraints on the contents of bins are satisfied.
 
 In our example, there are 3 types of bins and 5 types of components. 
 The bin types are red, blue, and green. The component types are 
-glass, plastic, steel, wood, and copper.\\
+glass, plastic, steel, wood, and copper.
 
 The following constraints must hold for the contents of bins:
 \begin{enumerate}
@@ -3256,29 +3258,29 @@ copper components. The packing list should require as few bins as possible.
 One possibility for a model consists in having a variable for every 
 component saying in which bin the component should be packed. The 
 resulting model admits many symmetric solutions and does not lead 
-to a satisfactory script.\\
+to a satisfactory script.
 
 We will use a model that has both variables for bins and for
-components. The model has a variable {\it mcap} saying how many 
+components. The model has a variable \emph{mcap} saying how many 
 bins are used to pack the order. For every i $\in$ 1 $\#$
-{\it mcap} we have 6 variables:
+\emph{mcap} we have 6 variables:
 \begin{itemize}
 \item
-${\it btype}_i$ denoting the type of the i-th bin.
+$\emph{btype}_i$ denoting the type of the i-th bin.
 \item
-${\it glass}_i$ denoting the number of glass components to be packed into the i-th bin.
+$\emph{glass}_i$ denoting the number of glass components to be packed into the i-th bin.
 \item
-${\it plastic}_i $denoting the number of plastic components to be packed into the i-th bin.
+$\emph{plastic}_i $denoting the number of plastic components to be packed into the i-th bin.
 \item
-${\it steel}_i $ denoting the number of steel components to be packed into the i-th bin.
+$\emph{steel}_i $ denoting the number of steel components to be packed into the i-th bin.
 \item
-${\it wood}_i $ denoting the number of wood components to be packed into the i-th bin.
+$\emph{wood}_i $ denoting the number of wood components to be packed into the i-th bin.
 \item
-${\it copper}_i $ denoting the number of copper components to be packed into the i-th bin.
+$\emph{copper}_i $ denoting the number of copper components to be packed into the i-th bin.
 \end{itemize}
 Given these variables, the capacity and containment constraints 
 are easy to express. The requirement and exclusion constraints are 
-implications that can be expressed by means of reified constraints.\\
+implications that can be expressed by means of reified constraints.
 
 To reduce the size of the search tree, we exclude some of the symmetries 
 in a packing list. We require that blue bins appear before red bins, 
@@ -3291,37 +3293,38 @@ glass components as the second bin.
 We branch on the type and capacity variables with
 the standard first - fail strategy. Because we want to get a 
 packlist with a minimal number of bins used, you should first
-branch over the variable {\it mcap} and try smaller values
+branch over the variable \emph{mcap} and try smaller values
 first. Here, this is not possible because the vaue is used
 to create the lenght of the packing list and so has to be an
-integer value. To get this value of {\it mcap} you would need to
-{\it reflect} it's value during search. This is not possible!\\
+integer value. To get this value of \emph{mcap} you would need to
+\emph{reflect} it's value during search. This is not possible!
+
 We solve this problem with a test function, that uses the structure
 \htmladdnormallink{\textcolor{blue}{Search}}
 {http://www.ps.uni-sb.de/alice/manual/library/search.html} and
-in a loop that tries smaller values for {\it mcap} first and
+in a loop that tries smaller values for \emph{mcap} first and
 stops when the first solution is found.
 
 \subsubsection{Script}
-The first defined constraint {\it impl} is used to post
+The first defined constraint \emph{impl} is used to post
 the following constraint:
 \begin{quote}
-$ v_1 \hspace{2mm} rel \hspace{2mm} v_1' \leftrightarrow v_2 \hspace{2mm} rel \hspace{2mm} v_2' $\\
+$ v_1 \hspace{2mm} rel \hspace{2mm} v_1' \leftrightarrow v_2 \hspace{2mm} rel \hspace{2mm} v_2' $
 \end{quote}
-The function {\it makebin} creates a consistently packed
+The function \emph{makebin} creates a consistently packed
 bin with type
-{\it btype} and its components. It implements all the capacity, 
+\emph{btype} and its components. It implements all the capacity, 
 containment, requirement, and exclusion constraints of the problem 
-specification.\\
+specification.
 
-The function {\it makepacklist} imposes constraints saying that 
-{\it packlist} is a consistent packing list ordered as specified 
-in the description of the model.\\
+The function \emph{makepacklist} imposes constraints saying that 
+\emph{packlist} is a consistent packing list ordered as specified 
+in the description of the model.
 
-{\it Match} imposes constraints saying that the packing list 
-{\it packlist} matches the order {\it order}.\\
+\emph{Match} imposes constraints saying that the packing list 
+\emph{packlist} matches the order \emph{order}.
 
-\lstset{caption = {\bf A script for the Bin Packing Problem},
+\lstset{caption = \textbf{A script for the Bin Packing Problem},
 label=listing 19,frame=trbl}
 \begin{myverbatim}
 type bin = {btype : FD.intvar, copper : FD.intvar, 
@@ -3465,8 +3468,8 @@ fun binpacking order mcap space =
 *)
 \end{myverbatim}
 
-\par 
-The result of {\it findsolution (1 )}
+ 
+The result of \emph{findsolution (1 )}
 is a list of lenght 8, where every element is a bin with it's type
 and components:
 \begin{quote}
@@ -3486,20 +3489,20 @@ In this chapter we focus on computing an optimal solution
 according to a given cost function. While we have searched 
 for optimal solutions already in Section \ref{sec8-2} and Section 
 \ref{sec8-4}, we have used a rather ad-hoc strategy there. This strategy 
-lacks generality and does not provide either for a proof of optimality.\\
+lacks generality and does not provide either for a proof of optimality.
 
 In this chapter we introduce a general schema to compute an optimal 
 solution according to an arbitrary cost function and show how it is 
-available in Alice. This schema is called {\bf branch and bound} and is available 
-by procedures like {\it ExploreBest}. A typical application of {\it ExploreBest}
-for a script {\it Script} looks like
+available in Alice. This schema is called \textbf{branch and bound} and is available 
+by procedures like \emph{ExploreBest}. A typical application of \emph{ExploreBest}
+for a script \emph{Script} looks like
 \begin{quote}
     Explorer.exploreBest Script 
 \end{quote}
 The branch and bound schema works as follows. When a solution of 
 Script is found, all the remaining alternatives in the search tree 
 are constrained to be better with respect to an order available through 
-the procedure {\it Order}. Usually Order applies a cost function to its 
+the procedure \emph{Order}. Usually Order applies a cost function to its 
 arguments and creates a propagator imposing the ordering. \db{The second 
 argument of Order is the previous solution, and the first argument 
 is an alternative solution we are searching for.} 
@@ -3513,7 +3516,7 @@ alignment problem which satisfies the maximal number of preferences.
 To this aim we have introduced a variable which counts the number of 
 satisfied preferences. By branching this variable with its maximal 
 value first, we have guaranteed that the first solution found is 
-indeed the optimal one.\\
+indeed the optimal one.
 
 In this section we replace this ad-hoc approach by branch and bound. 
 We first restate the script for the problem by omitting the branching 
@@ -3521,7 +3524,7 @@ code for the variable summing up the satisfied preferences. The resulting
 script is shown in Listing \ref{listing 20}.
 
 \subsubsection{Script}
-\lstset{caption = {\bf The revised script for the Photo Puzzle},
+\lstset{caption = \textbf{The revised script for the Photo Puzzle},
 label=listing 20,frame=trbl}
 \begin{myverbatim}
 fun revisedphoto space =
@@ -3577,8 +3580,9 @@ fun revisedphoto space =
 
 Next we define an ordering procedure which states that the overall 
 sum of satisfied preferences in an alternative solution must be 
-strictly greater than the corresponding sum in a previous solution:\\
-\lstset{caption = {\bf ordering procedure},label=listing 21,frame=trbl}
+strictly greater than the corresponding sum in a previous solution:
+
+\lstset{caption = \textbf{ordering procedure},label=listing 21,frame=trbl}
 \begin{myverbatim}
 fun photoorder(current,last)=
                post (current, FD(satisfaction)`> 
@@ -3586,18 +3590,19 @@ fun photoorder(current,last)=
 \end{myverbatim}
 
 
-Here the procedure {\it FD.Reflect.value} from the
+Here the procedure \emph{FD.Reflect.value} from the
 \htmladdnormallink{\textcolor{blue}{FD.Reflect}}
 {http://www.ps.uni-sb.de/alice/manual/library/fd.html}
 library structure is used.
-It returns the value {\it satisfaction} takes in the space {\it last} and
-throws {\it NotAssigned} if {\it satisfaction} is not determined.\\
+It returns the value \emph{satisfaction} takes in the space \emph{last} and
+throws \emph{NotAssigned} if \emph{satisfaction} is not determined.
+
 The optimal solution can be found with the statement
 \begin{quote}
     Explorer.exploreBest revisedphoto
 \end{quote}
 Note that the type of the script has changed to:
-\lstset{caption = {\bf type of revised photo script},
+\lstset{caption = \textbf{type of revised photo script},
 label=listing 22,frame=trbl}
 \begin{myverbatim}
 FD.space ->
@@ -3628,7 +3633,7 @@ Send More Money problem. The send Send Most Money problem
 has more than one solution and we want to find the best one.
 
 \subsubsection{Script}
-\lstset{caption = {\bf A script for the Send Most Money Puzzle},
+\lstset{caption = \textbf{A script for the Send Most Money Puzzle},
 label=listing 23,frame=trbl}
 \begin{myverbatim}
 fun smm space =
@@ -3658,12 +3663,12 @@ fun smm space =
   
 \end{myverbatim}
 
-The procedure {\it better} in listing \ref{listing 23} ensures
-that the value of {\it money} is maximized. Again, you use
+The procedure \emph{better} in listing \ref{listing 23} ensures
+that the value of \emph{money} is maximized. Again, you use
 \begin{quote}
 Explorer.exploreBest(smm)
 \end{quote}
-to get a search tree where the value of {\it money} in every 
+to get a search tree where the value of \emph{money} in every 
 solution space is higher than the one in a solution space before. 
 
 
@@ -3682,98 +3687,100 @@ warehouse we have fixed costs. The costs for transportation from
 a warehouse to a store vary depending on the location of the warehouse 
 and the supplied store. The aim is to determine which warehouses 
 should be constructed and which stores should be supplied by the 
-constructed warehouses such that the overall costs are minimized.\\
+constructed warehouses such that the overall costs are minimized.
 
 We assume the fixed costs of building a warehouse to be 50. We 
-furthermore assume 5 warehouses W1 through W5 and 10 stores Store1 
-through Store10. The capacities of the warehouses are:\\[1.0cm]
+furthermore assume 5 warehouses W1 through W5 and 10 stores Store 1 
+through Store 10. The capacities of the warehouses are:
+
 \label{cap}
 \begin{tabular}{||c|c|c|c|c|c||}
 \hline
-& {\bf W1} & {\bf W2} & {\bf W3} & {\bf W4} &{\bf W5}\\
+& \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} &\textbf{W5}\\
 \hline
 capacity  & 1 & 4 & 2 &1 & 3\\
 \hline
-\end{tabular}\\[1.0cm]
+\end{tabular}
 
-The costs to supply a store by a warehouse are:\\[1.0cm]
+The costs to supply a store by a warehouse are:
+
 \begin{tabular}{||c|c|c|c|c|c||}
 \hline
-& {\bf W1} & {\bf W2} & {\bf W3} & {\bf W4} &{\bf W5}\\
+& \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} &\textbf{W5}\\
 \hline
-{\bf Store 1}& 36 & 42 & 22 & 44 & 52\\
+\textbf{Store 1}& 36 & 42 & 22 & 44 & 52\\
 \hline
-{\bf Store 2}& 49 & 47 & 134 & 135 & 121\\ 
+\textbf{Store 2}& 49 & 47 & 134 & 135 & 121\\ 
 \hline
-{\bf Store 3}& 121 & 158 & 117 & 156 & 115\\
+\textbf{Store 3}& 121 & 158 & 117 & 156 & 115\\
 \hline
-{\bf Store 4}& 8 & 91 & 120 & 113 & 101\\
+\textbf{Store 4}& 8 & 91 & 120 & 113 & 101\\
 \hline
-{\bf Store 5}& 77 & 156 & 98 & 135 & 11\\
+\textbf{Store 5}& 77 & 156 & 98 & 135 & 11\\
 \hline
-{\bf Store 6}& 71 & 39 & 50 & 110 & 98\\
+\textbf{Store 6}& 71 & 39 & 50 & 110 & 98\\
 \hline
-{\bf Store 7}& 6 & 12 & 120 & 98 & 93\\
+\textbf{Store 7}& 6 & 12 & 120 & 98 & 93\\
 \hline
-{\bf Store 8}& 20 & 120 & 25 & 72 & 156\\
+\textbf{Store 8}& 20 & 120 & 25 & 72 & 156\\
 \hline
-{\bf Store 9}& 151 & 60 & 104 & 139 & 77\\
+\textbf{Store 9}& 151 & 60 & 104 & 139 & 77\\
 \hline
-{\bf Store 10}& 79 & 107 & 91 & 117 & 154\\
+\textbf{Store 10}& 79 & 107 & 91 & 117 & 154\\
 \hline
-\end{tabular}\\[1.0cm]
+\end{tabular}
 
 \subsubsection{Viewpoint and Constraints}
-We assume that the costs are given in the matrix {\it CostMatrix} 
+We assume that the costs are given in the matrix \emph{CostMatrix} 
 defined above. For the model of this problem we introduce the 
 following variables.
 \begin{itemize}
 \item
-${\it Open}_i$, 1 $\leq$ i$ \leq$ 5, with domain 0$\#$1 such that 
-${\it Open}_i$ = 1 if warehouse $W_i$ does supply at least one store.
+$\emph{Open}_i$, 1 $\leq$ i$ \leq$ 5, with domain 0$\#$1 such that 
+$\emph{Open}_i$ = 1 if warehouse $W_i$ does supply at least one store.
 \item
-${\it Supplier}_i$, 1 $\leq$ i $\leq$ 10, with domain 1$\#$5 such that 
-${\it Supplier}_i$ = j if store ${\it Store_i}$ is supplied by 
+$\emph{Supplier}_i$, 1 $\leq$ i $\leq$ 10, with domain 1$\#$5 such that 
+$\emph{Supplier}_i$ = j if store $\Store_i$ is supplied by 
 warehouse $W_j$.
 \item
-${\it Cost}_i$, 1 $\leq$ i $\leq$ 10, such that the domain of ${\it Cost}_i$ 
-is defined by the row ${\it CostMatrix}_i$. The variable ${\it Cost}_i$ 
-denotes the costs of supplying store ${\it Store}_i$ by warehouse 
-$W_{{\it Supplier}_i}$, i. e., ${\it Cost}_i$ = ${\it CostMatrix}_{i,{\it Supplier}_i}$.
+$\emph{Cost}_i$, 1 $\leq$ i $\leq$ 10, such that the domain of $\emph{Cost}_i$ 
+is defined by the row $\emph{CostMatrix}_i$. The variable $\emph{Cost}_i$ 
+denotes the costs of supplying store $\Store_i$ by warehouse 
+$W_{\emph{Supplier}_i}$, i. e., $\emph{Cost}_i$ = $\emph{CostMatrix}_{i,\emph{Supplier}_i}$.
 \end{itemize}
 We have the additional constraint that the capacity of the warehouses 
 must not be exceeded. To this aim we introduce auxiliary variables 
-${\it Supplies}_{i,j}$ with the domain 0$\#$1 as follows:
+$\emph{Supplies}_{i,j}$ with the domain 0$\#$1 as follows:
 \begin{quote}
 $\forall i \in \{1,\ldots,5\} \forall j \in \{1,\ldots, 10\}$:
-$({\it Supplies}_{i,j} = 1) \Leftrightarrow ({\it Supplier_j} = i)$
+$(\emph{Supplies}_{i,j} = 1) \Leftrightarrow (\emph{Supplier}_j = i)$
 \end{quote}
 
 The capacity constraints can then be stated with
 \begin{quote}
-$\forall i \in \{1, \ldots, 5\}:\ {\it Cap}_i \geq $
-$\sum\limits_{j=1}^{10}{\it Supplies}_{i,j}$
+$\forall i \in \{1, \ldots, 5\}:\ \emph{Cap}_i \geq $
+$\sum\limits_{j=1}^{10}\emph{Supplies}_{i,j}$
 \end{quote}
-where ${\it Cap}_i$ is defined defined above\ref{cap}.
+where $\emph{Cap}_i$ is defined defined above\ref{cap}.
 
 
 \subsubsection{Branching Strategy}
 There are several possibilities to define a branching 
-strategy for this problem.\\
+strategy for this problem.
 
-We choose to determine the variables ${\it Cost}_i$ by branching. 
+We choose to determine the variables $\emph{Cost}_i$ by branching. 
 Because no entry in a row of the cost matrix occurs twice, we 
 immediately know which store is supplied by which warehouse. 
-We select the variable ${\it Cost}_i$ first for which the difference 
+We select the variable $\emph{Cost}_i$ first for which the difference 
 between the smallest possible value and the next higher value 
 is maximal. Thus, decisions are made early in the search tree 
 where the difference between two costs by different suppliers 
 are maximal. The branching strategy will try the minimal 
-value in the domain of ${\it Cost}_i$ first. In Operations 
-Research this strategy is known as the principle of {\it least regret}.
+value in the domain of $\emph{Cost}_i$ first. In Operations 
+Research this strategy is known as the principle of \emph{least regret}.
 
 \subsubsection{Script}
-\lstset{caption = {\bf A script for the warehouse problem},
+\lstset{caption = \textbf{A script for the warehouse problem},
 label=listing 24,frame=trbl}
 \begin{myverbatim}
 val capacity = #[3,1,4,1,4];
@@ -3862,38 +3869,38 @@ fun warehouse cap costm space =
 \subsubsection{Set Values}
 Alice provides finite sets of integers as 
 first-class values and every set value is a subset of 
-the universal set {\it U} = \{{\it - sup},$\ldots$,{\it sup}\}. 
-The value of {\it sup} is determined by the 
+the universal set \emph{U} = \{\emph{- sup},$\ldots$,\emph{sup}\}. 
+The value of \emph{sup} is determined by the 
 actual implementation and in Alice it is 536870910.
 
 
 \subsubsection{Set Constraints}
-A basic set constraint approximates a set value {\it S} 
+A basic set constraint approximates a set value \emph{S} 
 in three different ways: 
 \begin{itemize}
 \item
-Constraining the lower bound by set {\it s}:{\it s}$\subseteq${\it S}. 
+Constraining the lower bound by set \emph{s}:\emph{s}$\subseteq$\emph{S}. 
 The lower bound contains all elements that are at 
 least contained in the set value. 
 \item
-Constraining the upper bound by set {\it s} :{\it S}$\subseteq${\it s} . 
+Constraining the upper bound by set \emph{s} :\emph{S}$\subseteq$\emph{s} . 
 The upper bound contains all elements that 
 are at most contained in the set value. 
 \item
 Constraining the cardinality of a set by a finite 
-domain interval \{{\it n},$\ldots$,{\it m}\}: {\it n}$\le$ $\#${\it S}$\le${\it m} . 
+domain interval \{\emph{n},$\ldots$,\emph{m}\}: \emph{n}$\le$ $\#$\emph{S}$\le$\emph{m} . 
 The cardinality constraint determines the minimal 
 and maximal number of elements allowed to be contained in the set. 
 \end{itemize}
-\par
+
 A set constraint denotes a set value if either the lower 
 is equal to the upper bound, the cardinality of the lower 
 bound is equal to the upper bound of the cardinality constraints, 
 or the cardinality of the upper bound is equal to the lower 
-bound of the cardinality constraint.\\
+bound of the cardinality constraint.
 
 Non-basic set constraints, as intersubsection $\cap$, union $\cup$, 
-disjointness $|\thinspace|$, 
+disjointness $\parallel$, 
 and the like, are provided as propagators. For details on the provided 
 set propagators see the structure
 \htmladdnormallink{\textcolor{blue}{FS}}
@@ -3908,25 +3915,25 @@ $\emptyset \subseteq$ X,Y $\subseteq$\{1,$\ldots$,5\}
 \end{quote}
 and additionally the following non-basic constraints:  
 \begin{quote}
-X $\cup$ Y = \{1,$\ldots$,5\} and X$|\thinspace|$Y.
+X $\cup$ Y = \{1,$\ldots$,5\} and X$\parallel$Y.
 \end{quote}
 Adding the constraints 1 $\in$ X and 2 $\notin$ Y  yields 
 the intermediate store \{1\} $\subseteq$ X $\subseteq$ \{1,$\ldots$,5\}
 and $\emptyset \subseteq$ Y $\subseteq$ \{1,3,4,5\}. The 
 present non-basic constraints can add even more basic 
 constraints: the disjointness constraint removes 1 from 
-the upper bound of {\it Y} since 1 was added to the lower bound 
-of {\it X}. The union constraint adds 2 to the lower bound of  
-{\it X} since 2 was removed from the upper bound of {\it Y}. 
+the upper bound of \emph{Y} since 1 was added to the lower bound 
+of \emph{X}. The union constraint adds 2 to the lower bound of  
+\emph{X} since 2 was removed from the upper bound of \emph{Y}. 
 After that, propagation has reached a fixed-point and leads to 
 \{1,2\}$\subseteq$ X $\subseteq$ \{1,$\ldots$,5\} and 
 $\emptyset \subseteq$ Y $\subseteq$ \{3,4,5\}. 
 Bringing the cardinality constraint 3 $\le$ $\#$Y $\le$ 5  
-into play determines {\it Y} to \{3,4,5\} since the upper 
+into play determines \emph{Y} to \{3,4,5\} since the upper 
 bound has exactly 3 elements which is the minimal number 
 required by the cardinality constraint. 
-The disjointness constraint then removes 3, 4, 5 from {\it X}'s 
-upper bound and that way determines {\it x} to \{1,2\}. 
+The disjointness constraint then removes 3, 4, 5 from \emph{X}'s 
+upper bound and that way determines \emph{x} to \{1,2\}. 
 
 \subsubsection{Connecting Finite Sets and Finite Domains}
 Set constraints on their own are of limited use, connecting 
@@ -3945,11 +3952,11 @@ expectedly in case of set constraints as well, solving a
 problem involving set constraints requires branching. 
 \db{A typical choice-point branching a set variable is 
 n $ \in $ S  $ \vee $ n $ \not\in $ S. 
-The following figure illustrates that.}\\
+The following figure illustrates that.}
 
 \begin{figure}[htpb]
-\centerline{\includegraphics*[scale=0.8]{figs2/setdistribution.eps}}
-\caption{{\bf Branching with set constraints}}
+\centerline{\includegraphics*[scale=0.8]{figs/setdistribution.eps}}
+\caption{\textbf{Branching with set constraints}}
 \label{figure 12}
 \end{figure}
 
@@ -3960,35 +3967,34 @@ The following figure illustrates that.}\\
 \newpage
 \subsection{The Steiner Problem}
 \subsubsection{Problem Specification}
-The ternary Steiner problem of order {\it n} asks for 
-{\it n( n - 1 ) / 6} sets ${\it s_i \subset} ${\it \{1,
-$\ldots$,n\}} with cardinality 3 such that every two of them share 
-at most one element. The mathematical properties of 
-the problem require that {\it n mod 6} has to be either 1 or 3 
+The ternary Steiner problem of order $n$ asks for $n( n - 1 ) / 6$
+sets $s_i \subset \{1,\ldots,n\}$ with cardinality 3 such that every
+two of them share at most one element. The mathematical properties of
+the problem require that $n \mod 6$ has to be either 1 or 3
 \cite{11}.
 
 \subsubsection{Viewpoint and Constraints}
-We create a list {\bf ss} of {\it n( n - 1 ) / 6} set variables 
+We create a list \textbf{ss} of \emph{n( n - 1 ) / 6} set variables 
 and constrain every set to have a cardinality of 3 and to have an 
-upper bound of {\it \{1,$\ldots$,n\}}. Further we require that the cardinality 
-of the intersubsection of every two distinct sets in {\it ss} must 
+upper bound of \emph{\{1,$\ldots$,n\}}. Further we require that the cardinality 
+of the intersubsection of every two distinct sets in \emph{ss} must 
 not exceed 1. 
 
 \subsubsection{Branching Strategy}
-Branching simply takes the sets as they occur in {\it ss} 
+Branching simply takes the sets as they occur in \emph{ss} 
 and adds resp. removes elements from them starting from 
 the smallest element. 
 
 \subsubsection{Script}
 First, the list ss is created and its elements' upper bounds 
 and cardinalities are appropriately constrained. 
-The procedure {\it intersect} ensures
+The procedure \emph{intersect} ensures
 that every two sets share at most one element by stating that 
-the cardinality of the intersubsection of two sets is in {\it \{0,1\}}. 
+the cardinality of the intersubsection of two sets is in \emph{\{0,1\}}. 
 Branching is straightforward and uses the provided library 
-procedure {\it setvarbranch}.
+procedure \emph{setvarbranch}.
   
-\lstset{caption = {\bf A script for the Steiner Problem},
+\lstset{caption = \textbf{A script for the Steiner Problem},
 label=listing 25,frame=trbl}
 \begin{myverbatim}
 exception FalseInput;
@@ -4037,8 +4043,8 @@ The search tree has 4529 choice nodes, and 4505
 failure nodes. 
 
 \begin{figure}[htpb]
-\centerline{\includegraphics*[scale=0.3]{figs2/steiner1.eps}}
-\caption{{\bf Search tree of the Steiner Problem}}
+\centerline{\includegraphics*[scale=0.3]{figs/steiner1.eps}}
+\caption{\textbf{Search tree of the Steiner Problem}}
 \label{figure 13}
 \end{figure}
 
@@ -4051,15 +4057,15 @@ unique solution) is to break symmetries and thus to improve
 constraint propagation. Breaking symmetries can be achieved 
 by imposing an order, in our case, an order on the set variables 
 in Ss. We can simply interpret every set as a number with 
-three digits to the base {\it (n + 1)}. A set with three elements 
-\{{\it $x_1, x_2, x_3$}\} can be mapped to an integer by 
-{\it (n + 1)}{\it $^2 * x_1$} + {\it (n + 1)}{\it $^2 * x_2$ + $x_3$}. 
+three digits to the base \emph{(n + 1)}. A set with three elements 
+\{\emph{$x_1, x_2, x_3$}\} can be mapped to an integer by 
+\emph{(n + 1)}\emph{$^2 * x_1$} + \emph{(n + 1)}\emph{$^2 * x_2$ + $x_3$}. 
 
 \subsubsection{Extending the Solver}
 The finite set library provides 
 FS.match to match 
-the elements of a set {\it s} with a fixed number of elements 
-to a vector of size {\it $\#$ s} of finite domain variables. This 
+the elements of a set \emph{s} with a fixed number of elements 
+to a vector of size \emph{$\#$ s} of finite domain variables. This 
 library constraint in conjunction with Map is used to 
 convert the list of sets Ss to a list of finite domain 
 lists with 3 finite domains per list. Finally the order 
@@ -4067,7 +4073,7 @@ between adjacent sets is imposed by
 \begin{quote}
 N1 * N1 * $y_1$ + N1 * $y_2$ + $y_3 < $ N1 * N1 * $x_1$ + N1 * $x_2$ + $x_3$.
 \end{quote}
-\lstset{caption = {\bf Extension of the Steiner Script},
+\lstset{caption = \textbf{Extension of the Steiner Script},
 label=listing 26,frame=trbl}
 \begin{myverbatim}
 let 
@@ -4096,8 +4102,8 @@ Solving the Steiner problem of order 9 results in the following
 search tree. 
 
 \begin{figure}[htpb]
-\centerline{\includegraphics*[scale=0.3]{figs2/steiner2.eps}}
-\caption{{\bf Search tree of the optimized Script for the Steiner Problem}}
+\centerline{\includegraphics*[scale=0.3]{figs/steiner2.eps}}
+\caption{\textbf{Search tree of the optimized Script for the Steiner Problem}}
 \label{figure 14}
 \end{figure}
 We see that the number of choice nodes decreases from 
@@ -4111,30 +4117,30 @@ We see that the number of choice nodes decreases from
 \subsection{Generating Hamming Codes}
 
 \subsubsection{Problem Specification}
-Generate a Hamming code that fits in {\it b} - bit words to 
-code {\it n} symbols where the Hamming distance between every 
-two symbol codes is at least {\it b}. The Hamming distance between 
+Generate a Hamming code that fits in \emph{b} - bit words to 
+code \emph{n} symbols where the Hamming distance between every 
+two symbol codes is at least \emph{b}. The Hamming distance between 
 two words is the number of bit positions where they differ. 
 
 \subsubsection{Viewpoint and Constraints}
-A {\it b} - bit word is modeled by a set 
-{\it s} $\subseteq$ \{1,$\ldots$,{\it b}\}
-where {\it e}$\in$ {\it s} means that the bit
-at position {\it e} is set (resp. unset otherwise). The Hamming 
-distance {\it h(a, b)} between two words {\it a} and {\it b}
-represented as sets ${\it s_a}$  and ${\it s_b}$ 
-can be computed by subtracting from the word size {\it b} 
+A \emph{b} - bit word is modeled by a set 
+\emph{s} $\subseteq$ \{1,$\ldots$,\emph{b}\}
+where \emph{e}$\in$ \emph{s} means that the bit
+at position \emph{e} is set (resp. unset otherwise). The Hamming 
+distance \emph{h(a, b)} between two words \emph{a} and \emph{b}
+represented as sets $s_a$  and $s_b$ 
+can be computed by subtracting from the word size $b$ 
 the number of elements that is contained 
-($\#$(${\it s_a} \cap {\it s_b}$)) \db{resp. is not contained 
-($\#$(\{1,$\ldots$,{\it b}$\backslash {\it s_a} \cup {\it s_b}$) 
+($\#(s_a \cap s_b)$) \db{resp. is not contained 
+($\#(\{1,\ldots,b\}\setminus s_a \cup s_b)$)
 in both sets. Thus, the Hamming distance results in 
 \begin{quote}
-{\it h(a, b)} = {\it $s_b$} - {\it $\#$ ($s_a \cap s_b $)}
- - $\#$(\{1,$\ldots$,{\it b}$\backslash {\it s_a} \cup {\it s_b}$).  
+$h(a, b)$ = $s_b$ - $\#$ ($s_a \cap s_b $)
+ - $\#$(\{1,$\ldots$,b$\backslash s_a \cup s_b$).  
 \end{quote}}
 
 \subsubsection{Script}
-\lstset{caption = {\bf A Script for the Hamming Codes Problem},
+\lstset{caption = \textbf{A Script for the Hamming Codes Problem},
 label=listing 27,frame=trbl}
 \begin{myverbatim}
 
@@ -4173,13 +4179,13 @@ fun hamming bits distance numsymbols space =
 
 
 The Script in Listing \ref{listing 27} generates a Hamming 
-code for {\it numsymbols} symbols in words with {\it bits} bits 
-and a Hamming distance of {\it distance}. The procedure {\it minDist} 
+code for \emph{numsymbols} symbols in words with \emph{bits} bits 
+and a Hamming distance of \emph{distance}. The procedure \emph{minDist} 
 implements the constraint that the Hamming distance does not 
-exceed the value of {\it distance}. The list {\it xs} holds the sets 
+exceed the value of \emph{distance}. The list \emph{xs} holds the sets 
 representing the single codes.
-The nested loop {\it forallTail} 
-imposes {\it minDist} on all pairwise distinct elements of {\it xs}. 
+The nested loop \emph{forallTail} 
+imposes \emph{minDist} on all pairwise distinct elements of \emph{xs}. 
 The branching employs straightforwardly a naive strategy.
 
 The following code generates a Hamming code for 16 symbols 
@@ -4216,23 +4222,23 @@ single diskette, it might become quite tricky to figure out
 the minimal number of needed diskettes and how to partition the files. 
 
 \subsubsection{Viewpoint and Constraints}
-A diskette is modeled by a set ${\it disk_i}$. All sets ${\it disk_i}$  
-form a partition of the set of all files ${\it s_{all\_files}}$, 
-i. e., all ${\it disk_i}$ are pairwise disjoint and their union is 
-${\it s_{all\_files}}$. The sizes of all files contained in a set is 
+A diskette is modeled by a set $\text{disk}_i$. All sets $\text{disk}_i$  
+form a partition of the set of all files $s_\text{all\_files}$, 
+i. e., all $\text{disk}_i$ are pairwise disjoint and their union is 
+$s_\text{all\_files}$. The sizes of all files contained in a set is 
 summed up and compared with the fixed capacity of the diskette. 
 
 \subsubsection{Branching Strategy}
 The branching over the sets representing the individual disks
 employs straightforwardly a naive strategy. To get the minimal
 number of needed disks, we have to write a procedure that searches
-for the first solution iterating over an integer variable {\it nbDisks}
+for the first solution iterating over an integer variable \emph{nbDisks}
 beginning with small values. \db{It is not possible to use a two dimensional
-branching strategy because the value of {\it nbDisks} would have to be
-{\it reflected} during search}.
+branching strategy because the value of \emph{nbDisks} would have to be
+\emph{reflected} during search}.
 
 \subsubsection{Script}
-\lstset{caption = {\bf A Script for the Packing Files Problem},
+\lstset{caption = \textbf{A Script for the Packing Files Problem},
 label=listing 29,frame=trbl}
 \begin{myverbatim}
 val diskCap = 1440
@@ -4278,33 +4284,33 @@ fun spreadFiles (files:filev) diskCap nbDisks space =
 \end{myverbatim}
 
 
-The function {\it spreadfiles} gets the formal arguments {\it files},
-{\it diskCap} and {\it nbDisks}. The script returns the problem 
-variable {\it disks} that contains the set of diskettes of 
-size {\it diskCap} needed to store all files in {\it files}. 
-and specifies what files have to be stored on which diskette.\\ 
+The function \emph{spreadfiles} gets the formal arguments \emph{files},
+\emph{diskCap} and \emph{nbDisks}. The script returns the problem 
+variable \emph{disks} that contains the set of diskettes of 
+size \emph{diskCap} needed to store all files in \emph{files}. 
+and specifies what files have to be stored on which diskette.
 
-The argument {\it files} is a vector of individual files, where each 
-file is represented by a record with labels {\it name} and {\it size}. 
-The argument {\it diskCap} and {\it nbDisks} are integers.\\ 
+The argument \emph{files} is a vector of individual files, where each 
+file is represented by a record with labels \emph{name} and \emph{size}. 
+The argument \emph{diskCap} and \emph{nbDisks} are integers.
 
 Because we want the number of disks we need to store the files
 to be minimal, we have to write an additional function that checks
-the result of a hardcoded value for {\it nbDisks} and tries to find -
-if possible - a smaller one.\\
+the result of a hardcoded value for \emph{nbDisks} and tries to find -
+if possible - a smaller one.
 
-The procedure {\it sum\_files} ensures that every file is stored in
-a disk without exceeding capacity.\\
+The procedure \emph{sum\_files} ensures that every file is stored in
+a disk without exceeding capacity.
 
-In listing \ref{listing 30} is given a function {\it test} that
-gets as formal argument an integer {\it x}. Given this integer, it
+In listing \ref{listing 30} is given a function \emph{test} that
+gets as formal argument an integer \emph{x}. Given this integer, it
 computes the result of
 \begin{quote}
 Search.searchOne(spreadFiles files diskCap x).
 \end{quote}
 If the function finds a solution it stops, otherwise it continues
-computation with the successor of {\it x}.
-\lstset{caption = {\bf Test function for the Packing 
+computation with the successor of \emph{x}.
+\lstset{caption = \textbf{Test function for the Packing 
 Files Problem},
 label=listing 30,frame=trbl}
 \begin{myverbatim}
@@ -4325,7 +4331,7 @@ fun test x =
 \end{myverbatim}
 
 
-Given the {\it test} function the argument 0, it computes
+Given the \emph{test} function the argument 0, it computes
 \begin{quote}
 $(2, [['a','b','f' ], ['c','d','e' ]])$
 \end{quote}
@@ -4351,7 +4357,7 @@ clients the cabin crew has to be able to speak German, Spanish,
 and French (see second Table). Further, a minimal number of 
 stewardesses resp. stewards have to attend a flight 
 (see third Table). Finally, every cabin crew member has 
-two flights off after an attended flight.\\[1.0cm]
+two flights off after an attended flight.
 
 \begin{tabular}{||c|c||c|c||}
 \hline
@@ -4369,9 +4375,7 @@ flight$\#$ & $\#$of cabin staff & flight$\#$ & $\#$of cabin staff\\
 \hline
 5 & 6 & 10 & 6\\
 \hline   
-\end{tabular}\\[1.0cm]
-
-
+\end{tabular}
 
 \begin{tabular}{||c||c|c|c||}
 \hline
@@ -4399,8 +4403,7 @@ flight$\#$ & French  & Spanish & German \\
 \hline
 10 & 1 & 1 & 1\\
 \hline   
-\end{tabular}\\[1.0cm]
-
+\end{tabular}
 
 \label{table3}
 \begin{tabular}{||c|c|c||c|c|c||}
@@ -4421,7 +4424,6 @@ flight$\#$ & male & female & flight$\#$ & male & female\\
 \hline   
 \end{tabular}
 
-
 \subsubsection{Viewpoint and Constraints}
 The cabin crew for every flight is represented as a set
 with domain 1$\#$20. 
@@ -4437,21 +4439,21 @@ expressed by the disjointness of the appropriate sets
 representing a crew per flight. 
 
 \subsubsection{Script}
-The function {\it assignCrew} returns a solver configured according 
-to its arguments {\it flights} and {\it crew}. As previously mentioned, 
+The function \emph{assignCrew} returns a solver configured according 
+to its arguments \emph{flights} and \emph{crew}. As previously mentioned, 
 the constraints on the cabin crew of a flight are expressed in 
 terms of sets of crew members meeting these constraints. For 
 that reason the following variables are defined: 
 \begin{itemize}
 \item
-{\it stewards} (male cabin crew members), 
+\emph{stewards} (male cabin crew members), 
 \item
-{\it stewardesses} (female cabin crew members), 
+\emph{stewardesses} (female cabin crew members), 
 \item
-{\it french, german, and spanish} 
+\emph{french, german, and spanish} 
 (French-, German-, resp. Spanish-speaking cabin crew members). 
 \end{itemize}
-\lstset{caption = {\bf A Script for the Crew Allocation Problem},
+\lstset{caption = \textbf{A Script for the Crew Allocation Problem},
 label=listing 31,frame=trbl}
 \begin{myverbatim}
 val maxValue = (valOf (Int.maxInt))div 2
@@ -4545,26 +4547,26 @@ fun assignCrew flights (crew:crewrec) space =
 \end{myverbatim}
 
 
-The procedure {\it teamConstraint} imposes the abovementioned constraints 
+The procedure \emph{teamConstraint} imposes the abovementioned constraints 
 on the individual flight cabin crew sets intersecting them with 
-appropriate sets by {\it FS.relOp} with the set operation {\it FS.INTER},
+appropriate sets by \emph{FS.relOp} with the set operation \emph{FS.INTER},
 and constrains the \db{intersection's cardinality according to Table 
-\ref{table3}(using FS.cardinality and {\it post})}. \\
+\ref{table3}(using FS.cardinality and \emph{post})}.
 
-The procedure {\it sequenceDisjoint} is responsible to ensure that every 
+The procedure \emph{sequenceDisjoint} is responsible to ensure that every 
 crew member may enjoy a two-flight break between two flights. It 
-is a recursive procedure imposing {\it FS.rel} with the set operation
-{\it FS.DISJ} upon every 3 subsequent sets. \\
+is a recursive procedure imposing \emph{FS.rel} with the set operation
+\emph{FS.DISJ} upon every 3 subsequent sets.
 
-The actual solver declares the local variable {\it crewlist} that 
+The actual solver declares the local variable \emph{crewlist} that 
 contains the list of sets representing the individual crew 
-assignments. Then, the constraints of the procedure {\it teamConstraint} 
-are imposed on {\it crewlist} by the {\it List.app} procedure, 
-applying the data provided by {\it flights} to {\it crewlist}. 
-The branching is straightforward and has no particularities.\\ 
+assignments. Then, the constraints of the procedure \emph{teamConstraint} 
+are imposed on \emph{crewlist} by the \emph{List.app} procedure, 
+applying the data provided by \emph{flights} to \emph{crewlist}. 
+The branching is straightforward and has no particularities.
 
 The following sample data can be used to test the solver:
-\lstset{caption = {\bf Sample data for the Crew Allocation Problem},
+\lstset{caption = \textbf{Sample data for the Crew Allocation Problem},
 label=listing 32,frame=trbl}
 \begin{myverbatim}
 fun name 1 = "tom"
@@ -4638,12 +4640,12 @@ A player is taken and assigned to all possible foursomes.
 Then the next player is taken and assigned and so on.
 The approach, coming usually into mind first, to branch
 a foursome completely, fails even for smaller instances of 
-the problem. This branching strategy is called {\it MIN UNKNOWN 
+the problem. This branching strategy is called \emph{MIN UNKNOWN 
 ELEMENT}.
 
 \subsubsection{Script}
 
-\lstset{caption = {\bf A Script for the Golf Problem},
+\lstset{caption = \textbf{A Script for the Golf Problem},
 label=listing 33,frame=trbl}
 \begin{myverbatim}
 val nbOfWeeks = 9;
@@ -4686,25 +4688,25 @@ fun golf nbOfWeeks nbOfFourSomes space =
 \end{myverbatim}
 
 The function Golf returns a solver to find an assignment 
-for {\it NbOfFourSomes} foursomes per week and NbOfWeeks weeks 
+for \emph{NbOfFourSomes} foursomes per week and NbOfWeeks weeks 
 duration. The number of players is computed from NbOfFourSomes 
-and stored in NbOfPlayers. The auxiliary function {\it flatten} is 
-used to flatten a list of lists of variables.\\ 
+and stored in NbOfPlayers. The auxiliary function \emph{flatten} is 
+used to flatten a list of lists of variables.
 %Its definition 
 %is necessary since the library function of the same name 
 %works only on ground terms. \\
 
-The variable {\it tournament} is a list, that contains for
+The variable \emph{tournament} is a list, that contains for
 every field (week) a list of sets (foursomes).
 
-The procedure {\it weeks} imposes the constraint that
+The procedure \emph{weeks} imposes the constraint that
 all sets are subsets of \{1,$\ldots$,nbOfPlayers\} 
 and have exactly 4 elements. Further, it imposes 
 that every foursome shares at most one element with any 
 other foursome of other weeks.
 
 \db{The following let - construct can be used to test the solver}:
-\lstset{caption = {\bf Sample data for the Golf Problem},
+\lstset{caption = \textbf{Sample data for the Golf Problem},
 label=listing 34,frame=trbl}
 \begin{myverbatim}
 let 
@@ -4774,7 +4776,7 @@ bound, the upper bound of $nb_2, \ldots, nb_5$ is \{1, $\ldots$, 81\}.
 \hline
   & 3 & 8 &   &   &   & 4 & 6 &  \\
 \hline   
-\end{tabular}\\[1.0cm]
+\end{tabular}
 
 \subsubsection{Branching Strategy}
 \db{We use a strategy that the variable with the minimal
@@ -4785,7 +4787,7 @@ value of the selected variable first}.
 In listing \ref{listing 35} the input is a list of tuples
 (a,b), where a is a 'number' value and b is the list of those
 numbers positions. 
-\lstset{caption = {\bf A Script for the Sudoku Problem},
+\lstset{caption = \textbf{A Script for the Sudoku Problem},
 label=listing 35,frame=trbl}
 \begin{myverbatim}
 val inputlist2 = [(1,[8,31,43,55]),(2,[2,51,63,67]),
@@ -4866,25 +4868,25 @@ fun sudoku2 inputlist space =
 \section{Combined Viewpoints}
 As we have have learned in section \ref{redundant}, redundant
 constraints can both improve the performance of a script and
-decrease the size of the search tree.\\
+decrease the size of the search tree.
 
 In this section, you are presented an approach to use the
-advantage of combining {\it mutually redundant models}.
+advantage of combining \emph{mutually redundant models}.
 
 
 \subsection{Construction of a combined Model}
-The idea of combining {\it mutually redundant models} was
+The idea of combining \emph{mutually redundant models} was
 first introduced by  Cheng, Choi, Lee and Wu \cite{9}.
 Let $V_1$ = ($X_1, D_1$) and $V_2$ = ($X_2, D_2$) two viewpoints
 for the same problem. From each viewpoint a complete
 model can be constructed, say $M_1$ = ($X_1, D_1, C_1$), 
-$M_2$ = ($X_2, D_2, C_2$). So, they are {\it mutually redundant}.\\
+$M_2$ = ($X_2, D_2, C_2$). So, they are \emph{mutually redundant}.
 
 If you combine these two models, you get a new model 
 $M_3$ = ($X_3, D_3, C_3$), where $X_3$ = $X_1 \cup X_2$, 
 $D_3$ = $D_1 \cup D_2$
 and $C_3$ =  $C_1 \cup C_2 \cup C_c$. $C_c$ is a set of
-{\it channeling constraints}.\\
+\emph{channeling constraints}.
 
 You should always choose constraints that are of low arity, i.e.
 that assignments in one viewpoint can be propagated in the other when
@@ -4904,7 +4906,7 @@ they relate a single variable in one viewpoint to
 a single variable in the other. If an assignment 
 is made in the model constructed
 from one viewpoint, it can be translated into an 
-assignment in the other and vice versa.\\
+assignment in the other and vice versa.
 
 Hence, the advantage of a combined model is the strenghtened
 propagation caused by these channeling constraints. If in one
@@ -4914,8 +4916,7 @@ is propagated by the channeling constraints} to the variables of the
 other model $M_2$ = ($X_2, D_2, C_2$). So, the propagated removals
 from the first viewpoint together with the constraints in $C_2$ may
 remove more values from the domains of $X_2$'s variables than the
-constraints in $C_2$ alone.\\
-
+constraints in $C_2$ alone.
 
 \newpage
 \subsection{Example: Sudoku Problem}
@@ -4930,8 +4931,7 @@ The Sudoku Problem example in section \ref{sudoku-puzzle} can
 be solved without any search at all. To underline the advantages
 of a combined model, we need a Problem that is harder to solve.
 Below you are given a problem that is hard  and needs search to be 
-solved.\\[1.0cm]
-
+solved.
 
 \begin{tabular}{||c|c|c||c|c|c||c|c|c||}
 \hline
@@ -4958,9 +4958,7 @@ solved.\\[1.0cm]
 \hline
  & 5 &  & 1 &  &  &  &  & \\
 \hline   
-\end{tabular}\\[1.0cm]
-
-
+\end{tabular}
 
 \subsubsection{Viewpoint and Constraints}
 The viewpoint of the new combined model consists in a set
@@ -4975,7 +4973,7 @@ grid'[i] = j $\Leftrightarrow i+1 \in $ numbers[ j-1],
 where grid is the vector of problem variables from the first
 model and numbers the vector of problem variables from the
 second model. Note, that the channeling constraints are realized
-with {\it Reified Constraints} among other things.
+with \emph{Reified Constraints} among other things.
 
 \subsubsection{Branching Strategy}
 \db{We use a strategy that the variable with the minimal
@@ -4984,7 +4982,7 @@ value of the selected variable first}.
 
 
 \subsubsection{Script}
-\lstset{caption = {\bf A combined Script for the Sudoku Problem},
+\lstset{caption = \textbf{A combined Script for the Sudoku Problem},
 label=listing 36,frame=trbl}
 \begin{myverbatim}
 val inputlist_hard=[(0,5,3),(0,7,6),(1,7,1),(2,1,9),
@@ -5090,7 +5088,7 @@ fun sudoku inputlist space =
 
 
 Below, the three realizations of the a hard Sudoku Problem
-\ref{hard-sudoku-problem} are compared:\\[1.0cm]
+\ref{hard-sudoku-problem} are compared:
 
 \begin{tabular}{||c|| c | c | c||}
 \hline
@@ -5103,75 +5101,69 @@ finite set constraints & 12 & 12  & 1   \\
 \hline
 combined model & 10  & 10 & 1 \\
 \hline
-\end{tabular}\\[1.0cm]
-
-
-
-
-
-
+\end{tabular}
 
 
 
 \newpage
 
 \begin{thebibliography}{99}
-\bibitem[1]{1} {\it Finite Domain Constraint Programming in Oz. A Tutorial.} by \\ 
-{\it Christian Schulte and Gert Smolka}
+\bibitem[1]{1} \emph{Finite Domain Constraint Programming in Oz. A Tutorial.} by \\ 
+\emph{Christian Schulte and Gert Smolka}
 
-\bibitem[2]{2} {\it Problem Solving with Finite Set Constraints in Oz. A Tutorial.} by \\ 
-{\it Tobias M\"uller}
+\bibitem[2]{2} \emph{Problem Solving with Finite Set Constraints in Oz. A Tutorial.} by \\ 
+\emph{Tobias M\"uller}
 
-\bibitem[3]{3} {\it Principles of Constraint Programming.} by \\
- {\it Krysztof R. Apt.}, Cambridge University Press, 2003.
+\bibitem[3]{3} \emph{Principles of Constraint Programming.} by \\
+ \emph{Krysztof R. Apt.}, Cambridge University Press, 2003.
 
-\bibitem[4]{4} {\it Short Tour to Alice} by\\
-{\it Andreas Rossberg}, http://www.ps.uni-sb.de/alice/manual/tour.html
+\bibitem[4]{4} \emph{Short Tour to Alice} by\\
+\emph{Andreas Rossberg}, http://www.ps.uni-sb.de/alice/manual/tour.html
 
-\bibitem[5]{5} {\it Modelling for Constraint Programming} by\\
-{\it Barbara M. Smith}, in First International Summer School
+\bibitem[5]{5} \emph{Modelling for Constraint Programming} by\\
+\emph{Barbara M. Smith}, in First International Summer School
 on Constraint Programming, September 2005
 
-\bibitem[6]{6} {\it Dual Viewpoint Heuristics for Binary
+\bibitem[6]{6} \emph{Dual Viewpoint Heuristics for Binary
 Constraint Satisfaction Problems} by \\ 
-{\it P. A. Geelen}, in B. Neumann
+\emph{P. A. Geelen}, in B. Neumann
 (Ed.), Proceedings ECAI92, 1992, pp. 3135. 
 
  \bibitem[7]{7} {Model Induction: a New Source
 of CSP Model Redundancy} by \\
-{\it Y. Law, J. Lee}, in: Proceedings of the
+\emph{Y. Law, J. Lee}, in: Proceedings of the
 18th National Conference on Artificial Intelligence
 (AAAI-2002), 2002, pp. 5460.
 
-\bibitem[8]{8}{\it Sudoku as a Constraint Problem} by\\
-{\it Helmut Simonis}, in Modelling and Reformulating
+\bibitem[8]{8}\emph{Sudoku as a Constraint Problem} by\\
+\emph{Helmut Simonis}, in Modelling and Reformulating
 Constraint Satisfaction Problems, Fourth International Workshop,
 Sitges (Barcelona), Spain, 1 October 2005
 
-\bibitem[9]{9}{\it Increasing constraint propagation by redundant
+\bibitem[9]{9}\emph{Increasing constraint propagation by redundant
 modeling: an experience report} by\\
-{\it B. M.W. Cheng, K. M. F. Choi, J. H. M. Lee, J. C. K. Wu},in 
+\emph{B. M.W. Cheng, K. M. F. Choi, J. H. M. Lee, J. C. K. Wu},in 
 Constraints 4 (1999)167192.
 
-\bibitem[10]{10}{\it Don't be puzzled!} by\\
-{\it  Martin Henz}, In Proceedings of the Workshop on Constraint 
+\bibitem[10]{10}\emph{Don't be puzzled!} by\\
+\emph{ Martin Henz}, In Proceedings of the Workshop on Constraint 
 Programming 
 Applications, in conjunction with the Second International 
 Conference on Principles 
 and Practice of Constraint Programming (CP96), Cambridge, 
 Massachusetts, USA, August 1996.
 
-\bibitem[11]{11} {\it Topics on steiner systems} by \\ 
-{\it by C.C. Lindner and A. Rosa},Annals of Discrete Mathematics, 
+\bibitem[11]{11} \emph{Topics on steiner systems} by \\ 
+\emph{by C.C. Lindner and A. Rosa},Annals of Discrete Mathematics, 
 volume 7. North Holland, 1980.
 
 \bibitem[12]{12}
 \htmladdnormallink
-{\it Gecode}
+{Gecode}
 {http://www.gecode.org/} constraint library
-%{\it }
-%\bibitem[]{} {\it } by \\
-% {\it }
+%\emph{}
+%\bibitem[]{} \emph{} by \\
+% \emph{}
 
 \end{thebibliography}
 
