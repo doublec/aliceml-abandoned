@@ -1,3 +1,76 @@
+/* Century Schoolbook font is very similar to Computer Modern Math: cmmi */
+.MATH    { font-family: "Century Schoolbook", serif; }
+.MATH I  { font-family: "Century Schoolbook", serif; font-style: italic }
+.BOLDMATH { font-family: "Century Schoolbook", serif; font-weight: bold }
+
+/* implement both fixed-size and relative sizes */
+SMALL.XTINY		{ font-size : xx-small }
+SMALL.TINY		{ font-size : x-small  }
+SMALL.SCRIPTSIZE	{ font-size : smaller  }
+SMALL.FOOTNOTESIZE	{ font-size : small    }
+SMALL.SMALL		{  }
+BIG.LARGE		{  }
+BIG.XLARGE		{ font-size : large    }
+BIG.XXLARGE		{ font-size : x-large  }
+BIG.HUGE		{ font-size : larger   }
+BIG.XHUGE		{ font-size : xx-large }
+
+#hue1069		{ color: #0000ff;  }
+#hue1509		{ color: #000000;  }
+#hue1514		{ color: #000000;  }
+#hue1517		{ color: #000000;  }
+#hue1522		{ color: #0000ff;  }
+#hue1524		{ color: #000000;  }
+#hue1533		{ color: #000000;  }
+#hue1538		{ color: #000000;  }
+#hue1540		{ color: #000000;  }
+#hue1542		{ color: #000000;  }
+#hue1544		{ color: #000000;  }
+#hue1551		{ color: #000000;  }
+#hue1555		{ color: #000000;  }
+#hue1557		{ color: #000000;  }
+#hue1559		{ color: #000000;  }
+#hue1562		{ color: #000000;  }
+#hue1566		{ color: #000000;  }
+#hue1571		{ color: #000000;  }
+#hue1575		{ color: #000000;  }
+#hue1577		{ color: #000000;  }
+#hue1591		{ color: #000000;  }
+#hue1593		{ color: #000000;  }
+#hue1595		{ color: #000000;  }
+#hue1597		{ color: #000000;  }
+#hue1599		{ color: #000000;  }
+#hue1601		{ color: #000000;  }
+#hue1606		{ color: #000000;  }
+#hue1610		{ color: #000000;  }
+#hue1613		{ color: #000000;  }
+#hue1615		{ color: #000000;  }
+#hue1625		{ color: #000000;  }
+#hue1628		{ color: #000000;  }
+#hue1630		{ color: #000000;  }
+#hue1632		{ color: #000000;  }
+#hue1645		{ color: #000000;  }
+#hue1649		{ color: #000000;  }
+#hue1653		{ color: #000000;  }
+#hue1656		{ color: #000000;  }
+#hue1658		{ color: #000000;  }
+#hue1660		{ color: #000000;  }
+#hue1662		{ color: #000000;  }
+#hue1664		{ color: #000000;  }
+#hue311		{ color: #ff0000;  }
+#hue319		{ color: #ff0000;  }
+#hue324		{ color: #ff0000;  }
+#hue339		{ color: #0000ff;  }
+#hue367		{ color: #0000ff;  }
+#hue387		{ color: #0000ff;  }
+#hue400		{ color: #0000ff;  }
+#hue50		{ color: #0000ff;  }
+#hue526		{ color: #0000ff;  }
+#hue53		{ color: #0000ff;  }
+#hue607		{ color: #0000ff;  }
+#hue902		{ color: #0000ff;  }
+#hue949		{ color: #0000ff;  }
+
 BODY {
 	background:	url(bg.gif) repeat-y white;
 	margin-left:	210px;
@@ -66,7 +139,6 @@ H1 {
 }
 
 H2 {
-	margin-left:	-60px;
 	width:		100%;
 	text-align:	left;
 	font-family:	arial, helvetica, sans-serif;
