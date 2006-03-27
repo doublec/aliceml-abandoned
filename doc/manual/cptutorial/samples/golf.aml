@@ -1,0 +1,62 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search from "x-alice:/lib/gecode/Search"
+
+open Linear;
+
+val nbOfWeeks = 9;
+val nbOfFourSomes = 8;
+
+fun golf nbOfWeeks nbOfFourSomes space =
+  let
+      val nbOfPlayers = 4 * nbOfFourSomes
+      val tournament = List.tabulate(nbOfWeeks,fn y => 
+	               List.tabulate(nbOfFourSomes,fn x =>
+	               FS.upperBound(space,#[(1,nbOfPlayers)])))
+      val allPlayers = FS.Value.make(space,#[(1,nbOfPlayers)])
+      fun flatten([])= []
+        | flatten(x::xs)= x@flatten(xs)
+      fun weeks([])= ()
+	| weeks(x::xs) = (List.app(fn y => 
+	                    FS.cardRange(space,4,4,y))x;
+	                  FS.relN(space,Vector.fromList x,
+	                              FS.DUNION,allPlayers);
+	                  List.app(fn y =>
+	                   List.app(fn z => 
+	                    List.app(fn v =>
+	                     let
+	                        val tmp = FS.setvar space
+	                     in
+	                       (FS.relOp(space,v,FS.INTER,y,
+	                                    FS.SEQ,tmp);
+	                        FS.cardRange(space,0,1,tmp))
+	                     end)z   
+	                      )xs             
+	                    )x;
+	                   weeks(xs))
+   in 
+      weeks(tournament);
+      FS.setvarbranch(space,Vector.fromList(flatten tournament),
+                           FS.FSB_MIN_UNKNOWN_ELEM,FS.FSB_MIN);
+      tournament
+   end
+	
+(* Explorer.exploreOne(golf nbOfWeeks nbOfFourSomes) *)
+
+(* 
+     
+let 
+    val (s,r) = valOf(Search.searchOne
+                  (golf nbOfWeeks nbOfFourSomes))
+in
+    List.map(fn z =>
+     List.map(fn w => domainToList w)z)
+       (List.map(fn x => 
+          (List.map(fn y => 
+            FS.Reflect.upperBound(s,y))x)
+                )r)
+end
+*)

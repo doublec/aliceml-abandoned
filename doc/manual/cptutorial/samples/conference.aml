@@ -1,0 +1,38 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+open Linear;
+
+
+fun conference space =
+    let 
+        val nbSlots = FD.range(space,(4,11)) 
+    	val plan as 
+    	   #[x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11] =
+           FD.rangeVec(space,11,(1,11))
+        fun precedes(a,b)= post(space,FD(a)`< FD(b),FD.DOM)
+        fun notparallel(s,vec)= Vector.app(fn x => 
+            post(space,FD(s)`<> FD(x),FD.DOM))vec
+        
+    in
+        FD.branch(space,#[nbSlots],FD.B_NONE,FD.B_MIN);
+        Vector.app(fn x => FD.rel(space,x,FD.LQ,nbSlots))plan;
+        precedes(x4,x11);
+        precedes(x5,x10);
+        precedes(x6,x11);
+        notparallel(x1,#[x2,x3,x5,x7,x8,x10]);
+        notparallel(x2,#[x3,x4,x7,x8,x9,x11]);
+        notparallel(x3,#[x5,x6,x8]);
+        notparallel(x4,#[x6,x8,x10]);
+        notparallel(x6,#[x7,x10]);
+        notparallel(x7,#[x8,x9]);
+        notparallel(x8,#[x10]);
+        (* the next line ensures that every slot has at most 
+           three sessions *)
+    	Vector.app(fn x =>FD.countVI(space,plan,x,FD.LE,4))plan;
+    	FD.branch(space,plan,FD.B_SIZE_MIN,FD.B_MIN);
+    	{x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11}
+    end
+    
+(* Explorer.exploreOne(conference) *);

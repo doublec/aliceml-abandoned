@@ -1,0 +1,65 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+(*import structure Linear from "x-alice:/lib/gecode/Linear"*)
+import structure Linear from "Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+
+open Linear;
+
+val maxValue = 711 * 100 * 100 *100
+
+
+fun product'(space,  _, 0, _) = FD.range(space, (1, 1))
+  | product'(space, xs, 1, _) = Vector.sub(xs, 0)
+  | product'(space, xs, n, conlevel) =
+       Vector.foldl (fn (x, a) =>
+          let
+             val tmp = FD.range(space, (0, maxValue))
+          in
+             FD.mult(space, a, x, tmp, conlevel);tmp
+          end)
+          (product'(space, #[], 0, conlevel))xs
+ 
+fun productRelI(space, xs, rel, c, conlevel) =
+   FD.relI(space, 
+   product'(space, xs, Vector.length xs, conlevel), rel, c)       
+ 
+datatype constraint =
+   SUM of FD.intvar vector * int
+ | PRD of FD.intvar vector * int
+ | LEQ of FD.intvar * FD.intvar
+
+
+fun constrain(space, SUM(xs, c)) = 
+       post(space,SUMV(xs) `= `c,FD.BND)
+  | constrain(space, PRD(xs, c)) = 
+       productRelI(space, xs, FD.EQ, c, FD.BND)
+  | constrain(space, LEQ( x, y)) = 
+       FD.rel(space, x, FD.LQ, y)
+       
+fun grocery space =
+   let
+      (* problem variables *)
+      val a = FD.range(space, (0, maxValue))
+      val b = FD.range(space, (0, maxValue))
+      val c = FD.range(space, (0, maxValue))
+      val d = FD.range(space, (0, maxValue))
+      val tmp = FD.range(space,(0, maxValue))
+      (* interface *)
+      val prices = #[a, b, c, d]
+   in
+      (* problem constraints *)
+      constrain(space, SUM(prices,711));
+      constrain(space, PRD(prices,maxValue));
+      (* symmetry breaking *)
+      
+      constrain(space, LEQ(a, b));
+      (* also try the next constraint instead!! of the one above *)
+      (*post(space,FD(a) `= `79 `* FD(tmp),FD.DOM);*)
+      constrain(space, LEQ(b, c));
+      constrain(space, LEQ(c, d));
+      
+      (* branching *)
+      FD.branch(space,prices,FD.B_SIZE_MIN,FD.B_SPLIT_MAX);
+      {a, b, c, d}
+   end
+(* Explorer.exploreAll grocery *)

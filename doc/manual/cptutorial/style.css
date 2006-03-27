@@ -1,0 +1,141 @@
+BODY {
+	background:	url(bg.gif) repeat-y white;
+	margin-left:	210px;
+	margin-right:	10px;
+}
+
+.margin {
+	position:	absolute;
+	left:		20px;
+	width:		150px;
+	color:		#0256A2;
+	text-align:	left;
+}
+
+.logo {
+	position:	absolute;
+	top:		0px;
+	left:		0px;
+	margin-top:	20px;
+	margin-right:	20px;
+}
+
+A:link {
+	color:		#00c000;
+	text-decoration: none;
+}
+
+A:visited {
+	color:		#009000;
+	text-decoration: none;
+}
+
+A:hover {
+	text-decoration: underline;
+}
+
+.menu A {
+	color:		#ecf17d;
+}
+
+.menu A:link {
+	color:		#ecf17d;
+	text-decoration: none;
+}
+
+.menu A:visited {
+	color:		#ecf17d;
+	text-decoration: none;
+}
+
+.menu A:hover {
+	text-decoration: underline;
+}
+
+H1 {
+	text-align:	left;
+	font-weight:	bold;
+	font-family:	"Courier New", courier, monospace;
+	font-size:	150%;
+	color:		#83a2eb;
+}
+
+.margin H1 {
+	font-size:	150%;
+	color:		white;
+}
+
+H2 {
+	margin-left:	-60px;
+	width:		100%;
+	text-align:	left;
+	font-family:	arial, helvetica, sans-serif;
+	font-size:	130%;
+	color:		#0b3373;
+}
+
+H3 {
+	font-family:	arial, helvetica, sans-serif;
+	font-size:	100%;
+	color:		#83a2eb;
+}
+
+PRE.code {
+	margin-left:	1.5cm;
+}
+
+P.quote {
+	margin-left:	1.5cm;
+	font-style:	italic;
+}
+
+A.url, TT, PRE.code {
+	font-family:	"Courier New", courier, monospace;
+}
+
+P.note, DIV.note {
+	font-size:	80%;
+}
+
+P.centered, DIV.centered {
+	text-align:	center;
+	font-size:	120%;
+	font-family:	arial, helvetica, sans-serif;
+}
+
+P.menu {
+	margin-top:	40px;
+	margin-bottom:	40px;
+	width:		100%;
+	font-family:	arial, helvetica, sans-serif;
+	color:		#ff8833;
+}
+
+TABLE TR {
+	vertical-align:	baseline;
+}
+
+TABLE.bnf {
+	font-family:	"Times New Roman", times, serif;
+	border-style:	none;
+}
+
+TABLE.bnf TR TD {
+	padding-left:	10px;
+	padding-right:	10px;
+	vertical-align:	baseline;
+}
+
+TABLE.tt TD {
+	font-family:	"Courier New", courier, monospace;
+}
+
+TABLE.dyptic {
+	width:		80%;
+}
+
+TABLE.dyptic TH, TABLE.dyptic TD, TABLE.df TH, TABLE.df TD {
+	text-align:	left;
+	padding:	3px;
+	background:	#eeeeee;
+}

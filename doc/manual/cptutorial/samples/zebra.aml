@@ -1,0 +1,83 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+open Linear;
+        
+fun adjacent (space,#[a,b])=
+	let
+           val tmp = FD.range(space,(~4,4))
+           val one = FD.range(space,(1,1))
+        in
+           post(space,FD(a) `- FD(b) `= FD(tmp),FD.DOM);
+           FD.abs(space,tmp,one,FD.DOM)
+        end
+
+
+   
+fun zebra_puzzle space =
+  let
+     val nationality  = 
+       {engl=FD.range(space,(0,4)),span=FD.range(space,(0,4)),
+        jap=FD.range(space,(0,4)),ital=FD.range(space,(0,4)),
+        norw=FD.range(space,(0,4))}
+     val color  =
+       {green=FD.range(space,(0,4)),red=FD.range(space,(0,4)),
+    	yellow=FD.range(space,(0,4)),blue=FD.range(space,(0,4)),
+    	white=FD.range(space,(0,4))}
+     val profession = 
+       {painter =FD.range(space,(0,4)),diplomat=FD.range(space,(0,4)),
+        violinist =FD.range(space,(0,4)),doctor=FD.range(space,(0,4)),
+        sculptor=FD.range(space,(0,4))}
+     val animal =
+       {dog=FD.range(space,(0,4)),zebra=FD.range(space,(0,4)),
+        fox=FD.range(space,(0,4)),snails=FD.range(space,(0,4)),
+        horse=FD.range(space,(0,4))}
+     val drink  = 
+       {juice=FD.range(space,(0,4)),water=FD.range(space,(0,4)),
+        tea=FD.range(space,(0,4)),coffee=FD.range(space,(0,4)),
+        milk=FD.range(space,(0,4))}
+     fun makevector() = 
+        let val a = (fn x => #[#engl(x),#ital(x),#jap(x),#norw(x),
+                        #span(x)])nationality
+            val b = (fn x => #[#green(x),#red(x),#yellow(x),#blue(x),
+                        #white(x)])color
+            val c = (fn x => #[#painter(x),#diplomat(x),#violinist(x),
+                        #doctor(x),#sculptor(x)])profession
+            val d = (fn x => #[#dog(x),#zebra(x),#fox(x),#snails(x),
+                        #horse(x)])animal
+            val e = (fn x => #[#juice(x),#water(x),#tea(x),#coffee(x),
+                        #milk(x)])drink
+        in
+            #[a,b,c,d,e]
+        end
+     val varvec = makevector ()
+  in
+        (* the following constraint ensures that the properties
+           within one group hold for different houses *) 
+        Vector.app(fn x => FD.distinct(space,x,FD.BND))
+                      varvec;	    
+ 	(* the next 15 constraints ensure the known
+ 	   facts mentioned in the problem specification *)
+ 	FD.rel(space,#engl(nationality),FD.EQ,#red(color));
+ 	FD.rel(space,#dog(animal),FD.EQ,#span(nationality));
+ 	FD.rel(space,#painter(profession),FD.EQ,#jap(nationality));
+ 	FD.rel(space,#tea(drink),FD.EQ,#ital(nationality));
+ 	FD.relI(space,#norw(nationality),FD.EQ,0);
+ 	FD.rel(space,#green(color),FD.EQ,#coffee(drink));
+ 	FD.rel(space,#green(color),FD.GR,#white(color));
+ 	FD.rel(space,#sculptor(profession),FD.EQ,#snails(animal));
+ 	FD.rel(space,#diplomat(profession),FD.EQ,#yellow(color));
+ 	FD.relI(space,#milk(drink),FD.EQ,2);
+ 	adjacent(space,#[#norw(nationality),#blue(color)]);
+ 	FD.rel(space,#violinist(profession),FD.EQ,#juice(drink));
+ 	adjacent(space,#[#fox(animal),#doctor(profession)]);
+ 	adjacent(space,#[#horse(animal),#diplomat(profession)]);
+ 	FD.rel(space,#zebra(animal),FD.EQ,#white(color));
+ 	
+ 	FD.branch(space,Vector.concat(Vector.toList(varvec)),
+ 	           FD.B_SIZE_MIN,FD.B_MIN);
+ 	{nationality,color,profession,animal,drink}
+ end
+ 	          
+(* Explorer.exploreAll zebra_puzzle *)	          

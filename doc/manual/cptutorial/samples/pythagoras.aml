@@ -1,0 +1,23 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Linear from "Linear"
+
+(* Lecture 2: Redundant constraints *)
+
+fun pythagoras space =
+   let
+      (* problem variables *)
+      val a = FD.range (space, (1, 1000))
+      val b = FD.range (space, (1, 1000))
+      val c = FD.range (space, (1, 1000))
+   in
+      post(space,FD(a) `* FD(a) `+ FD(b) `* FD(b) `= FD(c) `* FD(c),FD.DOM);
+      (* problem constraints *)
+      FD.rel (space, a, FD.LQ, b);
+      FD.rel (space, b, FD.LQ, c);
+      (* redundant constraint *)
+      post(space,`2 `* FD(b) `* FD(b) `> FD(b) `* FD(b), FD.DOM);
+      (* branching *)
+      FD.branch (space, #[a, b, c], FD.B_SIZE_MIN, FD.B_MIN);
+      {a, b, c}
+   end
+(* Explorer.exploreAll (pythagoras) *);

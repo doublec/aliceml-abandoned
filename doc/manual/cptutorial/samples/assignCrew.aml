@@ -1,0 +1,144 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search from "x-alice:/lib/gecode/Search"
+
+open Linear;
+val maxValue = (valOf (Int.maxInt))div 2
+
+type crewrec = {french : int list, german : int list,
+                spanish : int list,stewardesses : int list, 
+                stewards : int list}
+                
+type flightrec = {crew : int, french : int, german : int,
+                  no : int,spanish : int,stewardesses : int,
+                  stewards : int}
+                  
+val crew = {stewards = [1,2,3,4,5,6,7,8,9,10],
+            stewardesses = [11,12,13,14,15,16,17,18,19,20],
+            french = [6,17,18,20],
+            german = [1,3,9,16,20],
+            spanish = [5,6,7,9,14,17,19]}
+     
+val flights = [{no = 1,crew = 4,stewards = 1,stewardesses = 1,
+                french = 1, spanish = 1,german = 1},
+               {no = 2,crew = 5,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 3,crew = 5,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 4,crew = 6,stewards = 2,stewardesses = 2,
+               french = 1, spanish = 1,german = 1},
+               {no = 5,crew = 7,stewards = 3,stewardesses = 3,
+               french = 1, spanish = 1,german = 1},
+               {no = 6,crew = 4,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 7,crew = 5,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 8,crew = 6,stewards = 1,stewardesses = 1,
+               french = 1, spanish = 1,german = 1},
+               {no = 9,crew = 6,stewards = 2,stewardesses = 2,
+               french = 1, spanish = 1,german = 1},
+               {no = 10,crew = 7,stewards = 3,stewardesses = 3,
+               french = 1, spanish = 1,german = 1}]
+
+fun assignCrew flights (crew:crewrec) space =
+    let
+       val stewards = FS.Value.make(space,
+                      FD.domainFromList(#stewards(crew)))
+       val stewardesses = FS.Value.make(space,
+                      FD.domainFromList(#stewardesses(crew)))
+       val french = FS.Value.make(space,
+                      FD.domainFromList(#french(crew)))
+       val german = FS.Value.make(space,
+                      FD.domainFromList(#german(crew)))
+       val spanish = FS.Value.make(space,
+                      FD.domainFromList(#spanish(crew)))
+       fun teamConstraint(team,flight:flightrec)=
+	   let
+	      val n = #crew(flight)
+	      val nstew = #stewards(flight)
+	      val nhost = #stewardesses(flight)
+	      val ngerm = #german(flight)
+	      val nspan = #spanish(flight)
+	      val nfren = #french(flight)
+	      fun cardOp(nb,setv)= 
+	          let
+	             val tmp1 = FS.setvar space
+	             val tmp2 = FD.range(space,(1,maxValue))
+	          in
+	             FS.relOp(space,team,FS.INTER,setv,
+	                      FS.SEQ,tmp1);
+	             FS.cardinality(space,tmp1,tmp2);
+	             post(space,FD(tmp2) `>= `nb,FD.DOM)
+	          end
+            in
+	       FS.cardRange(space,n,n,team);
+	       Vector.app(fn(x,y)=>cardOp(x,y))
+	       (#[(nstew,stewards),(nhost,stewardesses),
+	          (ngerm,german),(nspan,spanish),(nfren,french)])
+	    end
+       fun sequenceDisjoint(x::y::nil)= FS.rel(space,x,FS.DISJ,y)
+	 | sequenceDisjoint(x::y::z::xs)= 
+	                  (FS.rel(space,x,FS.DISJ,y);
+	                   FS.rel(space,x,FS.DISJ,z);
+	                   sequenceDisjoint(y::z::xs))         
+       val crewlist = List.tabulate(List.length flights,fn x =>
+                                    FS.upperBound(space,#[(1,20)]))         
+    in
+       List.app(fn(x,y)=> teamConstraint(y,x))
+               (ListPair.zip(flights,crewlist));
+       sequenceDisjoint(crewlist);
+       FS.setvarbranch(space,Vector.fromList crewlist,
+                       FS.FSB_NONE,FS.FSB_MIN); 
+       crewlist
+    end
+	
+	
+(* Explorer.exploreOne(assignCrew flights crew) *)
+
+
+(*     
+
+fun domainToList(vec:(int * int) vector) =
+  let 
+      val tmp = Vector.toList(vec)   
+  in
+      List.concat(List.map(fn y => 
+        List.tabulate(#2(y) - #1(y) + 1,fn x => x + #1(y)))
+        (tmp))
+  end
+ *)                    
+
+           
+(*
+fun name 1 = "tom"
+  | name 2 = "david"
+  | name 3 = "jeremy"
+  | name 4 = "ron"
+  | name 5 = "joe"
+  | name 6 = "bill"
+  | name 7 = "fred"
+  | name 8 = "bob"
+  | name 9 = "mario"
+  | name 10 = "ed"
+  | name 11 = "carol"
+  | name 12 = "janet"
+  | name 13 = "tracy"
+  | name 14 = "marilyn"
+  | name 15 = "carolyn"
+  | name 16 = "cathy"
+  | name 17 = "inez"
+  | name 18 = "jean"
+  | name 19 = "heather"
+  | name 20 = "juliet";
+
+let 
+    val (s,r) = valOf(Search.searchOne(assignCrew flights crew))
+in  
+    List.map(fn x => List.map(fn y => name y)x)
+    (List.map(fn y=> domainToList y)(List.map(fn x => 
+                  FS.Reflect.upperBound(s,x))(r)))
+end
+*)

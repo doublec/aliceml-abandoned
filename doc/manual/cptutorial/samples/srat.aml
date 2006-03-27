@@ -1,0 +1,154 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+(*import structure Linear from "x-alice:/lib/gecode/Linear"*)
+import structure Linear from "Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Linear;
+
+(* bsum ensures that the sum of the boolean vector 
+   boolvec is equal s(:intvar) *)
+fun bsum(space,boolvec,s)=
+    let
+        val tmp = Vector.map(fn x => 
+                      (FD.boolvar2intvar x))boolvec
+    in
+       post(space,SUMV(tmp) `= FD(s),FD.DOM)
+    end
+	    		        
+(* bsumI ensures that the sum of the boolean vector 
+   boolvec is equal s(:int) *)
+fun bsumI(space,boolvec,s)= 
+    let
+        val tmp = Vector.map(fn x => 
+                      (FD.boolvar2intvar x))boolvec
+    in
+       post(space,SUMV(tmp) `= `s,FD.DOM)
+    end	    		        
+
+fun srat space =
+    let
+        val a as #[a0,a1,a2,a3,a4,a5,a6,a7,a8,a9] = 
+              FD.boolvarVec(space,10)
+	val b as #[b0,b1,b2,b3,b4,b5,b6,b7,b8,b9]= 
+	      FD.boolvarVec(space,10)
+	val c as #[c0,c1,c2,c3,c4,c5,c6,c7,c8,c9]= 
+	      FD.boolvarVec(space,10)
+	val d as #[d0,d1,d2,d3,d4,d5,d6,d7,d8,d9]= 
+	      FD.boolvarVec(space,10)
+	val e as #[e0,e1,e2,e3,e4,e5,e6,e7,e8,e9]= 
+	      FD.boolvarVec(space,10)	
+	val questions as #[q0,q1,q2,q3,q4,q5,q6,q7,q8,q9] = 
+	      FD.rangeVec(space,10,(1,5))
+	val suma = FD.range(space,(0,10))
+	val sumb = FD.range(space,(0,10))
+	val sumc = FD.range(space,(0,10))
+	val sumd = FD.range(space,(0,10))
+	val sume = FD.range(space,(0,10))
+	val sumae =FD.range(space,(0,20))
+	val sumbcd = FD.range(space,(0,30))
+       (* assert ensures that q_i = nb <-> boolvec[i]= 1  *)
+	fun asrt(boolvec,nb)= Vector.appi(fn(i,x)=> 
+	    FD.Reified.relI(space,Vector.sub(questions,i),
+	                          FD.EQ,nb,x))(boolvec)
+   in  
+	Vector.app(fn(x,y)=> bsum(space,x,y))
+	     (#[(a,suma),(b,sumb),(c,sumc),(d,sumd),(e,sume)]);
+	post(space,FD(suma) `+ FD(sume) `= FD(sumae),FD.DOM);
+        post(space,FD(sumb) `+ FD(sumc) `+ FD(sumd) 
+                    `= FD(sumbcd),FD.DOM);
+	    
+       (* ensures that a_i + b_i + .. + e_i = 1 *)
+	Vector.app(fn(i) => 
+	  let 
+	      val tmp = Vector.map(fn y =>Vector.sub(y,i))
+	                 (#[a,b,c,d,e])
+	  in
+	      bsumI(space,tmp,1)
+	  end)
+	      (Vector.tabulate(10,fn x => x)); 
+	       			   
+       (*  to obtain a compact representation of the questions
+          (see Model) *)  			      
+        Vector.appi(fn(i,x)=> asrt(x,i+1))(#[a,b,c,d,e]);
+	   
+       (* first question *)
+	Vector.appi(fn(i,(x,y))=>
+	 let
+	     val tmp1 = Vector.sub(x,0)
+	     val tmp2 = Vector.sub(b,i+1)
+	     val tmp3 = FD.boolvar(space)
+	     val tmp4 = FD.boolvar(space)
+	     val tmp5 = FD.boolvar(space)
+	 in
+	     if(Vector.length(y)>0) 
+	     then
+	       (FD.Reified.linear(space,Vector.map(fn x=>
+	       (1,FD.boolvar2intvar x))y,FD.EQ,0,tmp3,FD.DOM);
+	        FD.conj(space,tmp4,tmp3,tmp2);
+	        FD.conj(space,tmp5,tmp4,tmp1);
+	        FD.Reified.relI(space,Vector.sub(questions,0),
+	                              FD.EQ,i+1,tmp5))
+	     else
+	       (FD.conj(space,tmp3,tmp1,tmp2);
+	        FD.Reified.relI(space,Vector.sub(questions,0),
+	                              FD.EQ,1,tmp3))
+	 end)
+	    (#[(a,#[]),(b,#[b1]),(c,#[b1,b2]),(d,#[b1,b2,b3]),
+	         (e,#[b1,b2,b3,b4])]); 
+	    
+	   
+       (* second and third question*)
+	Vector.app(fn(x,y)=>FD.rel(space,x,FD.NQ,y))
+	          (#[(q0,q1),(q6,q7),(q7,q8),(q8,q9)]);
+	Vector.app(fn(x,y,z) => FD.Reified.rel(space,y,FD.EQ,z,x))
+	            (#[(a1,q1,q2),(b1,q2,q3),(c1,q3,q4),(d1,q4,q5),
+	               (e1,q5,q6),(a2,q0,q2),(b2,q1,q2),(c2,q3,q2),
+	               (d2,q6,q2),(e2,q5,q2)]);
+	                 
+       (* fourth question *)
+	let 
+	    val tmp = FD.range(space,(1,5))
+	in 
+	    post(space,FD(tmp) `= FD(q3) `- `1,FD.DOM);
+	    FD.elementI(space,#[0,1,2,3,4],tmp,suma)
+	end;
+	    
+       (* fifth question *)
+	Vector.app(fn(x,y) => FD.Reified.rel(space,y,FD.EQ,q4,x))
+	          (#[(a4,q9),(b4,q8),(c4,q7),(d4,q6),(e4,q5)]);
+	              
+       (* sixth question *)
+	Vector.app(fn(x,y)=>FD.Reified.rel(space,suma,FD.EQ,x,y))
+	            (#[(sumb,a5),(sumc,b5),(sumd,c5),(sume,d5)]);
+	FD.Reified.linear(space,Vector.map(fn x =>
+	                (1,FD.boolvar2intvar x))(#[a5,b5,c5,d5]),
+	                 FD.EQ,0,e5,FD.DOM); 
+	    
+       (* seventh question *)
+	FD.Reified.relI(space,q7,FD.EQ,1,c6);
+	FD.Reified.relI(space,q7,FD.EQ,3,d6);
+	    
+       (* eighth question *)
+	let 
+	    val tmp = FD.range(space,(1,5))
+	in 
+	    post(space,FD(tmp) `= FD(q7) `- `1,FD.DOM);
+	    FD.elementI(space,#[2,3,4,5,6],tmp,sumae)
+	end;
+	    
+       (* nineth question *)
+	Vector.app(fn(x,y)=>FD.Reified.dom(space,sumbcd,y,x))
+	         (#[(a8,#[(2,3),(5,5),(7,7)]),(b8,#[(1,2),(6,6)]),
+	            (c8,#[(0,1),(4,4),(9,9)]),(d8,#[(0,1),(8,8)]),
+	            (e8,#[(0,0),(5,5),(10,10)]) ]); 
+	  
+        (* last question is entailed in the compact representation 
+           constraint above*) 
+	    
+	FD.branch(space,questions,FD.B_SIZE_MIN,FD.B_MIN);
+       {q1 = q0, q2 = q1, q3 = q2, q4 = q3, q5 = q4, q6 = q5,
+        q7 = q6, q8 = q7, q9 = q8, q10 = q9}
+    end
+
+(* Explorer.exploreAll(srat) *)

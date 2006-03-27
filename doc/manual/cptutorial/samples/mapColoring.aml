@@ -1,0 +1,32 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Linear;
+
+fun mapColoring space =
+ let
+    val nbColors = FD.range(space,(1,10))
+    val countries as #[au,ge,ne,sw,be,ita,po,fr,lu,sp] =
+    	    FD.rangeVec(space,10,(1,10))
+    (* borderTo gets a country and its neighbours and
+          ensures they do not have the same color *) 
+    fun borderTo(space,c,nvec)=
+    		Vector.app(fn x => FD.rel(space,c,FD.NQ,x))nvec
+ in
+    FD.branch(space,#[nbColors],FD.B_NONE,FD.B_MIN);
+    Vector.app(fn x => FD.rel(space,x,FD.LQ,nbColors))countries;
+    borderTo(space,au,#[ita,sw,ge]);
+    borderTo(space,be,#[fr,ne,ge,lu]);
+    borderTo(space,fr,#[sp,lu,ita]);
+    borderTo(space,ge,#[au,fr,lu,ne]);
+    borderTo(space,sp,#[po]);
+    borderTo(space,sw,#[ita,fr,ge,au]);
+    FD.branch(space,countries,FD.B_SIZE_MIN,FD.B_MIN);
+    { netherlands = ne, belgium = be, france = fr, spain = sp,
+      portugal = po, germany = ge, luxemburg = lu, italy = ita,
+      switzerland = sw, austria = au,nbColors}
+ end
+    
+(* Explorer.exploreOne(mapColoring) *);

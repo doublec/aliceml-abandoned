@@ -1,0 +1,49 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+(*import structure Linear from "x-alice:/lib/gecode/Linear"*)
+import structure Linear from "Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+
+open Linear;
+
+ 
+fun photo space =
+   let 
+       val pers as #[b,c,d,f,g,m,p]= FD.rangeVec(space,7,(1,7))
+      (* si is a vector of boolean variables where s_i is 1 
+	 if the i-th preference is satisfied *)
+       val si as #[s1,s2,s3,s4,s5,s6,s7,s8] = FD.boolvarVec(space,8)
+      (* constraints is a vector of pairs (x,y) s.t. x wants to
+	 stand next to y *)
+       val constraints = #[(b,g),(b,m),(c,b),(c,g),(f,m),
+                           (f,d),(p,f),(p,d)]
+      (* satisfaction is the sum of all s_i *)
+       val satisfaction = FD.range(space,(0,8))
+      (* satisfy posts the reified constraints:|x-y| = 1 <-> z *)
+       fun satisfy(sp,constr,bools)= Vector.app(fn ((x,y),z) =>
+              let
+	          val tmp1 = FD.boolvar sp
+	          val tmp2 = FD.boolvar sp
+	      in
+	         (FD.Reified.linear(sp,#[(1,x),(~1,y)],
+	                            FD.EQ,1,tmp1,FD.DEF);
+	   	  FD.Reified.linear(sp,#[(1,x),(~1,y)],
+	   	                    FD.EQ,~1,tmp2,FD.DEF);
+	   	  FD.disjV(sp,#[tmp2,tmp1],z))
+	      end)
+	   	 (VectorPair.zip(constr,bools))
+   in
+       FD.distinct(space,pers,FD.DOM);
+       satisfy(space,constraints,si);
+       let 
+	   val si' = Vector.map(fn x => (FD.boolvar2intvar x))si
+       in
+	   post(space,SUMV(si') `= FD(satisfaction),FD.DOM)
+       end;
+       FD.rel(space,f,FD.LE,b);
+       FD.branch(space,#[satisfaction],FD.B_NONE,FD.B_MAX);
+       FD.branch(space,pers,FD.B_SIZE_MIN,FD.B_SPLIT_MIN);
+      {Betty = b, Chris = c, Donald = d, Fred = f,
+       Gary = g, Mary = m, Paul = p,satisfaction}  
+  end
+
+(* Explorer.exploreOne(photo) *)	 

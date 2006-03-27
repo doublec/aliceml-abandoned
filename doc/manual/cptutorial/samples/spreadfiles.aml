@@ -1,0 +1,67 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search from "x-alice:/lib/gecode/Search"
+
+open Linear;
+
+val diskCap = 1440
+
+type filev = {name : string, size : int} vector
+
+val files = #[{name= "a",size = 360},{name= "b",size = 850},
+              {name= "c",size = 630},{name= "d",size = 70},
+              {name= "e",size = 700},{name= "f",size = 210}]
+    
+
+fun spreadFiles (files:filev) diskCap nbDisks space =
+    let
+       val size = Vector.length files
+       val disks = Vector.tabulate(nbDisks,fn x => 
+                      FS.upperBound(space,#[(1,size)]))
+       val disks' = Vector.tabulate(nbDisks,fn x => 
+                      FD.boolvarVec(space,size))
+       val all_files = FS.Value.make(space,#[(1,size)])          
+       fun sumFiles vec =  
+           Vector.appi(fn(i,x) => 
+   	     let 
+   	        val list = List.tabulate(size,fn x => x+1)
+   	     in      
+               	List.app(fn y => FS.domR(space,x,FS.SUP,#[(y,y)],
+               	           Vector.sub(Vector.sub(disks',i),y-1)))
+    	                list;
+   	        FD.linear(space,VectorPair.zip(
+   	                   Vector.tabulate(size,fn z => 
+   	                              #size(Vector.sub(files,z))),
+   	                    Vector.map(fn z => FD.boolvar2intvar z)
+   	                         (Vector.sub(disks',i))),
+   	                  FD.LQ,diskCap,FD.DOM)
+   	     end)vec
+   in 
+       FS.relN(space,disks,FS.DUNION,all_files);
+       sumFiles(disks);
+       FS.setvarbranch(space,disks,FS.FSB_NONE,FS.FSB_MIN); 
+       disks
+   end
+     
+     
+(*
+
+fun test x =                        
+  let 
+     val b = (Search.searchOne(spreadFiles files diskCap x))
+             handle Space.InvalidSpace => NONE
+     fun name l = List.map(fn z =>List.map(fn y => 
+                  (#name)(Vector.sub(files,y-1)))z)l
+  in
+     case b of NONE => test(x+1)
+             | SOME (s,r) =>
+       (x,name(List.map(fn z => domainToList z)
+            (Vector.toList(Vector.map(fn x =>
+                 FS.Reflect.upperBound(s,x))r))))
+     
+  end
+*)     
+     

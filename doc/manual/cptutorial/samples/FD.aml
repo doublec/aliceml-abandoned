@@ -1,0 +1,192 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space        from "Space"
+import signature FD           from "FD-sig"
+import structure UnsafeGecode from "UnsafeGecode"
+
+structure FD :> FD where type space = Space.space =
+struct
+    type space = Space.space
+
+    datatype relation =
+	     EQ (* Equality         == *)
+	   | NQ (* Disequality      != *)
+	   | LQ (* Less or equal    <= *)
+	   | LE (* Less             <  *)
+	   | GQ (* Greater or equal >= *)
+	   | GR (* Greater          >  *)
+	     
+    datatype conlevel = 
+	     BND | DEF | DOM | VAL
+
+    datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
+
+    datatype b_var_sel =
+	     B_DEGREE_MAX
+	   | B_DEGREE_MIN
+	   | B_MAX_MAX
+	   | B_MAX_MIN
+	   | B_MIN_MAX
+	   | B_MIN_MIN
+	   | B_NONE
+	   | B_SIZE_MAX
+	   | B_SIZE_MIN
+	     
+    datatype b_val_sel =
+	     B_MAX
+	   | B_MED
+	   | B_MIN
+	   | B_SPLIT_MAX
+	   | B_SPLIT_MIN
+	   
+    exception NotAssigned
+              
+    type domain = (int * int) vector
+    exception InvalidDomain = UnsafeGecode.InvalidDomain
+   
+(*   open UnsafeGecode*)
+
+   type intvar
+   type boolvar = intvar
+
+(*   val varStamp = UnsafeGecode.varStamp*)
+		 
+   fun intvar(space,v) = UnsafeGecode.new_intvar(space,
+					       v)
+   fun intvarVec(space,n, v) = Vector.tabulate (n, fn _ => intvar(space,v))
+   fun range(space,r) = intvar (space,#[r])
+   fun rangeVec(space,n,r) = intvarVec(space, n, #[r])
+		 
+   fun intvar2boolvar(space,d) = (UnsafeGecode.int_dom(space,d,#[(0,1)]); d)
+   val boolvar2intvar = fn x => x
+
+   fun boolvar space = intvar2boolvar(space, intvar(space, #[(0,1)]))
+   fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
+
+   fun dListFromList' nil _ = nil
+     | dListFromList' ([x]) min = [(min,x)]
+     | dListFromList' (x1::x2::xr) min =
+       if x1<x2-1 then (min, x1)::dListFromList' (x2::xr) x2
+       else dListFromList' (x2::xr) min
+
+   fun dListFromList nil = nil
+     | dListFromList [x] = [(x,x)]
+     | dListFromList (xs as (x::_)) = dListFromList' xs x
+       
+   val domainFromList = Vector.fromList o dListFromList
+   
+   fun domainToList(vec) =
+     let 
+         val tmp = Vector.toList(vec)   
+     in
+         List.concat(List.map(fn y => 
+           List.tabulate(#2(y) - #1(y) + 1,fn x => x + #1(y)))
+        (tmp))
+     end
+
+   val assign = UnsafeGecode.int_assign
+   val dom = UnsafeGecode.int_dom
+   val rel = UnsafeGecode.int_rel
+   val relI = UnsafeGecode.int_relI
+   val equal = UnsafeGecode.int_eq
+   val equalV = UnsafeGecode.int_eqV
+   val distinct = UnsafeGecode.int_distinct
+   val sortedness = UnsafeGecode.int_sortedness
+   val permsort = UnsafeGecode.int_permsort
+   val gcc = UnsafeGecode.int_gcc
+
+   fun distinctOffset(s, v, cl) =
+       let
+           val (args, vars) = VectorPair.unzip v
+       in
+           UnsafeGecode.int_distinctI(s,args,vars,cl)
+       end
+
+   val countII = UnsafeGecode.int_countII
+   val countIV = UnsafeGecode.int_countIV
+   val countVI = UnsafeGecode.int_countVI
+   val countVV = UnsafeGecode.int_countVV
+
+   val element = UnsafeGecode.int_element
+   val elementI = UnsafeGecode.int_elementI
+   val lex = UnsafeGecode.int_lex
+
+   val nega = UnsafeGecode.int_bool_not
+   val conj = UnsafeGecode.int_bool_and
+   val disj = UnsafeGecode.int_bool_or
+   val impl = UnsafeGecode.int_bool_imp
+   val equi = UnsafeGecode.int_bool_eq
+   val exor = UnsafeGecode.int_bool_xor
+   val conjV = UnsafeGecode.int_bool_andV
+   val disjV = UnsafeGecode.int_bool_orV
+
+   fun linear(s, v, rel, i, cl) =
+       let
+           val (args, vars) = VectorPair.unzip v
+       in
+           UnsafeGecode.int_linear(s,args,vars,rel,i,cl)
+       end
+
+   val min = UnsafeGecode.int_min
+   val max = UnsafeGecode.int_max
+   val abs = UnsafeGecode.int_abs
+   val mult = UnsafeGecode.int_mult
+(*   val power = UnsafeGecode.int_power*)
+
+   val branch = UnsafeGecode.int_branch
+
+   structure Reified =
+       struct
+	   val dom = UnsafeGecode.int_domR
+           fun intvar(space,v, b) =
+               let
+                   val i = UnsafeGecode.new_intvar(space, v)
+               in
+                   dom(space,i,v,b);
+                   i
+               end
+	   fun intvarVec(space,n, v, b) =
+	       Vector.tabulate (n, fn _ => intvar(space,v,b))
+	   val rel = UnsafeGecode.int_relR
+	   val relI = UnsafeGecode.int_relIR
+(*	   val equal = UnsafeGecode.int_equalr*)
+           fun linear(s,v,rel,i,b,cl) = 
+               let
+                   val (args, vars) = VectorPair.unzip v
+               in
+                   UnsafeGecode.int_linearR(s,args,vars,rel,i,b,cl)
+               end
+       end
+
+   structure Reflect =
+       struct
+           val min = UnsafeGecode.int_getMin
+	   val max = UnsafeGecode.int_getMax
+           val med = UnsafeGecode.int_getMed
+           val dom = UnsafeGecode.int_getRanges
+           val size = UnsafeGecode.int_getDomainSize
+           val assigned = UnsafeGecode.int_isAssigned
+           val range = UnsafeGecode.int_isRange
+	   fun value (s,v) =
+	       let
+		   val min = min(s,v)
+	       in
+		   if min<>max(s,v) then raise NotAssigned
+		   else min
+	       end
+
+
+	   fun boolVal v = value(boolvar2intvar v)=1
+       end
+
+end

@@ -1,0 +1,32 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+
+open Linear
+
+fun smm space =
+  let
+    (* I use o' because o is an operator *)
+    val letters as #[s, e, n, d, m,o', t, y] = 
+        FD.rangeVec(space, 8,(0,9))
+    val money = FD.range(space,(0, 98765))
+    (* better function *)
+    fun better (current, lastSolution) =
+         post (current, FD(money) `> 
+          `(FD.Reflect.value(lastSolution,money)),FD.BND)
+  in
+    FD.distinct (space, letters, FD.DOM);
+    post (space, FD(s) `<> `0, FD.DOM);
+    post (space, FD(m) `<> `0, FD.DOM);
+    post (space, `1000 `* FD(s) `+ `100 `* FD(e) `+ 
+                 `10 `* FD(n) `+ FD(d) `+  `1000 `* FD(m)`+ 
+                 `100 `* FD(o') `+ `10 `* FD(s) `+ FD(t)
+             `= `10000 `* FD(m) `+ `1000 `* FD(o') `+ `100 `* 
+                  FD(n) `+ `10 `* FD(e) `+ FD(y), FD.DOM);
+    post (space, FD(money)`= `10000 `* FD(m) `+ `1000 `* FD(o')
+            `+ `100 `* FD(n) `+ `10 `* FD(e) `+ FD(y), FD.DOM);
+    FD.branch (space, letters, FD.B_SIZE_MIN, FD.B_MIN);
+    ({s, e, n, d, m, o', t, y}, better)
+  end
+  
+(* Explorer.exploreBest(smm) *)

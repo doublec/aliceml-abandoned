@@ -1,0 +1,34 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure Linear from "Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Linear;
+
+fun fractions space =
+ 	let 
+ 	    val letters as #[a,b,c,d,e,f,g,h,i]=
+ 	        FD.rangeVec(space,9,(1,9))
+ 	    val bc = FD.range(space,(1,81))
+ 	    val ef = FD.range(space,(1,81))
+ 	    val hi = FD.range(space,(1,81))
+ 	in
+ 	    FD.distinct(space, letters, FD.DOM);
+ 	    post(space,`10 `* FD(b) `+ FD(c) `= FD(bc),FD.DOM);
+ 	    post(space,`10 `* FD(e) `+ FD(f) `= FD(ef),FD.DOM);
+ 	    post(space,`10 `* FD(h) `+ FD(i) `= FD(hi),FD.DOM);   
+ 	    post(space,FD(a) `* FD(ef) `* FD(hi) `+
+ 	               FD(d) `* FD(bc) `* FD(hi) `+
+ 	               FD(g) `* FD(bc) `* FD(ef) `= 
+ 	               FD(bc) `* FD(ef) `* FD(hi),FD.DOM);
+  	    (* impose canonical order *)
+  	    post(space,FD(a) `* FD(ef) `>= FD(d) `* FD(bc),FD.DOM);
+  	    post(space,FD(d) `* FD(hi) `>= FD(g) `* FD(ef),FD.DOM);
+  	    (* redundant constraints *)
+  	    post(space,`3 `* FD(a) `>= FD(bc),FD.DOM);
+  	    post(space,`3 `* FD(g) `<= FD(hi),FD.DOM);
+  	    FD.branch(space,letters,FD.B_SIZE_MIN,FD.B_MIN);
+  	    {letters}  
+       end    
+(* Explorer.exploreOne(fractions) *);           
+            

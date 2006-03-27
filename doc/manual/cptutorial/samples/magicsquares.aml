@@ -1,0 +1,58 @@
+import structure FD from "x-alice:/lib/gecode/FD"
+(*import structure Linear from "x-alice:/lib/gecode/Linear"*)
+import structure Linear from "Linear"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
+import structure Space from "x-alice:/lib/gecode/Space"
+
+open Linear;
+
+val maxValue = (valOf (Int.maxInt))div 2
+
+
+fun magicsquares n space =
+    let
+        val nn = n * n
+        val matrix = Vector.tabulate(n,fn x => 
+                              FD.rangeVec(space,n,(1,nn)))
+        val matrixv =Vector.concat(Vector.toList(matrix))
+        val sum = FD.range(space,(1,maxValue))
+        val sumn = FD.range(space,(1,maxValue))
+        val diagonal1 = Vector.tabulate(n,fn x =>(x,x))
+        val diagonal2 = Vector.tabulate(n,fn x =>(n-1-x,x))
+        val diagonal1vars = Vector.map(fn(x,y) => 
+               Vector.sub(Vector.sub(matrix,x),y))diagonal1  
+        val diagonal2vars = Vector.map(fn(x,y) => 
+               Vector.sub(Vector.sub(matrix,x),y))diagonal2
+        val field11 = Vector.sub(Vector.sub(matrix,0),0) 
+        val field1N = Vector.sub(Vector.sub(matrix,0),n-1)
+        val fieldN1 = Vector.sub(Vector.sub(matrix,n-1),0)
+        val fieldNN = Vector.sub(Vector.sub(matrix,n-1),n-1)                 
+    in
+        FD.distinct(space,matrixv,FD.DOM);
+        (* diagonals *)
+        post(space,SUMV(diagonal1vars) `= FD(sum),FD.DOM);
+        post(space,SUMV(diagonal2vars) `= FD(sum),FD.DOM);
+        (* columns *)
+        Vector.appi(fn(y,z)=>
+         let 
+            val colmn = Vector.tabulate(n,fn x =>
+                         Vector.sub(Vector.sub(matrix,x),y)) 
+         in
+            post(space,SUMV(colmn) `= FD(sum),FD.DOM)
+         end)matrix;
+        (* rows *)
+        Vector.appi(fn(x,y) =>
+                     post(space,SUMV(y) `= FD(sum),FD.DOM))matrix;
+        (* Eliminate symmetries *)
+        FD.rel(space,field11,FD.LE,fieldNN);
+        FD.rel(space,fieldN1,FD.LE,field1N);
+        FD.rel(space,field11,FD.LE,fieldN1);
+        (*redundant constraints *)
+        post(space,FD(sum) `* `n `= FD(sumn),FD.DOM);
+        FD.relI(space,sumn,FD.EQ,(nn *(nn + 1))div 2);
+        
+        FD.branch(space,matrixv,FD.B_SIZE_MIN,FD.B_SPLIT_MIN);
+        {matrix}  
+    end
+    
+(* Explorer.exploreAll(magicsquares 3) *)
