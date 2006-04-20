@@ -42,15 +42,22 @@
 //class LazyByteCompileClosure;
 class HotSpotCode;
 
+//! class for construction of immediate environment
+/*!
+  This class is used by the compiler to construct an immediate
+  environment.
+*/
 class ByteCodeImmediateEnv {
 protected:
   u_int index;
   u_int size;
-  Tuple *values;
-  Map *map;
+  Tuple *values; //!< actual values
+  Map *map; //!< mapping to detect sharing
 public:
+  //! constructor
   ByteCodeImmediateEnv() {}
 
+  //! initialization of the immediate environment
   void Init() {
     index  = 0;
     size   = 5;
@@ -58,6 +65,14 @@ public:
     // remember addresses for sharing
     map = Map::New(size);
   }
+
+  //! save value in the immediate environment
+  /*!
+    Method to register a value in the immediate environment. Sharing
+    is automatically detected
+    @param item value that should be registered
+    @return index into environment where the value is stored
+  */
   u_int Register(word item) {
     Assert(item != (word) 0);
     if(map->IsMember(item))
@@ -74,17 +89,42 @@ public:
     map->Put(item,Store::IntToWord(index));
     return index++;
   }
+
+  //! read from immediate environment
+  /*!
+    Select value from immediate environment. There is no range check.
+    @param index index into environment.
+    @return value that is stored under \p index
+   */
   word Sel(u_int index) {
     return values->Sel(index);
   }
+
+  //! replace a value in the environment
+  /*!
+    The slot \p index is updated with the value \p item.
+    @param index index into immediate environment
+    @param item value that should be stored unter \p index
+   */
   void Replace(u_int index, word item) {
     values->Init(index, item);
   }
+  //! export immediate environment
+  /*!
+    This method exports the immediate environment after compilation
+    is finished.
+    @return immediate environment is a tuple casted to word
+   */
   word ExportEnv() {
     return values->ToWord();
   }
 };
 
+//! byte code JIT compiler
+/*!
+  This is the byte code jitter. It traverses the abstract code graph and
+  emits a sematically equivalent byte code sequence.
+*/
 
 class AliceDll ByteCodeJitter {
 private:
@@ -160,10 +200,6 @@ private:
 
   u_int IdToReg(word id) {
 #ifdef DO_REG_ALLOC
-//     fprintf(stderr,"localOffset %d, id %d, %d -> %d\n",
-// 	    localOffset,Store::DirectWordToInt(id),
-// 	    Store::DirectWordToInt(id) + localOffset,
-// 	    mapping[Store::DirectWordToInt(id) + localOffset]);
     return mapping[Store::DirectWordToInt(id) + localOffset];
 #else
     return Store::DirectWordToInt(id) + localOffset;
@@ -179,28 +215,94 @@ private:
   void LoadIdRefInto(u_int dst, word idRef);
   u_int LoadIdRefKill(word idRef, bool doIncScratch);
 
-  // inlined primitives
+  /*! @name Inlining of Primitives
+    The methods in this group are used for inlining of primitives.
+  */
+  //@{
+  //! main procedure for primitive inlining
+  /*!
+    This is the main procedure for primitive inlining.
+
+    @param cFunction The function pointer points to the primitive. The 
+    method reflects on this pointer to find primitives that can be inlined.
+
+    @param args Actual arguments of the primitive \a cFunction.
+
+    @param idDefInstrOpt Pair of formal argument for the return value
+    and the continuation.
+
+    @return The boolean indicates whether the primitive could be inlined or 
+    not.
+  */
+  bool InlinePrimitive(void *cFunction, Vector *args, TagVal *idDefInstrOpt);
+
+  //! compile return from an inlined primitive
+  /*!
+    The return from an inlined primitive call is normally trivial. If, however,
+    procedure integration is enabled, things get more complex. In this case
+    the return is simulated as a jump instruction to the caller.
+
+    @param reg Register in which the return value is stored.
+   */
   void InlinePrimitiveReturn(u_int reg);
-  TagVal *Inline_IntPlus(Vector *args, TagVal *idDefInstrOpt);
-  TagVal *Inline_IntMinus(Vector *args, TagVal *idDefInstrOpt);
-  TagVal *Inline_RefAssign(Vector *args, TagVal *idDefInstrOpt);
-  TagVal *Inline_FutureAwait(Vector *args, TagVal *idDefInstrOpt);
-  TagVal *Inline_FutureByneed(Vector *args, TagVal *idDefInstrOpt);
-  TagVal *Inline_HoleHole(Vector *args, TagVal *idDefInstrOpt);
-  TagVal *Inline_HoleFill(Vector *args, TagVal *idDefInstrOpt);
 
-  bool InlinePrimitive(void *cFunction, 
-		       Vector *args, TagVal *idDefInstrOpt, 
-		       TagVal **continuation);
+  //@{
+  //! various methods to inline specific primitives
+  /*!
+    Each method is used to inline a specific primitive.
 
-  // AbstractCode Instructions
+    @param args Actual arguments of the primitive.
+
+    @param idDefInstrOpt Pair of formal argument for the return value and
+    of the contination.
+  */
+  void Inline_IntPlus(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_IntMinus(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_RefAssign(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_FutureAwait(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_FutureByneed(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_HoleHole(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_HoleFill(Vector *args, TagVal *idDefInstrOpt);
+  //@}
+  //@}
+
+
+  /*! @name Code Generation
+    Each method generates byte code for a specific Abstract Code instruction.
+   */
+  //@{
+
+  //! Little helper to compile tuple generation.
+  /*!
+    Compilation of tuple generation.    
+    @param dst Destination register where the initialized tuple is stored.
+    @param idRefs Actual values of the tuple components.
+  */
+  void NewTup(u_int dst, Vector *idRefs);
+
+  //! Little helper to compile tagged value selection
+  /*!
+    Compilation of tagged value selection. The method emits specialized byte code
+    instructions whenever possible.
+    @param testVal value that should be deconstructed
+    @param idDefs destination identifiers
+    @param isBig Indicates if \a testVal is a big tagged value or not.
+   */
+  void LoadTagVal(u_int testVal, Vector *idDefs, bool isBig);
+
+  //@{
+  //! Compilation of one abstract code instruction
+  /*!
+    Each method generates code for the node \a pc and returns the successor of that node. 
+    @param pc abstract code instruction that is to compile
+    @return continuation; INVALID_POINTER signals a leaf node
+   */
   TagVal *InstrKill(TagVal *pc);
   TagVal *InstrPutVar(TagVal *pc);
   TagVal *InstrPutNew(TagVal *pc);
   TagVal *InstrPutTag(TagVal *pc);
   TagVal *InstrPutCon(TagVal *pc);
   TagVal *InstrPutRef(TagVal *pc);
-  void NewTup(u_int dst, Vector *idRefs);
   TagVal *InstrPutTup(TagVal *pc);
   TagVal *InstrPutPolyRec(TagVal *pc);
   TagVal *InstrPutVec(TagVal *pc);
@@ -221,19 +323,21 @@ private:
   TagVal *InstrCompactIntTest(TagVal *pc);
   TagVal *InstrRealTest(TagVal *pc);
   TagVal *InstrStringTest(TagVal *pc);
-  void LoadTagVal(u_int testVal, Vector *idDefs, bool isBig);
   TagVal *InstrTagTest(TagVal *pc);
   TagVal *InstrCompactTagTest(TagVal *pc);
   TagVal *InstrConTest(TagVal *pc);
   TagVal *InstrVecTest(TagVal *pc);
   TagVal *InstrShared(TagVal *pc);
   TagVal *InstrReturn(TagVal *pc);
+  //@}
+  //@}
 
   void CompileCCC(Vector *rets, u_int outArity);
   void CompileInstr(TagVal *pc);
   void CompileApplyPrimitive(Closure *closure, Vector *args, bool isTailcall);
   void CompileSelfCall(TagVal *instr, bool isTailcall);
-  // inlining
+ 
+ // inlining
   void CompileInlineCCC(Vector *formalArgs, Vector *args, bool isReturn);
   TagVal *CompileInlineFunction(TagVal *abstractCode, 
 				InlineInfo *info,
@@ -243,10 +347,22 @@ private:
 				TagVal *idDefsInstrOpt);
 
 public:
+  //! constructor
   ByteCodeJitter();
+
+  //! destructor
   ~ByteCodeJitter();
-  static void Init(); // initializes static variables
-  //  word Compile(LazyByteCompileClosure *compClosure);
+
+  //! initialization of all static variables
+  static void Init();
+
+  //! actual compilation method
+  /*!
+    Compilation is started with this method. The abstract code graph is
+    wrapped into hotspot code that is converted to byte concrete code.
+
+    @param[in,out] hsc code to compile
+  */
   void Compile(HotSpotCode *hsc);
 };
 

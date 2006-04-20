@@ -341,7 +341,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
         SET_ARGS##NOA();						\
 	SAVEPC(PC);							\
 	word wClosure = GETREG(reg);					\
-	/*	Closure *closure = Closure::FromWord(wClosure);		\
+	Closure *closure = Closure::FromWord(wClosure);		        \
         if(closure == CP) {						\
 	  PushCall(closure);						\
           frame = (ByteCodeFrame*) Scheduler::GetFrame();		\
@@ -364,7 +364,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	    }								\
 	  }								\
 	}								\
-	*//* preemption test happens in Scheduler::PushCall */		\
+	/* preemption test happens in Scheduler::PushCall */		\
       	return Scheduler::PushCall(wClosure);				\
       }
 
@@ -385,13 +385,13 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_SEAMCALL##NOA();					\
         SET_ARGS##NOA();						\
 	word wClosure = GETREG(reg);					\
-	/*	Closure *closure = Closure::FromWord(wClosure);		\
+	Closure *closure = Closure::FromWord(wClosure);			\
 	if(closure == CP) {						\
 	  SETPC(0);							\
 	  CHECK_PREEMPT();						\
 	  DISPATCH(PC);							\
-	  }*/								\
-	Scheduler::PopFrame(frame->GetSize());/*			\
+	}								\
+	Scheduler::PopFrame(frame->GetSize());				\
 	if(closure != INVALID_POINTER) {				\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
@@ -407,7 +407,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	    }								\
 	  }								\
 	}								\
-	*//* preemption check happens in Scheduler::PushCall */		\
+	/* preemption check happens in Scheduler::PushCall */		\
 	return  Scheduler::PushCall(wClosure);				\
       }
 
@@ -469,7 +469,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define PRELUDE_IMMEDIATE_CALL1() PRELUDE_IMMEDIATE_CALL0()
 #define PRELUDE_IMMEDIATE_CALL2() PRELUDE_IMMEDIATE_CALL0()
 #define PRELUDE_IMMEDIATE_CALL3() PRELUDE_IMMEDIATE_CALL0()
-#define PRELUDE_IMMEDIATE_CALL()  GET_2I(codeBuffer,PC,closureAddr,nArgs)	
+#define PRELUDE_IMMEDIATE_CALL()  GET_2I(codeBuffer,PC,closureAddr,nArgs)      
 
 #define REWRITE_CALL(N) {					\
 	PRELUDE_IMMEDIATE_CALL##N();				\
@@ -657,19 +657,20 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define PRELUDE_RETURN3() PRELUDE_RETURN0()
 #define PRELUDE_RETURN()  GET_1I(codeBuffer,PC,nArgs)
 
-#define SEAM_RETURN(NOA) {						\
-	PRELUDE_RETURN##NOA();						\
-        SET_ARGS##NOA();						\
-	Scheduler::PopFrame(frame->GetSize());				\
-	/*	StackFrame *newFrame = Scheduler::GetFrame();		\
-	if(newFrame->GetWorker() == this) {				\
-	  frame = (ByteCodeFrame*) newFrame;				\
-	  code = frame->GetCode();					\
-	  LOADSTATE(PC,CP,IP);						\
-	  DISPATCH(PC);							\
-	}								\
-	*//*preempt check only in call instructions*/			\
-        return Worker::CONTINUE;					\
+#define SEAM_RETURN(NOA) {				\
+	PRELUDE_RETURN##NOA();				\
+        SET_ARGS##NOA();				\
+	Scheduler::PopFrame(frame->GetSize());		\
+	StackFrame *newFrame = Scheduler::GetFrame();	\
+        /* dynamic test */ 				\
+	if(newFrame->GetWorker() == this) {		\
+	  frame = (ByteCodeFrame*) newFrame;		\
+	  code = frame->GetCode();			\
+	  LOADSTATE(PC,CP,IP);				\
+	  DISPATCH(PC);					\
+	}						\
+	/* preempt check only in call instructions */	\
+        return Worker::CONTINUE; 			\
       }
 
     Case(seam_return)  SEAM_RETURN();
@@ -678,6 +679,24 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(seam_return2) SEAM_RETURN(2);
     Case(seam_return3) SEAM_RETURN(3);
 
+    // special case
+    Case(seam_return_unit)
+      {
+	Scheduler::SetNArgs(1);
+	Scheduler::SetCurrentArg(0, Store::IntToWord(0));
+	Scheduler::PopFrame(frame->GetSize());
+	StackFrame *newFrame = Scheduler::GetFrame();
+	/* dynamic test */
+	if(newFrame->GetWorker() == this) {
+	  frame = (ByteCodeFrame*) newFrame;
+	  code = frame->GetCode();
+	  LOADSTATE(PC,CP,IP);
+	  DISPATCH(PC);
+	}
+	/* preemption check only in call instructions */
+	return Worker::CONTINUE; // pass control to scheduler
+      }
+       
 
       /**************************************
        * closure building and initialization 
