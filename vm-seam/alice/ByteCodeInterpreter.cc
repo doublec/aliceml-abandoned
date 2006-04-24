@@ -680,7 +680,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(seam_return3) SEAM_RETURN(3);
 
     // special case
-    Case(seam_return_unit)
+    Case(seam_return_zero)
       {
 	Scheduler::SetNArgs(1);
 	Scheduler::SetCurrentArg(0, Store::IntToWord(0));
@@ -826,10 +826,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	GET_3R(codeBuffer,PC,r0,r1,r2);		
 #if defined(__i386__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
-	word yw = GETREG(r2);
+	word yw = PointerOp::Deref(GETREG(r2));
 	if (PointerOp::IsTransient(yw))
 	  REQUEST(yw);
 	
@@ -843,10 +843,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
 	SETREG(r0, xw);
 #elif defined(__ppc__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
-	register word yw = GETREG(r2);
+	register word yw = PointerOp::Deref(GETREG(r2));
 	if (PointerOp::IsTransient(yw))
 	  REQUEST(yw);
 	__asm__ __volatile__("subfo. %[xw],%[yw],%[xw]\n\t"
@@ -875,10 +875,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	GET_3R(codeBuffer,PC,r0,r1,r2);
 
 #if defined(__i386__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
-	word yw = GETREG(r2);
+	word yw = PointerOp::Deref(GETREG(r2));
 	if (PointerOp::IsTransient(yw))
 	  REQUEST(yw);
 
@@ -891,10 +891,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 			     );
 	SETREG(r0, xw);
 #elif defined(__ppc__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
-	register word yw = GETREG(r2);
+	register word yw = PointerOp::Deref(GETREG(r2));
 	if (PointerOp::IsTransient(yw))
 	  REQUEST(yw);
 	__asm__ __volatile__("addo. %[xw],%[xw],%[yw]\n\t"
@@ -921,7 +921,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 #if defined(__i386__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
 	
@@ -934,7 +934,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
 	SETREG(r0, xw);
 #elif defined(__ppc__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
 	register int yw = 2;
@@ -960,7 +960,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	GET_2R(codeBuffer,PC,r0,r1);
 #if defined(__i386__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
 	
@@ -973,7 +973,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
 	SETREG(r0, xw);
 #elif defined(__ppc__)
-	word xw = GETREG(r1);
+	word xw = PointerOp::Deref(GETREG(r1));
 	if (PointerOp::IsTransient(xw))
 	  REQUEST(xw);
 	register int yw = 2;
@@ -1260,8 +1260,6 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(select_tup1) SELECT_TUP(1);
     Case(select_tup2) SELECT_TUP(2);
 
-      // TODO: add a deconstr_tup instruction
-
       /****************************
        * tagval instructions
        ****************************/
@@ -1306,7 +1304,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define TV_PRELUDE2() u_int size = 2; GET_1R1I(codeBuffer,PC,reg,tag);
 #define TV_PRELUDE3() u_int size = 3; GET_1R1I(codeBuffer,PC,reg,tag);
 #define TV_PRELUDE4() u_int size = 4; GET_1R1I(codeBuffer,PC,reg,tag);
-#define TV_PRELUDE()  GET_1R2I(codeBuffer,PC,reg,size,tag);
+#define TV_PRELUDE()  GET_1R2I(codeBuffer,PC,reg,tag,size);
 
 #define NEW_TAGVAL_INIT(TagValType,N) {			\
       TV_PRELUDE##N();                                  \

@@ -806,7 +806,7 @@ inline TagVal *ByteCodeJitter::InstrPutCon(TagVal *pc) {
     case 2:  SET_INSTR_1R1I(PC,new_bigtagval_init2,dst,tag); break;
     case 3:  SET_INSTR_1R1I(PC,new_bigtagval_init3,dst,tag); break;
     case 4:  SET_INSTR_1R1I(PC,new_bigtagval_init4,dst,tag); break;
-    default: SET_INSTR_1R2I(PC,new_bigtagval_init,dst,nargs,tag);    
+    default: SET_INSTR_1R2I(PC,new_bigtagval_init,dst,tag,nargs);    
     }
   } else {
     switch(nargs) {
@@ -814,7 +814,7 @@ inline TagVal *ByteCodeJitter::InstrPutCon(TagVal *pc) {
     case 2:  SET_INSTR_1R1I(PC,new_tagval_init2,dst,tag); break;
     case 3:  SET_INSTR_1R1I(PC,new_tagval_init3,dst,tag); break;
     case 4:  SET_INSTR_1R1I(PC,new_tagval_init4,dst,tag); break;
-    default: SET_INSTR_1R2I(PC,new_tagval_init,dst,nargs,tag);    
+    default: SET_INSTR_1R2I(PC,new_tagval_init,dst,tag,nargs);    
     }
   }
   // set arguments
@@ -2247,7 +2247,7 @@ inline TagVal *ByteCodeJitter::InstrShared(TagVal *pc) {
   } else {
     // check for specialized return instruction
     if(PeepHoleOptimizer::optimizeReturnUnit(returnIdRefs)) {
-      SET_INSTR(PC,seam_return_unit);
+      SET_INSTR(PC,seam_return_zero);
       return INVALID_POINTER;
     }
     // load arguments into registers

@@ -22,7 +22,7 @@
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AbstractCode.hh"
 
-#define ABSTRACT_CODE_COUNTER_INIT 5 // execute abstract code five times
+#define ABSTRACT_CODE_COUNTER_INIT 0 // execute abstract code five times
 
 word HotSpotConcreteCode::New(TagVal *abstractCode) {
   return HotSpot_StartState::New(HotSpotInterpreter::self, 
