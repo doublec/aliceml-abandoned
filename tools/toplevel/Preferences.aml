@@ -18,6 +18,7 @@ import structure Gui          from "Gui"
 import structure DialogUtils  from "DialogUtils"
 import structure Config       from "Config"
 import structure Buffer       from "Buffer"
+import structure Print        from "x-alice:/lib/system/Print"
 
 structure Preferences =
     struct
@@ -128,9 +129,11 @@ structure Preferences =
 				mkLabel("\"string\"", !stringColor));
 	     Gtk.Label.setMarkup(comment_label,
 				mkLabel("(*comment*)", !commentColor)))
-	    
+
 	fun fillDialog () =
-	    (Gtk.Button.setLabel(Gui.font_button, !Config.stdFontName);
+	    (Gtk.Entry.setText(Gui.pp_depth_entry, Int.toString (!Print.depth));
+	     Gtk.Entry.setText(Gui.pp_width_entry, Int.toString (!Print.width));
+	     Gtk.Button.setLabel(Gui.font_button, !Config.stdFontName);
 	     fillColors ();
 	     Gtk.ToggleButton.setActive(Gui.loadSessionButton,
 				       !Config.loadFileHistory);
@@ -139,6 +142,10 @@ structure Preferences =
 
 	fun applyConfig () =
 	    let
+		val ppDepth = Gtk.Entry.getText Gui.pp_depth_entry
+		val ppWidth = Gtk.Entry.getText Gui.pp_width_entry
+		val ppDepth = Option.getOpt(Int.fromString ppDepth, !Print.depth)
+		val ppWidth = Option.getOpt(Int.fromString ppWidth, !Print.width)
 		val fontName = Gtk.Button.getLabel Gui.font_button
 		val historySize = Gtk.Entry.getText Gui.history_size_entry
 		val historySize =
@@ -146,6 +153,8 @@ structure Preferences =
 		val loadFileHistory =
 		    Gtk.ToggleButton.getActive Gui.loadSessionButton
 	    in
+		Print.depth := ppDepth;
+		Print.width := ppWidth;
 		Config.historySize := historySize;
 		if !colorsChanged then
 		    (Config.plainColor := (!plainColor);
