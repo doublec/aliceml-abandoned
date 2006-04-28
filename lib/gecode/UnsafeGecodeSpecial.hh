@@ -264,8 +264,7 @@ const SetBvalSel int2fsbvalsel[] =
   };
 
 class GecodeHandler : public ConcreteRepresentationHandler {
-  Transform
-  *GecodeHandler::GetAbstractRepresentation(ConcreteRepresentation *) {
+  Transform *GetAbstractRepresentation(ConcreteRepresentation *) {
     return INVALID_POINTER;
   }
 };

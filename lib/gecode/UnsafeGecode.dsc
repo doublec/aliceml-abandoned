@@ -132,8 +132,8 @@ void convexHull(SetVar, SetVar); set_convexHull;
 void sequence(const SetVarArgs&); set_seq;
 void sequentialUnion(const SetVarArgs&, SetVar); set_seqU;
 
-void minElement(SetVar, IntVar); set_min;
-void maxElement(SetVar, IntVar); set_max;
+void min(SetVar, IntVar); set_min;
+void max(SetVar, IntVar); set_max;
 void match(SetVar, const IntVarArgs&); set_match;
 void cardinality(SetVar, IntVar); set_cardinality;
 

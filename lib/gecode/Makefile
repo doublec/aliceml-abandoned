@@ -13,7 +13,7 @@
 
 # Makefile for alice gecode binding
 
-VERSION=1.2
+VERSION=$(shell alicetool --package-version)
 
 INSTALLDIR=`alice-config --alicelibdir`/gecode
 GECODEDIR="/usr"
