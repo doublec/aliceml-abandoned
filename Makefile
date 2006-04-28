@@ -8,7 +8,7 @@ GLOBAL_PREFIX = /opt/alice-devel
 PREFIX = $(PWD)/install
 DEBUG = 0
 
-VERSION = 1.2
+VERSION = $(shell alicetool --package-version)
 
 LD_LIBRARY_PATH := /opt/gtk+-2.6/lib:$(LD_LIBRARY_PATH)
 PKG_CONFIG_PATH := $(PWD)/../seam/support/install/lib/pkgconfig:/opt/gecode/lib/pkgconfig:/opt/gtk+-2.6/lib/pkgconfig:$(PKG_CONFIG_PATH)
@@ -134,6 +134,7 @@ clean-seam: clean-common
 	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk/seam && make distclean) || exit 1
 	(cd lib/tools/inspector/seam && make distclean) || exit 1
+	(cd lib/tools/explorer/seam && make distclean) || exit 1
 	(cd tools/toplevel && make distclean) || exit 1
 	(cd tools/lex && make distclean) || exit 1
 	(cd tools/yacc && make distclean) || exit 1
@@ -288,10 +289,16 @@ dist-seam: #install-seam
 	  mv alice-$(VERSION).tar.gz ../packages/ ) && \
 	 (cd lib/gtk/seam && make dist && \
 	  mv alice-gtk-$(VERSION).tar.gz ../../../packages/ ) && \
+	 (cd lib/regex && make dist && \
+	  mv alice-regex-$(VERSION).tar.gz ../../packages/ ) && \
+	 (cd lib/sqlite && make dist && \
+	  mv alice-sqlite-$(VERSION).tar.gz ../../packages/ ) && \
+	 (cd lib/xml && make dist && \
+	  mv alice-xml-$(VERSION).tar.gz ../../packages/ ) && \
 	 (cd lib/gecode && make dist && \
 	  mv alice-gecode-$(VERSION).tar.gz ../../packages/ ) && \
-	 (cp -r misc/debian/* $(PREFIX)/share/alice/ && \
-	  cd $(PREFIX)/share/alice && \
+	 (cp -r misc/debian/* $(PREFIX) && \
+	  cd $(PREFIX) && \
 	  make -f Makefile.cvs && ./configure && \
 	  make dist) && \
-	 mv $(PREFIX)/share/alice/alice-runtime-$(VERSION).tar.gz packages/ )
+	 mv $(PREFIX)/alice-runtime-$(VERSION).tar.gz packages/ )
