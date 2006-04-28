@@ -28,8 +28,7 @@
 
 
 class SQLiteHandler : public ConcreteRepresentationHandler {
-  Transform *SQLiteHandler::GetAbstractRepresentation(ConcreteRepresentation *)
-  {
+  Transform *GetAbstractRepresentation(ConcreteRepresentation *) {
     return INVALID_POINTER;
   }
 };

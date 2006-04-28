@@ -40,7 +40,7 @@ extern "C" {
 // regex_t is requested.
 
 class RegexRepHandler : public ConcreteRepresentationHandler {
-  Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *c);
+  Transform *GetAbstractRepresentation(ConcreteRepresentation *c);
 };
 
 Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *) {

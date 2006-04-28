@@ -15,7 +15,7 @@
 #include <libxml/parser.h>
 
 class XMLRepHandler : public ConcreteRepresentationHandler {
-  Transform *XMLRepHandler::GetAbstractRepresentation(ConcreteRepresentation *) {
+  Transform *GetAbstractRepresentation(ConcreteRepresentation *) {
     return INVALID_POINTER;
   }
 };

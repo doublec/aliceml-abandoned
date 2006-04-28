@@ -9,7 +9,7 @@ SOURCES = \
 
 TARGETS = XML.alc XML-sig.alc
 
-VERSION = 1.2
+VERSION = $(shell alicetool --package-version)
 DISTFILES = $(SOURCES) Makefile debian
 distdir = alice-xml-$(VERSION)
 
