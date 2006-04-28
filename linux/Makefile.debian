@@ -7,11 +7,11 @@
 URL = http://www.ps.uni-sb.de/alice/download/sources
 
 REVISION = 1
-PACKAGES = seam-1.2 alice-1.2 \
-	alice-gecode-1.2 \
-	alice-gtk-1.2 \
-	alice-sqlite-1.2 alice-xml-1.2 alice-regex-1.2 \
-	alice-runtime-1.2
+PACKAGES = seam-1.3 alice-1.3 \
+	alice-gecode-1.3 \
+	alice-gtk-1.3 \
+	alice-sqlite-1.3 alice-xml-1.3 alice-regex-1.3 \
+	alice-runtime-1.3
 
 all: $(PACKAGES:%=%.tar.gz)
 
@@ -21,11 +21,11 @@ $(PACKAGES:%=%.tar.gz): %:
 	curl $(URL)/$@ -o $@
 	tar xzf $@ && \
 	cd $(@:%.tar.gz=%) && \
-	dpkg-buildpackage -rfakeroot $(DPKGOPTIONS) && \
+	dpkg-buildpackage -us -uc $(DPKGOPTIONS) && \
 	cd .. && \
-	dpkg -i $(@:%-1.2.tar.gz=%)_*.deb && \
-	(test -f $(@:%-1.2.tar.gz=%)-dev_*.deb && \
-	 dpkg -i $(@:%-1.2.tar.gz=%)-dev_*.deb) || echo done
+	dpkg -i $(@:%-1.3.tar.gz=%)_*.deb && \
+	(test -f $(@:%-1.3.tar.gz=%)-dev_*.deb && \
+	 dpkg -i $(@:%-1.3.tar.gz=%)-dev_*.deb) || echo done
 	
 
 clean:
