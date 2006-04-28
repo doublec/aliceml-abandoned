@@ -27,4 +27,5 @@ EXTRA_DIST = \
 	bin/alicerun.in \
 	bin/alicetool.in \
 	bin/aliceremote \
-	bin/alice-config.in
+	bin/alice-config.in \
+	alice/bytecode_disassembler_body.hh

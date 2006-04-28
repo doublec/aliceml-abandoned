@@ -1,5 +1,5 @@
 Name: alice-sqlite
-Version: 1.2
+Version: 1.3
 Release: 1
 Copyright: X11
 Summary: The Alice Programming System, SQLite Binding

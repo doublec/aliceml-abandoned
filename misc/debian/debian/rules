@@ -22,7 +22,7 @@ endif
 # generic Debian directories
 
 package_name = alice-runtime
-package_version = 1.2
+package_version = $(alicetool --package-version)
 
 DEB_BASE_DIR = $(PWD)
 DEB_DEBIAN_DIR = $(DEB_BASE_DIR)/debian

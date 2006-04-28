@@ -1,5 +1,5 @@
 Name: alice-runtime
-Version: 1.2
+Version: 1.3
 Release: 1
 Copyright: X11
 Summary: The Alice Programming System, Runtime Components
@@ -8,7 +8,7 @@ Source: %{name}-%{version}.tar.gz
 Vendor: The Alice Project
 URL: http://www.ps.uni-sb.de/alice/
 Packager: Guido Tack <tack@ps.uni-sb.de>
-Requires: alice >= 1.2, alice-gtk >= 1.2, alice-gecode >= 1.2, alice-sqlite >= 1.2, alice-xml >= 1.2
+Requires: alice >= 1.3, alice-gtk >= 1.3, alice-gecode >= 1.3, alice-sqlite >= 1.3, alice-xml >= 1.3
 BuildArchitectures: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}
 

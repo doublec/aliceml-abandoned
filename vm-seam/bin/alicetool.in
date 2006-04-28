@@ -31,9 +31,10 @@ usage () {
     echo "Compilation utility for Alice                              " >&2
     echo "                                                           " >&2
     echo "Generic options:                                           " >&2
-    echo "  -h, --help       display this message and exit           " >&2
-    echo "  -v, --verbose    enable verbose shell tracing            " >&2
-    echo "  -V, --version    show version information and exit       " >&2
+    echo "  -h, --help        display this message and exit          " >&2
+    echo "  -v, --verbose     enable verbose shell tracing           " >&2
+    echo "  -V, --version     show version information and exit      " >&2
+    echo "  --package-version show package version and exit          " >&2
     echo "                                                           " >&2
     echo "MODE must be one of the following:                         " >&2
     echo "  compile          compile a C++ source file               " >&2
@@ -65,6 +66,10 @@ case "$1" in
 	;;
     -V|--version)
 	version
+	exit 0
+	;;
+    --package-version)
+	echo @PACKAGE_VERSION@
 	exit 0
 	;;
     -v|--verbose)

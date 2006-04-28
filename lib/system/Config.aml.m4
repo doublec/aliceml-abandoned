@@ -37,7 +37,7 @@ struct
 	  | UNIX => #":"
 
     val major = 1
-    val minor = 2
+    val minor = 3
     val revision = 0
     val version = {major, minor, revision}
 
@@ -54,7 +54,8 @@ struct
 	    (* 1.X *) #[
 		(* 1.0.X *) #["", "Lord of the Lib"],
 		(* 1.1.X *) #[""],
-		(* 1.2.X *) #[""]
+		(* 1.2.X *) #[""],
+	        (* 1.3.X *) #[""]
 			]
 	]
     val revisions = Vector.sub (Vector.sub (allRevisions, major), minor)

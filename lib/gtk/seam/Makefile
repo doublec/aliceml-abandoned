@@ -43,7 +43,7 @@ GEN_WRAPPERSCAP= \
 	    GTK \
 	    CANVAS
 
-VERSION=$(shell alicetool --version 2>&1 | head -n 1  | cut -d ' ' -f 5)
+VERSION=$(shell alicetool --package-version)
 
 DEFS=atk-types.defs atk.defs canvas.defs gdk-types.defs gdk.defs gtk-extrafuncs.defs gtk-types.defs gtk.defs pango-types.defs pango.defs wrapper.defs types canvas-properties.defs gtk-properties.defs
 
