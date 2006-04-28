@@ -53,8 +53,7 @@ public:
   static const int endian = 1; // most significant byte first
   static const int size = 4; // words of 4 bytes
 
-  Transform
-  *GMPHandler::GetAbstractRepresentation(ConcreteRepresentation *cr) {
+  Transform *GetAbstractRepresentation(ConcreteRepresentation *cr) {
     // Pickle a big integer
 
     BigInt *b = BigInt::FromWordDirect(cr->Get(0));
