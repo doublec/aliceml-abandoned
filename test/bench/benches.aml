@@ -476,18 +476,18 @@ fun benches(iter) =
 (*       doit("loadtypes",iter, 8)] *)
 
     [doit("fib",iter,31),
-(*       doit("fibf",iter,31), *)
-(*       doit("concfib",iter,20), *)
-(*       doit("concfib2",iter,20), *)
-(*       doit("threadcrea",iter,100000), *)
+      doit("fibf",iter,31),
+      doit("concfib",iter,20),
+      doit("concfib2",iter,20),
+      doit("threadcrea",iter,100000),
      doit("tak",iter,8),
-(*       doit("cpstak",iter,8), *)
+      doit("cpstak",iter,8),
      doit("nrev",iter,3000),
      doit("quick",iter,30),
-(*       doit("quickho",iter,30), *)
-(*       doit("quickarray",iter,30), *)
-(*       doit("queens",iter,10), *)
-(*       doit("mandel",iter,4711), *)
+      doit("quickho",iter,30),
+      doit("quickarray",iter,30),
+      doit("queens",iter,10),
+      doit("mandel",iter,4711),
      doit("deriv",iter,30)]
 
 val _ = benches 10;
