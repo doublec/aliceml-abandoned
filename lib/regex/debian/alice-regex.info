@@ -1,5 +1,5 @@
 Package: alice-regex
-Version: 1.2
+Version: 1.3
 Revision: 1
 Source: http://www.ps.uni-sb.de/alice/download/%n-%v.tar.gz
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
