@@ -11,7 +11,7 @@ DEBUG = 0
 VERSION = $(shell alicetool --package-version)
 
 LD_LIBRARY_PATH := /opt/gtk+-2.6/lib:$(LD_LIBRARY_PATH)
-PKG_CONFIG_PATH := $(PWD)/../seam/support/install/lib/pkgconfig:/opt/gecode/lib/pkgconfig:/opt/gtk+-2.6/lib/pkgconfig:$(PKG_CONFIG_PATH)
+PKG_CONFIG_PATH := $(PWD)/../seam/support/install/lib/pkgconfig:/opt/gtk+-2.6/lib/pkgconfig:$(PKG_CONFIG_PATH)
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
