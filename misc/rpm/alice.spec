@@ -1,7 +1,7 @@
 Name: alice
 Version: 0.9.3
 Release: 1
-Copyright: X11
+License: X11
 Summary: The Alice Programming System
 Group: Development/Languages
 Source: %{name}-%{version}.tar.gz

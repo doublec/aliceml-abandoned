@@ -1,7 +1,7 @@
 Name: alice-gtk
 Version: 1.3
 Release: 1
-Copyright: X11
+License: X11
 Summary: The Alice Programming System, Gtk Binding
 Group: Development/Languages
 Source0: alice-gtk-%{version}.tar.gz
@@ -10,39 +10,9 @@ URL: http://www.ps.uni-sb.de/alice/
 Packager: Guido Tack <tack@ps.uni-sb.de>
 Requires: /bin/bash
 Requires: /bin/sh
-Requires: libc.so.6
-Requires: libc.so.6(GLIBC_2.0)
-Requires: libc.so.6(GLIBC_2.1)
-Requires: libc.so.6(GLIBC_2.1.3)
-Requires: libc.so.6(GLIBC_2.2)
-Requires: libc.so.6(GLIBC_2.3)
-Requires: libdl.so.2
-Requires: libdl.so.2(GLIBC_2.0)
-Requires: libdl.so.2(GLIBC_2.1)
-Requires: libgcc_s.so.1
-Requires: libgcc_s.so.1(GCC_3.0)
-Requires: libm.so.6
-Requires: libm.so.6(GLIBC_2.0)
-Requires: libstdc++.so.5
-Requires: libstdc++.so.5(GLIBCPP_3.2)
-Requires: libz.so.1
-Requires: libgnomecanvas-2.so.0
-Requires: libart_lgpl_2.so.2
-Requires: libpangoft2-1.0.so.0
-Requires: libgtk-x11-2.0.so.0
-Requires: libgdk-x11-2.0.so.0
-Requires: libatk-1.0.so.0
-Requires: libgdk_pixbuf-2.0.so.0
-Requires: libpangoxft-1.0.so.0
-Requires: libpangox-1.0.so.0
-Requires: libpango-1.0.so.0
-Requires: libgobject-2.0.so.0
-Requires: libgmodule-2.0.so.0
-Requires: libglib-2.0.so.0
 
 BuildArchitectures: i386
 BuildRoot: %{_tmppath}/%{name}-%{version}
-AutoReqProv: no
 
 %description
 Alice is a functional programming language based on Standard ML, extended

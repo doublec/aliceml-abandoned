@@ -6,7 +6,7 @@ Name:		sml-mode
 Version:	v4_0
 Release:	0.1
 Group:		Applications/Editors
-Copyright:	GPL
+License:	GPL
 Packager:	Stefan Monnier
 Source:		ftp://flint.cs.yale.edu/pub/monnier/%{name}/%{name}.tar.gz
 Buildroot:	%{_tmppath}/%{name}-buildroot

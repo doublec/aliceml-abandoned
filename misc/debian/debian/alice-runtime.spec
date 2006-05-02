@@ -1,7 +1,7 @@
 Name: alice-runtime
 Version: 1.3
 Release: 1
-Copyright: X11
+License: X11
 Summary: The Alice Programming System, Runtime Components
 Group: Development/Languages
 Source: %{name}-%{version}.tar.gz
