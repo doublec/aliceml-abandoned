@@ -10,7 +10,7 @@ all: $(PACKAGES:%=%.tar.gz)
 
 $(PACKAGES:%=%.tar.gz): %:
 	curl $(URL)/$@ -o $@
-	tar -f $@ -z -x '*/debian/*.spec' -O > $(@:%.tar.gz=%)-$(REVISION).spec
+	tar -f $@ -z -x -O '*/debian/*.spec' > $(@:%.tar.gz=%)-$(REVISION).spec
 	./build-rpm $@ $(@:%.tar.gz=%)-$(REVISION).spec
 	rpm -Uvh $(@:%.tar.gz=%)-$(REVISION).i386.rpm
 
