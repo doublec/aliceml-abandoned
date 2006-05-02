@@ -30,21 +30,9 @@
     the desired mode of operation.
   </P>
 
-<?php
-#  <P>
-#    A propagator ceases to exist if all the variables
-#    it is posted on are determined. In the following sections,
-#    only exceptions from this rule are mentioned,
-#    i. e. if the propagator ceases to exist earlier.
-#    For example, <TT>FD.lessEq(x, y)</TT> ceases
-#    to exist if the current upper bound
-#    of <I>x</I> is smaller than or equal to the current lower bound of <I>y</I>.
-#  </P>
-?>
-
   <P>See also:
     <A href="fs.html"><TT>FS</TT></A>,
-    <A href="linear.html"><TT>Linear</TT></A>,
+    <A href="modeling.html"><TT>Modeling</TT></A>,
     <A href="space.html"><TT>Space</TT></A>
   </P>
 
@@ -142,7 +130,8 @@ signature FD =
          end
       datatype b_var_sel =
          B_DEGREE_MAX | B_DEGREE_MIN | B_MAX_MAX | B_MAX_MIN | B_MIN_MAX |
-         B_MIN_MIN | B_NONE | B_SIZE_MAX | B_SIZE_MIN
+         B_MIN_MIN | B_NONE | B_REGRET_MAX_MAX | B_REGRET_MAX_MIN |
+         B_REGRET_MIN_MAX | B_REGRET_MIN_MIN | B_SIZE_MAX | B_SIZE_MIN
       datatype b_val_sel = B_MAX | B_MED | B_MIN | B_SPLIT_MAX | B_SPLIT_MIN
       val branch : space * intvar vector * b_var_sel * b_val_sel -> unit
    end</PRE>
@@ -670,6 +659,22 @@ signature FD =
       <TT>B_MIN_MAX</TT> : Pick the variable with the largest lower bound.<BR>
       <TT>B_MIN_MIN</TT> : Pick the variable with the smallest lower bound.<BR>
       <TT>B_NONE</TT> : Pick the leftmost undetermined variable.<BR>
+      <TT>B_REGRET_MAX_MAX</TT> : Pick the variable with largest
+      max-regret. The max-regret of a variable is the difference
+      between the largest and second-largest value still in the
+      domain. <BR>
+      <TT>B_REGRET_MAX_MIN</TT> : Pick the variable with smallest
+      max-regret. The max-regret of a variable is the difference
+      between the largest and second-largest value still in the
+      domain.<BR>
+      <TT>B_REGRET_MIN_MAX</TT> : Pick the variable with largest
+      min-regret. The min-regret of a variable is the difference
+      between the smallest and second-smallest value still in the
+      domain.<BR>
+      <TT>B_REGRET_MIN_MIN</TT> : Pick the variable with smallest
+      min-regret. The min-regret of a variable is the difference
+      between the smallest and second-smallest value still in the
+      domain.<BR>
       <TT>B_SIZE_MAX</TT> : Pick the variable with the most possible values.<BR>
       <TT>B_SIZE_MIN</TT> : Pick the variable with the fewest possible values. Also known as First Fail strategy.<BR>
     </P></DD>

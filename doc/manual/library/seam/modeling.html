@@ -1,26 +1,26 @@
 <?php include("macros.php3"); ?>
-<?php heading("The Linear structure", "The <TT>Linear</TT> structure"); ?>
+<?php heading("The Modeling structure", "The <TT>Modeling</TT> structure"); ?>
 
 <P></P>
 
 <?php section("synopsis", "synopsis"); ?>
 
   <PRE>
-    signature LINEAR
-    structure Linear : LINEAR</PRE>
+    signature MODELING
+    structure Modeling : MODELING</PRE>
 
   <P>
-    The <TT>Linear</TT> structure provides functionality to post
-    linear equality constraints using a convenient infix operator syntax.
+    The <TT>Modeling</TT> structure provides functionality to post
+    arithmetic constraints using a convenient infix operator syntax.
   </P>
 
   <P class=node><EM>Notes:</EM>
   </P>
-    The linear module maps linear constraints onto regular sum constraints
+    This module maps constraints onto regular sum constraints
     of the FD module. This transformation is not always optimal, that is,
     one might be able to devise a better constraint manually.
   <P>
-    Note also that since the linear module extensively
+    Note also that since this module extensively
     performs folding of constant expressions,
     it eventually might exceed the implementation specific
     integer constant limit of finite domain constraints.
@@ -31,97 +31,101 @@
 <?php section("import", "import"); ?>
 
   <PRE>
-    import signature LINEAR from "x-alice:/lib/constraints/LINEAR-sig"
-    import structure Linear from "x-alice:/lib/constraints/Linear"</PRE>
+    import signature MODELING from "x-alice:/lib/constraints/MODELING-sig"
+    import structure Modeling from "x-alice:/lib/constraints/Modeling"</PRE>
 
 <?php section("interface", "interface"); ?>
 
   <PRE>
-signature LINEAR =
+signature MODELING =
 sig
-	type space
-	type intvar
-	type boolvar
-
-        datatype conlevel = 
-	         BND | DEF | DOM | VAL
-
-	infix  7  `*
-	infix  6  `+ `-
-	infix  5  `#
-	infix  4  `= `&lt;> `> `>= `&lt; `&lt;=
-
-	infix  3  `->
-	infix  3  `&lt;-
-	infix  3  `==
-	infix  3  `&
-	infix  3  `|
-	infix  3  XOR
-
-
-	datatype domain_element =
-	    `` of int
-	  | `# of int * int
-
-	type domain = domain_element list
-
-	datatype b_var_sel =
-	    B_DEGREE_MAX
-	  | B_DEGREE_MIN
-	  | B_MAX_MAX
-	  | B_MAX_MIN
-	  | B_MIN_MAX
-	  | B_MIN_MIN
-	  | B_NONE
-	  | B_SIZE_MAX
-	  | B_SIZE_MIN
-	    
-	datatype b_val_sel =
-	    B_MAX
-	  | B_MED
-	  | B_MIN
-	  | B_SPLIT_MAX
-	  | B_SPLIT_MIN
-
-	datatype term =
-	    FD of intvar
-	  | `  of int
-	  | `+ of term * term
-	  | `- of term * term
-	  | `* of term * term
-
-	datatype rel =
-	    `&lt;   of term * term
-	  | `&lt;=  of term * term
-	  | `=   of term * term
-	  | `&lt;>  of term * term
-	  | `>=  of term * term
-	  | `>   of term * term
-	 
-	val fdterm : space * domain -> term
-	val fdtermVec : space * int * domain -> term vector
+    type space
+    type intvar
+    type boolvar
 	
-	val post : space * rel * conlevel -> unit
+    datatype conlevel = 
+	BND | DEF | DOM | VAL
+	
+    infix  7  `*
+    infix  6  `+ `-
+    infix  5  `#
+    infix  4  `= `<> `> `>= `< `<=
+	
+    infix  3  `->
+    infix  3  `<-
+    infix  3  `==
+    infix  3  `&
+    infix  3  `|
+    infix  3  XOR
 
-	val distinct : space * term vector * conlevel -> unit
-	val branch : space * term vector * b_var_sel * b_val_sel -> unit
+    datatype domain_element =
+	`` of int
+      | `# of int * int
 
-	datatype b_term = 
-	  BV of boolvar
-	 | BC of bool
-	 | HOLDS of rel
-	 | `== of b_term * b_term
-	 | `-> of b_term * b_term
-	 | `&lt;- of b_term * b_term
-	 | `! of b_term
-	 | `& of b_term * b_term
-	 | XOR of b_term * b_term
-	 | `| of b_term * b_term
+    type domain = domain_element list
 
-	val boolterm : space -> b_term
-	val booltermVec : space * int -> b_term vector
-
-	val postTrue : space * b_term -> unit
+    datatype b_var_sel =
+	B_DEGREE_MAX
+      | B_DEGREE_MIN
+      | B_MAX_MAX
+      | B_MAX_MIN
+      | B_MIN_MAX
+      | B_MIN_MIN
+      | B_NONE
+      | B_REGRET_MAX_MAX
+      | B_REGRET_MAX_MIN
+      | B_REGRET_MIN_MAX
+      | B_REGRET_MIN_MIN
+      | B_SIZE_MAX
+      | B_SIZE_MIN
+	
+    datatype b_val_sel =
+	B_MAX
+      | B_MED
+      | B_MIN
+      | B_SPLIT_MAX
+      | B_SPLIT_MIN
+	
+    datatype term =
+	FD of intvar
+      | `  of int
+      | `+ of term * term
+      | `- of term * term
+      | `* of term * term
+      | SUMV of intvar vector
+	
+    datatype rel =
+	`<   of term * term
+      | `<=  of term * term
+      | `=   of term * term
+      | `<>  of term * term
+      | `>=  of term * term
+      | `>   of term * term
+	
+    val fdterm : space * domain -> term
+    val fdtermVec : space * int * domain -> term vector
+	
+    val post : space * rel * conlevel -> unit
+	
+    val distinct : space * term vector * conlevel -> unit
+    val branch : space * term vector * b_var_sel * b_val_sel -> unit
+	
+    datatype b_term = 
+	BV of boolvar
+      | BC of bool
+      | HOLDS of rel
+      | `== of b_term * b_term
+      | `-> of b_term * b_term
+      | `<- of b_term * b_term
+      | `! of b_term
+      | `& of b_term * b_term
+      | XOR of b_term * b_term
+      | `| of b_term * b_term
+	
+    val boolterm : space -> b_term
+    val booltermVec : space * int -> b_term vector
+	
+    val postTrue : space * b_term -> unit
 
     end</PRE>
 
@@ -213,7 +217,8 @@ sig
 	  &nbsp;&nbsp;| `&gt;&nbsp;&nbsp;&nbsp;of term * term<BR></TT>
     </DT>
     <DD>
-      <P>This datatype is used to post linear equations.
+      <P>This datatype is used to post equations, inequations, and
+      disequations.
       </P>
       <UL>
         <LI><TT><I>x</I> `&lt; <I>y</I></TT> denotes that
