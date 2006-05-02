@@ -33,8 +33,8 @@ TARGETS = \
 	FS.alc \
 	SEARCH-sig.alc \
 	Search.alc \
-	LINEAR-sig.alc \
-	Linear.alc \
+	MODELING-sig.alc \
+	Modeling.alc \
 	CONSTRAINTS-sig.alc \
 	Constraints.alc
 

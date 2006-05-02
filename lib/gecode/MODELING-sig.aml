@@ -1,0 +1,105 @@
+(*
+ * Author:
+ *   Gabor Szokoli <szokoli@ps.uni-sb.de>
+ *   Dominik Brill <brill@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Gabor Szokoli, 2003, 2004
+ *   Dominik Brill, 2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature MODELING =
+sig
+    type space
+    type intvar
+    type boolvar
+	
+    datatype conlevel = 
+	BND | DEF | DOM | VAL
+	
+    infix  7  `*
+    infix  6  `+ `-
+    infix  5  `#
+    infix  4  `= `<> `> `>= `< `<=
+	
+    infix  3  `->
+    infix  3  `<-
+    infix  3  `==
+    infix  3  `&
+    infix  3  `|
+    infix  3  XOR
+
+    datatype domain_element =
+	`` of int
+      | `# of int * int
+
+    type domain = domain_element list
+
+    datatype b_var_sel =
+	B_DEGREE_MAX
+      | B_DEGREE_MIN
+      | B_MAX_MAX
+      | B_MAX_MIN
+      | B_MIN_MAX
+      | B_MIN_MIN
+      | B_NONE
+      | B_REGRET_MAX_MAX
+      | B_REGRET_MAX_MIN
+      | B_REGRET_MIN_MAX
+      | B_REGRET_MIN_MIN
+      | B_SIZE_MAX
+      | B_SIZE_MIN
+	
+    datatype b_val_sel =
+	B_MAX
+      | B_MED
+      | B_MIN
+      | B_SPLIT_MAX
+      | B_SPLIT_MIN
+	
+    datatype term =
+	FD of intvar
+      | `  of int
+      | `+ of term * term
+      | `- of term * term
+      | `* of term * term
+      | SUMV of intvar vector
+	
+    datatype rel =
+	`<   of term * term
+      | `<=  of term * term
+      | `=   of term * term
+      | `<>  of term * term
+      | `>=  of term * term
+      | `>   of term * term
+	
+    val fdterm : space * domain -> term
+    val fdtermVec : space * int * domain -> term vector
+	
+    val post : space * rel * conlevel -> unit
+	
+    val distinct : space * term vector * conlevel -> unit
+    val branch : space * term vector * b_var_sel * b_val_sel -> unit
+	
+    datatype b_term = 
+	BV of boolvar
+      | BC of bool
+      | HOLDS of rel
+      | `== of b_term * b_term
+      | `-> of b_term * b_term
+      | `<- of b_term * b_term
+      | `! of b_term
+      | `& of b_term * b_term
+      | XOR of b_term * b_term
+      | `| of b_term * b_term
+	
+    val boolterm : space -> b_term
+    val booltermVec : space * int -> b_term vector
+	
+    val postTrue : space * b_term -> unit
+	
+end
