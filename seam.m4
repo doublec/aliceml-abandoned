@@ -73,9 +73,11 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_OPTIMIZED],
    if test "${enable_optimized:-yes}" = "yes" -a \
            "${enable_checked:-no}" = "no"; then
       AC_MSG_RESULT(yes)
-      AC_SEAM_CHECK_CXXFLAGS(-O3 -fomit-frame-pointer \
-                             -fforce-mem -fforce-addr \
-                             -finline-limit=2500 -fno-implement-inlines \
+      AC_SEAM_CHECK_CXXFLAGS(-O3 \
+                             -fomit-frame-pointer \
+                             -fforce-addr \
+                             -finline-limit=2500 \
+			     -fno-implement-inlines \
                              -fno-keep-static-consts \
                              -fno-implicit-templates \
                              -fno-implicit-inline-templates)
