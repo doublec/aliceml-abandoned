@@ -377,8 +377,6 @@ u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
   default:
     Error("ByteCodeJitter::LoadIdRef: invalid idRef Tag");
   }
-
-  return INVALID_INT;
 }
 
 ByteCodeJitter::ByteCodeJitter() {
@@ -782,7 +780,7 @@ inline TagVal *ByteCodeJitter::InstrPutCon(TagVal *pc) {
 }
 
 // PutTag of id * int * int * idRef vector * instr 
-/*inline*/ TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   u_int tag  = Store::DirectWordToInt(pc->Sel(2));  
 
@@ -860,7 +858,7 @@ inline TagVal *ByteCodeJitter::InstrPutRef(TagVal *pc) {
 }
 
 // PutTup of id * idRef vector * instr
-inline void ByteCodeJitter::NewTup(u_int dst, Vector *idRefs) {
+void ByteCodeJitter::NewTup(u_int dst, Vector *idRefs) {
   u_int size = idRefs->GetLength();
   switch(size) {
   case 2:
@@ -927,7 +925,7 @@ inline TagVal *ByteCodeJitter::InstrPutVec(TagVal *pc) {
 }
 
 // Close of id * idRef vector * template * instr
-inline TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
   u_int dst = IdToReg(pc->Sel(0));
   Vector *globalRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nGlobals = globalRefs->GetLength();
@@ -981,7 +979,7 @@ inline TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
 // On runtime every value of the global environment is directly 
 // substituted into the code. This means that every time such a closure
 // is really needed, new code must be compiled.
-inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
   u_int dst = IdToReg(pc->Sel(0));
   Vector *globalRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nGlobals = globalRefs->GetLength();
@@ -1028,9 +1026,9 @@ inline TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
   }
 
 // AppPrim of value * idRef vector * (idDef * instr) option   
-/*inline*/ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure, 
-						      Vector *args, 
-						      bool isTailcall) { 
+void ByteCodeJitter::CompileApplyPrimitive(Closure *closure, 
+					   Vector *args, 
+					   bool isTailcall) { 
   u_int nArgs = args->GetLength();
   ConcreteCode *concreteCode = 
     ConcreteCode::FromWord(closure->GetConcreteCode());		
@@ -1236,7 +1234,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   Vector *args = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs = args->GetLength();
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
-  u_int outArity = INVALID_INT;
+  s_int outArity = INVALID_INT;
 
 #ifdef DO_INLINING
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER
@@ -1700,7 +1698,7 @@ inline TagVal *ByteCodeJitter::InstrEndHandle(TagVal *pc) {
 }
 
 // IntTest of idRef * (int * instr) vector * instr 
-inline TagVal *ByteCodeJitter::InstrIntTest(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrIntTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   Vector *tests = Vector::FromWordDirect(pc->Sel(1));
   u_int nTests = tests->GetLength();
@@ -1719,7 +1717,7 @@ inline TagVal *ByteCodeJitter::InstrIntTest(TagVal *pc) {
 }
 
 // CompactIntTest of idRef * int * instrs * instr 
-inline TagVal *ByteCodeJitter::InstrCompactIntTest(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrCompactIntTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   u_int offset  = Store::DirectWordToInt(pc->Sel(1));
   Vector *jumpTable = Vector::FromWordDirect(pc->Sel(2));
@@ -1750,7 +1748,7 @@ inline TagVal *ByteCodeJitter::InstrCompactIntTest(TagVal *pc) {
 }
 
 // RealTest of idRef * (real * instr) vector * instr
-inline TagVal *ByteCodeJitter::InstrRealTest(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrRealTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   Vector *tests = Vector::FromWordDirect(pc->Sel(1));
   u_int nTests = tests->GetLength();
@@ -1782,7 +1780,7 @@ inline TagVal *ByteCodeJitter::InstrRealTest(TagVal *pc) {
 }
 
 // StringTest of idRef * (string * instr) vector * instr 
-inline TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   Vector *tests = Vector::FromWordDirect(pc->Sel(1));
   u_int nTests = tests->GetLength();
@@ -1881,7 +1879,7 @@ void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
 
 // TagTest of idRef * int * (int * instr) vector
 //          * (int * idDef vector * instr) vector * instr   
-/*inline*/ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   Vector *nullaryTests = Vector::FromWordDirect(pc->Sel(2));
@@ -2114,7 +2112,7 @@ void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
 
 // Contest of idRef * (idRef * instr) vector 
 //          * (idRef * idDef vector * instr) vector * instr    
-/*inline*/ TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrConTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   Vector *nullaryTests = Vector::FromWordDirect(pc->Sel(1));
   Vector *naryTests = Vector::FromWordDirect(pc->Sel(2));
@@ -2165,7 +2163,7 @@ void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
 }
 
 // VecTest of idRef * (idDef vector * instr) vector * instr  
-inline TagVal *ByteCodeJitter::InstrVecTest(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrVecTest(TagVal *pc) {
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   Vector *tests = Vector::FromWordDirect(pc->Sel(1));
   u_int nTests = tests->GetLength();
@@ -2220,7 +2218,7 @@ inline TagVal *ByteCodeJitter::InstrShared(TagVal *pc) {
 }
 
 // Return of idRef vector
-/*inline*/ TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
   Vector *returnIdRefs = Vector::FromWordDirect(pc->Sel(0));
   u_int nArgs = returnIdRefs->GetLength();
 #ifdef DO_INLINING
@@ -2358,7 +2356,7 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
   scratch = oldScratch;
 }
 
-void ByteCodeJitter::CompileCCC(Vector *rets, u_int outArity) {
+void ByteCodeJitter::CompileCCC(Vector *rets, s_int outArity) {
   u_int inArity = rets->GetLength();
   bool match = 
     outArity != INVALID_INT && 

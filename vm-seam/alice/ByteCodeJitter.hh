@@ -332,7 +332,7 @@ private:
   //@}
   //@}
 
-  void CompileCCC(Vector *rets, u_int outArity);
+  void CompileCCC(Vector *rets, s_int outArity);
   void CompileInstr(TagVal *pc);
   void CompileApplyPrimitive(Closure *closure, Vector *args, bool isTailcall);
   void CompileSelfCall(TagVal *instr, bool isTailcall);

@@ -75,7 +75,7 @@ public:
     top = 0;
     return code;
   }
-  static void SetSlot(u_int index, CodeSlot slot) {
+  static __attribute__((always_inline)) void SetSlot(u_int index, CodeSlot slot) {
     if(index >= top)
       top = index+1;
     if(index+1 >= size) {
