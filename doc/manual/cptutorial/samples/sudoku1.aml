@@ -1,11 +1,9 @@
 import structure FD from "x-alice:/lib/gecode/FD"
 import structure FS from "x-alice:/lib/gecode/FS"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
-import structure Space from "x-alice:/lib/gecode/Space"
-import structure Search from "x-alice:/lib/gecode/Search"
 
-open Linear;
+open Modeling
 
 (* the inputlist is a list of triples(a,b,c) where
    (a,b) is the address of the variable in the grid

@@ -1,11 +1,11 @@
 import structure FD from "x-alice:/lib/gecode/FD"
 import structure FS from "x-alice:/lib/gecode/FS"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
 import structure Search from "x-alice:/lib/gecode/Search"
 
-open Linear;
+open Modeling
 
 val nbOfWeeks = 9;
 val nbOfFourSomes = 8;
@@ -53,7 +53,7 @@ let
                   (golf nbOfWeeks nbOfFourSomes))
 in
     List.map(fn z =>
-     List.map(fn w => domainToList w)z)
+     List.map(fn w => FD.domainToList w)z)
        (List.map(fn x => 
           (List.map(fn y => 
             FS.Reflect.upperBound(s,y))x)

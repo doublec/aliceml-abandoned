@@ -1,15 +1,13 @@
 import structure FD from "x-alice:/lib/gecode/FD"
 import structure FS from "x-alice:/lib/gecode/FS"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
-(*import structure Space from "x-alice:/lib/gecode/Space"
-import structure Search from "x-alice:/lib/gecode/Search"*)
 
-open Linear;
+open Modeling
 
 val inputlist3 = [(0,1,2),(0,2,6),(0,6,8),(0,7,1),
                   (1,0,3),(1,3,7),(1,5,8),(1,8,6),
-                  (2,0,4),(2,4,5),(2,8,7),(3,1,5),
+                  (2,0,4),(2,4,5),(2,8,7),(3,1,5),
                   (3,3,1),(3,5,7),(3,7,9),(4,2,3),
                   (4,3,9),(4,5,5),(4,6,1),(5,1,4),
                   (5,3,3),(5,5,2),(5,7,5),(6,0,1),
@@ -105,18 +103,18 @@ fun sudoku inputlist space =
           List.app(fn j =>
              let
                 val bvar = FD.boolvar space
-             in  
+             in  
                 FD.Reified.relI(space,Vector.sub(grid',i-1),
-                                     FD.EQ,j,bvar);
+                                     FD.EQ,j,bvar);
                 FS.domR(space,Vector.sub(numbers,j-1),
                                      FS.SUP,#[(i,i)],bvar)
              end)
              (List.tabulate(9,fn x => x+1)))
-         (List.tabulate(81,fn x => x+1));
+         (List.tabulate(81,fn x => x+1));
      FS.setvarbranch(space,numbers,FS.FSB_MIN_CARD,FS.FSB_MIN);
      numbers
   end
-
+
 (* Explorer.exploreOne(sudoku) *)
 (* Explorer.exploreAll(sudoku inputlist3)*)
 (* Explorer.exploreAll(sudoku inputlist_hard)*)

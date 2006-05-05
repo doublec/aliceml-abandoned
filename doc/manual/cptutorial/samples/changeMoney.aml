@@ -1,9 +1,10 @@
 import structure FD from "x-alice:/lib/gecode/FD"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
 
-open Linear;
+open Modeling
+
 (* billsandcoins is a vector of pairs where the first component
    specifies the value of a coin in cents and the second the
    the amount of available coins *)

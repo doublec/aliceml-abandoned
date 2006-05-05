@@ -1,11 +1,12 @@
 import structure FD from "x-alice:/lib/gecode/FD"
 import structure FS from "x-alice:/lib/gecode/FS"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
 
-open Linear;
-exception FalseInput;
+open Modeling
+
+exception FalseInput
 
 fun steiner n space  = 
    if ((n mod 6) = 1) orelse ((n mod 6) = 3)
@@ -53,4 +54,3 @@ fun steiner n space  =
      raise FalseInput   
            
 (* Explorer.exploreOne(steiner 9) *)      
-           

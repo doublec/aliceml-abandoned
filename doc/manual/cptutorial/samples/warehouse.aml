@@ -1,9 +1,9 @@
 import structure FD from "x-alice:/lib/gecode/FD"
-(*import structure Linear from "x-alice:/lib/gecode/Linear"*)
-import structure Linear from "Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
-open Linear;
+
+open Modeling
 
 val capacity = #[3,1,4,1,4];
 
@@ -25,9 +25,9 @@ fun warehouse cap costm space =
        val cost as #[c0,c1,c2,c3,c4,c5,c6,c7,c8,c9] = 
                           FD.rangeVec(space,10,(1,1000))
        val suppliesij = Vector.tabulate(5,fn x => 
-                          FD.boolvarVec(space,10))
+                          FD.boolvarVec(space,10))
        val sumcost = FD.range(space,(1,10000))
-       val nbopen = FD.range(space,(0,5))
+       val nbopen = FD.range(space,(0,5))
        val totalcost = FD.range(space,(1,11000))
        fun order(curr,last)=
            post (curr, FD(totalcost)`< 

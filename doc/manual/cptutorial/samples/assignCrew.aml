@@ -1,11 +1,12 @@
 import structure FD from "x-alice:/lib/gecode/FD"
 import structure FS from "x-alice:/lib/gecode/FS"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
 import structure Search from "x-alice:/lib/gecode/Search"
 
-open Linear;
+open Modeling
+
 val maxValue = (valOf (Int.maxInt))div 2
 
 type crewrec = {french : int list, german : int list,
@@ -98,19 +99,6 @@ fun assignCrew flights (crew:crewrec) space =
 	
 (* Explorer.exploreOne(assignCrew flights crew) *)
 
-
-(*     
-
-fun domainToList(vec:(int * int) vector) =
-  let 
-      val tmp = Vector.toList(vec)   
-  in
-      List.concat(List.map(fn y => 
-        List.tabulate(#2(y) - #1(y) + 1,fn x => x + #1(y)))
-        (tmp))
-  end
- *)                    
-
            
 (*
 fun name 1 = "tom"
@@ -138,7 +126,7 @@ let
     val (s,r) = valOf(Search.searchOne(assignCrew flights crew))
 in  
     List.map(fn x => List.map(fn y => name y)x)
-    (List.map(fn y=> domainToList y)(List.map(fn x => 
+    (List.map(fn y=> FD.domainToList y)(List.map(fn x => 
                   FS.Reflect.upperBound(s,x))(r)))
 end
 *)

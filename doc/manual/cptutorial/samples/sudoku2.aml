@@ -1,11 +1,9 @@
 import structure FD from "x-alice:/lib/gecode/FD"
 import structure FS from "x-alice:/lib/gecode/FS"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
-(*import structure Space from "x-alice:/lib/gecode/Space"
-import structure Search from "x-alice:/lib/gecode/Search"*)
 
-open Linear;
+open Modeling
 
 val inputlist2 = [(1,[8,31,43,55]),(2,[2,51,63,67]),
                   (3,[10,39,49,59,74]),(4,[19,47,69,79]),
@@ -42,7 +40,7 @@ fun sudoku2 inputlist space =
                      let 
                         val tmp2 = FS.setvar space 
                      in
-                        FS.relOp(space,x,FS.INTER,tmp1,FS.SEQ,tmp2);
+                        FS.relOp(space,x,FS.INTER,tmp1,FS.SEQ,tmp2);
                         FS.cardRange(space,1,1,tmp2)
                      end)numbers
                  end)l

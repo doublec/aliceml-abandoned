@@ -1,10 +1,8 @@
 import structure FD from "x-alice:/lib/gecode/FD"
-(*import structure Linear from "x-alice:/lib/gecode/Linear"*)
-import structure Linear from "Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
-import structure Space from "x-alice:/lib/gecode/Space"
 
-open Linear;
+open Modeling
 
 (* bsum ensures that the sum of the boolean vector 
    boolvec is equal s(:intvar) *)
@@ -72,7 +70,7 @@ fun srat space =
           (see Model) *)  			      
         Vector.appi(fn(i,x)=> asrt(x,i+1))(#[a,b,c,d,e]);
 	   
-       (* first question *)
+       (* first question *)
 	Vector.appi(fn(i,(x,y))=>
 	 let
 	     val tmp1 = Vector.sub(x,0)

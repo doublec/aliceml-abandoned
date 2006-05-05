@@ -1,11 +1,11 @@
 import structure FD from "x-alice:/lib/gecode/FD"
 import structure FS from "x-alice:/lib/gecode/FS"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
 import structure Search from "x-alice:/lib/gecode/Search"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
-open Linear;
+open Modeling
  
 val distance = 2
 val bits = 7
@@ -37,7 +37,7 @@ fun hamming bits distance numsymbols space =
     	                  minDist(y,x))(ys);forallTail ys)
     in
        forallTail(xs);
-       FS.setvarbranch(space,Vector.fromList xs,
+       FS.setvarbranch(space,Vector.fromList xs,
                              FS.FSB_NONE,FS.FSB_MIN);
        xs
     end
@@ -50,10 +50,10 @@ let
     val(s,r) = valOf(Search.searchOne
                 (hamming bits distance numsymbols))
 in
-    List.map(fn y => domainToList y)
+    List.map(fn y => FD.domainToList y)
      (List.map(fn x =>FS.Reflect.upperBound(s,x))r)
 end 	
 
  *)          
-           
+
            

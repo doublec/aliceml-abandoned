@@ -1,10 +1,9 @@
 import structure FD from "x-alice:/lib/gecode/FD"
-(*import structure Linear from "x-alice:/lib/gecode/Linear"*)
-import structure Linear from "Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
 
-open Linear;
+open Modeling
 
 val maxValue = (valOf (Int.maxInt))div 2
 

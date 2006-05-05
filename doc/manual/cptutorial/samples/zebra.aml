@@ -1,8 +1,8 @@
 import structure FD from "x-alice:/lib/gecode/FD"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
-open Linear;
+open Modeling
         
 fun adjacent (space,#[a,b])=
 	let
@@ -59,7 +59,7 @@ fun zebra_puzzle space =
                       varvec;	    
  	(* the next 15 constraints ensure the known
  	   facts mentioned in the problem specification *)
- 	FD.rel(space,#engl(nationality),FD.EQ,#red(color));
+ 	FD.rel(space,#engl(nationality),FD.EQ,#red(color));
  	FD.rel(space,#dog(animal),FD.EQ,#span(nationality));
  	FD.rel(space,#painter(profession),FD.EQ,#jap(nationality));
  	FD.rel(space,#tea(drink),FD.EQ,#ital(nationality));
@@ -79,5 +79,5 @@ fun zebra_puzzle space =
  	           FD.B_SIZE_MIN,FD.B_MIN);
  	{nationality,color,profession,animal,drink}
  end
- 	          
+
 (* Explorer.exploreAll zebra_puzzle *)	          

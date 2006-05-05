@@ -1,9 +1,9 @@
 import structure FD from "x-alice:/lib/gecode/FD"
-import structure Linear from "Linear"
+import structure Modeling from "Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 import structure Space from "x-alice:/lib/gecode/Space"
 
-open Linear;
+open Modeling
 
 fun fractions space =
  	let 
