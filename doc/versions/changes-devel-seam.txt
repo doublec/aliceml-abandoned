@@ -22,7 +22,8 @@ Gtk Library:
 
 Other Libraries:
 
-* [FIX] XML: fix crash on nodes with empty names.
+* [FIX] XML: fix crash on nodes with empty names, throw exceptions for
+  operations on null nodes.
 
 
 Alice 1.2 (Kraftwerk 'Boost Your G-Thing' Album) - 2005/09/02
