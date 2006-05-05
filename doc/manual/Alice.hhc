@@ -272,10 +272,6 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/io.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Linear">
-			<param name="Local" value="library/linear.html">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="List">
 			<param name="Local" value="library/list.html">
 			</OBJECT>
@@ -302,6 +298,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="MkSearch">
 			<param name="Local" value="library/sf-search.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Modeling">
+			<param name="Local" value="library/modeling.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="MONO_ARRAY">

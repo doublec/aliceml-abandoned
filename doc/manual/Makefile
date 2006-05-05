@@ -12,7 +12,7 @@ INTEROP =
 CONSTRAINTS = constraints_gecode.html
 PLATFORM_LIB = \
 	fd.html fs.html space.html search.html \
-	linear.html explorer.html \
+	modeling.html explorer.html \
 	glib.html pango.html atk.html \
 	gtk.html gtk-canvas.html gtk-overview.html gdk.html \
         sf-search.html sf-path.html sf-problem.html sf-debug.html sf-distributed.html

@@ -1088,10 +1088,10 @@ of the selected variable.
     Puzzle},label=listing 1,frame=trbl}
 \begin{myverbatim}
 import structure FD from "x-alice:/lib/gecode/FD"
-import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
 import structure Explorer from "x-alice:/lib/tools/Explorer"
 
-open Linear
+open Modeling
 
 fun money space =
   let
@@ -1117,7 +1117,7 @@ fun money space =
 
 \db{Listing \ref{listing 1} shows a script realizing the model and
 branching strategy just discussed. In the first three lines of 
-the script the structures \emph{FD}, \emph{Linear} and \emph{Explorer}
+the script the structures \emph{FD}, \emph{Modeling} and \emph{Explorer}
 are imported. This is important to be able to use the methods of the
 respective structures. In the following scripts these imports are omitted
 for the sake of readability. Be sure not to forget them when testing
@@ -1127,8 +1127,8 @@ The script first declares a vector of finite domain variables,one for every lett
 This is done via
 the function \emph{fdtermVec: space * int * domain $ \rightarrow $ term vector}
 included in the structure
-\htmladdnormallink{\textcolor{blue}{Linear}}
-{http://www.ps.uni-sb.de/alice/manual/library/linear.html} from the Gecode 
+\htmladdnormallink{\textcolor{blue}{Modeling}}
+{http://www.ps.uni-sb.de/alice/manual/library/modeling.html} from the Gecode 
 library. \db{ The function \emph{fdtermVec(s,i,d)} creates a 
 new vector of finite domain variables 
 with lenght \emph{i}
@@ -1144,7 +1144,7 @@ distinct. This is
 realized with the predefined propagator \\
 \emph{distinct : space * term vector * conlevel $ \rightarrow $ 
 unit}, also included
-in the Linear library. \emph{Conlevel} refers to 
+in the Modeling library. \emph{Conlevel} refers to 
 the strength of
 propagation, i.e. for most propagators you can select 
 \emph{interval propagation} (FD.BND)
@@ -1935,9 +1935,9 @@ label=listing 7,frame=trbl}
 \begin{myverbatim}
 fun queens n space =
    let
-      val row = Linear.fdtermVec(space, n, [0`#(n - 1)])
+      val row = Modeling.fdtermVec(space, n, [0`#(n - 1)])
    in
-      Linear.distinct (space, row, FD.BND);
+      Modeling.distinct (space, row, FD.BND);
       List.app (fn (i, j) =>
          let
             val rowi = Vector.sub (row, i)
@@ -1946,7 +1946,7 @@ fun queens n space =
             post (space, rowi `+ (`j `- `i) `<> rowj, FD.BND);
             post (space, rowi `- (`j `- `i) `<> rowj, FD.BND)
          end) (upperTriangle n);
-      Linear.branch (space, row, FD.B_SIZE_MIN, FD.B_MED);
+      Modeling.branch (space, row, FD.B_SIZE_MIN, FD.B_MED);
       row
    end
 \end{myverbatim}
@@ -3608,7 +3608,7 @@ label=listing 22,frame=trbl}
 FD.space ->
       {Betty : FD.intvar, Chris : FD.intvar, Donald : FD.intvar,
        Fred : FD.intvar, Gary : FD.intvar, Mary : FD.intvar, Paul : FD.intvar,
-       satisfaction : FD.intvar} * (Linear.space * FD.space -> unit)
+       satisfaction : FD.intvar} * (Modeling.space * FD.space -> unit)
 \end{myverbatim}
 
 

@@ -54,8 +54,8 @@ href="components.html">components</A>:</P>
 <UL>
   <LI> <TT>structure <A href="library/fd.html">FD</A></TT> -
 	<A href="#fd">finite domain constraints</A> </LI>
-  <LI> <TT>structure <A href="library/linear.html">Linear</A></TT> -
-	<A href="#fd">linear finite domain constraints</A> </LI>
+  <LI> <TT>structure <A href="library/modeling.html">Modeling</A></TT> -
+	<A href="#fd">Modeling tools for finite domain constraints</A> </LI>
   <LI> <TT>structure <A href="library/fs.html">FS</A></TT> -
 	<A href="#fs">finite set constraints</A> </LI>
   <LI> <TT>structure <A href="library/space.html">Space</A></TT> -
@@ -100,16 +100,17 @@ in
     {S,E,N,D,M,O,R,Y}
 end
 <I><SMALL>val money :
-   Linear.space ->
+   Modeling.space ->
       {D : term, E : term, M : term, N : term, O : term, R : term, S : term,
        Y : term} = _fn</SMALL></I></PRE>
 
 <P>Constraint problems have to be formulated as a script, a unary
 function taking a computation space and
 posting the necessary constraints to that space. The script makes use
-of the <TT>Linear</TT> component to formulate the constraints conveniently. See
+of the <TT>Modeling</TT> component to formulate the constraints
+conveniently. See 
 the description of the <A href="library/fd.html"><TT>FD</TT></A> and <A
-href="library/linear.html"><TT>Linear</TT></A> structures for a detailed
+href="library/modeling.html"><TT>Modelin</TT></A> structures for a detailed
 description of the meaning of the above constraints.</P>
 
 <P>The Send More Money problem cannot be solved using constraint propagation

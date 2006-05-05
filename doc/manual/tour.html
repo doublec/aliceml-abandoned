@@ -1629,9 +1629,9 @@ to import the constraint library and define a so-called <I>script</I>
 that encodes the problem:</P>
 
 <PRE class=code>
-import structure FD     from "x-alice:/lib/gecode/FD"
-import structure Linear from "x-alice:/lib/gecode/Linear"
-open Linear
+import structure FD       from "x-alice:/lib/gecode/FD"
+import structure Modeling from "x-alice:/lib/gecode/Modeling"
+open Modeling
 
 fun money sp =
 let
@@ -1647,7 +1647,7 @@ in
     {S,E,N,D,M,O,R,Y}
 end
 <I><SMALL>val money :
-   Linear.space ->
+   Modeling.space ->
       {D : term, E : term, M : term, N : term, O : term, R : term, S : term,
        Y : term} = _fn</SMALL></I></PRE>
 
