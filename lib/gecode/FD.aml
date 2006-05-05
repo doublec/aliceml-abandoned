@@ -89,6 +89,16 @@ struct
        
    val domainFromList = Vector.fromList o dListFromList
 
+   fun domainToList vec =
+     let 
+         val tmp = Vector.toList(vec)   
+     in
+         List.concat(List.map(fn y => 
+			      List.tabulate(#2(y) - #1(y) + 1,
+					    fn x => x + #1(y)))
+		     (tmp))
+     end
+
    val assign = UnsafeGecode.int_assign
    val dom = UnsafeGecode.int_dom
    val rel = UnsafeGecode.int_rel

@@ -24,6 +24,7 @@ sig
     (* if something that is no proper domain is used *)
 
     val domainFromList : int list -> domain
+    val domainToList : domain -> int list
 
     (* Allocation of finite domain variables *)
     val intvar :  space * domain -> intvar
