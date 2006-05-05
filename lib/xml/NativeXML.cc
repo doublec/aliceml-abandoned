@@ -57,6 +57,12 @@ static word MakeXMLError(String *err) {
   return conVal->ToWord();
 }
 
+#define CHECK_NULL(node)						\
+  if ( (node) == NULL ) {						\
+    word exn ## __LINE__ = MakeXMLError(String::New("node is NULL"));	\
+    RAISE(exn ## __LINE__);						\
+  }
+
 DEFINE1(xml_parse) {
   DECLARE_STRING(filename, x0);
   xmlDocPtr doc;
@@ -127,6 +133,7 @@ DEFINE1(xml_isNull) {
 DEFINE1(xml_children) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
   c->Init(1, Store::UnmanagedPointerToWord(node->children));
@@ -136,15 +143,23 @@ DEFINE1(xml_children) {
 DEFINE1(xml_parent) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
-  c->Init(1, Store::UnmanagedPointerToWord(node->parent));
+
+  if (node == xmlDocGetRootElement(extract_docptr(t->Sel(0)))) {
+    c->Init(1, Store::UnmanagedPointerToWord(NULL));
+  } else {
+    c->Init(1, Store::UnmanagedPointerToWord(node->parent));
+  }
+
   RETURN(c->ToWord());
 } END
 
 DEFINE1(xml_next) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
   c->Init(1, Store::UnmanagedPointerToWord(node->next));
@@ -154,6 +169,7 @@ DEFINE1(xml_next) {
 DEFINE1(xml_prev) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
   c->Init(1, Store::UnmanagedPointerToWord(node->prev));
@@ -163,6 +179,7 @@ DEFINE1(xml_prev) {
 DEFINE1(xml_properties) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
   c->Init(1, Store::UnmanagedPointerToWord(node->properties));
@@ -172,6 +189,7 @@ DEFINE1(xml_properties) {
 DEFINE1(xml_name) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(node);
 
   if (node->name) {
     int len = strlen((const char*)node->name);
@@ -192,6 +210,7 @@ DEFINE2(xml_nodeListGetString) {
   DECLARE_TUPLE(t, x0);
   xmlDocPtr doc = extract_docptr(t->Sel(0));
   xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(node);
 
   DECLARE_INT(inLine, x1);
 
@@ -219,12 +238,14 @@ DEFINE2(xml_nodeListGetString) {
 DEFINE1(xml_getType) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr cur = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(cur);
   RETURN_INT(xmlTypeMapping[cur->type]);
 } END
 
 DEFINE2(xml_getProp) {
   DECLARE_TUPLE(t, x0);
   xmlNodePtr cur = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  CHECK_NULL(cur);
   DECLARE_STRING(name, x1);
 
   int len2 = name->GetSize();
