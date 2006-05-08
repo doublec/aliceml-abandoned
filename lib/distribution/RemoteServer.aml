@@ -51,9 +51,9 @@ fun main ((flag as ("-x"|"-r"))::[ticket]) =
 		Promise.fulfill (p, true)
 	    end
 
-	val _ = OS.Process.atExit
-		(fn _ => (log "Exit called";
-			  return (EXN Remote.Exit, "Returning exception Exit")))
+(* 	val _ = OS.Process.atExit *)
+(* 		(fn _ => (log "Exit called"; *)
+(* 			  return (EXN Remote.Exit, "Returning exception Exit"))) *)
 
 	val _ = log ("Evaluating component")
 	val reply =
