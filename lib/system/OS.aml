@@ -45,7 +45,7 @@ struct
 
     structure Process =
     struct
-	__primitive eqtype status = "OS.Process.status"
+	type status = int
 
 	val success = UnsafeOS.Process.success
 	val failure = UnsafeOS.Process.failure

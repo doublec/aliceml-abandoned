@@ -16,7 +16,8 @@ signature UNSAFE_UNIX_COMPONENT =
 	structure UnsafeUnix:
 	    sig
 		val execute: string * string list -> 'proc
-		val streamsOf: 'proc -> 'instream * 'outstream
-                val allStreamsOf: 'proc -> 'instream * 'outstream * 'outstream
+		val wait' :  'proc_handle -> int option	
+	        val streamsOf : 'proc -> 'instream * 'outstream
+	        val pHandleOf : 'proc -> 'proc_handle
 	    end
     end
