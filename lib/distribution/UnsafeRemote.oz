@@ -23,16 +23,21 @@ import
 export
    'UnsafeRemote$' : Remote
 define
+   TicketException = {NewUniqueName 'Remote.Ticket'}
    SitedInternalException = {NewUniqueName 'UnsafeRemote.SitedInternal'}
    CorruptInternalException = {NewUniqueName 'UnsafeRemote.CorruptInternal'}
    SitedArgumentException = {NewUniqueName 'Remote.SitedArgument'}
    SitedResultException = {NewUniqueName 'Remote.SitedResult'}
    ProxyException = {NewUniqueName 'Remote.Proxy'}
    ProtocolException = {NewUniqueName 'Remote.Protocol'}
+   RemoteException = {NewUniqueName 'Remote.Remote'}
+   ConnectionException = {NewUniqueName 'Remote.Connection'}
    ExitException = {NewUniqueName 'Remote.Exit'}
 
    Remote =
-   'Remote'('SitedInternal': SitedInternalException
+   'Remote'('Ticket': TicketException
+	    '\'Ticket': TicketException
+	    'SitedInternal': SitedInternalException
 	    '\'SitedInternal': SitedInternalException
 	    'CorruptInternal': CorruptInternalException
 	    '\'CorruptInternal': CorruptInternalException
@@ -40,12 +45,16 @@ define
 	    '\'SitedArgument': SitedArgumentException
 	    'SitedResult': SitedResultException
 	    '\'SitedResult': SitedResultException
-	    'Exit': ExitException
-	    '\'Exit': ExitException
 	    'Proxy': fun {$ Exn} ProxyException(Exn) end
 	    '\'Proxy': ProxyException
 	    'Protocol': fun {$ S} ProtocolException(S) end
 	    '\'Protocol': ProtocolException
+	    'Connection': ConnectionException
+	    '\'Connection': ConnectionException
+	    'Remote': fun {$ Exn} RemoteException(Exn) end
+	    '\'Remote': RemoteException
+	    'Exit': fun {$ N} ExitException(N) end
+	    '\'Exit': ExitException
 	    getLocalIP:
 	       fun {$ unit}   % generate a ticket just to guess our IP
 		  case {VirtualString.toString {Connection.offer 7}}

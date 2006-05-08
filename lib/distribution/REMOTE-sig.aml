@@ -5,7 +5,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus and Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *   Thorsten Brunklaus and Leif Kornstaedt and Andreas Rossberg, 2001-2006
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -25,7 +25,9 @@ signature REMOTE =
 	exception SitedArgument			(* only as proxy cause *)
 	exception SitedResult			(* only as proxy cause *)
 	exception Protocol of string		(* only as proxy cause *)
-	exception Exit
+	exception Remote of exn
+	exception Connection			(* only as remote cause *)
+	exception Exit of OS.Process.status	(* only as remote cause *)
 
 	(*--** once-only offer and proxy are missing *)
 	val proxy: ('a -> 'b) -> 'a -> 'b

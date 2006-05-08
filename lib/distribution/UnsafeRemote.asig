@@ -14,13 +14,16 @@ signature UNSAFE_REMOTE_COMPONENT =
     sig
 	structure UnsafeRemote:
 	    sig
+		exception Ticket
 		exception SitedInternal
 		exception CorruptInternal
 		exception SitedArgument
 		exception SitedResult
 		exception Proxy of exn
 		exception Protocol of string
-		exception Exit
+		exception Remote of exn
+		exception Connection
+		exception Exit of int
 
 		val getLocalIP: unit -> string
 

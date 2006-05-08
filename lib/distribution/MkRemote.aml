@@ -7,7 +7,7 @@
  *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -174,7 +174,11 @@ sig
     exception SitedArgument			(* only as proxy cause *)
     exception SitedResult			(* only as proxy cause *)
     exception Protocol of string		(* only as proxy cause *)
-    exception Exit				(* remote process exits *)
+    exception Remote of exn			(* raised if remote exec fails
+                                                   exn is reason (cause) 
+                                                 *)
+    exception Connection			(* only as remote cause *)
+    exception Exit of OS.Process.status		(* only as remote cause *)
 
     val export: string -> ticket
     val download: ticket -> string
@@ -192,6 +196,8 @@ struct
     exception SitedArgument = RemotePort.SitedArgument
     exception SitedResult = RemotePort.SitedResult
     exception Protocol = RemotePort.Protocol
+    exception Remote = RemotePort.Remote
+    exception Connection = RemotePort.Connection
     exception Exit = RemotePort.Exit
 
     (*--------------------------------------------------------------
@@ -392,13 +398,20 @@ struct
                               "x-alice:/lib/distribution/RemoteServer " ^
                               T.ticket ^ "\n")
 *)
-            val _ =
+            val proc =
                 Unix.execute ("ssh",
                               [host, "aliceremote",
                                "x-alice:/lib/distribution/RemoteServer",
                                flag, ticket])
+	    val result =
+		case Future.awaitEither(Promise.future p, spawn Unix.wait proc) of
+		     FST result => result
+		   | SND n =>
+		     if Promise.isFulfilled p (* avoid race *)
+		     then Promise.future p
+		     else raise Remote(if n = 255 then Connection else Exit n)
 	in
-	    case Promise.future p of
+	    case result of
 		OK package => package
 	      | EXN exn => raise exn
 	end

@@ -24,11 +24,13 @@ structure HttpRemotePort :> REMOTE_PORT =
     struct
 	type ticket = Url.t
 
-	exception Ticket
+	exception Ticket = UnsafeRemote.Ticket
 	exception Proxy = UnsafeRemote.Proxy
 	exception SitedArgument = UnsafeRemote.SitedArgument
 	exception SitedResult = UnsafeRemote.SitedResult
 	exception Protocol = UnsafeRemote.Protocol
+	exception Remote = UnsafeRemote.Remote
+	exception Connection = UnsafeRemote.Connection
 	exception Exit = UnsafeRemote.Exit
 
 	val pickleContentType = "application/x-alice-pickle"
