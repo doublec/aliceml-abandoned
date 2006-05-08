@@ -391,7 +391,7 @@ struct
 						 Promise.fulfill (p, reply)))
 			  : (val component : Component.t
 			     val return : reply -> unit))
-		handle Component.Sited => raise SitedArgument
+		handle Component.Sited => raise Remote SitedArgument
 (*DEBUG
             val _ =
                 TextIO.print ("ssh " ^ host ^ " alicerun " ^
@@ -403,6 +403,7 @@ struct
                               [host, "aliceremote",
                                "x-alice:/lib/distribution/RemoteServer",
                                flag, ticket])
+		handle e => raise Remote e
 	    val result =
 		case Future.awaitEither(Promise.future p, spawn Unix.wait proc) of
 		     FST result => result

@@ -63,15 +63,15 @@ fun main ((flag as ("-x"|"-r"))::[ticket]) =
 	return (reply, case reply of OK _ => "Returning result"
 				 | EXN e => "Returning exception " ^ Exn.name e)
 	handle Remote.Proxy Remote.SitedArgument =>
-	       (return (EXN Remote.SitedResult, "Sited result");
+	       (return (EXN(Remote.Remote Remote.SitedResult), "Sited result");
 	        OS.Process.exit OS.Process.success)
 	     | Remote.Proxy e =>
-	       (return (EXN e, "Exception Proxy(" ^ Exn.name e ^
-						") raised while returning!");
+	       (return (EXN(Remote.Remote e), "Exception Proxy(" ^ Exn.name e ^
+					      ") raised while returning!");
 	        OS.Process.exit OS.Process.success)
 	     | e =>
-	       (return (EXN e, "Exception " ^ Exn.name e ^
-					  " raised while returning!");
+	       (return (EXN(Remote.Remote e), "Exception " ^ Exn.name e ^
+					      " raised while returning!");
 	        OS.Process.exit OS.Process.success);
 	case (flag, reply)
 	 of ("-r", OK _) => ()
