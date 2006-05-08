@@ -29,22 +29,39 @@
 
 #include "alice/Authoring.hh"
 
+static word TicketConstructor;
 static word SitedArgumentConstructor;
 static word SitedResultConstructor;
 static word ProxyConstructor;
 static word ProtocolConstructor;
+static word RemoteConstructor;
+static word ConnectionConstructor;
 static word ExitConstructor;
 
-DEFINE1(UnsafeComponent_Proxy) {
+DEFINE1(UnsafeRemote_Proxy) {
   ConVal *conVal =
     ConVal::New(Store::DirectWordToBlock(ProxyConstructor), 1);
   conVal->Init(0, x0);
   RETURN(conVal->ToWord());
 } END
 
-DEFINE1(UnsafeComponent_Protocol) {
+DEFINE1(UnsafeRemote_Protocol) {
   ConVal *conVal =
     ConVal::New(Store::DirectWordToBlock(ProtocolConstructor), 1);
+  conVal->Init(0, x0);
+  RETURN(conVal->ToWord());
+} END
+
+DEFINE1(UnsafeRemote_Remote) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(RemoteConstructor), 1);
+  conVal->Init(0, x0);
+  RETURN(conVal->ToWord());
+} END
+
+DEFINE1(UnsafeRemote_Exit) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(ExitConstructor), 1);
   conVal->Init(0, x0);
   RETURN(conVal->ToWord());
 } END
@@ -98,23 +115,34 @@ DEFINE1(UnsafeRemote_unpackValue) {
 static word SitedConstructor;
 
 AliceDll word UnsafeRemote() {
+  TicketConstructor =
+    UniqueConstructor::New("Ticket", "Remote.Ticket")->ToWord();
+  RootSet::Add(TicketConstructor);
   SitedArgumentConstructor =
     UniqueConstructor::New("SitedArgument", "Remote.SitedArgument")->ToWord();
   RootSet::Add(SitedArgumentConstructor);
   SitedResultConstructor =
     UniqueConstructor::New("SitedResult", "Remote.SitedResult")->ToWord();
   RootSet::Add(SitedResultConstructor);
-  ExitConstructor =
-    UniqueConstructor::New("Exit", "Remote.Exit")->ToWord();
-  RootSet::Add(ExitConstructor);
   ProxyConstructor =
     UniqueConstructor::New("Proxy", "Remote.Proxy")->ToWord();
   RootSet::Add(ProxyConstructor);
   ProtocolConstructor =
     UniqueConstructor::New("Protocol", "Remote.Protocol")->ToWord();
   RootSet::Add(ProtocolConstructor);
+  RemoteConstructor =
+    UniqueConstructor::New("Remote", "Remote.Remote")->ToWord();
+  RootSet::Add(RemoteConstructor);
+  ConnectionConstructor =
+    UniqueConstructor::New("Connection", "Remote.Connection")->ToWord();
+  RootSet::Add(ConnectionConstructor);
+  ExitConstructor =
+    UniqueConstructor::New("Exit", "Remote.Exit")->ToWord();
+  RootSet::Add(ExitConstructor);
 
-  Record *record = Record::New(18);
+  Record *record = Record::New(24);
+  record->Init("'Ticket", TicketConstructor);
+  record->Init("Ticket", TicketConstructor);
   record->Init("'SitedInternal", Pickler::Sited);
   record->Init("SitedInternal", Pickler::Sited);
   record->Init("'CorruptInternal", Unpickler::Corrupt);
@@ -123,14 +151,20 @@ AliceDll word UnsafeRemote() {
   record->Init("SitedArgument", SitedArgumentConstructor);
   record->Init("'SitedResult", SitedResultConstructor);
   record->Init("SitedResult", SitedResultConstructor);
-  record->Init("'Exit", ExitConstructor);
-  record->Init("Exit", ExitConstructor);
+  record->Init("'Connection", ConnectionConstructor);
+  record->Init("Connection", ConnectionConstructor);
   record->Init("'Proxy", ProxyConstructor);
-  INIT_STRUCTURE(record, "UnsafeComponent", "Proxy",
-		 UnsafeComponent_Proxy, 1);
+  INIT_STRUCTURE(record, "UnsafeRemote", "Proxy",
+		 UnsafeRemote_Proxy, 1);
   record->Init("'Protocol", ProtocolConstructor);
-  INIT_STRUCTURE(record, "UnsafeComponent", "Protocol",
-		 UnsafeComponent_Protocol, 1);
+  INIT_STRUCTURE(record, "UnsafeRemote", "Protocol",
+		 UnsafeRemote_Protocol, 1);
+  record->Init("'Remote", RemoteConstructor);
+  INIT_STRUCTURE(record, "UnsafeRemote", "Remote",
+		 UnsafeRemote_Remote, 1);
+  record->Init("'Exit", ExitConstructor);
+  INIT_STRUCTURE(record, "UnsafeRemote", "Exit",
+		 UnsafeRemote_Proxy, 1);
   INIT_STRUCTURE(record, "UnsafeRemote", "getLocalIP",
 		 UnsafeRemote_getLocalIP, 0);
   INIT_STRUCTURE(record, "UnsafeRemote", "setCallback",
