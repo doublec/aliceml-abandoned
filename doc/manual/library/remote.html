@@ -52,7 +52,9 @@
 	exception <A href="#SitedResult-exn">SitedResult</A>
 	exception <A href="#Protocol">Protocol</A> of string
 	exception <A href="#Ticket-exn">Ticket</A>
-	exception <A href="#Exit-exn">Exit</A>
+	exception <A href="#Remote-exn">Remote</A> of exn
+	exception <A href="#Connection-exn">Connection</A>
+	exception <A href="#Exit-exn">Exit</A> of OS.Process.status
 
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
 
@@ -121,11 +123,22 @@
     </DD>
 
     <DT>
-      <TT>exception <A name="Exit-exn">Exit</A></TT>
+      <TT>exception <A name="Remote-exn">Remote</A> of exn</TT>
     </DT>
     <DD>
-      <P>indicates that a remote process has called
-      <TT><A href="os-process.html">OS.Process.exit</A></TT> before evaluation
+      <P>indicates that remote execution has failed. The argument
+      exception describes the specific cause of failure.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Connection-exn">Connection</A></TT> <BR>
+      <TT>exception <A name="Exit-exn">Exit</A> of OS.Process.status</TT>
+    </DT>
+    <DD>
+      <P>the former indicates that a connection for remote exection could not 
+      be established; the latter indicates that a remote process has called
+      <TT><A href="os-process.html">OS.Process.exit</A></TT>, or been terminated
+      by other means, before evaluation
       of its root component has finished.</P>
     </DD>
 
@@ -304,30 +317,40 @@
 	package. If evaluation of the component terminates with an
 	exception, that exception is re-raised in the caller's thread.</P>
 
-	<P>Like proxy calls, remote execution may fail for a number of reasons:</P>
+	<P>Like proxy calls, remote execution may fail for a number of reasons. In each case, the exception <TT>Remote</TT> is raised, carrying a secondary exception as an indication of the cause of failure:</P>
       <UL>
 	<LI><P>The component contains a sited value. In that
 	  case, <TT><A
-	  href="#SitedArgument-exn">SitedArgument</A></TT> will be
-	  raised.</P>
+	  href="#SitedArgument-exn">SitedArgument</A></TT> will
+	  indicate the cause.</P>
 	<LI><P>The remote process calls
 	  <TT><A href="os-process.html">OS.Process.exit</A></TT> before
-	  evaluation of the component was finished. In this case,
-	  <TT><A href="#Exit-exn">Exit</A></TT> is raised.</P>
+	  evaluation of the component was finished. Or it was terminated by
+	  other means, e.g. a signal. In these cases,
+	  <TT><A href="#Exit-exn">Exit</A></TT> is indicated.
+	  If the remote machine runs a Unix-compatible environment,
+	  the exception <TT>Exit 127</TT> might also indicate that the
+	  <TT>aliceremote</TT> command could not be found there.</P>
 	<LI><P>The export of the component contains a sited value after
 	  evaluation on the remote site, or it contains a failed future that
 	  carries an exception with a sited value or another failed
 	  future. In all cases, <TT><A
-	  href="#SitedResult-exn">SitedResult</A></TT> will be raised.
+	  href="#SitedResult-exn">SitedResult</A></TT> is indicated.
 	  (Secondary failed futures are captured to prevent divergence in
 	  the case of circular data structures.)</P>
+	<LI><P>The remote connection could not be established successfully,
+	  e.g. because the machine is not accessible, or permissions on the
+	  remote machine prohibit execution.
+	  In these cases, <TT><A 
+	  href="#Connection-exn">Connection</A> <I>s</I></TT> will be
+	  indicated.</P>
 	<LI><P>A protocol failure occurs in the lower communication layers.
 	  In this case, <TT><A 
-	  href="#Protocol-exn">Protocol</A> <I>s</I></TT> will be raised,
+	  href="#Protocol-exn">Protocol</A> <I>s</I></TT> will be indicated,
 	  with <TT><I>s</I></TT> describing the error condition.</P>
 	<LI><P>An I/O problem occurs in the lower communication layers.
 	  In this case, <TT><A 
-	  href="io.html">Io</A> <I>args</I></TT> will be raised, with
+	  href="io.html">Io</A> <I>args</I></TT> will be indicated, with
 	  <TT><I>args</I></TT> carrying further information.</P>
       </UL>
 
