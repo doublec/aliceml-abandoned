@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #define GetLastError() errno
 #define WSAGetLastError() errno
@@ -56,7 +57,7 @@ DEFINE2(UnsafeUnix_execute) {
     REQUEST(args);
   Assert(Store::WordToInt(args) == Types::nil);
   // Create the pipes and its associated process
-  Tuple *streams = Tuple::New(2);
+  word pHandle;
   IODesc *reader, *writer;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   HANDLE stdinRd, stdinWr, stdoutRd, stdoutWr, stderrWr;
@@ -121,7 +122,8 @@ DEFINE2(UnsafeUnix_execute) {
 		     NULL, NULL, TRUE, 0, NULL, NULL, &si, &pinf)) {
     RAISE_SYS_ERR();
   }
-  int pid = pinf.dwProcessId;
+  
+  //  int pid = pinf.dwProcessId;
   // Relase no longer needed handle resources
   CloseHandle(stdinRd);
   CloseHandle(stdoutWr);
@@ -133,6 +135,7 @@ DEFINE2(UnsafeUnix_execute) {
     IODesc::NewForwarded(IODesc::DIR_READER, String::New("reader"), stdoutRdDup);
   writer =
     IODesc::NewForwarded(IODesc::DIR_WRITER, String::New("writer"), stdinWrDup);
+  // TODO: pHandle = ??? pinf ???
 #else
   int sv[2];
   Interruptible(ret, socketpair(PF_UNIX, SOCK_STREAM, 0, sv));
@@ -187,22 +190,61 @@ DEFINE2(UnsafeUnix_execute) {
   // We can use the same socket fd for both reading and writing
   reader = IODesc::NewFromFD(IODesc::DIR_READER, String::New("reader"), sv[0]);
   writer = IODesc::NewFromFD(IODesc::DIR_WRITER, String::New("writer"), sv[0]);
+  pHandle = Store::IntToWord(pid);
+#endif  
+  RETURN3(reader->ToWord(), writer->ToWord(), pHandle);
+} END
+
+
+DEFINE1(UnsafeUnix_waitnh) {
+  word option;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // TODO: windows part missing
+#else
+  DECLARE_INT(pid, x0);
+  int status;
+  int ret = waitpid(pid,&status,WNOHANG);
+  if(ret == 0) { // process is still alive
+    option = Store::IntToWord(Types::NONE);
+  } else if(ret == pid) { // process is dead
+    TagVal *some = TagVal::New(Types::SOME,1);
+    // check why the process is dead
+    if(WIFEXITED(status)) {
+      some->Init(0, Store::IntToWord(WEXITSTATUS(status)));
+      option = some->ToWord();
+    } else if(WIFSIGNALED(status)) {
+      some->Init(0, Store::IntToWord(256 + WTERMSIG(status)));
+      option = some->ToWord();
+    } else  {            
+      option = Store::IntToWord(Types::NONE);
+    }
+  } else { // error
+    fprintf(stderr, "waitpid failed\n");
+    exit(-1);
+  }
 #endif
-  streams->Init(0, reader->ToWord());
-  streams->Init(1, writer->ToWord());
-  RETURN(streams->ToWord());
+  RETURN(option);
 } END
 
 DEFINE1(UnsafeUnix_streamsOf) {
-  DECLARE_TUPLE(streams, x0);
-  RETURN2(streams->Sel(0), streams->Sel(1));
+  DECLARE_TUPLE(triple, x0);
+  RETURN2(triple->Sel(0), triple->Sel(1));
+} END
+
+DEFINE1(UnsafeUnix_pHandleOf) {
+  DECLARE_TUPLE(triple, x0);
+  RETURN(triple->Sel(2));
 } END
 
 AliceDll word UnsafeUnix() {
-  Record *record = Record::New(2);
+  Record *record = Record::New(4);
   INIT_STRUCTURE_N(record, "UnsafeUnix", "execute",
-		   UnsafeUnix_execute, 2, 1);
+		   UnsafeUnix_execute, 2, 3);
+  INIT_STRUCTURE_N(record, "UnsafeUnix", "wait'",
+		   UnsafeUnix_waitnh, 1, 1);
   INIT_STRUCTURE_N(record, "UnsafeUnix", "streamsOf",
 		   UnsafeUnix_streamsOf, 1, 2);
+  INIT_STRUCTURE_N(record, "UnsafeUnix", "pHandleOf",
+		   UnsafeUnix_pHandleOf, 1, 1);
   RETURN_STRUCTURE("UnsafeUnix$", record);
 }
