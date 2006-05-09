@@ -134,7 +134,9 @@ DEFINE2(UnsafeUnix_execute) {
     IODesc::NewForwarded(IODesc::DIR_READER, String::New("reader"), stdoutRdDup);
   writer =
     IODesc::NewForwarded(IODesc::DIR_WRITER, String::New("writer"), stdinWrDup);
-  pHandle = Store::UnmanagedPointerToWord(pinf.hProcess);
+  // NOTE: we assume that process handle is represented as a pointer
+  // otherwise it would be: pHandle = Store::IntToWord((s_int) pinf.hProcess)
+  pHandle = Store::UnmanagedPointerToWord((void *)(pinf.hProcess));
 #else
   int sv[2];
   Interruptible(ret, socketpair(PF_UNIX, SOCK_STREAM, 0, sv));
@@ -198,11 +200,23 @@ DEFINE2(UnsafeUnix_execute) {
 DEFINE1(UnsafeUnix_waitnh) {
   word option;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  // TODO: windows part missing
-  DECLARE(...
-  HANDLE hProcess = Store::...
-  ...
-    CloseHandle(hProcess);
+  // NOTE: we assume here that HANDLE is a kind of pointer
+  // for integer, it is just: DELCARE_INT(hProcess, x0)
+  HANDLE hProcess = (HANDLE)(Store::WordToUnmanagedPointer(x0));
+  LPDWORD exitCode;
+  if(GetExitCodeProcess(hProcess, &exitCode)) {
+    if(exitCode == STILL_ACTIVE) {
+      option = Store::IntToWord(Types::NONE);
+    } else {
+      TagVal *some = TagVal::New(Types::SOME, 1);
+      some->Init(0, Store::IntToWord(exitCode));
+      option = some->ToWord();
+      CloseHandle(hProcess);
+    }
+  } else { // error
+    fprintf(stderr, "GetExitCodeProcess failed\n");
+    exit(-1);
+  }
 #else
   DECLARE_INT(pid, x0);
   int status;
