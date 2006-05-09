@@ -128,14 +128,13 @@ DEFINE2(UnsafeUnix_execute) {
   CloseHandle(stdinRd);
   CloseHandle(stdoutWr);
   CloseHandle(stderrWr);
-  CloseHandle(pinf.hProcess); //--** this is unsafe! keep open while pid used
   CloseHandle(pinf.hThread);
   // Wrap the handles
   reader =
     IODesc::NewForwarded(IODesc::DIR_READER, String::New("reader"), stdoutRdDup);
   writer =
     IODesc::NewForwarded(IODesc::DIR_WRITER, String::New("writer"), stdinWrDup);
-  // TODO: pHandle = ??? pinf ???
+  pHandle = Store::UnmanagedPointerToWord(pinf.hProcess);
 #else
   int sv[2];
   Interruptible(ret, socketpair(PF_UNIX, SOCK_STREAM, 0, sv));
@@ -191,7 +190,7 @@ DEFINE2(UnsafeUnix_execute) {
   reader = IODesc::NewFromFD(IODesc::DIR_READER, String::New("reader"), sv[0]);
   writer = IODesc::NewFromFD(IODesc::DIR_WRITER, String::New("writer"), sv[0]);
   pHandle = Store::IntToWord(pid);
-#endif  
+#endif
   RETURN3(reader->ToWord(), writer->ToWord(), pHandle);
 } END
 
@@ -200,6 +199,10 @@ DEFINE1(UnsafeUnix_waitnh) {
   word option;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   // TODO: windows part missing
+  DECLARE(...
+  HANDLE hProcess = Store::...
+  ...
+    CloseHandle(hProcess);
 #else
   DECLARE_INT(pid, x0);
   int status;
