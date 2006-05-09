@@ -25,7 +25,8 @@ DIRS = $(PREFIX) \
 	$(PREFIX)/library \
 	$(PREFIX)/library/constraints \
 	$(PREFIX)/examples \
-	$(PREFIX)/examples/interpreter
+	$(PREFIX)/examples/interpreter \
+	$(PREFIX)/cptutorial
 
 INSTALLFILES_0 = \
 	style.css macros.php3 menu.html bg.gif logo-small.gif logo-large.gif \
@@ -102,13 +103,18 @@ INSTALLFILES = \
 	$(INSTALLFILES_EXAMPLES_0:%=$(PREFIX)/examples/%) \
 	$(INSTALLFILES_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/examples/interpreter/%)
 
-.PHONY: install clean
+.PHONY: install clean cptutorial
 
 all: install
 
-install: $(DIRS) $(INSTALLFILES)
+install: $(DIRS) $(INSTALLFILES) cptutorial
 	rm -f constraints.html
 	rm -f $(PLATFORM_LIB:%=library/%)
+
+cptutorial:
+	(cd cptutorial && \
+	 make all && \
+	 install -c -m 444 html/* $(PREFIX)/cptutorial)
 
 clean:
 	rm -f constraints.html
