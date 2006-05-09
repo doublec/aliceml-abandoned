@@ -22,18 +22,19 @@ import signature UNIX             from "UNIX-sig"
 
 structure Unix :> UNIX =
     struct
-	type proc_handle
-	    
-	datatype proc_status =
-	    DEAD of OS.Process.status
-	  | ALIVE of proc_handle
-
         (* TODO: How to implement binstreams? *)
-	type ('a,'b) proc = 
-	    TextIO.instream * TextIO.outstream * proc_status ref
+	type ('a,'b) proc =
+	    TextIO.instream * TextIO.outstream * OS.Process.status
+	type signal
+
+	datatype exit_status =
+	    W_EXITED
+	  | W_EXITSTATUS of Word8.word
+	  | W_SIGNALED of signal
+	  | W_STOPPED of signal
 
 	structure TextTranslator =
-	    MkTextTranslator(structure PrimIO = TextPrimIO)
+	    MkTextTranslator (structure PrimIO = TextPrimIO)
 
 	fun textReader obj = TextTranslator.translateReader (TextPrimIO.RD obj)
 	fun textWriter obj = TextTranslator.translateWriter
@@ -41,25 +42,14 @@ structure Unix :> UNIX =
 
 	fun streamsOf (instream,outstream,_) = (instream,outstream)
 
-	fun wait (_,_,ref (DEAD s)) = s
-	  | wait (_,_,status as ref (ALIVE pHandle)) = 
-	    let
-		val timeout = Time.fromMilliseconds (LargeInt.fromInt 200)
-		fun loop () = 
-		    case UnsafeUnix.wait' pHandle of
-			    NONE => (Thread.sleep timeout; loop ()) (* alive *)
-			  | SOME x => x
-		val s = loop ()
-	    in
-		status := DEAD s;
-		s
-	    end
+	fun wait (_,_,status) = Future.await status
 
 	fun reap (proc as (instream,outstream,_)) =
 	    (TextIO.closeIn instream;
 	     TextIO.closeOut outstream;
 	     wait proc)
 
+	val timeout = Time.fromMilliseconds (LargeInt.fromInt 200)
 	fun execute (cmd, args) =
 	    let
 		val proc = UnsafeUnix.execute (cmd, args)
@@ -67,11 +57,19 @@ structure Unix :> UNIX =
 		val pHandle = UnsafeUnix.pHandleOf proc
 		val reader = textReader (IODesc.mkReader instream)
 		val writer = textWriter (IODesc.mkWriter outstream)
+		val status = Promise.promise ()
+		fun poll () = 
+		    (* wait' closes process handle on Windows, as soon as
+		     * process is dead - avoids resource leak! *)
+		    case UnsafeUnix.wait' pHandle of
+			    NONE => (Thread.sleep timeout; poll ()) (* alive *)
+			  | SOME x => Promise.fulfill (status, x)
 	    in
+		spawn poll ();
 		(TextIO.mkInstream (TextIO.StreamIO.mkInstream
 				    (reader, CharVector.fromList nil)),
 		 TextIO.mkOutstream (TextIO.StreamIO.mkOutstream
 				     (writer, IO.LINE_BUF)),
-		 ref (ALIVE pHandle))
+		 Promise.future status)
 	    end
     end

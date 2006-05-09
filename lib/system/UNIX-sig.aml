@@ -17,12 +17,17 @@ import structure OS from "OS"
 signature UNIX =
 sig
     type ('a,'b) proc
+    type signal
+
+    datatype exit_status =
+       W_EXITED
+      | W_EXITSTATUS of Word8.word
+      | W_SIGNALED of signal
+      | W_STOPPED of signal
 
     val execute :	string * string list -> ('a,'b) proc
 
 (*TODO
-    val allStreamsOf :  (TextIO.instream, TextIO.outstream) proc
-                        -> TextIO.instream * TextIO.outstream * TextIO.outstream
     val executeInEnv :	string * string list * string list -> ('a,'b) proc
     val fromStatus :	OS.Process.status -> exit_status
     val textInstreamOf:	(TextIO.instream, 'a) proc -> TextIO.instream
@@ -38,5 +43,4 @@ sig
 
     val wait    :       ('a,'b) proc -> OS.Process.status
     val reap :		('a,'b) proc -> OS.Process.status 
-
 end
