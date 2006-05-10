@@ -47,7 +47,7 @@ distclean:	clean
 	rm -f *.lex.*
 	rm -rf *-image.*
 	rm -f $(GENERATED_AML_FILES)
-	
+
 %.alc:	%.aml
 	alicec -z --no-warn-conventions $< -o $@
 
@@ -62,8 +62,10 @@ JackeParser.aml JACKE_PARSER-sig.aml:	jacke.grm
 
 Lexer.aml: Jacke.lex  
 	ml-lex Jacke.lex
-	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "JACKE_PARSER-sig"\nimport structure ErrorMsg from "ErrorMsg"' > Lexer.aml
-	cat Jacke.lex.sml >> Lexer.aml
+	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "JACKE_PARSER-sig"\nimport structure ErrorMsg from "ErrorMsg"' > Lexer.aml.tmp
+	cat Jacke.lex.sml >> Lexer.aml.tmp
+	sed -e 's/Unsafe.//g' Lexer.aml.tmp > Lexer.aml
+	rm Lexer.aml.tmp
 	rm Jacke.lex.sml
 
 

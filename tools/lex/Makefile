@@ -38,7 +38,7 @@ install: $(LINKED_HOSE) LEXER-sig.alc Lexer.alc
 	install -d $(INSTALL_LIB_TO)
 	install LEXER-sig.alc Lexer.alc $(INSTALL_LIB_TO)
 
-	
+
 depend:	$(GENERATED_FILES)
 	alicedep $(FILES) $(GENERATED_FILES) > Makefile.depend
 
@@ -68,8 +68,10 @@ HoseParser.aml HOSE_PARSER-sig.aml:	hose.grm
 
 HoseLexer.aml: hose.lex  
 	ml-lex hose.lex
-	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "HOSE_PARSER-sig"\n import structure AbsSyn from "AbsSyn"\n' > HoseLexer.aml
-	cat hose.lex.sml >> HoseLexer.aml
+	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "HOSE_PARSER-sig"\n import structure AbsSyn from "AbsSyn"\n' > HoseLexer.aml.tmp
+	cat hose.lex.sml >> HoseLexer.aml.tmp
+	sed -e 's/Unsafe.//g' HoseLexer.aml.tmp > HoseLexer.aml
+	rm HoseLexer.aml.tmp
 	rm hose.lex.sml
 
 -include Makefile.depend
