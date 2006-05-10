@@ -134,9 +134,11 @@ DEFINE2(UnsafeUnix_execute) {
     IODesc::NewForwarded(IODesc::DIR_READER, String::New("reader"), stdoutRdDup);
   writer =
     IODesc::NewForwarded(IODesc::DIR_WRITER, String::New("writer"), stdinWrDup);
-  // NOTE: we assume that process handle is represented as a pointer
-  // otherwise it would be: pHandle = Store::IntToWord((s_int) pinf.hProcess)
-  pHandle = Store::UnmanagedPointerToWord((void *)(pinf.hProcess));
+
+  Chunk *tmpHandle = Store::AllocChunk(sizeof(HANDLE));
+  HANDLE *tmpHandlePtr = (HANDLE*) (tmpHandle->GetBase());
+  tmpHandlePtr[0] = pinf.hProcess;
+  pHandle = tmpHandle->ToWord();
 #else
   int sv[2];
   Interruptible(ret, socketpair(PF_UNIX, SOCK_STREAM, 0, sv));
@@ -200,11 +202,11 @@ DEFINE2(UnsafeUnix_execute) {
 DEFINE1(UnsafeUnix_waitnh) {
   word option;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  // NOTE: we assume here that HANDLE is a kind of pointer
-  // for integer, it is just: DELCARE_INT(hProcess, x0)
-  HANDLE hProcess = (HANDLE)(Store::WordToUnmanagedPointer(x0));
-  LPDWORD exitCode;
-  if(GetExitCodeProcess(hProcess, &exitCode)) {
+  Chunk *tmpHandle = Store::DirectWordToChunk(x0);
+  HANDLE *tmpHandlePtr = (HANDLE*) (tmpHandle->GetBase());
+  HANDLE hProcess = tmpHandlePtr[0];
+  unsigned int exitCode;
+  if(GetExitCodeProcess(hProcess, (LPDWORD)&exitCode)) {
     if(exitCode == STILL_ACTIVE) {
       option = Store::IntToWord(Types::NONE);
     } else {
