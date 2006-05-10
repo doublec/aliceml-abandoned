@@ -91,12 +91,12 @@ struct
 
    fun domainToList vec =
      let 
-         val tmp = Vector.toList(vec)   
+         val tmp = Vector.toList vec
      in
-         List.concat(List.map(fn y => 
-			      List.tabulate(#2(y) - #1(y) + 1,
-					    fn x => x + #1(y)))
-		     (tmp))
+         List.concat(List.map(fn (y1,y2) => 
+			      List.tabulate(y2 - y1 + 1,
+					    fn x => x + y1))
+		     tmp)
      end
 
    val assign = UnsafeGecode.int_assign

@@ -13,7 +13,7 @@ let
   structure Space  = Constraints.Space
   structure FD     = Constraints.FD
   structure FS     = Constraints.FS
-  structure Linear = Constraints.Linear
+  structure Modeling = Constraints.Modeling
 
   (*** Search problem :
    *   Choose one number in each column (numbers1, numbers2)

@@ -141,6 +141,6 @@ void selectUnion(const SetVarArgs&, SetVar, SetVar); set_selectUnion;
 void selectInter(const SetVarArgs&, SetVar, SetVar); set_selectInter;
 void selectInterIn(const SetVarArgs&, SetVar, SetVar, IntSet&); set_selectInterIn;
 void selectDisjoint(const SetVarArgs&, SetVar); set_selectDisjoint;
-void selectSets(const SetVarArgs&, IntVar, SetVar); set_selectSets;
+void selectSet(const SetVarArgs&, IntVar, SetVar); set_selectSets;
 
 void branch(const SetVarArgs&, SetBvarSel, SetBvalSel); set_branch;

@@ -14,8 +14,8 @@
 #ifndef __GECODESPACE_HH__
 #define __GECODESPACE_HH__
 
-#include "int.hh"
-#include "set.hh"
+#include "gecode/int.hh"
+#include "gecode/set.hh"
 
 using namespace Gecode;
 
