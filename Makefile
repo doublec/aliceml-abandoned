@@ -118,14 +118,14 @@ setup:
 	cvs -d $(CVSROOT) login
 	(cd $(PWD) && cvs -d $(CVSROOT) get seam-support)
 	make build-seam-support
-	mkdir $(PWD)/seam
-	mkdir $(PWD)/seam/build
+	mkdir -p $(PWD)/seam
+	mkdir -p $(PWD)/seam/build
 	(cd $(PWD)/seam && cvs -d $(CVSROOT) get seam && mv seam sources)
 #	mkdir $(PWD)/gecode
 #	mkdir $(PWD)/gecode/build
 #	(cd $(PWD)/gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
-	mkdir $(PWD)/alice
-	mkdir $(PWD)/alice/build
+	mkdir -p $(PWD)/alice
+	mkdir -p $(PWD)/alice/build
 	(cd $(PWD)/alice && cvs -d $(CVSROOT) get alice && mv alice sources)
 	@echo Setup complete.
 	@echo Include `pwd`/seam-support/install/bin into your PATH.
@@ -381,7 +381,7 @@ build-xml-dll:
 distro: build-win-exec build-xml-dll
 	(rm -rf $(PWD)/../InstallShield/Files/Alice) && \
 	(cp -r $(PWD)/distro $(PWD)/../InstallShield/Files/Alice) && \
-	(mkdir $(PWD)/../InstallShield/Files/Alice/doc) && \
+	(mkdir -p $(PWD)/../InstallShield/Files/Alice/doc) && \
 	(cp $(PWD)/docs/Alice.chm $(PWD)/../InstallShield/Files/Alice/doc/) && \
 	echo Distro prepared. Run InstallShield/Scripts/Alice/Alice.ism.
 
