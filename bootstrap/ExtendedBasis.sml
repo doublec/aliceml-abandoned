@@ -447,7 +447,7 @@ structure Substring =
   struct
     open Substring
 
-    val full		= all
+    fun full s          = substring(s, 0, String.size s)
     fun hash ss		= String.hash(string ss)
     fun equal(ss, st)	= string ss = string st
 
