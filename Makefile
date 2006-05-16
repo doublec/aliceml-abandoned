@@ -79,7 +79,7 @@
 # Configure this properly
 
 CVSROOT = :pserver:anoncvs:anoncvs@ps.uni-sb.de:/services/alice/CVS
-GECODECVSROOT = rossberg@ps.uni-sb.de:/services/gecode/CVS
+GECODE_URL = http://www.gecode.org/download/gecode-1.1.0.tar.gz
 DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
 # From here on no change should be needed
@@ -94,6 +94,9 @@ UNAME := $(shell if [ -x /bin/uname ]; then echo "/bin/uname"; \
 
 # make it lowercase for easier comparing
 SYSTEM := $(shell echo "`$(UNAME) -m` `$(UNAME) -s` `$(UNAME) -r`" | tr [A-Z] [a-z])
+
+#extract the later directory name from the URL of the Gecode Package
+GECODE_ARCHIVE_NAME := $(shell echo $(GECODE_URL) | sed -r 's/.*\///' | sed 's/.tar.gz//')
 
 # can stand here, because PWD/WinGtk2 is not build under non-windows systems
 WIN_GTK_DIR := $(PWD)/WinGtk2
@@ -121,9 +124,9 @@ setup:
 	mkdir -p $(PWD)/seam
 	mkdir -p $(PWD)/seam/build
 	(cd $(PWD)/seam && cvs -d $(CVSROOT) get seam && mv seam sources)
-#	mkdir $(PWD)/gecode
-#	mkdir $(PWD)/gecode/build
-#	(cd $(PWD)/gecode && cvs -d $(GECODECVSROOT) get gecode && mv gecode sources)
+	mkdir -p $(PWD)/gecode
+	mkdir -p $(PWD)/gecode/build
+	(cd $(PWD)/gecode; wget $(GECODE_URL) -O - | tar xz; mv $(GECODE_ARCHIVE_NAME) sources)
 	mkdir -p $(PWD)/alice
 	mkdir -p $(PWD)/alice/build
 	(cd $(PWD)/alice && cvs -d $(CVSROOT) get alice && mv alice sources)
