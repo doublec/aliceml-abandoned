@@ -84,7 +84,7 @@ DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
 # From here on no change should be needed
 
-PWD := $(shell pwd)/..
+PWD := $(shell (cd ..; pwd))
 PREFIX = $(PWD)/distro
 
 UNAME := $(shell if [ -x /bin/uname ]; then echo "/bin/uname"; \
@@ -131,7 +131,7 @@ setup:
 	mkdir -p $(PWD)/alice/build
 	(cd $(PWD)/alice && cvs -d $(CVSROOT) get alice && mv alice sources)
 	@echo Setup complete.
-	@echo Include `pwd`/seam-support/install/bin into your PATH.
+	@echo Include $(PWD)/seam-support/install/bin into your PATH.
 
 setup-wingtk:
 	cp $(PWD)/seam-support/windows/WinGtk2.tgz $(PWD)
