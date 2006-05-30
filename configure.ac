@@ -92,8 +92,12 @@ AC_CHECK_DECL(VirtualAlloc,
    [[#include <windows.h>]])
 
 AC_CHECK_DECL(LoadLibrary,
-   [AC_DEFINE(HAVE_LOADLIBRARY, 1)],
-   [AC_DEFINE(HAVE_LOADLIBRARY, 0)],
+   [AC_DEFINE(HAVE_LOADLIBRARY, 1)
+    AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LOADLIBRARY=1)
+    seam_have_loadlibrary="yes"],
+   [AC_DEFINE(HAVE_LOADLIBRARY, 0)
+    AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LOADLIBRARY=0)
+    seam_have_loadlibrary="no"],
    [[#include <windows.h>]])
 
 # checks for system services
@@ -119,6 +123,7 @@ AC_CHECK_DECL(SetConsoleCtrlHandler,
 
 # libtool
 
+if test "$seam_have_loadlibrary" = "no"; then
 AC_LIBLTDL_CONVENIENCE
 AC_SUBST(LTDLINCL)
 AC_SUBST(LIBLTDL)
@@ -128,6 +133,11 @@ AC_PROG_LIBTOOL
 AC_CONFIG_SUBDIRS(libltdl)
 AC_DEFINE(HAVE_LIBLTDL, 1)
 AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIBLTDL=1)
+else
+AC_PROG_LIBTOOL
+AC_DEFINE(HAVE_LIBLTDL, 0)
+AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIBLTDL=0)
+fi
 
 case "$host" in
     *-*-cygwin*)
