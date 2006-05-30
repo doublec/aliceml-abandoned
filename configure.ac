@@ -91,6 +91,11 @@ AC_CHECK_DECL(VirtualAlloc,
    [AC_DEFINE(HAVE_VIRTUALALLOC, 0)],
    [[#include <windows.h>]])
 
+AC_CHECK_DECL(LoadLibrary,
+   [AC_DEFINE(HAVE_LOADLIBRARY, 1)],
+   [AC_DEFINE(HAVE_LOADLIBRARY, 0)],
+   [[#include <windows.h>]])
+
 # checks for system services
 
 # groups of checks
