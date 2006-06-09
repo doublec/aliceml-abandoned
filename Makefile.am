@@ -1,4 +1,9 @@
+if HAVE_LIBLTDL
 SUBDIRS = libltdl store adt generic lightning debian
+else
+SUBDIRS = store adt generic lightning debian
+endif
+
 INCLUDES = $(LTDLINCL)
 
 EXTRA_DIST = Makefile.cvs Makefile.lightning.am

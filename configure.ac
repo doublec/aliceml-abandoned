@@ -139,6 +139,7 @@ AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIBLTDL=0)
 LTDLINCL=
 LIBLTDL=
 fi
+AM_CONDITIONAL(HAVE_LIBLTDL, test "$seam_have_loadlibrary" = "no")
 
 case "$host" in
     *-*-cygwin*)
