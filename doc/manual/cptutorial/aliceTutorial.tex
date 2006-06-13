@@ -220,7 +220,7 @@ it is expected that the reader has already a working knowledge of
 functional Alice programming. Alice is a functional programming
 language based on \textcolor{blue}{Standard ML}, extended with rich
 support for concurrent, distributed, and constraint programming.
-As an introduction for functional programming in Alice I suggest the 
+As an introduction for functional programming in Alice we suggest the 
 \cite{4} ``\htmladdnormallink
 {\textcolor{blue}{Short Tour to Alice}}
 {http://www.ps.uni-sb.de/alice/manual/tour.html}
@@ -231,12 +231,10 @@ As an introduction for functional programming in Alice I suggest the
 The tutorial features a large number of examples. To ease the 
 understanding the examples should 
 be tried in the Alice Programming Environment. The Alice 
-programs are contained in the following 
-file: 
-\htmladdnormallink{Alice sources}{http://www.ps.uni-sb.de/alice/manual/cptutorial/samples/}
-%-------------
-% comes later...
-%------------
+programs can be downloaded from the 
+\htmladdnormallinkfoot{sample
+  sources}{http://www.ps.uni-sb.de/alice/manual/cptutorial/samples/}
+directory on our website.
 
 \subsection{Acknowledgements}
 
@@ -696,16 +694,14 @@ of the search tree considerably.
 
 
 \subsection{Branching Strategies}
-A \emph{branching} is a computational agent implementing 
-a \emph{branching strategy}. If a thread 
-creates a branching, the thread is blocked until the 
-branching has done its job. If a 
-branching step is needed, the branching becomes 
-active and generates the constraint 
-with which the space will be branched.
+A \emph{branching strategy} is used when propagation alone is not
+strong enough to yield a solution of a constraint problem. After
+computing the fixpoint of all propagators, the branching strategy
+determines which constraints should be added in order to obtain two or
+more branches of the current node in the search tree.
 
 Usually, a branching strategy is defined on a sequence 
-$ x_1,\ldots,x_n $ of variables. When a 
+$x_1,\ldots,x_n$ of variables. When a 
 branching step is necessary, the strategy selects a not 
 yet determined variable in the sequence 
 and branches on this variable.
@@ -764,32 +760,33 @@ in the memory needed. The memory requirements of breadth-first
 exploration are typically 
 exponentially larger than those of depth-first exploration.
 \end{itemize}
-We will assume that the search engine explores the search 
-trees always in a depth-first fashion. 
-Moreover, when the engine branches with a constraint C, 
-it explores the space obtained with C 
-first and the space obtained with $ \neg C$ second.
+We will assume that the search engine explores the search trees always
+in a depth-first fashion.  Moreover, when the branching strategy
+results in $n$ branches for some node, the search engine will explore
+those branches from left to right (i.e. from branch number one to
+number $n$).
 
-The above assumptions ensure that the exploration of a 
-search tree is a deterministic process, 
-provided the branching strategy generating the 
-constraints to branch with is deterministic.
-
-
+The above assumptions ensure that the exploration of a search tree is
+a deterministic process, provided the branching strategy generating
+the constraints to branch with is deterministic.
 
 \newpage
 \section{Constraint Satisfaction Problems, Models and Viewpoints}
 In section \ref{sec 2} the two basic techniques to solve
-constraint problems have been introduced. In practice, 
-the first step, once confronted with a problem, is to think
-of how this problem can be modeled, i.e. what variables, what
-domains for these variables and what constraint propagators
-should be used to encode the problem to a \emph{constraint
-satisfaction problem}. Additional underlying concepts
-are \emph{viewpoints} and \emph{models}, and will be 
-presented in the following.
+constraint problems, propagate and branch, have been introduced.
 
-\subsection{Constraint Satisfaction Problem(CSP) and Models}
+In practice, the first step when confronted with a problem is to think
+of how this problem can be modeled, i.e. what variables, what
+domains for these variables, and what constraints
+should be used to encode the problem.
+
+In the following, we present \emph{Constraint Satisfaction Problems}
+as an abstract, but formal view of a single \emph{model} of a problem.
+Then we introduce \emph{viewpoints}, focusing on the problem variables
+and their initial domains. A viewpoints naturally leads to a model for
+a problem, as will be exemplified using the Sudoku puzzle.
+
+\subsection{Constraint Satisfaction Problem (CSP) and Models}
 A \emph{Constraint Satisfaction Problem}(CSP), is a triple
 $<$ X, D, C $>$ with: 
 \begin{itemize}
