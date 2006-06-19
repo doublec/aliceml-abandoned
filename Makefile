@@ -215,17 +215,13 @@ build-seam-support:
 clean-gecode:
 	(cd $(PWD)/gecode/build && rm -rf *)
 
-.PHONY: setup-gecode
-setup-gecode:
-	(cd $(PWD)/gecode/sources && autoconf)
-
 .PHONY:	configure-gecode-windows
 configure-gecode-windows:
 	(cd $(PWD)/gecode/build && \
 	 ../sources/configure \
 		CXX='g++ -mno-cygwin' \
 		CC='gcc -mno-cygwin' \
-		--enable-static \
+		--enable-static --disable-shared \
 		--disable-examples --disable-search --disable-minimodel \
 		--prefix='$(PWD)/gecode/install')
 
@@ -242,8 +238,8 @@ rebuild-gecode:
 	(cd $(PWD)/gecode/build && make install)
 
 .PHONY:	build-gecode-windows build-gecode-linux
-build-gecode-windows: setup-gecode configure-gecode-windows rebuild-gecode
-build-gecode-linux: setup-gecode configure-gecode-linux rebuild-gecode
+build-gecode-windows: configure-gecode-windows rebuild-gecode
+build-gecode-linux: configure-gecode-linux rebuild-gecode
 
 ########### Seam ############
 
