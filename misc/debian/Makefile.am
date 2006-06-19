@@ -27,10 +27,10 @@ install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(datadir)
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man1
 	(cd $(srcdir)/bin && $(AMTAR) -c $(EXTRA_BINDIR_DIST)) | \
-	(cd $(DESTDIR)/$(bindir) && $(AMTAR) x)
+	(cd $(DESTDIR)$(bindir) && $(AMTAR) x)
 	(cd $(srcdir)/share && $(AMTAR) -c $(EXTRA_DATADIR_DIST)) | \
-	(cd $(DESTDIR)/$(datadir) && $(AMTAR) x)
+	(cd $(DESTDIR)$(datadir) && $(AMTAR) x)
 	(cd $(srcdir)/share && $(AMTAR) -c $(EXTRA_DATADIR_SUBDIRS)) | \
-	(cd $(DESTDIR)/$(datadir) && $(AMTAR) x)
+	(cd $(DESTDIR)$(datadir) && $(AMTAR) x)
 	(cd $(srcdir)/man && $(AMTAR) -c $(EXTRA_MANDIR_DIST)) | \
-	(cd $(DESTDIR)/$(mandir)/man1 && $(AMTAR) x)
+	(cd $(DESTDIR)$(mandir)/man1 && $(AMTAR) x)
