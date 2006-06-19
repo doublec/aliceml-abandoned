@@ -64,7 +64,8 @@ all: LinkedMkExplorer.alc Explorer.alc
 LinkedMkExplorer.alc: $(TARGETS)
 	alicelink -z --include ./ ./MkExplorer -o $@
 
-$(GLADE_TARGETS): $(GLADE_SOURCES)
+.PHONY: generate
+generate: $(GLADE_SOURCES)
 	aliceglade $< -o $(GLADE_SOURCES:%.glade=%)
 
 %.alc: %.aml
