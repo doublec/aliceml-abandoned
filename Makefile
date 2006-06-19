@@ -79,8 +79,10 @@
 # Configure this properly
 
 CVSROOT = :pserver:anoncvs:anoncvs@ps.uni-sb.de:/services/alice/CVS
-GECODE_URL = http://www.gecode.org/download/gecode-1.1.0.tar.gz
 DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
+
+GECODE_VERSION=1.2
+VERSION=1.3
 
 # From here on no change should be needed
 
@@ -95,8 +97,28 @@ UNAME := $(shell if [ -x /bin/uname ]; then echo "/bin/uname"; \
 # make it lowercase for easier comparing
 SYSTEM := $(shell echo "`$(UNAME) -m` `$(UNAME) -s` `$(UNAME) -r`" | tr [A-Z] [a-z])
 
-#extract the later directory name from the URL of the Gecode Package
-GECODE_ARCHIVE_NAME := $(shell echo $(GECODE_URL) | sed -r 's/.*\///' | sed 's/.tar.gz//')
+# source packages
+GECODE_ARCHIVE_NAME=gecode-$(GECODE_VERSION)
+SEAM_ARCHIVE_NAME=seam-$(VERSION)
+ALICE_LL_ARCHIVE_NAME=alice-$(VERSION)
+ALICE_GTK_ARCHIVE_NAME=alice-gtk-$(VERSION)
+ALICE_GECODE_ARCHIVE_NAME=alice-gecode-$(VERSION)
+ALICE_REGEX_ARCHIVE_NAME=alice-regex-$(VERSION)
+ALICE_SQLITE_ARCHIVE_NAME=alice-sqlite-$(VERSION)
+ALICE_XML_ARCHIVE_NAME=alice-xml-$(VERSION)
+ALICE_RUNTIME_ARCHIVE_NAME=alice-runtime-$(VERSION)
+
+# download paths
+GECODE_URL = http://www.gecode.org/download/$(GECODE_ARCHIVE_NAME).tar.gz
+ALICE_MAIN_URL=http://www.ps.uni-sb.de/alice/download/sources
+SEAM_URL=$(ALICE_MAIN_URL)/$(SEAM_ARCHIVE_NAME).tar.gz
+ALICE_LL_URL=$(ALICE_MAIN_URL)/$(ALICE_LL_ARCHIVE_NAME).tar.gz
+ALICE_GTK_URL=$(ALICE_MAIN_URL)/$(ALICE_GTK_ARCHIVE_NAME).tar.gz
+ALICE_GECODE_URL=$(ALICE_MAIN_URL)/$(ALICE_GECODE_ARCHIVE_NAME).tar.gz
+ALICE_REGEX_URL=$(ALICE_MAIN_URL)/$(ALICE_REGEX_ARCHIVE_NAME).tar.gz
+ALICE_SQLITE_URL=$(ALICE_MAIN_URL)/$(ALICE_SQLITE_ARCHIVE_NAME).tar.gz
+ALICE_XML_URL=$(ALICE_MAIN_URL)/$(ALICE_XML_ARCHIVE_NAME).tar.gz
+ALICE_RUNTIME_URL=$(ALICE_MAIN_URL)/$(ALICE_RUNTIME_ARCHIVE_NAME).tar.gz
 
 # can stand here, because PWD/WinGtk2 is not build under non-windows systems
 WIN_GTK_DIR := $(PWD)/WinGtk2
@@ -115,8 +137,9 @@ info:
 	@echo To test, \`make rungui\'.
 	@echo Optionally, \`make update\' first.
 	@echo For initial checkout, \`make setup\'.
+	@echo For releasing, \`make setup-release\' and \`make release\'.
 
-.PHONY:	setup setup-wingtk
+.PHONY:	setup setup-wingtk setup-release
 setup:
 	cvs -d $(CVSROOT) login
 	(cd $(PWD) && cvs -d $(CVSROOT) get seam-support)
@@ -139,6 +162,37 @@ setup-wingtk:
 	(cd $(PWD)/WinGtk2 && ./patch.sh)
 	rm $(PWD)/WinGtk2.tgz
 
+setup-release:
+	cvs -d $(CVSROOT) login
+	(cd $(PWD) && cvs -d $(CVSROOT) get seam-support)
+	make build-seam-support
+	mkdir -p $(PWD)/seam
+	mkdir -p $(PWD)/seam/build
+	rm -rf $(PWD)/seam/sources
+	(cd $(PWD)/seam && wget $(SEAM_URL) -O - | tar xz; mv $(SEAM_ARCHIVE_NAME) sources)
+	mkdir -p $(PWD)/gecode
+	mkdir -p $(PWD)/gecode/build
+	rm -rf $(PWD)/gecode/sources
+	(cd $(PWD)/gecode; wget $(GECODE_URL) -O - | tar xz; mv $(GECODE_ARCHIVE_NAME) sources)
+	mkdir -p $(PWD)/alice/build
+	mkdir -p $(PWD)/alice/sources
+	rm -rf $(PWD)/alice/sources/vm-seam
+	(cd $(PWD)/alice/sources && wget $(ALICE_LL_URL) -O - | tar xz; mv $(ALICE_LL_ARCHIVE_NAME) vm-seam)
+	rm -rf $(PWD)/alice-gtk
+	(cd $(PWD) && wget $(ALICE_GTK_URL) -O - | tar xz; mv $(ALICE_GTK_ARCHIVE_NAME) alice-gtk)
+	rm -rf $(PWD)/alice-gecode
+	(cd $(PWD) && wget $(ALICE_GECODE_URL) -O - | tar xz; mv $(ALICE_GECODE_ARCHIVE_NAME) alice-gecode)
+	rm -rf $(PWD)/alice-regex
+	(cd $(PWD) && wget $(ALICE_REGEX_URL) -O - | tar xz; mv $(ALICE_REGEX_ARCHIVE_NAME) alice-regex)
+	rm -rf $(PWD)/alice-sqlite
+	(cd $(PWD) && wget $(ALICE_SQLITE_URL) -O - | tar xz; mv $(ALICE_SQLITE_ARCHIVE_NAME) alice-sqlite)
+	rm -rf $(PWD)/alice-xml
+	(cd $(PWD) && wget $(ALICE_XML_URL) -O - | tar xz; mv $(ALICE_XML_ARCHIVE_NAME) alice-xml)
+	rm -rf $(PWD)/alice-runtime
+	(cd $(PWD) && wget $(ALICE_RUNTIME_URL) -O - | tar xz; mv $(ALICE_RUNTIME_ARCHIVE_NAME) alice-runtime)
+
+	@echo Setup complete.
+	@echo Include $(PWD)/seam-support/install/bin into your PATH.
 
 .PHONY:	update
 update:
@@ -172,6 +226,14 @@ build-suffix:
 	@echo ALICE_HOME=$(PREFIX)/share/alice
 	@echo for Windows: PATH=$(WIN_GTK_DIR)/bin:$(WIN_GTK_DIR)/lib:PATH
 
+.PHONY: release-windows release-linux release-freebsd release-ppc-darwin
+release-windows: setup-wingtk build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap-release build-suffix
+
+release-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap-release build-suffix
+
+release-freebsd:    build-freebsd
+release-ppc-darwin: build-ppc-darwin
+
 .PHONY: all windows linux freebsd ppc-darwin
 windows:    setup-wingtk build-windows
 linux:	    build-linux
@@ -196,6 +258,30 @@ all:
 	   *power*mac*darwin*) \
 		echo "building for Power Mac Darwin" ; \
 	        make ppc-darwin ; \
+	   	;; \
+	   *) \
+		echo "Non-supported OS: $(SYSTEM)"; \
+		exit 1 \
+	   	;; \
+	esac
+
+release:
+	@case " $(SYSTEM) " in \
+	   *i[3456]86*linux*) \
+		echo "building for Linux" ; \
+		make release-linux ; \
+	   	;; \
+	   *i[3456]86*freebsd*) \
+		echo "building for FreeBSD" ; \
+	        make release-freebsd ; \
+	   	;; \
+	   *i[3456]86*cygwin*) \
+		echo "building for Win32/Cygwin" ; \
+		make release-windows ; \
+	   	;; \
+	   *power*mac*darwin*) \
+		echo "building for Power Mac Darwin" ; \
+	        make release-ppc-darwin ; \
 	   	;; \
 	   *) \
 		echo "Non-supported OS: $(SYSTEM)"; \
@@ -338,6 +424,28 @@ rebuild-alice-bootstrap:
 
 .PHONY:	build-alice-bootstrap
 build-alice-bootstrap: setup-alice-bootstrap rebuild-alice-bootstrap
+
+########### Alice Compiler & Library from precompiled packages ###########
+
+.PHONY: build-alice-bootstrap-release
+
+ALICE_LIBS=gtk gecode regex sqlite xml
+
+build-release-runtime:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
+	cd $(PWD)/alice-runtime && \
+	./configure --prefix=$(PREFIX) && \
+	make install	
+
+build-release-libs:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
+	for p in $(ALICE_LIBS); do \
+	  (cd $(PWD)/alice-$$p/ && \
+	   make compiledll installdll \
+	   INSTALLDIR=$(PREFIX)/share/alice/lib/$$p);\
+	done
+
+build-alice-bootstrap-release: build-release-runtime build-release-libs
 
 ########### Documentation ############
 
