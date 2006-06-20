@@ -5,6 +5,10 @@
 // Copyright:
 //   Guido Tack, 2003
 // 
+//  See the file "debian/copyright" for information on usage and
+//  redistribution of this file, and for a
+//     DISCLAIMER OF ALL WARRANTIES.
+//
 // Last change:
 //   $Date$ by $Author$
 //   $Revision$
