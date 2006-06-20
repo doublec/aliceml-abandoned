@@ -1,19 +1,4 @@
-This is the Debian/GNU prepackaged version of SEAM, the simple extendable
-abstract machine.  SEAM was developed at the Programming Systems Lab,
-Saarland University, Saarbrücken, Germany.
-
-The Debian package was put together by Marco Kuhlmann <mk@debian.org> using
-sources obtained from
-
-    http://www.ps.uni-sb.de/alice/
-
-Changes with respect to the original source:
-
-    * added Debian-specific scripts and control files
-
-The original license of SEAM follows:
-
-Copyright (c) 1999-2003 Programming Systems Lab, Saarland University,
+Copyright (c) 1999-2006 Programming Systems Lab, Saarland University,
 and the individual authors
 
 All rights reserved.
