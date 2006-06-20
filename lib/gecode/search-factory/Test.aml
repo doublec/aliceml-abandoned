@@ -1,3 +1,19 @@
+(*
+ * Author:
+ *   Didier Le Botlan <botlan@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Didier Le Botlan, 2004
+ *
+ *  See the file "../debian/copyright" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 import structure Debug      from "Debug"
 import structure Space      from "x-alice:/lib/gecode/Space"
 import structure FD         from "x-alice:/lib/gecode/FD"

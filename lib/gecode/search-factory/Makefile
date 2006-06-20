@@ -1,3 +1,18 @@
+#
+# Author:
+#   Didier Le Botlan <botlan@ps.uni-sb.de>
+#
+# Copyright:
+#   Didier Le Botlan, 2004
+#
+#  See the file "../debian/copyright" for information on usage and
+#  redistribution of this file, and for a
+#     DISCLAIMER OF ALL WARRANTIES.
+#
+# Last change:
+#   $Date$ by $Author$
+#   $Revision$
+#
 
 ALICEC = alicec
 ALICEDEP = alicedep
