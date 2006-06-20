@@ -163,10 +163,10 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
       concreteCodeConstructor = NativeConcreteCode::New;    
       break;
     default:
-      concreteCodeConstructor = NativeConcreteCode::New;    
+      concreteCodeConstructor = HotSpotConcreteCode::New;    
     }
   else
-  concreteCodeConstructor = NativeConcreteCode::New;
+  concreteCodeConstructor = HotSpotConcreteCode::New;
 
 #else
   if (jitMode != NULL)
@@ -184,7 +184,7 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
       concreteCodeConstructor = ByteConcreteCode::New;
     }
   else
-    concreteCodeConstructor = ByteConcreteCode::New;
+    concreteCodeConstructor = HotSpotConcreteCode::New;
 
 #endif
 #if DEBUG_CHECK
