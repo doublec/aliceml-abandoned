@@ -44,7 +44,11 @@ DISTFILES = \
 	GecodeSpace.cc \
 	GecodeSpace.hh \
 	UnsafeGecode.cc \
-	UnsafeGecodeSpecial.hh
+	UnsafeGecodeSpecial.hh \
+	UnsafeGecode.dsc \
+	Generator.aml \
+	DescParser.aml \
+	GeneratorMain.aml
 
 distdir = alice-gecode-$(VERSION)
 
