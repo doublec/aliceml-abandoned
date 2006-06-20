@@ -1,20 +1,32 @@
 Runtime System:
 
+* [NEW] Byte code jitter now default; smaller memory footprint, more aggressive
+        dynamic optimizations (e.g. inlining, specialization, "hotspot"-like
+        selective (re-)jitting).
 * [FIX] Nasty stack overflow bug that could cause VM to eat memory like hell.
 
 Interactive Toplevel:
 
+* [NEW] Pretty printing depth & width can now be set from preferences.
 * [FIX] Several bug fixes (including bug 163).
 
 Basic Library:
 
+* [NEW] Unix: added `reap' and `wait'; fixed resource leak for `execute' on
+        Windows.
+* [CHG] Remote.{run,eval}: improved error detection and indication; fixed
+        treatment of ALICE_REMOTE_LOG.
 * [FIX] OS.FileSys: filter out current and parent arc with `readDir'.
-* [FIX] Remote.{run,eval}: fixed treatment of ALICE_REMOTE_LOG.
 
 Constraint Library:
 
-* [NEW] Now incorporates official Gecode 1.0.
+* [NEW] Now incorporates official Gecode 1.2.0, including a bunch of new
+        functionality.
+* [NEW] Renamed Linear to Modeling; now supports non-linear equations.
+* [NEW] Documentation now includes an extensive tutorial on constraint
+        programming.
 * [CHG] Interface adapted to Gecode changes.
+* [FIX] Adapted and fixed Gecode documentation (including bug 170).
 
 Gtk Library:
 
@@ -22,8 +34,11 @@ Gtk Library:
 
 Other Libraries:
 
-* [FIX] XML: fix crash on nodes with empty names, throw exceptions for
-  operations on null nodes.
+* [FIX] XML: fix crash on nodes with empty names and null nodes (bug 171).
+
+Platforms:
+
+* [FIX] Debian: fixed missing aliceremote.
 
 
 Alice 1.2 (Kraftwerk 'Boost Your G-Thing' Album) - 2005/09/02
