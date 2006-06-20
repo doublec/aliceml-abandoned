@@ -53,10 +53,6 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
   components Alice consists of, or use the source rpms to build Alice
   for a different platform. You can find the necessary packages <A
   HREF="download/rpm">in the rpm download directory</A>.
-  Please note that we cannot provide a source package
-  for Gecode at the moment, as it is not yet released. You will have
-  to either use the binary version or install <TT>alice-runtime</TT>
-  using the <TT>--nodeps</TT> command line option.
   </LI>
   <LI>On newer RPM-based distributions, you may need to install
   <TT>compat-libstdc++</TT> packages.</LI>
@@ -70,15 +66,9 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
   to your <TT>/etc/apt/sources.list</TT>. You need to apt-get the
   package <TT>alice-runtime</TT>.</LI>
   <LI>Alternatively, use <TT>deb-src</TT> to retrieve and install
-  source packages. Please note that we cannot provide a source package
-  for Gecode at the moment, as it is not yet released. You will have
-  to either use the binary version or install <TT>alice-runtime</TT>
-  using the <TT>--force-depends</TT> command line option.
+  source packages.
 </LI>
 </UL>
-
-<P><B>Note:</B> Alice packages are available for Debian AMD 64. However,
-this version does not support just-in-time native code compilation yet.</P>
 
 <P>For other Linuces:</P>
 
