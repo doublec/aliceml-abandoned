@@ -114,7 +114,11 @@ install: $(DIRS) $(INSTALLFILES) cptutorial
 cptutorial:
 	(cd cptutorial && \
 	 make all && \
-	 install -c -m 444 html/* $(PREFIX)/cptutorial)
+	 install -d $(PREFIX)/cptutorial/samples && \
+	 find html/samples -maxdepth 0 -type f -exec \
+	    install -c -m 444 "{}" $(PREFIX)/cptutorial/samples ";" && \
+	 find html -maxdepth 0 -type f -exec \
+	    install -c -m 444 "{}" $(PREFIX)/cptutorial ";")
 
 clean:
 	rm -f constraints.html
