@@ -80,11 +80,17 @@ else
     CC_OPTS=
 endif
 
-PC_OPTS=gtk+-2.0 glib-2.0 libgnomecanvas-2.0
+PC_OPTS="gtk+-2.0 >= 2.6" "glib-2.0 >= 2.6" libgnomecanvas-2.0 "pango >= 1.8"
 
 .PHONY: clean all wrappers installdll installalice compiledll compilealice
 
 all: installalice installdll 
+
+.PHONY: checkgtk
+
+# check that gtk version is new enough
+checkgtk:
+	pkg-config --exists $(PC_OPTS) --print-errors
 
 NativeLibs.asig: NativeLibs.tasig NativeCore.asig
 	head -n 4 $< > $@
@@ -138,7 +144,7 @@ compilealice:	$(INSTALLALICETARGETS)
 
 install:	all installdll installalice
 
-installdll:	$(INSTALLDLLTARGETS)
+installdll:	checkgtk $(INSTALLDLLTARGETS)
 	mkdir -p -m 775 $(INSTALLDIR)
 	./myinstall $(INSTALLDLLTARGETS) $(INSTALLDIR)
 
