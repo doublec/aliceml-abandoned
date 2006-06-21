@@ -75,7 +75,7 @@ public:
   */
   u_int Register(word item) {
     Assert(item != (word) 0);
-    if(map->IsMember(item))
+    if(!PointerOp::IsTransient(item) && map->IsMember(item))
       return Store::DirectWordToInt(map->Get(item));
     if (index >= size) {
       u_int oldsize = size;
@@ -86,7 +86,8 @@ public:
       values = newValues;
     }
     values->Init(index, item);
-    map->Put(item,Store::IntToWord(index));
+    if(!PointerOp::IsTransient(item))
+      map->Put(item,Store::IntToWord(index));
     return index++;
   }
 
