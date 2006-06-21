@@ -1,5 +1,5 @@
 Name: gecode
-Version: 1.1.0
+Version: 1.2.0
 Release: 1
 License: BSD
 Summary: generic constraint development environment
@@ -40,5 +40,7 @@ rm -rf %{buildroot}
 %{_libdir}/*
 
 %changelog
+* Wed Jun 21 2006 Guido Tack <tack@ps.uni-sb.de>
+- update to Gecode version 1.2.0
 * Tue May  2 2006 Christian Mueller <cmueller@ps.uni-sb.de>
 - initial Gecode rpm package
