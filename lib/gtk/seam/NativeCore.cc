@@ -652,6 +652,28 @@ dummy_log_handler(const gchar*, GLogLevelFlags, const gchar*, gpointer) {
 #endif
 
 static void Init() {
+
+  {
+    const gchar* res = glib_check_version(GLIB_MAJOR_VERSION,
+					  GLIB_MINOR_VERSION,
+					  GLIB_MICRO_VERSION);
+    if (res != NULL) {
+      fprintf(stderr, res);
+      fprintf(stderr, "\nAborting.\n");
+      exit(2);
+    }
+  }
+  {
+    const gchar* res = gtk_check_version(GTK_MAJOR_VERSION,
+					 GTK_MINOR_VERSION,
+					 GTK_MICRO_VERSION);
+    if (res != NULL) {
+      fprintf(stderr, res);
+      fprintf(stderr, "\nAborting.\n");
+      exit(2);
+    }
+  }
+
   static const u_int INITIAL_MAP_SIZE = 256; // TODO: find appropriate size
   // Init global data
   eventStream = (Future::New())->ToWord();
