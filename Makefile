@@ -81,7 +81,7 @@
 CVSROOT = :pserver:anoncvs:anoncvs@ps.uni-sb.de:/services/alice/CVS
 DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
-GECODE_VERSION=1.2
+GECODE_VERSION=1.2.0
 VERSION=1.3
 
 # From here on no change should be needed
