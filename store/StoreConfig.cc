@@ -245,8 +245,12 @@ int main(int argc, char **argv) {
   std::fprintf(f, "#define STORE_WORD_WIDTH     %d\n\n", (MIN_WIDTH * 8));
 
   std::fprintf(f, "typedef %s s_int;\n", int_val);
+  std::fprintf(f, "#ifndef HAVE_U_INT\n");
   std::fprintf(f, "#define u_int unsigned %s\n", int_val);
   std::fprintf(f, "#define u_char unsigned char\n\n");
+  std::fprintf(f, "#else\n");
+  std::fprintf(f, "#include <sys/types.h>\n");
+  std::fprintf(f, "#endif\n");
 
   switch (CheckFloatEndianness()) {
   case bigEndian:

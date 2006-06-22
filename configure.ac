@@ -57,6 +57,8 @@ AC_SEAM_ENABLE_LIGHTNING
 
 # checks for types
 
+AC_CHECK_TYPES([u_int, u_char])
+
 # checks for structures
 
 # checks for compiler characteristics
