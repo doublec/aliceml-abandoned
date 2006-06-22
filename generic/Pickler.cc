@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include "generic/ZLib.hh"
 #include "store/Map.hh"
 #include "adt/Stack.hh"
 #include "generic/RootSet.hh"
@@ -32,7 +33,6 @@
 #include "generic/Transform.hh"
 #include "generic/Pickler.hh"
 #include "generic/Pickle.hh"
-#include "generic/ZLib.hh"
 #include "generic/UniqueString.hh"
 
 //

@@ -14,12 +14,6 @@
 #pragma implementation "store/Heap.hh"
 #endif
 
-#include "store/Base.hh"
-#include "store/Types.hh"
-#include "store/HeaderOp.hh"
-#include "store/Heap.hh"
-#include "store/StatusWord.hh"
-
 #include <cstring>
 
 #if HAVE_VIRTUALALLOC
@@ -37,6 +31,13 @@
 # define STORE_MEM_ALIGN PAGE_SIZE
 #endif
 #endif
+
+#include "store/Base.hh"
+#include "store/Types.hh"
+#include "store/HeaderOp.hh"
+#include "store/Heap.hh"
+#include "store/StatusWord.hh"
+
 
 void HeapChunk::Alloc(u_int size) {
 #if HAVE_VIRTUALALLOC
