@@ -17,7 +17,7 @@
 #pragma interface "alice/Guid.hh"
 #endif
 
-#include "alice/Base.hh"
+#include "alice/Authoring.hh"
 
 class AliceDll Guid: private String {
 public:

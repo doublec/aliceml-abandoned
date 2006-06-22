@@ -13,7 +13,6 @@
 #ifndef __ALICE_BYTE_CODE_BUFFER_HH__
 #define __ALICE_BYTE_CODE_BUFFER_HH__
 
-#include <cstring> 
 #include "alice/Data.hh"
 
 // GNUC allows labels as values for direct threaded code

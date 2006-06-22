@@ -17,7 +17,6 @@
 #pragma interface "alice/HotSpotConcreteCode.hh"
 #endif
 
-#include "Seam.hh"
 #include "alice/Base.hh"
 #include "alice/Data.hh"
 #include "alice/AliceLanguageLayer.hh"

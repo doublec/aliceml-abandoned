@@ -24,7 +24,7 @@
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/JitterAliceData.hh"
 
-#include <setjmp.h>
+
 
 class LivenessTable;
 class TableAllocator;

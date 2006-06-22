@@ -19,10 +19,8 @@
 #pragma interface "alice/Data.hh"
 #endif
 
-#include <cstring>
 #include "alice/Base.hh"
 
-#include <gmp.h>
 
 class Transform;
 

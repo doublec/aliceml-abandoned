@@ -13,6 +13,10 @@
 #ifndef __ALICE__BASE_HH__
 #define __ALICE__BASE_HH__
 
+#include <setjmp.h>
+#include <cstring>
+#include <gmp.h>
+
 #include "Seam.hh"
 
 #if HAVE_DLLS

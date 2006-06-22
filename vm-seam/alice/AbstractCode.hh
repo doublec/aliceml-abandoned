@@ -17,7 +17,6 @@
 #pragma interface "alice/AbstractCode.hh"
 #endif
 
-#include <cstdio>
 #include "alice/Data.hh"
 
 // Opcodes

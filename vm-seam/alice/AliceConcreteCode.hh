@@ -17,7 +17,6 @@
 #pragma interface "alice/AliceConcreteCode.hh"
 #endif
 
-#include <cstdio>
 #include "alice/Data.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 

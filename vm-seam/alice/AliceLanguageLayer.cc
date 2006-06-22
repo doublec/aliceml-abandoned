@@ -14,8 +14,9 @@
 #pragma implementation "alice/AliceLanguageLayer.hh"
 #endif
 
-#include "alice/Types.hh"
+#include "alice/Data.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/Types.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/Guid.hh"
 #include "alice/LazySelInterpreter.hh"

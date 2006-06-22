@@ -10,10 +10,8 @@
 //   $Revision$
 //
 
-#include "generic/FinalizationSet.hh"
 #include "alice/Authoring.hh"
-
-#include <gmp.h>
+#include "generic/FinalizationSet.hh"
 
 /*
  * Integers with arbitrary precision 
