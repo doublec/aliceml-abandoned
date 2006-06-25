@@ -8,4 +8,4 @@ License: BSD
 Description: Alice Language Layer for Seam
 Source-MD5: INSERTMD5HERE
 Depends: seam-shlibs, seam, gmp-shlibs
-ConfigureParams: --with-jit=bytecode
+BuildDepends: seam, gmp
