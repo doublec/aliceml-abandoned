@@ -19,10 +19,10 @@
 #ifndef _NATIVE_UTILS_HH_
 #define _NATIVE_UTILS_HH_
 
-#include "Alice.hh"
-#include "MyNativeAuthoring.hh"
 #include <gtk/gtk.h>
 #include <libgnomecanvas/libgnomecanvas.h>
+#include "Alice.hh"
+#include "MyNativeAuthoring.hh"
 
 #define AWAIT(y,x) \
 	if (Store::WordToTransient(x) != INVALID_POINTER) REQUEST(x); \
