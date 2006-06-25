@@ -15,8 +15,8 @@
  * 
  */
 
-#include "Alice.hh"
 #include "GecodeSpace.hh"
+#include "Alice.hh"
 
 // STAMPS
 // 
