@@ -57,7 +57,9 @@ AC_SEAM_ENABLE_LIGHTNING
 
 # checks for types
 
-AC_CHECK_TYPES([u_int, u_char])
+AC_CHECK_TYPE(u_int,
+  [AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_U_INT=1)
+   AC_DEFINE(HAVE_U_INT, 1)])
 
 # checks for structures
 
