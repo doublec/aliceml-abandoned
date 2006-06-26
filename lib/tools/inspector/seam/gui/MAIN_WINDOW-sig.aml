@@ -19,6 +19,6 @@ sig
   val canvas              : Gtk.object
   val setStatus           : string -> unit
   val canvasWidth         : int (* Max possible width of the canvas *)
-  val popup               : int * int -> unit
+  val popup               : int * IntInf.int -> unit
 end
 

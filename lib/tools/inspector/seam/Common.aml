@@ -29,7 +29,7 @@ struct
   | DoSelect of int list list (* Select the given paths. *)
   | ClicAt of int * int * int (* Select a value. (x, y, modifier) *)
   | InfoAt of int * int * int
-  | PopupAt of int * int * int * int * int
+  | PopupAt of int * int * int * int * IntInf.int
   | Tooltip of int * int
   | HideTooltip
 

@@ -38,6 +38,12 @@ word makeGtkCoreTypeError (GType actual, GType expected) {
     return conVal->ToWord ();
 }
 
+static inline word NewIntInf(s_int i) {
+  if (i<MAX_VALID_INT && i>MIN_VALID_INT)
+    return Store::IntToWord(i);
+  return BigInt::New(i)->ToWord();
+}
+
 DEFINE1(Core_error) {
   ConVal *conVal =
     ConVal::New(Store::DirectWordToBlock(GtkCoreErrorConstructor), 1);
@@ -114,7 +120,7 @@ static inline word MotionEvent(GdkEvent* event, int label) {
   t->Init(1, INT_TO_WORD(ev->is_hint));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
-  t->Init(4, INT_TO_WORD(ev->time));
+  t->Init(4, NewIntInf(ev->time));
   t->Init(5, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(6, REAL_TO_WORD(ev->x));
   t->Init(7, REAL_TO_WORD(ev->x_root));
@@ -130,7 +136,7 @@ static inline word ButtonEvent(GdkEvent* event, int label) {
   t->Init(1, OBJECT_TO_WORD(ev->device,TYPE_G_OBJECT));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
-  t->Init(4, INT_TO_WORD(ev->time));
+  t->Init(4, NewIntInf(ev->time));
   t->Init(5, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(6, REAL_TO_WORD(ev->x));
   t->Init(7, REAL_TO_WORD(ev->x_root));
@@ -149,7 +155,7 @@ static inline word KeyEvent(GdkEvent* event, int label) {
   t->Init(4, BOOL_TO_WORD(ev->send_event));
   t->Init(5, INT_TO_WORD(ev->state));
   t->Init(6, STRING_TO_WORD(ev->string));
-  t->Init(7, INT_TO_WORD(ev->time));
+  t->Init(7, NewIntInf(ev->time));
   t->Init(8, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
@@ -163,7 +169,7 @@ static inline word CrossingEvent(GdkEvent* event, int label) {
   t->Init(3, BOOL_TO_WORD(ev->send_event));
   t->Init(4, INT_TO_WORD(ev->state));
   t->Init(5, OBJECT_TO_WORD(ev->subwindow,TYPE_G_OBJECT));
-  t->Init(6, INT_TO_WORD(ev->time));
+  t->Init(6, NewIntInf(ev->time));
   t->Init(7, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(8, REAL_TO_WORD(ev->x));
   t->Init(9, REAL_TO_WORD(ev->x_root));
@@ -217,7 +223,7 @@ static inline word ScrollEvent(GdkEvent* event, int label) {
   t->Init(1, INT_TO_WORD(ev->direction));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
-  t->Init(4, INT_TO_WORD(ev->time));
+  t->Init(4, NewIntInf(ev->time));
   t->Init(5, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(6, REAL_TO_WORD(ev->x));
   t->Init(7, REAL_TO_WORD(ev->x_root));

@@ -41,40 +41,40 @@ struct
 	 area_x:int, area_y:int, area_height:int, area_width:int,
 	 region:object, count:int}
       | EVENT_MOTION_NOTIFY of
-	{window:object, send:bool, time:int,
+	{window:object, send:bool, time:IntInf.int,
 	 x:real, y:real,
 	 state:int, is_hint:int,
 	 device: object, x_root:real, y_root:real}
       | EVENT_BUTTON_PRESS of
-	{window:object, send:bool, time:int,
+	{window:object, send:bool, time:IntInf.int,
 	 x:real, y:real, state:int, button:int,
 	 device: object, x_root:real, y_root:real}
       | EVENT_2BUTTON_PRESS of
-	{window:object, send:bool, time:int,
+	{window:object, send:bool, time:IntInf.int,
 	 x:real, y:real, state:int, button:int,
 	 device: object, x_root:real, y_root:real}
       | EVENT_3BUTTON_PRESS of
-	{window:object, send:bool, time:int,
+	{window:object, send:bool, time:IntInf.int,
 	 x:real, y:real, state:int, button:int,
 	 device: object, x_root:real, y_root:real}
       | EVENT_BUTTON_RELEASE of
-	{window:object, send:bool, time:int,
+	{window:object, send:bool, time:IntInf.int,
 	 x:real, y:real, state:int, button:int,
 	 device: object, x_root:real, y_root:real}
       | EVENT_KEY_PRESS of
-	{window:object, send:bool, time:int, state:int,
+	{window:object, send:bool, time:IntInf.int, state:int,
 	 keyval:int, length:int, string:string, 
 	 hardware_keycode:int, group:int}
       | EVENT_KEY_RELEASE of
-	{window:object, send:bool, time:int, state:int,
+	{window:object, send:bool, time:IntInf.int, state:int,
 	 keyval:int, length:int, string:string, 
 	 hardware_keycode:int, group:int}
       | EVENT_ENTER_NOTIFY of
-	{window:object, send:bool, subwindow:object, time:int,
+	{window:object, send:bool, subwindow:object, time:IntInf.int,
 	 x:real, y:real, x_root:real, y_root:real,
 	 mode:int, detail:int, focus:bool, state:int}
       | EVENT_LEAVE_NOTIFY of
-	{window:object, send:bool, subwindow:object, time:int,
+	{window:object, send:bool, subwindow:object, time:IntInf.int,
 	 x:real, y:real, x_root:real, y_root:real,
 	 mode:int, detail:int, focus:bool, state:int}
       | EVENT_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
@@ -100,7 +100,7 @@ struct
 	{window:object, send:bool, state:int}
       | EVENT_NO_EXPOSE of {window:object, send:bool}
       | EVENT_SCROLL of
-	{window:object, send:bool, time:int, x:real, y:real,
+	{window:object, send:bool, time:IntInf.int, x:real, y:real,
 	 state:int, direction:int, device:object,
 	 x_root:real, y_root:real}
       | EVENT_WINDOW_STATE
