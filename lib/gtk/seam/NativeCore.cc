@@ -1119,7 +1119,7 @@ word NativeCore_CreateComponent () {
   INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalConnect", 
 		 NativeCore_signalConnect, 3);
   INIT_STRUCTURE(record, "NativeLibs.NativeCore", "signalDisconnect", 
-		 NativeCore_signalDisconnect, 3);
+		 NativeCore_signalDisconnect, 2);
   INIT_STRUCTURE(record, "NativeLibs.NativeCore", "getEventStream", 
 		 NativeCore_getEventStream, 1);
 
