@@ -335,7 +335,7 @@ clean-seam:
 
 .PHONY: setup-seam
 setup-seam:
-	(cd $(PWD)/seam/sources && make -f Makefile.cvs)
+	(cd $(PWD)/seam/sources && (test -e configure) && make -f Makefile.cvs)
 
 .PHONY:	configure-seam-windows
 configure-seam-windows:
