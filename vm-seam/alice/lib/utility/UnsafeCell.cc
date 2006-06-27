@@ -231,7 +231,8 @@ Worker::Result CellMapInsertWorker::Run(StackFrame *sFrame) {
   Scheduler::PopFrame(frame->GetSize());
   Construct();
   entry->SetValue(Scheduler::GetCurrentArg(0));
-  Scheduler::SetNArgs(0);
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, Store::IntToWord(0));
   return Worker::CONTINUE;
 }
 

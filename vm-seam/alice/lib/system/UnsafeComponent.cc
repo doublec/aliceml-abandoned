@@ -196,8 +196,8 @@ AliceDll word UnsafeComponent() {
   record->Init("extension", String::New("alc")->ToWord());
   INIT_STRUCTURE(record, "UnsafeComponent", "getInitialTable",
 		 UnsafeComponent_getInitialTable, 0);
-  INIT_STRUCTURE(record, "UnsafeComponent", "save",
-		 UnsafeComponent_save, 2);
+  INIT_STRUCTURE_N(record, "UnsafeComponent", "save",
+		   UnsafeComponent_save, 2, 0);
   INIT_STRUCTURE(record, "UnsafeComponent", "load",
 		 UnsafeComponent_load, 1);
   INIT_STRUCTURE(record, "UnsafeComponent", "unzip",
