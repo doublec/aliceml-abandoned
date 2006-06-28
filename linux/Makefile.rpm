@@ -12,7 +12,7 @@ $(PACKAGES:%=%.tar.gz): %:
 	curl $(URL)/$@ -o $@
 	tar -f $@ -z -x -O '*/debian/*.spec' > $(@:%.tar.gz=%)-$(REVISION).spec
 	./build-rpm $@ $(@:%.tar.gz=%)-$(REVISION).spec
-	rpm -Uvh --force $(@:%.tar.gz=%)-$(REVISION).*[l6].rpm
+	rpm -Uvh --force $(@:%.tar.gz=%)-$(REVISION).*[l6h].rpm
 
 complete:
 	./build-rpm $(PACKAGES:%=%.tar.gz) alice-complete.spec
