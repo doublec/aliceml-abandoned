@@ -40,6 +40,7 @@ TARGETS = \
 
 DISTFILES = \
 	debian \
+	LICENSE \
 	Makefile \
 	GecodeSpace.cc \
 	GecodeSpace.hh \
