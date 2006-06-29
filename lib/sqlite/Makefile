@@ -33,7 +33,7 @@ EXTRA_LIBS = `pkg-config --libs sqlite3`
 EXTRA_INCLUDES = `pkg-config --cflags sqlite3`
 
 VERSION = $(shell alicetool --package-version)
-DISTFILES = $(SOURCES) Makefile debian
+DISTFILES = $(SOURCES) Makefile debian LICENSE
 distdir = alice-sqlite-$(VERSION)
 
 MAKEDEPEND = alicetool makedepend
