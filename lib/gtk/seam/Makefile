@@ -71,7 +71,7 @@ INSTALLALICETARGETS =$(COMPILED_GEN_WRAPPERS_SIGS) $(COMPILED_GEN_WRAPPERS) $(CO
 INSTALLDLLTARGETS=NativeLibs.dll
 INSTALLDIR=`alice-config --alicelibdir`/gtk
 #ALICEDLL=`alice-config --alicedll`
-DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeCore.cc NativeUtils.hh MyNativeAuthoring.hh ExtraMarshaller.hh Makefile debian myinstall
+DISTFILES=$(GEN_WRAPPERS_HH) $(GEN_WRAPPERS_CC) NativeCore.cc NativeUtils.hh MyNativeAuthoring.hh ExtraMarshaller.hh Makefile debian myinstall LICENSE
 DISTDIR=alice-gtk-$(VERSION)
 
 ifeq ($(WINDOWS),1)
