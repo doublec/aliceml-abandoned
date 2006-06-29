@@ -80,7 +80,6 @@ structure OutputWriters =
 
       val (rowCol, rowColText) = Stream.stream ()
 
-
       (* Highlight *)
 
       fun highlight (buffer, text, startOffset, startiter, enditer) =
@@ -235,19 +234,24 @@ structure OutputWriters =
 	val noeditRef = ref NONE
 	val insertHandler = ref 0
 
-        fun compilerInsert (eval, noedit, bold)
-		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
+	val timeStamp = ref (Int.toLarge 0)
+	fun incTimeStamp () =
 	    let
-(*
-                val enditer = Gtk.TextIter.new()
-                val cursor = Gtk.TextBuffer.getInsert buf
-                val _ = Gtk.TextBuffer.getIterAtMark(buf,enditer,cursor)
-                val startiter = Gtk.TextIter.copy enditer
-*)
+		val p = Promise.promise()
+		val x = Ref.exchange (timeStamp, Promise.future p) +
+		        Int.toLarge 1
+	    in
+		Promise.fulfill (p, x);
+		x
+	    end
+
+        fun compilerInsert' ts (eval, noedit, bold)
+		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) 
+		where (ts = !timeStamp) =
+	    let
                 val startiter = Gtk.TextIter.new()
                 val enditer = Gtk.TextIter.new()
 	    in
-		(*if String.sub(txt, String.size txt - 1) = #"\n" then*)
 		if txt = "\n" then
 		    if lastChar(buf, off+size-1) = SOME (ord #";") then
                 	let
@@ -294,9 +298,23 @@ structure OutputWriters =
                 	highlight(buf, str, offset, startiter, enditer)
 		    end
 	    end
-          | compilerInsert _ _ = () (* Gtk is crazy *)
+          | compilerInsert' _ _ _ = ()
 
-	fun compilerDelete (noedit, bold) (buf, _) =
+	fun compilerInsert arg1 arg2 =
+	    let
+		(* in the case of several consecutive events,
+		   hopefully, compilerInsert' is scheduled after
+		   the time stamp has been incremented for most of them,
+		   such that only the last event triggers highlighting
+		   (same for compilerDelete)
+		 *)
+		val ts = incTimeStamp()
+	    in
+		spawn Lock.sync Gtk.lock (compilerInsert' ts arg1) arg2
+	    end
+
+	fun compilerDelete' ts (noedit, bold) (buf, _) =
+	    if ts = !timeStamp then
 	    let
                 val startiter = Gtk.TextIter.new()
                 val enditer = Gtk.TextIter.new()
@@ -315,6 +333,14 @@ structure OutputWriters =
 		Gtk.TextBuffer.removeAllTags(buf, startiter, enditer);
                 Gtk.TextBuffer.applyTag(buf, bold, startiter, enditer);
                 highlight(buf, str, offset, startiter, enditer)
+	    end
+	    else ()
+
+	fun compilerDelete arg1 arg2 = 
+	    let
+		val ts = incTimeStamp()
+	    in
+		spawn Lock.sync Gtk.lock (compilerDelete' ts arg1) arg2
 	    end
 
 	fun compilerHistory direction () =

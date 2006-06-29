@@ -13,11 +13,11 @@
 
 import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Channel from "x-alice:/lib/data/Channel"
 import structure FileDialog from "FileDialog"
 import structure Config from "Config"
 import structure BufferHighlight from "BufferHighlight"
 import structure BufferAnnotate from "BufferAnnotate"
-
 
 structure Buffer =
    struct
@@ -44,7 +44,7 @@ structure Buffer =
                      undo: undo list ref,
                      lastSearchPos: int ref,
 		     highlightActive : bool ref,
-		     highlight: int option Promise.promise ref}
+		     highlight: int option Channel.channel}
 
       val bufferMap : buffer Map.map = Map.map()
 
@@ -56,30 +56,27 @@ structure Buffer =
       val never = Promise.future(Promise.promise())
       val infinity = Option.getOpt(Int.maxInt, 1073741823)
 
-      fun highlightGuard'(buf, plaintag, promRef, signal, offset, active) =
-	  case Future.awaitEither(Promise.future(!promRef), signal)
+      fun highlightGuard'(buf, plaintag, chan, signal, offset, active) =
+	  case Future.awaitEither(spawn Channel.peek chan, signal)
 	   of FST NONE => () (* buffer closed *)
 	    | FST(SOME offset') =>  (* wakeup by change before delay is over *)
-	         (promRef := Promise.promise();
-		  highlightGuard'(buf, plaintag, promRef, Future.alarm delay, Int.min(offset,offset'), active))
+	         (Channel.pop chan;
+		  highlightGuard'(buf, plaintag, chan, Future.alarm delay, Int.min(offset,offset'), active))
 	    | SND _ => (* delay over *)
 	      if !active then
 	      let
-		  val prom = Promise.promise()
-		  val inter = Promise.future prom
+		  val inter = spawn Channel.peek chan
 		  val kill = ref false
 	      in
-                  promRef := prom;
 		  spawn (await inter; kill := true);
 		  BufferHighlight.highlightOffset(buf, offset, plaintag, kill);
-		  highlightGuard'(buf, plaintag, promRef, never, infinity, active)
+		  highlightGuard'(buf, plaintag, chan, never, infinity, active)
 	      end
 	      else
-                  (promRef := Promise.promise();
-		   highlightGuard'(buf, plaintag, promRef, never, infinity, active))
+                  highlightGuard'(buf, plaintag, chan, never, infinity, active)
 
-      fun highlightGuard(buf, plaintag, promRef, active) =
-          highlightGuard'(buf, plaintag, promRef, never, infinity, active)
+      fun highlightGuard(buf, plaintag, chan, active) =
+          highlightGuard'(buf, plaintag, chan, never, infinity, active)
 
       (* Cursor *)
       fun getCursorIter buf =
@@ -114,7 +111,7 @@ structure Buffer =
                   Gtk.Label.setText(fileLabel, fileName)
           end
 
-      fun deleteText id (buf,[Gtk.INT off, Gtk.INT _, Gtk.STRING txt]) =
+      fun deleteText' (id, (buf,[Gtk.INT off, Gtk.INT _, Gtk.STRING txt])) =
           let
               val {undo,highlight,...} = Map.lookupExistent(bufferMap, id)
           in
@@ -123,9 +120,11 @@ structure Buffer =
                   undo := ur
                 | _ =>
                   undo := DELETE(off, txt) :: (!undo);
-	      Promise.fulfill (!highlight, SOME off) handle Promise.Promise => ()
+	      Channel.put (highlight, SOME off)
           end
-        | deleteText _ _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: delete\n")
+        | deleteText' _ = TextIO.output(TextIO.stdErr, "** Gtk is crazy: delete\n")
+
+      fun deleteText id args = Lock.sync Gtk.lock deleteText' (id, args)
 
       fun findStartOfLine iter =
 	  if Gtk.TextIter.getChar iter = Char.ord #"\n" then
@@ -153,7 +152,7 @@ structure Buffer =
                   undo := ur
                 | _ =>
                   undo := INSERT(off, off+length) :: (!undo);
-	      Promise.fulfill (!highlight, SOME off) handle Promise.Promise => ();
+	      Channel.put (highlight, SOME off);
 	      if txt <> "\n" orelse off = 0 then () else
 	      let
 		  val startiter = Gtk.TextIter.new()
@@ -385,10 +384,7 @@ structure Buffer =
 		  Map.lookupExistent(bufferMap, id)
 	  in
 	      highlightActive := active;
-	      if active then
-		  (Promise.fulfill (!highlight, SOME 0)
-		   handle Promise.Promise => ())
-	      else
+	      if active then () else
 		  Lock.sync Gtk.lock
 		  (fn () =>
 		   let
@@ -399,8 +395,7 @@ structure Buffer =
 		       Gtk.TextBuffer.getEndIter(buf, enditer);
 		       BufferHighlight.uncolor(buf, startiter, enditer)
 		   end) ();
-		  Promise.fulfill(!highlight, SOME 0)
-		  handle Promise.Promise => ()
+	      Channel.put (highlight, SOME 0)
 	  end
 
       fun getBufferByName f =
@@ -497,7 +492,7 @@ structure Buffer =
                          undo=ref [SAVE_MARKER],
                          lastSearchPos=ref 0,
 			 highlightActive = ref highlightActive,
-			 highlight=ref(Promise.promise())}
+			 highlight=Channel.channel()}
           in
 	      Lock.sync Gtk.lock
 	      (fn () =>
@@ -516,8 +511,8 @@ structure Buffer =
               Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
               Gtk.signalConnect(buf, "end-user-action", userAction(id,false));
               Map.insertDisjoint(bufferMap, id, ret);
-	      spawn highlightGuard (buf, #plain(#tags ret),
-				    #highlight ret, #highlightActive ret);
+	      spawn highlightGuard (buf, #plain(#tags ret), #highlight ret,
+				    #highlightActive ret);
               ret
           end
 
@@ -531,11 +526,9 @@ structure Buffer =
       fun close id =
           let
               val {file,buf,highlight,...} = Map.lookupExistent(bufferMap, id)
-	      val prom = Promise.promise()
           in
-              (Map.removeExistent(bufferMap, id);
-               Promise.fulfill(prom, NONE);
-	       highlight := prom)
+              Map.removeExistent(bufferMap, id);
+	      Channel.put(highlight, NONE)
           end
 
       fun maySave(f, modified, timeStamp) =
