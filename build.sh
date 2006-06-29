@@ -3,11 +3,12 @@
 set -e
 
 AUTOMAKE="yes"
-LIGHTNING=1
-BUILD_GMP=0
-BUILD_SQLITE=0
-BUILD_LIBXML=0
+: ${LIGHTNING=1}
+: ${BUILD_GMP=0}
+: ${BUILD_SQLITE=0}
+: ${LIBXML=0}
 SUPPORTDIR="$(pwd)"
+
 : ${prefix="$SUPPORTDIR/install"}
 
 case `uname -s` in
