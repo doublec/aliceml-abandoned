@@ -34,7 +34,7 @@ EXTRA_INCLUDES = -DSTDC_HEADERS
 MAKEDEPEND = $(ALICETOOL) makedepend
 
 VERSION = $(shell alicetool --package-version)
-DISTFILES = $(SOURCES) Makefile debian regex.h
+DISTFILES = $(SOURCES) Makefile debian regex.h LICENSE
 distdir = alice-regex-$(VERSION)
 
 all: compiledll compilealice
