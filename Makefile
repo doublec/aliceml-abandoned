@@ -165,7 +165,7 @@ setup-wingtk:
 setup-release:
 	cvs -d $(CVSROOT) login
 	(cd $(PWD) && cvs -d $(CVSROOT) get seam-support)
-	make build-seam-support
+	make build-seam-support-windows
 	mkdir -p $(PWD)/seam
 	mkdir -p $(PWD)/seam/build
 	rm -rf $(PWD)/seam/sources
@@ -295,6 +295,9 @@ release:
 build-seam-support:
 	(cd $(PWD)/seam-support && ./build.sh)
 
+.PHONY:	build-seam-support-windows
+build-seam-support-windows:
+	(cd $(PWD)/seam-support && BUILD_GMP=1 BUILD_SQLITE=1 LIBXML=1 ./build.sh)
 ########### Gecode ############
 
 .PHONY:	clean-gecode
