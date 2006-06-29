@@ -27,7 +27,7 @@ SOURCES = \
 TARGETS = XML.alc XML-sig.alc
 
 VERSION = $(shell alicetool --package-version)
-DISTFILES = $(SOURCES) Makefile debian
+DISTFILES = $(SOURCES) Makefile debian LICENSE
 distdir = alice-xml-$(VERSION)
 
 EXTRA_LIBS = `pkg-config --libs libxml-2.0`
