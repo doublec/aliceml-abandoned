@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -45,7 +45,10 @@ struct
 
     val allMinors = #[
 	    (* 0.X *) #[],
-	    (* 1.X *) #["Debut", "Eval Your Own", "Boost Your G-Thing"]
+	    (* 1.X *) #["Debut",
+			"Eval Your Own",
+			"Boost Your G-Thing",
+			"Propa Gators"]
 	]
     val minors = Vector.sub (allMinors, major) handle Subscript => #[]
 
@@ -55,7 +58,7 @@ struct
 		(* 1.0.X *) #["", "Lord of the Lib"],
 		(* 1.1.X *) #[""],
 		(* 1.2.X *) #[""],
-	        (* 1.3.X *) #[""]
+		(* 1.3.X *) #[""]
 			]
 	]
     val revisions = Vector.sub (Vector.sub (allRevisions, major), minor)
