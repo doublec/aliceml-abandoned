@@ -28,6 +28,6 @@ EXTRA_DIST = \
 	bin/alicetool.in \
 	bin/aliceremote \
 	bin/alice-config.in \
-	alice/bytecode_disassembler_body.hh
+	alice/bytecode_disassembler_body.hh \
 	bin/windows/Makefile \
 	bin/windows/alicex.cc
