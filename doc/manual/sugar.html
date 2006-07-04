@@ -18,6 +18,7 @@ expressible by other, less convenient means:</P>
   <LI> <A href="#rec">Recursive definitions</A> </LI>
   <LI> <A href="#finally">Finalization</A> </LI>
   <LI> <A href="#assert">Assertions</A> </LI>
+  <LI> <A href="#do">Statements</A> </LI>
 </UL>
 
 
@@ -194,6 +195,19 @@ values of the original record.</P>
 
 <?php section("patterns", "patterns") ?>
 
+<?php subsection("patterns-bar", "Optional bar") ?>
+
+<P>An optional bar is allowed before the first rule of a match, yielding more regular and editing-friendly notation:</P>
+
+<PRE class=code>
+case f n of
+   | LESS => f(n-1)
+   | EQUAL => n
+   | GREATER => f(n+1)</PRE>
+
+<P>This is also supported for <TT>fn</TT> and <TT>handle</TT>, and for function declarations using <TT>fun</TT>.</P>
+
+
 <?php subsection("patterns-alt", "Alternative patterns") ?>
 
 <P>Alternative patterns (also called <EM>or patterns</EM>) are present in SML/NJ
@@ -288,6 +302,29 @@ guard expression occurs whenever the pattern is tried to be matched.</P>
     <TD></TD> <TD></TD>
     <TD> <I>pat</I> <TT>where</TT> <I>atexp</I> </TD>
     <TD> guarded (L) </TD>
+  </TR>
+  <TR></TR>
+
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>exp</I> <TT>handle</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> handle exception </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>case</TT> <I>exp</I> <TT>of</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> case analysis </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fn</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> function </TD>
   </TR>
 </TABLE>
 
@@ -528,5 +565,29 @@ fun f (x::xs) = g x
   | f  nil    = assert false  (* we know the list is non-empty *)</PRE>
 
 <P>The value of such an assert expression should never be used and is thus represented by a <A href="futures.html#failed">failed future</A>. Accessing it will also raise an <TT>Assert</TT> exception.</P>
+
+<?php section("do", "Statements") ?>
+
+<P>The common SML idiom of writing a declaration</P>
+
+<PRE class=code>
+val _ = exp</PRE>
+
+<P>for causing a side effect can be abbreviated to</P>
+
+<PRE class=code>
+do exp</PRE>
+
+<P>This is a simple derived form:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>do</TT> <I>exp</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>val</TT> <TT>_</TT> <TT>:</TT> <TT>{}</TT> <TT>=</TT> <I>exp</I> </TD>
+  </TR>
+</TABLE>
+
+<P>I.e. the expression must have type <TT>unit</TT>.</P>
 
 <?php footing() ?>

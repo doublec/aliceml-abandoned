@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -34,6 +34,8 @@
  *   - exception declarations have been made a derived form:
  *	exception exbind          ==>  con exbind'
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
+ *   - do declarations:
+ *      do exp  ==>  val _ : {} = exp
  *   - derived form for function declarations extended with lazy keyword:
  *      <lazy> <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...
  *        ==>
@@ -169,6 +171,7 @@ sig
 
     (* Declarations *)
 
+    val DODec:		Info * Exp					-> Dec
     val FUNDec:		Info * TyVarSeq * FvalBind			-> Dec
     val EQTYPEDec:	Info * TypBind					-> Dec
     val EQEQTYPEDec:	Info * TypBind					-> Dec

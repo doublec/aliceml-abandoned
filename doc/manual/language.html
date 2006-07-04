@@ -17,7 +17,7 @@ programming language (SML), as defined in</P>
   ISBN 0-262-63181-4</LI>
 </UL>
 
-<P>However, Alice ML features several major extensions relative to SML:</P>
+<P>However, Alice ML features several major extensions relative to SML. Some of them have been proposed for inclusion in <A href="http://www.successor-ml.org"><I>Successor ML</I></A>.</P>
 
 <UL>
   <LI> <A href="futures.html">Futures:</A>
@@ -98,6 +98,7 @@ programming language (SML), as defined in</P>
     <LI> <A href="sugar.html#finally">finalization</A> </LI>
     <LI> <A href="sugar.html#sourcepos">source position</A> </LI>
     <LI> <A href="sugar.html#assert">assertions</A> </LI>
+    <LI> <A href="sugar.html#do">statements</A> </LI>
   </UL>
   </LI>
 </UL>
@@ -162,6 +163,21 @@ relative to Standard ML. Derived forms are marked (*).
     <TD align="center">::=</TD>
     <TD> ... </TD>
     <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>exp</I> <TT>handle</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> <A href="sugar.html#patterns-bar">handle exception</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>case</TT> <I>exp</I> <TT>of</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> <A href="sugar.html#patterns-bar">case analysis</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fn</TT> &lt;<TT>|</TT>&gt; <I>match</I>
+    <TD> <A href="sugar.html#patterns-bar">function</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
@@ -320,6 +336,11 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <TT>constructor</TT> <I>econbind</I> </TD>
     <TD> <A href="types.html#exttype">generative constructor</A> </TD>
   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>do</TT> <I>exp</I> </TD>
+    <TD> <A href="sugar.html#do">statement</A> </TD>
+  </TR>
 
   <TR></TR>
   <TR>
@@ -330,7 +351,7 @@ relative to Standard ML. Derived forms are marked (*).
 	 (<I>m</I>,<I>n</I>&ge;1) (*) </TD>
   </TR><TR>
     <TD></TD><TD></TD>
-    <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <TD> &nbsp;&nbsp;&lt;<TT>|</TT>&gt;
          &lt;<TT>op</TT>&gt; <I>vid atpat</I><SUB>11</SUB> ... <I>atpat</I><SUB>1<I>n</I></SUB> &lt;<TT>:</TT> ty<SUB>1</SUB>&gt;
 	 <TT>=</TT> <I>exp</I><SUB>1</SUB> </TD>
   </TR><TR>

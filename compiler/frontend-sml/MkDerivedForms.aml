@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -34,6 +34,8 @@
  *   - exception declarations have been made a derived form:
  *	exception exbind          ==>  constructor exbind'
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
+ *   - do declarations:
+ *      do exp  ==>  val _ : {} = exp
  *   - derived form for function declarations extended with lazy/spawn keyword:
  *      lazy <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...
  *        ==>
@@ -662,6 +664,13 @@ end
 
     fun Fpat p			= p
 
+    fun DODec(I, exp) =
+	let
+	    val ty  = G.RECORDTy(I, NONE)
+	    val pat = G.TYPEDPat(I, G.ATPATPat(I, G.WILDCARDAtPat(I)), ty)
+	in
+	    G.VALDec(I, G.Seq(I, []), G.PLAINValBind(I, pat, exp, NONE))
+	end
 
     fun DATATYPEDec(I, datbind, NONE)         = G.DATATYPEDec(I, datbind)
       | DATATYPEDec(I, datbind, SOME typbind) =

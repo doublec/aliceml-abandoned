@@ -2,7 +2,7 @@
 (*   Andreas Rossberg <rossberg@ps.uni-sb.de>					*)
 (*										*)
 (* Copyright:									*)
-(*   Andreas Rossberg, 2001-2004						*)
+(*   Andreas Rossberg, 2001-2006						*)
 (*										*)
 (* Last change:									*)
 (*   $Date$ by $Author$				*)
@@ -36,10 +36,17 @@
 (*		  assert<d> exp raise pat					*)
 (*		  assert<d> exp_1 do exp_2					*)
 (*		  assert<d> exp_1 of pat do exp_2				*)
+(*   - optional leading bar in matches:						*)
+(*	  exp ::= fn <|> match							*)
+(*	      ::= exp handle <|> match						*)
+(*	      ::= case exp of <|> match						*)
+(*	  fvalbind ::= <|> ...							*)
 (*   - lazy function declarations:						*)
-(*        fvalbind ::= lazy <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...	*)
+(*        fvalbind ::= lazy <|> <op> vid atpat11...atpat1n <: ty1> = exp1 | ...	*)
 (*   - concurrent function declarations:					*)
-(*        fvalbind ::= spawn <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...	*)
+(*        fvalbind ::= spawn <|> <op> vid atpat11...atpat1n <: ty1> = exp1 |...	*)
+(*   - do declarations:								*)
+(*	  dec ::= do exp							*)
 (*   - more relaxed constructor pattern syntax:					*)
 (*	  pat ::= pat atpat			(R)				*)
 (*   - generalized layered patterns:						*)
@@ -407,6 +414,7 @@
 	| exp				of Exp
 
 	| match				of Match
+	|    BAR_opt			of unit
 	|    BAR_match_opt		of Match option
 	| mrule				of Mrule
 
@@ -795,15 +803,17 @@
 	| exp ANDALSO exp	( ANDALSOExp(I(exp1left,exp2right), exp1, exp2))
 	| exp ORELSE exp	( ORELSEExp(I(exp1left,exp2right), exp1, exp2) )
 	| exp FINALLY exp	( FINALLYExp(I(exp1left,exp2right), exp1, exp2))
-	| exp HANDLE match	( HANDLEExp(I(expleft,matchright), exp, match) )
+	| exp HANDLE BAR_opt match
+				( HANDLEExp(I(expleft,matchright), exp, match) )
 	| RAISE exp		( RAISEExp(I(RAISEleft,expright), exp) )
 	| LAZY exp		( LAZYExp(I(LAZYleft,expright), exp) )
 	| SPAWN exp		( SPAWNExp(I(SPAWNleft,expright), exp) )
 	| IF exp THEN exp ELSE exp
 				( IFExp(I(IFleft,exp3right), exp1, exp2, exp3) )
 	| WHILE exp DO exp	( WHILEExp(I(WHILEleft,exp2right), exp1, exp2) )
-	| CASE exp OF match	( CASEExp(I(CASEleft,matchright), exp, match) )
-	| FN match		( FNExp(I(FNleft,matchright), match) )
+	| CASE exp OF BAR_opt match
+				( CASEExp(I(CASEleft,matchright), exp, match) )
+	| FN BAR_opt match	( FNExp(I(FNleft,matchright), match) )
 	| REC pat DARROW exp	( RECExp(I(RECleft,expright), pat, exp) )
 	| PACK atstrexp COLON atsigexp
 				( TRANSPACKExp(I(PACKleft,atsigexpright),
@@ -830,6 +840,10 @@
   match:
 	  mrule BAR_match_opt	( Match(I(mruleleft,BAR_match_optright),
 					mrule, BAR_match_opt) )
+
+     BAR_opt:
+	  BAR				( () )
+	| (*empty*)			( () )
 
      BAR_match_opt:
 	  BAR match			( SOME match )
@@ -867,6 +881,7 @@
 				 Seq(I(defaultPos,defaultPos), []), valbind) )
 	| VAL tyvarseq1 valbind
 			( VALDec(I(VALleft,valbindright), tyvarseq1, valbind) )
+	| DO exp	( DODec(I(DOleft,expright), exp) )
 	| FUN fvalbind	( FUNDec(I(FUNleft,fvalbindright),
 				 Seq(I(defaultPos,defaultPos), []), fvalbind) )
 	| FUN tyvarseq1 fvalbind
@@ -994,13 +1009,13 @@
 
 
   fvalbind:
-	  fmatch AND_fvalbind_opt
+	  BAR_opt fmatch AND_fvalbind_opt
 			( FvalBind(I(fmatchleft,AND_fvalbind_optright),
 				     SANSLazy, fmatch, AND_fvalbind_opt) )
-	| LAZY fmatch AND_fvalbind_opt
+	| LAZY BAR_opt fmatch AND_fvalbind_opt
 			( FvalBind(I(LAZYleft,AND_fvalbind_optright),
 				     WITHLazy, fmatch, AND_fvalbind_opt) )
-	| SPAWN fmatch AND_fvalbind_opt
+	| SPAWN BAR_opt fmatch AND_fvalbind_opt
 			( FvalBind(I(SPAWNleft,AND_fvalbind_optright),
 				     WITHSpawn, fmatch, AND_fvalbind_opt) )
      AND_fvalbind_opt:
