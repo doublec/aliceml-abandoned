@@ -375,6 +375,15 @@ relative to Standard ML. Derived forms are marked (*).
 
   <TR></TR>
   <TR>
+    <TD> <I>datbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>conbind</T> &lt;<TT>and</TT> <I>datbind</I>&gt; </TD>
+    <TD> <A href="sugar.html#patterns-bar">datatype binding</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
     <TD> <I>extbind</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
@@ -671,6 +680,15 @@ summary</A> for a more precise grammar of functor signatures.</P>
 
   <TR></TR>
   <TR>
+    <TD> <I>datdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>condesc</T> &lt;<TT>and</TT> <I>datdesc</I>&gt; </TD>
+    <TD> <A href="sugar.html#patterns-bar">datatype description</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
     <TD> <I>extdesc</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
@@ -872,7 +890,7 @@ specifications.</P>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
-    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> <I>conitem</I>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt; <I>conitem</I>
          &lt;<TT>and</TT> <I>datitem</I>&gt; </TD>
     <TD> </TD>
   </TR>

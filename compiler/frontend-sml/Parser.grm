@@ -36,11 +36,13 @@
 (*		  assert<d> exp raise pat					*)
 (*		  assert<d> exp_1 do exp_2					*)
 (*		  assert<d> exp_1 of pat do exp_2				*)
-(*   - optional leading bar in matches:						*)
+(*   - optional leading bars:							*)
 (*	  exp ::= fn <|> match							*)
 (*	      ::= exp handle <|> match						*)
 (*	      ::= case exp of <|> match						*)
 (*	  fvalbind ::= <|> ...							*)
+(*        datbind ::= tyvarseq tycon = <|> conbind <and datbind>		*)
+(*        datdesc ::= tyvarseq tycon = <|> condesc <and datdesc>		*)
 (*   - lazy function declarations:						*)
 (*        fvalbind ::= lazy <|> <op> vid atpat11...atpat1n <: ty1> = exp1 | ...	*)
 (*   - concurrent function declarations:					*)
@@ -177,7 +179,7 @@
 (*	  typitem   ::=	tycon <and typitem>					*)
 (*			tyvarseq tycon <and typitem>				*)
 (*	  datitem   ::=	tycon <and datitem>					*)
-(*			tyvarseq tycon = conitem <and datitem>			*)
+(*			tyvarseq tycon = <|> conitem <and datitem>			*)
 (*	  conitem   ::=	<op> vid <of ty> <| conitem>				*)
 (*	  extitem   ::=	tycon <and extitem>					*)
 (*			tyvarseq tycon <and extitem>				*)
@@ -1052,16 +1054,16 @@
 
 
   datbind:
-	  tyvarseq tycon EQUALS conbind AND_datbind_opt
+	  tyvarseq tycon EQUALS BAR_opt conbind AND_datbind_opt
 			( DatBind(I(tyvarseqleft,AND_datbind_optright),
 				  tyvarseq, tycon, conbind, AND_datbind_opt))
      datbind0:
-	  tycon EQUALS conbind AND_datbind_opt
+	  tycon EQUALS BAR_opt conbind AND_datbind_opt
 			( DatBind(I(tyconleft,AND_datbind_optright),
 				  Seq(I(defaultPos,defaultPos), []),
 				  tycon, conbind, AND_datbind_opt) )
      datbind1:
-	  tyvarseq1 tycon EQUALS conbind AND_datbind_opt
+	  tyvarseq1 tycon EQUALS BAR_opt conbind AND_datbind_opt
 			( DatBind(I(tyvarseq1left,AND_datbind_optright),
 				  tyvarseq1, tycon, conbind, AND_datbind_opt) )
      AND_datbind_opt:
@@ -2090,16 +2092,16 @@
 	| (*empty*)	( NONE )
 
   datdesc:
-	  tyvarseq tycon EQUALS condesc AND_datdesc_opt
+	  tyvarseq tycon EQUALS BAR_opt condesc AND_datdesc_opt
 			( DatDesc(I(tyvarseqleft,AND_datdesc_optright),
 				  tyvarseq, tycon, condesc, AND_datdesc_opt) )
      datdesc0:
-	  tycon EQUALS condesc AND_datdesc_opt
+	  tycon EQUALS BAR_opt condesc AND_datdesc_opt
 	  		( DatDesc(I(tyconleft,AND_datdesc_optright),
 	  			  Seq(I(defaultPos,defaultPos), []),
 				  tycon, condesc, AND_datdesc_opt) )
      datdesc1:
-	  tyvarseq1 tycon EQUALS condesc AND_datdesc_opt
+	  tyvarseq1 tycon EQUALS BAR_opt condesc AND_datdesc_opt
 	  		( DatDesc(I(tyvarseq1left,AND_datdesc_optright),
 	  			  tyvarseq1, tycon, condesc, AND_datdesc_opt) )
      AND_datdesc_opt:
@@ -2604,11 +2606,11 @@
 	  tycon AND_datitem_opt
 			( PLAINDatItem(I(tyconleft,AND_datitem_optright),
 				      tycon, AND_datitem_opt) )
-	| tycon EQUALS conitem AND_datitem_opt
+	| tycon EQUALS BAR_opt conitem AND_datitem_opt
 			( DESCDatItem(I(tyconleft,AND_datitem_optright),
 				      Seq(I(defaultPos,defaultPos), []),
 				      tycon, conitem, AND_datitem_opt) )
-	| tyvarseq1 tycon EQUALS conitem AND_datitem_opt
+	| tyvarseq1 tycon EQUALS BAR_opt conitem AND_datitem_opt
 			( DESCDatItem(I(tyvarseq1left,AND_datitem_optright),
 				      tyvarseq1, tycon, conitem,
 				      AND_datitem_opt) )

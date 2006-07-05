@@ -222,6 +222,13 @@ case f n of
 
 <P>This is also supported for <TT>fn</TT> and <TT>handle</TT>, and for function declarations using <TT>fun</TT>.</P>
 
+<P>Optional bars are also allowed with datatype declarations and specifications:</P>
+
+<PRE class=code>
+datatype order =
+   | LESS
+   | EQUAL
+   | GREATER</PRE>
 
 <?php subsection("patterns-alt", "Alternative patterns") ?>
 
@@ -341,6 +348,21 @@ guard expression occurs whenever the pattern is tried to be matched.</P>
     <TD> <TT>fn</TT> &lt;<TT>|</TT>&gt; <I>match</I>
     <TD> function </TD>
   </TR>
+  <TR></TR>
+
+  <TR>
+    <TD> <I>datbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>conbind</T> &lt;<TT>and</TT> <I>datbind</I>&gt; </TD>
+  </TR>
+  <TR>
+    <TD> <I>datdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
+         <I>condesc</T> &lt;<TT>and</TT> <I>datdesc</I>&gt; </TD>
+  </TR>
+
 </TABLE>
 
 
