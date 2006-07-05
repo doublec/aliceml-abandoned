@@ -1011,7 +1011,10 @@
 
 
   fvalbind:
-	  BAR_opt fmatch AND_fvalbind_opt
+	  fmatch AND_fvalbind_opt
+			( FvalBind(I(fmatchleft,AND_fvalbind_optright),
+				     SANSLazy, fmatch, AND_fvalbind_opt) )
+	| BAR fmatch AND_fvalbind_opt
 			( FvalBind(I(fmatchleft,AND_fvalbind_optright),
 				     SANSLazy, fmatch, AND_fvalbind_opt) )
 	| LAZY BAR_opt fmatch AND_fvalbind_opt
