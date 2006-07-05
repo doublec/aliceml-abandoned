@@ -24,6 +24,21 @@ expressible by other, less convenient means:</P>
 
 <?php section("lexical", "lexical syntax extensions") ?>
 
+<?php subsection("comments", "Line comments") ?>
+
+<P>The comment marker <TT>(*)</TT> introduces a comment that stretches to the end of line:</P>
+
+<PRE class=code>
+fun myf x = bla    (*) my function
+fun myg x = blo    (*) my second function</PRE>
+
+<P>Line comments properly nest into conventional comments, so the following is one single comment, even though the inner line comment contains a closing comment delimiter:</P>
+
+<PRE class=code>
+(*
+fun myf x = bla    (*) my function *)
+*)</PRE>
+
 <?php subsection("literals", "Literals") ?>
 
 <P>Numeric literals may contain underscores to group digits:</P>

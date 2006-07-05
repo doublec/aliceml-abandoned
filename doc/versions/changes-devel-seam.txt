@@ -3,6 +3,7 @@ Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/06/30
 
 Language:
 
+* [NEW] Line comments, starting with (*).
 * [NEW] Allow optional bar before first clause of fn, case, handle, fun.
 * [NEW] Allow "do exp" as abbreviation of "val _ : unit = exp".
 
@@ -19,6 +20,7 @@ Interactive Toplevel:
 * [FIX] Fixed Undo of delete events (bug 163).
 * [FIX] Use clipboard properly.
 * [FIX] Removed race conditions in syntax highlighting (including bug 134).
+* [FIX] Properly recover from unclosed comments.
 * [FIX] Several minor bug fixes.
 
 Basic Library:

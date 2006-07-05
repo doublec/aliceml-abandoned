@@ -83,7 +83,12 @@ struct
 		scanString (ss, s, y, x, y, x+1, rs)
 	    else if c = #"(" andalso x < Substring.size s
 		 andalso Substring.sub (s, x+1) = #"*" then
-		scanComment 1 (ss, s, y, x, y, x+2, rs)
+		if x < Substring.size s - 2
+		     andalso Substring.sub (s, x+2) = #")" then
+		    scanLineComment 1 (ss, s, y, x, y, x+3,
+				       merge (PLAIN, x', x, rs))
+		else
+		    scanComment 1 (ss, s, y, x, y, x+2, rs)
 	    else
 		scanPlain (ss, s, y, x+1, rs)
 	end
@@ -125,6 +130,8 @@ struct
 	    scanId (ss, s, y, x', x+1, rs)
 	else
 	    scanPlain (ss, s, y, x, checkReserved (s, y, x', x, rs))
+    and scanLineComment nesting (ss, s, y', x', y, x, rs) =
+	scanComment (nesting-1) (ss, s, y', x', y, Substring.size s, rs)
     and scanComment nesting (ss, s, y', x', y, x, rs) =
 	if nesting = 0 then
 	    scanPlain (ss, s, y, x, (COMMENT, y',x', y,x)::rs)
@@ -137,7 +144,12 @@ struct
 	    if c = #"*" andalso Substring.sub (s, x+1) = #")" then
 		scanComment (nesting-1) (ss, s, y', x', y, x+2, rs)
 	    else if c = #"(" andalso Substring.sub (s, x+1) = #"*" then
-		scanComment (nesting+1) (ss, s, y', x', y, x+2, rs)
+		if x < Substring.size s - 2
+		     andalso Substring.sub (s, x+2) = #")" then
+		    scanLineComment (nesting+1) (ss, s, y', x', y, x+3, rs)
+		else
+		    scanComment 1 (ss, s, y, x, y, x+2, rs)
+		    scanComment (nesting+1) (ss, s, y', x', y, x+2, rs)
 	    else
 		scanComment nesting (ss, s, y', x', y, x+1, rs)
 	end

@@ -16,6 +16,7 @@
  * Definition, sections 2.1-2.5, 3.1
  *
  * Extensions and modifications:
+ *   - line comments
  *   - more liberal constant prefixes (allow 0xw)
  *   - binary int and word constants (0b010, 0wb010)
  *   - allow underscores in numbers
@@ -76,15 +77,17 @@
 
     val nesting = ref [] : int list ref
 
-    fun nest yypos = nesting := yypos :: !nesting
+    fun nest yypos = nesting := yypos-2 :: !nesting
+    fun nested ()  = not (List.null(!nesting))
     fun unnest ()  = ( nesting := List.tl(!nesting) ; List.null(!nesting) )
 
     fun eof() =
 	case !nesting
 	  of []    => raise LexerError.EOF(fn i => Tokens.EOF i)
 	   | i0::_ =>
-		raise LexerError.EOF(fn(i1,i2) =>
-					error((i0,i2), E.UnclosedComment))
+		( nesting := [];
+		  raise LexerError.EOF(fn(i1,i2) =>
+					  error((i0,i2), E.UnclosedComment)))
 
 
 
@@ -224,7 +227,7 @@
 			  where type token = (Tokens.svalue,int) Tokens.token
 			  where type error = ParsingError.error));
 
-%s COMMENT;
+%s COMMENT LCOMMENT;
 
 %full
 
@@ -390,13 +393,18 @@
   <INITIAL>{id}		=> ( tokenOf(ALPHA,   toId,     yypos, yytext) );
 
 
-  <INITIAL>"(*"		=> ( nest(yypos-2) ; YYBEGIN COMMENT ; continue() );
-  <COMMENT>"(*"		=> ( nest(yypos-2) ; continue() );
+  <INITIAL>"(*)"	=> ( YYBEGIN LCOMMENT ; continue() );
+  <INITIAL>"(*"		=> ( nest yypos ; YYBEGIN COMMENT ; continue() );
+  <COMMENT>"(*)"	=> ( YYBEGIN LCOMMENT ; continue() );
+  <COMMENT>"(*"		=> ( nest yypos ; continue() );
   <COMMENT>"*)"		=> ( if unnest() then YYBEGIN INITIAL else () ;
 			     continue() );
   <COMMENT>.		=> ( continue() );
   <COMMENT>"\n"		=> ( continue() );
 
+  <LCOMMENT>.		=> ( continue() );
+  <LCOMMENT>"\n"	=> ( YYBEGIN (if nested() then COMMENT else INITIAL) ;
+			     continue() );
 
   <INITIAL>"\""		=> ( error'(yypos, yytext, E.InvalidString) );
   <INITIAL>.		=> ( error'(yypos, yytext,

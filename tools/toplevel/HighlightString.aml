@@ -79,7 +79,11 @@ struct
 		scanString (s, x, x+1, merge (PLAIN, x', x, rs))
 	    else if c = #"(" andalso x < String.size s - 1
 		 andalso String.sub (s, x+1) = #"*" then
-		scanComment 1 (s, x, x+2, merge (PLAIN, x', x, rs))
+		if x < String.size s - 2
+		     andalso String.sub (s, x+2) = #")" then
+		    scanLineComment 1 (s, x, x+3, merge (PLAIN, x', x, rs))
+		else
+		    scanComment 1 (s, x, x+2, merge (PLAIN, x', x, rs))
 	    else
 		scanPlain (s, x', x+1, rs)
 	end
@@ -121,19 +125,30 @@ struct
 	    scanId (s, x', x+1, rs)
 	else
 	    scanPlain (s, x, x, checkReserved (s, x', x, rs))
+    and scanLineComment nesting (s, x', x, rs) =
+	if x = String.size s then
+	    scanComment (nesting-1) (s, x', x, rs)
+	else if String.sub (s, x) = #"\n" then
+	    scanComment (nesting-1) (s, x', x+1, rs)
+	else
+	    scanLineComment nesting (s, x', x+1, rs)
     and scanComment nesting (s, x', x, rs) =
 	if nesting = 0 then
 	    scanPlain (s, x, x, merge (COMMENT, x', x, rs))
 	(* last character cannot end or start a comment *)
 	else if x >= String.size s - 1 then
-	    merge (ERRONEOUS, x', x, rs)
+	    merge (ERRONEOUS, x', String.size s, rs)
 	else let
 	    val c = String.sub (s, x)
 	in
 	    if c = #"*" andalso String.sub (s, x+1) = #")" then
 		scanComment (nesting-1) (s, x', x+2, rs)
 	    else if c = #"(" andalso String.sub (s, x+1) = #"*" then
-		scanComment (nesting+1) (s, x', x+2, rs)
+		if x < String.size s - 2
+		     andalso String.sub (s, x+2) = #")" then
+		    scanLineComment (nesting+1) (s, x', x+3, rs)
+		else
+		    scanComment (nesting+1) (s, x', x+2, rs)
 	    else
 		scanComment nesting (s, x', x+1, rs)
 	end
