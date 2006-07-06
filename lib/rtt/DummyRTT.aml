@@ -74,6 +74,7 @@ in
 		val emptyRow = dummy
 		val extendRow = dummy
 		val fix = dummy
+		val asProd = dummy
 	    end
 
 	    structure Fixity =

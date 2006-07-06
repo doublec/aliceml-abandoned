@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -164,7 +164,9 @@ and t is mu-wf iff it is wf and
 and a row r is wf iff all nested types are wf and
 
 	r = INDEXED ts
-	r = NAMED(lts,_) and forall li,lj in lts, li<lj if i<j
+	r = FIXED lts	and forall li,lj in lts, li<lj if i<j
+	r = FLEX(lts,r') and forall li,lj in lts, li<lj if i<j and r' wf
+	r = FREE(ls,n)	and forall li,lj in ls, li<lj if i<j
 
 where t* is defined as follows:
 
@@ -253,11 +255,13 @@ struct
 
     and row' =						(* [rho,r] *)
 	  INDEXED of typ vector
-	| NAMED   of (lab * typ) list * int option
+	| FIXED   of (lab * typ) list
+	| FLEX    of (lab * typ) list * row
+	| FREE    of lab list * int
 
     withtype typ	= typ' cell			(* [tau,t] *)
     and      var	= typ' cell			(* [alpha,a] *)
-    and      row	= row'
+    and      row	= row' cell
     and      kind	= kind' cell			(* [kappa,k] *)
 
     structure Map	= Cell.MkMap(type t = typ')
@@ -359,10 +363,13 @@ struct
 	 | APPLY(t1,t2)	=> "APPLY(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 	 | ABBREV(t1,t2) => "ABBREV(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 
-    and rowToString = fn ads =>
-	fn INDEXED ts   => String.concatWith "," (Vector.toList(Vector.map (typ ads) ts))
-	 | NAMED(lts,d) => String.concatWith "," (List.map (fieldToString ads) lts @
-				      (if Option.isNone d then [] else ["..."]))
+    and rowToString = fn ads => fn r =>
+	case content r
+	of INDEXED ts   => String.concatWith "," (Vector.toList(Vector.map (typ ads) ts))
+	 | FIXED lts    => String.concatWith "," (List.map (fieldToString ads) lts
+	 | FLEX(lts,r)  => String.concatWith "," (List.map (fieldToString ads) lts ^
+			   "," ^ rowToString r
+	 | FREE ls	=> "...[" ^ String.concatWith "," (List.map Label.toString ls) ^ "]"
     and fieldToString = fn ads =>
 	fn (l,t)        => Label.toString l ^ ":" ^ typ ads t
 
@@ -547,7 +554,7 @@ struct
 
     fun con'(p,k)	= new(CON(p,k))
     fun arrow'(t1,t2)	= new(FUN(t1,t2))
-    fun tuple' ts	= new(PROD(INDEXED ts))
+    fun tuple' ts	= new(PROD(new(INDEXED ts)))
     fun prod' r		= new(PROD r)
     fun sum' r		= new(SUM r)
     fun mu' t		= new(MU t)
@@ -670,13 +677,71 @@ struct
 
     exception Row
 
-    fun emptyRow()		= INDEXED #[]
-    fun unknownRow()		= NAMED([], SOME(!level))
+    fun emptyRow()		= new(INDEXED #[])
+    fun unknownRow()		= new(FREE([], !level))
 
-    fun isIndexed r =
-	case r
+    fun isFreeRow r =
+	case content r
+	  of FREE _		=> true
+	   | _			=> false
+
+    fun namedToIndexed(lts : (lab * typ) list) =
+	Vector.map #2 (Vector.fromList lts)
+    fun indexedToNamed ts =
+	List.tabulate(Vector.length ts,
+		      fn i => (Label.fromInt(i+1), Vector.sub(ts,i)))
+
+    fun extendRow'(l,t, [])	= [(l,t)]
+      | extendRow'(l,t, lts as lt'::lts') =
+	case Label.compare(l, #1 lt')
+	  of EQUAL		=> raise Row
+	   | LESS		=> (l,t)::lts
+	   | GREATER		=> lt'::extendRow'(l,t,lts')
+
+    fun mergeRow'(lts1, [])	= lts1 : (lab * typ) list
+      | mergeRow'([], lts2)	= lts2
+      | mergeRow'(lts1 as lt1::lts1', lts2 as lt2::lts2') =
+	case Label.compare(#1 lt1, #1 lt2)
+	  of EQUAL		=> raise Row
+	   | LESS		=> lt1::mergeRow'(lts1', lts2)
+	   | GREATER		=> lt2::mergeRow'(lts1, lts2')
+
+    fun mergeExcluded(ls1, [])	= ls1
+      | mergeExcluded([], ls2)	= ls2
+      | mergeExcluded(ls1 as l1::ls1', ls2 as l2::ls2') =
+	case Label.compare(l1,l2)
+	  of EQUAL		=> l1::mergeExcluded(ls1',ls2')
+	   | LESS		=> l1::mergeExcluded(ls1',ls2)
+	   | GREATER		=> l2::mergeExcluded(ls1,ls2')
+
+    fun normaliseRow r =
+	case content r
+	  of (INDEXED _|FREE _)	=> ()
+	   | FIXED lts		=>
+	     if isIndexed'(lts,1)
+	     then replace(r, INDEXED(namedToIndexed lts))
+	     else ()
+	   | FLEX(lts,r')	=>
+	     (normaliseRow r';
+	      case content r'
+	        of FREE _ => ()
+		 | FIXED lts' =>
+		   replace(r, FIXED(mergeRow'(lts,lts')))
+		 | FLEX(lts',r'') =>
+		   replace(r, FLEX(mergeRow'(lts,lts'),r''))
+		 | INDEXED ts =>
+		   if isIndexed'(lts, Vector.length ts+1)
+		   then replace(r,INDEXED(Vector.concat[ts,namedToIndexed lts]))
+		   else replace(r,FIXED(mergeRow'(lts, indexedToNamed ts)))
+	     )
+
+    and isIndexed r =
+	case content r
 	  of INDEXED _		=> true
-	   | NAMED(lts,d)	=> Option.isNone d andalso isIndexed'(lts,1)
+	   | FIXED lts		=> isIndexed'(lts,1)
+	   | FLEX(lts, r')	=> not(isFreeRow r') andalso
+				   (normaliseRow r; isIndexed r)
+	   | FREE _		=> false
     and isIndexed'(lts,i) =
 	case lts
 	  of []			=> true
@@ -685,72 +750,104 @@ struct
 	  of NONE		=> false
 	   | SOME i'		=> i' = i andalso isIndexed'(lts',i+1)
 
-    fun indexedToNamed ts =
-	List.tabulate(Vector.length ts,
-		      fn i => (Label.fromInt(i+1), Vector.sub(ts,i)))
-
-    fun namedToIndexed lts =
-	Vector.fromList(List.mapi namedToIndexed' lts)
-	handle Overflow => raise Row
-    and namedToIndexed'(i,(l,t)) =
-	case Label.toInt l
-	  of NONE		=> raise Row
-	   | SOME i'		=> if i' = i+1 then t else raise Row
-
     fun asIndexed r =
-	case r
-	  of INDEXED ts		=> ts
-	   | NAMED(lts,NONE)	=> namedToIndexed lts
-	   | NAMED(_,SOME _)	=> raise Row
-    fun asNamed r =
-	case r
-	  of INDEXED ts		=> (indexedToNamed ts, NONE)
-	   | NAMED x		=> x
+	(normaliseRow r;
+	 case content r
+	   of INDEXED ts	=> ts
+	    | _			=> raise Row
+	)
 
-    fun extendRow(l,t,r)	= let val (lts,d) = asNamed r in
-				     NAMED(extendRow'(l,canonicalStar t,lts), d)
-				  end
-    and extendRow'(l,t, [])                   = [(l,t)]
-      | extendRow'(l,t, lts as (l',t')::lts') =
+    fun isExcluded'(l,[])	= false
+      | isExcluded'(l,l'::ls)	=
 	case Label.compare(l,l')
-	  of EQUAL		=> raise Row
-	   | LESS		=> (l,t)::lts
-	   | GREATER		=> (l',t')::extendRow'(l,t,lts')
+	  of EQUAL		=> true
+	   | LESS		=> false
+	   | GREATER		=> isExcluded'(l,ls)
 
+    fun isIncluded'(l,[])	= false
+      | isIncluded'(l,(l',_)::lts) =
+	case Label.compare(l,l')
+	  of EQUAL		=> true
+	   | LESS		=> false
+	   | GREATER		=> isIncluded'(l,lts)
+
+    fun excludeRow(l,r)		=
+	case content r
+	  of INDEXED ts		=> (case Label.toInt l
+				      of SOME i =>
+					 if 1 <= i andalso i <= Vector.length ts
+					 then raise Row
+					 else ()
+				       | NONE => ()
+				   )
+	   | FIXED lts		=> if isIncluded'(l,lts) then raise Row else ()
+	   | FLEX(lts,r')	=> if isIncluded'(l,lts) then raise Row
+				   else excludeRow(l,r')
+	   | FREE(ls,n)		=> replace(r, FREE(excludeRow'(l,ls),n))
+    and excludeRow'(l, [])	= [l]
+      | excludeRow'(l, ls as l'::ls') =
+	case Label.compare(l,l')
+	  of EQUAL		=> ls
+	   | LESS		=> l::ls
+	   | GREATER		=> l'::excludeRow'(l,ls')
+
+    fun extendRow(l,t,r)	=
+	let
+	    val t = canonicalStar t
+	in
+	    case content r
+	      of FIXED lts	=> new(FIXED(extendRow'(l,t,lts)))
+	       | FLEX(lts,r')	=> (excludeRow(l,r');
+				    new(FLEX(extendRow'(l,t,lts),r')))
+	       | _		=> (excludeRow(l,r); new(FLEX([(l,t)],r)))
+	end
 
     datatype row_desc =
-	  UnknownRow
+	  UnknownRow of lab list
 	| EmptyRow
 	| FieldRow of lab * typ * row
 
     fun inspectRow r =
-	case asNamed r
-	  of ([], SOME _)	=> UnknownRow
-	   | ([], NONE)		=> EmptyRow
-	   | ((l,t)::lts, d)	=> FieldRow(l,t, NAMED(lts,d))
+	(case content r
+	   of FLEX _ => normaliseRow r
+	    | _ => ();
+	 inspectRow' r)
+    and inspectRow' r =
+	case content r
+	  of INDEXED ts		=> inspectRow'(new(FIXED(indexedToNamed ts)))
+	   | FIXED []		=> EmptyRow
+	   | FIXED((l,t)::lts)	=> FieldRow(l,t, new(FIXED lts))
+	   | FLEX([], r')	=> inspectRow' r'
+	   | FLEX((l,t)::lts, r') => FieldRow(l,t, new(FLEX(lts,r')))
+	   | FREE(ls,_)		=> UnknownRow ls
 
     fun isUnknownRow r =
-	case r
-	  of NAMED(_, SOME _)	=> true
+	case content r
+	  of FREE _		=> true
+	   | FLEX(_,r')		=> isUnknownRow r'
 	   | _			=> false
     fun isEmptyRow r =
-	case r
+	case content r
 	  of ( INDEXED #[]
-	     | NAMED([],_) )	=> true
+	     | FIXED [] )	=> true
+	   | FLEX([], r')	=> isEmptyRow r'
 	   | _			=> false
     fun asFieldRow r =
-	case asNamed r
-	  of ([], _)		=> raise Row
-	   | ((l,t)::lts, d)	=> (l,t, NAMED(lts,d))
+	case inspectRow r
+	  of FieldRow ltr	=> ltr
+	   | _			=> raise Row
 
     val isTupleRow = isIndexed
     val asTupleRow = asIndexed
 
     fun lookupRow(r,l) =
-	case r
+	case content r
 	  of INDEXED ts		=> (Vector.sub(ts,Option.valOf(Label.toInt l)-1)
 				    handle (Option | Subscript) => raise Row)
-	   | NAMED(lts,d)	=> lookupRow'(lts,l)
+	   | FIXED lts		=> lookupRow'(lts,l)
+	   | FLEX(lts,r')	=> (lookupRow'(lts,l)
+				    handle Row => lookupRow(r',l))
+	   | FREE _		=> raise Row
     and lookupRow'([], l) =
 	    raise Row
       | lookupRow'((l',t)::lts, l) =
@@ -926,9 +1023,12 @@ struct
 	   | ( PROD r
 	     | SUM r )			=> appRow1(r,f)
 
-    and appRow1(INDEXED ts, f)		= Vector.app f ts
-      | appRow1(NAMED(lts,d), f)	= List.app (f o #2) lts
-
+    and appRow1(r,f) =
+	case content r
+	  of INDEXED ts			=> Vector.app f ts
+	   | FIXED lts			=> List.app (f o #2) lts
+	   | FLEX(lts,r')		=> (List.app (f o #2) lts; appRow1(r',f))
+	   | FREE _			=> ()
 
     fun foldl1(t,f,c,b) =
 	case content t
@@ -946,8 +1046,14 @@ struct
 	   | ( PROD r
 	     | SUM r )			=> foldlRow1(r,f,c)
 
-    and foldlRow1(INDEXED ts, f,c)	= Vector.foldl f c ts
-      | foldlRow1(NAMED(lts,d), f,c)	= List.foldl (fn((l,t),c)=>f(t,c)) c lts
+    and foldlRow1(r,f,c) =
+	case content r
+	  of INDEXED ts			=> Vector.foldl f c ts
+	   | FIXED lts			=> List.foldl (fn((l,t),c)=>f(t,c)) c lts
+	   | FLEX(lts,r')		=> foldlRow1(r',f,
+						     List.foldl
+						     (fn((l,t),c)=>f(t,c)) c lts)
+	   | FREE _			=> c
 
     fun app'(b,f,t) =
 	let
@@ -1013,14 +1119,14 @@ fun checkMu(t0,t1) =
       | HOLE _ => ()
       | LAMBDA(_,t11) => checkMu(t0,t11)
       | ABBREV(_,t11) => checkMu(t0,t11)
-      | SUM(NAMED(lts as (l1,_)::_,_)) =>
+      | SUM(FIXED(lts as (l1,_)::_)) =>
         let
 	    val m = Map.map()
 
 	    fun app t =
 		if Map.member(m,t) then () else
 		(case content t
-		 of SUM(NAMED((l2,_)::_,_)) =>
+		 of SUM(FIXED((l2,_)::_)) =>
 		    if l1 <> l2 then () else
 		    TextIO.print("!! checkMu unrolled: " ^ typToString t0 ^ "\n")
   		  | _ => ();
@@ -1138,25 +1244,46 @@ val _ = checkMuFwd := checkMu
 	    else buildNew(mt, t, toTyp(t1',t2'))
 	end
 
-    and buildRow(mt,mk, rea, t, toTyp, INDEXED ts) =
+    and buildRow(mt,mk, rea, t, toTyp, r) =
 	let
-	    val ts' = Vector.map (fn ti => build(mt,mk,rea,ti)) ts
+	    val r' = buildRow'(mt,mk, rea, r)
 	in
-	    if VectorPair.all (fn(t,t') => Cell.equal(canonical t,t')) (ts,ts')
+	    if Cell.equal(r,r')
 	    then buildOld(mt, t)
-	    else buildNew(mt, t, toTyp(INDEXED ts'))
+	    else buildNew(mt, t, toTyp r')
 	end
-      | buildRow(mt,mk, rea, t, toTyp, NAMED(lts,d)) =
-	let
-	    val lts' = List.map (fn(li,ti) => (li, build(mt,mk,rea,ti))) lts
-	in
-(*ASSERT    assert isNone d do *)
-	    (*if isSome d then assert false else*)
-	    if ListPair.all (fn((_,t),(_,t')) => Cell.equal(canonical t,t'))
-			    (lts,lts')
-	    then buildOld(mt, t)
-	    else buildNew(mt, t, toTyp(NAMED(lts',d)))
-	end
+    and buildRow'(mt,mk, rea, r) =
+	case content r
+	  of INDEXED ts =>
+	     let
+		 val ts' = Vector.map (fn ti => build(mt,mk,rea,ti)) ts
+	     in
+		 if VectorPair.all (fn(t,t') => Cell.equal(canonical t,t'))
+				   (ts,ts')
+		 then r
+		 else new(INDEXED ts')
+	     end
+	   | FIXED lts =>
+	     let
+		 val lts' = List.map (fn(li,ti) => (li, build(mt,mk,rea,ti))) lts
+	     in
+		 if ListPair.all (fn((_,t),(_,t')) => Cell.equal(canonical t,t'))
+				 (lts,lts')
+		 then r
+		 else new(FIXED lts')
+	     end
+	   | FLEX(lts,r') =>
+	     let
+		 val lts' = List.map (fn(li,ti) => (li, build(mt,mk,rea,ti))) lts
+		 val r''  = buildRow'(mt,mk, rea, r')
+	     in
+		 if ListPair.all (fn((_,t),(_,t')) => Cell.equal(canonical t,t'))
+				 (lts,lts')
+		 andalso Cell.equal(r',r'')
+		 then r
+		 else new(FLEX(lts',r''))
+	     end
+	   | FREE _ => r
 
     and buildKind(mt,mk, rea, k) =
 	case KindMap.lookup(mk,k)
@@ -1208,9 +1335,12 @@ val _ = checkMuFwd := checkMu
 	     | LAMBDA(a,t1) )	=> hasFree(mus, mt,mk, rea, t1)
 
     and rowHasFree(mus, mt,mk, rea, r) =
-	case r
+	case content r
 	  of INDEXED ts   => Vector.exists (fn t => hasFree(mus,mt,mk,rea,t)) ts
-	   | NAMED(lts,_) => List.exists (fn(l,t)=>hasFree(mus,mt,mk,rea,t)) lts
+	   | FIXED lts    => List.exists (fn(l,t)=>hasFree(mus,mt,mk,rea,t)) lts
+	   | FLEX(lts,r') => List.exists (fn(l,t)=>hasFree(mus,mt,mk,rea,t)) lts
+			     orelse rowHasFree(mus,mt,mk,rea,r')
+	   | FREE _	  => false
 
     and kindHasFree(mus, mt,mk, rea, k) =
 	case KindMap.lookup(mk,k)
@@ -1378,11 +1508,8 @@ val _ = checkMuFwd := checkMu
 
     exception Unclosed
 
-    fun isClosedRow(NAMED(_,SOME _))	= false
-      | isClosedRow _			= true
-
     fun checkClosed'(HOLE _)		= raise Unclosed
-      | checkClosed'(PROD r | SUM r)	= if isClosedRow r then () else
+      | checkClosed'(PROD r | SUM r)	= if not(isUnknownRow r) then () else
 					  raise Unclosed
       | checkClosed' _			= ()
 
@@ -1419,7 +1546,7 @@ val _ = checkMuFwd := checkMu
 				     fn t2 => f(all'(t,t2)))
 	      | Extensional(p,_) => (replace(t, CON(p,k)); f)
 	    )
-	   | (PROD r | SUM r) => if isClosedRow r then f else raise Close t
+	   | (PROD r | SUM r) => if not(isUnknownRow r) then f else raise Close t
 	   | _                => f
 
     (*DEBUG*)
@@ -1442,17 +1569,17 @@ val _ = checkMuFwd := checkMu
 		  of HOLE(k,n',c,r) =>
 			if n' <= n then () else replace(t, HOLE(k,n,c,r))
 		   | VAR(k,n',c) => if n' <= n then () else raise Lift t
-		   | PROD r	=> liftRow(t, PROD, r)
-		   | SUM r	=> liftRow(t, SUM, r)
+		   | PROD r	=> liftRow r
+		   | SUM r	=> liftRow r
 		   | MU _	=> ()	(*ASSUME no holes under mu *)
 		   | t'		=> app1(t, lift, true)
 		)
-	    and liftRow(t, cons, r) =
-		(case r
-		   of NAMED(fs,SOME n')	=>
-			if n' <= n then ()
-			else replace(t, cons(NAMED(fs,SOME n)))
-		    | _			=> ();
+	    and liftRow r =
+		(case content r
+		   of FREE(ls,n') => if n' <= n then ()
+				     else replace(r, FREE(ls,n))
+		    | FLEX(_,r')  => liftRow r'
+		    | _		  => ();
 		 appRow1(r, lift)
 		)
 	in
@@ -1736,34 +1863,25 @@ handle e =>
 
 	  | ( (t1' as PROD(r1), PROD(r2))
 	    | (t1' as SUM(r1), SUM(r2)) ) =>
-		(case (r1, r2)
+	    let
+		val (fixed1,free1) = splitRow r1
+		val (fixed2,free2) = splitRow r2
+	    in
+		(case (fixed1, fixed2)
 		  of (INDEXED ts1, INDEXED ts2) =>
 			merge(ms, t1,t2, unifyIndexed(i,ms,rea, t1,t2, ts1,ts2))
-		   | (INDEXED ts1, NAMED(lts2,d2)) =>
+		   | (INDEXED ts1, FIXED lts2) =>
 			merge(ms, t2,t1,
-			      unifyIndexedNamed(i,ms,rea, t2,t1, ts1, lts2,d2))
-		   | (NAMED(lts1,d1), INDEXED ts2) =>
+			      unifyIndexedNamed(i,ms,rea, t2,t1, ts1, lts2,free2))
+		   | (FIXED lts1, INDEXED ts2) =>
 			merge(ms, t1,t2,
-			      unifyIndexedNamed(i,ms,rea, t1,t2, ts2, lts1,d1))
-		   | (NAMED(lts1,d1), NAMED(lts2,d2)) =>
-			let
-			    val (lts,d,k) =
-				unifyNamed(i,ms,rea, t1,t2, lts1,d1,lts2,d2)
-			in
-			    case (d1,d2)
-			     of (_,    NONE) => merge(ms,t1,t2,k)
-			      | (NONE, SOME _) => merge(ms,t2,t1,k)
-			      | (SOME _, SOME _) =>
-				let
-				    val r' = NAMED(lts,d)
-				    val t' = case t1' of SUM _ => sum' r'
-						       | _     => prod' r'
-				in
-				    merge(ms,t1,t',k);
-				    merge(ms,t2,t',k)
-				end
-			end
+			      unifyIndexedNamed(i,ms,rea, t1,t2, ts2, lts1,free1))
+		   | (FIXED lts1, FIXED lts2) =>
+			merge(ms, t1,t2,
+			      unifyNamed(i,ms,rea, t1,t2, lts1,free1,lts2,free2))
+		   | _ => raise Type (* crash *)
 		)
+	    end
 
 	  | (MU(t11), MU(t21)) =>
 		let
@@ -1800,65 +1918,110 @@ handle e =>
 	   | NONE       => (Map.insert(m,a1,a2); 1)
 	)
 
+    and splitRow r =
+	(normaliseRow r;
+	 case content r
+	   of FREE _       => (FIXED [], SOME r)
+	    | FLEX(lts,r') => (FIXED lts, SOME r')
+	    | r'           => (r', NONE)
+	)
+
     and unifyIndexed(i,ms,rea, t1,t2, ts1,ts2) =
 	if Vector.length ts1 <> Vector.length ts2 then raise Mismatch(t1,t2)
 	else VectorPair.foldl
 		(fn(t1,t2,k) => Int.max(k, unify'(i,ms,rea,t1,t2))) 0 (ts1,ts2)
 
-    and unifyIndexedNamed(i,ms,rea, t1,t2, ts1, lts2,d2) =
+    and unifyIndexedNamed(i,ms,rea, t1,t2, ts1, lts2,free2) =
 	let
 	    fun nth j  = Vector.sub(ts1,j)
 	    fun fail _ = raise Mismatch(t1,t2)
-	    val lift   = case d2 of NONE   => fail
-				  | SOME n => fn t => lift'(n,t)
+	    val unifyFree =
+		case free2 of NONE => fail
+			    | SOME r =>
+		case content r of (INDEXED _| FIXED _| FLEX _) => raise Type
+			    | FREE(ls,n) =>
+		fn (l,t) => if isExcluded'(l,ls) then fail() else lift'(n,t)
 
-	    fun unifyFields(j, [], k) =
-		    (VectorSlice.app lift (VectorSlice.slice(ts1,j,NONE)) ; k)
-	      | unifyFields(j, lts2 as (l,t2)::lts2', k) =
+	    fun unifyFields(j, [], lts2', k) =
+		    if j = Vector.length ts1 then (List.rev lts2', k) else
+		    let val (l1,t1) = (Label.fromInt(j+1), nth j) in
+		       unifyFree(l1,t1);
+		       unifyFields(j+1, [], (l1,t1)::lts2', k)
+		    end
+	      | unifyFields(j, lts2 as (l,t2)::lts2', lts2'', k) =
 		    if j = Vector.length ts1 then fail() else
 		    case Label.toInt l
 		     of NONE    => fail()
 		      | SOME j' =>
 		    case Int.compare(j,j'-1)
-		     of LESS    => (lift(nth j) ; unifyFields(j+1, lts2, k))
+		     of LESS    =>
+			let val (l1,t1) = (Label.fromInt(j+1), nth j) in
+			    unifyFree(l1,t1);
+			    unifyFields(j+1, lts2, (l1,t1)::lts2'', k)
+			end
 		      | GREATER => fail()	(* l might have been 0 *)
-		      | EQUAL   => let val k' = unify'(i,ms,rea, nth j, t2)
-				   in unifyFields(j+1,lts2', Int.max(k,k')) end
+		      | EQUAL   =>
+			let val k' = unify'(i,ms,rea, nth j, t2) in
+			    unifyFields(j+1, lts2', lts2'', Int.max(k,k'))
+			end
+	    val (lts2',k) = unifyFields(0, lts2, [], 0)
 	in
-	    unifyFields(0, lts2, 0)
+	    case free2 of NONE => ()
+			| SOME r => replace(r, FIXED lts2');
+	    k
 	end
 
-    and unifyNamed(i,ms,rea, t1,t2, lts1,d1, lts2,d2) =
+    and unifyNamed(i,ms,rea, t1,t2, lts1,free1, lts2,free2) =
 	let
-	    fun fail t = raise Mismatch(t1,t2)
-	    fun lift d = case d of NONE   => fail
-				 | SOME n => fn t => lift'(n,t)
-	    val lift1 = lift d1
-	    val lift2 = lift d2
+	    fun fail _ = raise Mismatch(t1,t2)
+	    fun unifyFree free =
+		case free of NONE => fail
+			   | SOME r =>
+		case content r of (INDEXED _|FIXED _|FLEX _) => raise Type
+			   | FREE(ls,n) =>
+		fn (l,t) => if isExcluded'(l,ls) then fail() else lift'(n,t)
+	    val unifyFree1 = unifyFree free1
+	    val unifyFree2 = unifyFree free2
 
-	    fun unifyFields([], [], lts, k) = (List.rev lts, k)
-	      | unifyFields([], (l,t)::lts2', lts, k) =
-		    (lift1 t; unifyFields([], lts2', (l,t)::lts, k))
-	      | unifyFields((l,t)::lts1', [], lts, k) =
-		    (lift2 t; unifyFields(lts1', [], (l,t)::lts, k))
+	    fun unifyFields([], [], lts1', lts2', k) =
+		    (List.rev lts1', List.rev lts2', k)
+	      | unifyFields([], (l,t)::lts2, lts1', lts2', k) =
+		    (unifyFree1(l,t);
+		     unifyFields([], lts2, (l,t)::lts1', lts2', k))
+	      | unifyFields((l,t)::lts1, [], lts1', lts2', k) =
+		    (unifyFree2(l,t);
+		     unifyFields(lts1, [], lts1', (l,t)::lts2', k))
 	      | unifyFields(lts1 as (l1,t1')::lts1',
-			    lts2 as (l2,t2')::lts2', lts, k) =
+			    lts2 as (l2,t2')::lts2', lts1'', lts2'', k) =
 		case Label.compare(l1,l2)
 		 of LESS =>
-		    (lift2 t1'; unifyFields(lts1', lts2, (l1,t1')::lts, k))
+		    (unifyFree2(l1,t1');
+		     unifyFields(lts1', lts2, lts1'', (l1,t1')::lts2'', k))
 		  | GREATER =>
-		    (lift1 t2'; unifyFields(lts1, lts2', (l2,t2')::lts, k))
+		    (unifyFree1(l2,t2');
+		     unifyFields(lts1, lts2', (l2,t2')::lts1'', lts2'', k))
 		  | EQUAL =>
 		    let val k' = unify'(i,ms,rea, t1',t2') in
-		        unifyFields(lts1',lts2',(l1,t1')::lts, Int.max(k,k'))
+		        unifyFields(lts1', lts2', lts1'', lts2'', Int.max(k,k'))
 		    end
-
-	    val (lts,k) = unifyFields(lts1,lts2,[],0)
-	    val  d      = if Option.isSome d1 andalso Option.isSome d2
-			  then SOME(Int.min(Option.valOf d1, Option.valOf d2))
-			  else NONE
+	    val (lts1',lts2',k) = unifyFields(lts1,lts2, [],[], 0)
 	in
-	    (lts,d,k)
+	    case (free1, free2)
+	      of (NONE, NONE) => ()
+	       | (SOME r1, NONE) => replace(r1, FIXED lts1')
+	       | (NONE, SOME r2) => replace(r2, FIXED lts2')
+	       | (SOME r1, SOME r2) =>
+		 case (content r1, content r2)
+		   of (FREE(ls1,n1), FREE(ls2,n2)) =>
+		      let
+			  val free' = new(FREE(mergeExcluded(ls1,ls2),
+					       Int.min(n1,n2)))
+		      in
+			  replace(r1, FLEX(lts1', free'));
+			  replace(r2, FLEX(lts2', free'))
+		      end
+		    | _ => raise Type (* crash *);
+	    k
 	end
 
   (* Equality, matching, and public interface to unification *)

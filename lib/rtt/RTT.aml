@@ -161,6 +161,8 @@ local
 		val extendRow :		Label.lab * typ * row -> row
 
 		val fix :		(typ * typ) vector -> unit
+
+		val asProd :		typ -> row
 	    end
 
 	    structure Fixity :

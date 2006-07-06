@@ -101,7 +101,7 @@ structure SQLite' :> SQLITE = struct
     fun rowToList r =
         case Type.inspectRow r of
             Type.EmptyRow => nil
-          | Type.UnknownRow => raise TypeError "unknown row"
+          | Type.UnknownRow _ => raise TypeError "unknown row"
           | Type.FieldRow(l,t,row) => (l, t)::rowToList row
 
     (* The dict is used to look up field names for matching them

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -67,6 +67,7 @@ struct
   (* Simple objects *)
 
     fun ppLab l = text(Label.toString l)
+    fun ppMLab l = text("#" ^ Label.toString l)
 
 
   (* Name management for holes *)
@@ -213,14 +214,14 @@ struct
 	    else
 		brace(
 		    fbox(below(
-			ppRow(",", " :", ps, i, j, m, annPrec+1, r)
+			ppRow(",", " :", ps, i, j, m, annPrec+1, r, [])
 		    ))
 		)
 	  | Sum r =>
 		if debug then text "..." else
 		parenPrec prec (ofPrec,
 		    fbox(below(
-			ppRow(" |", " of", ps, i, j, m, ofPrec+1, r)
+			ppRow(" |", " of", ps, i, j, m, ofPrec+1, r, [])
 		    ))
 		)
 	  | All(a,t') =>
@@ -276,14 +277,26 @@ struct
 	    )
 	end
 
-    and ppRow(sep,ann,ps,i,j,m,prec,r) =
+    and ppRow(sep,ann,ps,i,j,m,prec,r,ls) =
 	case inspectRow r
-	 of UnknownRow		=> text "..."
+	 of UnknownRow ls' =>
+	    let
+		fun filterLabs(l::ls, l'::ls') =
+		    (case Label.compare(l,l')
+		       of EQUAL   => filterLabs(ls, ls')
+			| LESS    => raise Type.Row
+			| GREATER => l'::filterLabs(l::ls, ls'))
+		  | filterLabs(_, ls') = ls'
+	    in
+		case filterLabs(List.rev ls, ls')
+		  of [] => text "..."
+		   | ls => text "..." ^/^ ppCommaList ppMLab ls
+	    end
 	  | EmptyRow		=> empty
 	  | FieldRow(l,t,r')	=>
 	    let
 		val doc1 = ppField(ann,ps,i,j,m,prec,l,t)
-		val doc2 = ppRow(sep,ann,ps,i,j,m,prec,r')
+		val doc2 = ppRow(sep,ann,ps,i,j,m,prec,r',l::ls)
 	    in
 		if isEmpty doc2
 		then doc1

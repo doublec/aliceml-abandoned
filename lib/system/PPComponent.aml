@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2004
+ *   Andreas Rossberg, 2002-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -101,7 +101,7 @@ struct
 	  | _			=> ()
     and rowToLabs(s,r) =
 	case Type.inspectRow r
-	 of (Type.EmptyRow | Type.UnknownRow)	=> ()
+	 of (Type.EmptyRow | Type.UnknownRow _)	=> ()
 	  |  Type.FieldRow(l,t,r')		=> (LabelSet.insert(s,l);
 						    rowToLabs(s,r'))
 

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2005
+ *   Andreas Rossberg, 2002-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -69,14 +69,14 @@ local
     fun rowToLabs r = Vector.fromList(rowToLabs' r)
     and rowToLabs' r =
 	case inspectRow r
-	 of (UnknownRow | EmptyRow) => []
-	  | FieldRow(l,_,r')        => l :: rowToLabs' r'
+	 of (UnknownRow _ | EmptyRow) => []
+	  | FieldRow(l,_,r')          => l :: rowToLabs' r'
 
     fun rowToTyps r = Vector.fromList(rowToTyps' r)
     and rowToTyps' r =
 	case inspectRow r
-	 of (UnknownRow | EmptyRow) => []
-	  | FieldRow(_,t,r')        => t :: rowToTyps' r'
+	 of (UnknownRow _ | EmptyRow) => []
+	  | FieldRow(_,t,r')          => t :: rowToTyps' r'
 
 
   (* Type registration *)
