@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -274,20 +274,35 @@ struct
 
     fun elabLab(E, I.Lab(i, l)) = ( l, O.Lab(nonInfo(i), l) )
 
-    fun elabRow(elabX, E, I.Row(i, flds, b)) =
+    fun elabRow(elabX, infoX, E, I.Row(i, flds, xo)) =
 	let
-	    val  r0       = (if b then Type.unknownRow else Type.emptyRow)()
+	    val (r0,xo')  = elabEll(elabX, infoX, E, xo)
 	    val (r,flds') = elabFlds(elabX, E, r0, flds)
 	in
-	    ( r, O.Row(nonInfo(i), flds', b) )
+	    ( r, O.Row(nonInfo(i), flds', xo') )
+	end
+
+    and elabEll(elabX, infoX, E, NONE) =
+	    ( Type.emptyRow(), NONE )
+      | elabEll(elabX, infoX, E, SOME x) =
+	let
+	    val (t,x') = elabX(E, x)
+	    val  t0    = Type.prod(Type.unknownRow())
+	    val  _     = Type.unify(t,t0) handle Type.Mismatch _ =>
+			 error(infoX x, E.EllRowType t)
+	in
+	    ( Type.asProd t, SOME x' )
 	end
 
     and elabFlds(elabX, E, r, flds) =
 	let
-	    val atflds' = Vector.map (fn fld => elabFld(elabX,E,fld)) flds
-	    val flds'   = Vector.map #3 atflds'
-	    val r       = Vector.foldl (fn((l,t,_), r) => Type.extendRow(l,t,r))
-					r atflds'
+	    val ltflds' = Vector.map (fn fld => elabFld(elabX,E,fld)) flds
+	    val flds'   = Vector.map #3 ltflds'
+	    val r       = Vector.foldl (fn((l,t,fld), r) => Type.extendRow(l,t,r)
+					handle Type.Row =>
+					    E.error(#region(O.infoFld fld),
+						    E.FldRowDuplicate l))
+					r ltflds'
 	in
 	    ( r, flds' )
 	end
@@ -469,21 +484,10 @@ struct
 
       | elabExp(E, I.ProdExp(i, exprow)) =
 	let
-	    val (r,exprow') = elabRow(elabExp, E, exprow)
+	    val (r,exprow') = elabRow(elabExp, I.infoExp, E, exprow)
 	    val  t          = Type.prod r
 	in
 	    ( t, O.ProdExp(typInfo(i,t), exprow') )
-	end
-
-      | elabExp(E, I.UpdExp(i, exp, I.Row(i',fs,_))) =
-	let
-	    val (t1,exp')    = elabExp(E, exp)
-	    val (r,exprow')  = elabRow(elabExp, E, I.Row(i',fs,true))
-	    val  t2          = Type.prod r
-	    val  _           = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
-				error(i, E.UpdExpMismatch(t2, t1, t4, t3))
-	in
-	    ( t1, O.UpdExp(typInfo(i,t1), exp', exprow') )
 	end
 
       | elabExp(E, I.SelExp(i, vallab, exp')) =
@@ -880,7 +884,8 @@ struct
 
       | elabPat(E, s, I.ProdPat(i, patrow)) =
 	let
-	    val (r,patrow') = elabRow(fn(E,pat) => elabPat(E,s,pat), E, patrow)
+	    val (r,patrow') = elabRow(fn(E,pat) => elabPat(E,s,pat), I.infoPat,
+				      E, patrow)
 	    val  t          = Type.prod r
 	in
 	    ( t, O.ProdPat(typInfo(i,t), patrow') )
@@ -1152,7 +1157,8 @@ struct
 
       | elabTyp'(E, allowJok, I.ProdTyp(i, typrow)) =
 	let
-	    val (r,typrow') = elabTypRow(E, allowJok, typrow)
+	    val (r,typrow') = elabRow(fn(E,t) => elabStarTyp(E, allowJok, t),
+				      I.infoTyp, E, typrow)
 	    val  t          = Type.prod r
 	in
 	    ( t, O.ProdTyp(typInfo(i,t), typrow') )
@@ -1160,7 +1166,8 @@ struct
 
       | elabTyp'(E, allowJok, I.SumTyp(i, typrow)) =
 	let
-	    val (r,typrow') = elabTypRow(E, allowJok, typrow)
+	    val (r,typrow') = elabRow(fn(E,t) => elabStarTyp(E, allowJok, t),
+				      I.infoTyp, E, typrow)
 	    val  t          = Type.sum r
 	in
 	    ( t, O.SumTyp(typInfo(i,t), typrow') )
@@ -1204,16 +1211,6 @@ struct
 
       | elabTyp'(E, allowJok, I.AbsTyp _) =
 	raise Crash.Crash "Elab.elabTyp: AbsTyp"
-
-    and elabTypRow(E, allowJok, typrow) =
-	let
-	    val res as (r, typrow' as O.Row(_,_,b)) =
-		elabRow(fn(E,t) => elabStarTyp(E, allowJok, t), E, typrow)
-	in
-	    if b andalso not allowJok
-	    then error(I.infoRow typrow, E.JokTypRow)
-	    else res
-	end
 
 
   (* Types in positions where they may not be higher order *)

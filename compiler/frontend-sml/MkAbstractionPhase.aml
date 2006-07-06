@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -499,7 +499,11 @@ struct
     fun ? tyvarsX E  NONE    = []
       | ? tyvarsX E (SOME x) = tyvarsX E x
 
-    fun unguardedTyVarsAtExp E (RECORDAtExp(_, exprow_opt)) =
+    fun unguardedTyVarsAtExp E ( SCONAtExp _
+			       | LONGVIDAtExp _
+			       | HASHAtExp _ ) = []
+
+      | unguardedTyVarsAtExp E (RECORDAtExp(_, exprow_opt)) =
 	    ?unguardedTyVarsExpRow E exprow_opt
 
       | unguardedTyVarsAtExp E ( TUPLEAtExp(_, exps)
@@ -513,9 +517,9 @@ struct
       | unguardedTyVarsAtExp E (PARAtExp(_, exp)) =
 	    unguardedTyVarsExp E exp
 
-      | unguardedTyVarsAtExp E _ = []
-
-    and unguardedTyVarsExpRow E (ROWExpRow(_, lab, exp, exprow_opt)) =
+    and unguardedTyVarsExpRow E (DOTSExpRow(_, exp)) =
+	    unguardedTyVarsExp E exp
+      | unguardedTyVarsExpRow E (ROWExpRow(_, lab, exp, exprow_opt)) =
 	    unguardedTyVarsExp E exp @ ?unguardedTyVarsExpRow E exprow_opt
 
     and unguardedTyVarsExp E (ATEXPExp(_, atexp)) =
@@ -620,8 +624,8 @@ struct
 
       | unguardedTyVarsAtPat E _ = []
 
-    and unguardedTyVarsPatRow E (WILDCARDPatRow(_)) = []
-
+    and unguardedTyVarsPatRow E (DOTSPatRow(_, pat)) =
+	    unguardedTyVarsPat E pat
       | unguardedTyVarsPatRow E (ROWPatRow(_, lab, pat, patrow_opt)) =
 	    unguardedTyVarsPat E pat @ ?unguardedTyVarsPatRow E patrow_opt
 
@@ -678,7 +682,9 @@ struct
       | unguardedTyVarsTy E (PARTy(_, ty)) =
 	    unguardedTyVarsTy E ty
 
-    and unguardedTyVarsTyRow E (ROWTyRow(_, lab, ty, tyrow_opt)) =
+    and unguardedTyVarsTyRow E (DOTSTyRow(_, ty)) =
+	    unguardedTyVarsTy E ty
+      | unguardedTyVarsTyRow E (ROWTyRow(_, lab, ty, tyrow_opt)) =
 	    unguardedTyVarsTy E ty @ ?unguardedTyVarsTyRow E tyrow_opt
 
     and unguardedTyVarsTyseq E (Seq(_, tys)) =
@@ -740,15 +746,6 @@ struct
 	   in
 		O.ProdExp(i, row')
 	   end
-	 | UPDATEAtExp(i, atexp, exprow) =>
-	   let
-		val exp' = trAtExp E atexp
-		val  _   = insertScope E
-		val row' = trExpRowo E (SOME exprow)
-		val  _   = removeScope E
-	   in
-		O.UpdExp(i, exp', row')
-	   end
 	 | HASHAtExp(i, lab) =>
 	   let
 		val id'  = O.Id(i, Stamp.stamp(), Name.InId)
@@ -775,12 +772,19 @@ struct
 
     and trExpRowo E exprowo =
 	let
-	    val (i, flds') = trExpRowo' E exprowo
+	    val (i, flds', expo') = trExpRowo' E exprowo
 	in
-	    O.Row(i, Vector.fromList flds', false)
+	    O.Row(i, Vector.fromList flds', expo')
 	end
     and trExpRowo' E =
-	fn NONE => (Source.nowhere, [])
+	fn NONE => (Source.nowhere, [], NONE)
+
+	 | SOME(DOTSExpRow(i, exp)) =>
+	   let
+		val exp' = trExp E exp
+	   in
+		(i, [], SOME exp')
+	   end
 
 	 | SOME(ROWExpRow(i, lab as Lab(i',lab'), exp, exprowo)) =>
 	   let
@@ -789,9 +793,9 @@ struct
 		val _    = insertDisjointFld(E, lab', i')
 			   handle CollisionFld _ =>
 				error(i', E.ExpRowLabDuplicate lab')
-		val (_,flds') = trExpRowo' E exprowo
+		val (_,flds',expo') = trExpRowo' E exprowo
 	   in
-		(i, fld'::flds')
+		(i, fld'::flds', expo')
 	   end
 
 
@@ -1002,14 +1006,19 @@ struct
 
     and trPatRowo (E,E') patrowo =
 	let
-	    val (i, flds', dots') = trPatRowo' (E,E') patrowo
+	    val (i, flds', pato') = trPatRowo' (E,E') patrowo
 	in
-	    O.Row(i, Vector.fromList flds', dots')
+	    O.Row(i, Vector.fromList flds', pato')
 	end
     and trPatRowo' (E,E') =
-	fn NONE => (Source.nowhere, [], false)
+	fn NONE => (Source.nowhere, [], NONE)
 
-	 | SOME(WILDCARDPatRow(i)) => (i, [], true)
+	 | SOME(DOTSPatRow(i, pat)) =>
+	   let
+	       val pat' = trPat (E,E') pat
+	   in
+	       (i, [], SOME pat')
+	   end
 
 	 | SOME(ROWPatRow(i, lab as Lab(i',lab'), pat, patrowo)) =>
 	   let
@@ -1018,9 +1027,9 @@ struct
 		val _    = insertDisjointFld(E, lab', i')
 			   handle CollisionFld _ =>
 				error(i', E.PatRowLabDuplicate lab')
-		val (_,flds',dots') = trPatRowo' (E,E') patrowo
+		val (_,flds',pato') = trPatRowo' (E,E') patrowo
 	   in
-		(i, fld'::flds', dots')
+		(i, fld'::flds', pato')
 	   end
 
 
@@ -1213,12 +1222,19 @@ struct
 
     and trTyRowo E tyrowo =
 	let
-	    val (i, flds') = trTyRowo' E tyrowo
+	    val (i, flds', typo') = trTyRowo' E tyrowo
 	in
-	    O.Row(i, Vector.fromList flds', false)
+	    O.Row(i, Vector.fromList flds', typo')
 	end
     and trTyRowo' E =
-	fn NONE => (Source.nowhere, [])
+	fn NONE => (Source.nowhere, [], NONE)
+
+	 | SOME(DOTSTyRow(i, ty)) =>
+	   let
+		val typ' = trTy E ty
+	   in
+		(i, [], SOME typ')
+	   end
 
 	 | SOME(ROWTyRow(i, lab as Lab(i',lab'), ty, tyrowo)) =>
 	   let
@@ -1227,9 +1243,9 @@ struct
 		val _    = insertDisjointFld(E, lab', i')
 			   handle CollisionFld _ =>
 				error(i', E.TyRowLabDuplicate lab')
-		val (_,flds') = trTyRowo' E tyrowo
+		val (_,flds',typo') = trTyRowo' E tyrowo
 	   in
-		(i, fld'::flds')
+		(i, fld'::flds',typo')
 	   end
 
 
@@ -1294,6 +1310,7 @@ struct
 
     and trAllTyRowo E =
 	fn NONE                               => []
+	 | SOME(DOTSTyRow(i, ty))             => trAllTy E ty
 	 | SOME(ROWTyRow(i, lab, ty, tyrowo)) =>
 		trAllTy E ty @ trAllTyRowo E tyrowo
 
@@ -2196,7 +2213,7 @@ struct
 		val (flds',decs') = trConBindo (E,E'',tycon',varids',typ')
 					       (SOME conbind)
 		val  _            = removeScope E
-		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', false))
+		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', NONE))
 		val  dec'         = O.TypDec(i, typid', funtyp(varids',sumtyp'))
 		val  _            = unionDisjoint(E',E'')
 				    handle CollisionVal vid' =>
@@ -2911,7 +2928,7 @@ struct
 		val (flds',specs') = trConDesco (E,E',tycon',varids',typ')
 						(SOME condesc)
 		val  _             = removeScope E
-		val  sumtyp'       = O.SumTyp(i', O.Row(i', flds', false))
+		val  sumtyp'       = O.SumTyp(i', O.Row(i', flds', NONE))
 		val  spec'         = O.TypSpec(i, typid',
 						  funtyp(varids', sumtyp'))
 		val  _             = unionDisjoint(E,E')
@@ -3423,7 +3440,7 @@ struct
 		val (flds',imps') = trConItemo (E,E',E'',tycon',varids',typ')
 					       (SOME conitem)
 		val  _            = removeScope E
-		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', false))
+		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', NONE))
 		val  desc'        = O.SomeDesc(i', funtyp(varids', sumtyp'))
 		val  imp'         = O.TypImp(i, typid', desc')
 		val  _            = unionDisjoint(E,E'')

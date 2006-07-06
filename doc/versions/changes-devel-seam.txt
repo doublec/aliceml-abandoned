@@ -3,7 +3,11 @@ Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/06/30
 
 Language:
 
-* [NEW] Line comments, starting with (*).
+* [NEW] Integrated most "immediate" extensions proposed for Succesor ML
+        (www.successor-ml.org) that were still missing, in detail:
+* [NEW] Line comments, starting with "(*)".
+* [NEW] Extensible records and row capture: "{a=1, b=2, ...=r}", see manual
+        section on record sugar for details.
 * [NEW] Allow optional bar before first clause of fn, case, handle, fun, and
         before first constructor in datatype definitions.
 * [NEW] Allow "do exp" as abbreviation of "val _ : unit = exp".
@@ -13,6 +17,7 @@ Runtime System:
 * [NEW] Byte code jitter now default; smaller memory footprint, more aggressive
         dynamic optimizations (e.g. inlining, specialization, "hotspot"-like
         selective (re-)jitting).
+* [CHG] Bumped version number of pickle format; old pickles are incompatible.
 * [FIX] Nasty stack overflow bug that could cause VM to eat memory like hell.
 
 Interactive Toplevel:

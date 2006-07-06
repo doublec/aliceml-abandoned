@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -99,4 +99,7 @@ struct
 
     val lab_fix		= vallab "fix"
     val _		= Type.fix : (typ * typ) vector -> unit	(* verify *)
+
+    val lab_asProd	= vallab "asProd"
+    val _		= Type.asProd : typ -> row		(* verify *)
 end

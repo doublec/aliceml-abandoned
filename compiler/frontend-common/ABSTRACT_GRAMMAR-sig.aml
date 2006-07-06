@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -96,7 +96,6 @@ sig
 	| StrictExp of exp_info * exp		(* strict evaluation *)
 	| TupExp    of exp_info * exp vector	(* tuple *)
 	| ProdExp   of exp_info * exp row	(* product (record) *)
-	| UpdExp    of exp_info * exp * exp row	(* record update *)
 	| SelExp    of exp_info * vallab * exp	(* selection *)
 	| VecExp    of exp_info * exp vector	(* vector *)
 	| FunExp    of exp_info * mat vector	(* function *)
@@ -118,7 +117,7 @@ sig
 				* varid * typlongid vector * typ (* overload *)
 	| OverallExp of exp_info * exp * varid * typ (* intensional overload *)
 
-    and 'a row = Row of 'a row_info * 'a fld vector * bool
+    and 'a row = Row of 'a row_info * 'a fld vector * 'a option
     and 'a fld = Fld of 'a fld_info * vallab * 'a
 
   (* Patterns *)

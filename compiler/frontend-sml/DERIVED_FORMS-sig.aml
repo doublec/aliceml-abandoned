@@ -17,6 +17,14 @@
  * Definition, Appendix A
  *
  * Extensions and modifications:
+ *   - extensible records:
+ *	  exprow ::= ... = exp <, exprow>
+ *	  patrow ::= ... <= pat> <, patrow>
+ *	  tyrow  ::= ... = ty <, tyrow>
+ *   - functional record update:
+ *        {atexp where exprow}
+ *        ==>
+ *        let val {patrow, ...=vid} in {exprow, ...=vid} end
  *   - recursive expressions:
  *	rec pat => exp     ==>     let val rec x as pat = exp in x end
  *     where x is a fresh identifier.
@@ -145,6 +153,9 @@ sig
     val ASSERTOFExp:    Info * Source.desc * int option * Exp * Pat -> Exp
     val ASSERTRAISEExp: Info * Source.desc * int option * Exp * Pat -> Exp
 
+    val UPDATEAtExp:    Info * AtExp * ExpRow                  -> AtExp
+
+    val DOTSExpRow:  Info * Exp * ExpRow option                -> ExpRow
     val VIDExpRow:   Info * VId * Ty option * ExpRow option    -> ExpRow
 
     (* Patterns *)
@@ -153,6 +164,7 @@ sig
     val TUPLEAtPat:  Info * Pat list                           -> AtPat
     val LISTAtPat:   Info * Pat list                           -> AtPat
 
+    val DOTSPatRow:  Info * Pat option * PatRow option         -> PatRow
     val VIDPatRow:   Info * VId * Ty option * Pat option * PatRow option
                                                                -> PatRow
     val WITHFUNPat:  Info * Pat * FvalBind                     -> Pat
@@ -162,6 +174,8 @@ sig
     (* Types *)
 
     val TUPLETy:     Info * Ty list                            -> Ty
+
+    val DOTSTyRow:   Info * Ty * TyRow option                  -> TyRow
 
     (* Bindings *)
 

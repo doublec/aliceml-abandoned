@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -160,7 +160,7 @@ struct
 
 	    fun loop r =
 		case Type.inspectRow r
-		 of (Type.EmptyRow | Type.UnknownRow) => ()
+		 of (Type.EmptyRow | Type.UnknownRow _) => ()
 		  | Type.FieldRow(l,t',r') =>
 		let
 		    val  vid    = VId.fromString(Label.toString l)

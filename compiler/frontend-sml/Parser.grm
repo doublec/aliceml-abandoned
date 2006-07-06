@@ -15,6 +15,10 @@
 (*										*)
 (* Extensions:									*)
 (*   - allow = to be bound as vid (in a pattern it must be prefixed by op)	*)
+(*   - extensible records:							*)
+(*	  exprow ::= ... = exp <, exprow>					*)
+(*	  patrow ::= ... <= pat> <, patrow>					*)
+(*	  tyrow  ::= ... = ty <, tyrow>						*)
 (*   - record update expressions:						*)
 (*	  atexp ::= { atexp where exprow }					*)
 (*   - vector expressions and patterns:						*)
@@ -775,6 +779,9 @@
 	  lab EQUALS exp COMMA_exprow_opt
 	  			( ROWExpRow(I(lableft,COMMA_exprow_optright),
 	  				    lab, exp, COMMA_exprow_opt) )
+	| DOTS EQUALS exp COMMA_exprow_opt
+	  			( DOTSExpRow(I(DOTSleft,COMMA_exprow_optright),
+	  				     exp, COMMA_exprow_opt) )
 	| vid' COLON_ty_opt COMMA_exprow_opt
 	  			( VIDExpRow(I(vid'left,COMMA_exprow_optright),
 	  				    vid', COLON_ty_opt,
@@ -1169,7 +1176,12 @@
 
 
   patrow:
-	  DOTS		( WILDCARDPatRow(I(DOTSleft,DOTSright)) )
+	  DOTS COMMA_patrow_opt
+			( DOTSPatRow(I(DOTSleft,DOTSright),
+				     NONE, COMMA_patrow_opt) )
+	| DOTS EQUALS pat COMMA_patrow_opt
+			( DOTSPatRow(I(DOTSleft,DOTSright),
+				     SOME pat, COMMA_patrow_opt) )
 	| lab EQUALS pat COMMA_patrow_opt
 			( ROWPatRow(I(lableft,COMMA_patrow_optright),
 				      lab, pat, COMMA_patrow_opt) )
@@ -1252,6 +1264,9 @@
 	  lab COLON ty COMMA_tyrow_opt
 			( ROWTyRow(I(lableft,COMMA_tyrow_optright),
 				   lab, ty, COMMA_tyrow_opt) )
+	| DOTS COLON ty COMMA_tyrow_opt
+			( DOTSTyRow(I(DOTSleft,COMMA_tyrow_optright),
+				    ty, COMMA_tyrow_opt) )
      COMMA_tyrow_opt:
 	  COMMA tyrow	( SOME tyrow )
 	| (*empty*)	( NONE )

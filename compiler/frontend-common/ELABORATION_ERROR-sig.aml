@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -80,12 +80,14 @@ sig
 	| AnnPatMismatch	of typ_mismatch
 	(* Types *)
 	| JokTyp
-	| JokTypRow
 	| StarTypKind		of kind
 	| AppTypFunKind		of kind
 	| AppTypArgKind		of kind * kind
 	| RefTypKind		of kind
 	| PervasiveTypUnknown	of string
+	(* Rows *)
+	| FldRowDuplicate	of lab
+	| EllRowType		of typ
 	(* Declarations *)
 	| ValDecMismatch	of typ_mismatch
 	| ValDecUnclosed	of typ

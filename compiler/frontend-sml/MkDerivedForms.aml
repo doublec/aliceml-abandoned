@@ -17,6 +17,14 @@
  *
  * Extensions and modifications:
  *   - predefined ids are taken out of a pseudo structure __pervasive
+ *   - extensible records:
+ *	  exprow ::= ... = exp <, exprow>
+ *	  patrow ::= ... <= pat> <, patrow>
+ *	  tyrow  ::= ... = ty <, tyrow>
+ *   - functional record update:
+ *        {atexp where exprow}
+ *        ==>
+ *        let val {patrow, ...=vid} in {exprow, ...=vid} end
  *   - recursive expressions:
  *	rec pat => exp     ==>     let val rec x as pat = exp in x end
  *     where x is a fresh identifier.
@@ -269,7 +277,9 @@ struct
       | replaceTy tyvarseq_tyseq (G.PARTy(I, ty)) =
 	    G.PARTy(I, replaceTy tyvarseq_tyseq ty)
 
-    and replaceTyRow tyvarseq_tyseq (G.ROWTyRow(I, lab, ty, tyrow_opt)) =
+    and replaceTyRow tyvarseq_tyseq (G.DOTSTyRow(I, ty)) =
+	    G.DOTSTyRow(I, replaceTy tyvarseq_tyseq ty)
+      | replaceTyRow tyvarseq_tyseq (G.ROWTyRow(I, lab, ty, tyrow_opt)) =
 	    G.ROWTyRow(I, lab, replaceTy tyvarseq_tyseq ty, 
 			  Option.map (replaceTyRow tyvarseq_tyseq) tyrow_opt)
 
@@ -309,7 +319,9 @@ struct
       | rewriteTy typbind (G.PARTy(I, ty)) =
 	    G.PARTy(I, rewriteTy typbind ty)
 
-    and rewriteTyRow typbind (G.ROWTyRow(I, lab, ty, tyrow_opt)) =
+    and rewriteTyRow typbind (G.DOTSTyRow(I, ty)) =
+	    G.DOTSTyRow(I, rewriteTy typbind ty)
+      | rewriteTyRow typbind (G.ROWTyRow(I, lab, ty, tyrow_opt)) =
 	    G.ROWTyRow(I, lab, rewriteTy typbind ty,
 			  Option.map (rewriteTyRow typbind) tyrow_opt)
 
@@ -384,6 +396,14 @@ struct
 	end
 
 
+    fun DOTSPatRow(I, SOME pat, NONE) = G.DOTSPatRow(I, pat)
+      | DOTSPatRow(I, NONE, NONE)     =
+	    G.DOTSPatRow(I, G.ATPATPat(I, G.WILDCARDAtPat(I)))
+      | DOTSPatRow(I, pat_opt, SOME(G.ROWPatRow(I', lab, pat, patrow_opt))) =
+	    G.ROWPatRow(I', lab, pat, SOME(DOTSPatRow(I, pat_opt, patrow_opt)))
+      | DOTSPatRow(I, pat_opt, SOME(G.DOTSPatRow(I', _))) =
+	    E.error(I', E.PatRowEllipses)
+
     fun VIDPatRow(I, vid as G.VId(I',vid'), ty_opt, pat_opt, patrow_opt) =
 	let
 	    val lab    = G.Lab(I', Lab.fromString(VId.toString vid'))
@@ -439,6 +459,36 @@ struct
 	in
 	    G.PARAtExp(I, toExpList exps)
 	end
+
+    fun UPDATEAtExp(I, atexp, exprow) =
+        let
+            val I'  = G.infoAtExp atexp
+            val vid = G.VId(I', VId.invent())
+
+            fun toPatRow NONE =
+                    SOME(G.DOTSPatRow(I', VIDPat(I', vid)))
+              | toPatRow(SOME(G.ROWExpRow(I, lab, exp, exprow_opt))) =
+                    SOME(G.ROWPatRow(I, lab,
+                                G.ATPATPat(I, G.WILDCARDAtPat(G.infoExp exp)),
+                                toPatRow exprow_opt))
+              | toPatRow(SOME(G.DOTSExpRow(I, _))) =
+                    E.error(I, E.UpdExpInvalid)
+
+            fun extendExpRow NONE =
+                    SOME(G.DOTSExpRow(I', VIDExp(I', vid)))
+              | extendExpRow(SOME(G.ROWExpRow(I, lab, exp, exprow_opt))) =
+                    SOME(G.ROWExpRow(I, lab, exp, extendExpRow exprow_opt))
+              | extendExpRow(SOME(G.DOTSExpRow(I, _))) =
+                    E.error(I, E.UpdExpInvalid)
+
+            val pat = G.ATPATPat(I', G.RECORDAtPat(I', toPatRow(SOME exprow)))
+            val dec = G.VALDec(I', G.Seq(I', []),
+                               G.PLAINValBind(I', pat,
+					      G.ATEXPExp(I', atexp), NONE))
+            val exp = G.ATEXPExp(I, G.RECORDAtExp(I, extendExpRow(SOME exprow)))
+        in
+            G.LETAtExp(I, dec, exp)
+        end
 
     fun RECExp(I, pat, exp) =
 	let
@@ -600,6 +650,27 @@ end
     fun ASSERTRAISEExp(I, desc, d_opt, exp, pat) =
 	ASSERTRAISEDOExp(I, desc, d_opt, exp, pat, G.ATEXPExp(I, UNITAtExp(I)))
 
+    fun DOTSExpRow(I, exp, NONE) =
+	    G.DOTSExpRow(I, exp)
+      | DOTSExpRow(I, exp, exprow_opt) =
+	let
+	    val I'     = G.infoExp exp
+	    val vid    = G.VId(I', VId.invent())
+	    val dec    = G.VALDec(I', G.Seq(I, []),
+				  G.PLAINValBind(I', VIDPat(I',vid), exp, NONE))
+	    val exprow = DOTSExpRow'(I, vid, exprow_opt)
+	    val recExp = G.ATEXPExp(I, G.RECORDAtExp(I, SOME exprow))
+	    val letExp = G.ATEXPExp(I, G.LETAtExp(I, dec, recExp))
+	in
+	    G.DOTSExpRow(I, letExp)
+	end
+    and DOTSExpRow'(I, vid, NONE) =
+	    G.DOTSExpRow(I, VIDExp(I, vid))
+      | DOTSExpRow'(I, vid, SOME(G.ROWExpRow(I', lab, exp, exprow_opt))) =
+	    G.ROWExpRow(I', lab, exp, SOME(DOTSExpRow'(I, vid, exprow_opt)))
+      | DOTSExpRow'(I, vid, SOME(G.DOTSExpRow(I', _))) =
+	    E.error(I', E.ExpRowEllipses)
+
     fun VIDExpRow(I, vid as G.VId(I',vid'), ty_opt, exprow_opt) =
 	let
 	    val lab    = G.Lab(I', Lab.fromString(VId.toString vid'))
@@ -616,6 +687,13 @@ end
 
     fun TUPLETy(I, [ty]) = ty
       | TUPLETy(I,  tys) = G.TUPLETy(I, tys)
+
+    fun DOTSTyRow(I, ty, NONE) =
+	    G.DOTSTyRow(I, ty)
+      | DOTSTyRow(I, ty, SOME(G.ROWTyRow(I', lab, ty', tyrow_opt))) =
+	    G.ROWTyRow(I', lab, ty', SOME(DOTSTyRow(I, ty, tyrow_opt)))
+      | DOTSTyRow(I, ty, SOME(G.DOTSTyRow(I', _))) =
+	    E.error(I', E.TyRowEllipses)
 
 
     (* Signature expressions (Part 1) *)

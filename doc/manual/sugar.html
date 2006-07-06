@@ -145,6 +145,33 @@ fun f {a = a, b = b, c = c} = {a = a, b = b}</PRE>
 <TT>{a = a : int, b = b}</TT>.</P>
 
 
+<?php subsection("records-extension", "Record extension") ?>
+
+<P>Ellipses in a record pattern may be followed by a pattern that will be matched against the "remaining" record. For example,</P>
+
+<PRE class=code>
+val r = {a = 1, b = true, c = "hello"}
+val {a = n, ... = r'} = r</PRE>
+
+<P>will bind <TT>r'</TT> to the record <TT>{b=true, c="hello"}</TT>.
+
+<P>Analogously, records can be constructed as extension of other records using ellipses:</P>
+
+<PRE class=code>
+val r'' = {d = 3.14, ... = r'}</PRE>
+
+<P>This example will bind <TT>r''</TT> to the record <TT>{b=true, c="hello", d=3.14}</TT>. Note that the ellipses expression must have record type, but this record may not contain any of the added labels.</P>
+
+<P>Record extension can also be used in type expressions:</P>
+
+<PRE class=code>
+type 'a t = {a : 'a, b : bool}
+type u = {c : char, d : string, ... : int t}</PRE>
+
+<P>Now the type <TT>u</TT> is equivalent to <TT>{a:int, b:bool, c:char, d:string}</TT>. Again, the label sets of the ellipses type and the explicit fields must be disjoint.</P>
+
+<P>In all three forms, the ellipses may appear anywhere in the row, but a row may not have multiple occurences of ellipses.</P>
+
 <?php subsection("records-update", "Functional record update") ?>
 
 <P>There also is syntax for functional record update. For example,</P>
@@ -161,6 +188,7 @@ end</PRE>
 <PRE class=code>
 {a = 3, b = true, c = "bye"}</PRE>
 
+<P>Here, the updated record must have a type containing all labels being updated. However, the types of these fields may change with the update.</P>
 
 <?php subsection("records-syntax", "Record syntax") ?>
 
@@ -176,6 +204,7 @@ end</PRE>
     <TD> <TT>{</TT> <I>atexp</I> <TT>where</TT> <I>exprow</I> <TT>}</TT> </TD>
     <TD> record update </TD>
   </TR>
+
   <TR></TR>
   <TR>
     <TD> <I>exprow</I> </TD>
@@ -189,6 +218,37 @@ end</PRE>
                     &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
     <TD> label as expression </TD>
   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>=</TT> <I>exp</I> &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+    <TD> ellipses </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>patrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> &lt;<TT>=</TT> <I>pat</I>&gt; &lt;<TT>,</TT> <I>patrow</I>&gt; </TD>
+    <TD> ellipses </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>tyrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>:</TT> <I>ty</I> &lt;<TT>,</TT> <I>tyrow</I>&gt; </TD>
+    <TD> ellipses </TD>
+  </TR>
 </TABLE>
 
 <P>The expression <I>atexp</I> in a record update must have a record type that
@@ -197,7 +257,7 @@ match. The result of evaluating a record update is a record of the same type
 but with the fields occuring in <I>exprow</I> replacing the corresponding
 values of the original record.</P>
 
-<P>Labels as expressions are a derived form:</P>
+<P>Labels as expressions are a derived form. Likewise is record update:</P>
 
 <TABLE class=bnf>
   <TR>
@@ -205,7 +265,15 @@ values of the original record.</P>
     <TD> ==> </TD>
     <TD> <I>vid</I> <TT>=</TT> <I>vid</I> &lt;<TT>:</TT> <I>ty</I>&gt; &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
   </TR>
+  <TR>
+    <TD> <TT>{</TT><I>atexp</I> <TT>where</TT> <I>exprow</I><TT>}</TT> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>let</TT> <TT>val</TT> <TT>{</TT><I>patrow</I><TT>,</TT> <TT>...</TT> <TT>=</TT> <I>vid</I><TT>}</TT> <TT>=</TT> <I>atexp</I> <BR>
+         <TT>in</TT> <TT>{</TT><I>exprow</I><TT>,</TT> <TT>...</TT> <TT>=</TT> <I>vid</I><TT>}</TT> <TT>end</TT> </TD>
+  </TR>
 </TABLE>
+
+<P>In the rewritten form of record update, <I>vid</I> is a fresh identifier, and <I>patrow</I> is obtained from <I>exprow</I> by replacing all right-hand sides with wildcards.</P>
 
 
 <?php section("patterns", "patterns") ?>

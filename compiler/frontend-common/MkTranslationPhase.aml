@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -263,7 +263,7 @@ struct
       | idsId'(id, ids') = ()
 
     fun idsDecs(env, decs, ids') =
-	Vector.app(fn dec => idsDec(env, dec, ids')) decs
+	Vector.app (fn dec => idsDec(env, dec, ids')) decs
     and idsDec(env, I.ValDec(_,pat,_), ids') = idsPat(env, pat, ids')
       | idsDec(env, I.TypDec(_,id,_), ids')  = idsId'(trTypid(env, id), ids')
       | idsDec(env, I.ModDec(_,id,_), ids')  = (idsId'(trModid(env, id), ids')
@@ -275,8 +275,9 @@ struct
 
     and idsPats(env, pats, ids') =
 	Vector.app (fn pat => idsPat(env, pat, ids')) pats
-    and idsRow(env, I.Row(_, flds, _), ids') =
-	Vector.app (fn fld => idsFld(env, fld, ids')) flds
+    and idsRow(env, I.Row(_, flds, pato), ids') =
+	(Vector.app (fn fld => idsFld(env, fld, ids')) flds;
+	 Option.app (fn pat => idsPat(env, pat, ids')) pato)
     and idsPat(env, ( I.JokPat _
 		    | I.LitPat _), ids')	= ()
       | idsPat(env, I.VarPat(_, id), ids')	= idsId'(trValid(env, id), ids')
@@ -401,40 +402,40 @@ struct
 	O.TupExp(i, trExps(env, exps))
 
       | trExp(env, I.ProdExp(i, row)) =
-	(* [{row}] = {[row]} *)
-	O.ProdExp(i, trExpRow(env, row))
-
-      | trExp(env, I.UpdExp(i, exp, row)) =
-	(* [{ exp where row}] =
-	 *   let id = [exp] in {lab1=#lab1 id,...,labN=#labN id,[row]}
-	 * (where lab_i in type of exp but not in row)
+	(* [{row}] = {[row]}
+	 * [{row,exp}] =
+	 *   let id = [exp] in {[row],lab1=#lab1 id,...,labN=#labN id}
+	 * (where lab_i in type of exp)
 	 *)
 	let
-	    val exp'   = trExp(env, exp)
-	    val flds'  = trExpRow(env, row)
-	    val id'    = auxId(O.infoExp exp')
-	    val dec'   = auxDec(id', exp')
-	    val idexp' = idExp id'
-
-	    fun updFlds(tr, flds2') =
-		case Type.inspectRow tr
-		 of Type.UnknownRow =>
-		    raise Crash.Crash "TranslationPhase.trExp"
-		  | Type.EmptyRow => Vector.fromList flds2'
-		  | Type.FieldRow(l,t,tr') =>
-		    if Vector.exists (fn O.Fld(_,O.Lab(_,l'),_) => l = l') flds'
-		    then updFlds(tr', flds2') else
-		    let
-			val r1   = regionOfExp exp'
-			val lab' = O.Lab(nonInfo r1, l)
-			val fld' = O.Fld(nonInfo r1, lab',
-					 O.SelExp(typInfo(r1,t), lab', idexp'))
-		    in
-			updFlds(tr', fld'::flds2')
-		    end
+	    val (flds',expo') = trExpRow(env, row)
 	in
-	    letExp(#[dec'], O.ProdExp(i, updFlds(Type.asProd(typOfId id'),
-						 Vector.toList flds')))
+	    case expo'
+	      of NONE => O.ProdExp(i, flds')
+	       | SOME exp' =>
+		 let
+		     val id'    = auxId(O.infoExp exp')
+		     val dec'   = auxDec(id', exp')
+		     val idexp' = idExp id'
+
+		     fun extFlds(r, flds2') =
+			 case Type.inspectRow r
+			   of Type.UnknownRow _ =>
+			      raise Crash.Crash "TranslationPhase.trExp"
+			    | Type.EmptyRow => Vector.fromList flds2'
+			    | Type.FieldRow(l,t,r') =>
+			      let
+				  val r1   = regionOfExp exp'
+				  val lab' = O.Lab(nonInfo r1, l)
+				  val exp' = O.SelExp(typInfo(r1,t), lab', idexp')
+				  val fld' = O.Fld(nonInfo r1, lab', exp')
+			      in
+				  extFlds(r', fld'::flds2')
+			      end
+		     val flds2' = extFlds(Type.asProd(typOfExp exp'), [])
+		 in
+		     letExp(#[dec'], O.ProdExp(i, Vector.concat[flds',flds2']))
+		 end
 	end
 
       | trExp(env, I.SelExp(i, lab, exp)) =
@@ -539,9 +540,10 @@ struct
 	(* [overload exp : typid.typ] = unseal [exp] *)
 	O.UnsealExp(trValInfo(env,i), trExp(env, exp))
 
-    and trExpRow(env, I.Row(i, flds, _)) =
+    and trExpRow(env, I.Row(i, flds, expo)) =
 	(* [fld1,...,fldN] = [fld1],...,[fldN] *)
-	Vector.map (fn fld => trExpFld(env, fld)) flds
+	(Vector.map (fn fld => trExpFld(env, fld)) flds,
+	 Option.map (fn exp => trExp(env, exp)) expo)
 
     and trExpFld(env, I.Fld(i, lab, exp)) =
 	(* [lab = exp] = ([lab] = [exp]) *)
@@ -600,8 +602,46 @@ struct
 	O.TupPat(i, trPats(env, pats))
 
       | trPat(env, I.ProdPat(i, row)) =
-	(* [{row}] = {[row]} *)
-	O.ProdPat(i, trPatRow(env, row))
+	(* [{row}] = {[row]}
+	 * [{row,pat}] =
+	 *   {[row],lab1=id1,...,labN=idN} with [pat]={lab1=id1,...,labN=idN}
+	 * (where lab_i in type of pat)
+	 *)
+	let
+	    val (flds',pato') = trPatRow(env, row)
+	in
+	    case pato'
+	      of NONE => O.ProdPat(i, flds')
+	       | SOME pat' =>
+		 let
+		     fun extFlds(r, pflds', eflds') =
+			 case Type.inspectRow r
+			   of Type.UnknownRow _ =>
+			      raise Crash.Crash "TranslationPhase.trExp"
+			    | Type.EmptyRow =>
+			      (Vector.fromList pflds', Vector.fromList eflds')
+			    | Type.FieldRow(l,t,r') =>
+			      let
+				  val r1    = regionOfPat pat'
+				  val id'   = auxId(typInfo(r1,t))
+				  val lab'  = O.Lab(nonInfo r1, l)
+				  val pat'  = idPat id'
+				  val exp'  = idExp id'
+				  val pfld' = O.Fld(nonInfo r1, lab', pat')
+				  val efld' = O.Fld(nonInfo r1, lab', exp')
+			      in
+				  extFlds(r', pfld'::pflds', efld'::eflds')
+			      end
+		     val (pflds',eflds') =
+			 extFlds(Type.asProd(typOfPat pat'), [], [])
+		     val exp' = O.ProdExp(O.infoPat pat', eflds')
+		     val dec' = O.ValDec(origInfo(regionOfPat pat', Aux),
+					 pat', exp')
+		 in
+		     O.WithPat(i, O.ProdPat(i, Vector.concat[flds',pflds']),
+			       #[dec'])
+		 end
+	end
 
       | trPat(env, I.VecPat(i, pats)) =
 	(* [#[pats]] = #[[pats]] *)
@@ -631,9 +671,13 @@ struct
 	(* [pat with decs] = [pat] with [decs] *)
 	O.WithPat(i, trPat(env, pat), trDecs(env, decs))
 
-    and trPatRow(env, I.Row(i, flds, b)) =
+    and trPatRow(env, I.Row(i, flds, (NONE | SOME(I.JokPat _)))) =
 	(* [fld1,...,fldN] = [fld1],...,[fldN] *)
-	Vector.map (fn fld => trPatFld(env, fld)) flds
+	(Vector.map (fn fld => trPatFld(env, fld)) flds, NONE)
+      | trPatRow(env, I.Row(i, flds, SOME pat)) =
+	(* [fld1,...,fldN] = [fld1],...,[fldN] *)
+	(Vector.map (fn fld => trPatFld(env, fld)) flds,
+	 SOME(trPat(env, pat)))
 
     and trPatFld(env, I.Fld(i, lab, pat)) =
 	(* [lab = pat] = ([lab] = [pat]) *)
@@ -1449,15 +1493,16 @@ struct
 
       | trTypRep'(env, pathexp', typ) = NONE
 
-    and trTypRow(env, I.Row(i, flds, b)) =
+    and trTypRow(env, I.Row(i, flds, typo)) =
 	(* [fld1,...,fldN]     =
 	 *   [fld1](...([fldN](__pervasive.Type.emptyRow())...)
-	 * [fld1,...,fldN, ...] =
-	 *   [fld1](...([fldN](__pervasive.Type.unknownRow())...)
+	 * [fld1,...,fldN,typ] =
+	 *   [fld1](...([fldN](__pervasive.Type.asProd[typ])...)
 	 *)
 	let
-	    val l    = if b then lab_unknownRow else lab_emptyRow
-	    val exp' = typExp(env, l, unitExp(#region i))
+	    val exp' = case typo
+			 of NONE => typExp(env, lab_emptyRow,unitExp(#region i))
+			  | SOME typ => typExp(env, lab_asProd, trTyp(env, typ))
 	in
 	    Vector.foldl (fn(fld, exp') => trTypFld(env, fld, exp')) exp' flds
 	end

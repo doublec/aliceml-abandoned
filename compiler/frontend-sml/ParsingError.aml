@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -40,6 +40,10 @@ struct
 	(* Parser *)
 	| SyntaxError		of string
 	(* Derived forms *)
+	| UpdExpInvalid
+	| ExpRowEllipses
+	| PatRowEllipses
+	| TyRowEllipses
 	| WithtypeInvalid
 	| WithtypeArityMismatch
 
@@ -74,6 +78,14 @@ struct
       | ppError(SyntaxError s) =
 	  textpar(String.tokens (fn c => c = #" ") s)
       (* Derived forms *)
+      | ppError(UpdExpInvalid) =
+	  textpar["invalid","record","update","syntax"]
+      | ppError(ExpRowEllipses) =
+	  textpar["multiple","ellipses","in","record","expression"]
+      | ppError(PatRowEllipses) =
+	  textpar["multiple","ellipses","in","record","pattern"]
+      | ppError(TyRowEllipses) =
+	  textpar["multiple","ellipses","in","record","type"]
       | ppError(WithtypeInvalid) =
 	  textpar["invalid","type","binding","inside","withtype"]
       | ppError(WithtypeArityMismatch) =

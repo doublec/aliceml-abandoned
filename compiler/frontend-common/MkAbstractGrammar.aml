@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -123,7 +123,6 @@ struct
 	| StrictExp of exp_info * exp		(* strict evaluation *)
 	| TupExp    of exp_info * exp vector	(* tuple *)
 	| ProdExp   of exp_info * exp row	(* product (record) *)
-	| UpdExp    of exp_info * exp * exp row	(* record update *)
 	| SelExp    of exp_info * vallab * exp	(* selection *)
 	| VecExp    of exp_info * exp vector	(* vector *)
 	| FunExp    of exp_info * mat vector	(* function *)
@@ -145,7 +144,7 @@ struct
 				* varid * typlongid vector * typ (* overload *)
 	| OverallExp of exp_info * exp * varid * typ (* intensional overload *)
 
-    and 'a row = Row of 'a row_info * 'a fld vector * bool
+    and 'a row = Row of 'a row_info * 'a fld vector * 'a option
     and 'a fld = Fld of 'a fld_info * vallab * 'a
 
   (* Patterns *)
@@ -291,7 +290,6 @@ struct
       | infoExp(StrictExp(i,_))		= i
       | infoExp(TupExp(i,_))		= i
       | infoExp(ProdExp(i,_))		= i
-      | infoExp(UpdExp(i,_,_))		= i
       | infoExp(SelExp(i,_,_))		= i
       | infoExp(VecExp(i,_))		= i
       | infoExp(FunExp(i,_))		= i
@@ -408,8 +406,9 @@ struct
 
   (* Valuability *)
 
-    fun isValueRow isValueX ( Row(_, flds, _) )	= Vector.all
-						    (isValueFld isValueX) flds
+    fun isValueRow isValueX ( Row(_, flds, xo)) =
+	Vector.all (isValueFld isValueX) flds andalso
+	(case xo of NONE => true | SOME x => isValueX x)
     and isValueFld isValueX ( Fld(_, _, x) )	= isValueX x
 
     fun isValue( LitExp _
@@ -432,8 +431,6 @@ struct
 	       | VecExp(_, exps)
 	       | OverExp(_, exps, _, _, _) )	= Vector.all isValue exps
       | isValue( ProdExp(_, exprow) )		= isValueRow isValue exprow
-      | isValue( UpdExp(_, exp, exprow) )	= isValue exp andalso
-						  isValueRow isValue exprow
       | isValue( AndExp(_, exp1, exp2)
 	       | OrExp(_, exp1, exp2)
 	       | SeqExp(_, exp1, exp2) )	= isValue exp1 andalso

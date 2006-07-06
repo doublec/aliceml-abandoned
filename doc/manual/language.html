@@ -249,6 +249,11 @@ relative to Standard ML. Derived forms are marked (*).
                     &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
     <TD> <A href="sugar.html#records-punning">label as expression</A> (*) </TD>
   </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>=</TT> <I>exp</I> &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
+    <TD> <A href="sugar.html#records-extension">record extension</A> </TD>
+  </TR>
 </TABLE>
 
 
@@ -298,6 +303,19 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>pat</I> <TT>where</TT> <I>atexp</I> </TD>
     <TD> <A href="sugar.html#patterns-guard">guarded</A> (L) </TD>
   </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>patrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>=</TT> <I>pat</I> &lt;<TT>,</TT> <I>patrow</I>&gt; </TD>
+    <TD> <A href="sugar.html#records-extension">record extension</A> </TD>
+  </TR>
 </TABLE>
 
 
@@ -314,6 +332,19 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>_</TT> </TD>
     <TD> <A href="types.html#wildcards">wildcard</A> </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>tyrow</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>...</TT> <TT>:</TT> <I>ty</I> &lt;<TT>,</TT> <I>tyrow</I>&gt; </TD>
+    <TD> <A href="sugar.html#records-extension">record extension</A> </TD>
   </TR>
 </TABLE>
 

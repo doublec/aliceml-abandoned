@@ -3,8 +3,8 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
-i *
+ *   Andreas Rossberg, 2001-2006
+ *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
@@ -103,12 +103,14 @@ struct
 	| AnnPatMismatch	of typ_mismatch
 	(* Types *)
 	| JokTyp
-	| JokTypRow
 	| StarTypKind		of kind
 	| AppTypFunKind		of kind
 	| AppTypArgKind		of kind * kind
 	| RefTypKind		of kind
 	| PervasiveTypUnknown	of string
+	(* Rows *)
+	| FldRowDuplicate	of lab
+	| EllRowType		of typ
 	(* Declarations *)
 	| ValDecMismatch	of typ_mismatch
 	| ValDecUnclosed	of typ
@@ -225,7 +227,6 @@ struct
 	    val  t2'      = Type.lookupRow(Type.asSum(Type.unroll t2), l)
 	    val  ue'      = unstrict(t1',t2',t3,t4)
 	in
-	    if not(Type.isEmptyRow r) then raise Type.Row else
 	    ppTypMismatch4(textpar["ill-typed","constructor","argument:"],
 			   textpar["does","not","match","argument","type"], ue')
 	end
@@ -263,7 +264,7 @@ struct
 	  textpar["inconsistent","types","in","vector","expression:"],
 	  textpar["does","not","agree","with","previous","element","type"], ue)
       | ppError(TagExpLab l) =
-	  textpar["label",ppLab l,"is","not","contained","in","type"]
+	  textpar["label",ppQuoted(ppLab l),"is","not","contained","in","type"]
       | ppError(TagExpArgMismatch ue | ConExpArgMismatch ue) =
 	ppTypMismatch4(
 	  textpar["mismatch","on","constructor","application:",
@@ -378,7 +379,7 @@ struct
 	  textpar["does","not","match","implementation","type"], ue)
       (* Patterns *)
       | ppError(TagPatLab l) =
-	  textpar["label",ppLab l,"is","not","contained","in","type"]
+	  textpar["label",ppQuoted(ppLab l),"is","not","contained","in","type"]
       | ppError(TagPatArgMismatch ue | ConPatArgMismatch ue) =
 	ppTypMismatch4(
 	  textpar["ill-typed","constructor","argument:"],
@@ -413,8 +414,6 @@ struct
       (* Types *)
       | ppError(JokTyp) =
 	  textpar["misplaced","type","wildcard"]
-      | ppError(JokTypRow) =
-	  textpar["misplaced","type","row","wildcard"]
       | ppError(StarTypKind k) =
 	  textpar["missing","arguments","in","type","expression"]
       | ppError(AppTypFunKind k) =
@@ -425,6 +424,14 @@ struct
 	  textpar["missing","arguments","in","type","expression"]
       | ppError(PervasiveTypUnknown s) =
 	  textpar["unknown","pervasive","type","\""^s^"\""]
+      (* Rows *)
+      | ppError(FldRowDuplicate l) =
+	  textpar["duplicate","label",ppQuoted(ppLab l),"in","record"]
+      | ppError(EllRowType t) =
+	vbox(
+	    textpar["non-record","type","at","ellipses:"] ^^
+	    indent(PPType.ppTyp t)
+	)
       (* Declarations *)
       | ppError(ValDecMismatch ue) =
 	ppTypMismatch4(

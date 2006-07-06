@@ -452,7 +452,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun rowLabels row =
 	    case Type.inspectRow row of
-		(Type.EmptyRow | Type.UnknownRow) => nil
+		(Type.EmptyRow | Type.UnknownRow _) => nil
 	      | Type.FieldRow (label, _, row') => label::rowLabels row'
 
 	fun isTuple (label::labels, i) =

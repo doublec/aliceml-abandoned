@@ -306,7 +306,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun parseRow row =
 	    case Type.inspectRow row of
-		(Type.EmptyRow | Type.UnknownRow) => nil
+		(Type.EmptyRow | Type.UnknownRow _) => nil
 	      | Type.FieldRow (label, typ, row') => (label, typ)::parseRow row'
 
 	fun getField (Fld (_, _, pat)) = pat

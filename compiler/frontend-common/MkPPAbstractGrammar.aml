@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -183,9 +183,9 @@ struct
 
   (* Rows and Fields *)
 
-    fun ppRow ppX (Row(i, flds, b))	= tree "Row" (ppRowInfo ppX i) (
-					    ppBool b ^/^
-					    ppFlds ppX flds
+    fun ppRow ppX (Row(i, flds, xo))	= tree "Row" (ppRowInfo ppX i) (
+					    ppFlds ppX flds ^/^
+					    ppOption ppX xo
 					  )
 
     and ppFlds ppX flds			= vec(Vector.map (ppFld ppX) flds)
@@ -243,10 +243,6 @@ struct
 					    ppExps exps
 					  )
       | ppExp(ProdExp(i, exprow))	= exptree "Prod" i (
-					    ppRow ppExp exprow
-					  )
-      | ppExp(UpdExp(i, exp, exprow))	= exptree "Upd" i (
-					    ppExp exp ^/^
 					    ppRow ppExp exprow
 					  )
       | ppExp(SelExp(i, vallab, exp))	= exptree "Sel" i (

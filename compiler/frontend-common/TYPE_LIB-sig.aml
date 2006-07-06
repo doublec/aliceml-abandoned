@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -50,5 +50,7 @@ sig
     val lab_emptyRow :		Label.t
     val lab_extendRow :		Label.t
 
-    val lab_fix :	Label.t
+    val lab_fix :		Label.t
+
+    val lab_asProd :		Label.t
 end
