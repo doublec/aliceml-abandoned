@@ -227,7 +227,7 @@ build-suffix:
 	@echo for Windows: PATH=$(WIN_GTK_DIR)/bin:$(WIN_GTK_DIR)/lib:PATH
 
 .PHONY: release-windows release-linux release-freebsd release-ppc-darwin
-release-windows: setup-wingtk build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap-release build-suffix
+release-windows: setup-wingtk build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap-release build-suffix distro
 
 release-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap-release build-suffix
 
@@ -462,8 +462,13 @@ docs:
 
 .PHONY:	docs-offline
 docs-offline:
-	cp $(PWD)/alice/sources/doc/manual/Alice.hh? $(PWD)/docs && \
-	(cd $(PWD)/docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true)
+	(if (! test -e ${PWD}/docs/Alice.chm) then \
+	rm -rf $(PWD)/docs; \
+	cp -r $(PWD)/alice-runtime/share/alice/doc $(PWD)/docs; \
+	cp ${PWD}/make/installshield/Alice.hhp ${PWD}/docs;\
+	echo "Now build Alice.chm in docs by using Microsoft HTML Workshop tool"; \
+	false; \
+	else echo "Alice.chm OK"; true; fi)
 
 ########### Windows Binaries ############
 
@@ -488,12 +493,14 @@ build-xml-dll:
 	cp $(PWD)/seam-support/install/bin/cygxml2-2.dll $(PWD)/distro/bin
 
 .PHONY: distro
-distro: build-win-exec build-xml-dll
-	(rm -rf $(PWD)/../InstallShield/Files/Alice) && \
-	(cp -r $(PWD)/distro $(PWD)/../InstallShield/Files/Alice) && \
-	(mkdir -p $(PWD)/../InstallShield/Files/Alice/doc) && \
-	(cp $(PWD)/docs/Alice.chm $(PWD)/../InstallShield/Files/Alice/doc/) && \
-	echo Distro prepared. Run InstallShield/Scripts/Alice/Alice.ism.
+distro: build-win-exec build-xml-dll docs-offline
+	(rm -rf $(PWD)/installshield/files/alice) && \
+	(mkdir -p $(PWD)/installshield/files) && \
+	(cp -r $(PWD)/distro $(PWD)/installshield/files/alice) && \
+	(cp make/installshield/Alice.ism installshield) && \
+	(mkdir -p $(PWD)/../installShield/files/alice/doc) && \
+	(cp $(PWD)/docs/Alice.chm $(PWD)/../installshield/files/alice/doc/) && \
+	echo Distro prepared. Run installshield/alice.ism.
 
 ########### Test Run ############
 
