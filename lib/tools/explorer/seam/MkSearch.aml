@@ -44,7 +44,7 @@ functor MkSearch (Space : SPACE)
 				 Types.SOLVED => callBack()
 			       | _ => ())
 		     | n => doDfe 0 n node
-	       and doDfe m n _ where (m=n) = ()
+	       and doDfe m n _ if (m=n) = ()
 		 | doDfe m n node =
 		   let
 		       val child = (ExplorerNode.getChild node m)
