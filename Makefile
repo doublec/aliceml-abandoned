@@ -497,7 +497,7 @@ distro: build-win-exec build-xml-dll docs-offline
 	(rm -rf $(PWD)/installshield/files/alice) && \
 	(mkdir -p $(PWD)/installshield/files) && \
 	(cp -r $(PWD)/distro $(PWD)/installshield/files/alice) && \
-	(cp ${PWD}/make/installshield/Alice.ism installshield) && \
+	(cp ${PWD}/make/installshield/Alice.ism ${PWD}/installshield) && \
 	(mkdir -p $(PWD)/../installShield/files/alice/doc) && \
 	(cp $(PWD)/docs/Alice.chm $(PWD)/../installshield/files/alice/doc/) && \
 	echo Distro prepared. Run installshield/alice.ism.
