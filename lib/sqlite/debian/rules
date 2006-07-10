@@ -43,7 +43,7 @@ install-stamp: build-stamp
 	dh_installdirs
 	-mkdir $(DEB_INSTALL_DIR)
 	$(MAKE) installdll \
-	  INSTALLDIR=$(DEB_INSTALL_DIR)/usr/share/alice/lib/gtk
+	  INSTALLDIR=$(DEB_INSTALL_DIR)/usr/share/alice/lib/sqlite
 	echo > $@
 
 clean:
