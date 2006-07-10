@@ -114,18 +114,48 @@ programming language (SML), as defined in</P>
 
 <?php section("syntax", "syntax summary") ?>
 
+<?php subsection("comments", "Line comments") ?>
+
+<UL>
+<LI>The comment marker <TT>(*)</TT> introduces a <A href="sugar.html#comments">line comment</A>.</LI>
+</UL>
+
+<?php subsection("literals", "Literals") ?>
+
+<UL>
+<LI>Numeric literals may contain <A href="sugar.html#literals">underscores</A> to group digits.</LI>
+
+<LI>The prefixes <TT>0b</TT> and <TT>0wb</TT> introduce <A href="sugar.html#literals">binary literals</A>.</LI>
+</UL>
+
 <?php subsection("reserved", "Reserved words") ?>
 
-<P>Alice defines some additional identifiers as reserved words:</P>
+<P>Alice ML defines some additional identifiers as reserved words:</P>
 
 <PRE class=code>
 	any       assert    assert<I>d</I>   constructor   exttype   fct
 	finally   from      import    non           lazy      pack
 	spawn     unpack    withfun   withval       _file_    _line_</PRE>
 
-<P>The following grammar collects all syntactic extensions of Alice ML
+<P>The following grammar collects all other syntactic extensions of Alice ML
 relative to Standard ML. Derived forms are marked (*).
 
+
+<?php subsection("longids", "Long identifiers") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>longid</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>id</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <I>longid</I> <TT>.</TT> <I>id</I> </TD>
+    <TD> <A href="sugar.html#longids">long identifiers</A> </TD>
+  </TR>
+</TABLE>
 
 <?php subsection("syntax-exps", "Expressions") ?>
 

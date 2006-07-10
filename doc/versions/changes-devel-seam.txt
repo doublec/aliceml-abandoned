@@ -4,7 +4,7 @@ Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/07/31
 Language:
 
 * [NEW] Integrated most "immediate" extensions proposed for Succesor ML
-        (www.successor-ml.org) that were still missing, in detail:
+        (www.successor-ml.org) that still were missing, in detail:
 * [NEW] Line comments, starting with "(*)".
 * [NEW] Extensible records and row capture: "{a=1, b=2, ...=r}", see manual
         section on record sugar for details.
@@ -63,6 +63,7 @@ Platforms:
 * [NEW] Mac OS: Preliminary support for Intel Macs; no official packages yet,
         due to problems with Gtk canvas (breaks Inspector, Explorer).
 * [FIX] Debian: fix missing aliceremote.
+* [FIX] Debian: fixed SQLite package.
 * [FIX] Source: added/clarified missing library licenses.
 
 

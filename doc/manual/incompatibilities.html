@@ -17,6 +17,17 @@ workarounds.</P>
 current version of Alice, which might produce additional incompatibilities.</P>
 
 
+<?php section("comments", "Comments") ?>
+
+<P>Alice ML supports <A href="sugar.html#comments">line comments</A>, which start with the character sequence <TT>(*)</TT>. Valid SML programs that contain a closing parenthesis as the first character of a regular comment (including nested ones) will hence be parsed incorrectly.</P>
+
+<?php subsection("comments-fix", "Workaround") ?>
+
+<UL>
+  <LI>Insert white space or use any other character then <TT>)</TT>.</LI>
+</UL>
+
+
 <?php section("keywords", "reserved words") ?>
 
 <P>The following are reserved words in Alice and may not be used as
