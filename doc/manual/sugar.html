@@ -347,8 +347,8 @@ matches and the guard expression evaluates to <TT>true</TT>. The guard
 expression can refer to variables bound by the nested pattern:</P>
 
 <PRE class=code>
-fun f(x,y) where (x = y) = g x
-  | f(x,y)               = h y</PRE>
+fun f(x,y) if (x = y) = g x
+  | f(x,y)            = h y</PRE>
 
 <P>Guards can be nested into other patterns. Any side effect produced by the
 guard expression occurs whenever the pattern is tried to be matched.</P>
@@ -390,7 +390,7 @@ guard expression occurs whenever the pattern is tried to be matched.</P>
 -->
   <TR>
     <TD></TD> <TD></TD>
-    <TD> <I>pat</I> <TT>where</TT> <I>atexp</I> </TD>
+    <TD> <I>pat</I> <TT>if</TT> <I>atexp</I> </TD>
     <TD> guarded (L) </TD>
   </TR>
   <TR></TR>

@@ -25,7 +25,7 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
     struct
 	structure PrimIO = PrimIO
 
-	fun translateReader reader where (Config.platform <> Config.WIN32) =
+	fun translateReader reader if (Config.platform <> Config.WIN32) =
 	    reader
 	  | translateReader (PrimIO.RD {name, chunkSize, readVec, readArr,
 					readVecNB, readArrNB, block, canInput,
@@ -97,7 +97,7 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 	val crnlVec = "\r\n"
 	val crnlArr = CharArray.fromVector crnlVec
 
-	fun translateWriter writer where (Config.platform <> Config.WIN32) =
+	fun translateWriter writer if (Config.platform <> Config.WIN32) =
 	    writer
 	  | translateWriter (PrimIO.WR {name, chunkSize, writeVec, writeArr,
 					writeVecNB, writeArrNB, block,
@@ -124,7 +124,7 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 				   | SOME n => i + n)
 		      | SOME j => case write (buf, i, SOME (j - i)) of
 				      NONE => i
-				    | SOME n where (n < j - i) => i + n
+				    | SOME n if (n < j - i) => i + n
 				    | SOME n =>
 				  case write (crnl, 0, SOME 2) of
 				      NONE => i + n

@@ -55,7 +55,7 @@ struct
 
     fun isIdChar c = Char.isAlphaNum c orelse c = #"_" orelse c = #"'"
 
-    fun merge (style,x1,x2, (style',x1',x2')::rs) where (style = style') =
+    fun merge (style,x1,x2, (style',x1',x2')::rs) if (style = style') =
 	    (style,x1',x2)::rs
       | merge (style,x1,x2, rs) = (style,x1,x2)::rs
 

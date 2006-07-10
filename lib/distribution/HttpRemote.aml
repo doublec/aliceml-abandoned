@@ -80,7 +80,7 @@ structure HttpRemotePort :> REMOTE_PORT =
 
 	fun checkContentType (request: Http.request, contentType) =
 	    case Http.StringMap.lookup (#headers request, "content-type") of
-		SOME s where (s = contentType) => ()
+		SOME s if (s = contentType) => ()
 	      | SOME _ => raise Response (errorResponse unsupportedMediaType)
 	      | NONE => raise Response (errorResponse badRequest)
 

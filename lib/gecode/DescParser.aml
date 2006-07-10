@@ -29,14 +29,13 @@ struct
   datatype desc = CLASS of string * decl list
                 | DECL of decl
 
-  fun stripWhitespace (s where
-                         (Char.isSpace(String.sub(s, String.size s - 1)))) =
+  fun stripWhitespace (s if (Char.isSpace(String.sub(s, String.size s - 1)))) =
       stripWhitespace (String.substring(s, 0, String.size s - 1))
-    | stripWhitespace (s where (Char.isSpace(String.sub(s, 0)))) =
+    | stripWhitespace (s if (Char.isSpace(String.sub(s, 0)))) =
       stripWhitespace (String.extract(s, 1, NONE))
     | stripWhitespace s = s
 
-  fun removeTrailingN (s where (String.sub (s, String.size s - 1) = #"\n")) =
+  fun removeTrailingN (s if (String.sub (s, String.size s - 1) = #"\n")) =
       String.substring(s, 0, String.size s -2)
     | removeTrailingN s = s
 
@@ -89,7 +88,7 @@ struct
 
   fun parseLine "" = NONE
     | parseLine "\n" = NONE
-    | parseLine (s where (String.isPrefix "//" s)) = NONE
+    | parseLine (s if (String.isPrefix "//" s)) = NONE
     | parseLine s  =
       case String.tokens (fn #";" => true | _ => false) (removeTrailingN s) of
           [decl, aliceName] =>
@@ -110,7 +109,7 @@ struct
   fun parseClass' f =
       case TextIO.inputLine f of
           NONE => raise ParseError "unexpected EOF"
-        | SOME s where (String.isPrefix "};" s) => nil
+        | SOME s if (String.isPrefix "};" s) => nil
         | SOME s => case parseLine s of NONE => parseClass' f
                                       | SOME d => (
              d::parseClass' f)
@@ -124,7 +123,7 @@ struct
   fun parseFile' f =
       case TextIO.inputLine f
        of NONE   => nil
-        | SOME s where (String.isPrefix "class " s) =>
+        | SOME s if (String.isPrefix "class " s) =>
           (parseClass s f)::parseFile' f
 	| SOME s => case parseLine s of NONE => parseFile' f
                                       | SOME s => (DECL s)::parseFile' f

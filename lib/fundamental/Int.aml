@@ -67,19 +67,19 @@ struct
 
     __primitive val compare : int * int -> order = "Int.compare"
 
-    val equal			= op =
-    val abs			= abs
+    val equal		= op =
+    val abs		= abs
 
-    fun hash i			= abs i handle General.Overflow => 0
+    fun hash i		= abs i handle General.Overflow => 0
 
-    fun min(i,j)		= if i < j then i else j
-    fun max(i,j)		= if i > j then i else j
+    fun min(i,j)	= if i < j then i else j
+    fun max(i,j)	= if i > j then i else j
 
-    fun sign i where (i>0)	= 1
-      | sign i where (i<0)	= ~1
-      | sign i			= 0
+    fun sign i if (i>0)	= 1
+      | sign i if (i<0)	= ~1
+      | sign i		= 0
 
-    fun sameSign(i,j)		= sign i = sign j
+    fun sameSign(i,j)	= sign i = sign j
 
 
     (* Formatting *)

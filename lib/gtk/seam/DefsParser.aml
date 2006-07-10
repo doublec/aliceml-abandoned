@@ -160,10 +160,10 @@ struct
             fun fixArrayParms ( (p1 as PARAM { name = sizeName, defType = sizeType, ... })
                              :: (p2 as PARAM { name = valueName, defType = arrayType, ... })
                              :: params ) 
-                    where (String.isPrefix "n_" sizeName andalso 
-                           List.exists (curry op= sizeType) sizeTypes andalso 
-                           String.size valueName > 2 andalso 
-                           String.extract (sizeName, 2, NONE) = valueName) =
+                    if (String.isPrefix "n_" sizeName andalso 
+                        List.exists (curry op= sizeType) sizeTypes andalso 
+                        String.size valueName > 2 andalso 
+                        String.extract (sizeName, 2, NONE) = valueName) =
                 (case unref arrayType of
                     SOME (_, elemType) =>
                         logged ("array parameter", PARAM { name = valueName, defType = arrayType, default = NONE,
@@ -176,10 +176,10 @@ struct
               | fixArrayParms ( (p1 as PARAM { name = valueName, defType = arrayType, ... })
                             ::  (p2 as PARAM { name = sizeName,  defType = sizeType, ... })
                             :: params )
-                    where (String.isPrefix "n_" sizeName andalso
-                           List.exists (curry op= sizeType) sizeTypes andalso 
-                           String.size valueName > 2 andalso 
-                           String.extract (sizeName, 2, NONE) = valueName) =
+                    if (String.isPrefix "n_" sizeName andalso
+                        List.exists (curry op= sizeType) sizeTypes andalso 
+                        String.size valueName > 2 andalso 
+                        String.extract (sizeName, 2, NONE) = valueName) =
                  (case unref arrayType of
                      SOME (_, elemType) =>
                         logged ("array parameter", PARAM { name = valueName, defType = arrayType, default = NONE,

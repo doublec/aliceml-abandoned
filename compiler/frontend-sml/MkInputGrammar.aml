@@ -243,7 +243,7 @@ struct
 	| TYPEDPat       of Info * Pat * Ty
 	| NONPat         of Info * Pat
 	| ASPat          of Info * Pat * Pat
-	| WHEREPat       of Info * Pat * AtExp
+	| IFPat          of Info * Pat * AtExp
 	| WITHVALPat     of Info * Pat * ValBind
 	| WITHFUNPat     of Info * Pat * FvalBind
 
@@ -534,7 +534,7 @@ struct
       | infoPat(TYPEDPat(I,_,_))			= I
       | infoPat(NONPat(I,_))				= I
       | infoPat(ASPat(I,_,_))				= I
-      | infoPat(WHEREPat(I,_,_))			= I
+      | infoPat(IFPat(I,_,_))				= I
       | infoPat(WITHVALPat(I,_,_))			= I
       | infoPat(WITHFUNPat(I,_,_))			= I
 

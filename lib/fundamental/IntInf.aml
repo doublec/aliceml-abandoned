@@ -74,8 +74,8 @@ struct
     fun min(i,j)		= if i < j then i else j
     fun max(i,j)		= if i > j then i else j
 
-    fun sign i where (i>fromInt 0)	= 1
-      | sign i where (i<fromInt 0)	= ~1
+    fun sign i if (i>fromInt 0)	= 1
+      | sign i if (i<fromInt 0)	= ~1
       | sign i			= 0
 
     fun sameSign(i,j)		= sign i = sign j
@@ -117,11 +117,11 @@ struct
 			  (if Char.ord c < ten+10 then zero else ten)
     end
 
-    fun fmt radix (i where (i=fromInt 0))	= "0"
+    fun fmt radix (i if (i=fromInt 0))	= "0"
       | fmt radix i	= if i > fromInt 0
 			  then String.implode(fmt'(base radix, ~i, []))
 			  else String.implode(#"~" :: fmt'(base radix, i, []))
-    and fmt'(b, i where (i=fromInt 0), cs)	= cs
+    and fmt'(b, i if (i=fromInt 0), cs)	= cs
       | fmt'(b, i, cs)	= fmt'(b, quot(i,b),
                                digit(toInt(~(rem(i,b)))) :: cs)
 

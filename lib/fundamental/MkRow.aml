@@ -32,11 +32,11 @@ struct
     val sub			= sub
 
     fun app  f r		= app'(f,r,0)
-    and app'(f,r,i) where (i = length r) = ()
+    and app'(f,r,i) if (i = length r) = ()
       | app'(f,r,i)		= (f(sub(r,i)) ; app'(f,r,i+1))
 
     fun appi  f r		= appi'(f,r,0)
-    and appi'(f,r,i) where (i = length r) = ()
+    and appi'(f,r,i) if (i = length r) = ()
       | appi'(f,r,i)		= (f(i,sub(r,i)) ; appi'(f,r,i+1))
 
     fun appr  f r		= appr'(f, r, length(r)-1)
@@ -48,11 +48,11 @@ struct
       | appri'(f,r,i)		= (f(i,sub(r,i)) ; appri'(f,r,i-1))
 
     fun foldl  f x r		= foldl'(f,x,r,0)
-    and foldl'(f,x,r,i) where (i = length r) = x
+    and foldl'(f,x,r,i) if (i = length r) = x
       | foldl'(f,x,r,i)		= foldl'(f, f(sub(r,i),x), r, i+1)
 
     fun foldli  f x r		= foldli'(f,x,r,0)
-    and foldli'(f,x,r,i) where (i = length r) = x
+    and foldli'(f,x,r,i) if (i = length r) = x
       | foldli'(f,x,r,i)	= foldli'(f, f(i,sub(r,i),x), r, i+1)
 
     fun foldr  f x r		= foldr'(f, x, r, length(r)-1)
@@ -80,13 +80,13 @@ struct
 				  (f(i,sub(r,i)) orelse existsi'(f,r,i+1))
 
     fun find  f r					= find'(f,r,0)
-    and find'(f,r,i) where (i = length r)		= NONE
-      | find'(f,r,i) withval x = sub(r,i) where (f x)	= SOME x
+    and find'(f,r,i) if (i = length r)			= NONE
+      | find'(f,r,i) withval x = sub(r,i) end if (f x)	= SOME x
       | find'(f,r,i)					= find'(f,r,i+1)
 
     fun findi  f r					= findi'(f,r,0)
-    and findi'(f,r,i) where (i = length r)		= NONE
-      | findi'(f,r,i) withval x = sub(r,i) where (f(i,x)) = SOME(i,x)
+    and findi'(f,r,i) if (i = length r)			= NONE
+      | findi'(f,r,i) withval x = sub(r,i) end if (f(i,x)) = SOME(i,x)
       | findi'(f,r,i)					= findi'(f,r,i+1)
 
     fun contains  eq r x	= contains'(eq,r,x,0)

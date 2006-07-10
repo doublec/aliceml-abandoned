@@ -158,7 +158,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		else SOME (Vector.sub (v, offset), f')
 	    end
 
-	fun inputN (f, n) where (n < 0 orelse n > Vector.maxLen) =
+	fun inputN (f, n) if (n < 0 orelse n > Vector.maxLen) =
 	    raise General.Size
 	  | inputN (f, 0) = (Vector.fromList [], f)
 	  | inputN (f, n) =

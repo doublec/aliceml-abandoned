@@ -145,8 +145,8 @@ struct
 	    val fdd = Vector.fromList(List.map domain_elementConverter d)
 	in
 	    (case fdd of 
-		 #[(i,j)] where (i=j) =>  `i
-	       | x                    => FD (FD.intvar(s,x))
+		 #[(i,j)] if (i=j) =>  `i
+	       | x                 => FD (FD.intvar(s,x))
 	    )
 	end		
  
@@ -155,9 +155,9 @@ struct
 	    val fdd = Vector.fromList(List.map domain_elementConverter d)
 	in
 	    (case fdd of 
-		 #[(i,j)] where (i=j) => Vector.tabulate (n, (fn q => `i))
-	       | x                    => Vector.map (fn v =>FD(v))
-		                         (FD.intvarVec(s,n,x))
+		 #[(i,j)] if (i=j) => Vector.tabulate (n, (fn q => `i))
+	       | x                 => Vector.map (fn v =>FD(v))
+		                      (FD.intvarVec(s,n,x))
 	    )
 	end
 

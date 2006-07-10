@@ -84,9 +84,9 @@ struct
 					  if isNan y then x else
 					  if x > y then x else y
 
-    fun sign x where (x > 0.0)		= 1
-      | sign x where (x < 0.0)		= ~1
-      | sign x where (isNan x)          = raise General.Domain
+    fun sign x if (x > 0.0)		= 1
+      | sign x if (x < 0.0)		= ~1
+      | sign x if (isNan x)		= raise General.Domain
       | sign x				= 0
 
     fun signBit x			= x < 0.0 orelse x = ~0.0 orelse

@@ -52,7 +52,7 @@ struct
     fun getItem(x::xs)		= SOME(x,xs)
       | getItem nil 		= NONE
 
-    fun nth (xs, i) where (i<0)	= raise General.Subscript
+    fun nth (xs, i) if (i<0)	= raise General.Subscript
       | nth (xs, i)		= nth'(i,xs)
     and nth'(0, x::xs)		= x
       | nth'(i, x::xs)		= nth'(i-1,xs)
@@ -78,24 +78,24 @@ struct
     and index'(i, nil)		= nil
       | index'(i, x::xs)	= (i,x)::index'(i+1,xs)
 
-    fun tabulate (n, f)    where (n<0)	= raise General.Size
+    fun tabulate (n, f)    if (n<0)	= raise General.Size
       | tabulate (n, f)			= tabulate'(n,f,0)
-    and tabulate'(n, f, i) where (i=n)	= nil
+    and tabulate'(n, f, i) if (i=n)	= nil
       | tabulate'(n, f, i)		= f(i)::tabulate'(n,f,i+1)
 
-    fun take (xs,i) where (i<0)	= raise General.Subscript
+    fun take (xs,i) if (i<0)	= raise General.Subscript
       | take (xs,i)		= take'(i,xs)
     and take'(0, xs)		= nil
       | take'(i, x::xs)		= x::take'(i-1,xs)
       | take'(i, nil)		= raise General.Subscript
 
-    fun drop (xs,i) where (i<0)	= raise General.Subscript
+    fun drop (xs,i) if (i<0)	= raise General.Subscript
       | drop (xs,i)		= drop'(i,xs)
     and drop'(0, xs)		= xs
       | drop'(i, x::xs)		= drop'(i-1,xs)
       | drop'(i, nil)		= raise General.Subscript
 
-    fun split(xs,i) where (i<0)	= raise General.Subscript
+    fun split(xs,i) if (i<0)	= raise General.Subscript
       | split(xs,i)		= split'(i,xs)
     and split'(0, xs)		= (nil,xs)
       | split'(i, x::xs)	= let val (ys,zs) = split'(i-1,xs)

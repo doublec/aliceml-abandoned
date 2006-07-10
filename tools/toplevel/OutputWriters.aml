@@ -247,7 +247,7 @@ structure OutputWriters =
 
         fun compilerInsert' ts (eval, noedit, bold)
 		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) 
-		where (ts = !timeStamp) =
+		if (ts = !timeStamp) =
 	    let
                 val startiter = Gtk.TextIter.new()
                 val enditer = Gtk.TextIter.new()

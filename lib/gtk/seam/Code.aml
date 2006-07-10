@@ -28,13 +28,13 @@ struct
         end
 
     and format' ([], args, res, temps) = String.concat (rev res)
-      | format' (#"$" :: d :: xs, args, res, temps) where (Char.isDigit d) =
+      | format' (#"$" :: d :: xs, args, res, temps) if (Char.isDigit d) =
         let val d = ord d - ord #"0"
         in
             if d >= Vector.length args then raise Fail "invalid format"
             else format' (xs, args, Vector.sub (args, d) :: res, temps)
         end
-      | format' (#"$" :: #"t" :: d :: xs, args, res, temps) where (Char.isDigit d) =
+      | format' (#"$" :: #"t" :: d :: xs, args, res, temps) if (Char.isDigit d) =
         let val d = ord d - ord #"0"
         in
             format' (xs, args, "tmp" ^ Int.toString (Future.await (Vector.sub (temps, d))) 

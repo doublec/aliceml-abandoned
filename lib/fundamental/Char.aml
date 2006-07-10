@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -41,10 +41,10 @@ struct
     val minChar = chr 0
     val maxChar = chr maxOrd
 
-    fun pred c where (c = minChar)	= raise General.Chr
-      | pred c				= chr(ord c - 1)
-    fun succ c where (c = maxChar)	= raise General.Chr
-      | succ c				= chr(ord c + 1)
+    fun pred c if (c = minChar)	= raise General.Chr
+      | pred c			= chr(ord c - 1)
+    fun succ c if (c = maxChar)	= raise General.Chr
+      | succ c			= chr(ord c + 1)
 
     __primitive val int_compare : int * int -> order     = "Int.compare"
     __primitive val string_size : string -> int          = "CharVector.length"
@@ -99,8 +99,8 @@ struct
       | toString #"\v"			= "\\v"
       | toString #"\f"			= "\\f"
       | toString #"\r"			= "\\r"
-      | toString c where (isPrint c)	= string_str c
-      | toString c where (ord c < 32)	= string_implode
+      | toString c if (isPrint c)	= string_str c
+      | toString c if (ord c < 32)	= string_implode
 					    [#"\\", #"^", chr(ord c + ord #"@")]
       | toString c withval n=ord c end	= string_implode
 					    [#"\\", chr(n div 100 + zero),
@@ -125,7 +125,7 @@ struct
       | toCString #"\v"			= "\\v"
       | toCString #"\f"			= "\\f"
       | toCString #"\r"			= "\\r"
-      | toCString c where (isPrint c)	= string_str c
+      | toCString c if (isPrint c)	= string_str c
       | toCString c			= toOctAscii(ord c)
 
 
@@ -156,51 +156,51 @@ struct
 
     fun scanControl getc src =
 	case getc src
-	  of SOME(c, src') where (64 <= ord c andalso ord c <= 95) =>
+	  of SOME(c, src') if (64 <= ord c andalso ord c <= 95) =>
 		SOME(chr(ord c - 64), src')
 	   | _ => NONE
 
     fun scanEscape getc src =
 	case getc src
-	  of SOME(#"a",  src')                   => SOME(#"\a", src')
-	   | SOME(#"b",  src')                   => SOME(#"\b", src')
-	   | SOME(#"t",  src')                   => SOME(#"\t", src')
-	   | SOME(#"n",  src')                   => SOME(#"\n", src')
-	   | SOME(#"v",  src')                   => SOME(#"\v", src')
-	   | SOME(#"f",  src')                   => SOME(#"\f", src')
-	   | SOME(#"r",  src')                   => SOME(#"\r", src')
-	   | SOME(#"\\", src')                   => SOME(#"\\", src')
-	   | SOME(#"\"", src')                   => SOME(#"\"", src')
-	   | SOME(#"^",  src')                   => scanControl getc src'
-	   | SOME(#"u",  src')                   => scanUnicode getc src'
-	   | SOME(  c,   src') where (isDigit c) => scanAscii getc src
-	   | SOME(  c,   src') where (isSpace c) => (case scanGap getc src'
+	  of SOME(#"a",  src')			=> SOME(#"\a", src')
+	   | SOME(#"b",  src')			=> SOME(#"\b", src')
+	   | SOME(#"t",  src')			=> SOME(#"\t", src')
+	   | SOME(#"n",  src')			=> SOME(#"\n", src')
+	   | SOME(#"v",  src')			=> SOME(#"\v", src')
+	   | SOME(#"f",  src')			=> SOME(#"\f", src')
+	   | SOME(#"r",  src')			=> SOME(#"\r", src')
+	   | SOME(#"\\", src')			=> SOME(#"\\", src')
+	   | SOME(#"\"", src')			=> SOME(#"\"", src')
+	   | SOME(#"^",  src')			=> scanControl getc src'
+	   | SOME(#"u",  src')			=> scanUnicode getc src'
+	   | SOME(  c,   src') if (isDigit c)	=> scanAscii getc src
+	   | SOME(  c,   src') if (isSpace c)	=> (case scanGap getc src'
 						       of NONE       => NONE
-						        | SOME src'' =>
+							| SOME src'' =>
 							  scan' getc src''
 						    )
-	   | _                                   => NONE
+	   | _					=> NONE
 
     and scanGap getc src =
 	case getc src
-	  of SOME(#"\\", src')                   => SOME src'
-	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
-	   | _                                   => NONE
+	  of SOME(#"\\", src')			=> SOME src'
+	   | SOME(  c,   src') if (isSpace c)	=> scanGap getc src'
+	   | _					=> NONE
 
     and scan' getc src =
 	case getc src
-	  of SOME(#"\\", src')                   => scanEscape getc src'
-	   | SOME(  c,   src') where (isPrint c) => SOME(c, src')
-	   | _                                   => NONE
+	  of SOME(#"\\", src')			=> scanEscape getc src'
+	   | SOME(  c,   src') if (isPrint c)	=> SOME(c, src')
+	   | _					=> NONE
     and scan getc src =
 	case scan' getc src
-	  of SOME(c, src')                       => scanTrailGap getc src' c
-	   | NONE                                => NONE
+	  of SOME(c, src')			=> scanTrailGap getc src' c
+	   | NONE				=> NONE
     and scanTrailGap getc src c =
 	case getc src
 	  of SOME(#"\\", src') =>
 	     (case getc src'
-		of SOME(c', src'') where (isSpace c') =>
+		of SOME(c', src'') if (isSpace c') =>
 		   (case scanGap getc src''
 		      of NONE        => SOME(c, src)
 		       | SOME src''' => scanTrailGap getc src''' c
@@ -215,7 +215,7 @@ struct
     and scanCAscii' getc src i 3 = SOME(chr i, src)
       | scanCAscii' getc src i k =
 	case getc src
-	  of SOME(c, src') where (isOctDigit c) =>
+	  of SOME(c, src') if (isOctDigit c) =>
 		scanCAscii' getc src' (8*i + value c) (k+1)
 	   | _ => scanCAscii'' src i k
 
@@ -226,7 +226,7 @@ struct
 				handle (General.Chr | General.Overflow) => NONE
     and scanCUnicode' getc src i k =
 	case getc src
-	  of SOME(c, src') where (isHexDigit c) =>
+	  of SOME(c, src') if (isHexDigit c) =>
 		scanCUnicode' getc src' (16*i + value c) (k+1)
 	   | _ => scanCUnicode'' src i k
 
@@ -235,27 +235,27 @@ struct
 
     fun scanCEscape getc src =
 	case getc src
-	  of SOME(#"a",  src')                   => SOME(#"\a", src')
-	   | SOME(#"b",  src')                   => SOME(#"\b", src')
-	   | SOME(#"t",  src')                   => SOME(#"\t", src')
-	   | SOME(#"n",  src')                   => SOME(#"\n", src')
-	   | SOME(#"v",  src')                   => SOME(#"\v", src')
-	   | SOME(#"f",  src')                   => SOME(#"\f", src')
-	   | SOME(#"r",  src')                   => SOME(#"\r", src')
-	   | SOME(#"?",  src')                   => SOME(#"?",  src')
-	   | SOME(#"\\", src')                   => SOME(#"\\", src')
-	   | SOME(#"\"", src')                   => SOME(#"\"", src')
-	   | SOME(#"'",  src')                   => SOME(#"'", src')
-	   | SOME(#"^",  src')                   => scanControl getc src'
-	   | SOME(#"x",  src')                   => scanCUnicode getc src'
-	   | SOME(  c,   src') where (isDigit c) => scanCAscii getc src
-	   | _                                   => NONE
+	  of SOME(#"a",  src')                => SOME(#"\a", src')
+	   | SOME(#"b",  src')                => SOME(#"\b", src')
+	   | SOME(#"t",  src')                => SOME(#"\t", src')
+	   | SOME(#"n",  src')                => SOME(#"\n", src')
+	   | SOME(#"v",  src')                => SOME(#"\v", src')
+	   | SOME(#"f",  src')                => SOME(#"\f", src')
+	   | SOME(#"r",  src')                => SOME(#"\r", src')
+	   | SOME(#"?",  src')                => SOME(#"?",  src')
+	   | SOME(#"\\", src')                => SOME(#"\\", src')
+	   | SOME(#"\"", src')                => SOME(#"\"", src')
+	   | SOME(#"'",  src')                => SOME(#"'", src')
+	   | SOME(#"^",  src')                => scanControl getc src'
+	   | SOME(#"x",  src')                => scanCUnicode getc src'
+	   | SOME(  c,   src') if (isDigit c) => scanCAscii getc src
+	   | _                                => NONE
 
     fun scanC getc src =
 	case getc src
-	  of SOME(#"\\", src')                   => scanCEscape getc src'
-	   | SOME(  c,   src') where (isPrint c) => SOME(c, src')
-	   | _                                   => NONE
+	  of SOME(#"\\", src')                => scanCEscape getc src'
+	   | SOME(  c,   src') if (isPrint c) => SOME(c, src')
+	   | _                                => NONE
 
     val fromString	= StringCvt.scanString scan
     val fromCString	= StringCvt.scanString scanC

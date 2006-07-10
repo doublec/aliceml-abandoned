@@ -72,8 +72,8 @@ local
 
 	fun scanString scan s =
 	    let
-		fun get i where (i = string_size s) = NONE
-		  | get i                           = SOME(string_sub(s,i), i+1)
+		fun get i if (i = string_size s) = NONE
+		  | get i                        = SOME(string_sub(s,i), i+1)
 	    in
 		case scan get 0 of NONE      => NONE
 				 | SOME(x,_) => SOME x

@@ -63,25 +63,25 @@ struct
     and rev'(a,i,j)	= if i >= j then () else (swap(a,i,j); rev'(a,i+1,j-1))
 
     fun modify  f a	= modify'(f,a,0)
-    and modify'(f,a,i) where (i = length a) = ()
+    and modify'(f,a,i) if (i = length a) = ()
       | modify'(f,a,i)	= (update(a,i,f(sub(a,i))); modify'(f,a,i+1))
 
     fun modifyi f a	= modifyi'(f,a,0)
-    and modifyi'(f,a,i) where (i = length a) = ()
+    and modifyi'(f,a,i) if (i = length a) = ()
       | modifyi'(f,a,i)	= (update(a,i,f(i,sub(a,i))); modifyi'(f,a,i+1))
 
     fun sort cmp a =
     let
-	fun partition(i,j,p) where (i = j) = j
-	  | partition(i,j,p) where (cmp(sub(a,i),p) <> GREATER) =
+	fun partition(i,j,p) if (i = j) = j
+	  | partition(i,j,p) if (cmp(sub(a,i),p) <> GREATER) =
 		partition(i+1,j,p)
-	  | partition(i,j,p) where (cmp(p,sub(a,j-1)) = LESS) =
+	  | partition(i,j,p) if (cmp(p,sub(a,j-1)) = LESS) =
 		partition(i,j-1,p)
 	  | partition(i,j,p) =
 		(swap(a,i,j-1); partition(i+1,j-1,p))
 
-	fun sort(i,j) where (j-i <= 1) = ()
-	  | sort(i,j) where (j-i = 2)  =
+	fun sort(i,j) if (j-i <= 1) = ()
+	  | sort(i,j) if (j-i = 2)  =
 		if cmp(sub(a,i), sub(a,j-1)) <> GREATER then ()
 		else swap(a,i,j-1)
 	  | sort(i,j) =

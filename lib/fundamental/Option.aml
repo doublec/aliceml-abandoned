@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,7 +38,7 @@ struct
     fun valOf(SOME x)		= x
       | valOf NONE		= raise Option
 
-    fun filter f x where (f x)	= SOME x
+    fun filter f x if (f x)	= SOME x
       | filter f x		= NONE
 
     fun join NONE		= NONE

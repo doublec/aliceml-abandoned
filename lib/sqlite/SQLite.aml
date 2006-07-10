@@ -92,7 +92,7 @@ structure SQLite' :> SQLITE = struct
             raise TypeError "more types than columns"
         else
             case converters of
-                (#[(l,_,c)] where (isSome (Label.toInt l))) =>
+                (#[(l,_,c)] if (isSome (Label.toInt l))) =>
                 c(row,0)
               | _ =>
             UnsafeValue.prod

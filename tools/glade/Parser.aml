@@ -114,16 +114,16 @@ structure Parser :> PARSER =
 		  val wp = skipTextNodes (c/>children)
 		  val (child,next) =
 		      case wp of
-			  (w::wr) where ((w/>name)="widget") =>
+			  (w::wr) if ((w/>name)="widget") =>
 			  (parseWidget(doc, sigDoc, w, internalChild), wr)
-			| (w::wr) where ((w/>name)="placeholder") =>
+			| (w::wr) if ((w/>name)="placeholder") =>
 			  ("placeholder", wr)
 			| _ => raise ParseError
 					 "widget or placeholder expected"
 		  val wp = skipTextNodes next
 		  val packing =
 		      case wp of
-			  (w::wr) where ((w/>name)="packing") =>
+			  (w::wr) if ((w/>name)="packing") =>
 			  let
 			      val (_,props) = parseProperties(doc, w/>children, nil)
 			  in

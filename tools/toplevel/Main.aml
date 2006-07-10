@@ -36,7 +36,7 @@ struct
 	(GuiToplevel.run files; OS.Process.success)
       | main ("--no-gui"::files | files as nil) =
 	(TextToplevel.run files; OS.Process.success)
-      | main (s::_) where (String.size s = 0 orelse String.sub (s,0) = #"-") =
+      | main (s::_) if (String.size s = 0 orelse String.sub (s,0) = #"-") =
 	(usage true; OS.Process.failure)
       | main files =
 	(TextToplevel.run files; OS.Process.success)

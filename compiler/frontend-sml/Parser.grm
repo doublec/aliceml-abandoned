@@ -59,14 +59,12 @@
 (*	  pat ::= pat as pat			(R)				*)
 (*   - alternative and guarded patterns:					*)
 (*	  atpat ::= ( pat_1 | ... | pat_n )	(n>=2)				*)
-(*	  pat   ::= pat where atexp		(L)				*)
+(*	  pat   ::= pat if exp			(L)				*)
 (*   - negated patterns:							*)
 (*	  pat ::= non pat							*)
 (*   - with patterns:								*)
 (*	  pat ::= pat withval valbind end					*)
 (*	      ::= pat withfun fvalbind end		(derived form)		*)
-(*	      ::= pat withval valbind where atexp	(derived form)		*)
-(*	      ::= pat withfun fvalbind where atexp	(derived form)		*)
 (*   - type wildcards:								*)
 (*	  ty ::= _								*)
 (*   - extensible datatypes (exception declarations become a derived form),	*)
@@ -378,7 +376,6 @@
 %left  COLON COLONGREATER
 %right ARROW
 %right WHERE
-
 
 %start component
 
@@ -1219,18 +1216,12 @@
 	| pat COLON ty	( TYPEDPat(I(patleft,tyright), pat, ty) )
 	| NON pat	( NONPat(I(NONleft,patright), pat) )
 	| pat AS pat	( ASPat(I(pat1left,pat2right), pat1, pat2) )
-	| pat WHERE atexp
-			( WHEREPat(I(patleft,atexpright), pat, atexp) )
+	| pat IF atexp
+			( IFPat(I(patleft,atexpright), pat, atexp) )
 	| pat WITHVAL valbind END
 			( WITHVALPat(I(patleft,ENDright), pat, valbind) )
 	| pat WITHFUN fvalbind END
 			( WITHFUNPat(I(patleft,ENDright), pat, fvalbind) )
-	| pat WITHVAL valbind WHERE atexp
-			( WITHVALWHEREPat(I(patleft,atexpright),
-					  pat, valbind, atexp) )
-	| pat WITHFUN fvalbind WHERE atexp
-			( WITHFUNWHEREPat(I(patleft,atexpright),
-					  pat, fvalbind, atexp) )
 
 
 

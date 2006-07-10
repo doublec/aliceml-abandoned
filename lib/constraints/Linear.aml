@@ -99,13 +99,13 @@ structure Linear :> LINEAR =
 	  | flatten (BinOp(label, a, b)) =
 	    let
 	      val ts  = flatten'(label, a, [b])
-	      fun flatten''(Op(l, ls), e) where (l = label) = e @ ls
-		| flatten'' (t, e)                          = e @ [t]
+	      fun flatten''(Op(l, ls), e) if (l = label) = e @ ls
+		| flatten'' (t, e)                       = e @ [t]
 	    in
 	      Op(label, foldl flatten'' nil ts)
 	    end
 	  | flatten _ = raise Match
-	and flatten'(l, t as BinOp(opl, a, b), ts) where (l = opl) =
+	and flatten'(l, t as BinOp(opl, a, b), ts) if (l = opl) =
 	    flatten'(l, a, b::ts)
 	  | flatten'(label, t, ts) = map flatten (t::ts)
 

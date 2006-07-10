@@ -97,14 +97,14 @@ struct
 
     fun find  f (v1,v2)		= find'(f, v1, v2, 0, length(v1,v2))
     and find'(f,v1,v2,i,0)	= NONE
-      | find'(f,v1,v2,i,n) withval xy = (sub'(v1,i), sub'(v2,i)) where (f xy)
+      | find'(f,v1,v2,i,n) withval xy = (sub'(v1,i), sub'(v2,i)) end if (f xy)
 				= SOME xy
       | find'(f,v1,v2,i,n)	= find'(f,v1,v2,i+1,n-1)
 
     fun findi  f (v1,v2)	= findi'(f, v1, v2, 0, length(v1,v2))
     and findi'(f,v1,v2,i,0)	= NONE
-      | findi'(f,v1,v2,i,n) withval ixy = (i, sub'(v1,i), sub'(v2,i))
-			      where (f ixy)
+      | findi'(f,v1,v2,i,n) withval ixy = (i, sub'(v1,i), sub'(v2,i)) end
+				if (f ixy)
 				= SOME ixy
       | findi'(f,v1,v2,i,n)	= findi'(f,v1,v2,i+1,n-1)
 end

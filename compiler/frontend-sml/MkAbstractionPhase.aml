@@ -644,7 +644,7 @@ struct
       | unguardedTyVarsPat E (ASPat(_, pat1, pat2)) =
 	    unguardedTyVarsPat E pat1 @ unguardedTyVarsPat E pat2
 
-      | unguardedTyVarsPat E (WHEREPat(_, pat, atexp)) =
+      | unguardedTyVarsPat E (IFPat(_, pat, atexp)) =
 	    unguardedTyVarsPat E pat @ unguardedTyVarsAtExp E atexp
 
       | unguardedTyVarsPat E (WITHVALPat(_, pat, valbind)) =
@@ -1040,7 +1040,7 @@ struct
 	 | TYPEDPat(i, pat, ty)	=> O.AnnPat(i, trPat (E,E') pat, trTy E ty)
 	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,env()) pat)
 	 | ASPat(i, pat1, pat2) => O.AsPat(i,trPat (E,E') pat1,trPat(E,E') pat2)
-	 | WHEREPat(i, pat, atexp) =>
+	 | IFPat(i, pat, atexp) =>
 	   let
 		val  _   = insertScope E'
 		val pat' = trPat (E,E') pat
@@ -1886,7 +1886,7 @@ struct
 	fn fpat as (ATPATPat _ | APPPat _) =>
 		trFappPat_lhs E (Infix.pat (infEnv E) fpat)
 	 | ( TYPEDPat(i, fpat, _)
-	   | WHEREPat(i, fpat, _)
+	   | IFPat(i, fpat, _)
 	   | WITHVALPat(i, fpat, _)
 	   | WITHFUNPat(i, fpat, _) )	=> trFpat_lhs E fpat
 	 | ( NONPat(i,_)
@@ -2004,7 +2004,7 @@ struct
 		( pat', arity, typ'::typs' )
 	   end
 
-	 | WHEREPat(i, fpat, atexp) =>
+	 | IFPat(i, fpat, atexp) =>
 	   let
 		val  _   = insertScope E'
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat

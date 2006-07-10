@@ -180,7 +180,7 @@ local
 
     fun loop' (sign, getc, s, res, n) =
         case getc s of
-            Option.SOME (d, s') where (Char.isDigit d) =>
+            Option.SOME (d, s') if (Char.isDigit d) =>
             if n > maxPrec then loop' (sign, getc, s', res, n + 1)
             else loop' (sign, getc, s', IntInf.+ (IntInf.* (res, ten), d2i d), n + 1)
           | Option.SOME (_, s') =>
@@ -197,7 +197,7 @@ local
             
     fun loop (sign, getc, s, res) =
         case getc s of
-            Option.SOME (d, s')    where (Char.isDigit d) => 
+            Option.SOME (d, s') if (Char.isDigit d) => 
             loop (sign, getc, s', IntInf.+ (IntInf.* (res, ten), d2i d))
           | Option.SOME (#".", s') =>
             loop' (sign, getc, s', res, 0)
@@ -206,11 +206,11 @@ local
     (* scan unsigned time. *)
     fun scanTime (sign, getc, s) =
         case getc s of
-            Option.SOME (d, s') where (Char.isDigit d) =>
+            Option.SOME (d, s') if (Char.isDigit d) =>
             loop (sign, getc, s', d2i d)
-          | Option.SOME (#".", s')                     =>
+          | Option.SOME (#".", s') =>
             loop' (sign, getc, s', zero, 0)
-          | _                                   =>
+          | _ =>
             Option.NONE
         
     fun scan getc s =
