@@ -25,10 +25,6 @@
 #if HAVE_LIGHTNING
 # include <sys/mman.h> // mprotect
 # include <errno.h>
-
-# define PAGE_SIZE 4096
-# undef STORE_MEM_ALIGN
-# define STORE_MEM_ALIGN PAGE_SIZE
 #endif
 #endif
 
@@ -38,6 +34,11 @@
 #include "store/Heap.hh"
 #include "store/StatusWord.hh"
 
+#if (!HAVE_VIRTUALALLOC) && HAVE_LIGHTNING
+# define PAGE_SIZE 4096
+# undef STORE_MEM_ALIGN
+# define STORE_MEM_ALIGN PAGE_SIZE
+#endif
 
 void HeapChunk::Alloc(u_int size) {
 #if HAVE_VIRTUALALLOC
