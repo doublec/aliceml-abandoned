@@ -466,7 +466,7 @@ docs-offline:
 	rm -rf $(PWD)/docs; \
 	cp -r $(PWD)/alice-runtime/share/alice/doc $(PWD)/docs; \
 	cp ${PWD}/make/installshield/Alice.hhp ${PWD}/docs;\
-	echo "Now build Alice.chm in docs by using Microsoft HTML Workshop tool"; \
+	echo "Now build Alice.chm in docs by using Microsoft HTML Workshop tool and call make distro"; \
 	false; \
 	else echo "Alice.chm OK"; true; fi)
 
@@ -497,7 +497,7 @@ distro: build-win-exec build-xml-dll docs-offline
 	(rm -rf $(PWD)/installshield/files/alice) && \
 	(mkdir -p $(PWD)/installshield/files) && \
 	(cp -r $(PWD)/distro $(PWD)/installshield/files/alice) && \
-	(cp make/installshield/Alice.ism installshield) && \
+	(cp ${PWD}/make/installshield/Alice.ism installshield) && \
 	(mkdir -p $(PWD)/../installShield/files/alice/doc) && \
 	(cp $(PWD)/docs/Alice.chm $(PWD)/../installshield/files/alice/doc/) && \
 	echo Distro prepared. Run installshield/alice.ism.
