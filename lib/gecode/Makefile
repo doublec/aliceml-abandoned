@@ -95,6 +95,7 @@ distclean: veryclean
 	rm -f $(NATIVES:%=%.dll)
 	rm -f UnsafeGecode.cc UnsafeGecode.asig
 	rm -f Makefile.depend
+	rm -f *.alc
 
 depend: UnsafeGecode.cc
 	alicedep *.aml > Makefile.depend
