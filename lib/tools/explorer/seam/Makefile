@@ -76,8 +76,7 @@ clean:
 	rm -f Explorer.alc
 	rm -f LinkedMkExplorer.alc
 
-distclean:
-	rm -f $(TARGETS) $(GLADE_TARGETS)
+distclean: clean
 
 depend: $(GLADE_TARGETS)
 	alicedep $(SOURCES) > Makefile.predepend
