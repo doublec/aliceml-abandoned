@@ -98,7 +98,7 @@ NativeLibs.asig: NativeLibs.tasig NativeCore.asig
 	tail -n +5 $< >> $@
 
 %-sig.aml: %-sig.tml
-	gawk -f includesig.awk $< > $@
+	gawk -f includesig.awk $< > $@ || rm $@
 
 NativeLibs.dll: NativeLibs.o NativeCanvas.o NativeGtk.o NativeGdk.o NativePango.o NativeAtk.o NativeGLib.o NativeCore.o
 	alicetool -v link $^ -o $@ $(CC_OPTS) \
