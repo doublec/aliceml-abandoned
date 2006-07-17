@@ -12,6 +12,6 @@ Description: The Alice language layer
 
 Package: alice-dev
 Architecture: any
-Depends: alice (= ${Source-Version}) seam-dev
+Depends: alice (= ${Source-Version}), seam-dev
 Description: The Alice language layer (development files)
 
