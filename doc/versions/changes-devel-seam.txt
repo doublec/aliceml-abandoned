@@ -1,7 +1,7 @@
 Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/07/31
 -------------------------------------------------------
 
-Language:
+Language & Compiler:
 
 * [NEW] Integrated most "immediate" extensions proposed for Succesor ML
         (www.successor-ml.org) that still were missing, in detail:
@@ -12,6 +12,8 @@ Language:
         before first constructor in datatype definitions.
 * [NEW] Allow "do exp" as abbreviation for "val _ = exp".
 * [CHG] Pattern guards now use "if" keyword.
+* [FIX] Fixed compilation of general "as" patterns in function arguments
+        (bugs 54, 73, 77, 152, 176).
 
 Runtime System:
 
@@ -27,21 +29,21 @@ Interactive Toplevel:
 * [FIX] Fixed Undo of delete events (bug 163).
 * [FIX] Use clipboard properly.
 * [FIX] Removed race conditions in syntax highlighting (including bug 134).
-* [FIX] Properly recover from unclosed comments.
+* [FIX] Properly recover from unclosed comments fed to compiler.
 * [FIX] Several minor bug fixes.
 
 Basic Library:
 
-* [NEW] Unix: added `reap' and `wait'; fixed resource leak for `execute' on
-        Windows.
+* [NEW] Unix: added `reap' and `wait'.
 * [CHG] Remote.{run,eval}: improved error detection and indication; fixed
         treatment of ALICE_REMOTE_LOG.
 * [FIX] OS.FileSys: filter out current and parent arc with `readDir'.
+* [FIX] Unix: fixed resource leak for `execute' on Windows.
 
 Constraint Library:
 
 * [NEW] Now incorporates official Gecode 1.2.0, including new functionality.
-* [NEW] Renamed Linear to Modeling; now supports non-linear equations.
+* [NEW] Renamed Linear to Modeling: now supports non-linear equations.
 * [NEW] Documentation now includes an extensive tutorial on constraint
         programming.
 * [CHG] Interface adapted to Gecode changes.
@@ -61,8 +63,8 @@ Platforms:
 
 * [NEW] Mac OS: installation no longer requires Fink.
 * [NEW] Mac OS: Preliminary support for Intel Macs; no official packages yet,
-        due to problems with Gtk canvas (breaks Inspector, Explorer).
-* [FIX] Debian: fix missing aliceremote.
+        due to problems with Gtk gnomecanvas (breaks Inspector, Explorer).
+* [FIX] Debian: fixed missing aliceremote.
 * [FIX] Debian: fixed SQLite package.
 * [FIX] Source: added/clarified missing library licenses.
 

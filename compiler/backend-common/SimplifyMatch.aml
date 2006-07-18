@@ -871,6 +871,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    exception SideEffect   (* precondition 2 not satisfied *)
 	    exception NotNAry
 
+	    infix or
+	    fun x or y = x orelse y (* avoid short-cut! *)
+
 	    fun deconstructs (JokPat _) = false
 	      | deconstructs (LitPat _) = raise NotNAry
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
@@ -883,9 +886,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | deconstructs (ProdPat (_, _)) = true
 	      | deconstructs (VecPat (_, _)) = raise NotNAry
 	      | deconstructs (AsPat (_, pat1, pat2)) =
-		deconstructs pat1 orelse deconstructs pat2
+		deconstructs pat1 or deconstructs pat2
 	      | deconstructs (AltPat (_, pat1, pat2)) =
-		deconstructs pat1 orelse deconstructs pat2
+		deconstructs pat1 or deconstructs pat2
 	      | deconstructs (NegPat (_, pat)) = deconstructs pat
 	      | deconstructs (GuardPat (_, pat, _)) =
 		deconstructs pat orelse raise SideEffect
