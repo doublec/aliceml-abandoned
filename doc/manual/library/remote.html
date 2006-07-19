@@ -362,11 +362,14 @@
 	that may have been spawned by evaluation.
 	With <TT>run</TT>, the remote process stays alive after the result is
 	returned to the caller,
-	i.e. the process is <I>not</I> terminated automatically. This
+	i.e. the process is <I>not</I> terminated automatically
+	(not even if the parent process terminates!). This
 	allows concurrent threads to continue running; in particular, it enables
 	the remote process to create proxies and return them to the caller who
 	can therewith call into the remote process later.
-	To terminate the process, an
+	It also allows a process to migrate to another site, by
+	initiating a remote process and then terminating the original one.
+	To terminate the remote process, an
 	explicit call to <TT><A href="os-process.html">OS.Process.exit</A></TT>
 	on the remote site is required. If evaluation of the component raises
 	an exception, the process is terminated in both cases.</P>
