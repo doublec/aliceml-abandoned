@@ -114,7 +114,7 @@ struct
     fun doCommits(state,s,i,best) =
 	case Space.status s of
             Space.BRANCH (_,desc) =>
-		(Space.commit(s, i, desc);
+		(Space.commit(s, desc, i);
 		 (case Types.getConstrain state of
 		      NONE => ()
 		    | SOME c => Option.app (fn b => c(s, b)) best);

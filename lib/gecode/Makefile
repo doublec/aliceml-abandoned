@@ -63,7 +63,7 @@ LDFLAGS = `pkg-config --libs gecode`
 all: compiledll compilealice
 
 checkgecode:
-	pkg-config --exists "gecode >= 1.2.0" --print-errors
+	pkg-config --exists "gecode >= 1.2.1" --print-errors
 compiledll: checkgecode $(NATIVES:%=%.dll)
 compilealice: $(TARGETS)
 

@@ -35,7 +35,7 @@ sig
     val new         : unit -> space
     val status      : space -> status
     
-    val commit      : space * int * description -> unit
+    val commit      : space * description * int -> unit
     val clone       : space -> space
     val discard     : space -> unit
     val alive       : space -> bool

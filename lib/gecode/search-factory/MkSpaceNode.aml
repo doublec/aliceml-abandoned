@@ -143,7 +143,7 @@ struct
               (Path.toString (getPath (Node node))) ^ "\n");
       case status mom of
         Space.BRANCH (_,descr) =>
-          (Space.commit (space, #altNum node, descr) ;
+          (Space.commit (space, descr, #altNum node) ;
            
            (* Branch and Bound. *)
            (case #best node of
@@ -221,7 +221,7 @@ struct
       val status = lazy
         let
           val space = getWorkingSpace node
-          val _ = Space.commit (space, i, descr)
+          val _ = Space.commit (space, descr, i)
           val _ =
             (* If a new best solution is present, bound the node. *)
             case newBestSol of  (* May trigger computation of lazy value. *)
@@ -266,7 +266,7 @@ struct
   fun applyPath space ((n, b), (parent, best)) =
     let 
       val _ = case Space.status space of
-                Space.BRANCH (_, descr) => Space.commit (space, n, descr)
+                Space.BRANCH (_, descr) => Space.commit (space, descr, n)
               | _ => raise Child
 
       val newBest = case b of

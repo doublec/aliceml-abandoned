@@ -364,17 +364,18 @@ DEFINE1(status) {
   DBGMSG("status");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  unsigned int alternatives;
-  switch(s->status(alternatives)) {
+  switch(s->status()) {
   case SS_BRANCH:
     DBGMSG("done");
     {
       ConcreteRepresentation *cr =
         ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,1);
-      cr->Init(0, Store::UnmanagedPointerToWord(s->description()));
+      Gecode::BranchingDesc* desc =
+	const_cast<Gecode::BranchingDesc*>(s->description());
+      cr->Init(0, Store::UnmanagedPointerToWord(desc));
       UnsafeGecode::gecodeBranchdescFinalizationSet->Register(cr->ToWord());
       TagVal *t = TagVal::New(0, 2);
-      t->Init(0, Store::IntToWord(alternatives));
+      t->Init(0, Store::IntToWord(desc->alternatives()));
       t->Init(1, cr->ToWord());
       RETURN(t->ToWord());
     }
@@ -391,34 +392,12 @@ DEFINE1(status) {
 
 } END
 
-DEFINE1(description) {
-  DBGMSG("description");
-  DECLARE_SPACE(s, stamp, pstamp, x0);
-  CHECK_SPACE(s);
-
-  unsigned int dummy;
-  switch(s->status(dummy)) {
-  case SS_BRANCH:
-    break;
-  default:
-    RAISE(UnsafeGecode::DescriptionConstructor)
-  }
-
-  ConcreteRepresentation *cr =
-    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,1);
-  cr->Init(0, Store::UnmanagedPointerToWord(s->description()));
-  UnsafeGecode::gecodeBranchdescFinalizationSet->Register(cr->ToWord());
-  DBGMSG("done");
-  RETURN(cr->ToWord());
-} END
-
 DEFINE1(clone) {
   DBGMSG("clone");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
-  unsigned int dummy;
-  if (s->status(dummy) == SS_FAILED)
+  if (s->status() == SS_FAILED)
     RAISE(UnsafeGecode::InvalidSpaceConstructor)  
 
   if (stamp==-1) {

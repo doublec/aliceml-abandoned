@@ -21,7 +21,7 @@ class Space {
   IntVar new_intvar(IntSet&); new_intvar;
   BoolVar new_boolvar(void); new_boolvar;
   SetVar new_setvar(void); new_setvar;
-  void commit(int, BranchingDesc*); commit;
+  void commit(BranchingDesc*, int); commit;
 };
 
 class IntVar {

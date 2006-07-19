@@ -60,9 +60,9 @@ structure GecodeTest :
                       val _ = p s
 		      val c = Space.clone s
 		  in
-		      Space.commit(s, 0, desc);
+		      Space.commit(s, desc, 0);
 		      (dfe s);
-		      Space.commit(c, 1, desc);
+		      Space.commit(c, desc, 1);
 		      (dfe c)
 		  end
 		 ))

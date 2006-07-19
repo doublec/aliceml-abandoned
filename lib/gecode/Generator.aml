@@ -408,7 +408,6 @@ structure Generator =
                Exn "InternalException",
                Fun ("makespace", 0, [Void], Space, "makespace"),
                Fun ("status", 1, [Space], Status, "status"),
-               Fun ("description", 1, [Space], Description, "description"),
                Fun ("clone", 1, [Space], Space, "clone"),
                Fun ("discard", 1, [Space], Void, "discard"),
                Fun ("alive", 1, [Space], Bool, "alive"),

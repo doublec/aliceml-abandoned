@@ -32,8 +32,8 @@ struct
 		    let
 			val c = Space.clone s
 		    in
-			Space.commit(s, 0, descr);
-			Space.commit(c, 1, descr);
+			Space.commit(s, descr, 0);
+			Space.commit(c, descr, 1);
 			(dfe s)@(dfe c)
 		    end
 	in
@@ -53,8 +53,8 @@ struct
 		    let
 			val c = Space.clone s
 		    in
-			Space.commit(s, 0, descr);
-			Space.commit(c, 1, descr);
+			Space.commit(s, descr, 0);
+			Space.commit(c, descr, 1);
 			dfe (depth+1) s;
 			dfe (depth+1) c
 		    end
@@ -81,8 +81,8 @@ struct
 			let
 			    val c = Space.clone f
 			in
-			    Space.commit(f, 0, descr);
-			    Space.commit(c, 1, descr);
+			    Space.commit(f, descr, 0);
+			    Space.commit(c, descr, 1);
 			    babe (f::c::fr) bs best
 			end
 	in
@@ -98,7 +98,7 @@ struct
           let
               val c = recompute s ir
           in
-              Space.commit(c,i,id);
+              Space.commit(c,id,i);
               c
           end
               
@@ -117,19 +117,19 @@ struct
                               val c = Space.clone s
                               val intdesc = (0, desc)
                           in
-                              Space.commit(s, 0, desc);
+                              Space.commit(s, desc, 0);
                               dfre s c [intdesc] 1;
-                              Space.commit(c, 1, desc);
+                              Space.commit(c, desc, 1);
                               dfre c c nil m
                           end
                       else let val intdesc = (0, desc) in                
-                               Space.commit(s, 0, desc);
+                               Space.commit(s, desc, 0);
                                dfre s r (intdesc::is) (d+1);
                                let
                                    val c = recompute r is
                                    val intdesc = (1, desc)
                                in
-                                   Space.commit(c, 1, desc);
+                                   Space.commit(c, desc, 1);
                                    dfre c r (intdesc::is) (d+1)
                                end
                            end
@@ -153,19 +153,19 @@ struct
                               val c = Space.clone s
                               val intdesc = (0, desc)
                           in
-                              (Space.commit(s, 0, desc);
+                              (Space.commit(s, desc, 0);
                                dfre s c [intdesc] 1)@
-                              (Space.commit(c, 1, desc);
+                              (Space.commit(c, desc, 1);
                                dfre c c nil m)
                           end
                       else let val intdesc = (0, desc) in                
-                               (Space.commit(s, 0, desc);
+                               (Space.commit(s, desc, 0);
                                 dfre s r (intdesc::is) (d+1))@
                                let
                                    val c = recompute r is
                                    val intdesc = (1, desc)
                                in
-                                   Space.commit(c, 1, desc);
+                                   Space.commit(c, desc, 1);
                                    dfre c r (intdesc::is) (d+1)
                                end
                            end

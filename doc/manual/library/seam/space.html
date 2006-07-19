@@ -25,9 +25,9 @@
 		 let
 		     val c = Space.clone s
 		 in
-		     Space.commit(s, 0, desc);
+		     Space.commit(s, desc, 0);
 		     case searchOne s of
-			  NONE   => (Space.commit(c, 1, desc); searchOne c)
+			  NONE   => (Space.commit(c, desc, 1); searchOne c)
 			| SOME s => SOME s
 		 end</PRE>
    <P>
@@ -74,7 +74,7 @@
 	datatype status = BRANCH of int * description | FAILED | SOLVED
 	val new         : unit -> space
 	val status      : space -> status
-	val commit      : space * int * description -> unit
+	val commit      : space * description * int -> unit
 	val clone       : space -> space
 	val discard     : space -> unit
 	val alive       : space -> bool
@@ -155,7 +155,7 @@
     </DD>
 
     <DT>
-      <TT>commit (<I>s</I>, <I>i</I>, <I>d</I>)</TT>
+      <TT>commit (<I>s</I>, <I>d</I>, <I>i</I>)</TT>
     </DT>
     <DD>
       <P>commits to alternative <I>i</I> of <I>s</I>,
