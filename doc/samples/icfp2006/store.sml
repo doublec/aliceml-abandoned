@@ -1,22 +1,22 @@
 signature STORE =
 sig
     type word32 = Word32.word
-    type block = word32 array
+    type store
 
     exception Address
 
-    val init : string -> unit
-    val load : string -> unit
-    val save : string -> unit
+    val init : string -> store
+    val load : string -> store
+    val save : string * store -> unit
 
-    val alloc : int -> word32
-    val free : word32 -> unit
-    val size : word32 -> int
-    val get : {arr:word32, idx:word32} -> word32
-    val set : {arr:word32, idx:word32, x:word32} -> unit
-    val move : word32 -> unit
+    val alloc : store * int -> word32
+    val free : store * word32 -> unit
+    val size : store * word32 -> int
+    val get : store * {arr:word32, idx:word32} -> word32
+    val set : store * {arr:word32, idx:word32, x:word32} -> unit
+    val move : store * word32 -> unit
 end
 
-structure Store : STORE =
+structure Store :> STORE =
 struct
 end
