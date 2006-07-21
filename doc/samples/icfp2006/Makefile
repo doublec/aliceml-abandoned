@@ -1,6 +1,6 @@
 ALICEC = alicec
 
-FILES0 = store code decoder disassemble
+FILES0 = store code decoder machine disassemble
 FILES = ${FILES0:%=%.alc}
 
 .PHONY:	all
