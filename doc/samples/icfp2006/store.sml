@@ -111,17 +111,21 @@ struct
 
     fun free (s : store, arr) =
 	Array.update (!(#blocks s), Word32.toInt arr, NONE)
+	handle Option => raise Address
 
     fun size (s : store, arr) =
 	Array.length (valOf (Array.sub (!(#blocks s), Word32.toInt arr)))
+	handle Option => raise Address
 
     fun get (s : store, {arr, idx}) =
 	Array.sub (valOf (Array.sub (!(#blocks s), Word32.toInt arr)),
 		   Word32.toInt idx)
+	handle (Subscript|Option) => raise Address
 
     fun set (s : store, {arr, idx, x}) =
 	Array.update (valOf (Array.sub (!(#blocks s), Word32.toInt arr)),
 		      Word32.toInt idx, x)
+	handle (Subscript|Option) => raise Address
 
     fun move (s : store, arr) =
 	if arr = Word32.fromInt 0 then ()
@@ -137,6 +141,7 @@ struct
 	     in
 		 Array.copy {src=old_arr, dst=new_arr, di=0}
 	     end
+	handle Option => raise Address
 
     fun getreg (s : store, reg) =
 	Array.sub (#regs s, reg)
@@ -146,5 +151,4 @@ struct
 	
     fun getpc (s : store) = !(#pc s)
     fun setpc (s : store, pc) = (#pc s) := pc
-
 end

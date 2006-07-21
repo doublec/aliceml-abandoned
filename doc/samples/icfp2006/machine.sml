@@ -1,10 +1,14 @@
 import "store"
 import "code"
 import "decoder"
+import "disassemble"
 
 signature MACHINE =
 sig
     type machine
+
+    exception InvalidInstruction
+    exception Halted
 
     val machine : Store.store -> machine
     val step : machine -> unit
@@ -12,8 +16,8 @@ end
 
 structure Machine :> MACHINE =
 struct
-
     exception InvalidInstruction
+    exception Halted
 
     type machine = {store: Store.store,
 		    prog: Code.program}
@@ -25,8 +29,21 @@ struct
 	    open Code
 	    open Store
 	    val s = #store m
-	    val instr = Array.sub (#prog m, getpc s)
+	    val pc = getpc s
+	    val instr = Array.sub (#prog m, pc)
 	in
+(*
+print ("["^Word32.toString (Store.getreg(s, 0)));
+print (","^Word32.toString (Store.getreg(s, 1)));
+print (","^Word32.toString (Store.getreg(s, 2)));
+print (","^Word32.toString (Store.getreg(s, 3)));
+print (","^Word32.toString (Store.getreg(s, 4)));
+print (","^Word32.toString (Store.getreg(s, 5)));
+print (","^Word32.toString (Store.getreg(s, 6)));
+print (","^Word32.toString (Store.getreg(s, 7))^"] \t");
+Disassemble.disassemble (#prog m, pc, 1);
+*)
+	    setpc (s, pc+1);
 	    case instr of
 		Move {dst, src, cond} =>
 		    if getreg (s, cond)<>Word32.fromInt 0 then
@@ -56,7 +73,7 @@ struct
 			setreg (s, dst,
 				Word32.~(Word32.andb(getreg(s, x),
 						     getreg(s, y))))
-	      | Halt                  => ()
+	      | Halt                  => raise Halted
 	      | Alloc {dst, size}     =>
 			setreg (s, dst,
 				alloc (s,
@@ -72,10 +89,12 @@ struct
 			     NONE => setreg (s, dst,
 					     Word32.~(Word32.fromInt 0))
 			   | SOME w =>
+(*
 				 if w= #"\n" then
 				     setreg (s, dst,
 					     Word32.~(Word32.fromInt 0))
 				 else
+*)
 				     setreg (s, dst,
 					     Word8.toLarge
 					     (Byte.charToByte w)))
