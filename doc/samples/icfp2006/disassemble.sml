@@ -12,7 +12,7 @@ struct
     fun showreg r = "R" ^ Int.toString r
 
     fun show oper = case oper of
-        Move {dst, src, cond} => "MOVE\t" ^ showreg dst ^ "<-" ^ showreg src ^ "|" ^ showreg cond ^ " != 0"
+        Move {dst, src, cond} => "MOVE\t" ^ showreg dst ^ " := " ^ showreg src ^ " | " ^ showreg cond ^ " != 0"
       | Get {dst, arr, idx} => "GET\t" ^ showreg dst ^ " := " ^ showreg arr ^ "[" ^ showreg idx ^ "]"
       | Set {arr, idx, src} => "SET\t" ^ showreg arr ^ "[" ^ showreg idx ^ "] := " ^ showreg src
       | Add {dst, x, y} => "ADD\t" ^ showreg dst ^ " := " ^ showreg x ^ " + " ^ showreg y
