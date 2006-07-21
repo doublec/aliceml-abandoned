@@ -19,6 +19,9 @@ sig
 
     val getreg : store * reg -> word32
     val setreg : store * reg * word32 -> unit
+
+    val getpc : store -> int
+    val setpc : store * int -> unit
 end
 
 structure Store :> STORE =
@@ -28,6 +31,7 @@ struct
     type reg = int
 
     type store = {regs : word32 array,
+		  pc : int ref,
 		  blocks : word32 array option array ref,
 		  maxblock : int ref}
 
@@ -70,6 +74,7 @@ struct
 	let
 	    val prog = readProgram filename
 	    val store = {regs=Array.array (8, Word32.fromInt 0),
+			 pc=ref 0,
 			 blocks=ref (Array.array (initial_store, NONE)),
 			 maxblock=ref (initial_store-1)}
 	in
@@ -118,11 +123,28 @@ struct
 	Array.update (valOf (Array.sub (!(#blocks s), Word32.toInt arr)),
 		      Word32.toInt idx, x)
 
-    fun move _ = raise NotImplemented
+    fun move (s : store, arr) =
+	if arr = Word32.fromInt 0 then ()
+	else let
+		 val arr_size = size (s, arr)
+		 val old_arr = valOf (Array.sub (!(#blocks s), 0))
+		 val old_size = Array.length old_arr
+		 val new_arr =
+		     if arr_size > old_size then
+			 Array.array (arr_size, Word32.fromInt 0)
+		     else
+			 valOf (Array.sub (!(#blocks s), 0))
+	     in
+		 Array.copy {src=old_arr, dst=new_arr, di=0}
+	     end
 
     fun getreg (s : store, reg) =
 	Array.sub (#regs s, reg)
 
     fun setreg (s : store, reg, x) =
 	Array.update (#regs s, reg, x)
+	
+    fun getpc (s : store) = !(#pc s)
+    fun setpc (s : store, pc) = (#pc s) := pc
+
 end
