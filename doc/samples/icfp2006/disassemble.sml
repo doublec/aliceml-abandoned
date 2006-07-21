@@ -10,6 +10,7 @@ struct
     open Code
 
     fun showreg r = "R" ^ Int.toString r
+
     fun show oper = case oper of
         Move {dst, src, cond} => "MOVE\t" ^ showreg dst ^ "<-" ^ showreg src ^ "|" ^ showreg cond ^ " != 0"
       | Get {dst, arr, idx} => "GET\t" ^ showreg dst ^ " := " ^ showreg arr ^ "[" ^ showreg idx ^ "]"
@@ -25,7 +26,8 @@ struct
       | In {dst} => "IN\t" ^ showreg dst
       | Load {arr, off} => "LOAD\t" ^ showreg arr ^ " :" ^ showreg off
       | Imm {dst, i} => "LOAD\t" ^ showreg dst ^ " := " ^ Word32.toString i
-    fun disassemble (p, fromm, to) = let
-        fun f (i, oper) = if fromm <= i andalso i <= to then print (show oper ^ "\n") else ()
-        in Array.appi f p end
+
+    fun disassemble (prog, start, length) = let
+        val progpart = ArraySlice.slice (prog, start, SOME length)
+        in ArraySlice.app (fn oper => print (show oper ^ "\n")) progpart end
 end
