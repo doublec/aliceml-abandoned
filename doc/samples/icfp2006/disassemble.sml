@@ -16,7 +16,7 @@ struct
         | Get {dst, arr, idx} => "GET\t" ^ showreg dst ^ " := " ^ showreg arr ^ "[" ^ showreg idx ^ "]"
         | Set {arr, idx, src} => "SET\t" ^ showreg arr ^ "[" ^ showreg idx ^ "] := " ^ showreg src
         | Add {dst, x, y} => "ADD\t" ^ showreg dst ^ " := " ^ showreg x ^ " + " ^ showreg y
-        | Mul {dst, x, y} => "MUL\t" ^ showreg dst ^ " := " ^ showreg x ^ " - " ^ showreg y
+        | Mul {dst, x, y} => "MUL\t" ^ showreg dst ^ " := " ^ showreg x ^ " * " ^ showreg y
         | Div {dst, x, y} => "DIV\t" ^ showreg dst ^ " := " ^ showreg x ^ " / " ^ showreg y
         | Nand {dst, x, y} => "NAND\t" ^ showreg dst ^ " := " ^ showreg x ^ " nand " ^ showreg y
         | Halt => "HALT"
@@ -30,8 +30,8 @@ struct
 
     fun disassemble (prog, start, length) =
         let
-            fun offset i = StringCvt.padLeft #" " 8 (Int.toString (start + i))
-            fun printoper (i, oper) = print (offset i ^ " " ^ show oper ^ "\n")
+            fun offset i = StringCvt.padLeft #"0" 8 (Int.fmt StringCvt.HEX (start + i))
+            fun printoper (i, oper) = print (offset i ^ "  " ^ show oper ^ "\n")
             val progpart = ArraySlice.slice (prog, start, SOME length)
         in
             ArraySlice.appi printoper progpart
