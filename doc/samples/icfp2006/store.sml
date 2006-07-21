@@ -60,8 +60,7 @@ struct
 	    val istr = BinIO.openIn filename
 	    val prog = Array.array (size, Word32.fromInt 0)
 	in
-	    
-
+	    input (istr, 0, prog);
 	    BinIO.closeIn istr;
 	    prog
 	end
@@ -125,5 +124,4 @@ struct
 
     fun setreg (s : store, reg, x) =
 	Array.update (#regs s, reg, x)
-
 end

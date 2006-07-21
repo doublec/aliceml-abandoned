@@ -1,3 +1,5 @@
+import "store"
+
 signature MACHINE =
 sig
     type machine

@@ -1,3 +1,5 @@
+import "code"
+
 signature DISASSEMBLE =
 sig
     val disassemble : Code.program * int * int -> unit
@@ -5,7 +7,9 @@ end
 
 structure Disassemble : DISASSEMBLE =
 struct
-    fun showreg r = "R" ^ toString r
+    open Code
+
+    fun showreg r = "R" ^ Int.toString r
     fun show oper = case oper of
         Move {dst, src, cond} => "MOVE\t" ^ showreg dst ^ "<-" ^ showreg src ^ "|" ^ showreg cond ^ " != 0"
       | Get {dst, arr, idx} => "GET\t" ^ showreg dst ^ " := " ^ showreg arr ^ "[" ^ showreg idx ^ "]"
@@ -20,8 +24,8 @@ struct
       | Out {src} => "OUT\t" ^ showreg src
       | In {dst} => "IN\t" ^ showreg dst
       | Load {arr, off} => "LOAD\t" ^ showreg arr ^ " :" ^ showreg off
-      | Imm {dst, i} => "LOAD\t" ^ showreg dst ^ " := " ^ toString i
+      | Imm {dst, i} => "LOAD\t" ^ showreg dst ^ " := " ^ Word32.toString i
     fun disassemble (p, fromm, to) = let
-        fun f (i, oper) = if fromm <= i andalso i <= to then print (show oper) else ()
-        in appi f p end
+        fun f (i, oper) = if fromm <= i andalso i <= to then print (show oper ^ "\n") else ()
+        in Array.appi f p end
 end
