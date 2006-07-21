@@ -3,7 +3,6 @@ import "code"
 
 signature DECODER =
 sig
-    exception Decode
     val decode : Store.store * Word32.word -> Code.program
 end
 
@@ -12,14 +11,12 @@ struct
     open Code
     open Word32 infix << >> andb
 
-    exception Decode
-
     val regmask = fromInt 0x00000007
     val valmask = fromInt 0x01ffffff
     val w3 = Word.fromInt 3
     val w6 = Word.fromInt 6
-    val w24 = Word.fromInt 24
     val w25 = Word.fromInt 25
+    val w28 = Word.fromInt 28
 
     fun a word = toInt ((word >> w6) andb regmask)
     fun b word = toInt ((word >> w3) andb regmask)
@@ -32,7 +29,7 @@ struct
 	let
 	    val w = Store.get (st, {arr=adr, idx=Word32.fromInt i})
 	    val oper =
-		case toInt (w >> w24) of
+		case toInt (w >> w28) of
 	              0 => Move {dst=a w, src=b w, cond=c w}
 		    | 1 => Get {dst=a w, arr=b w, idx=c w}
 		    | 2 => Set {arr=a w, idx=b w, src=c w}
@@ -47,7 +44,7 @@ struct
 		    | 11 => In {dst=c w}
 		    | 12 => Load {arr=b w, off=c w}
 		    | 13 => Imm {dst=a' w, i=v w}
-		    | _  => raise Decode
+		    | _  => Invalid
 	in
 	    Array.update (prog, i, oper);
 	    decode' (st, adr, prog, Int.+(i,1))

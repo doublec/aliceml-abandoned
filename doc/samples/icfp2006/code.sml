@@ -18,6 +18,7 @@ struct
 	    | In of {dst:reg}
 	    | Load of {arr:reg, off:reg}
 	    | Imm of {dst:reg, i:word32}
+	    | Invalid
 
     type program = oper array
 end

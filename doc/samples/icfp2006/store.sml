@@ -36,32 +36,33 @@ struct
 
     val initial_store = 10
 
-    fun input (istr, idx, arr) =
-	if BinIO.endOfStream istr then arr
-	else
+    fun input (bin, i, arr) =
+	if i = Array.length arr then () else
 	let
-	    val w4 = Word8.toLarge (valOf (BinIO.input1 istr))
-	    val w3 = Word8.toLarge (valOf (BinIO.input1 istr))
-	    val w2 = Word8.toLarge (valOf (BinIO.input1 istr))
-	    val w1 = Word8.toLarge (valOf (BinIO.input1 istr))
+	    val j = 4*i
+	    val w4 = Word8.toLarge (Word8Vector.sub (bin, j))
+	    val w3 = Word8.toLarge (Word8Vector.sub (bin, j+1))
+	    val w2 = Word8.toLarge (Word8Vector.sub (bin, j+2))
+	    val w1 = Word8.toLarge (Word8Vector.sub (bin, j+3))
 	    val w =
-		(Word32.<<(w4, Word.fromInt 24)) +
-		(Word32.<<(w3, Word.fromInt 16)) +
-		(Word32.<<(w2, Word.fromInt 8)) +
-		 w1
+		Word32.<<(w4, Word.fromInt 24) +
+		Word32.<<(w3, Word.fromInt 16) +
+		Word32.<<(w2, Word.fromInt 8) +
+		w1
 	in
-	    Array.update (arr, idx, w1);
-	    input (istr, idx+1, arr)
+	    Array.update (arr, i, w);
+	    input (bin, i+1, arr)
 	end
 
     fun readProgram filename =
 	let
-	    val size = (OS.FileSys.fileSize filename) div 4
-	    val istr = BinIO.openIn filename
+	    val file = BinIO.openIn filename
+	    val bin  = BinIO.inputAll file
+	    val size = Word8Vector.length bin div 4
 	    val prog = Array.array (size, Word32.fromInt 0)
 	in
-	    input (istr, 0, prog);
-	    BinIO.closeIn istr;
+	    BinIO.closeIn file;
+	    input (bin, 0, prog);
 	    prog
 	end
 
