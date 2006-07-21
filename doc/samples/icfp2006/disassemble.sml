@@ -25,7 +25,7 @@ struct
         | Out {src} => "OUT\t" ^ showreg src
         | In {dst} => "IN\t" ^ showreg dst
         | Load {arr, off} => "LOAD\t" ^ showreg arr ^ " :" ^ showreg off
-        | Imm {dst, i} => "LOAD\t" ^ showreg dst ^ " := " ^ Word32.toString i
+        | Imm {dst, i} => "IMM\t" ^ showreg dst ^ " := " ^ Word32.toString i
         | Invalid => "INVALID"
 
     fun disassemble (prog, start, length) =
