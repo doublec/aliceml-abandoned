@@ -32,13 +32,11 @@ struct
 
     type store = {regs : word32 array,
 		  pc : int ref,
-		  blocks : word32 array option array ref,
-		  maxblock : int ref}
+		  blocks : (int, word32 array) alt array ref,
+		  free : int ref}
 
     exception Address
     exception NotImplemented
-
-    val initial_store = 10
 
     fun input (bin, i, arr) =
 	if i = Array.length arr then () else
@@ -73,75 +71,78 @@ struct
     fun init filename =
 	let
 	    val prog = readProgram filename
-	    val store = {regs=Array.array (8, Word32.fromInt 0),
-			 pc=ref 0,
-			 blocks=ref (Array.array (initial_store, NONE)),
-			 maxblock=ref (initial_store-1)}
 	in
-	    Array.update (!(#blocks store), 0, SOME prog);
-	    store
+	    {regs=Array.array (8, Word32.fromInt 0),
+	     pc=ref 0,
+	     blocks=ref (Array.array (1, SND prog)),
+	     free=ref 1}
 	end
 
     fun load filename = raise NotImplemented
     fun save filename = raise NotImplemented
 
-    (* find a currently unused address for a new block *)
-    fun freshAddress (s : store) =
-	case Array.findi (fn (_, NONE) => true | _ => false) (!(#blocks s)) of
-	    SOME (i, _) => i
-	  | NONE        =>
-		let
-		    val blocks = Array.array ((3 * (!(#maxblock s))) div 2,
-					      NONE)
-		in
-		    Array.copy {src=(!(#blocks s)), dst=blocks, di=0};
-		    (#blocks s) := blocks;
-		    (#maxblock s) := ((3 * (!(#maxblock s))) div 2) - 1;
-		    freshAddress s
-		end
+    fun grow (s : store) =
+	let
+	    val oldblocks = !(#blocks s)
+	    val oldsize = Array.length oldblocks
+	    val newsize = 2 * oldsize
+	    val newblocks = Array.tabulate (newsize, fn i => FST (i+1))
+	in
+	    Array.copy {src=oldblocks, dst=newblocks, di=0};
+	    #blocks s := newblocks
+	end
 
     fun alloc (s : store, size) =
 	let
-	    val a = freshAddress s
+	    val a = !(#free s)
 	in
+	    if a = Array.length (!(#blocks s)) then grow s else ();
+	    #free s := Alt.fst (Array.sub (!(#blocks s), a));
 	    Array.update (!(#blocks s), a,
-			  SOME (Array.array (size, Word32.fromInt 0)));
+			  SND (Array.array (size, Word32.fromInt 0)));
 	    Word32.fromInt a
 	end
 
     fun free (s : store, arr) =
-	Array.update (!(#blocks s), Word32.toInt arr, NONE)
+	let
+	    val a = Word32.toInt arr
+	in
+	    Array.update (!(#blocks s), a, FST (!(#free s)));
+	    #free s := a
+	end
 	handle Option => raise Address
 
     fun size (s : store, arr) =
-	Array.length (valOf (Array.sub (!(#blocks s), Word32.toInt arr)))
-	handle Option => raise Address
+	Array.length (Alt.snd (Array.sub (!(#blocks s), Word32.toInt arr)))
+	handle (Subscript|Alt) => raise Address
 
     fun get (s : store, {arr, idx}) =
-	Array.sub (valOf (Array.sub (!(#blocks s), Word32.toInt arr)),
+	Array.sub (Alt.snd (Array.sub (!(#blocks s), Word32.toInt arr)),
 		   Word32.toInt idx)
-	handle (Subscript|Option) => raise Address
+	handle (Subscript|Alt) => raise Address
 
     fun set (s : store, {arr, idx, x}) =
-	Array.update (valOf (Array.sub (!(#blocks s), Word32.toInt arr)),
+	Array.update (Alt.snd (Array.sub (!(#blocks s), Word32.toInt arr)),
 		      Word32.toInt idx, x)
-	handle (Subscript|Option) => raise Address
+	handle (Subscript|Alt) => raise Address
 
     fun move (s : store, arr) =
-	if arr = Word32.fromInt 0 then ()
-	else let
-		 val arr_size = size (s, arr)
-		 val old_arr = valOf (Array.sub (!(#blocks s), 0))
-		 val old_size = Array.length old_arr
-		 val new_arr =
-		     if arr_size > old_size then
-			 Array.array (arr_size, Word32.fromInt 0)
-		     else
-			 valOf (Array.sub (!(#blocks s), 0))
-	     in
-		 Array.copy {src=old_arr, dst=new_arr, di=0}
-	     end
-	handle Option => raise Address
+	if arr = Word32.fromInt 0 then () else
+	let
+	    val src = Alt.snd (Array.sub (!(#blocks s), Word32.toInt arr))
+	    val size = Array.length src
+	    val old = Alt.snd (Array.sub (!(#blocks s), 0))
+	    val old_size = Array.length old
+	    val dst =
+		if size > old_size then
+		    Array.array (size, Word32.fromInt 0)
+		else
+		    old
+	in
+	    Array.copy {src, dst, di=0};
+	    Array.update (!(#blocks s), 0, SND dst)
+	end
+	handle Alt => raise Address
 
     fun getreg (s : store, reg) =
 	Array.sub (#regs s, reg)
