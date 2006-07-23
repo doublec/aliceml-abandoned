@@ -34,7 +34,7 @@ struct
 	    val file = BinIO.openIn filename
 	    val raw  = BinIO.inputAll file
 	    val size = Word8Vector.length raw div 4
-	    val prog = tabulate(size, fn i => Word.fromLarge(PackWord32Big.subVec(raw, i)))
+	    val prog = tabulate(size, fn i => Word32.fromLarge(PackWord32Big.subVec(raw, i)))
 	in
 	    BinIO.closeIn file;
 	    setblock(0w0, USED prog)
