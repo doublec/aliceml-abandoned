@@ -593,36 +593,16 @@ private:
   static const int SIZE = sizeof(MP_INT);
 public:
   using Chunk::ToWord;
-  static BigInt *New(void) {
-    Chunk *c = Store::AllocChunk(SIZE);
-    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
-    mpz_init(big);
-    return STATIC_CAST(BigInt *, c);
-  }
-  static BigInt *New(BigInt *old) {
-    Chunk *c = Store::AllocChunk(SIZE);
-    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
-    mpz_init_set(big, old->big());
-    return STATIC_CAST(BigInt *, c);
-  }
-  static BigInt *New(s_int i) {
-    Chunk *c = Store::AllocChunk(SIZE);
-    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
-    mpz_init_set_si(big, i);
-    return STATIC_CAST(BigInt *, c);
-  }
-  static BigInt *New(u_int i) {
-    Chunk *c = Store::AllocChunk(SIZE);
-    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
-    mpz_init_set_ui(big, i);
-    return STATIC_CAST(BigInt *, c);
-  }
-  static BigInt *New(double d) {
-    Chunk *c = Store::AllocChunk(SIZE);
-    MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
-    mpz_init_set_d(big, d);
-    return STATIC_CAST(BigInt *, c);
-  }
+  static BigInt *New(void);
+  static BigInt *New(BigInt *old);
+  static BigInt *New(s_int i);
+  static BigInt *New(u_int i);
+  static BigInt *New(double d);
+  int toInt(void);
+  void destroy(void);
+  bool operator==(int i);
+
+
   static BigInt *FromWordDirect(word x) {
     Chunk *c = Store::DirectWordToChunk(x);
     Assert(c->GetSize() == SIZE);
@@ -631,146 +611,56 @@ public:
   MP_INT *big(void) { 
     return STATIC_CAST(MP_INT*, this->GetBase());
   }
-  int toInt(void) {
-    MP_INT *b = big();
-    if (mpz_fits_slong_p(b)) {
-      long int i = mpz_get_si(b);
-      if (i>MAX_VALID_INT || i<MIN_VALID_INT) {
-        return INVALID_INT;
-      } else {
-        return i;
-      }
-    } else {
-      return INVALID_INT;
-    }
-  }
-  void destroy(void) {
-    MP_INT *b = big();
-    mpz_clear(b);
-  }
 
-  bool operator==(int i) {
-    return mpz_cmp_si(big(), i)==0;
-  }
+  BigInt *negate(void);
+  BigInt *abs(void);
+  BigInt *notb(void);
+  
+  BigInt *add(BigInt *b);
+  BigInt *add(unsigned long int i);
+  BigInt *sub(BigInt *b);
+  BigInt *sub(unsigned long int i);
 
-#define MKOP1(op, mpop) \
-  BigInt *op(void) { \
-    BigInt *n = BigInt::New(); \
-    mpop(n->big(), big()); \
-    return n; \
-  }
-  MKOP1(negate, mpz_neg);
-  MKOP1(abs, mpz_abs);
-  MKOP1(notb, mpz_com);
-#undef MKOP1
+  BigInt *mul(BigInt *b);
+  BigInt *mul(long int i);
 
-#define MKOP2(op, mpop) \
-  BigInt *op(BigInt *b) { \
-    BigInt *n = BigInt::New(); \
-    mpop(n->big(), big(), b->big()); \
-    return n; \
-  } \
-  BigInt *op(unsigned long int i) { \
-    BigInt *n = BigInt::New(); \
-    mpop ## _ui(n->big(), big(), i); \
-    return n; \
-  }
-  MKOP2(add, mpz_add);
-  MKOP2(sub, mpz_sub);
-#undef MKOP2
+  BigInt *div(BigInt *b);
+  BigInt *div(MP_INT *b);
+  BigInt *mod(BigInt *b);
+  BigInt *mod(MP_INT *b);
+  BigInt *quot(BigInt *b);
+  BigInt *quot(MP_INT *b);
+  BigInt *rem(BigInt *b);
+  BigInt *rem(MP_INT *b);
+  BigInt *orb(BigInt *b);
+  BigInt *orb(MP_INT *b);
+  BigInt *xorb(BigInt *b);
+  BigInt *xorb(MP_INT *b);
+  BigInt *andb(BigInt *b);
+  BigInt *andb(MP_INT *b);
 
-  BigInt *mul(BigInt *b) {
-    BigInt *n = BigInt::New();
-    mpz_mul(n->big(), big(), b->big());
-    return n;
-  }
-  BigInt *mul(long int i) {
-    BigInt *n = BigInt::New();
-    mpz_mul_si(n->big(), big(), i);
-    return n;
-  }
+  void divMod(BigInt *b, BigInt *d, BigInt *m);
+  void quotRem(BigInt *b, BigInt *q, BigInt *r);
 
-#define MKOP2(op, mpop) \
-  BigInt *op(BigInt *b) { \
-    BigInt *n = BigInt::New(); \
-    mpop(n->big(), big(), b->big()); \
-    return n; \
-  } \
-  BigInt *op(MP_INT *b) { \
-    BigInt *n = BigInt::New(); \
-    mpop(n->big(), big(), b); \
-    return n; \
-  }
-  MKOP2(div, mpz_fdiv_q);
-  MKOP2(mod, mpz_fdiv_r);
-  MKOP2(quot, mpz_tdiv_q);
-  MKOP2(rem, mpz_tdiv_r);
-  MKOP2(orb, mpz_ior);
-  MKOP2(xorb, mpz_xor);
-  MKOP2(andb, mpz_and);
-#undef MKOP2
+  BigInt *pow(unsigned long int exp);
 
-  void divMod(BigInt *b, BigInt *d, BigInt *m) {
-    mpz_fdiv_qr(d->big (), m->big (), big(), b->big());
-  }
-  void quotRem(BigInt *b, BigInt *q, BigInt *r) {
-    mpz_tdiv_qr(q->big (), r->big (), big(), b->big());
-  }
+  unsigned long int log2(void);
 
-  BigInt *pow(unsigned long int exp) {
-    BigInt *n = BigInt::New();
-    mpz_pow_ui(n->big(), big(), exp);
-    return n;
-  }
+  BigInt *shiftr(unsigned long int b);
 
-  unsigned long int log2(void) {
-    return mpz_sizeinbase(big(), 2)-1;
-  }
+  BigInt *shiftl(unsigned long int b);
 
-  BigInt *shiftr(unsigned long int b) {
-    BigInt *n = BigInt::New();
-    mpz_fdiv_q_2exp(n->big(), big(), b);
-    return n;
-  }
+  int compare(BigInt *b);
+  int compare(int i);
+  bool less(BigInt *b);
+  bool lessEq(BigInt *b);
+  bool greater(BigInt *b);
+  bool greaterEq(BigInt *b);
 
-  BigInt *shiftl(unsigned long int b) {
-    BigInt *n = BigInt::New();
-    mpz_mul_2exp(n->big(), big(), b);
-    return n;
-  }
-
-  int compare(BigInt *b) {
-    if (this==b) return 0;
-    return mpz_cmp(big(), b->big());
-  }
-  int compare(int i) {
-    return mpz_cmp_si(big(), i);
-  }
-  bool less(BigInt *b) {
-    return mpz_cmp(big(), b->big()) < 0;
-  }
-  bool lessEq(BigInt *b) {
-    return mpz_cmp(big(), b->big()) <= 0;
-  }
-  bool greater(BigInt *b) {
-    return mpz_cmp(big(), b->big()) > 0;
-  }
-  bool greaterEq(BigInt *b) {
-    return mpz_cmp(big(), b->big()) >= 0;
-  }
-
-  bool less(int i) {
-    return mpz_cmp_si(big(), i) < 0;
-  }
-  bool lessEq(int i) {
-    return mpz_cmp_si(big(), i) <= 0;
-  }
-  bool greater(int i) {
-    return mpz_cmp_si(big(), i) > 0;
-  }
-  bool greaterEq(int i) {
-    return mpz_cmp_si(big(), i) >= 0;
-  }
+  bool less(int i);
+  bool lessEq(int i);
+  bool greater(int i);
+  bool greaterEq(int i);
 
 };
 
