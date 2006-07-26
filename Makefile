@@ -81,7 +81,7 @@
 CVSROOT = :pserver:anoncvs:anoncvs@ps.uni-sb.de:/services/alice/CVS
 DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
-GECODE_VERSION=1.2.0
+GECODE_VERSION=1.2.1
 VERSION=1.3
 
 # From here on no change should be needed
@@ -445,7 +445,8 @@ build-release-libs:
 	for p in $(ALICE_LIBS); do \
 	  (cd $(PWD)/alice-$$p/ && \
 	   make compiledll installdll \
-	   INSTALLDIR=$(PREFIX)/share/alice/lib/$$p);\
+	   INSTALLDIR=$(PREFIX)/share/alice/lib/$$p\
+	   MUST_GENERATE="no");\
 	done
 
 build-alice-bootstrap-release: build-release-runtime build-release-libs
@@ -496,10 +497,12 @@ build-xml-dll:
 distro: build-win-exec build-xml-dll docs-offline
 	(rm -rf $(PWD)/installshield/files/alice) && \
 	(mkdir -p $(PWD)/installshield/files) && \
+	(cp ${PWD}/make/installshield/Alice.ico $(PWD)/installshield) && \
+	(cp ${PWD}/make/installshield/License.rtf $(PWD)/installshield) && \
 	(cp -r $(PWD)/distro $(PWD)/installshield/files/alice) && \
 	(cp ${PWD}/make/installshield/Alice.ism ${PWD}/installshield) && \
-	(mkdir -p $(PWD)/../installShield/files/alice/doc) && \
-	(cp $(PWD)/docs/Alice.chm $(PWD)/../installshield/files/alice/doc/) && \
+	(mkdir -p $(PWD)/installShield/files/alice/doc) && \
+	(cp $(PWD)/docs/Alice.chm $(PWD)/installshield/files/alice/doc/) && \
 	echo Distro prepared. Run installshield/alice.ism.
 
 ########### Test Run ############
