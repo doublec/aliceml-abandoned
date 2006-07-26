@@ -44,8 +44,8 @@ structure Stream :> STREAM =
 	    let
 		val old = Ref.exchange (stream, nil)
 	    in
-		Hole.fill (old, nil)
-	    end handle Hole.Hole => ()
+		Hole.fill (old, nil) handle Hole.Hole => ()
+	    end
 
 	fun isClosed stream =
 	    let
@@ -76,18 +76,19 @@ structure Stream :> STREAM =
 		val old = Ref.exchange (stream, new)
 	    in
 		Promise.fulfill (old, x::Promise.future new)
-	    end handle Promise.Promise => raise Closed
-		(*FIXME: this is not thread-safe! *)
+		handle Promise.Promise =>
+			(Promise.fulfill (new, nil); raise Closed)
+			(*FIXME: this is not thread-safe! *)
+	    end
 
 	fun close stream =
 	    let
 		val new = Promise.promise ()
+		val _   = Promise.fulfill (new, nil)
 		val old = Ref.exchange (stream, new)
 	    in
-		Promise.fulfill (old, nil);
-		Promise.fulfill (new, Promise.future old)
-	    end handle Promise.Promise => ()
-		(*FIXME: this is not thread-safe! *)
+		Promise.fulfill (old, nil) handle Promise.Promise => ()
+	    end
 
 	fun isClosed stream =
 	    let
