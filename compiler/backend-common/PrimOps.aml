@@ -113,8 +113,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Hole.hole", SOME (Tuple 0));
 		ins ("Hole.isFailed", SOME Unary);
 		ins ("Hole.isHole", SOME Unary);
-        ins ("IEEEReal.getRoundingMode", NONE);
-        ins ("IEEEReal.setRoundingMode", SOME Unary);
+		ins ("IEEEReal.getRoundingMode", NONE);
+		ins ("IEEEReal.setRoundingMode", SOME Unary);
 		ins ("Int.~", SOME Unary);
 		ins ("Int.+", SOME (Tuple 2));
 		ins ("Int.-", SOME (Tuple 2));
@@ -132,9 +132,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Int.precision", NONE);
 		ins ("Int.quot", SOME (Tuple 2));
 		ins ("Int.rem", SOME (Tuple 2));
-
-                ins ("IntInf.fromInt", SOME Unary);
-                ins ("IntInf.toInt", SOME Unary);
+		ins ("IntInf.fromInt", SOME Unary);
+		ins ("IntInf.toInt", SOME Unary);
 		ins ("IntInf.~", SOME Unary);
 		ins ("IntInf.+", SOME (Tuple 2));
 		ins ("IntInf.-", SOME (Tuple 2));
@@ -159,7 +158,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("IntInf.notb", SOME Unary);
 		ins ("IntInf.<<", SOME (Tuple 2));
 		ins ("IntInf.~>>", SOME (Tuple 2));
-
 		ins ("List.Empty", NONE);
 		ins ("Math.acos", SOME Unary);
 		ins ("Math.acosh", SOME Unary);
@@ -181,6 +179,12 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Math.tan", SOME Unary);
 		ins ("Math.tanh", SOME Unary);
 		ins ("Option.Option", NONE);
+		ins ("Promise.Promise", NONE);
+		ins ("Promise.future", SOME Unary);
+		ins ("Promise.isFulfilled", SOME Unary);
+		ins ("Promise.fail", SOME (Tuple 2));
+		ins ("Promise.fulfill", SOME (Tuple 2));
+		ins ("Promise.promise", SOME (Tuple 0));
 		ins ("Real.~", SOME Unary);
 		ins ("Real.+", SOME (Tuple 2));
 		ins ("Real.-", SOME (Tuple 2));

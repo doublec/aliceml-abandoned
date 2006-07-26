@@ -47,6 +47,7 @@ private:
   static void RegisterList();
   static void RegisterMath();
   static void RegisterOption();
+  static void RegisterPromise();
   static void RegisterReal();
   static void RegisterRef();
   static void RegisterRemote();
@@ -72,6 +73,7 @@ public:
   static word General_Subscript;
   static word General_Unordered;
   static word Hole_Hole;
+  static word Promise_Promise;
   static word Thread_Terminated;
   static word UnsafeMap_IllegalKey;
 

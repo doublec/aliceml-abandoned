@@ -180,6 +180,7 @@ LIBDATASOURCES0 = \
 	SET-sig.aml MAP-sig.aml MkRedBlackSet.aml MkRedBlackMap.aml \
 	IMP_SET-sig.aml IMP_MAP-sig.aml MkHashImpSet.aml MkHashImpMap.aml \
 	MkRedBlackImpSet.aml MkRedBlackImpMap.aml \
+	SITED-sig.aml Sited.aml \
 	STACK-sig.aml Stack.aml STREAM-sig.aml Stream.aml \
 	LOCK-sig.aml Lock.aml
 LIBSYSTEMSOURCES0 = \

@@ -1,0 +1,25 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2006
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SITED from "SITED-sig"
+
+structure Sited :> SITED =
+struct
+    (* Pickler works right-to-left, don't trigger futures in 'a! *)
+    type 'a sited = 'a * Thread.t
+    type t = sited
+
+    val dummy = Thread.current ()
+
+    fun sited x = (x, dummy)
+    fun value (x, _) = x
+end

@@ -18,6 +18,46 @@ import signature STREAM from "STREAM-sig"
 
 structure Stream :> STREAM =
     struct
+	type 'a stream = 'a list ref
+	type 'a t      = 'a stream
+
+	exception Closed
+
+	fun stream () =
+	    let
+		val h = Hole.hole ()
+	    in
+		(ref h, Hole.future h)
+	    end
+
+	fun send (stream, x) =
+	    let
+		val new = Hole.hole ()
+		val old = Ref.exchange (stream, new)
+	    in
+		Hole.fill (old, x::Hole.future new)
+		handle Hole.Hole => (Hole.fill(new, nil); raise Closed)
+			(*FIXME: this is not thread-safe! *)
+	    end
+
+	fun close stream =
+	    let
+		val old = Ref.exchange (stream, nil)
+	    in
+		Hole.fill (old, nil)
+	    end handle Hole.Hole => ()
+
+	fun isClosed stream =
+	    let
+		val xs = Hole.future (!stream)
+	    in
+		Future.isDetermined xs andalso List.null xs
+	    end
+    end
+
+(* Implementation with promises, equivalent but somewhat less efficient...
+structure Stream :> STREAM =
+    struct
 	type 'a stream = 'a list Promise.promise ref
 	type 'a t      = 'a stream
 
@@ -37,6 +77,7 @@ structure Stream :> STREAM =
 	    in
 		Promise.fulfill (old, x::Promise.future new)
 	    end handle Promise.Promise => raise Closed
+		(*FIXME: this is not thread-safe! *)
 
 	fun close stream =
 	    let
@@ -46,6 +87,7 @@ structure Stream :> STREAM =
 		Promise.fulfill (old, nil);
 		Promise.fulfill (new, Promise.future old)
 	    end handle Promise.Promise => ()
+		(*FIXME: this is not thread-safe! *)
 
 	fun isClosed stream =
 	    let
@@ -54,3 +96,4 @@ structure Stream :> STREAM =
 		Future.isDetermined xs andalso List.null xs
 	    end
     end
+*)

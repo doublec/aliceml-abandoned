@@ -32,6 +32,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    struct
 		datatype t =
 		    ARRAY
+		  | PROMISE
 		  | CELL
 		  | CON_VAL
 		  | RECORD
@@ -121,18 +122,19 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val strictExit = 7
 
 		fun toInt ARRAY   = 0
-		  | toInt CELL    = 1
-		  | toInt CON_VAL = 2
-		  | toInt RECORD  = 3
-		  | toInt VECTOR  = 4
-		  | toInt BIG_TAG = 5
-		  | toInt (TAG i) = 6 + i
+		  | toInt PROMISE = 1
+		  | toInt CELL    = 2
+		  | toInt CON_VAL = 3
+		  | toInt RECORD  = 4
+		  | toInt VECTOR  = 5
+		  | toInt BIG_TAG = 6
+		  | toInt (TAG i) = 7 + i
 		  | toInt TUPLE   = 243
 		  | toInt CLOSURE = 242
 		  | toInt TRANSFORM = 245
 
 		(* alice/Data.hh: Alice::MAX_TAG - Alice::MIN_TAG *)
-		val maxSmallTag = 94
+		val maxSmallTag = 93
 
 		fun isBigTagValue nLabels = nLabels > maxSmallTag
 	    end

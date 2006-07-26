@@ -20,6 +20,7 @@ libprimitives_a_SOURCES = \
 	List.cc \
 	Math.cc \
 	Option.cc \
+	Promise.cc \
 	Real.cc \
 	Ref.cc \
 	Remote.cc \

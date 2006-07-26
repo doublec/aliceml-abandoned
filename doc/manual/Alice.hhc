@@ -416,6 +416,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/set.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Sited">
+			<param name="Local" value="library/sited.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Socket">
 			<param name="Local" value="library/socket.html">
 			</OBJECT>

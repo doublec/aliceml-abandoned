@@ -33,6 +33,7 @@ word PrimitiveTable::General_Size;
 word PrimitiveTable::General_Subscript;
 word PrimitiveTable::General_Unordered;
 word PrimitiveTable::Hole_Hole;
+word PrimitiveTable::Promise_Promise;
 word PrimitiveTable::Thread_Terminated;
 word PrimitiveTable::UnsafeMap_IllegalKey;
 
@@ -53,6 +54,7 @@ void PrimitiveTable::Init() {
   RootSet::Add(PrimitiveTable::General_Subscript);
   RootSet::Add(PrimitiveTable::General_Unordered);
   RootSet::Add(PrimitiveTable::Hole_Hole);
+  RootSet::Add(PrimitiveTable::Promise_Promise);
   RootSet::Add(PrimitiveTable::Thread_Terminated);
   RootSet::Add(PrimitiveTable::UnsafeMap_IllegalKey);
   RegisterUnqualified();
@@ -72,6 +74,7 @@ void PrimitiveTable::Init() {
   RegisterList();
   RegisterMath();
   RegisterOption();
+  RegisterPromise();
   RegisterReal();
   RegisterRef();
   RegisterRemote();

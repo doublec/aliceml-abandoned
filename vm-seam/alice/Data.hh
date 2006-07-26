@@ -36,12 +36,13 @@ inline s_int mydiv(s_int a, s_int b) {
 class AliceDll Alice {
 public:
   static const BlockLabel Array   = MIN_DATA_LABEL;
-  static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 1);
-  static const BlockLabel ConVal  = (BlockLabel) (MIN_DATA_LABEL + 2);
-  static const BlockLabel Record  = (BlockLabel) (MIN_DATA_LABEL + 3);
-  static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 4);
-  static const BlockLabel BIG_TAG = (BlockLabel) (MIN_DATA_LABEL + 5);
-  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 6);
+  static const BlockLabel Promise = (BlockLabel) (MIN_DATA_LABEL + 1);
+  static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 2);
+  static const BlockLabel ConVal  = (BlockLabel) (MIN_DATA_LABEL + 3);
+  static const BlockLabel Record  = (BlockLabel) (MIN_DATA_LABEL + 4);
+  static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 5);
+  static const BlockLabel BIG_TAG = (BlockLabel) (MIN_DATA_LABEL + 6);
+  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 7);
   static const BlockLabel MAX_TAG = MAX_DATA_LABEL;
 
   static bool IsTag(BlockLabel l) {
@@ -98,6 +99,59 @@ public:
   word Sub(u_int index) {
     Assert(index <= Store::DirectWordToInt(GetArg(LENGTH_POS)));
     return GetArg(BASE_SIZE + index);
+  }
+};
+
+class AliceDll Promise: private Block {
+protected:
+  enum { FLAG_POS, FUTURE_POS, SIZE };
+public:
+  using Block::ToWord;
+
+  static Promise *New() {
+    Block *b = Store::AllocMutableBlock(Alice::Promise, SIZE);
+    b->InitArg(FLAG_POS, Store::IntToWord(false));
+    b->InitArg(FUTURE_POS, Future::New()->ToWord());
+    return STATIC_CAST(Promise *, b);
+  }
+  static Promise *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Promise);
+    return STATIC_CAST(Promise *, b);
+  }
+  static Promise *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == Alice::Promise);
+    return STATIC_CAST(Promise *, b);
+  }
+
+  bool IsFulfilled() {
+    return Store::WordToInt(GetArg(FLAG_POS));
+  }
+  word GetFuture() {
+    return GetArg(FUTURE_POS);
+  }
+  bool Fulfill(word value) {
+    if (IsFulfilled()) return false;
+    ReplaceArg(FLAG_POS, Store::IntToWord(true));
+    Future *future =
+      STATIC_CAST(Future *, Store::WordToTransient(GetArg(FUTURE_POS)));
+    future->ScheduleWaitingThreads();
+    future->Become(REF_LABEL, value);
+    return true;
+  }
+  bool Fail(word exn) {
+    if (IsFulfilled()) return false;
+    ReplaceArg(FLAG_POS, Store::IntToWord(true));
+    Future *future =
+      STATIC_CAST(Future *, Store::WordToTransient(GetArg(FUTURE_POS)));
+    Tuple *package = Tuple::New(2);
+    Backtrace *backtrace = Backtrace::New(); // TODO: have primitive in BT
+    package->Init(0, exn);
+    package->Init(1, backtrace->ToWord());
+    future->ScheduleWaitingThreads();
+    future->Become(CANCELLED_LABEL, package->ToWord());
+    return true;
   }
 };
 
