@@ -81,7 +81,7 @@
 CVSROOT = :pserver:anoncvs:anoncvs@ps.uni-sb.de:/services/alice/CVS
 DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
-GECODE_VERSION=1.2.1
+GECODE_VERSION=1.2.2
 VERSION=1.3
 
 # From here on no change should be needed
@@ -227,9 +227,9 @@ build-suffix:
 	@echo for Windows: PATH=$(WIN_GTK_DIR)/bin:$(WIN_GTK_DIR)/lib:PATH
 
 .PHONY: release-windows release-linux release-freebsd release-ppc-darwin
-release-windows: setup-wingtk build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap-release build-suffix distro
+release-windows: setup-wingtk build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap-release-windows build-suffix distro
 
-release-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap-release build-suffix
+release-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap-release-linux build-suffix
 
 release-freebsd:    build-freebsd
 release-ppc-darwin: build-ppc-darwin
@@ -440,7 +440,7 @@ build-release-runtime:
 	./configure --prefix=$(PREFIX) && \
 	make install	
 
-build-release-libs:
+build-release-libs-linux:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	for p in $(ALICE_LIBS); do \
 	  (cd $(PWD)/alice-$$p/ && \
@@ -449,7 +449,19 @@ build-release-libs:
 	   MUST_GENERATE="no");\
 	done
 
-build-alice-bootstrap-release: build-release-runtime build-release-libs
+build-release-libs-windows:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
+	for p in $(ALICE_LIBS); do \
+	  (cd $(PWD)/alice-$$p/ && \
+	   make compiledll installdll \
+	   INSTALLDIR=$(PREFIX)/share/alice/lib/$$p\
+	   MUST_GENERATE="no" \
+	   WINDOWS="1");\
+	done
+
+build-alice-bootstrap-release-windows: build-release-runtime build-release-libs-windows
+
+build-alice-bootstrap-release-linux: build-release-runtime build-release-libs-linux
 
 ########### Documentation ############
 
