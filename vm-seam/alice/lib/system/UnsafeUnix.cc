@@ -15,6 +15,7 @@
 #include <cstdio>
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#include <winsock.h>
 #else
 #include <unistd.h>
 #include <errno.h>
@@ -22,8 +23,10 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <sys/wait.h>
 
+#define ioctlsocket ioctl
 #define GetLastError() errno
 #define WSAGetLastError() errno
 #define Interruptible(res, call)		\
@@ -190,6 +193,8 @@ DEFINE2(UnsafeUnix_execute) {
     break;
   }
   close(sv[1]);
+  unsigned long arg = true;
+  ioctlsocket(sv[0], FIONBIO, &arg);
   // We can use the same socket fd for both reading and writing
   reader = IODesc::NewFromFD(IODesc::DIR_READER, String::New("reader"), sv[0]);
   writer = IODesc::NewFromFD(IODesc::DIR_WRITER, String::New("writer"), sv[0]);

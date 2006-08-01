@@ -39,6 +39,7 @@ Basic Library:
 * [CHG] Remote.{run,eval}: improved error detection and indication; fixed
         treatment of ALICE_REMOTE_LOG.
 * [FIX] OS.FileSys: filter out current and parent arc with `readDir'.
+* [FIX] Unix: prevent VM from blocking on streams obtained by `streamsOf'.
 * [FIX] Unix: fixed resource leak for `execute' on Windows.
 * [FIX] Promise: attempt to pickle promise now blocks on the promised future.
 
