@@ -50,6 +50,7 @@ INSTALLFILES_0 = \
 	inspector-fd-1.jpg inspector-fd-2.jpg inspector-fd-3.jpg \
 	inspector-fd-4.jpg inspector-fd-5.jpg inspector-fd-6.jpg \
 	inspector-search-1.png \
+	Alice.hhc Alice.hhp \
 	explorer.png
 INSTALLFILES_LIBRARY_0 = \
 	macros.php3 menu.html bg.gif \
@@ -115,9 +116,9 @@ cptutorial:
 	(cd cptutorial && \
 	 make all && \
 	 install -d $(PREFIX)/cptutorial/samples && \
-	 find html/samples -maxdepth 0 -type f -exec \
+	 find html/samples -maxdepth 1 -type f -exec \
 	    install -c -m 444 "{}" $(PREFIX)/cptutorial/samples ";" && \
-	 find html -maxdepth 0 -type f -exec \
+	 find html -maxdepth 1 -type f -exec \
 	    install -c -m 444 "{}" $(PREFIX)/cptutorial ";")
 
 clean:
