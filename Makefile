@@ -194,6 +194,7 @@ setup-release:
 	@echo Setup complete.
 	@echo Include $(PWD)/seam-support/install/bin into your PATH.
 
+
 .PHONY:	update
 update:
 	(cd $(PWD)/seam-support && cvs -q -d $(CVSROOT) update -dP) && \
@@ -468,20 +469,10 @@ build-alice-bootstrap-release-linux: build-release-runtime build-release-libs-li
 .PHONY: docs
 docs:
 	rm -rf $(PWD)/docs && \
-	cp -r $(DOC) $(PWD)/docs && \
-	cp $(PWD)/alice/sources/doc/manual/Alice.hh? $(PWD)/docs && \
-	(cd $(PWD)/docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true) && \
+	cp -r $(PWD)/alice-runtime/share/alice/doc $(PWD)/docs; \
+	(cd $(PWD)/docs && /cygdrive/c/Programme/HTML\ Help\ Workshop/hhc Alice || true) && \
 	echo Docs built.
 
-.PHONY:	docs-offline
-docs-offline:
-	(if (! test -e ${PWD}/docs/Alice.chm) then \
-	rm -rf $(PWD)/docs; \
-	cp -r $(PWD)/alice-runtime/share/alice/doc $(PWD)/docs; \
-	cp ${PWD}/make/installshield/Alice.hhp ${PWD}/docs;\
-	echo "Now build Alice.chm in docs by using Microsoft HTML Workshop tool and call make distro"; \
-	false; \
-	else echo "Alice.chm OK"; true; fi)
 
 ########### Windows Binaries ############
 
@@ -506,7 +497,7 @@ build-xml-dll:
 	cp $(PWD)/seam-support/install/bin/cygxml2-2.dll $(PWD)/distro/bin
 
 .PHONY: distro
-distro: build-win-exec build-xml-dll docs-offline
+distro: build-win-exec build-xml-dll docs
 	(rm -rf $(PWD)/installshield/files/alice) && \
 	(mkdir -p $(PWD)/installshield/files) && \
 	(cp ${PWD}/make/installshield/Alice.ico $(PWD)/installshield) && \
