@@ -544,6 +544,16 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Advanced Topics">
+		<param name="ImageNumber" value="1">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Constraint Programming Tutorial">
+			<param name="Local" value="cptutorial/index.html">
+			</OBJECT>
+        </UL>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Alice on the Web">
 		<param name="Local" value="http://www.ps.uni-sb.de/alice/">
 		<param name="ImageNumber" value="1">
