@@ -13,7 +13,7 @@
 
 INSTALLTO= `alice-config --alicelibdir`/postscript
 
-.PHONY: all install clean
+.PHONY: all install clean distclean
 
 all: PS.alc
 
@@ -24,6 +24,8 @@ install: all
 
 clean:
 	rm PS.alc
+
+distclean: clean
 
 %.alc: %.aml
 	alicec -z $< -o $@
