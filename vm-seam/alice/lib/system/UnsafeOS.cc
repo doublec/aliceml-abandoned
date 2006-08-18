@@ -459,7 +459,7 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   strcat(buf, "/Alice/");
   RETURN(String::New(buf)->ToWord());
 #else
-  static const char *const alice = "/.alice/"
+  static const char *const alice = "/.alice/";
   static const int pluslen = strlen(alice);
   char *envVal = std::getenv("HOME");
 
