@@ -1,4 +1,4 @@
-Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/07/31
+Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/08/30
 -------------------------------------------------------
 
 Language & Compiler:
@@ -26,6 +26,7 @@ Runtime System:
 Interactive Toplevel:
 
 * [NEW] Pretty printing depth & width can now be set from preferences.
+* [FIX] Fixed Jump-To-Error on Windows.
 * [FIX] Fixed Undo of delete events (bug 163).
 * [FIX] Use clipboard properly.
 * [FIX] Removed race conditions in syntax highlighting (including bug 134).
@@ -38,7 +39,8 @@ Basic Library:
 * [NEW] Unix: added `reap' and `wait'.
 * [CHG] Remote.{run,eval}: improved error detection and indication; fixed
         treatment of ALICE_REMOTE_LOG.
-* [FIX] OS.FileSys: filter out current and parent arc with `readDir'.
+* [FIX] OS.FileSys: filter out current and parent arc with `readDir'; always
+        deliver paths in canonical form on Windows; fixed buffer overrun bugs.
 * [FIX] Unix: prevent VM from blocking on streams obtained by `streamsOf'.
 * [FIX] Unix: fixed resource leak for `execute' on Windows.
 * [FIX] Promise: attempt to pickle promise now blocks on the promised future.
