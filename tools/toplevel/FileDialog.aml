@@ -37,7 +37,7 @@ structure FileDialog =
                 val ret =
                     case Gtk.ResponseType.fromInt response of
                         Gtk.ResponseType.OK =>
-                        SOME (Gtk.utf8ToLatin1 (Gtk.FileSelection.getFilename fileSel))
+                        SOME (OS.Path.mkCanonical (Gtk.utf8ToLatin1 (Gtk.FileSelection.getFilename fileSel)))
                       | _ => NONE
             in
                 Gtk.Widget.destroy fileSel;
