@@ -211,7 +211,10 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
       wBufferString = buffer->ToWord();
       goto retry;
     }
+    // make canonical
     buf[0] = tolower(buf[0]);
+    for (n--; n>0; n--)
+      if (buf[n] == '\\') buf[n] = '/';
 #else
     if (getcwd(buf, size) == NULL) {
       if (errno != ERANGE) RAISE_SYS_ERR();
@@ -361,7 +364,8 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
   String *buffer = String::FromWordDirect(wBufferString);
   u_int size = buffer->GetSize();
  retry:
-  DWORD res = GetTempPath(size, (char *) buffer->GetValue());
+  char *buf = (char *) buffer->GetValue();
+  DWORD res = GetTempPath(size, buf);
   if (res == 0) RAISE_SYS_ERR();
   if (res > size) {
     size = size * 3 / 2;
@@ -370,10 +374,14 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
     goto retry;
   }
   String *name = String::New(res + 10);
+  // make canonical
+  buf[0] = tolower(buf[0]);
+  for (res--; res>0; res--)
+    if (buf[res] == '\\') buf[res] = '/';
   char *s = (char *) name->GetValue();
   static int counter = 0;
   while (true) {
-    std::sprintf(s, "%salice%d", buffer->GetValue(), counter);
+    std::sprintf(s, "%salice%d", buf, counter);
     counter = (counter++) % 10000;
     if (GetFileAttributes(s) == INVALID_FILE_ATTRIBUTES)
       break;
@@ -403,7 +411,12 @@ DEFINE0(UnsafeOS_FileSys_getHomeDir) {
   hRes = SHGetMalloc(&palloc); 
   palloc->Free( (void*)pidl ); 
   palloc->Release();
-  RETURN(String::New((char *) buffer->GetValue())->ToWord());
+  char *buf = (char *) buffer->GetValue();
+  // make canonical
+  buf[0] = tolower(buf[0]);
+  for (char *p = buf; *p; p++)
+    if (*p == '\\') *p = '/';
+  RETURN(String::New(buf)->ToWord());
 #else
   char *envVal = std::getenv("HOME");
 
@@ -424,12 +437,13 @@ DEFINE0(UnsafeOS_FileSys_getHomeDir) {
 
 DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   String *buffer = String::FromWordDirect(wBufferString);
+  char *buf = (char *) buffer->GetValue();
   u_int size = buffer->GetSize();
 #if defined(__MINGW32__) || defined(_MSC_VER)
   ITEMIDLIST* pidl;
   HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_APPDATA, &pidl );
   if (hRes==NOERROR) {
-    SHGetPathFromIDList( pidl, (CHAR *) buffer->GetValue());
+    SHGetPathFromIDList( pidl, (CHAR *) buf);
   } else {
     RAISE_SYS_ERR();
   }
@@ -438,26 +452,38 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   hRes = SHGetMalloc(&palloc); 
   palloc->Free( (void*)pidl ); 
   palloc->Release();
-  strcat((char *) buffer->GetValue(), "\\Alice\\");
-  RETURN(String::New((char *) buffer->GetValue())->ToWord());
+  // make canonical
+  buf[0] = tolower(buf[0]);
+  for (char *p = buf; *p; p++)
+    if (*p == '\\') *p = '/';
+  strcat(buf, "/Alice/");
+  RETURN(String::New(buf)->ToWord());
 #else
+  static const char *const alice = "/.alice/"
+  static const int pluslen = strlen(alice);
   char *envVal = std::getenv("HOME");
 
   if (envVal==NULL) {
   retry:
-    if (getcwd((char *) buffer->GetValue(), size) == NULL) {
+    if (getcwd(buf, size-pluslen) == NULL) {
       if (errno != ERANGE) RAISE_SYS_ERR();
       size = size * 3 / 2;
       buffer = String::New(size);
       wBufferString = buffer->ToWord();
       goto retry;
     }
-    strcat((char *) buffer->GetValue(), "/.alice/");
-    RETURN(String::New((char *) buffer->GetValue())->ToWord());
+  } else {
+    int len = strlen(envVal);
+    if (len + pluslen >= size) {
+      size = len + pluslen + 1;
+      buffer = String::New(size);
+      buf = (char *) buffer->GetValue();
+      wBufferString = buffer->ToWord();
+    }
+    strcpy(buf, envVal);
   }
-  strcpy((char *) buffer->GetValue(), envVal);
-  strcat((char *) buffer->GetValue(), "/.alice/");
-  RETURN(String::New((char *) buffer->GetValue())->ToWord());
+  strcat(buf, alice);
+  RETURN(String::New(buf)->ToWord());
 #endif
 } END
 
@@ -593,7 +619,11 @@ AliceDll word UnsafeOS() {
   SysErrConstructor =
     UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  wBufferString = String::New(MAX_PATH+20)->ToWord();
+#else
   wBufferString = String::New(1024)->ToWord();
+#endif
   RootSet::Add(wBufferString);
 
   Record *record = Record::New(5);
