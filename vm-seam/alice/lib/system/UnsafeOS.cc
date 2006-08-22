@@ -456,10 +456,10 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   buf[0] = tolower(buf[0]);
   for (char *p = buf; *p; p++)
     if (*p == '\\') *p = '/';
-  strcat(buf, "/Alice/");
+  strcat(buf, "/Alice");
   RETURN(String::New(buf)->ToWord());
 #else
-  static const char *const alice = "/.alice/";
+  static const char *const alice = "/.alice";
   static const int pluslen = strlen(alice);
   char *envVal = std::getenv("HOME");
 
