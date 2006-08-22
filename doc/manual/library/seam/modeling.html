@@ -49,10 +49,10 @@ sig
     infix  7  `*
     infix  6  `+ `-
     infix  5  `#
-    infix  4  `= `<> `> `>= `< `<=
+    infix  4  `= `&lt;&gt; `&gt; `&gt;= `&lt; `&lt;=
 	
-    infix  3  `->
-    infix  3  `<-
+    infix  3  `-&gt;
+    infix  3  `&lt;-
     infix  3  `==
     infix  3  `&
     infix  3  `|
@@ -95,12 +95,12 @@ sig
       | SUMV of intvar vector
 	
     datatype rel =
-	`<   of term * term
-      | `<=  of term * term
+	`&lt;   of term * term
+      | `&lt;=  of term * term
       | `=   of term * term
-      | `<>  of term * term
-      | `>=  of term * term
-      | `>   of term * term
+      | `&lt;&gt;  of term * term
+      | `&gt;=  of term * term
+      | `&gt;   of term * term
 	
     val fdterm : space * domain -> term
     val fdtermVec : space * int * domain -> term vector
@@ -115,8 +115,8 @@ sig
       | BC of bool
       | HOLDS of rel
       | `== of b_term * b_term
-      | `-> of b_term * b_term
-      | `<- of b_term * b_term
+      | `-&gt; of b_term * b_term
+      | `&lt;- of b_term * b_term
       | `! of b_term
       | `& of b_term * b_term
       | XOR of b_term * b_term
