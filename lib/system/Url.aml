@@ -404,7 +404,7 @@ structure Url : URL =
 			 device, absolute, path, ...}: url) =
 	    let
 		val windows = Config.platform = Config.WIN32
-		val slash = if windows then "\\" else "/"
+		val slash = "/"
 		val l = List.foldr (fn (s, nil) => [s]
 				     | (s, rest) => s::slash::rest) nil path
 		val l = if absolute then slash::l else l
@@ -433,7 +433,7 @@ structure Url : URL =
 			  device = NONE, path, ...}: url) =
 	    let
 		val windows = Config.platform = Config.WIN32
-		val slash = if windows then "\\" else "/"
+		val slash = "/"
 		val l = List.foldr (fn (s, nil) => [s]
 				     | (s, rest) => s::slash::rest)
 				   nil path
