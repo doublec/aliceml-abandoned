@@ -6,12 +6,12 @@
 
 <P>Current versions of the Alice system are somewhat resource-hungry. We
 hence recommend a system with at least 1 GHz and 256 MB Ram. The installation
-requires approximately 35 MB of Harddisk space.</P>
+requires approximately 70 MB of Harddisk space.</P>
 
 
 <?php section("packages", "Packages") ?>
 
-<P>The following packages provide <A href="download/CHANGES">version 1.2</A>
+<P>The following packages provide <A href="download/CHANGES">version 1.3</A>
 of the Alice programming system. All packages include the full <A
 href="manual/">manual</A> web pages.</P>
 
@@ -20,7 +20,7 @@ href="manual/">manual</A> web pages.</P>
 <P>As a self installing executable:</P>
 
 <UL>
-  <LI><A href="download/alice-1.2-1.exe"><TT>alice-1.2-1.exe</TT></A></LI>
+  <LI><A href="download/alice-1.3-1.exe"><TT>alice-1.3-1.exe</TT></A></LI>
 </UL>
 
 <!--
@@ -48,7 +48,7 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <UL>
   <LI><A
-  href="download/alice-complete-1.2-1.i386.rpm"><TT>alice-complete-1.2-1.i386.rpm</TT></A></LI>
+  href="download/rpm/alice-complete-1.3-1.i386.rpm"><TT>alice-complete-1.3-1.i386.rpm</TT></A></LI>
   <LI>Alternatively, install binary packages of the individual
   components Alice consists of, or use the source rpms to build Alice
   for a different platform. You can find the necessary packages <A
@@ -75,7 +75,7 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <UL>
   <LI><A
-  HREF="download/alice-1.2-1.i386-linux.tgz"><TT>alice-1.2-1.i386-linux.tgz</TT></A>
+  HREF="download/alice-1.3-1.i386-linux.tgz"><TT>alice-1.3-1.i386-linux.tgz</TT></A>
   (binary tarball, see below for installation instructions)</LI>
   <LI><A HREF="download/sources/">source packages</A> (see README file for installation instructions)</LI>
 </UL>
@@ -86,9 +86,13 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <?php subsection("packages-mac", "Mac OS") ?>
 
-<P>For Mac OS X:</P>
+<P><B>Note:</B> Alice is not yet available for Intel Macs, because of problems with Gtk on that platform.</P>
+
+<P>For Mac OS X (PowerPC only):</P>
 
 <UL>
+<LI>To come soon.
+<!--
 <LI>You need the <A HREF="http://fink.sourceforge.net/">Fink</A>
 system, which provides Mac OS packages of many common Unix
 applications. The Alice packages depend on the Gtk libraries, libxml2,
@@ -112,10 +116,11 @@ application</A> that will start X11 and launch the
 interactive toplevel. Note that this application does not contain the
 Alice system itself.
 </LI>
+-->
 </UL>
 
-<P><B>Note:</B> The Mac OS version currently does not contain the
-just-in-time native code compiler.</P>
+<!--<P><B>Note:</B> The Mac OS version currently does not contain the
+just-in-time native code compiler.</P>-->
 
 <?php subsection("license", "License") ?>
 
@@ -255,10 +260,10 @@ Password: anoncvs</PRE>
 <P>The tag for the current release branch is:</P>
 
 <PRE class=code>
-release-1-2</PRE>
+release-1-3</PRE>
 
 
-<?php subsection("cvs-example", "Example session") ?>
+<?php subsection("cvs-example", "Sample session") ?>
 
 <P>An example session to check out the whole Alice source tree (including
 tools, libraries, and documentation) might look as follows:</P>
@@ -272,7 +277,7 @@ CVS password: anoncvs
 <P>From the CVS repository you can also access the released version:</P>
 
 <PRE class=code>
-% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r release-1-2 alice</PRE>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r release-1-3 alice</PRE>
 
 <P>Note that you also need <A href="/seam/">SEAM</A> and <A href="http://www.gecode.org">Gecode</A> to be able to actually build Alice. See the <A href="wiki/index.cgi/HowToBuildForSEAM">Alice Wiki</A> for details.</P>
 

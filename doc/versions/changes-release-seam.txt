@@ -1,3 +1,81 @@
+Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/08/28
+-------------------------------------------------------
+
+Language & Compiler:
+
+* [NEW] Integrated most "immediate" extensions proposed for Succesor ML
+        (www.successor-ml.org), the new ones being:
+* [NEW] Line comments, starting with "(*)".
+* [NEW] Extensible records and row capture: "{a=1, b=2, ...=r}", see manual
+        section on record sugar for details.
+* [NEW] Allow optional bar before first clause of fn, case, handle, fun, and
+        before first constructor in datatype definitions.
+* [NEW] Allow "do exp" as abbreviation for "val _ = exp".
+* [CHG] Pattern guards now use "if" keyword.
+* [FIX] Fixed compilation of general "as" patterns in function arguments
+        (bugs 54, 73, 77, 152, 176).
+
+Runtime System:
+
+* [NEW] Byte code jitter now default; smaller memory footprint, more aggressive
+        dynamic optimizations (e.g. inlining, specialization, "hotspot"-like
+        selective (re-)jitting).
+* [CHG] Had to bump version of pickle format; old pickles are incompatible.
+* [FIX] Nasty stack overflow bug that could cause VM to eat memory like hell.
+
+Interactive Toplevel:
+
+* [NEW] Pretty printing depth & width can now be set from preferences.
+* [FIX] Fixed Go-To-Error on Windows.
+* [FIX] Fixed Undo of delete events (bug 163).
+* [FIX] Use clipboard properly.
+* [FIX] Removed race conditions in syntax highlighting (including bug 134).
+* [FIX] Properly recover from unclosed comments fed to compiler.
+* [FIX] Several minor bug fixes.
+
+Basic Library:
+
+* [NEW] Sited: abstract type for creating sited values.
+* [NEW] Unix: added `reap' and `wait'.
+* [CHG] Remote.{run,eval}: improved error detection and indication; fixed
+        treatment of ALICE_REMOTE_LOG.
+* [FIX] OS.FileSys.readDir: filter out current and parent arc.
+* [FIX] OS.FileSys.{get*Dir,tmpName}: deliver paths in canon form on Windows.
+* [FIX] OS.FileSys.{getHomeDir,getApplicationConfigDir}: fixed buffer overruns.
+* [FIX] Url.toLocalFile: deliver paths in canonical form on Windows.
+* [FIX] Unix.streamsOf: prevent VM from blocking on obtained streams.
+* [FIX] Unix.execute: fixed resource leak on Windows.
+* [FIX] Promise: attempt to pickle unfulfilled promise now blocks on its future.
+
+Constraint Library:
+
+* [NEW] Documentation now includes an extensive tutorial on constraint
+        programming.
+* [NEW] Now incorporates official Gecode 1.2.2, including new functionality.
+* [NEW] Renamed Linear to Modeling: now supports non-linear equations.
+* [CHG] Interface adapted to Gecode changes.
+* [FIX] Adapted and fixed Gecode documentation (including bug 170).
+
+Gtk Library:
+
+* [CHG] Gtk.event: time fields changed to IntInf.int type to avoid overflow.
+* [FIX] Gtk.{List,Tree}Store: fixed type of constructor functions.
+* [FIX] Gtk.signalDisconnect: fix potential crash due to wrong arity.
+
+Other Libraries:
+
+* [FIX] XML: fix crash on nodes with empty names and null nodes (bug 171).
+
+Platforms:
+
+* [NEW] Mac OS: installation no longer requires Fink.
+* [NEW] Mac OS: Preliminary support for Intel Macs; no official packages yet,
+        due to problems with Gtk gnomecanvas (breaks Inspector, Explorer).
+* [FIX] Debian: fixed missing aliceremote.
+* [FIX] Debian: fixed SQLite package.
+* [FIX] Source: added/clarified missing library licenses.
+
+
 Alice 1.2 (Kraftwerk 'Boost Your G-Thing' Album) - 2005/09/02
 -------------------------------------------------------------
 

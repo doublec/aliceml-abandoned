@@ -12,7 +12,7 @@ DIRS = $(PREFIX) \
 INSTALLFILES_0 = \
 	style.css bg.gif alice.gif macros.php3 project.html \
 	index.html people.html papers.html download.html contact.html \
-	contribs.html
+	contribs.html news.html
 INSTALLFILES_DOWNLOAD_0 = \
 	COPYING CHANGES
 INSTALLFILES_PAPERS_0 = \

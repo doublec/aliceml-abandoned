@@ -55,8 +55,9 @@
  
   function footing()
   {
-  $file = __FILE__;
-  $lastmod = date("Y/M/d H:i", filemtime($file));
+  $trace = debug_backtrace();
+  $file = substr_replace($trace[0]['file'], "", -strlen(".static.in"));
+  $lastmod = date("Y/m/d H:i", filemtime($file));
 ?>
   <BR>
   <HR>
