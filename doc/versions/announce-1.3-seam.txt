@@ -7,7 +7,7 @@ Alice ML is a functional programming language that enriches the
 statically typed, closed functional world of ML with extensive
 support for type-safe programming of concurrent, distributed
 and open systems. It also features cutting-edge constraint
-programming technology in the tradition of Oz/Mozart.
+programming technology based on the Gecode library.
 
 Alice ML is a mostly conservative extension of Standard ML
 featuring:
@@ -28,7 +28,7 @@ featuring:
      type-safe remote functions and network mobility
   Constraints
      constraint propagation and programmable search for
-     solving hard combinatorical problems
+     solving hard combinatorical problems with Gecode
   Virtual Machine
      portable implementation with just-in-time compilation
   Interactive tools
