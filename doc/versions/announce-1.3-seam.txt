@@ -37,12 +37,12 @@ featuring:
 The highlights of this release are:
 
   Constraint Tutorial
-     an extensive tutorial on Constraint Programming using the Alice
-     binding to the Gecode library [www.gecode.org] has been added to
-     the documentation
+     an extensive tutorial on Constraint Programming using the
+     Alice binding to the Gecode library [www.gecode.org] has
+     been added to the documentation
   New Byte Code Jitter
-     internal byte code jitting is now the default, which allows
-     smaller memory footprint and more aggressive dynamic optimizations
+     internal byte code jitting is now the default, with smaller
+     memory footprint and more aggressive dynamic optimizations
   Successor ML
      integrated proposals for Successor ML [www.successor-ml.org],
      in particular extensible records and line comments
