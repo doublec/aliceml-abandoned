@@ -86,41 +86,24 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <?php subsection("packages-mac", "Mac OS") ?>
 
-<P><B>Note:</B> Alice is not yet available for Intel Macs, because of problems with Gtk on that platform.</P>
+<P>We provide a disk image with Alice as a full, self-contained application.
+Just mount the image and copy Alice to your hard disk. Starting the Alice
+application will launch the interactive toplevel.</P>
 
-<P>For Mac OS X (PowerPC only):</P>
+<P>
+In order to use the Alice command line tools, add
+<CODE>/Applications/Alice.app/Contents/Resources/bin</CODE> to your
+<CODE>PATH</CODE> environment variable. (This assumes that you copied
+Alice into that folder, just replace the path with the path where you
+actually copied it.)
 
-<UL>
-<LI>To come soon.
-<!--
-<LI>You need the <A HREF="http://fink.sourceforge.net/">Fink</A>
-system, which provides Mac OS packages of many common Unix
-applications. The Alice packages depend on the Gtk libraries, libxml2,
-and libgmp.</LI>
+<P><B>Note:</B> starting Alice for the first time may take a while. Please
+be a little patient.</P>
 
-<LI>Please add
-<PRE>deb http://www.ps.uni-sb.de/alice/download/fink ./</PRE>
-to your <TT>/sw/etc/apt/sources.list</TT>. You need to install the
-package <TT>alice-runtime</TT>, e.g. using the Fink Commander.
-The fink dependencies for gtk seem to be incomplete. If you can't see
-any text e.g. in the GUI of the interactive toplevel, please install the
-package <TT>pango1-xft2</TT> manually.</LI>
+<P>For Mac OS X / Intel: <A href="download/Alice-1.3-1-i386.dmg">Alice-1.3-1-i386.dmg</A></P>
 
-<P><B>Note:</B> Alice depends on Gtk 2.6, which is not yet in stable Fink.
-Installing the Alice packages will also install a package for Gtk 2.6 from our
-repository, replacing any eventual installation of older versions of Gtk.</P>
+<P>For Mac OS X / PowerPC: not available yet</P>
 
-<LI>
-Additionally, we provide <A HREF="download/AliceLauncher.dmg">a Mac OS X launcher
-application</A> that will start X11 and launch the
-interactive toplevel. Note that this application does not contain the
-Alice system itself.
-</LI>
--->
-</UL>
-
-<!--<P><B>Note:</B> The Mac OS version currently does not contain the
-just-in-time native code compiler.</P>-->
 
 <?php subsection("license", "License") ?>
 
