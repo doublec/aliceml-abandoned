@@ -9,7 +9,7 @@
   </PRE>
 
   <P>
-    The Standard ML Basis'
+    Ane xtended version of the Standard ML Basis'
     <A href="http://www.standardml.org/Basis/os-file-sys.html"><TT>OS.FileSys</TT></A> structure.
   </P>
 
@@ -49,13 +49,16 @@
 	val remove :    string -> unit
 
 	val tmpName :   unit -> string
+
+	val getHomeDir : unit -> string
+	val getApplicationConfigDir : string -> string
     end
   </PRE>
 
 <?php section("description", "description") ?>
 
   <P>
-    Like the Standard ML Basis'
+    Items not described here are as in the Standard ML Basis'
     <A href="http://www.standardml.org/Basis/os-file-sys.html"><TT>OS.FileSys</TT></A> structure.
   </P>
 
@@ -71,5 +74,29 @@
     <LI><TT>fileId</TT></LI>
     <LI><TT>hash</TT>, <TT>compare</TT></LI>
   </UL>
+
+  <DL>
+    <DT>
+      <TT>getHomeDir ()</TT>
+    </DT>
+    <DD>
+      <P>Returns the path of the home directory of the current user.
+      Under Windows, it typically maps to the language-specific equivalent of
+      <TT>"c:/Documents And Settings/<I>user</I>/My Documents"</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>getApplicationConfigDir <I>name</I> </TT>
+    </DT>
+    <DD>
+      <P>Returns the canonical directory path where an Alice ML
+      application of Name <TT><I>name</I></TT> can store its (user-specific)
+      configurations. This is regardless of whether the directory actually
+      exists, i.e. an application has to create it itself.</P>
+      <P>Under Unix-like systems, the delivered path will typically be
+      <TT>$HOME/.alice/<I>name</I><TT>, under Windows it is usually something
+      like <TT>"c:/Documents And Settings/<I>user</I>/Application Data/Alice/<I>name</I>"</TT>.</P>
+    </DD>
+  </DL>
 
 <?php footing() ?>
