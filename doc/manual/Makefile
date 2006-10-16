@@ -142,7 +142,7 @@ $(DIRS):
 
 $(PREFIX)/%.html: %.html macros.php3 menu.html
 	(echo '<?php $$platform = "$(PLATFORM)"; ?>'; cat $<) > $<.static.in
-	$(PHP) -f $<.static.in > $<.static
+	(cd $(dir $<); $(PHP) -f $(notdir $<).static.in > $(notdir $<).static)
 	install -c -m 444 $<.static $@
 	rm -f $<.static.in $<.static
 
