@@ -109,7 +109,7 @@ INSTALLFILES = \
 
 all: install
 
-install: $(DIRS) $(INSTALLFILES) #cptutorial
+install: $(DIRS) $(INSTALLFILES) cptutorial
 	rm -f constraints.html
 	rm -f $(PLATFORM_LIB:%=library/%)
 
