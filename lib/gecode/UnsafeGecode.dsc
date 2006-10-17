@@ -96,7 +96,7 @@ void count(const IntVarArgs&, IntVar, IntRelType, IntVar); int_countVV;
 
 void element(const IntVarArgs&, IntVar, IntVar); int_element;
 void element(const IntArgs&, IntVar, IntVar); int_elementI;
-void lex(const IntVarArgs&, IntRelType, const IntVarArgs&); int_lex;
+void rel(const IntVarArgs&, IntRelType, const IntVarArgs&); int_lex;
 
 // Boolean constraints
 void bool_not(BoolVar, BoolVar); int_bool_not;
