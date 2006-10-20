@@ -18,7 +18,7 @@ import structure Pango from "x-alice:/lib/gtk/Pango"
 (* import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums" *)
 import structure FileDialog from "FileDialog"
 
-signature OLD_USER_CONFIG =
+signature USER_CONFIG_1 =
    sig
       val reservedColor : (int * int * int)
       val errorColor : (int * int * int)
@@ -29,10 +29,18 @@ signature OLD_USER_CONFIG =
       val stdFontName : string
    end
 
-signature USER_CONFIG =
+signature USER_CONFIG_2 =
    sig
-      include OLD_USER_CONFIG
+      include USER_CONFIG_1
       val loadFileHistory : bool
+   end
+
+signature USER_CONFIG = USER_CONFIG_2
+
+signature GEOMETRY =
+   sig
+       val geometry : {x : int, y : int, w : int, h : int,
+		       bufferPane : int, ioPane : int}
    end
 
 structure Config =
@@ -167,13 +175,14 @@ structure Config =
       val configDir = OS.FileSys.getApplicationConfigDir "Toplevel"
       val preferencesFile = configDir ^ "/preferences." ^ Pickle.extension
       val historyFile = configDir ^ "/history." ^ Pickle.extension
+      val geometryFile = configDir ^ "/geometry." ^ Pickle.extension
 
       val workDir = ref (OS.FileSys.getDir ())
 
       fun init() =
 	  let
 	      val p = Pickle.load preferencesFile
-	      structure C = unpack p : OLD_USER_CONFIG
+	      structure C = unpack p : USER_CONFIG_1
 	  in
 	      stdFontName := C.stdFontName;
 	      stdFont := Pango.FontDescription.fromString (!stdFontName);
@@ -186,13 +195,13 @@ structure Config =
 
 	      historySize := C.historySize;
 	      let
-		  structure D = unpack p : USER_CONFIG
+		  structure D = unpack p : USER_CONFIG_2
 	      in
 		  loadFileHistory := D.loadFileHistory
 	      end handle Package.Mismatch _ => ()
 	  end handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) => ()
 
-      fun save() =
+      fun save () =
 	  let
 	      structure C = 
 	      struct
@@ -210,6 +219,25 @@ structure Config =
 	      Pickle.save(preferencesFile, pack C : USER_CONFIG)
 	  end handle (OS.SysErr _ | IO.Io _) =>
 	      FileDialog.message "Could not save preferences."
+
+     (* Window geometry *)
+
+      fun loadGeometry() =
+	  let
+	      structure C = unpack Pickle.load geometryFile : GEOMETRY
+	  in
+	      SOME C.geometry
+	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => NONE
+
+      fun saveGeometry geometry =
+	  let
+	      structure G = (val geometry = geometry)
+	  in
+	      createConfigDir ();
+	      Pickle.save(geometryFile, pack G : GEOMETRY)
+	  end handle (OS.SysErr _ | IO.Io _) =>
+	      FileDialog.message "Could not save window geometry."
+
 
      (* History management *)
       fun loadHistory() =

@@ -285,6 +285,17 @@ structure GuiMain =
 		 ()
 	     end
 
+	fun saveSettings () =
+	    let
+		val (x,y) = Gtk.Window.getPosition (Gui.mainwidget, 0, 0) (* dummy arguments, thanks to interface bug *)
+		val (w,h) = Gtk.Window.getSize (Gui.mainwidget, 0, 0) (* dummy arguments, thanks to interface bug *)
+		val bufferPane = Gtk.Paned.getPosition Gui.vpaned1
+		val ioPane = Gtk.Paned.getPosition Gui.vpaned2
+	    in
+		Config.saveHistory (History.get(), Buffer.getFileNames());
+		Config.saveGeometry {x, y, w, h, bufferPane, ioPane}
+	    end
+
 	datatype open_mode = datatype Buffer.load_mode
 
         fun new' file =
@@ -358,7 +369,7 @@ structure GuiMain =
 		    NONE => ()
 		  | SOME f => (Config.workDir := OS.Path.dir f;
 			       openGivenFile EXPLICIT f);
-		Config.saveHistory (History.get(), Buffer.getFileNames())
+		saveSettings ()
 	    end
        
 
@@ -375,14 +386,14 @@ structure GuiMain =
         fun saveFileAs () =
             (case getCurrentPage() of NONE => ()
                                    | SOME id => saveGivenFileAs id;
-	     Config.saveHistory (History.get(), Buffer.getFileNames()))
+	     saveSettings ())
 
         fun saveFile () =
             (case getCurrentPage() of NONE => ()
                                    | SOME id =>
                                      if Buffer.save id then ()
                                      else saveGivenFileAs id;
-	     Config.saveHistory (History.get(), Buffer.getFileNames()))
+	     saveSettings ())
 
 
         (* Evaluation *)
@@ -682,7 +693,7 @@ structure GuiMain =
              else FileDialog.modifiedWarning
 		 ("File modified.", "Discard changes and close anyway, or cancel?",
 		  reallyClose, !currentPage);
-	     Config.saveHistory (History.get(), Buffer.getFileNames());
+	     saveSettings ();
              checkNotebookSize())
 
         fun interruptEval() =
@@ -878,8 +889,7 @@ structure GuiMain =
 		    (id, Gtk.CheckMenuItem.getActive Gui.syntax_colouring)
 
 
-	fun doQuit () = (Config.saveHistory (History.get(),
-					     Buffer.getFileNames());
+	fun doQuit () = (saveSettings ();
 			 reallyQuit := true;
 			 OS.Process.exit OS.Process.success)
 
@@ -918,16 +928,24 @@ structure GuiMain =
                                changeFocus COMPILER);
              Gtk.signalConnect(Gui.progout, "focus-in-event",
                                changeFocus STDSTREAMS);
-	     Gtk.Paned.setPosition(Gui.vpaned1,0);
-	          (* workaround: Glade refuses to set pane position to 0,
-		   * but with 1 the statusbar appears over the menu when
-		   * using an eventbox... 8-} *)
 	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
 	     OutputWriters.makeWriters (ignore o eval (false, false));
 	     History.set (Config.loadHistory());
 	     Gtk.TextView.setEditable(Gui.compilerout, false);
-	     Gtk.Window.setDefaultSize(Gui.mainwidget,
-				      Config.sizeX,Config.sizeY);
+	     case Config.loadGeometry () of
+		 NONE => 
+		 (Gtk.Paned.setPosition(Gui.vpaned1,0);
+	          (* workaround: Glade refuses to set pane position to 0,
+		   * but with 1 the statusbar appears over the menu when
+		   * using an eventbox... 8-} *)
+		  Gtk.Window.setDefaultSize(Gui.mainwidget,
+					    Config.sizeX, Config.sizeY))
+	       | SOME {x,y,w,h,bufferPane,ioPane} =>
+		 (Gtk.Paned.setPosition(Gui.vpaned1, bufferPane);
+		  Gtk.Paned.setPosition(Gui.vpaned2, ioPane);
+		  Gtk.Window.resize(Gui.mainwidget, w, h);
+		  Gtk.Window.move(Gui.mainwidget, x, y)
+	         );
 	     Gtk.Widget.showAll Gui.mainwidget;
              Gtk.Widget.grabFocus (Gui.compilerout);
 	     OS.Process.atExit (fn () => quit' false))

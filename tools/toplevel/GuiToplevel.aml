@@ -31,6 +31,7 @@ structure GuiToplevel =
 	    Evaluator.init ();
 	    GuiMain.initDone loadSession;
 	    List.app (GuiMain.openGivenFile GuiMain.COMMANDLINE) files';
+	    GuiMain.checkNotebookSize ();
 	    await (Promise.future (Promise.promise ()))
 	end
   end

@@ -28,7 +28,7 @@ featuring:
      type-safe remote functions and network mobility
   Constraints
      constraint propagation and programmable search for
-     solving hard combinatorical problems with Gecode
+     solving hard combinatorial problems with Gecode
   Virtual Machine
      portable implementation with just-in-time compilation
   Interactive tools
