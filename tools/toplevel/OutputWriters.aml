@@ -4,7 +4,7 @@
  *   Guido Tack <tack@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Guido Tack, 2005
+ *   Andreas Rossberg and Guido Tack, 2007
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -414,10 +414,10 @@ structure OutputWriters =
               Gtk.TextView.setBuffer(Gui.compilerout, compilerBuf);
 	      spawn foldl (forward (Gui.compilerout, compilerBuf, cSig, cNoEd,
 				    #[cStd, cLog, cErr],
-				    #[highlight, highlight, const ()])) 1 compilerText;
+				    #[highlight, highlight, Fn.const ()])) 1 compilerText;
 	      spawn foldl (forward (Gui.progout, progBuf, pSig, pNoEd,
 				    #[pStd, pStd, pErr],
-				    #[const (), const (), const ()])) 1 stdText;
+				    #[Fn.const (), Fn.const (), Fn.const ()])) 1 stdText;
               spawn app setStatus traceText;
               spawn app setRowCol rowColText
           end

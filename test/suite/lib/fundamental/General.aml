@@ -39,23 +39,8 @@ struct
 	    Test.test (fn x => ((b x before a x) = 1 andalso !n = 2)) ()
 	end
 
-    fun testConst () =
-	Test.test (fn (x, y) => General.const x y = x) (0, 0.0)
-
-    fun testId () = 
-	Test.test (fn x => General.id x = x) 0
-
     fun testUnref () =
 	Test.test (fn x => !(ref x) = x) 0
-
-    fun testFlip () =
-	let
-	    fun gen () = Gen.int (Random.int (valOf Int.maxInt) - 1)
-	    fun g (x, y) = x div y
-	in
-	    Test.test (fn (x, y) => General.flip g (x, y) = 
-				  (g (y, x)) handle _ => true) (gen (), gen ())
-	end
 
     fun testO () = 
 	let
@@ -82,10 +67,7 @@ struct
     val suite = ("General", [("inverse", testInverse),
 			     ("ignore", testIgnore),
 			     ("before", testBefore),
-			     ("const", testConst),
-			     ("id", testId),
 			     ("unref", testUnref),
-			     ("flip", testFlip),
 			     ("o", testO),
 			     ("ref", testRef),
 			     ("swap", testSwap)])

@@ -110,18 +110,18 @@ struct
     and parse [] = ()
       | parse (LPAR :: SYM "type-wrapper" :: STR defType :: STR aliceType :: body) =
         let val (assocs, ts) = SexpTools.parseAssocs body 
-            val ctype = SexpTools.assoc' SexpTools.Conv.string (const defType) ("c-type", assocs)
+            val ctype = SexpTools.assoc' SexpTools.Conv.string (Fn.const defType) ("c-type", assocs)
             val argCode = SexpTools.assoc' SexpTools.Conv.string 
-                                (const ("(" ^ ctype ^ ")$0")) ("arg-code", assocs)
+                                (Fn.const ("(" ^ ctype ^ ")$0")) ("arg-code", assocs)
                     
             val mode  = SexpTools.assoc' (convMode o SexpTools.Conv.symOrStr) 
-                                (const M_IN_RET) ("mode", assocs)
+                                (Fn.const M_IN_RET) ("mode", assocs)
             fun getInCode assocs  = SexpTools.assoc' SexpTools.Conv.string
-                                     (const "") ("in-code", assocs)
+                                     (Fn.const "") ("in-code", assocs)
             fun getOutCode assocs = SexpTools.assoc' SexpTools.Conv.string
-                                     (const "") ("out-code", assocs)
+                                     (Fn.const "") ("out-code", assocs)
             fun getPrepareOutCode assocs = SexpTools.assoc' SexpTools.Conv.string
-                                    (const "") ("prepare-out-code", assocs)
+                                    (Fn.const "") ("prepare-out-code", assocs)
         
             fun register (kind, inCode, outCode, prepareOutCode) map =
                 StrMap.insertDisjoint (map, defType, TY_WRAP {

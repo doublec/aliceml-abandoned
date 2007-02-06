@@ -1,10 +1,19 @@
 Interactive Toplevel:
 
 * [NEW] Window size and position are now saved across sessions.
+* [FIX] Display proper type in status bar for constructor identifiers.
 
 Basic Library:
 
+* [NEW] Fn: new structure with generic function combinators.
+* [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
+* [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
 * [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.
+
+Constraint Library:
+
+* [NEW] Now incorporates Gecode 1.3.0.
+* [FIX] Resync'ed documentation.
 
 
 Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/08/28

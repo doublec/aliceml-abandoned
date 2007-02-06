@@ -184,9 +184,9 @@ struct
 
     val errorToString  = Error.toString Error.englishMsgCfg
 
-    fun char c = satisfy (curry op= c) <?> ("'" ^ Token.toString c ^ "'")
+    fun char c = satisfy (Fn.curry op= c) <?> ("'" ^ Token.toString c ^ "'")
 
-    fun anyChar() = satisfy (const true)
+    fun anyChar() = satisfy (Fn.const true)
 
 
     fun seq (m1, m2) =

@@ -60,7 +60,7 @@ INSTALLFILES_LIBRARY_0 = \
 	channel.html char.html command-line.html \
 	date.html \
 	exn.html \
-	future.html \
+	fn.html future.html \
 	general.html \
 	hashable.html hole.html \
 	ieee-real.html imp-map.html imp-set.html imperative-io.html \

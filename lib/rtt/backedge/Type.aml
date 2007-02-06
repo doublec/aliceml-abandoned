@@ -101,8 +101,8 @@ fun asIndexed r  = asIndexedHole r
 
 type canonical_typ = typ
 
-val canonical = id
-val fromCanonical = id
+val canonical = Fn.id
+val fromCanonical = Fn.id
 
 (* TODO : we want two different maps here
  * one for types and one for variables *)

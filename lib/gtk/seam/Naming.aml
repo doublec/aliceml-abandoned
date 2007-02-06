@@ -52,7 +52,7 @@ struct
     fun enumValueToAlice s =
         (* convert foo-bar to FOO_BAR *)
         let val s = String.concatWith "_" 
-                        (map upper (String.tokens (curry op= #"-") s))
+                        (map upper (String.tokens (Fn.curry op= #"-") s))
         in
             (* HACK alert: just fix 2 known corner cases by hand *)
             if s = "2BUTTON_PRESS" then "BUTTON2_PRESS"
@@ -115,7 +115,7 @@ struct
 
     fun cFunPrefixToCType t =
         (* convert gtk_widget_ to GtkWidget *)
-        String.concat (map capitalize (String.tokens (curry op= #"_") t))
+        String.concat (map capitalize (String.tokens (Fn.curry op= #"_") t))
 
     fun removePrefix pre s =
         if String.isPrefix pre s then
@@ -131,14 +131,14 @@ struct
             
     fun toCamelCase s = 
         (* convert foo_bar_baz to fooBarBaz *)
-        case String.tokens (curry op = #"_") s of
+        case String.tokens (Fn.curry op = #"_") s of
             []          => ""
           | [x]         => x
           | x::xs       => String.concat (x :: map capitalize xs)
 
     fun propNameToAlice s =
         (* convert foo-bar to fooBar *)
-        case String.tokens (curry op= #"-") s of
+        case String.tokens (Fn.curry op= #"-") s of
             []          => ""
           | [x]         => x
           | x :: xs     => String.concat (x :: map capitalize xs)

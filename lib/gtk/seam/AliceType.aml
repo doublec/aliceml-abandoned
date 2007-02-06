@@ -63,13 +63,13 @@ struct
                                     AliceName.toString (t, path)
           | AT_APPLY (args, t)  =>
             assert not (null args) do
-            "(" ^ String.concatWith ", " (map (curry (flip toString) path) args) 
+            "(" ^ String.concatWith ", " (map (Fn.curry (Fn.flip toString) path) args) 
           ^ ") " ^ AliceName.toString (t, path)
           | AT_ARROW (a, b)     =>
             toString' (a, path) ^ " -> " ^ toString (b, path)
           | AT_PROD []          => "unit"
           | AT_PROD tys         => 
-            String.concatWith " * " (map (curry (flip toString'') path) tys)
+            String.concatWith " * " (map (Fn.curry (Fn.flip toString'') path) tys)
           | AT_REC fields       =>
             "{ " ^ String.concatWith ", " 
                 (map (fn (n, t) => Rename.renameField n ^ " : " ^ toString (t, path)) fields) ^
@@ -190,7 +190,7 @@ struct
       | toNativeType (AT_ARROW (a, b)) =
         AT_ARROW (toNativeType a, toNativeType b)
       | toNativeType (at as AT n) =
-        if List.exists (curry op= at) [
+        if List.exists (Fn.curry op= at) [
                 Types.string, Types.unit, Types.word, Types.int,
                 Types.real, Types.char, Types.bool
             ] then at

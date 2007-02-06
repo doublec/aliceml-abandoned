@@ -1,0 +1,32 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2006-2007
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive          from "Pervasive"
+import __primitive type unit type int from "ToplevelTypes"
+
+signature FN =							(**)
+sig
+    val id : 'a -> 'a
+    val const : 'a -> 'b -> 'a
+    val apply : ('a -> 'b) * 'a -> 'b
+    val o : ('b -> 'c) * ('a -> 'b) -> ('a -> 'c)
+    val curry : ('a * 'b -> 'c) -> ('a -> 'b -> 'c)
+    val uncurry : ('a -> 'b -> 'c) -> ('a * 'b -> 'c)
+    val flip : ('a * 'b -> 'c) -> ('b * 'a -> 'c)
+    val repeat : int -> ('a -> 'a) -> ('a -> 'a)
+    val forever : ('a -> 'a) -> 'a -> 'b
+    val iter : int -> (unit -> unit) -> unit
+end;

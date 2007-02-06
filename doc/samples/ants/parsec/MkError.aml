@@ -55,7 +55,7 @@ struct
         ERROR (p, ms)
 
     fun setMessage (m, ERROR (p, ms)) =
-        ERROR (p, lazy (m :: (List.filter (not o (curry equalMsg m)) ms)))
+        ERROR (p, lazy (m :: (List.filter (not o (Fn.curry equalMsg m)) ms)))
         
     fun merge (ERROR (p, ms1), ERROR (_, ms2)) =
         ERROR (p, ms1 @ ms2)
@@ -114,10 +114,10 @@ struct
                             then commasOr ms
                             else pre ^ " " ^ commasOr ms
         
-            val sysUnexpected   = List.filter (curry equalMsg (SYS_UNEXPECTED "")) msgs
-            val unexpected      = List.filter (curry equalMsg (UNEXPECTED "")) msgs
-            val expected        = List.filter (curry equalMsg (EXPECTED "")) msgs
-            val messages        = List.filter (curry equalMsg (MESSAGE "")) msgs
+            val sysUnexpected   = List.filter (Fn.curry equalMsg (SYS_UNEXPECTED "")) msgs
+            val unexpected      = List.filter (Fn.curry equalMsg (UNEXPECTED "")) msgs
+            val expected        = List.filter (Fn.curry equalMsg (EXPECTED "")) msgs
+            val messages        = List.filter (Fn.curry equalMsg (MESSAGE "")) msgs
         
             val showExpected    = showMany (expectedText, expected)
             val showUnexpected  = showMany (unexpectedText, unexpected)

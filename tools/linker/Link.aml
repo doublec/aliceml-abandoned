@@ -103,7 +103,7 @@ struct
 					  if url1 = url2 then url1 else
 					  raise Rewrite (url', url1, url2)
 				      ) (rewrites, url', url);
-		    UrlMap.insertWith (flip op@) (excludes, url, [entry]);
+		    UrlMap.insertWith (Fn.flip op@) (excludes, url, [entry]);
 		    (false, index)
 		end
 

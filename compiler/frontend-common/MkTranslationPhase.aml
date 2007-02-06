@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -2121,7 +2121,7 @@ struct
 	    val dec1' = auxDec(id1', exp1')
 
 	    val id'   = trInfid(env, id)
-	    val (exp2',l) = case trInfRep'(env, General.id, idExp id1', inf)
+	    val (exp2',l) = case trInfRep'(env, Fn.id, idExp id1', inf)
 			     of NONE      => (trInf'(env, inf), lab_singKind)
 			      | SOME exp' => (exp', lab_kind)  (* generative *)
 	    val dec2' = auxDec(id', lazyExp exp2')
@@ -2292,7 +2292,7 @@ struct
 	    val (idjus',decs1') = trAnns(env, anns)
 	    val  decs2'         = trDecs(env, decs)
 	    val  decs'          = Vector.concat[decs1', decs2']
-	    val  flds'          = Vector.map (idFld General.id) (ids(env, decs))
+	    val  flds'          = Vector.map (idFld Fn.id) (ids(env, decs))
 	    val  s              = #sign i
 	in
 	    if !Switches.Language.retainFullImport then () else

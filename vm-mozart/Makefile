@@ -1,9 +1,10 @@
 ###
 ### Author:
 ###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+###   Andreas Rossberg <rossberg@ps.uni-sb.de>
 ###
 ### Copyright:
-###   Leif Kornstaedt, 1999-2003
+###   Leif Kornstaedt and Andreas Rossberg, 1999-2007
 ###
 ### Last change:
 ###   $Date$ by $Author$
@@ -143,7 +144,8 @@ LIBFUNDAMENTALSOURCES0 = \
 	Core.aml ALT-sig.aml ARRAY2-sig.aml \
 	ARRAY-sig.aml ARRAY_SLICE-sig.aml \
 	BOOL-sig.aml BYTE-sig.aml \
-	CHAR-sig.aml EXN-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
+	CHAR-sig.aml EXN-sig.aml FN-sig.aml FUTURE-sig.aml \
+	GENERAL-sig.aml HOLE-sig.aml \
 	IEEE_REAL-sig.aml INTEGER-sig.aml INT_INF-sig.aml \
 	LIST-sig.aml LIST_PAIR-sig.aml \
 	LOCK-sig.aml MATH-sig.aml MONO_ARRAY-sig.aml MONO_VECTOR-sig.aml \
@@ -157,7 +159,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	Alt.aml Array.aml Array2.aml \
 	ArraySlice.aml Bool.aml Byte.aml Char.aml \
 	CharArray.aml CharArraySlice.aml CharVector.aml CharVectorSlice.aml \
-	Exn.aml Future.aml General.aml Hole.aml IEEEReal.aml \
+	Exn.aml Fn.aml Future.aml General.aml Hole.aml IEEEReal.aml \
 	Int.aml LargeInt.aml FixedInt.aml IntInf.aml \
 	LargeReal.aml LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml \
 	MkRow.aml MkVector.aml MkArray.aml MkMonoVector.aml MkMonoArray.aml \

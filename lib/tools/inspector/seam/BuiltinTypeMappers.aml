@@ -254,8 +254,8 @@ struct
   val vectorSuffix = AbsTree.closeAbsBracketL
 
   fun polyType [t] = t | polyType _ = assert false
-  val charType = const PervasiveType.typ_char
-  val word8Type = const (PervasiveType.lookup "Word8.word")
+  val charType = Fn.const PervasiveType.typ_char
+  val word8Type = Fn.const (PervasiveType.lookup "Word8.word")
 
   val array = genArray (arrayPrefix, arraySuffix, Array.length, Array.sub,
 			polyType)

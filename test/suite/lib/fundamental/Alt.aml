@@ -87,16 +87,16 @@ struct
 	let
 	    val t = Real.fromInt
 	in
-	    (Test.test (fn x => Alt.mapFst t x = Alt.map (t, id) x) (FST 1);
-	     Test.test (fn x => Alt.mapFst t x = Alt.map (t, id) x) (SND 1))
+	    (Test.test (fn x => Alt.mapFst t x = Alt.map (t, Fn.id) x) (FST 1);
+	     Test.test (fn x => Alt.mapFst t x = Alt.map (t, Fn.id) x) (SND 1))
 	end
 
     fun testMapSnd () =
 	let
 	    val t = Real.fromInt
 	in
-	    (Test.test (fn x => Alt.mapSnd t x = Alt.map (id, t) x) (FST 1);
-	     Test.test (fn x => Alt.mapSnd t x = Alt.map (id, t) x) (SND 1))
+	    (Test.test (fn x => Alt.mapSnd t x = Alt.map (Fn.id, t) x) (FST 1);
+	     Test.test (fn x => Alt.mapSnd t x = Alt.map (Fn.id, t) x) (SND 1))
 	end
 
     fun testMapBoth () =

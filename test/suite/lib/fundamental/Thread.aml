@@ -24,7 +24,7 @@ struct
 
 
     fun testThread () =
-	Test.test (fn x => (x; true) handle _ => false) (Thread.thread id)
+	Test.test (fn x => (x; true) handle _ => false) (Thread.thread Fn.id)
 
     fun testSpawnThread () =
 	let

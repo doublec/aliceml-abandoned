@@ -98,7 +98,7 @@ local
 	    (* enforce polymorphic arguments (for soundness) *)
   	    List.app (fn t => Type.unify(t, Option.valOf(!typ_value))) ts
 	    handle Type.Mismatch _ => raise Type.Type;
-	    PathMap.insertWith (flip op@) (registry, p, [UnsafeValue.cast f])
+	    PathMap.insertWith (Fn.flip op@) (registry, p, [UnsafeValue.cast f])
 	end
 
     fun unregisterTyp' t _ =
@@ -181,7 +181,7 @@ local
 	    abox(doc ^^
 		nest(ebreak ^^
 		     List.foldr (op ^/^) empty
-			[contain ("{|", "|}") (ppCommaList id docs)]
+			[contain ("{|", "|}") (ppCommaList Fn.id docs)]
 		)
 	    )
 	)
@@ -288,7 +288,7 @@ local
 				) ds (VectorSlice.slice(ts,0,SOME n'))
 	    in
 		paren(
-		    ppCommaList id docs'
+		    ppCommaList Fn.id docs'
 		)
 	    end
 	else
@@ -314,7 +314,7 @@ local
 				 end) ds (VectorSlice.slice(ts,0,SOME n'))
 	    in
 		brace(
-		    ppCommaList id docs'
+		    ppCommaList Fn.id docs'
 		)
 	    end
 
@@ -575,7 +575,7 @@ local
 					Array2.row(x,i), 0, SOME nc))
 		    in
 			(if i = 0 then empty else text "," ^^ break ) ^^
-			ppRow(ppCommaList id (List.map ppElem xs @ docC0)) ^^
+			ppRow(ppCommaList Fn.id (List.map ppElem xs @ docC0)) ^^
 			ppRows(i+1)
 		    end
 	    in

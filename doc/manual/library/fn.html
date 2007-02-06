@@ -1,0 +1,143 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Fn structure", "The <TT>Fn</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature FN
+    structure Fn : FN
+  </PRE>
+
+  <P>
+    The structure <tt>Fn</tt> defines basic generic combinators for functions
+    that are useful for a wide range of programming tasks.
+  </P>
+
+  <P>See also:
+    <A href="general.html"><TT>General</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature FN =
+    sig
+	val id :      'a -> 'a
+	val const :   'a -> 'b -> 'a
+	val apply :   ('a -> 'b) * 'a -> 'b
+	val o :       ('b -> 'c) * ('a -> 'b) -> ('a -> 'c)
+	val curry :   ('a * 'b -> 'c) -> ('a -> 'b -> 'c)
+	val uncurry : ('a -> 'b -> 'c) -> ('a * 'b -> 'c)
+	val flip :    ('a * 'b -> 'c) -> ('b * 'a -> 'c)
+	val repeat :  int -> ('a -> 'a) -> ('a -> 'a)
+	val forever : ('a -> 'a) -> 'a -> 'b
+	val iter :    int -> (unit -> unit) -> unit
+    end
+
+<?php section("description", "description") ?>
+
+  <P>
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://www.standardml.org/Basis/general.html"><TT>General</TT></A> structure.
+  </P>
+
+  <DL>
+    <DT>
+	<TT>val id : 'a -> 'a</TT>
+    <DD>
+	<TT>id</TT> is the identity function. Thus, <TT>id <I>a</I></TT>
+	is equivalent to <TT><I>a</I></TT>.
+    </DD>
+
+    <DT>
+	val const : 'a -> 'b -> 'a
+    </DT>
+    <DD>
+	<TT>const <I>a</I></TT> is a constant function that always returns
+	<TT><I>a</I></TT>. Thus, <TT>const <I>a b</I></TT> is equivalent to
+	<TT><I>a</I></TT>, except for side-effects.
+    </DD>
+
+    <DT>
+	val apply : ('a -> 'b) * 'a -> 'b
+    </DT>
+    <DD>
+	<TT>apply(<I>f</I>,<I>a</I>)</TT> applies <TT><I>f</I></TT> to
+	<TT><I>a</I></TT>. Thus, it is equivalent to <TT><I>f a</I></TT>.
+    </DD>
+
+    <DT>
+	val o : ('b -> 'c) * ('a -> 'b) -> ('a -> 'c)
+    </DT>
+    <DD>
+	<TT><I>f</I> o <I>g</I></TT> is the function composition of
+	<TT><I>f</I></TT>
+	and <TT><I>g</I></TT>. Thus, <TT>(<I>f</I> o <I>g</I>) <I>a</I></TT> is
+	equivalent to <TT><I>f</I>(<I>g a</I>)</TT>.
+    </DD>
+
+    <DT>
+	val curry : ('a * 'b -> 'c) -> ('a -> 'b -> 'c)
+    </DT>
+    <DD>
+	<TT>curry <I>f</I></TT> transforms the binary function
+	<TT><I>f</I></TT> into curried form. Thus, <TT>curry <I>f a b</I></TT>
+	is equivalent to <TT><I>f</I>(<I>a</I>,<I>b</I>)</TT>.
+    </DD>
+
+    <DT>
+	val uncurry : ('a -> 'b -> 'c) -> ('a * 'b -> 'c)
+    </DT>
+    <DD>
+	<TT>uncurry <I>f</I></TT> transforms a curried function
+	<TT><I>f</I></TT> into a binary function. Thus, <TT>uncurry <I>f</I>
+	(<I>a</I>,<I>b</I>)</TT> is equivalent to <TT><I>f a b</I></TT>.
+    </DD>
+
+    <DT>
+	val flip : ('a * 'b -> 'c) -> ('b * 'a -> 'c)
+    </DT>
+    <DD>
+	<TT>flip <I>f</I></TT> switches the argument order of the binary
+	function
+	<TT><I>f</I></TT>. Thus, <TT>flip <I>f</I> (<I>a</I>,<I>b</I>)</TT> is
+	equivalent to <TT><I>f</I>(<I>b</I>,<I>a</I>)</TT>.
+   </DD>
+
+    <DT>
+	val repeat : int -> ('a -> 'a) -> ('a -> 'a)
+    </DT>
+    <DD>
+	<TT>repeat <I>n f</I></TT> is the <TT><I>n</I></TT>-fold composition
+	of <TT><I>f</I></TT>. Thus, <TT>repeat <I>n f a</I></TT> is equivalent
+	to <TT><I>f</I>(</TT>...<TT>(<I>f</I>(<I>a</I>))</TT>...<TT>)</TT>,
+	where <TT><I>f</I></TT> occurs <TT><I>n</I></TT> times.
+    </DD>
+
+    <DT>
+	val forever : ('a -> 'a) -> 'a -> 'b
+    </DT>
+    <DD>
+	<TT>forever <I>f a</I></TT> performs infinite repetition of the function
+	<TT><I>f</I></TT>. Thus, <TT>forever <I>f</I></TT> can be thought of as
+	being equivalent to <TT>repeat &infin; <I>f</I></TT>.
+    </DD>
+
+    <DT>
+	val iter : int -> (unit -> unit) -> unit
+    </DT>
+    <DD>
+	<TT>iter <I>n f</I></TT> performs <TT><I>n</I></TT> times the
+	application <TT><I>f</I>()</TT>. Thus, <TT>iter <I>n f</I></TT> is
+	equivalent to <TT>(<I>f</I>();</TT>...<TT>;<I>f</I>())</TT>, with
+	<TT><I>f</I></TT> occurring <TT><I>n</I></TT> times.
+    </DD>
+  </DL>
+
+<?php footing() ?>

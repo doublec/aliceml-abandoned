@@ -31,7 +31,7 @@ struct
     fun testCatch () =
 	let
 	    fun t' e () = (raise e; e)
-	    fun t e = (Exn.catch (id o Exn.fromPacket) (t' e)) = 
+	    fun t e = (Exn.catch (Fn.id o Exn.fromPacket) (t' e)) = 
 		      (t' e () handle e => e)
 	in
 	    Gen.try 100 Gen.exn (Test.test t)

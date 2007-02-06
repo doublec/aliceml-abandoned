@@ -29,7 +29,7 @@ struct
     fun trName f (Name.ExId s)	= Name.ExId(f s)
       | trName f  n		= n
     fun trLab f l		= Label.fromName(trName f (Label.toName l))
-    val trValLab		= id
+    val trValLab		= Fn.id
     val trTypLab		= trLab(fn s => "$" ^ s)
     val trModLab		= trLab(fn s => s ^ "$")
     val trInfLab		= trLab(fn s => "$" ^ s ^ "$")

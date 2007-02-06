@@ -52,7 +52,6 @@ import
     val :=:
 
     val o
-    val flip
     val before
     val ignore
 

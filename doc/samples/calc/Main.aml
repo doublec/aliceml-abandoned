@@ -20,8 +20,8 @@ fun markError (l, (_, col1), (_, col2) ) =
     let val prefix = "Syntax error near: "
     in
         print (prefix ^ l ^ "\n");
-        print (String.tabulate (String.size prefix + col1 - 1, const #" ") ^ 
-               String.tabulate (Int.max (col2 - col1, 1), const #"^") ^ "\n")
+        print (String.tabulate (String.size prefix + col1 - 1, Fn.const #" ") ^ 
+               String.tabulate (Int.max (col2 - col1, 1), Fn.const #"^") ^ "\n")
     end
     
     

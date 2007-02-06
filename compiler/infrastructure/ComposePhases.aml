@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 2000-2004
+ *   Andreas Rossberg and Leif Kornstaedt, 2000-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -51,7 +51,7 @@ in
 	structure Phase1  = Phase1
 	structure Phase2  = Phase2
 	structure Context = Context
-	val context       = General.id
+	val context       = Fn.id
 	val context1      = Pair.fst
 	val context2      = Pair.snd
     )

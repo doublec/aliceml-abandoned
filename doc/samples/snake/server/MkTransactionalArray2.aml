@@ -52,7 +52,7 @@ struct
         end
 
     fun rollback (_, new) =
-        Array2.modify Array2.RowMajor (const NONE) new
+        Array2.modify Array2.RowMajor (Fn.const NONE) new
 
 
     fun commit (old, new) =

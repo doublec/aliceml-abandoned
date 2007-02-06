@@ -398,7 +398,7 @@ structure Url : URL =
 	    end
 
 	val toString = toStringEncode (encode isPathChar)
-	val toStringRaw = toStringEncode General.id
+	val toStringRaw = toStringEncode Fn.id
 
 	fun toLocalFile ({scheme = (NONE | SOME "file"), authority,
 			 device, absolute, path, ...}: url) =

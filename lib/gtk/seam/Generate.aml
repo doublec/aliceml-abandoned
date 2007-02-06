@@ -47,7 +47,7 @@ val indentWidth = 4
 
 fun print f (indent, msg) = 
     TextIO.output (f,
-        String.tabulate (indent * indentWidth, const #" ") ^ msg ^ "\n")
+        String.tabulate (indent * indentWidth, Fn.const #" ") ^ msg ^ "\n")
 
 fun generateFiles name nativeSig f =
     let val aml       = TextIO.openOut (name ^ ".aml")
@@ -259,7 +259,7 @@ and wrapStandAloneFunctions (module, p, pSig, pNat, pNatSig, defines) functions 
              List.app (fn (f as FUNCTION { aliceName, ... }) =>
                 let 
                 in
-                    printFunctionSig [module, module2] (curry pSig 2) f;
+                    printFunctionSig [module, module2] (Fn.curry pSig 2) f;
                     pNatSig (2, "val " ^ nativeFunName aliceName ^ ": " ^ 
                         AliceType.toString (AliceType.toNativeType 
                             (TypeWrapper.aliceFunctionSig f), []));
@@ -389,7 +389,7 @@ and wrapFunction (module, pNat, defines) (f as FUNCTION {
         if null resSig then pNat (1, "RETURN_UNIT;")
         else
             let val resL = List.mapPartial #4
-                            ( ("", "", "", Option.map (const "res") returnType) ::
+                            ( ("", "", "", Option.map (Fn.const "res") returnType) ::
                               args)
                 val n    = List.length resL
             in
@@ -419,15 +419,15 @@ and wrapObject info (p, pSig, pNative, pNatSig, moduleName, ob as
         pSig (1, "structure " ^ List.last alicePath ^ " :");
         pSig (1, "sig");
         pSig (2, "(* constructors *)");
-        List.app (printFunctionSig alicePath (curry pSig 2)) (!constructors);
+        List.app (printFunctionSig alicePath (Fn.curry pSig 2)) (!constructors);
         pSig (2, "(* methods *)");
-        List.app (printFunctionSig alicePath (curry pSig 2)) methods;
+        List.app (printFunctionSig alicePath (Fn.curry pSig 2)) methods;
         pSig (2, "(* properties *)");
-        List.app (printPropertySig alicePath (curry pSig 2)) properties;
+        List.app (printPropertySig alicePath (Fn.curry pSig 2)) properties;
         pSig (1, "end")
      ) else (
-        List.app (printFunctionSig alicePath (curry pSig 1)) (!constructors);
-        List.app (printFunctionSig alicePath (curry pSig 1)) methods
+        List.app (printFunctionSig alicePath (Fn.curry pSig 1)) (!constructors);
+        List.app (printFunctionSig alicePath (Fn.curry pSig 1)) methods
      );
         
      (* structure *)
@@ -443,7 +443,7 @@ and wrapObject info (p, pSig, pNative, pNatSig, moduleName, ob as
                     p (2, "val " ^ AliceName.toString (name, alicePath) ^ " = Native" ^
                           moduleName ^ "." ^ nativeFunName name)) methods;
          p (2, "(* properties *)");
-         List.app (printPropDef alicePath (curry p 2)) properties;
+         List.app (printPropDef alicePath (Fn.curry p 2)) properties;
          p (1, "end")
      ) else (
          List.app (fn (FUNCTION { aliceName = name, ... }) =>
@@ -453,7 +453,7 @@ and wrapObject info (p, pSig, pNative, pNatSig, moduleName, ob as
                     p (1, "val " ^ AliceName.toString (name, alicePath) ^ " = Native" ^
                           moduleName ^ "." ^ nativeFunName name)) methods;
          p (2, "(* properties *)");
-         List.app (printPropDef alicePath (curry p 2)) properties
+         List.app (printPropDef alicePath (Fn.curry p 2)) properties
      );
 
      (* native signature *)
@@ -535,10 +535,10 @@ and wrapBoxed info (p, pSig, pNative, pNatSig, moduleName, boxed as TY_BOXED
      pSig (1, "sig");
      pSig (2, "(* constructors *)");
      List.app (printFunctionSig (AliceName.absolutePath aliceName) 
-                    (curry pSig 2)) (!constructors);
+                    (Fn.curry pSig 2)) (!constructors);
      pSig (2, "(* methods *)");
      List.app (printFunctionSig (AliceName.absolutePath aliceName)
-                    (curry pSig 2)) methods;
+                    (Fn.curry pSig 2)) methods;
      pSig (1, "end");
      (* structure *)
      p (1, "structure " ^ List.last (AliceName.absolutePath aliceName) ^ " =");

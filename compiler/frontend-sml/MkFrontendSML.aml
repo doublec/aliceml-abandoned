@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -57,6 +57,6 @@ in
 	structure Context = Phase2'.C
 	val context       = Pair.snd
 	val context1      = ignore
-	val context2      = General.id
+	val context2      = Fn.id
     )
 end

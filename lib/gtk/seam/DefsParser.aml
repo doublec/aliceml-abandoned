@@ -65,7 +65,7 @@ struct
             fun missingAssoc n = raise Error ("missing field '" ^ n ^ "'")
 
             fun allSplits s = 
-                let val parts   = String.tokens (curry op= #"_") s
+                let val parts   = String.tokens (Fn.curry op= #"_") s
                     val len     = length parts
                 in
                     if len < 3 then []
@@ -93,15 +93,15 @@ struct
                 case List.find (fn (_, m, ob, _) => StrMap.member (tys, m ^ ob)) splits of
                     SOME (_, module, ob, f) => FC_METHOD (module ^ ob, f)
                   | NONE =>
-                    case List.find (curry op= 1 o #1) splits of
+                    case List.find (Fn.curry op= 1 o #1) splits of
                         SOME (_, module, ob, f) => FC_FUNC (module, ob, f)
                       | NONE                 => FC_UNKNOWN
                 end
 
             
-            val assoc = assoc' id missingAssoc
+            val assoc = assoc' Fn.id missingAssoc
 
-            fun optAssoc f def = assoc' f (const def)
+            fun optAssoc f def = assoc' f (Fn.const def)
 
             val strAssoc     = Conv.string o assoc
 
@@ -119,7 +119,7 @@ struct
                   | LPAR :: STR defType :: STR name :: ts' =>
                     let val (assocs, ts'') = parseAssocs ts'
                         val default        = optStrAssoc ("default", assocs)
-                        val nullOk         = assoc' (const true) (const false) 
+                        val nullOk         = assoc' (Fn.const true) (Fn.const false) 
                                                 ("null-ok", assocs)
                         val p              = {
                                 name      = Rename.renameField name, 
@@ -161,7 +161,7 @@ struct
                              :: (p2 as PARAM { name = valueName, defType = arrayType, ... })
                              :: params ) 
                     if (String.isPrefix "n_" sizeName andalso 
-                        List.exists (curry op= sizeType) sizeTypes andalso 
+                        List.exists (Fn.curry op= sizeType) sizeTypes andalso 
                         String.size valueName > 2 andalso 
                         String.extract (sizeName, 2, NONE) = valueName) =
                 (case unref arrayType of
@@ -177,7 +177,7 @@ struct
                             ::  (p2 as PARAM { name = sizeName,  defType = sizeType, ... })
                             :: params )
                     if (String.isPrefix "n_" sizeName andalso
-                        List.exists (curry op= sizeType) sizeTypes andalso 
+                        List.exists (Fn.curry op= sizeType) sizeTypes andalso 
                         String.size valueName > 2 andalso 
                         String.extract (sizeName, 2, NONE) = valueName) =
                  (case unref arrayType of
@@ -193,7 +193,7 @@ struct
               | fixArrayParms []        = []              
             
 
-            val parametersAssoc = assoc' (fixArrayParms o parameters) (const [])
+            val parametersAssoc = assoc' (fixArrayParms o parameters) (Fn.const [])
             
             fun properties ts = properties' ([], ts) 
 
@@ -254,11 +254,11 @@ struct
                   | _                   => raise Error "syntax"
 
 
-            val propertiesAssoc = assoc' properties (const [])
+            val propertiesAssoc = assoc' properties (Fn.const [])
 
             
             fun returnTypeAssoc assocs = 
-                case assoc' Conv.string (const "none") ("return-type", assocs) of
+                case assoc' Conv.string (Fn.const "none") ("return-type", assocs) of
                     "none"      => NONE
                   | "void"      => NONE
                   | r           => SOME (DT r)
@@ -286,7 +286,7 @@ struct
                             propertiesAssoc ("properties", assocs)
                           | ps  => ps
                             
-                    val varArgs       = assoc' (const true) (const false) ("varargs", assocs)
+                    val varArgs       = assoc' (Fn.const true) (Fn.const false) ("varargs", assocs)
                     val path          = lookupAlicePath objectName
                     val f             = FUNCTION {
                             aliceName = aliceName (path, Rename.renameFun (Naming.toCamelCase name)), 
@@ -333,9 +333,9 @@ struct
                                 []  =>
                                 propertiesAssoc ("properties", assocs)
                               | ps  => ps
-                    val varArgs       = assoc' (const true) (const false) ("varargs", assocs)
+                    val varArgs       = assoc' (Fn.const true) (Fn.const false) ("varargs", assocs)
                 in
-                    case assoc' (SOME o Conv.symOrStr) (const NONE) 
+                    case assoc' (SOME o Conv.symOrStr) (Fn.const NONE) 
                                 ("is-constructor-of", assocs) of
                         NONE    =>  
                         if Ignore.notIgnoredFun cName then
@@ -457,9 +457,9 @@ struct
                     val cName         = CN (strAssoc ("c-name", assocs))
                     val fields        = sortFields (map convertField 
                                             (optStrPairAssoc ("fields", assocs)))
-                    val copyFunc      = assoc' (SOME o CN o Conv.string) (const NONE)
+                    val copyFunc      = assoc' (SOME o CN o Conv.string) (Fn.const NONE)
                                             ("copy-func", assocs)
-                    val releaseFunc   = assoc' (SOME o CN o Conv.string) (const NONE)
+                    val releaseFunc   = assoc' (SOME o CN o Conv.string) (Fn.const NONE)
                                             ("relase-func", assocs)
                 
                     val gType         = optStrAssoc ("gtype-id", assocs)

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -54,11 +54,6 @@ struct
     val op :=					= op :=
     val op :=:					= op :=:
 
-    fun id x					= x
-    fun const x y				= x
-    fun curry f x y				= f(x,y)
-    fun uncurry f (x,y)				= f x y
-    fun flip f (a,b)				= f(b,a)
     fun (f o g) a				= f(g a)
     fun a before b				= a
     fun ignore a				= ()

@@ -162,7 +162,7 @@ struct
 		      | cause =>
 			    raise IO.Io {name = Url.toStringRaw url,
 					 function = "load", cause})
-	  | SOME (Resolver.DELEGATE url') => delegate (logger, id, url)
+	  | SOME (Resolver.DELEGATE url') => delegate (logger, id, url')
 	  | NONE => raise IO.Io {name = Url.toStringRaw url,
 				 function = "load", cause = NotFound}
 

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,6 +19,8 @@ import structure __pervasive			from "Pervasive"
 import __primitive structure Toplevel		from "Toplevel"
 import __primitive signature GENERAL		from "GENERAL-sig"
 import __primitive structure General		from "General"
+import __primitive signature FN			from "FN-sig"
+import __primitive structure Fn			from "Fn"
 import __primitive signature EXN		from "EXN-sig"
 import __primitive structure Exn		from "Exn"
 import __primitive signature REF		from "REF-sig"
@@ -125,6 +127,8 @@ import __primitive structure Lock		from "Lock"
 
 signature GENERAL		= GENERAL
 structure General		= General
+signature FN			= FN
+structure Fn			= Fn
 signature EXN			= EXN
 structure Exn			= Exn
 signature REF			= REF

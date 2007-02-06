@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -1843,7 +1843,7 @@ TextIO.print "\n";
 				   | I.PrimTyp _ => false
 				   | _ => true) andalso nonlocalPath po
 	    val  p           = elabNewPath(po, I.name typid)
-	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
+	    val (t,gen,typ') = elabTypRep(E, p, Fn.id, typ)
 	    val (t',typid')  = elabTypid_bind(E, p, abbrev, t, typid)
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
@@ -1875,7 +1875,7 @@ prInf "j'" j';
 				   | I.PrimInf _ => false
 				   | _ => true) andalso nonlocalPath po
 	    val  p           = elabNewPath(po, I.name infid)
-	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
+	    val (j,gen,inf') = elabInfRep(E, p, Fn.id, inf)
 	    val (j',infid')  = elabInfid_bind(E, p, abbrev, j, infid)
 	    val  k           = Future.byneed(fn() =>
 			       (if gen then Inf.kind else Inf.singKind) j')
@@ -2042,7 +2042,7 @@ prInf "j'" j';
       | elabRHSRecDec(E, s, rtpats', I.TypDec(i, typid, typ)) =
 	let
 	    val (t0,p,typid') = elabTypid(E, typid)
-	    val (t,gen,typ')  = elabTypRep(E, p, General.id, typ)
+	    val (t,gen,typ')  = elabTypRep(E, p, Fn.id, typ)
 	    val  k            = (if gen then Type.kind else Type.singKind) t0
 	    val  _            = Inf.extendTyp(s, p, k)
 	    (* ASSUME typ is wellformed for fix *)
@@ -2095,7 +2095,7 @@ prInf "j'" j';
 				     I.name typid' <> I.name typid
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name typid)
-	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
+	    val (t,gen,typ') = elabTypRep(E, p, Fn.id, typ)
 	    val (t',typid')  = elabTypid_bind(E, p, abbrev, t, typid)
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
@@ -2119,7 +2119,7 @@ prInf "j'" j';
 				     I.name infid' <> I.name infid
 				   | _ => true
 	    val  p           = elabNewPath(po, I.name infid)
-	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
+	    val (j,gen,inf') = elabInfRep(E, p, Fn.id, inf)
 	    val (j',infid')  = elabInfid_bind(E, p, abbrev, j, infid)
 	    val  k           = (if gen then Inf.kind else Inf.singKind) j'
 	    val  _           = Inf.extendInf(s, p, k)
@@ -2181,7 +2181,7 @@ prInf "j'" j';
     and elabRHSRecSpec(E, s, I.TypSpec(i, typid, typ)) =
 	let
 	    val (t0,p,typid') = elabTypid(E, typid)
-	    val (t,gen,typ')  = elabTypRep(E, p, General.id, typ)
+	    val (t,gen,typ')  = elabTypRep(E, p, Fn.id, typ)
 	    (* ASSUME typ is wellformed for fix *)
 	    val  k            = (if gen then Type.kind else Type.singKind) t0
 	    val  _            = Inf.extendTyp(s, p, k)
@@ -2288,7 +2288,7 @@ prInf "j'" j';
 		 of I.NoDesc(i')       => (k1, t1, O.NoDesc(typInfo(i', t1)))
 		  | I.SomeDesc(i',typ) =>
 		    let
-			val (t2,_,typ') = elabTypRep(E, p, General.id, typ)
+			val (t2,_,typ') = elabTypRep(E, p, Fn.id, typ)
 			val  k2         = Type.kind t2
 		    in
 			if isExplicit then () else
@@ -2358,7 +2358,7 @@ prInf "j'" j';
 		 of I.NoDesc(i')       => (k1, j1, O.NoDesc(infInfo(i',j1)))
 		  | I.SomeDesc(i',inf) =>
 		    let
-			val (j2,_,inf') = elabInfRep(E, p, General.id, inf)
+			val (j2,_,inf') = elabInfRep(E, p, Fn.id, inf)
 			val  k2         = Inf.kind j2
 		    in
 			if isExplicit then () else

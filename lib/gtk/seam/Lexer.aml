@@ -47,7 +47,7 @@ struct
                                       "0123456789" ^ 
                                       "#-_")
 
-            fun isIdChar c = List.exists (curry op= c) idChars 
+            fun isIdChar c = List.exists (Fn.curry op= c) idChars 
             
             fun lex' s =
                 case s of 

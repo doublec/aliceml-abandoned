@@ -361,7 +361,7 @@ struct
 	      | t (s, (s2::xs)) x = t (s, xs) (x ^ s2 ^ s)
 	in
 	Gen.try 100 (Gen.pair (Gen.string, Gen.list Gen.string)) 
-		 (Test.test (fn x => uncurry String.concatWith x = t x ""))
+		 (Test.test (fn x => Fn.uncurry String.concatWith x = t x ""))
 	end
 
     fun testMap () =
@@ -370,7 +370,7 @@ struct
 	    fun test c = Char.chr ((Char.ord c + 5) mod Char.maxOrd)
 	in
 	    Gen.try 1000 Gen.string 
-	        (Test.test (fn s => (String.map id s = t id s andalso
+	        (Test.test (fn s => (String.map Fn.id s = t Fn.id s andalso
 			             String.map test s = t test s)))
 	end
 

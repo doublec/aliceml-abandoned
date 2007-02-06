@@ -10,11 +10,6 @@ structure General =
     exception Assert of string * int
 
     fun op :=: (r1 as ref x1, r2 as ref x2)	= (r1 := x2 ; r2 := x1)
-    fun id x					= x
-    fun const x y				= x
-    fun curry f x y				= f(x,y)
-    fun uncurry f (x,y)				= f x y
-    fun flip f (x,y)				= f(y,x)
     fun inverse LESS				= GREATER
       | inverse EQUAL				= EQUAL
       | inverse GREATER				= LESS
@@ -25,13 +20,31 @@ structure General =
 exception Unordered = General.Unordered
 exception Assert = General.Assert
 val op :=:	= General.:=:
-val id		= General.id
-val const	= General.const
-val curry	= General.curry
-val uncurry	= General.uncurry
-val flip	= General.flip
 val inverse	= General.inverse
 val assert	= General.assert
+
+
+
+(*****************************************************************************
+ * Fn
+ *****************************************************************************)
+
+structure Fn =
+struct
+    fun id a		= a
+    fun const a b	= a
+    fun apply(f,a)	= f a
+    fun (f o g) a	= f(g a)
+    fun curry f a b	= f(a,b)
+    fun uncurry f (a,b)	= f a b
+    fun flip f (a,b)	= f(b,a)
+    fun repeat 0 f	= id
+      | repeat n f	= f o repeat (n-1) f
+    fun forever f a	= forever f (f a)
+    fun iter n f	= repeat n f ()
+end
+
+
 
 (*****************************************************************************
  * Ref
@@ -1074,11 +1087,6 @@ type ('a,'b) pair = 'a * 'b
 
 exception Assert = General.Assert
 val op :=:	= General.:=:
-val id		= General.id
-val const	= General.const
-val curry	= General.curry
-val uncurry	= General.uncurry
-val flip	= General.flip
 val inverse	= General.inverse
 val assert	= General.assert
 

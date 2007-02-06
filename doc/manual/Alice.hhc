@@ -186,6 +186,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/fd.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Fn">
+			<param name="Local" value="library/fn.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="FS">
 			<param name="Local" value="library/fs.html">
 			</OBJECT>

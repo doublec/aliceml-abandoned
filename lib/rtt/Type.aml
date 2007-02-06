@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -1529,7 +1529,7 @@ val _ = checkMuFwd := checkMu
     fun close ts =
 	let
 	    val generalise =
-		foldl close1 General.id (tuple'(Vector.fromList ts))
+		foldl close1 Fn.id (tuple'(Vector.fromList ts))
 		(* TODO: This should better use foldlNoAbbrev, but then
 		 * we had to lift holes in abbreviations somehow. *)
 	in

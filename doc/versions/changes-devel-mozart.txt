@@ -71,6 +71,7 @@ Library:
   - Trace messages are more informative, particularly wrt signature mismatches.
 * Resolver, ComponentManager: added support for delegation.
 * Toplevel: Future.await is now available unqualified; fst and snd no longer.
+* Fn: new structure with generic function combinators.
 * Word[N]: fixed compare.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
 * Real: Fixed treatment of NaN in several functions.

@@ -223,7 +223,7 @@ struct
         "gnome_canvas_bpath_set_bpath"
     ]
 
-    fun notIgnoredFun (BasicTypes.CN cname) = not (List.exists (curry op= cname) ignoreFunList)
+    fun notIgnoredFun (BasicTypes.CN cname) = not (List.exists (Fn.curry op= cname) ignoreFunList)
     
 
     val ignoreTyList = [
@@ -234,6 +234,6 @@ struct
         "PangoAttrList"
     ]
         
-    fun notIgnoredType (BasicTypes.CN cname) = not (List.exists (curry op= cname) ignoreTyList)
+    fun notIgnoredType (BasicTypes.CN cname) = not (List.exists (Fn.curry op= cname) ignoreTyList)
     
 end

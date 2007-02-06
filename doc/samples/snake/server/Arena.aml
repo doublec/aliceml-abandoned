@@ -316,10 +316,10 @@ struct
         Snake.appBody (fn (r, c) => TA.update (a, r, c, P.EMPTY)) s;
  
     fun removeSnakeBodies (a, snakes) =
-        List.app (curry removeSnakeBody a) snakes
+        List.app (Fn.curry removeSnakeBody a) snakes
        
     fun removeSnakes (a, snakes) =
-        List.app (curry removeSnake a) snakes 
+        List.app (Fn.curry removeSnake a) snakes 
 
     fun placeSnake (a, s) =
         let

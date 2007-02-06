@@ -72,7 +72,8 @@ install-rec: install-$(TARGET)-rec man
 	@echo Time for build 3:
 	@cat $(TIMEDIR)3
 
-install-common: install-prelude bootstrap-smlnj doc
+#install-common: install-prelude bootstrap-smlnj doc
+install-common: install-prelude bootstrap-smlnj
 
 install-prelude:
 	@echo Installing Alice to $(PREFIX) for $(PLATFORM)...

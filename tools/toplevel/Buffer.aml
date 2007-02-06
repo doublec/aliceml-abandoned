@@ -228,9 +228,9 @@ structure Buffer =
 
       fun indentString n =
 	  if !Config.useTabs
-	  then String.tabulate(n div 8, const #"\t") ^
-	       String.tabulate(n mod 8, const #" ")
-	  else String.tabulate(n, const #" ")
+	  then String.tabulate(n div 8, Fn.const #"\t") ^
+	       String.tabulate(n mod 8, Fn.const #" ")
+	  else String.tabulate(n, Fn.const #" ")
 
       fun findNonSpace iter =
           let

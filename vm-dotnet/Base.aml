@@ -197,7 +197,6 @@ signature GENERAL =
     val op := :		'a ref * 'a -> unit
     val op :=: :	'a ref * 'a ref -> unit			(**)
 
-    val flip :		('a * 'b -> 'c) -> ('b * 'a -> 'c)	(**)
     val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
     val before :	'a * unit -> 'a
     val ignore :	'a -> unit
@@ -231,7 +230,6 @@ structure General : GENERAL =
 
     fun (r1 as ref x1) :=: (r2 as ref x2)	= (r1 := x2 ; r2 := x1)	(**)
 
-    fun flip f (a,b)	= f(b,a)
     fun (f o g) a	= f(g a)
     fun a before b	= a
     fun ignore a	= ()
