@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -464,8 +464,9 @@ struct
     fun trConLongVId E longvid =
 	case #1(trLongVId E longvid)
 	  of O.LongId(i1, modid', O.Lab(i2, lab')) =>
-		O.LongId(i1, modid',
-		    O.Lab(i2, Label.fromString(conName(Label.toString lab'))))
+		O.LongId(Source.at i1, modid',
+		    O.Lab(Source.at i2,
+			  Label.fromString(conName(Label.toString lab'))))
 
 	   | O.ShortId(i1, O.Id(i2, stamp, name)) =>
 	     let
@@ -474,16 +475,18 @@ struct
 		case lookupVal(E, VId.fromString name')
 		  of NONE => raise Crash.Crash "AbstractionPhase.trConLongVId"
 		   | SOME(i, stamp', is) =>
-			O.ShortId(i1, O.Id(i2, stamp', Name.ExId name'))
+			O.ShortId(Source.at i1,
+				  O.Id(Source.at i2, stamp', Name.ExId name'))
 	     end
 
     fun trLongVIdTyCon E (longvid, tycon', k) =
 	let
-	    val tycon           = TyCon(I.infoLong longvid, tycon')
+	    val i               = Source.at(I.infoLong longvid)
+	    val tycon           = TyCon(i, tycon')
 	    val (vid,longtycon) = case longvid
-				    of SHORTLong(i, vid) =>
+				    of SHORTLong(_, vid) =>
 					( vid, SHORTLong(i, tycon) )
-				     | DOTLong(i, longstrid, vid) =>
+				     | DOTLong(_, longstrid, vid) =>
 					( vid, DOTLong(i, longstrid, tycon) )
 	    val (typlongid',E') = trLongTyCon E longtycon
 	    val VId(_, vid')    = vid
@@ -730,11 +733,13 @@ struct
 	   (case trLongVId E longvid
 	      of (vallongid', T(NULLARY, tycon, kty)) =>
 		  O.RollExp(i, O.TagExp(i, longidToLab vallongid',
-					O.StrictExp(i, O.TupExp(i, #[]))),
+					O.StrictExp(Source.at i,
+					   O.TupExp(Source.at i, #[]))),
 			       trLongVIdTyCon E (longvid, tycon, kty))
 	       | (vallongid', C NULLARY) =>
 		  O.ConExp(i, trConLongVId E longvid,
-			   O.StrictExp(i, O.TupExp(i, #[])))
+			   O.StrictExp(Source.at i,
+			      O.TupExp(Source.at i, #[])))
 	       | (vallongid', _) =>
 		  O.VarExp(i, vallongid')
 	   )
@@ -878,7 +883,7 @@ struct
 					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', C NARY) =>
 		 ( fn(i',exp') => O.ConExp(i', trConLongVId E longvid,
-					   O.StrictExp(i', exp')) )
+					   O.StrictExp(O.infoExp exp', exp')) )
 	       | (vallongid', C UNARY) =>
 		 ( fn(i',exp') => O.ConExp(i', trConLongVId E longvid, exp') )
 
@@ -942,11 +947,13 @@ struct
 	   (case lookupIdStatus(E, vid')
 	      of T(NULLARY, tycon, kty) =>
 		 O.RollPat(i, O.TagPat(i, idToLab(#1(trVId E vid)),
-				       O.StrictPat(i, O.TupPat(i,#[]))),
+				       O.StrictPat(Source.at i,
+				          O.TupPat(Source.at i, #[]))),
 			   trLongVIdTyCon E (longvid,tycon,kty))
 	       | C NULLARY =>
 		 O.ConPat(i, trConLongVId E longvid,
-			  O.StrictPat(i, O.TupPat(i, #[])))
+			  O.StrictPat(Source.at i,
+			     O.TupPat(Source.at i, #[])))
 	       | V =>
 		 let
 		    (* If inside an alternative pattern then E' contains
@@ -971,11 +978,13 @@ struct
 	   (case trLongVId E longvid
 	      of (vallongid', T(NULLARY, tycon, kty)) =>
 		 O.RollPat(i, O.TagPat(i, longidToLab vallongid',
-				       O.StrictPat(i, O.TupPat(i,#[]))),
+				       O.StrictPat(Source.at i,
+				          O.TupPat(Source.at i, #[]))),
 			   trLongVIdTyCon E (longvid,tycon,kty))
 	       | (vallongid', C NULLARY) =>
 		 O.ConPat(i, trConLongVId E longvid,
-			  O.StrictPat(i, O.TupPat(i, #[])))
+			  O.StrictPat(Source.at i,
+			     O.TupPat(Source.at i, #[])))
 	       | (vallongid', V)   => error(i, E.PatLongVIdVar)
 	       | (vallongid', _)   => error(i, E.PatConArgMissing)
 	   )
@@ -1124,7 +1133,7 @@ struct
 					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', C NARY) =>
 		 ( fn(i',pat') => O.ConPat(i', trConLongVId E longvid,
-					   O.StrictPat(i', pat')) )
+					   O.StrictPat(O.infoPat pat', pat')) )
 
 	       | (vallongid', C UNARY) =>
 		 ( fn(i',pat') => O.ConPat(i', trConLongVId E longvid, pat') )
@@ -1951,8 +1960,8 @@ struct
 			val valids'  = Vector.tabulate(arity,
 						fn _ => inventId(Source.at i))
 			val exps'    = Vector.map(fn valid' =>
-					  O.VarExp(Source.nowhere,
-					     O.ShortId(Source.nowhere, valid')))
+					  O.VarExp(Source.at i',
+					     O.ShortId(Source.at i', valid')))
 					  valids'
 			val tupexp'  = tupexp(i', exps')
 			val caseexp' = O.CaseExp(i', tupexp', mats')

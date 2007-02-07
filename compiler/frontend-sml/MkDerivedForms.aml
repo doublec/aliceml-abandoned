@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -214,6 +214,8 @@ struct
     fun TRUEPat(I)		= LONGVIDPat(I, longvid_TRUE(I))
     fun NILPat(I)		= LONGVIDPat(I, longvid_NIL(I))
     fun CONSPat(I)		= LONGVIDPat(I, longvid_CONS(I))
+    fun NILAtExp(I)		= G.LONGVIDAtExp(I, G.WITHOp, longvid_NIL(I))
+    fun NILAtPat(I)		= G.LONGVIDAtPat(I, G.WITHOp, longvid_NIL(I))
 
     fun tycon_EXN(I)		= G.TyCon(I, TyCon.fromString "exn")
     fun longtycon_EXN(I)	= longtycon(I, tycon_EXN(I))
@@ -378,21 +380,30 @@ struct
     val TUPLEAtPat   = G.TUPLEAtPat
     val WITHFUNPat   = G.WITHFUNPat
 
-    fun LISTAtPat(I, pats) =
+    fun LISTAtPat(I, []) = NILAtPat(I)
+      | LISTAtPat(I, pats as pat::_) =
 	let
-	    fun toPatList []          = NILPat(I)
+	    val I' = Source.span(I, Source.at(G.infoPat pat))
+	    fun toPatList []          = NILPat(I')
 	      | toPatList(pat::pats') =
-		G.APPPat(I, CONSPat(I), TUPLEAtPat(I, [pat,toPatList pats']))
+		let
+		    val I'' = G.infoPat pat
+		in
+		    G.APPPat(I'', CONSPat(I'),
+			     TUPLEAtPat(I'', [pat,toPatList pats']))
+		end
 	in
 	    G.PARAtPat(I, toPatList pats)
 	end
 
 
-    fun DOTSPatRow(I, SOME pat, NONE) = G.DOTSPatRow(I, pat)
+    fun DOTSPatRow(I, SOME pat, NONE) =
+	    G.DOTSPatRow(Source.span(I, G.infoPat pat), pat)
       | DOTSPatRow(I, NONE, NONE)     =
 	    G.DOTSPatRow(I, G.ATPATPat(I, G.WILDCARDAtPat(I)))
       | DOTSPatRow(I, pat_opt, SOME(G.ROWPatRow(I', lab, pat, patrow_opt))) =
-	    G.ROWPatRow(I', lab, pat, SOME(DOTSPatRow(I, pat_opt, patrow_opt)))
+	    G.ROWPatRow(I', lab, pat,
+			SOME(DOTSPatRow(Source.at I, pat_opt, patrow_opt)))
       | DOTSPatRow(I, pat_opt, SOME(G.DOTSPatRow(I', _))) =
 	    E.error(I', E.PatRowEllipses)
 
@@ -427,11 +438,18 @@ struct
       | LETAtExp(I, dec,  exps) =
 	    G.LETAtExp(I, dec, G.ATEXPExp(I, SEQAtExp(I, exps)))
 
-    fun LISTAtExp(I, exps) =
+    fun LISTAtExp(I, []) = NILAtExp(I)
+      | LISTAtExp(I, exps as exp::_) =
 	let
-	    fun toExpList []          = NILExp(I)
+	    val I' = Source.span(I, Source.at(G.infoExp exp))
+	    fun toExpList []          = NILExp(I')
 	      | toExpList(exp::exps') =
-		  G.APPExp(I, CONSExp(I), TUPLEAtExp(I, [exp, toExpList exps']))
+		let
+		    val I'' = G.infoExp exp
+		in
+		    G.APPExp(I'', CONSExp(I'),
+			     TUPLEAtExp(I'', [exp, toExpList exps']))
+		end
 	in
 	    G.PARAtExp(I, toExpList exps)
 	end
@@ -439,19 +457,19 @@ struct
     fun UPDATEAtExp(I, atexp, exprow) =
         let
             val I'  = G.infoAtExp atexp
-            val vid = G.VId(I', VId.invent())
+            val vid = G.VId(Source.at I', VId.invent())
 
             fun toPatRow NONE =
-                    SOME(G.DOTSPatRow(I', VIDPat(I', vid)))
-              | toPatRow(SOME(G.ROWExpRow(I, lab, exp, exprow_opt))) =
-                    SOME(G.ROWPatRow(I, lab,
-                                G.ATPATPat(I, G.WILDCARDAtPat(G.infoExp exp)),
+                    SOME(G.DOTSPatRow(I', VIDPat(Source.at I', vid)))
+              | toPatRow(SOME(G.ROWExpRow(I, G.Lab(I2,l), exp, exprow_opt))) =
+                    SOME(G.ROWPatRow(I, G.Lab(Source.at I2, l),
+                                G.ATPATPat(I, G.WILDCARDAtPat(Source.at I')),
                                 toPatRow exprow_opt))
               | toPatRow(SOME(G.DOTSExpRow(I, _))) =
                     E.error(I, E.UpdExpInvalid)
 
             fun extendExpRow NONE =
-                    SOME(G.DOTSExpRow(I', VIDExp(I', vid)))
+                    SOME(G.DOTSExpRow(I', VIDExp(Source.at I', vid)))
               | extendExpRow(SOME(G.ROWExpRow(I, lab, exp, exprow_opt))) =
                     SOME(G.ROWExpRow(I, lab, exp, extendExpRow exprow_opt))
               | extendExpRow(SOME(G.DOTSExpRow(I, _))) =
@@ -469,12 +487,13 @@ struct
     fun RECExp(I, pat, exp) =
 	let
 	    val I'      = G.infoPat pat
-	    val vid     = G.VId(Source.at I', VId.invent())
-	    val asPat   = G.ASPat(I', VIDPat(Source.at I', vid), pat)
+	    val I''     = Source.span(I,Source.at I')
+	    val vid     = G.VId(I'', VId.invent())
+	    val asPat   = G.ASPat(I', VIDPat(I'', vid), pat)
 	    val valbind = G.RECValBind(I, G.PLAINValBind(I, asPat, exp, NONE))
 	    val dec     = G.VALDec(I, G.Seq(I',[]), valbind)
 	in
-	    G.ATEXPExp(I, G.LETAtExp(I, dec, VIDExp(I', vid)))
+	    G.ATEXPExp(I, G.LETAtExp(I, dec, VIDExp(I'', vid)))
 	end
 
     fun WHILEExp(I, exp1, exp2) =
@@ -489,9 +508,10 @@ struct
 
 	    val seqExp    = G.ATEXPExp(I, G.SEQAtExp(I, [exp2, callVid]))
 	    val fnBody    = G.IFExp(I, exp1, seqExp, unitExp)
-	    val mrule     = G.Mrule(I, G.ATPATPat(I, G.WILDCARDAtPat(I)),fnBody)
+	    val pat       = G.ATPATPat(I, G.WILDCARDAtPat(Source.at I))
+	    val mrule     = G.Mrule(I, pat, fnBody)
 	    val fnExp     = G.FNExp(I, G.Match(I, mrule, NONE))
-	    val fnBind    = G.PLAINValBind(I, VIDPat(I, vid), fnExp, NONE)
+	    val fnBind    = G.PLAINValBind(I, VIDPat(I', vid), fnExp, NONE)
 	    val valbind   = G.RECValBind(I, fnBind)
 	    val dec       = G.VALDec(I, G.Seq(I, []), valbind)
 	in
@@ -516,14 +536,14 @@ struct
 
 	    val mrule2     = G.Mrule(I, G.ATPATPat(I, G.WILDCARDAtPat(I)), exp2)
 	    val fnExp      = G.FNExp(I, G.Match(I, mrule2, NONE))
-	    val valbind2   = G.PLAINValBind(I, VIDPat(I, vid2), fnExp, NONE)
+	    val valbind2   = G.PLAINValBind(I, VIDPat(I', vid2), fnExp, NONE)
 	    val dec2       = G.VALDec(I, G.Seq(I, []), valbind2)
 
 	    val raiseExp   = G.RAISEExp(I, vidExp3)
 	    val handleBody = G.ATEXPExp(I, G.SEQAtExp(I, [appExp, raiseExp]))
-	    val mrule1     = G.Mrule(I, VIDPat(I,vid3), handleBody)
+	    val mrule1     = G.Mrule(I, VIDPat(I',vid3), handleBody)
 	    val handleExp  = G.HANDLEExp(I, exp1, G.Match(I, mrule1, NONE))
-	    val valbind1   = G.PLAINValBind(I, VIDPat(I, vid1), handleExp, NONE)
+	    val valbind1   = G.PLAINValBind(I, VIDPat(I',vid1), handleExp, NONE)
 	    val dec1       = G.VALDec(I, G.Seq(I, []), valbind1)
 	in
 	    G.ATEXPExp(I, G.LETAtExp(I, G.SEQDec(I, dec2, dec1), letBody))
@@ -628,20 +648,22 @@ end
 
     fun DOTSExpRow(I, exp, NONE) =
 	    G.DOTSExpRow(I, exp)
-      | DOTSExpRow(I, exp, exprow_opt) =
+      | DOTSExpRow(I, exp, exprow_opt as SOME exprow) =
 	let
 	    val I'     = G.infoExp exp
 	    val vid    = G.VId(I', VId.invent())
 	    val dec    = G.VALDec(I', G.Seq(I, []),
 				  G.PLAINValBind(I', VIDPat(I',vid), exp, NONE))
-	    val exprow = DOTSExpRow'(I, vid, exprow_opt)
-	    val recExp = G.ATEXPExp(I, G.RECORDAtExp(I, SOME exprow))
-	    val letExp = G.ATEXPExp(I, G.LETAtExp(I, dec, recExp))
+	    val I''    = G.infoExpRow exprow
+	    val exprow'= DOTSExpRow'(I, vid, exprow_opt)
+	    val recExp = G.ATEXPExp(I'', G.RECORDAtExp(I'', SOME exprow'))
+	    val letExp = G.ATEXPExp(I'', G.LETAtExp(I'', dec, recExp))
 	in
-	    G.DOTSExpRow(I, letExp)
+	    G.DOTSExpRow(Source.at I, letExp)
 	end
     and DOTSExpRow'(I, vid, NONE) =
-	    G.DOTSExpRow(I, VIDExp(I, vid))
+	    G.DOTSExpRow(Source.span(I, G.infoVId vid),
+			 VIDExp(G.infoVId vid, vid))
       | DOTSExpRow'(I, vid, SOME(G.ROWExpRow(I', lab, exp, exprow_opt))) =
 	    G.ROWExpRow(I', lab, exp, SOME(DOTSExpRow'(I, vid, exprow_opt)))
       | DOTSExpRow'(I, vid, SOME(G.DOTSExpRow(I', _))) =
@@ -665,7 +687,7 @@ end
       | TUPLETy(I,  tys) = G.TUPLETy(I, tys)
 
     fun DOTSTyRow(I, ty, NONE) =
-	    G.DOTSTyRow(I, ty)
+	    G.DOTSTyRow(Source.span(I, G.infoTy ty), ty)
       | DOTSTyRow(I, ty, SOME(G.ROWTyRow(I', lab, ty', tyrow_opt))) =
 	    G.ROWTyRow(I', lab, ty', SOME(DOTSTyRow(I, ty, tyrow_opt)))
       | DOTSTyRow(I, ty, SOME(G.DOTSTyRow(I', _))) =
@@ -720,8 +742,9 @@ end
 
     fun DODec(I, exp) =
 	let
-	    val ty  = G.RECORDTy(I, NONE)
-	    val pat = G.TYPEDPat(I, G.ATPATPat(I, G.WILDCARDAtPat(I)), ty)
+	    val I'  = Source.at I
+	    val ty  = G.RECORDTy(I', NONE)
+	    val pat = G.TYPEDPat(I', G.ATPATPat(I', G.WILDCARDAtPat(I')),ty)
 	in
 	    G.VALDec(I, G.Seq(I, []), G.PLAINValBind(I, pat, exp, NONE))
 	end
@@ -793,8 +816,8 @@ end
 
 
     fun NEWExBind(I, op_opt, vid, ty_opt, econbind_opt) =
-	    G.NEWEconBind(I, op_opt, vid, ty_opt,
-			     G.Seq(I,[]), longtycon_EXN(I), econbind_opt)
+	    G.NEWEconBind(I, op_opt, vid, ty_opt, G.Seq(I,[]),
+			     longtycon_EXN(Source.at I), econbind_opt)
  
 
     (* Structure bindings *)
@@ -930,7 +953,7 @@ end
 
     fun NEWExDesc(I, op_opt, vid, ty_opt, econdesc_opt) =
 	    G.NEWEconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
-			  longtycon_EXN(I), econdesc_opt)
+			  longtycon_EXN(Source.at I), econdesc_opt)
 
     fun FunDesc(I, strid, strpats, sigexp, fundesc_opt) =
 	let
