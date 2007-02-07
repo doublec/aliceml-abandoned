@@ -133,7 +133,7 @@ structure OutputWriters =
 
       val rowColId = Gtk.Statusbar.getContextId(Gui.statusbar1, "rowcol")
       val _ = Gtk.Statusbar.push(Gui.statusbar1,rowColId,
-                                "L 0  C 0");
+                                "0.0");
 
       val tooltips = Gtk.Tooltips.new()
 
@@ -143,7 +143,7 @@ structure OutputWriters =
               val c = Int.toString col
 	      val annot = case annotOpt of NONE => "" | SOME(s1,s2,s3) =>
 		  s1^" "^s2^" "^Substring.string(Substring.takel (fn c=>c <> #"\n") (Substring.full s3))
-              val msg = "L "^r^"  C "^c^"    "^annot
+              val msg = r^"."^c^"    "^annot
           in
 	      case annotOpt of
 	          NONE => Gtk.Tooltips.disable tooltips
