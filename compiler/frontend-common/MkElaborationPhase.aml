@@ -312,6 +312,7 @@ struct
 	    val (l,vallab') = elabLab(E, vallab)
 	    val (t,x')      = elabX(E, x)
 	in
+	    annots := (I.infoLab vallab, ValAnnot t) :: !annots;
 	    ( l, t, O.Fld(nonInfo(i), vallab', x') )
 	end
 
@@ -370,6 +371,7 @@ struct
 	let
 	    val (t,lit') = elabLit(E, lit)
 	in
+	    annots := (i, ValAnnot t) :: !annots;
 	    ( t, O.LitExp(typInfo(i,t), lit') )
 	end
 
@@ -385,6 +387,7 @@ struct
 	let
 	    val (t,typ') = elabStarTyp(E, false, typ)
 	in
+	    annots := (i, ValAnnot t) :: !annots;
 	    ( t, O.PrimExp(typInfo(i,t), s, typ') )
 	end
 
@@ -401,6 +404,7 @@ struct
 	    val _        = if Type.isExtKind(Type.kind t2) then () else
 				error(i, E.NewExpResTyp t2)
 	in
+	    annots := (i, ValAnnot t) :: !annots;
 	    ( t, O.NewExp(typInfo(i,t), typ') )
 	end
 
@@ -411,6 +415,7 @@ struct
 	    val  r          = Type.extendRow(l, t1, Type.unknownRow())
 	    val  t          = Type.sum r
 	in
+	    annots := (I.infoLab vallab, ValAnnot t) :: !annots;
 	    ( t, O.TagExp(typInfo(i,t), vallab', exp') )
 	end
 (*OBSOLETE
@@ -425,6 +430,7 @@ struct
 	    val  _          = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				    error(i, E.TagExpArgMismatch(t1,t2, t3,t4))
 	in
+	    annots := (I.infoLab vallab, ValAnnot t) :: !annots;
 	    ( t, O.TagExp(typInfo(i,t), vallab', SOME typ', exp') )
 	end
 *)
@@ -444,6 +450,7 @@ struct
 				  handle Type.Mismatch(t4,t5)=>
 				    error(i, E.ConExpArgMismatch(t11, t2, t4, t5))
 	in
+	    annots := (I.infoLongid vallongid, ValAnnot t12) :: !annots;
 	    ( t12, O.ConExp(typInfo(i,t12), vallongid', exp') )
 	end
 
@@ -452,6 +459,8 @@ struct
 	    val (t1,exp') = elabExp(E, exp)
 	    val  t        = refTyp(E, t1)
 	in
+	    annots := (Source.span(i, Source.at(I.infoExp exp)),
+		       ValAnnot t) :: !annots;
 	    ( t, O.RefExp(typInfo(i,t), exp') )
 	end
 
@@ -479,6 +488,11 @@ struct
 	    val (ts,exps') = elabExps(E, exps)
 	    val  t         = Type.tuple ts
 	in
+	    (* Bad interference with derived forms... :-(
+	    annots := (Source.span(i, Source.at(I.infoExp(Vector.sub(exps,0))))
+		       handle Subscript => i,
+		       ValAnnot t) :: !annots;
+	    *)
 	    ( t, O.TupExp(typInfo(i,t), exps') )
 	end
 
@@ -487,6 +501,10 @@ struct
 	    val (r,exprow') = elabRow(elabExp, I.infoExp, E, exprow)
 	    val  t          = Type.prod r
 	in
+	    (* Bad interference with derived forms... :-(
+	    annots := (Source.span(i, Source.at(I.infoRow exprow)),
+		       ValAnnot t) :: !annots;
+	    *)
 	    ( t, O.ProdExp(typInfo(i,t), exprow') )
 	end
 
@@ -500,6 +518,8 @@ struct
 	    val  _          = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				error(i, E.SelExpMismatch(t1, t2, t3, t4))
 	in
+	    annots := (Source.span(i, I.infoLab vallab),
+		       ValAnnot(Type.arrow(t1,t))) :: !annots;
 	    ( t, O.SelExp(typInfo(i,t), vallab', exp') )
 	end
 
@@ -513,6 +533,9 @@ struct
 				error(I.infoExp(Vector.sub(exps,n)),
 				      E.VecExpMismatch(t, Vector.sub(ts,n), t1,t2))
 	in
+	    annots := (Source.span(i, Source.at(I.infoExp(Vector.sub(exps,0))))
+		       handle Subscript => i,
+		       ValAnnot t) :: !annots;
 	    ( t, O.VecExp(typInfo(i,t), exps') )
 	end
 
@@ -522,6 +545,9 @@ struct
 	    val (t2,mats') = elabMats(E, t1, mats)
 	    val  t         = Type.arrow(t1,t2)
 	in
+	    annots := (Source.span(i, Source.at(I.infoMat(Vector.sub(mats,0))
+						handle Subscript => i)),
+		       ValAnnot t) :: !annots;
 	    ( t, O.FunExp(typInfo(i,t), mats') )
 	end
 
@@ -579,6 +605,8 @@ struct
 	    val  _         = Type.unify(t2,t3) handle Type.Mismatch(t4,t5) =>
 				error(i, E.IfExpBranchMismatch(t2, t3, t4, t5))
 	in
+	    annots := (Source.span(i, Source.at(I.infoExp exp1)),
+		       ValAnnot t2) :: !annots;
 	    ( t2, O.IfExp(typInfo(i,t2), exp1', exp2', exp3') )
 	end
 
@@ -595,6 +623,8 @@ struct
 	    val (t1,exp')  = elabExp(E, exp)
 	    val (t2,mats') = elabMats(E, t1, mats)
 	in
+	    annots := (Source.span(i, Source.at(I.infoExp exp)),
+		       ValAnnot(Type.arrow(t1,t2))) :: !annots;
 	    ( t2, O.CaseExp(typInfo(i,t2), exp', mats') )
 	end
 
@@ -602,6 +632,7 @@ struct
 	let
 	    val  t = Type.unknown(Type.starKind())
 	in
+	    annots := (i, ValAnnot t) :: !annots;
 	    ( t, O.FailExp(typInfo(i,t)) )
 	end
 
@@ -609,6 +640,8 @@ struct
 	let
 	    val (t,exp') = elabExp(E, exp)
 	in
+	    annots := (Source.span(i, Source.at(I.infoExp exp)),
+		       ValAnnot t) :: !annots;
 	    ( t, O.LazyExp(typInfo(i,t), exp') )
 	end
 
@@ -616,6 +649,8 @@ struct
 	let
 	    val (t,exp') = elabExp(E, exp)
 	in
+	    annots := (Source.span(i, Source.at(I.infoExp exp)),
+		       ValAnnot t) :: !annots;
 	    ( t, O.SpawnExp(typInfo(i,t), exp') )
 	end
 
@@ -634,10 +669,14 @@ struct
       | elabExp(E, I.HandleExp(i, exp, mats)) =
 	let
 	    val (t1,exp')  = elabExp(E, exp)
-	    val (t2,mats') = elabMats(E, exnTyp E, mats)
+	    val  te        = exnTyp E
+	    val (t2,mats') = elabMats(E, te, mats)
 	    val  _         = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				error(i, E.HandleExpMismatch(t1, t2, t3, t4))
 	in
+	    annots := (Source.between(I.infoExp exp, I.infoMat(Vector.sub(mats,0))),
+		       ValAnnot(Type.arrow(te,t1))) :: !annots
+		       handle Subscript => ();
 	    ( t1, O.HandleExp(typInfo(i,t1), exp', mats') )
 	end
 
@@ -665,6 +704,11 @@ struct
 	    val  _       = if not(Inf.isExist j) then () else
 				error(i, E.LetExpGenerative(#2(Inf.asExist j)))
 	in
+	    (* Bad interference with derived forms... :-(
+	    annots := (Source.span(i, Source.at(I.infoDec(Vector.sub(decs,0))
+						handle Subscript => I.infoExp exp)),
+		       ValAnnot t) :: !annots;
+	    *)
 	    ( t, O.LetExp(typInfo(i,t), decs', exp') )
 	end
 
@@ -678,6 +722,8 @@ struct
 	    val  _        = Type.exitLevel()
 	    val  t        = PervasiveType.typ_package
 	in
+	    annots := (Source.span(i, Source.at(I.infoMod mod)),
+		       ValAnnot t) :: !annots;
 	    ( t, O.PackExp(typInfo(i,t), mod', inf') )
 	end
 
@@ -787,6 +833,7 @@ struct
 	let
 	    val t = Type.unknown(Type.starKind())
 	in
+	    annots := (i, ValAnnot t) :: !annots;
 	    ( t, O.JokPat(typInfo(i,t)) )
 	end
 
@@ -794,6 +841,7 @@ struct
 	let
 	    val (t,lit') = elabLit(E, lit)
 	in
+	    annots := (i, ValAnnot t) :: !annots;
 	    ( t, O.LitPat(typInfo(i,t), lit') )
 	end
 
@@ -811,6 +859,7 @@ struct
 	    val  r          = Type.extendRow(l, t1, Type.unknownRow())
 	    val  t          = Type.sum r
 	in
+	    annots := (I.infoLab vallab, ValAnnot t) :: !annots;
 	    ( t, O.TagPat(typInfo(i,t), vallab', pat') )
 	end
 (*OBSOLETE
@@ -844,6 +893,7 @@ struct
 				  handle Type.Mismatch(t4,t5)=>
 				    error(i, E.ConPatArgMismatch(t11, t2, t4, t5))
 	in
+	    annots := (I.infoLongid vallongid, ValAnnot t12) :: !annots;
 	    ( t12, O.ConPat(typInfo(i,t12), vallongid', pat') )
 	end
 
@@ -852,6 +902,8 @@ struct
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val  t        = refTyp(E, t1)
 	in
+	    annots := (Source.span(i, Source.at(I.infoPat pat)),
+		       ValAnnot t) :: !annots;
 	    ( t, O.RefPat(typInfo(i,t), pat') )
 	end
 
@@ -879,6 +931,11 @@ struct
 	    val (ts,pats') = elabPats(E, s, pats)
 	    val  t         = Type.tuple ts
 	in
+	    (* Bad interference with derived forms... :-(
+	    annots := (Source.span(i, Source.at(I.infoPat(Vector.sub(pats,0))))
+		       handle Subscript => i,
+		       ValAnnot t) :: !annots;
+	    *)
 	    ( t, O.TupPat(typInfo(i,t), pats') )
 	end
 
@@ -888,6 +945,10 @@ struct
 				      E, patrow)
 	    val  t          = Type.prod r
 	in
+	    (* Bad interference with derived forms... :-(
+	    annots := (Source.span(i, Source.at(I.infoRow patrow)),
+		       ValAnnot t) :: !annots;
+	    *)
 	    ( t, O.ProdPat(typInfo(i,t), patrow') )
 	end
 
@@ -901,6 +962,9 @@ struct
 				error(I.infoPat(Vector.sub(pats,n)),
 				      E.VecPatMismatch(t, Vector.sub(ts,n), t1,t2))
 	in
+	    annots := (Source.span(i, Source.at(I.infoPat(Vector.sub(pats,0))))
+		       handle Subscript => i,
+		       ValAnnot t) :: !annots;
 	    ( t, O.VecPat(typInfo(i,t), pats') )
 	end
 
@@ -928,6 +992,8 @@ struct
 	let
 	    val (t,pat') = elabPat(E, s, pat)
 	in
+	    annots := (Source.span(i, Source.at(I.infoPat pat)),
+		       ValAnnot t) :: !annots;
 	    ( t, O.NegPat(typInfo(i,t), pat') )
 	end
 
@@ -1096,6 +1162,7 @@ struct
 	let
 	    val t = Type.unknown(Type.starKind())
 	in
+	    annots := (i, TypAnnot t) :: !annots;
 	    if allowJok
 	    then ( t, O.JokTyp(typInfo(i,t)) )
 	    else error(i, E.JokTyp)
@@ -1376,6 +1443,11 @@ prInf "s2" j;
 ())
 *)
 	in
+	    (*
+	    annots := (Source.span(i, Source.at(I.infoDec(Vector.sub(decs,0))))
+		       handle Subscript => i,
+		       ModAnnot j) :: !annots;
+	    *)
 	    ( j, O.StrMod(infInfo(i,j), decs') )
 	end
 
@@ -1404,6 +1476,8 @@ prInf "s2" j;
 TextIO.print "ElabMod FunMod:\n";
 prInf "j" j;
 *)
+	    annots := (Source.span(i, Source.at(I.infoId modid)),
+		       ModAnnot j) :: !annots;
 	    ( j, O.FunMod(infInfo(i,j), modid', inf', mod') )
 	end
 
@@ -1529,6 +1603,9 @@ prInf "j" j;
 ())
 *)
 	in
+	    annots := (Source.span(i, Source.at(I.infoDec(Vector.sub(decs,0))
+						handle Subscript => I.infoMod mod)),
+		       ModAnnot j) :: !annots;
 	    ( j, O.LetMod(infInfo(i,j), decs', mod') )
 	end
 
