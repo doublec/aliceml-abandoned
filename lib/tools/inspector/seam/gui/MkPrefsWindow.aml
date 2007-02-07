@@ -24,7 +24,7 @@ local
                                          "    Done    ",
                                          Gtk.INT 0)
   *)
-  val _ = Gtk.Dialog.addButton (dialog, "    Done    ", 1)
+  val _ = Gtk.Dialog.addButton (dialog, "    Done    ", 0)
   val _ = Gtk.Dialog.addButton (dialog, "    Apply    ", 1)
   val _ = Gtk.Dialog.addButton (dialog, "    Cancel    ", ~1)
     
