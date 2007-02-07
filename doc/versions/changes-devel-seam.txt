@@ -17,6 +17,7 @@ Constraint Library:
 
 Other Libraries:
 
+* [NEW] Inspector: preferences can be saved now.
 * [FIX] Inspector: "Done" button did not close the window.
 
 

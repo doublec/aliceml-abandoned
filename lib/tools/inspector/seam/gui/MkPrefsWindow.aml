@@ -24,8 +24,9 @@ local
                                          "    Done    ",
                                          Gtk.INT 0)
   *)
-  val _ = Gtk.Dialog.addButton (dialog, "    Done    ", 0)
   val _ = Gtk.Dialog.addButton (dialog, "    Apply    ", 1)
+  val _ = Gtk.Dialog.addButton (dialog, "    Save    ", 2)
+  val _ = Gtk.Dialog.addButton (dialog, "    Done    ", 0)
   val _ = Gtk.Dialog.addButton (dialog, "    Cancel    ", ~1)
     
   val vbox = Gtk.Dialog.getFieldVBox dialog
@@ -295,11 +296,12 @@ local
      Gtk.Widget.setSensitive(MainWin.menuItemPreferences, true))
     
   fun apply () = Handlers.applyPreferences (read3 (read2 (read1 prefs)))
-    
+
   fun response (_, args) =
     case args of
       Gtk.INT 0 :: _ => (apply () ; close ())
     | Gtk.INT 1 :: _ => apply ()
+    | Gtk.INT 2 :: _ => (apply () ; Prefs.save ())
     | Gtk.INT x :: _ => (assert (x<0) ; close ())
     | _ => (Common.warning "MkPrefsWindow.newPrefWindow: GTK - assert false." ;
             close ())

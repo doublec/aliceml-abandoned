@@ -8,18 +8,20 @@ struct
 		       | Son        (* The son, highlighting also the text. *)
 		       | SonStrict  (* Only the son is highlighted. *)
 
-  type style = {name       : string ,
-		colorClass : Gdk.object ref ,
-		font       : string     ref ,
-		usefont    : bool       ref}
+  type 'a style' = {name       : string ,
+		    rgb        : (int * int * int) ref ,
+		    colorClass : 'a     ref ,
+		    font       : string ref ,
+		    usefont    : bool   ref}
+  type style = Gdk.object style'
 
-  fun copyStyle {name, colorClass, font, usefont} =
-      {name, colorClass = ref (!colorClass), font = ref (!font),
-       usefont = ref (!usefont)}
+  fun copyStyle {name, rgb, colorClass, font, usefont} =
+      {name, rgb = ref (!rgb), colorClass = ref (!colorClass),
+       font = ref (!font), usefont = ref (!usefont)}
 
-  fun updateStyle ({name = name1, colorClass = color1,
+  fun updateStyle ({name = name1, rgb = rgb1, colorClass = color1,
 		    font = font1, usefont = usefont1},
-		   {name = name2, colorClass = color2,
+		   {name = name2, rgb = rgb2, colorClass = color2,
 		    font = font2, usefont = usefont2},
 		   changed) =
       let
@@ -28,6 +30,8 @@ struct
 		      else (font1 := !font2 ; true)
 	val changed = if !usefont1 = !usefont2 then changed
 		      else (usefont1 := !usefont2 ; true)
+	val changed = if !rgb1 = !rgb2 then changed
+		      else (rgb1 := !rgb2 ; true)
 	val changed = if !color1 = !color2 then changed
 		      else (color1 := !color2 ; true)
       in
@@ -36,16 +40,17 @@ struct
       
 
   (* Preferences. *)
-  type prefs = {widthLimit   : int ,
-                depthLimit   : int ,
-		incrWidth    : int ,
-		incrDepth    : int ,
-                fontname     : string,
-                labelOrient  : orientation,
-                tooltips     : bool,
-                tipDelay     : int,
-                identifiers  : bool,
-		styles       : style list}
+  type 'a prefs' = {widthLimit   : int ,
+		    depthLimit   : int ,
+		    incrWidth    : int ,
+		    incrDepth    : int ,
+		    fontname     : string,
+		    labelOrient  : orientation,
+		    tooltips     : bool,
+		    tipDelay     : int,
+		    identifiers  : bool,
+		    styles       : 'a list}
+  type prefs = style prefs'
 
   val styles = ref []
   val widthLimit  = ref 16
@@ -150,10 +155,14 @@ struct
   val shadeColor   = lazy allocColor (45000, 45000, 45000)
 
   fun newStyle (name, font, rgb, editable) =
+    case List.find (fn {name = n, ...} => name = n) (!styles) of
+      SOME style => style
+    | NONE =>
     let 
       val c = lazy allocColor rgb
       val r = ref c
       val style = {name, 
+		   rgb = ref rgb ,
 		   colorClass = r ,
 		   font = ref font,
 		   usefont = ref false}
@@ -161,6 +170,53 @@ struct
       if editable then styles := style :: (!styles) else () ;
       style
     end
+
+(***********************************************************
+ *                 Loading and Saving                      *
+ ***********************************************************)
+
+  type persistent_style = unit style'
+  type persistent_prefs = persistent_style prefs'
+
+  fun externaliseStyle (style : style) : persistent_style =
+      {style where colorClass = ref ()}
+  fun externalise (prefs : prefs) : persistent_prefs =
+      {prefs where styles = List.map externaliseStyle (#styles prefs)}
+
+  fun internaliseStyle (style : persistent_style) : style =
+      {style where colorClass = ref (lazy allocColor (!(#rgb style)))}
+  fun internalise (prefs : persistent_prefs) : prefs =
+      {prefs where styles = List.map internaliseStyle (#styles prefs)}
+
+  val configDir = OS.FileSys.getApplicationConfigDir "Inspector"
+  val prefsFile = configDir ^ "/preferences." ^ Pickle.extension
+
+  fun createConfigDir () =
+      let
+	  val parent = OS.Path.getParent configDir
+      in
+	  OS.FileSys.mkDir parent handle OS.SysErr _ => ();
+	  OS.FileSys.mkDir configDir handle OS.SysErr _ => ()
+      end
+
+  fun save () =
+      let
+	val prefs' = externalise (getCurrentPrefs ())
+	val package = pack (val it = prefs') : (val it : persistent_prefs)
+      in
+	createConfigDir ();
+	Pickle.save (prefsFile, package) handle (OS.SysErr _ | IO.Io _) => ()
+      end
+
+  fun load () =
+      let
+	val package = Pickle.load prefsFile
+	structure P = unpack package : (val it : persistent_prefs)
+      in
+	ignore (setCurrentPrefs (internalise P.it))
+      end handle (OS.SysErr _ | IO.Io _) => ()
+
+  do load ()
 
   (* Styles for displaying values. *)
 
