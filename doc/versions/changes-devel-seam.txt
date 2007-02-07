@@ -1,7 +1,7 @@
 Interactive Toplevel:
 
 * [NEW] Window size and position are now saved across sessions.
-* [FIX] Display proper type in status bar for constructor identifiers.
+* [NEW] Extended and improved type information dispay in status bar.
 
 Basic Library:
 
