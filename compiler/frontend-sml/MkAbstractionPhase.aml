@@ -874,7 +874,7 @@ struct
 	       | (vallongid', T(NARY,tycon,kty)) =>
 		 ( fn(i',exp') => O.RollExp(i',
 					O.TagExp(i', longidToLab vallongid',
-						 O.StrictExp(i', exp')),
+						 O.StrictExp(O.infoExp exp', exp')),
 					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', T(UNARY,tycon,kty)) =>
 		 ( fn(i',exp') => O.RollExp(i',
@@ -1124,7 +1124,7 @@ struct
 	       | (vallongid', T(NARY,tycon,kty)) =>
 		 ( fn(i',pat') => O.RollPat(i',
 					O.TagPat(i', longidToLab vallongid',
-						 O.StrictPat(i', pat')),
+						 O.StrictPat(O.infoPat pat', pat')),
 					trLongVIdTyCon E (longvid,tycon,kty)) )
 	       | (vallongid', T(UNARY,tycon,kty)) =>
 		 ( fn(i',pat') => O.RollPat(i',
