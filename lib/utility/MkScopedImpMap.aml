@@ -71,6 +71,8 @@ struct
 
     fun appScope f (ref ms)	= ImpMap.app f (List.hd ms)
     fun app f (ref ms)		= List.app (ImpMap.app f) (List.rev ms)
+    fun modifyScope f (ref ms)	= ImpMap.modify f (List.hd ms)
+    fun modify f (ref ms)	= List.app (ImpMap.modify f) (List.rev ms)
     fun foldScope f b (ref ms)	= ImpMap.fold f b (List.hd ms)
     fun fold f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.fold f b' m)
 					     b ms
@@ -83,6 +85,8 @@ struct
 
     fun appiScope f (ref ms)	= ImpMap.appi f (List.hd ms)
     fun appi f (ref ms)		= List.app (ImpMap.appi f) (List.rev ms)
+    fun modifyiScope f (ref ms)	= ImpMap.modifyi f (List.hd ms)
+    fun modifyi f (ref ms)	= List.app (ImpMap.modifyi f) (List.rev ms)
     fun foldiScope f b (ref ms)	= ImpMap.foldi f b (List.hd ms)
     fun foldi f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.foldi f b' m)
 					     b ms

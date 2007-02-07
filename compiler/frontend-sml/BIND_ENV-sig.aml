@@ -21,7 +21,7 @@ binding analysis for identifiers:
 	FldEnv	= Lab   -> 0			(field env)
 	VarEnv	= TyVar -> Stamp		(type variable env)
 	ValEnv	= VId   -> Stamp * IdStatus	(value env)
-	TyEnv	= TyCon -> Stamp * Env		(type env)
+	TyEnv	= TyCon -> Stamp * Env * int	(type env)
 	StrEnv	= StrId -> Stamp * EnvFn	(module env)
 	SigEnv	= SigId -> Stamp * EnvFn	(signature env)
 
@@ -73,7 +73,7 @@ sig
     type Fld = Info
     type Var = Info * stamp
     type Val = Info * stamp * IdStatus
-    type Ty  = Info * stamp * Env
+    type Ty  = Info * stamp * (Env * int)
     type Str = Info * stamp * EnvFn
     type Sig = Info * stamp * EnvFn
 
@@ -165,6 +165,21 @@ sig
     val foldiTys :		(TyCon * Ty  * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiStrs :		(StrId * Str * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
+
+    val foldli :		( VId  * Inf * 'a -> 'a) *
+				( Lab  * Fld * 'a -> 'a) *
+				(TyVar * Var * 'a -> 'a) *
+				( VId  * Val * 'a -> 'a) *
+				(TyCon * Ty  * 'a -> 'a) *
+				(StrId * Str * 'a -> 'a) *
+				(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldri :		( VId  * Inf * 'a -> 'a) *
+				( Lab  * Fld * 'a -> 'a) *
+				(TyVar * Var * 'a -> 'a) *
+				( VId  * Val * 'a -> 'a) *
+				(TyCon * Ty  * 'a -> 'a) *
+				(StrId * Str * 'a -> 'a) *
+				(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
 
     val infEnv :		Env -> VId -> InfStatus
 end

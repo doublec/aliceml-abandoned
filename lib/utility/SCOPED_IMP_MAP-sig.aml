@@ -72,6 +72,11 @@ sig
     val appi :			(key * 'a -> unit) -> 'a map -> unit
     val appiScope :		(key * 'a -> unit) -> 'a map -> unit
 
+    val modify :		('a -> 'a) -> 'a map -> unit
+    val modifyScope :		('a -> 'a) -> 'a map -> unit
+    val modifyi :		(key * 'a -> 'a) -> 'a map -> unit
+    val modifyiScope :		(key * 'a -> 'a) -> 'a map -> unit
+
     val fold :			('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val foldScope :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val foldi :			(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b

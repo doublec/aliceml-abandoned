@@ -23,9 +23,6 @@ signature BIN_IO =
 	      and type StreamIO.reader = BinPrimIO.reader
 	      and type StreamIO.writer = BinPrimIO.writer
 
-	type instream
-	type outstream
-
 	val openIn: string -> instream
 	val openOut: string -> outstream
 	val openAppend: string -> outstream
