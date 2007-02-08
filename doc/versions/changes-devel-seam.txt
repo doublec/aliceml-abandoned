@@ -1,3 +1,7 @@
+Language & Compiler:
+
+* [NEW] Full support for signature inclusion.
+
 Interactive Toplevel:
 
 * [NEW] Window size and position are now saved across sessions.

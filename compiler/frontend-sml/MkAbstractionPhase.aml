@@ -2614,11 +2614,38 @@ struct
 	      raise Crash.Crash "AbstractionPhase.expandIncludeSig"
 	)
 
+    and induceIncludePrefix(E, sigexp) =
+	let
+	    val spec = expandInclude(infoSigExp sigexp, E)
+	in
+	    induceIncludePrefixSigExp(spec, sigexp)
+	end
 
-    and extractIncludes(INCLUDESpec(i, sigexp))   = [sigexp]
-      | extractIncludes(SEQSpec(i, spec1, spec2)) =
-	    extractIncludes spec1 @ extractIncludes spec2
-      | extractIncludes spec = []
+    and induceIncludePrefixAtSigExp(spec, atsigexp) =
+	case atsigexp
+	 of (ANYAtSigExp _ | LONGSIGIDAtSigExp _) =>
+		atsigexp
+
+	 | SIGAtSigExp(i, spec') =>
+		SIGAtSigExp(i, SEQSpec(i, spec, spec'))
+
+	 | LETAtSigExp _ =>
+		atsigexp	(* not allowed to contain dependencies *)
+
+	 | PARAtSigExp(i, sigexp) =>
+		PARAtSigExp(i, induceIncludePrefixSigExp(spec, sigexp))
+
+    and induceIncludePrefixSigExp(spec, sigexp) =
+	case sigexp
+	 of ATSIGEXPSigExp(i, atsigexp) =>
+		ATSIGEXPSigExp(i, induceIncludePrefixAtSigExp(spec, atsigexp))
+
+	  | (APPSigExp _ | FCTSigExp _) =>
+		sigexp		(* not allowed to contain dependencies *)
+
+	  | WHERESigExp(i, sigexp1, sigexp2) =>
+		WHERESigExp(i, induceIncludePrefixSigExp(spec, sigexp1),
+			       induceIncludePrefixSigExp(spec, sigexp2))
 
     and trAtSigExp E =
 	fn ANYAtSigExp(i) =>
@@ -2630,24 +2657,21 @@ struct
 
 	 | SIGAtSigExp(i, spec) =>
 	   let
-		val _       = insertScope E
-		val _       = insertSelf E
-		val sigexps = extractIncludes spec
-		val specs'  = trSpec E spec
-		val E'      = splitScope E
-		val F       = PLAIN E'
+		val _  = insertScope E
+		val _  = insertSelf E
+		val (specs', includes) = trSpec E spec
+		val E' = splitScope E
+		val F  = PLAIN E'
 	   in
-(*
-		( O.SigInf(i, specs'), F )
-*)
-	        List.foldr (fn(sigexp,(inf'',F')) =>
+	        List.foldr (fn((Eincl,sigexp),(inf'',F')) =>
 			    let
-				val (inf',F) = trSigExp E sigexp
+				val sigexp' = induceIncludePrefix(Eincl, sigexp)
+				val (inf',F) = trSigExp E sigexp'
 				val _ = BindEnv.composeEnvFn(F,F')
 			    in
 				( O.InterInf(i, inf', inf''), F )
 			    end)
-			   (O.SigInf(i, specs'), F) sigexps
+			   (O.SigInf(i, specs'), F) includes
 	   end
 
 	 | LONGSIGIDAtSigExp(i, sigid) =>
@@ -2702,20 +2726,25 @@ struct
 		( O.InterInf(i, inf1', inf2'), F1 )
 	   end
 
-    and trSpec  E spec = Vector.rev(Vector.fromList(trSpec' (E,[]) spec))
-    and trSpec'(E,acc) =
+    and trSpec  E spec =
+	let
+	    val (specs',includes) = trSpec' (E,([],[])) spec
+	in
+	    (Vector.rev(Vector.fromList specs'), List.rev includes)
+	end
+    and trSpec'(E, acc as (acc1,acc2)) =
 	fn VALSpec(i, valdesc) =>
-		trValDesco' (E,acc) (SOME valdesc)
+		(trValDesco' (E,acc1) (SOME valdesc), acc2)
 
 	 | TYPESpec(i, typdesc) =>
-		trTypDesco' (E,acc) (SOME typdesc)
+		(trTypDesco' (E,acc1) (SOME typdesc), acc2)
 
 	 | DATATYPESpec(i, datdesc) =>
 	   let
 		val  _                = trDatDesco_lhs E (SOME datdesc)
 		val (tspecs',cspecs') = trDatDesco_rhs E (SOME datdesc)
 	   in
-		cspecs' @ O.RecSpec(i, tspecs') :: acc
+		(cspecs' @ O.RecSpec(i, tspecs') :: acc1, acc2)
 	   end
 
 	 | REPLICATIONSpec(i, tycon as TyCon(i', tycon'), longtycon) =>
@@ -2732,76 +2761,73 @@ struct
 				      handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
-		foldiVals (trOpenSpecVal (E,i,modlongido',tycon'))
+		(foldiVals (trOpenSpecVal (E,i,modlongido',tycon'))
 		    (O.TypSpec(i, typid',
-			       O.ConTyp(infoLong longtycon, typlongid')) :: acc)
-		    E'
+			       O.ConTyp(infoLong longtycon, typlongid'))
+		    :: acc1) E', acc2)
 		before
 		appiVals (fn(vid,_) => insertDisjointVal(E'',vid,
 			    		    Option.valOf(lookupVal(E,vid)))) E'
 	   end
 
 	 | EXTTYPESpec(i, extdesc) =>
-		trExtDesco' (E,acc) (SOME extdesc)
+		(trExtDesco' (E,acc1) (SOME extdesc), acc2)
 
 	 | CONSTRUCTORSpec(i, econdesc) =>
-		trEconDesco' (E,acc) (SOME econdesc)
+		(trEconDesco' (E,acc1) (SOME econdesc), acc2)
 
 	 | STRUCTURESpec(i, strdesc) =>
-		trStrDesco' (E,acc) (SOME strdesc)
+		(trStrDesco' (E,acc1) (SOME strdesc), acc2)
 
 	 | SIGNATURESpec(i, sigdesc) =>
-		trSigDesco' (E,acc) (SOME sigdesc)
+		(trSigDesco' (E,acc1) (SOME sigdesc), acc2)
 
 	 | INCLUDESpec(i, sigexp) =>
 	   let
+		val Einclude = BindEnv.cloneScope E
 		val (inf',F) = trSigExp E sigexp
 		val E'       = case F of PLAIN E' => E'
 				       | _ => error(i, E.IncludeSpecNonStruct)
-		(*val _ =
-		    unionDisjoint(E,E')
-		    handle CollisionInf x => error(i, E.SpecFixDuplicate x)
-			 | CollisionVal x => error(i, E.SpecVIdDuplicate x)
-			 | CollisionTy  x => error(i, E.SpecTyConDuplicate x)
-			 | CollisionStr x => error(i, E.SpecStrIdDuplicate x)
-			 | CollisionSig x => error(i, E.SpecSigIdDuplicate x)*)
 	   in
-	       (*O.ExtSpec(i, inf') :: acc*)
-	       (* hack for at least having limited treatment of include *)
-	       trSpec' (E,acc) (expandInclude(i,E'))
+	       trSpec' (E, (acc1,(Einclude,sigexp)::acc2))
+		  (expandInclude(i,E'))
+	       (*before union(E,E')	(* to include values etc. *)*)
 	   end
 
 	 | EMPTYSpec(i) =>
-		acc
+		(acc1, acc2)
 
 	 | SEQSpec(i, spec1, spec2) =>
 		trSpec' (E, trSpec' (E,acc) spec1) spec2
 
 	 | SHARINGTYPESpec(i, spec, longtycons) =>
 	   let
-		val specs'      = List.rev(trSpec' (E,[]) spec)
+		val (specs',includes) = trSpec' (E,([],[])) spec
+		val specs'' = List.rev specs'
 		val typlongids' = List.map (#1 o trLongTyCon E) longtycons
-		val rspecs'     = List.rev(Sharing.shareTyp(specs',typlongids'))
+		val rspecs' = List.rev(Sharing.shareTyp(specs'', typlongids'))
 	   in
-		rspecs' @ acc
+		(rspecs' @ acc1, includes @ acc2)
 	   end
 
 	 | SHARINGSIGNATURESpec(i, spec, longsigids) =>
 	   let
-		val specs'      = List.rev(trSpec' (E,[]) spec)
+		val (specs',includes) = trSpec' (E,([],[])) spec
+		val specs'' = List.rev specs'
 		val inflongids' = List.map (#1 o trLongSigId E) longsigids
-		val rspecs'     = List.rev(Sharing.shareSig(specs',inflongids'))
+		val rspecs' = List.rev(Sharing.shareSig(specs'', inflongids'))
 	   in
-		rspecs' @ acc
+		(rspecs' @ acc1, includes @ acc2)
 	   end
 
 	 | SHARINGSpec(i, spec, longstrids) =>
 	   let
-		val specs'      = List.rev(trSpec' (E,[]) spec)
+		val (specs',includes) = trSpec' (E,([],[])) spec
+		val specs'' = List.rev specs'
 		val modlongids' = List.map (#1 o trLongStrId E) longstrids
-		val rspecs'     = List.rev(Sharing.shareStr(specs',modlongids'))
+		val rspecs' = List.rev(Sharing.shareStr(specs'', modlongids'))
 	   in
-		rspecs' @ acc
+		(rspecs' @ acc1, includes @ acc2)
 	   end
 
 	 | INFIXSpec(i, n, vid as VId(i',vid')) =>
@@ -2814,7 +2840,7 @@ struct
 			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
-		spec' :: acc
+		(spec' :: acc1, acc2)
 	   end
 
 	 | INFIXRSpec(i, n, vid as VId(i',vid')) =>
@@ -2827,7 +2853,7 @@ struct
 			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
-		spec' :: acc
+		(spec' :: acc1, acc2)
 	   end
 
 	 | NONFIXSpec(i, vid as VId(i',vid')) =>
@@ -2840,7 +2866,7 @@ struct
 			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
-		spec' :: acc
+		(spec' :: acc1, acc2)
 	   end
 
 

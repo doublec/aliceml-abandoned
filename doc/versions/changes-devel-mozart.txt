@@ -1,5 +1,12 @@
 Language:
 
+* Line comments, starting with "(*)".
+* Extensible records and row capture: "{a=1, b=2, ...=r}", see manual
+  section on record sugar for details.
+* Allow optional bar before first clause of fn, case, handle, fun, and
+  before first constructor in datatype definitions.
+* Allow "do exp" as abbreviation for "val _ = exp".
+* Pattern guards now use "if" keyword.
 * Syntactic sugar for finalization.
 * Nicer syntax (derived forms) for functors.
 * Lazy and spawn syntax for modules.
@@ -14,7 +21,7 @@ Language:
 
 Compiler:
 
-* Signature inclusion has been implemented in limited form.
+* Signature inclusion has been implemented.
 * Dynamic sealing has been implemented.
 * Warn about unused imports (switch --(no-)warn-unused-imports).
 * Warn about inaccessible type and signature names appearing in inferred
