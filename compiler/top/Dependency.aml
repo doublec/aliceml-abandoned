@@ -106,35 +106,39 @@ struct
 	 of ("", s') => (fs,s')
 	  | (f,  s') => parseTokens(s', f::fs)
 
-    fun resolve(path, rel) =
-	OS.Path.mkRelative{path = path, relativeTo = OS.Path.dir rel}
-	handle OS.Path.Path => path
+    val cwd = OS.FileSys.getDir()
 
-    fun parseLine(s, d) =
+    fun normalize root path =
+	OS.Path.base(OS.Path.mkAbsolute{path = path, relativeTo = root})
+
+    fun parseLine(s, d, path) =
 	let
 	    val (f,s')   = parseHeadToken s
 	    val (fs,s'') = parseTokens(s', nil)
-	    val  f'      = OS.Path.base f
-	    val  fs'     = List.map (fn f => resolve(OS.Path.base f, f')) fs
+	    val  f'      = normalize path f
+	    val  fs'     = List.map (normalize path) fs
 	in
-	    (s'', Map.insertWith op@ (d, f', fs'))
+	    (s'', Map.insertWith op@ (d, f', fs'), path)
 	end
 
-    fun parseFile(s, d) =
+    fun parseFile(s, d, path) =
 	let
 	    val s' = Substring.dropl Char.isSpace s
 	in
 	    if Substring.isEmpty s' then d
-	    else if Substring.sub(s',0) = #"#" then parseFile(parseComment s',d)
-	    else parseFile(parseLine(s',d))
+	    else if Substring.sub(s',0) = #"#" then
+		parseFile(parseComment s', d, path)
+	    else parseFile(parseLine(s', d, path))
 	end
 
     fun load(d, file) =
 	let
-	    val is = TextIO.openIn file
-	    val s  = TextIO.inputAll is
+	    val is   = TextIO.openIn file
+	    val s    = TextIO.inputAll is
+	    val path = OS.Path.dir(OS.Path.mkAbsolute{path = file,
+						      relativeTo = cwd})
 	in
 	    TextIO.closeIn is;
-	    parseFile(Substring.full s, d)
+	    parseFile(Substring.full s, d, path)
 	end
 end
