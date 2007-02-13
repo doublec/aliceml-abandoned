@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2006
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -37,7 +37,7 @@ struct
 	  | UNIX => #":"
 
     val major = 1
-    val minor = 3
+    val minor = 4
     val revision = 0
     val version = {major, minor, revision}
 
@@ -48,7 +48,8 @@ struct
 	    (* 1.X *) #["Debut",
 			"Eval Your Own",
 			"Boost Your G-Thing",
-			"Propa Gators"]
+			"Propa Gators",
+			"Equal Rights"]
 	]
     val minors = Vector.sub (allMinors, major) handle Subscript => #[]
 
@@ -58,7 +59,8 @@ struct
 		(* 1.0.X *) #["", "Lord of the Lib"],
 		(* 1.1.X *) #[""],
 		(* 1.2.X *) #[""],
-		(* 1.3.X *) #[""]
+		(* 1.3.X *) #[""],
+		(* 1.4.X *) #[""]
 			]
 	]
     val revisions = Vector.sub (Vector.sub (allRevisions, major), minor)

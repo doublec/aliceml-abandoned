@@ -104,6 +104,8 @@ components (currently <TT>alc</TT>) and exit immediately.</P>
   <DD><P>Warn about violations of standard naming conventions (on by default).</P></DD>
   <DT><TT>--(no-)warn-shadowing</TT></DT>
   <DD><P>Warn about shadowing of identifiers (off by default, gives a lot of spurious warnings).</P></DD>
+  <DT><TT>--(no-)recursive-compilation</TT></DT>
+  <DD><P>Recursively compile imports if they do not exist in compiled form yet (does <I>not</I> perform any up-to-date checks!).</P></DD>
   <DT><TT>--dependency-file &lt;dependency file&gt;</TT></DT>
   <DD><P>Use dependency file to automatically derive import announcements.</P></DD>
   <DT><TT>--annotations-file &lt;annotations file&gt;</TT></DT>
@@ -225,6 +227,8 @@ necessary information into a single dependency file.</P>
 <P>Please note that these methods are provided solely for better compatibility
 with other SML systems. Using them for native Alice components is strongly
 discouraged.</P>
+
+<P>Depending on the structure of the sources, using a dependency file may yield a lot of spurious "unused import" warnings, because it invariably inserts imports for all entities defined on the top-level of a source file. You may want to use the <TT>--no-warn-unused-imports</TT> flag to avoid this.</P>
 
 
 <?php section("environment-variables", "environment variables") ?>

@@ -110,6 +110,7 @@ import structure Sharing           from "Sharing"
 import structure AbstractionError  from "AbstractionError"
 import signature ABSTRACTION_PHASE from "ABSTRACTION_PHASE-sig"
 
+
 structure SigLoader =
 struct
     type t = Source.desc * Url.t -> BindEnvFromSig.sign
@@ -1398,16 +1399,61 @@ struct
 					of O.LongId(_,modlongid',_) =>
 						SOME modlongid'
 					 | O.ShortId _ => NONE
+(*
+		val  E'struct       = case longtycon
+					of SHORTLong(i, _) => E
+					 | DOTLong(i, longstrid, _) =>
+				      case #2(trLongStrId E longstrid)
+					of PLAIN E => E
+					 | _ => raise Crash.Crash("AbstractionPhase.trDec: REPLICATIONDec")
 		val E''             = env()
 		val _               = insertTy(E, tycon', (i', stamp, (E'',n)))
+*)
+		val dec' = O.TypDec(i, typid',
+				    O.ConTyp(infoLong longtycon, typlongid'))
+		fun checkCons E0 =
+		    appiVals (fn(vid,(_,z,_)) =>
+			  case lookupVal(E0, vid)
+			   of NONE => error(i, E.ReplicationDecConShadowed vid)
+			    | SOME(_,z',_) => if z = z' then () else
+				error(i, E.ReplicationDecConShadowed vid)) E'
+		fun condecs() =
+		    let
+			val E'' = env()
+		    in
+			insertTy(E, tycon', (i', stamp, (E'',n)));
+			foldiVals (trOpenDecVal (E,i,modlongido',SOME tycon'))
+				  (dec' :: acc) E'
+			before
+			appiVals (fn(vid,_) => insertDisjointVal(E'',vid,
+					    Option.valOf(lookupVal(E,vid)))) E'
+		    end
 	   in
+		case longtycon
+		 of SHORTLong(_, TyCon(_, tycon)) =>
+		    (checkCons E;
+		     if Option.isSome(lookupScopeTy(E, tycon))
+		     then (insertTy(E, tycon', (i', stamp, (E',n))); dec' :: acc)
+		     else condecs())
+		  | DOTLong(_, longstrid, _) =>
+		case #2(trLongStrId E longstrid)
+		 of PLAIN E => (checkCons E; condecs())
+		  | _ =>
+		    raise Crash.Crash("AbstractionPhase.trDec: REPLICATIONDec")
+(*
+		appiVals (fn(vid,(_,z,_)) =>
+			  case lookupVal(E'struct, vid)
+			   of NONE => error(i, E.ReplicationDecConShadowed vid)
+			    | SOME(_,z',_) => if z = z' then () else
+				error(i, E.ReplicationDecConShadowed vid)) E';
 		foldiVals (trOpenDecVal (E,i,modlongido',SOME tycon'))
 		    (O.TypDec(i, typid',
 			      O.ConTyp(infoLong longtycon, typlongid')) :: acc)
 		    E'
 		before
 		appiVals (fn(vid,_) => insertDisjointVal(E'',vid,
-			    		    Option.valOf(lookupVal(E,vid)))) E'
+					    Option.valOf(lookupVal(E,vid)))) E'
+*)
 	   end
 
 	 | EXTTYPEDec(i, extbind) =>
@@ -1737,9 +1783,12 @@ struct
 				   O.LongId(i', modlongid',
 					    O.Lab(i', Label.fromString name))
 	    val E''        = env()
-	    val _          = appiVals (fn(vid,_) =>
+	    val _          = appiVals (fn(vid,(I,z,is)) =>
 				insertDisjointVal(E'',vid,
-			    	    Option.valOf(lookupVal(E,vid)))) E'
+				    case lookupVal(E,vid)
+				      of SOME(x as (_,z',_)) => if z = z' then x
+						else (I,Stamp.stamp(),is)
+				       | NONE => (I,Stamp.stamp(),is))) E'
 	    val typ'       = O.ConTyp(i', typlongid')
 	    val _          = insertTy(E, tycon', (i',stamp2,(E'',n)))
 	in
@@ -2176,11 +2225,10 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val (typ',_)       = trTyWithEnv E ty
+		val (typ',E'')     = trTyWithEnv E ty
 		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', typ')
 		val  dec'          = O.TypDec(i', typid', funtyp')
-		val  E''           = env()
 		val  n             = trTyVarSeqArity tyvarseq
 		val  _             = insertDisjointTy(E', tycon',
 						      (i',stamp,(E'',n))
@@ -2755,19 +2803,66 @@ struct
 					of O.ShortId _              => NONE
 					 | O.LongId(_,modlongid',_) =>
 						SOME modlongid'
+(*
+		val  E'struct       = case longtycon
+					of SHORTLong(i, _) => E
+					 | DOTLong(i, longstrid, _) =>
+				      case #2(trLongStrId E longstrid)
+					of PLAIN E => E
+					 | _ => raise Crash.Crash("AbstractionPhase.trSpec: REPLICATIONSpec")
 		val E''             = env()
 		val  _              = insertDisjointTy(E, tycon',
 						       (i', stamp, (E'',n)))
 				      handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
+*)
+		val spec' = O.TypSpec(i, typid',
+				      O.ConTyp(infoLong longtycon, typlongid'))
+		fun checkCons E0 =
+		    appiVals (fn(vid,(_,z,_)) =>
+			  case lookupVal(E0, vid)
+			   of NONE => error(i, E.ReplicationSpecConShadowed vid)
+			    | SOME(_,z',_) => if z = z' then () else
+				error(i, E.ReplicationSpecConShadowed vid)) E'
+		fun conspecs() =
+		    let
+			val E'' = env()
+		    in
+			insertTy(E, tycon', (i', stamp, (E'',n)));
+			( foldiVals (trOpenSpecVal (E,i,modlongido',tycon'))
+				    (spec' :: acc1) E'
+			, acc2 )
+			before
+			appiVals (fn(vid,_) => insertDisjointVal(E'',vid,
+					    Option.valOf(lookupVal(E,vid)))) E'
+		    end
 	   in
+		case longtycon
+		 of SHORTLong(_, TyCon(_, tycon)) =>
+		    (checkCons E;
+		     if Option.isSome(lookupScopeTy(E, tycon))
+		     then (insertTy(E, tycon', (i', stamp, (E',n)));
+			   ( spec'::acc1, acc2 ))
+		     else conspecs())
+		  | DOTLong(_, longstrid, _) =>
+		case #2(trLongStrId E longstrid)
+		 of PLAIN E => (checkCons E; conspecs())
+		  | _ =>
+		    raise Crash.Crash("AbstractionPhase.trSpec: REPLICATIONSpec")
+(*
+		appiVals (fn(vid,(_,z,_)) =>
+			  case lookupVal(E'struct, vid)
+			   of NONE => error(i, E.ReplicationSpecConShadowed vid)
+			    | SOME(_,z',_) => if z = z' then () else
+				error(i, E.ReplicationDecConShadowed vid)) E';
 		(foldiVals (trOpenSpecVal (E,i,modlongido',tycon'))
 		    (O.TypSpec(i, typid',
 			       O.ConTyp(infoLong longtycon, typlongid'))
 		    :: acc1) E', acc2)
 		before
 		appiVals (fn(vid,_) => insertDisjointVal(E'',vid,
-			    		    Option.valOf(lookupVal(E,vid)))) E'
+					    Option.valOf(lookupVal(E,vid)))) E'
+*)
 	   end
 
 	 | EXTTYPESpec(i, extdesc) =>
@@ -2958,11 +3053,10 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val (typ',_)       = trTyWithEnv E ty
+		val (typ',E')      = trTyWithEnv E ty
 		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', typ')
 		val  spec'         = O.TypSpec(i, typid', funtyp')
-		val  E'            = env()
 		val  n             = trTyVarSeqArity tyvarseq
 		val  _             = insertDisjointTy(E, tycon',
 						      (i', stamp, (E',n)))

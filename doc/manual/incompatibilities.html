@@ -164,7 +164,7 @@ expect.</P>
 <?php section("matching", "pattern matching") ?>
 
 <P>Since Alice is a <A href="futures.html#spawn">concurrent</A> language, matches containing impure patterns -
-particularly <TT>ref</TT> patterns - may behave slightly oddly. Patterns that
+particularly <TT>ref</TT> patterns - may behave slightly odd. Patterns that
 are exhaustive in plain SML may not necessarily be so in Alice. Also, pattern
 matching may trigger side-effects, when a <A href="futures.html#lazy">lazy
 future</A> is <A href="futures.html#request">requested</A> by matching and the
@@ -210,8 +210,9 @@ likewise.</P>
 
 <P>Alice' <A href="types.html#structural">structural datatypes</A> come with
 some restrictions that are not present in SML. In particular, Alice demands
-that, whenever a datatype constructor is used in an expression or pattern, the
-corresponding type is visible.</P>
+that, whenever a datatype constructor is used in an expression, pattern, the
+corresponding type is visible. Dually, if a datatype is replicated, all its
+constructors must be visible.</P>
 
 
 <?php subsection("datatypes-example", "Examples") ?>
@@ -223,13 +224,23 @@ datatype t = C
 type t = int
 val c = C</PRE>
 
-<P>Though one does not usually write such code, the same situation can appear
-implicitly through liberal use of open.</P>
+<P>The datatype replication in the last line of the following snippet is
+invalid as well:</P>
+
+<PRE class=code>
+datatype t = C
+datatype u = C | D
+datatype v = datatype t</PRE>
+
+<P>Though one does not usually write such code directly, these situations
+can appear implicitly through liberal use of open.</P>
+
 
 <?php subsection("datatypes-fix", "Workaround") ?>
 
 <UL>
-  <LI> Do not shadow datatypes you intend to use. </LI>
+  <LI> Do not shadow datatypes or constructors you intend to use. </LI>
+  <LI> The problem can often be avoided by using qualified names. </LI>
 </UL>
 
 

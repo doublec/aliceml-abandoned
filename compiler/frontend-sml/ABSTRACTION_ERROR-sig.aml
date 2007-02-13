@@ -51,6 +51,7 @@ sig
 	| ValTyVarSeqDuplicate	of TyVar.t
 	(* Declarations and bindings *)
 	| OpenDecNonStruct
+	| ReplicationDecConShadowed of VId.t
 	| FvalBindDuplicate	of VId.t
 	| FvalBindArityInconsistent
 	| FvalBindArityZero
@@ -71,6 +72,7 @@ sig
 	| AppStrExpNonFun
 	(* Specifications and descriptions *)
 	| IncludeSpecNonStruct
+	| ReplicationSpecConShadowed of VId.t
 	| SpecFixDuplicate	of VId.t
 	| SpecVIdDuplicate	of VId.t
 	| SpecTyConDuplicate	of TyCon.t

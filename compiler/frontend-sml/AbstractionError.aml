@@ -65,6 +65,7 @@ struct
 	| ValTyVarSeqDuplicate	of TyVar.t
 	(* Declarations and bindings *)
 	| OpenDecNonStruct
+	| ReplicationDecConShadowed of VId.t
 	| FvalBindDuplicate	of VId.t
 	| FvalBindArityInconsistent
 	| FvalBindArityZero
@@ -85,6 +86,7 @@ struct
 	| AppStrExpNonFun
 	(* Specifications and descriptions *)
 	| IncludeSpecNonStruct
+	| ReplicationSpecConShadowed of VId.t
 	| SpecFixDuplicate	of VId.t
 	| SpecVIdDuplicate	of VId.t
 	| SpecTyConDuplicate	of TyCon.t
@@ -186,8 +188,9 @@ struct
       | ppError(LongStrIdNonStruct) =
 	  textpar["module","in","long","identifier","is","not","a","structure"]
       | ppError(ConTyConShadowed(tycon, vid)) =
-	  textpar["datatype",ppTyCon tycon,"belonging","to","constructor",
-		  ppVId vid,"is","not","accessible"]
+	  textpar["datatype",ppTyCon tycon,"of","constructor",
+		  ppVId vid,"is","shadowed","by","another","type","of","the",
+		  "same","name"]
       (* Expressions *)
       | ppError(ExpConArgSuperfluous) =
 	  textpar["superfluous","constructor","argument"]
@@ -223,6 +226,9 @@ struct
       (* Declarations and bindings *)
       | ppError(OpenDecNonStruct) =
 	  textpar["module","in","open","declaration","is","not","a","structure"]
+      | ppError(ReplicationDecConShadowed vid) =
+	  textpar["constructor",ppVId vid,"of","replicated","datatype","is",
+		  "not","in","scope","or","shadowed"]
       | ppError(FvalBindDuplicate vid) =
 	  textpar["duplicate","function",ppVId vid,"in","binding","group"]
       | ppError(FvalBindArityInconsistent) =
@@ -269,6 +275,9 @@ struct
       | ppError(IncludeSpecNonStruct) =
 	  textpar["signature","in","include","specification","is","not",
 		  "a","structure"]
+      | ppError(ReplicationSpecConShadowed vid) =
+	  textpar["constructor",ppVId vid,"of","replicated","datatype","is",
+		  "not","in","scope","or","shadowed"]
       | ppError(SpecFixDuplicate vid) =
 	  textpar(["duplicate","fixity","specification","for"] @ #2 classVId @
 		  [ppVId vid,"in","signature"])

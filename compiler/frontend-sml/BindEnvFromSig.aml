@@ -143,12 +143,20 @@ struct
 		   (* t_l < ('_a -> ref '_a) ? *)
 		   val (t1,t2) = Type.asArrow(Type.instance(Inf.lookupVal(s,l)))
 		   val (t3,t4) = Type.asApply t2
+		   val vid     = VId.fromString name
+		   val x       = (I,Stamp.stamp(),R)
 		in
 		    if Type.isUnknown t1 andalso Type.equal(t3,t)
 					 andalso Type.equal(t4,t1)
-		    then insertVal(E', VId.fromString name, (I,Stamp.stamp(),R))
+		    then (insertDisjointVal(E', vid, x); insertVal(E, vid, x))
 		    else ()
-		end handle (Inf.Lookup _ | Type.Type) => ();
+		end handle (Inf.Lookup _ | Type.Type) =>
+		let
+		    val vid = VId.fromString(TyCon.toString tycon)
+		in
+		    insertVal(E', vid, (I,Stamp.stamp(),R));
+		    ()
+		end;
 	        E'
 	    end
 	else
@@ -183,16 +191,21 @@ struct
 		    if not(List.all Type.isUnknown ts) then raise Type.Type else
 		    Type.unify(t0, t3);
 		    Type.unify(t1, unstrict t');
-		    insertVal(E', vid, (I,z,is));
+		    insertDisjointVal(E', vid, (I,z,is));
+		    insertVal(E, vid, (I,z,is));	(* overwrite! *)
+		    loop r'
+		end
+		handle (Option.Option|Inf.Lookup _|Type.Type|Type.Mismatch _) =>
+		let
+		    val vid = VId.fromString(Label.toString l)
+		    val is  = T(arityFromTyp t', tycon, k)
+		in
+		    insertVal(E', vid, (I,Stamp.stamp(),is));
 		    loop r'
 		end
 	in
-	    loop r
-	    handle (Option.Option|Inf.Lookup _|Type.Type|Type.Mismatch _) =>
-		removeAll E';
-	    E'
+	    loop r; E'
 	end
-
 
     fun explodePath p =
 	case Path.inspect p
@@ -332,8 +345,7 @@ struct
 			   | _ => env()
 		val n  = arityFromKind k
 	    in
-		insertDisjointTy(E, tyconFromLabel l, (I,x,(E',n)));
-		appiVals (fn(vid,x) => insertVal(E, vid, x)) E'
+		insertDisjointTy(E, tyconFromLabel l, (I,x,(E',n)))
 	    end
 	  | Inf.ModItem(p,j) =>
 	    let

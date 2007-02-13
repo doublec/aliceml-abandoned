@@ -1,6 +1,10 @@
 Language & Compiler:
 
 * [NEW] Full support for signature inclusion.
+* [NEW] Compiler flag --recursive-compilation compiles imports if needed.
+* [CHG] Less frequent "datatype of constructor is not accessible" problems;
+        OTOH, datatype replication now requires all constructors to be in scope.
+* [CHG] Paths in dependency files are now all interpreted relative to CWD.
 
 Interactive Toplevel:
 
