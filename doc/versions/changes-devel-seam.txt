@@ -10,6 +10,7 @@ Interactive Toplevel:
 
 * [NEW] Window size and position are now saved across sessions.
 * [NEW] Extended and improved type information dispay in status bar.
+* [CHG] Changed semantics of `use' function to better match other SML systems.
 
 Basic Library:
 

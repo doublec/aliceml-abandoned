@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2005
+ *   Andreas Rossberg, 2005-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -245,6 +245,21 @@ struct
 	(* Evaluation *)
 
 	fun loopUses (env, signal) =
+	    case Ref.exchange (useFiles, nil)
+	     of nil        => env
+	      | file::rest =>
+		let
+		    do TextIO.output (outStream, "### evaluating file " ^ file ^ "\n")
+		    val result = evalFile (true, env, file, signal)
+		    val new = Promise.promise ()
+		    val old = Ref.exchange (useFiles, Promise.future new)
+		in
+		    Promise.fulfill (new, old @ rest);
+		    case result
+		     of NONE      => env
+		      | SOME env' => loopUses (env', signal)
+		end
+(*
 	    let
 		val new = Promise.promise ()
 		val old = Ref.exchange (useFiles, Promise.future new)
@@ -259,6 +274,7 @@ struct
 		    )
 		  | nil => (Promise.fulfill (new, nil); env)
 	    end
+*)
 
 	fun eval (source, signal) =
 	    let
@@ -272,10 +288,12 @@ struct
 
 	fun evalFile (file, signal) =
 	    let
-		val p   = Promise.promise ()
-		val env = Ref.exchange (currentEnv, Promise.future p)
+		val p    = Promise.promise ()
+		val env  = Ref.exchange (currentEnv, Promise.future p)
+		val p'   = Promise.promise ()
+		val uses = Ref.exchange (useFiles, Promise.future p')
 	    in
-		useFiles := [file];
+		Promise.fulfill (p', file::uses);
 		Promise.fulfill (p, loopUses (env, signal))
 	    end
     end
