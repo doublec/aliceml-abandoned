@@ -176,7 +176,7 @@ struct
 	O.Id(trValInfo(env,i), z, NameTranslation.trValName n)
     fun trTypid(env, I.Id(i,z,n)) =
 	O.Id(trTypInfo(env,i), z, NameTranslation.trTypName n)
-    fun trVarid(env, I.Id(i,z,n)) =
+    fun trVarid(env, (I.Id(i,z,n), eq)) =
 	O.Id(trVarInfo(env,i), z, NameTranslation.trTypName n)
     fun trInfid(env, I.Id(i,z,n)) =
 	O.Id(trInfInfo(env,i), z, NameTranslation.trInfName n)
@@ -1463,7 +1463,7 @@ struct
 	(*UNFINISHED*)
 	unfinished (#region i) "trTyp" "runtime singleton types"
 
-      | trTyp'(env, I.AbsTyp(i, isExtensible)) =
+      | trTyp'(env, I.AbsTyp _) =
 	raise Crash.Crash "TranslationPhase.trTyp: AbsTyp"
 
     and trTypRep(env, id, typ) =
@@ -1482,7 +1482,7 @@ struct
 	(* [fun id -> typ]_p = [typ]_p *)
 	trTypRep'(env, pathexp', typ)
 
-      | trTypRep'(env, pathexp', I.AbsTyp(i, isExtensible)) =
+      | trTypRep'(env, pathexp', I.AbsTyp(i, eq, isExt)) =
 	(* [abstract]_p = __pervasive.Type.con(p, k) *)
 	let
 	    val r    = #region i

@@ -18,7 +18,7 @@ signature PRIM_IO =
 	type elem
 	type vector
 	type vector_slice
-	type array
+	eqtype array
 	type array_slice
 
 	eqtype pos

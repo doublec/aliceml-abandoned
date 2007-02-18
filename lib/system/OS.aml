@@ -29,7 +29,7 @@ struct
     structure FileSys =
     struct
 	__primitive type dirstream = "OS.FileSys.dirstream"
-	__primitive eqtype file_id = "OS.FileSys.file_id"
+	__primitive eqtype file_id = "''OS.FileSys.file_id"
 	datatype access_mode = A_READ | A_WRITE | A_EXEC
 
 	open UnsafeOS.FileSys
@@ -96,7 +96,7 @@ struct
 
     structure IO =
     struct
-	__primitive eqtype iodesc = "OS.IO.iodesc"
+	__primitive eqtype iodesc = "''OS.IO.iodesc"
 
 	fun hash iodesc = Word.fromInt (UnsafeIODesc.hash iodesc)
 	val compare = UnsafeIODesc.compare

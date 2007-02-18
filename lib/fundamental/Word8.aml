@@ -16,7 +16,7 @@ import __primitive type bool                from "ToplevelTypes"
 import functor MkWord                       from "MkWord"
 
 structure Word8 = MkWord(
-    __primitive eqtype word = "Word8.word"
+    __primitive eqtype word = "''Word8.word"
 
     val wordSize = 8
 

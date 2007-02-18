@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -74,7 +74,7 @@ sig
     and      inflab		= inflab_info lab
     and      valid		= valid_info id
     and      typid		= typid_info id
-    and      varid		= varid_info id
+    and      varid		= varid_info id * bool  (* equality? *)
     and      modid		= modid_info id
     and      infid		= infid_info id
     and      vallongid		= (vallongid_info,valid_info,vallab_info) longid
@@ -159,7 +159,7 @@ sig
 	| AllTyp    of typ_info * varid * typ	(* universal quantification *)
 	| ExTyp     of typ_info * varid * typ	(* existential quantification *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
-	| AbsTyp    of typ_info * bool		(* abstract type (extensible?)*)
+	| AbsTyp    of typ_info * bool option * bool (* abstract type (eq?, ext?)*)
 
   (* Modules *)
 

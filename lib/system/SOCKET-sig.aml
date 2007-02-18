@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,7 +13,7 @@
 
 signature SOCKET =
     sig
-	type socket
+	eqtype socket
 	type t = socket
 	type vector = string
 	type elem = char

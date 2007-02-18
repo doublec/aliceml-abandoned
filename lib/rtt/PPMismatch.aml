@@ -88,7 +88,7 @@ struct
       | ppInfMismatch(Inf.MismatchTyp(l,k1,k2,m)) =
 	if not(Type.isSingKind k2) then
 	    indent(textpar["type",ppLab l]) ^/^
-	    textpar["has","incompatible","arity"]
+	    textpar["has","incompatible","arity","or","equality","status"]
 	else
 	    indent(if Type.isSingKind k1
 		   then par[text"type",text(ppLab l),text"=",

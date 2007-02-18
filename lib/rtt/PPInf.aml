@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -78,11 +78,13 @@ struct
 	  | Type.Mu t'		=> unlambdaTyp'(t',vs)
 	  | _			=> (List.rev vs, t)
 
-    fun unarrowTKind  k     = unarrowTKind'(k,[])
-    and unarrowTKind'(k,ks) =
+    fun makeEq(b,k)            = if b then Type.eqKind k else k
+    fun unarrowTKind  k        = unarrowTKind'(k,[],false)
+    and unarrowTKind'(k,ks,eq) =
 	case Type.inspectKind k
-	 of Type.ArrowKind(k1,k2) => unarrowTKind'(k2,k1::ks)
-	  | _                     => (List.rev ks, k)
+	 of Type.ArrowKind(k1,k2) => unarrowTKind'(k2, makeEq(eq,k1)::ks, eq)
+	  | Type.EqKind k1        => unarrowTKind'(k1, ks, true)
+	  | _                     => (List.rev ks, makeEq(eq,k))
 
     fun unquantifyTyp  t     = unquantifyTyp'(t,[])
     and unquantifyTyp'(t,vs) =
@@ -145,28 +147,32 @@ struct
 
   (* Variables *)
 
-    fun ppVar prec (n,v) =
+    fun ppVarAnnot(prec, doc0, k) =
+	case Type.inspectKind k
+	 of (Type.StarKind | Type.ExtKind) =>
+		(doc0, doc0)
+	  | Type.EqKind k' =>
+		ppVarAnnot(prec, doc0, k')
+	  | Type.ArrowKind _ =>
+	    let
+		val doc1 = PPType.ppKind k
+		val doc  = abox(below(nest(doc0 ^^ text " :" ^/^ doc1)))
+	    in
+		(doc0, parenPrec prec (0,doc))
+	    end
+	  | Type.SingKind t =>
+	    let
+		val doc1 = PPType.ppTyp t
+		val doc  = abox(below(nest(doc0 ^^ text " =" ^/^ doc1)))
+	    in
+		(doc1, parenPrec prec (0,doc))
+	    end
+
+    fun ppVar prec (n,a) =
 	let
-	    val k    = Type.kindVar v
-	    val doc0 = PPType.ppVar(n,v)
+	    val doc0 = PPType.ppVar(n,a)
 	in
-	    case Type.inspectKind k
-	     of (Type.StarKind | Type.ExtKind) =>
-		    (doc0, doc0)
-	      | Type.ArrowKind _ =>
-		let
-		    val doc1 = PPType.ppKind k
-		    val doc  = abox(below(nest(doc0 ^^ text " :" ^/^ doc1)))
-		in
-		    (doc0, parenPrec prec (0,doc))
-		end
-	      | Type.SingKind t =>
-		let
-		    val doc1 = PPType.ppTyp t
-		    val doc  = abox(below(nest(doc0 ^^ text " =" ^/^ doc1)))
-		in
-		    (doc1, parenPrec prec (0,doc))
-		end
+	    ppVarAnnot(prec, doc0, Type.kindVar a)
 	end
 
     fun ppVars vs =
@@ -371,7 +377,8 @@ struct
 		    text(case Type.inspectKind k'
 			 of Type.StarKind    => "type "
 			  | Type.ExtKind     => "exttype "
-			  | Type.SingKind t  => if isDatatype
+			  | Type.EqKind _    => "eqtype "
+			  | Type.SingKind _  => if isDatatype
 						then "datatype "
 						else "type "
 			  | Type.ArrowKind _ => assert false

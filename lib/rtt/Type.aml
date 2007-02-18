@@ -91,6 +91,52 @@ subkinding between EXT and STAR. In order to have a nice encoding of modules
 we also support singleton kinds. At some places we must therefore not just check
 kind equality but allow for subkinding.
 
+On Equality Types:
+
+We handle equality types through the kind system: a special kind EQ(k), which is
+a subkind of k, classifies types that admit equality. For instance, EQ(STAR) is
+the kind of ground equality types like int.
+
+In the higher-order case, different notions of equality type are distinguished
+as follows: a type with a kind like k1->EQ(k2) denotes eqtypes whose equality
+attribute does not depend on the argument, e.g. types like ref or array. Other
+eqtypes have higher-order equality kind EQ(k1->k2), and there is a special,
+additional kinding rule for type application involving such kinds:
+
+  t1 : EQ(k'->k)    t2 : EQ(k')
+  -----------------------------
+         t1 t2 : EQ(k)
+
+i.e., equality is propagated inwards iff the argument has equality kind.
+Otherwise, equality of the type function is forgotten via subsumption and the
+standard application rule applies.
+
+Higher-order
+equality kinds are introduced by the following addional kinding rule for
+lambdas:
+
+  a:EQ(k1) |- t : EQ(k2)
+  ----------------------
+   \a:k1.t : EQ(k1->k2)
+
+For quantified types similar additional rules exist (note that for an
+existential, no assumption may be made about a admitting equality):
+
+  a:EQ(k) |- t : EQ(STAR)      a:k |- t : EQ(STAR)
+  -----------------------      -------------------
+     !a:k.t : EQ(STAR)          ?a:k.t : EQ(STAR)
+
+There also is a higher-order subsumption rule for equality kinds:
+
+  k1->EQ(k2)  <  EQ(k1->k2)
+
+This allows types like ref to match an eqtype specification. Accordingly,
+the following equalities hold, but only the former is currently considered
+during normalisation:
+
+  EQ(EQ(k))       = EQ(k)
+  EQ(k1->EQ(k2))  = k1->EQ(k2)
+
 On Tuples and Records:
 
 As in SML, tuples are just a special case of records. We treat tuple rows
@@ -240,7 +286,7 @@ struct
 	| FUN    of typ * typ	(* arrow type *)
 	| PROD   of row		(* product (tuple or record) *)
 	| SUM    of row		(* sum type (datatype) *)
-	| MU     of typ		(* recursive type *)
+	| MU     of kind * typ	(* recursive type *)
 	| ALL    of var * typ	(* universal quantification *)
 	| EXIST  of var * typ	(* existential quantification *)
 	| LAMBDA of var * typ	(* abstraction (type function) *)
@@ -250,6 +296,7 @@ struct
     and kind' =						(* [kappa',k'] *)
 	  STAR			(* plain type *)
 	| EXT			(* extensible type *)
+	| EQ     of kind	(* equality type *)
 	| ARROW  of kind * kind	(* type function *)
 	| SING   of typ		(* singleton *)
 
@@ -257,7 +304,7 @@ struct
 	  INDEXED of typ vector
 	| FIXED   of (lab * typ) list
 	| FLEX    of (lab * typ) list * row
-	| FREE    of lab list * int
+	| FREE    of lab list * int * bool
 
     withtype typ	= typ' cell			(* [tau,t] *)
     and      var	= typ' cell			(* [alpha,a] *)
@@ -338,12 +385,14 @@ struct
 
     fun cnstr Unconstrained = ""
       | cnstr Intensional   = "[...]"
-      | cnstr Extensional(p,ps) =
-	"[" ^ List.foldl (fn p => "," ^ pth p) (pth p) ps ^ "]"
+      | cnstr (Extensional(p,ps)) =
+	"[" ^ List.foldl (fn(p,s) => s ^ "," ^ pth p) (pth p) ps ^ "]"
 
-    fun id t = Int.toString(Addr.addr t) (* only works from build2 on *)
-    (*fun id t = Int.toString(Cell.hash t)*)
-    		(* For NJ, have to make bootstrap/Cell transparent! *)
+    (*fun addr cell = Addr.addr cell (* only works from build2 on *)*)
+    (*fun addr c = Cell.hash c*)
+    val addr = Addr.addr
+
+    fun id t = Int.toString(addr t)
 
     val rec typ'ToString = fn ads =>
 	fn t =>	if Hole.isHole t then "_" else
@@ -356,7 +405,7 @@ struct
 	 | FUN(t1,t2)	=> "FUN(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 	 | PROD r	=> "PROD(" ^ rowToString ads r ^ ")"
 	 | SUM r	=> "SUM(" ^ rowToString ads r ^ ")"
-	 | MU t		=> "MU(" ^ typ ads t ^ ")"
+	 | MU(k,t)	=> "MU(" ^ kind ads k ^ "," ^ typ ads t ^ ")"
 	 | ALL(a,t)	=> "ALL(" ^ typ ads a ^ "," ^ typ ads t ^ ")"
 	 | EXIST(a,t)	=> "EXIST(" ^ typ ads a ^ "," ^ typ ads t ^ ")"
 	 | LAMBDA(a,t)	=> "LAMBDA(" ^ typ ads a ^ "," ^ typ ads t ^ ")"
@@ -366,28 +415,29 @@ struct
     and rowToString = fn ads => fn r =>
 	case content r
 	of INDEXED ts   => String.concatWith "," (Vector.toList(Vector.map (typ ads) ts))
-	 | FIXED lts    => String.concatWith "," (List.map (fieldToString ads) lts
-	 | FLEX(lts,r)  => String.concatWith "," (List.map (fieldToString ads) lts ^
-			   "," ^ rowToString r
-	 | FREE ls	=> "...[" ^ String.concatWith "," (List.map Label.toString ls) ^ "]"
+	 | FIXED lts    => String.concatWith "," (List.map (fieldToString ads) lts)
+	 | FLEX(lts,r)  => String.concatWith "," (List.map (fieldToString ads) lts) ^
+			   "," ^ rowToString ads r
+	 | FREE(ls,_,_)	=> "...[" ^ String.concatWith "," (List.map Label.toString ls) ^ "]"
     and fieldToString = fn ads =>
 	fn (l,t)        => Label.toString l ^ ":" ^ typ ads t
 
     and typ = fn ads => fn t => id t
 		(*DEBUG ^
-		(if List.contains ads (Addr.addr t) then ""
-		 else "=" ^ typ'ToString (Addr.addr t::ads) (content t)) *)
+		(if List.contains ads (addr t) then ""
+		 else "=" ^ typ'ToString (addr t::ads) (content t)) *)
 
-    val rec kind'ToString = fn ads =>
+    and kind'ToString = fn ads =>
 	fn STAR		=> "STAR"
 	 | EXT		=> "EXT"
+	 | EQ k		=> "EQ(" ^ kind ads k ^")"
 	 | ARROW(k1,k2)	=> "ARROW(" ^ kind ads k1 ^ "," ^ kind ads k2 ^ ")"
 	 | SING t	=> "SING(" ^ typ ads t ^ ")"
 
     and kind = fn ads => fn k => id k
-		(*DEBUG ^
-		(if List.contains ads (Addr.addr k) then ""
-		 else "=" ^ kind'ToString (Addr.addr k::ads) (content k)) *)
+		(*DEBUG*) ^
+		(if List.contains ads (addr k) then ""
+		 else "=" ^ kind'ToString (addr k::ads) (content k)) (**)
 
     fun typToString t  = id t ^ "=" ^ typ'ToString [] (content t)
     fun kindToString k = id k ^ "=" ^ kind'ToString [] (content k)
@@ -451,61 +501,163 @@ struct
 
     val kStar			= newKind STAR
     val kExt			= newKind EXT
-    fun starKind()		= kStar
-    fun extKind()		= kExt
-    fun arrowKind(k1,k2)	= newKind(ARROW(k1,k2))
-    fun singKind t		= let val k = kind t in
+
+    fun starKind'()		= kStar
+    fun extKind'()		= kExt
+    fun eqKind' k		= newKind(EQ k)
+    fun arrowKind'(k1,k2)	= newKind(ARROW(k1,k2))
+    fun singKind' t		= newKind(SING t)
+
+    val kEqStar			= eqKind'(starKind'())
+
+    val starKind		= starKind'
+    val extKind			= extKind'
+    val arrowKind		= arrowKind'
+    fun eqStarKind()		= kEqStar
+    fun eqKind k		= if isEqKind k orelse isSingKind k then k
+				  else eqKind' k
+    and singKind t		= let val k = kind t in
 				      if isSingKind k
 				      then k
-				      else newKind(SING t)
+				      else singKind' t
 				  end
 
+    (* Kind synthesis:
+     * |- t : k|T   where T is a set of type variables and holes
+     * implies
+     * |- t : k
+     * and
+     * |- sigma(t) : EQ k   if T<>{} and Dom sigma=T and all t in Ran sigma, t: EQ _
+     *)
+
     and kindVar a		= kind a
-    and kind t =
+    and kind t			= #1(kind' t)
+    and kind' t =
 	case content t
-	  of ( LINK t | MU t
-	     | ABBREV(_,t) )	=> kind t
-	   | HOLE(k,_,_,_)	=> k
-	   | VAR(k,_,_)		=> k
-	   | CON(_,k)		=> k
-	   | LAMBDA(a,t)	=> arrowKind(kind a, kind t)
-	   | APPLY(t1,t2)	=> #2(asArrowKind(kind t1))
-	   | _			=> starKind()
+	  of ( LINK t
+	     | ABBREV(_,t) )	=> kind' t
+	   | ( HOLE(k,_,_,_)
+	     | VAR(k,_,_) )	=> if isEqKind k then (k,[]) else (k,[t])
+	   | ( CON(_,k)		   (* no free variables or holes under mu! *)
+	     | MU(k,_) )	=> (k,[])
+	   | LAMBDA(a,t2)	=> let val  k1     = kind a
+				       val (k2,vs) = kind' t2
+				       val     vs' = filter(a, vs)
+				       val  k      = arrowKind(k1,k2)
+				   in
+				       if not(null vs) andalso null vs'
+				       then (eqKind k,[])
+				       else (k,vs')
+				   end
+	   | APPLY(t1,t2)	=> let val (k1,vs1) = kind' t1
+				       val (k2,vs2) = kind' t2
+				       val (_,k) = asArrowKind k1
+				   in
+				       if isEqKind k1 then
+					  if isEqKind k2 then (eqKind k,[])
+					  else (k,vs2)
+				       else
+					  if null vs1 then (k,[])
+					  else if isEqKind k2 then (k,vs1)
+					  else if null vs2 then (k,[])
+					  else (k,vs1@vs2)
+				   end
+	   | FUN _		=> (kStar,[])
+	   | (PROD r | SUM r)	=> (case kindRow(r, [])
+				     of NONE    => (kStar,[])
+				      | SOME [] => (kEqStar,[])
+				      | SOME vs => (kStar,vs))
+	   | ALL(a,t2)		=> let val (k,vs) = kind' t2
+				       val    vs' = filter(a, vs)
+				   in
+				       if not(null vs) andalso null vs'
+				       then (kEqStar,[])
+				       else (k,vs')
+				   end
+	   | EXIST(a,t2)	=> let val (k,vs) = kind' t2 in
+				       if member(a, vs)
+				       then (kStar,[])
+				       else (k,vs)
+				   end
+
+    and filter(v, [])		= []
+      | filter(v, v'::vs)	= let val vs' = filter(v, vs)
+      				  in if v = v' then vs' else v'::vs' end
+    and member(v, [])		= false
+      | member(v, v'::vs)	= v = v' orelse member(v, vs)
+
+    and kindRow(r, vs) =
+	case content r
+	 of INDEXED ts		=> kindIndexed(ts, Vector.length ts - 1, vs)
+	  | FIXED lts		=> kindFixed(lts, vs)
+	  | FLEX(lts,r)		=> (case kindFixed(lts, vs)
+				    of NONE => NONE
+				     | SOME vs => kindRow(r, vs))
+	  | FREE(_,_,b)		=> if b then SOME vs else NONE
+	
+    and kindIndexed(ts, ~1, vs)	= SOME vs
+      | kindIndexed(ts, i, vs)	= let val (k,vs') = kind'(Vector.sub(ts,i)) in
+				     if isEqKind k then kindIndexed(ts, i-1, vs)
+				     else if null vs' then NONE
+				     else kindIndexed(ts, i-1, vs'@vs)
+				  end
+    and kindFixed([], vs)	= SOME vs
+      | kindFixed(lt::lts, vs)	= let val (k,vs') = kind'(#2 lt) in
+				     if isEqKind k then kindFixed(lts, vs)
+				     else if null vs' then NONE
+				     else kindFixed(lts, vs'@vs)
+				  end
+
 
     and isStarKind k =
 	case content k
 	  of (STAR | EXT)	=> true
+	   | EQ k		=> isStarKind k
 	   | ARROW _		=> false
 	   | SING t		=> isStarKind(kind t)
     and isExtKind k =
 	case content k
 	  of EXT		=> true
 	   | (STAR | ARROW _)	=> false
+	   | EQ k		=> isExtKind k
 	   | SING t		=> isExtKind(kind t)
+    and isEqKind k =
+	case content k
+	  of EQ _		=> true
+	   | (STAR|EXT|ARROW _)	=> false
+	   | SING t		=> isEqKind(kind t)
     and isArrowKind k =
 	case content k
 	  of ARROW _		=> true
 	   | (STAR | EXT)	=> false
+	   | EQ k		=> isArrowKind k
 	   | SING t		=> isArrowKind(kind t)
     and isSingKind k =
 	case content k
 	  of SING _		=> true
-	   | (STAR|EXT|ARROW _)	=> false
+	   | (STAR|EXT|EQ _|ARROW _) => false
 
+    and asEqKind k =
+	case content k
+	  of EQ k		=> k
+	   | SING t		=> asEqKind(kind t)
+	   | (STAR|EXT|ARROW _)	=> raise Kind
     and asArrowKind k =
 	case content k
 	  of ARROW kk		=> kk
+	   | EQ k		=> asArrowKind k
 	   | SING t		=> asArrowKind(kind t)
 	   | (STAR | EXT)	=> raise Kind
     and asSingKind k =
 	case content k
 	  of SING t		=> t
-	   | (STAR|EXT|ARROW _)	=> raise Kind
+	   | (STAR|EXT|EQ _|ARROW _) => raise Kind
 
 
     datatype kind_desc =
 	  StarKind
 	| ExtKind
+	| EqKind    of kind
 	| ArrowKind of kind * kind
 	| SingKind  of typ
 
@@ -513,6 +665,7 @@ struct
 	case content k
 	  of STAR		=> StarKind
 	   | EXT		=> ExtKind
+	   | EQ k		=> EqKind k
 	   | ARROW kk		=> ArrowKind kk
 	   | SING t		=> SingKind t
 
@@ -522,6 +675,7 @@ struct
 	case (content k1, content k2)
 	  of (STAR, STAR)	=> true
 	   | (EXT,  EXT)	=> true
+	   | (EQ k1, EQ k2)	=> equalKind(k1,k2)
 	   | (ARROW(k11,k12),
 	      ARROW(k21,k22))	=> equalKind(k21,k11) andalso
 				   equalKind(k12,k22)
@@ -557,7 +711,7 @@ struct
     fun tuple' ts	= new(PROD(new(INDEXED ts)))
     fun prod' r		= new(PROD r)
     fun sum' r		= new(SUM r)
-    fun mu' t		= new(MU t)
+    fun mu'(k,t)	= new(MU(k,t))
     fun all'(a,t)	= new(ALL(canonicalVar a, t))
     fun exist'(a,t)	= new(EXIST(canonicalVar a, t))
 
@@ -672,13 +826,12 @@ struct
     fun apply(t1,t2)	= (matchKind(kind t2, #1(asArrowKind(kind t1)));
 			   apply'(t1,t2)) handle KindMismatch _ => raise Kind
 
-
   (* Rows *)
 
     exception Row
 
     fun emptyRow()		= new(INDEXED #[])
-    fun unknownRow()		= new(FREE([], !level))
+    fun unknownRow()		= new(FREE([], !level, false))
 
     fun isFreeRow r =
 	case content r
@@ -783,7 +936,7 @@ struct
 	   | FIXED lts		=> if isIncluded'(l,lts) then raise Row else ()
 	   | FLEX(lts,r')	=> if isIncluded'(l,lts) then raise Row
 				   else excludeRow(l,r')
-	   | FREE(ls,n)		=> replace(r, FREE(excludeRow'(l,ls),n))
+	   | FREE(ls,n,eq)	=> replace(r, FREE(excludeRow'(l,ls), n, eq))
     and excludeRow'(l, [])	= [l]
       | excludeRow'(l, ls as l'::ls') =
 	case Label.compare(l,l')
@@ -819,7 +972,7 @@ struct
 	   | FIXED((l,t)::lts)	=> FieldRow(l,t, new(FIXED lts))
 	   | FLEX([], r')	=> inspectRow' r'
 	   | FLEX((l,t)::lts, r') => FieldRow(l,t, new(FLEX(lts,r')))
-	   | FREE(ls,_)		=> UnknownRow ls
+	   | FREE(ls,_,_)	=> UnknownRow ls
 
     fun isUnknownRow r =
 	case content r
@@ -873,7 +1026,7 @@ struct
     fun fixLHS t =
 	case content t
 	  of (LINK t1 | ABBREV(_,t1)) => fixLHS t1
-	   | HOLE _                   => t
+	   | HOLE(k,_,_,_)            => (t,k)
 	   | _                        => raise Fix
 
     fun fixRHS t =
@@ -884,14 +1037,34 @@ struct
 
     fun tie(t1,t2) =
 	let
-	    val t1' = fixLHS t1
-	    val _   = fixRHS t2
+	    val (t1',k1) = fixLHS t1
+	    val  _       = fixRHS t2
+	    val  k2      = kind t2
 	in
-	    matchKind(kind t2, kind t1') handle KindMismatch _ => raise Fix;
-	    replace(t1', MU t2)
+	    matchKind(k2, k1) handle KindMismatch _ => raise Fix;
+	    replace(t1', MU(eqKind k2, t2))
 	end
 
-    val fix = Vector.app tie
+    fun maxLHS t =
+	case content t
+	  of (LINK t1 | ABBREV(_,t1)) => maxLHS t1
+	   | MU(k,t')                 => (t,t',k)
+	   | _                        => raise Fix
+
+    fun maximiseEq tts = maximiseEq'(tts, Vector.length tts - 1, false)
+    and maximiseEq'(tts, ~1, false) = ()
+      | maximiseEq'(tts, ~1, true)  = maximiseEq tts
+      | maximiseEq'(tts, i, b) =
+	let
+	    val (t1,t2)   = Vector.sub(tts,i)
+	    val (t1',t,k) = maxLHS t1
+	in
+	    if isEqKind k andalso not(isEqKind(kind t))
+	    then (replace(t1', MU(asEqKind k, t)); maximiseEq'(tts, i-1, true))
+	    else maximiseEq'(tts, i-1, b)
+	end
+
+    fun fix tts = (Vector.app tie tts; maximiseEq tts)
 
     (*DEBUG*)
     val fix = trace fix "fix"
@@ -902,14 +1075,14 @@ struct
     fun unroll t =
 	case content t
 	  of (LINK t1 | ABBREV(_,t1))	=> unroll t1
-	   | MU t1			=> unroll t1
+	   | MU(_,t1)			=> unroll t1
 	   | APPLY _			=> unrollApply(t,t,[])
 	   | _				=> t
     and unrollApply(t0,t,ts) =
 	case content t
 	  of (LINK t1 | ABBREV(_,t1))	=> unrollApply(t0,t1,ts)
 	   | APPLY(t1,t2)		=> unrollApply(t0,t1,t2::ts)
-	   | MU t1			=> let val m = Map.map() in
+	   | MU(_,t1)			=> let val m = Map.map() in
 					       Map.insertDisjoint(m,t,t);
 					       unrollLambda(t0,m,t1,ts)
 					   end
@@ -955,7 +1128,7 @@ struct
 	   | FUN tt			=> Arrow tt
 	   | PROD r			=> Prod r
 	   | SUM r			=> Sum r
-	   | MU t			=> Mu t
+	   | MU(_,t)			=> Mu t
 	   | ALL at			=> All at
 	   | EXIST at			=> Exist at
 	   | LAMBDA at			=> Lambda at
@@ -993,7 +1166,7 @@ struct
 							    | _ => raise Type
     fun asProd t	= case asType' t of PROD r    => r  | _ => raise Type
     fun asSum t		= case asType' t of SUM r     => r  | _ => raise Type
-    fun asMu t		= case asType' t of MU t      => t  | _ => raise Type
+    fun asMu t		= case asType' t of MU(_,t)   => t  | _ => raise Type
     fun asAll t		= case asType' t of ALL at    => at | _ => raise Type
     fun asExist t	= case asType' t of EXIST at  => at | _ => raise Type
     fun asLambda t	= case asType' t of LAMBDA at => at | _ => raise Type
@@ -1013,7 +1186,7 @@ struct
 	     | VAR _
 	     | CON _ )			=> ()
 	   | ( LINK t
-	     | MU t )			=> f t
+	     | MU(_,t) )		=> f t
  	   | ( ALL(a,t)
 	     | EXIST(a,t)
 	     | LAMBDA(a,t) )		=> (f a ; f t)
@@ -1036,7 +1209,7 @@ struct
 	     | VAR _
 	     | CON _ )			=> c
 	   | ( LINK t
-	     | MU t )			=> f(t,c)
+	     | MU(_,t) )		=> f(t,c)
 	   | ( ALL(a,t)
 	     | EXIST(a,t)
 	     | LAMBDA(a,t) )		=> f(t, f(a,c))
@@ -1094,8 +1267,9 @@ struct
     fun appKind1(k,f,fTyp) =
 	case content k
 	  of ( STAR | EXT )		=> ()
+	   | EQ k			=> f k
 	   | ARROW(k1,k2)		=> (f k1; f k2)
-	   | SING t			=> (fTyp t)
+	   | SING t			=> fTyp t
 
     fun appKind (f,fTyp) k =
 	let
@@ -1189,15 +1363,15 @@ val _ = checkMuFwd := checkMu
 	   | LAMBDA(a,t1)	=> buildBind(mt,mk, rea, t, lambda',a,t1)
 	   | APPLY(t1,t2)	=> buildPair(mt,mk, rea, t, apply',t1,t2)
 	   | ABBREV(t1,t2)	=> buildPair(mt,mk, rea, t, abbrev',t1,t2)
-	   | MU t1		=> if not(hasFree(ref [t], mt,mk, rea, t1))
+	   | MU(k,t1)		=> if not(hasFree(ref [t], mt,mk, rea, t1))
 				   then buildOld(mt, t)
 				   else let
-				       val t0' = unknown'(kind t1,
-							  Unconstrained, Flex)
-				       val t'  = buildNew(mt, t, mu' t0')
+				       val k'  = buildKind(mt,mk,rea,k)
+				       val t0' = unknown'(k',Unconstrained,Flex)
+				       val t'  = buildNew(mt, t, mu'(k',t0'))
 				       val t1' = build(mt,mk, rea, t1)
 				   in
-				       replace(t', MU t1'); t'
+				       replace(t', MU(k',t1')); t'
 				   end
     and buildOld(mt,t)    = (Map.insertDisjoint(mt,t,t); t)
     and buildNew(mt,t,t') = (Map.insertDisjoint(mt,t,t'); t')
@@ -1291,6 +1465,14 @@ val _ = checkMuFwd := checkMu
 	   | NONE		=>
 	case content k
 	  of (STAR | EXT)	=> buildOldKind(mk,k)
+	   | EQ k1		=>
+		let
+		    val k1' = buildKind(mt,mk,rea,k1)
+		in
+		    if Cell.equal(k1,k1')
+		    then buildOldKind(mk, k)
+		    else buildNewKind(mk, k, eqKind k1')
+		end
 	   | ARROW(k1,k2)	=>
 		let
 		    val k1' = buildKind(mt,mk,rea,k1)
@@ -1306,8 +1488,18 @@ val _ = checkMuFwd := checkMu
 		in
 		    if Cell.equal(t,t')
 		    then buildOldKind(mk, k)
-		    else buildNewKind(mk, k, singKind t')
+		    else buildNewKind(mk, k, singKind' t')
 		end
+(*
+		let
+		    val k1' = buildKind(mt,mk,rea,k1)
+		    val t'  = build(mt,mk,rea,t)
+		in
+		    if Cell.equal(k1,k1') andalso Cell.equal(t,t')
+		    then buildOldKind(mk, k)
+		    else buildNewKind(mk, k, singKind' t')
+		end
+*)
 
     and buildOldKind(mk,k)    = (KindMap.insertDisjoint(mk,k,k); k)
     and buildNewKind(mk,k,k') = (KindMap.insertDisjoint(mk,k,k'); k')
@@ -1329,7 +1521,7 @@ val _ = checkMuFwd := checkMu
 	     | ABBREV(t1,t2) )	=> hasFree(mus,mt,mk,rea,t1) orelse
 				   hasFree(mus,mt,mk,rea,t2)
 	   | (PROD r | SUM r)	=> rowHasFree(mus,mt,mk,rea,r)
-	   | MU t1		=> (mus := t :: !mus; hasFree(mus,mt,mk,rea,t1))
+	   | MU(_,t1)		=> (mus := t :: !mus; hasFree(mus,mt,mk,rea,t1))
 	   | ( ALL(a,t1)
 	     | EXIST(a,t1) 
 	     | LAMBDA(a,t1) )	=> hasFree(mus, mt,mk, rea, t1)
@@ -1337,8 +1529,8 @@ val _ = checkMuFwd := checkMu
     and rowHasFree(mus, mt,mk, rea, r) =
 	case content r
 	  of INDEXED ts   => Vector.exists (fn t => hasFree(mus,mt,mk,rea,t)) ts
-	   | FIXED lts    => List.exists (fn(l,t)=>hasFree(mus,mt,mk,rea,t)) lts
-	   | FLEX(lts,r') => List.exists (fn(l,t)=>hasFree(mus,mt,mk,rea,t)) lts
+	   | FIXED lts    => List.exists (fn(l,t)=> hasFree(mus,mt,mk,rea,t)) lts
+	   | FLEX(lts,r') => List.exists (fn(l,t)=> hasFree(mus,mt,mk,rea,t)) lts
 			     orelse rowHasFree(mus,mt,mk,rea,r')
 	   | FREE _	  => false
 
@@ -1348,6 +1540,7 @@ val _ = checkMuFwd := checkMu
 	   | NONE		=>
 	case content k
 	  of (STAR | EXT)	=> false
+	   | EQ k1		=> kindHasFree(mus,mt,mk,rea,k1)
 	   | ARROW(k1,k2)	=> kindHasFree(mus,mt,mk,rea,k1) orelse
 				   kindHasFree(mus,mt,mk,rea,k2)
 	   | SING t		=> hasFree(mus,mt,mk,rea,t)
@@ -1557,39 +1750,79 @@ val _ = checkMuFwd := checkMu
 
     exception Lift of var
 
-    fun liftAndCheck(n,t1,t2) =
+    fun liftAndCheck(n,eq,t1:typ,t2) =
 	let
 	    val m = Map.map()
 
-	    fun lift t =
-		if Cell.equal(t1,t) then raise Mismatch(t1,t2) else
-		if Map.member(m,t) then () else
-		Map.insert(m,t,()) before
-		(case content t
-		  of HOLE(k,n',c,r) =>
-			if n' <= n then () else replace(t, HOLE(k,n,c,r))
-		   | VAR(k,n',c) => if n' <= n then () else raise Lift t
-		   | PROD r	=> liftRow r
-		   | SUM r	=> liftRow r
-		   | MU _	=> ()	(*ASSUME no holes under mu *)
-		   | t'		=> app1(t, lift, true)
-		)
-	    and liftRow r =
-		(case content r
-		   of FREE(ls,n') => if n' <= n then ()
-				     else replace(r, FREE(ls,n))
-		    | FLEX(_,r')  => liftRow r'
-		    | _		  => ();
-		 appRow1(r, lift)
-		)
+	    fun lift eq =
+	    let
+		fun lift' t =
+		    if Cell.equal(t1,t) then raise Lift t else
+		    if Map.member(m,t) then () else
+		    Map.insert(m,t,()) before
+		    (case content t
+		      of HOLE(k,n',c,r) =>
+			 let
+			     (* ASSUME k not higher order *)
+			     val k' = if eq then eqKind k else k
+			 in
+			     replace(t, HOLE(k', Int.min(n,n'), c, r))
+			 end
+		       | VAR(k,n',c) =>
+			     if n' <= n andalso
+				(not eq orelse isEqKind k orelse isArrowKind k)
+			     then () else raise Lift t
+		       | FUN(t1,t2) =>
+			     if eq then raise Lift t
+			     else (lift' t1; lift' t2)
+		       | PROD r => liftRow r
+		       | SUM r => liftRow r
+		       | (MU(k,_) | CON(_,k)) => (*ASSUME no holes under mu *)
+			     if not eq orelse isEqKind k orelse isArrowKind k
+			     then () else raise Lift t
+		       | APPLY(t1,t2) => 
+			 if not eq then app1(t, lift', true) else
+			 (* Examples:
+			  * t : k1->k2->EQ(k3)
+			  * t t1 : k2->EQ(k3)
+			  * t t1 t2 : EQ(k3)
+			  * u : EQ(k1->k2->k3)
+			  * u t1 : EQ(k2->k3)   (if t1 : EQ(k1) after lift)
+			  * u t1 t2 : EQ(k3)    (if t2 : EQ(k2) after lift)
+			  *)
+			 let
+			     val _  = lift' t1
+			     val k1 = kind t1
+			 in
+			     if isEqKind k1 then lift' t2 else
+			     let
+				 val k = kind t
+			     in
+				 if isEqKind k orelse isArrowKind k
+				 then () else raise Lift t;
+				 lift false t2
+			     end
+			 end
+		       | t' => app1(t, lift', false)
+		    )
+		and liftRow r = (liftRow' r; appRow1(r, lift'))
+		and liftRow' r =
+		    case content r
+		      of FREE(ls,n',eq') =>
+			     replace(r, FREE(ls, Int.min(n,n'), eq orelse eq'))
+		       | FLEX(_,r') => liftRow' r'
+		       | _          => ()
+	    in
+		lift'
+	    end
 	in
-	    lift t2
+	    lift eq t2
 	end
 (*DEBUG*)handle e => raise e
 
-    val dummy      = newVar(starKind(), Unconstrained)
-    fun lift'(n,t) = liftAndCheck(n, dummy, t)
-    fun lift t     = liftAndCheck(!level, dummy, t)
+    val dummy         = newVar(starKind(), Unconstrained)
+    fun lift'(n,eq,t) = liftAndCheck(n, eq, dummy, t)
+    fun lift t        = liftAndCheck(!level, false, dummy, t)
 
     (*DEBUG*)
     val liftAndCheck = trace liftAndCheck "liftAndCheck"
@@ -1722,7 +1955,7 @@ val _ = checkMuFwd := checkMu
 	(* Merge at level i - this is a conservative approximation that
 	 * avoids calculating the level of t2. *)
 	let
-	    val _   = matchKindCont'(i,ms,rea, kind t2, k1)
+	    val _   = matchKindCont'(i,ms,rea, eqKind(kind t2), k1)
 		      handle KindMismatch _ => raise Mismatch(t1,t2)
 	    val t2' = case rea
 			of NONE      => canonical t2
@@ -1743,7 +1976,8 @@ List.appri (fn(i,m) => TextIO.print("m"^Int.toString i^" = {\n" ^ substToString 
 TextIO.print("i = "^Int.toString i^"\n");
 *)
 	    if meetsConstraint(t2',c,r) then () else raise Mismatch(t1,t2');
-	    liftAndCheck(n1,t1,t2') handle Lift _ => raise Mismatch(t1,t2');
+	    liftAndCheck(n1,isEqKind k1,t1,t2') handle Lift _ =>
+		raise Mismatch(t1,t2');
 	    replace(t1, LINK t2');
 	    merge(ms,t1,t2',i)
 	end
@@ -1883,10 +2117,15 @@ handle e =>
 		)
 	    end
 
-	  | (MU(t11), MU(t21)) =>
+	  | (MU(k1,t11), MU(k2,t21)) =>
 		let
 		    val m = Map.map()
 		in
+		    (* Don't require kind equivalence, since it is not
+		     * refined upon realisation!
+		    equalKindCont'(i,ms,rea, k1, k2) handle KindMismatch mo =>
+			raise Mismatch(Option.getOpt(mo, (t1,t2)));
+		    *)
 		    Map.insert(m,t1,t2);
 		    mergeBind(m,ms, t1,t2, unify'(i+1,m::ms,rea, t11,t21))
 		end
@@ -1939,8 +2178,9 @@ handle e =>
 		case free2 of NONE => fail
 			    | SOME r =>
 		case content r of (INDEXED _| FIXED _| FLEX _) => raise Type
-			    | FREE(ls,n) =>
-		fn (l,t) => if isExcluded'(l,ls) then fail() else lift'(n,t)
+			    | FREE(ls,n,eq) =>
+		fn (l,t) => if isExcluded'(l,ls) then fail()
+			    else lift'(n,eq,t) handle Lift _ => fail()
 
 	    fun unifyFields(j, [], lts2', k) =
 		    if j = Vector.length ts1 then (List.rev lts2', k) else
@@ -1978,8 +2218,9 @@ handle e =>
 		case free of NONE => fail
 			   | SOME r =>
 		case content r of (INDEXED _|FIXED _|FLEX _) => raise Type
-			   | FREE(ls,n) =>
-		fn (l,t) => if isExcluded'(l,ls) then fail() else lift'(n,t)
+			   | FREE(ls,n,eq) =>
+		fn (l,t) => if isExcluded'(l,ls) then fail()
+			    else lift'(n,eq,t) handle Lift _ => fail()
 	    val unifyFree1 = unifyFree free1
 	    val unifyFree2 = unifyFree free2
 
@@ -2012,15 +2253,16 @@ handle e =>
 	       | (NONE, SOME r2) => replace(r2, FIXED lts2')
 	       | (SOME r1, SOME r2) =>
 		 case (content r1, content r2)
-		   of (FREE(ls1,n1), FREE(ls2,n2)) =>
+		   of (FREE(ls1,n1,eq1), FREE(ls2,n2,eq2)) =>
 		      let
 			  val free' = new(FREE(mergeExcluded(ls1,ls2),
-					       Int.min(n1,n2)))
+					       Int.min(n1,n2),
+					       eq1 orelse eq2))
 		      in
 			  replace(r1, FLEX(lts1', free'));
 			  replace(r2, FLEX(lts2', free'))
 		      end
-		    | _ => raise Type (* crash *);
+		    | _ => raise Type; (* crash *)
 	    k
 	end
 
@@ -2086,24 +2328,43 @@ matchCont(m,rea,t1,t2)
 
   (* Kind matching *)
 
-    fun matchKindCont'(i,ms,rea,k1,k2) =
-	if Cell.equal(k1,k2) then () else
-	case (content k1, content k2)
-	 of (STAR, STAR)	=> ()
-	  | (EXT,  STAR)	=> ()
-	  | (EXT,  EXT)		=> ()
+    (* must be carful to allow matching  k1->k2->EQ(k3) < EQ(k1->k2->k3) *)
+
+    fun matchKindCont'(i,ms,rea,k1,k2) = matchKindCont''(i,ms,rea,k1,k2,false)
+    and matchKindCont''(i,ms,rea,k1,k2,b2) =
+	if Cell.equal(k1,k2) then
+	    if b2 then raise KindMismatch NONE else ()
+	else case (content k1, content k2)
+	 of (STAR, STAR)	=> if b2 then raise KindMismatch NONE else ()
+	  | (EXT,  STAR)	=> if b2 then raise KindMismatch NONE else ()
+	  | (EXT,  EXT)		=> if b2 then raise KindMismatch NONE else ()
+	  | (EQ k11, EQ k21)	=> matchKindCont''(i,ms,rea,k11,k21,false)
+	  | (EQ k11, _)		=> matchKindCont''(i,ms,rea,k11,k2,false)
+	  | (_, EQ k21)		=> matchKindCont''(i,ms,rea,k1,k21,true)
 	  | (ARROW(k11,k12),
 	     ARROW(k21,k22))	=> (matchKindCont'(i,ms,rea,k21,k11);
-				    matchKindCont'(i,ms,rea,k12,k22))
+				    matchKindCont''(i,ms,rea,k12,k22,b2))
 	  | (SING t1, SING t2)	=> (ignore(unify'(i,ms,rea,t1,t2))
 				    handle Mismatch m =>
 					raise KindMismatch(SOME m))
-	  | (SING t1, _)	=> matchKindCont'(i,ms, rea, kind t1, k2)
+	  | (SING t1, _)	=> matchKindCont''(i,ms,rea,kind t1,k2,b2)
 	  | _			=> raise KindMismatch NONE
 
     fun matchKind(k1,k2)            = matchKindCont'(0,[], NONE, k1,k2)
     fun matchKindCont(m,rea,k1,k2)  = matchKindCont'(1,[m], SOME rea, k1,k2)
-
+(*DEBUG
+val print=TextIO.print
+fun matchKind(k1,k2) =
+(print("[matchKind("^kindToString k1^", "^kindToString k2^")=");
+matchKindCont'(0,[], NONE, k1,k2) handle e => (print"false]\n"; raise e);
+print("true]\n")
+)
+fun matchKindCont(m,rea,k1,k2) =
+(print("[matchKindCont("^kindToString k1^", "^kindToString k2^")=");
+matchKindCont'(1,[m], SOME rea, k1,k2) handle e => (print"false]\n"; raise e);
+print("true]\n")
+)
+*)
     fun equalKindCont'(i,ms,rea,k1,k2) = (matchKindCont'(i,ms, rea, k2,k1);
 					  matchKindCont'(i,ms, rea, k1,k2))
 

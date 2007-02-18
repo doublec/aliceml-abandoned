@@ -138,11 +138,14 @@
 (*	  spec   ::= spec sharing signature longsigid_1 = ... = longsigid_n	*)
 (*   - generalized where constraints:						*)
 (*	  sigexp ::= sigexp where rea						*)
-(*	  rea    ::= val <op> longvid = <op> longvid <and rea>			*)
+(*	  rea    ::= sig spec end <and rea>					*)
+(*		 ::= val <op> longvid = <op> longvid <and rea>			*)
 (*		 ::= fun <op> longvid = <op> longvid <and rea> (derived form)	*)
 (*		 ::= constructor <op> longvid = <op> longvid <and rea>		*)
 (*		 ::= exception <op> longvid = <op> longvid <and rea> (derived)	*)
 (*		 ::= type tyvarseq longtycon = ty <and rea>			*)
+(*		 ::= eqtype tyvarseq longtycon <and rea>			*)
+(*		 ::= __eqeqtype tyvarseq longtycon <and rea>			*)
 (*		 ::= structure longstrid <: sigexp> = longstrid <and rea>	*)
 (*		 ::= functor longstrid <: sigexp> = longstrid <and rea>(derived)*)
 (*		 ::= signature longsigid strpat_1 ... strpat_n = longstrid	*)
@@ -1459,7 +1462,11 @@
 			  , #2 rea__AND_strbind_opt ) )
 
      rea__AND_strbind_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_strbind_opt
+	  SIG spec END AND_rea_opt__AND_strbind_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_strbind_optright),
+				   spec, #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_strbind_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_strbind_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_strbind_opt)
@@ -1488,6 +1495,18 @@
 				      AND_rea_opt__AND_strbind_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_strbind_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_strbind_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_strbind_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					AND_rea_opt__AND_strbind_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_strbind_opt)
 			  , #2 AND_rea_opt__AND_strbind_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_strbind_opt
@@ -1629,7 +1648,11 @@
 			  , #2 rea__AND_sigbind_opt ) )
 
      rea__AND_sigbind_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_sigbind_opt
+	  SIG spec END AND_rea_opt__AND_sigbind_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_sigbind_optright),
+				   spec, #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_sigbind_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_sigbind_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_sigbind_opt)
@@ -1658,6 +1681,18 @@
 				      AND_rea_opt__AND_sigbind_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_sigbind_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_sigbind_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_sigbind_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					  AND_rea_opt__AND_sigbind_optright),
+					tyvarseq, longtycon,
+					#1 AND_rea_opt__AND_sigbind_opt)
 			  , #2 AND_rea_opt__AND_sigbind_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_sigbind_opt
@@ -1726,7 +1761,10 @@
 
 
   rea:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt
+	  SIG spec END AND_rea_opt
+			( SIGRea(I(SIGleft,AND_rea_optright),
+				 spec, AND_rea_opt) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt
 			( VALRea(I(VALleft,AND_rea_optright),
 				 OP_opt1, longvid1,
 				 OP_opt2, longvid2, AND_rea_opt) )
@@ -1745,6 +1783,12 @@
 	| TYPE tyvarseq longtycon EQUALS ty AND_rea_opt
 			( TYPERea(I(TYPEleft,AND_rea_optright),
 				  tyvarseq, longtycon, ty, AND_rea_opt) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt
+			( EQTYPERea(I(EQTYPEleft,AND_rea_optright),
+				    tyvarseq, longtycon, AND_rea_opt) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt
+			( EQEQTYPERea(I(EQEQTYPEleft,AND_rea_optright),
+				      tyvarseq, longtycon, AND_rea_opt) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid AND_rea_opt
 			( STRUCTURERea(I(STRUCTUREleft,AND_rea_optright),
 				       longstrid1, COLON_sigexp_opt, longstrid2,
@@ -1863,7 +1907,11 @@
 			  , #2 rea__AND_funbind_opt ) )
 
      rea__AND_funbind_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_funbind_opt
+	  SIG spec END AND_rea_opt__AND_funbind_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_funbind_optright),
+				   spec, #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_funbind_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_funbind_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_funbind_opt)
@@ -1892,6 +1940,18 @@
 				      AND_rea_opt__AND_funbind_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_funbind_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_funbind_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_funbind_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					  AND_rea_opt__AND_funbind_optright),
+					tyvarseq, longtycon,
+					#1 AND_rea_opt__AND_funbind_opt)
 			  , #2 AND_rea_opt__AND_funbind_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_funbind_opt
@@ -2191,7 +2251,11 @@
 			  , #2 rea__AND_strdesc_opt ) )
 
      rea__AND_strdesc_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_strdesc_opt
+	  SIG spec END AND_rea_opt__AND_strdesc_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_strdesc_optright),
+				   spec, #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_strdesc_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_strdesc_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_strdesc_opt)
@@ -2220,6 +2284,18 @@
 				      AND_rea_opt__AND_strdesc_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_strdesc_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_strdesc_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_strdesc_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					  AND_rea_opt__AND_strdesc_optright),
+					tyvarseq, longtycon,
+					#1 AND_rea_opt__AND_strdesc_opt)
 			  , #2 AND_rea_opt__AND_strdesc_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_strdesc_opt
@@ -2320,7 +2396,11 @@
 			  , #2 rea__AND_sigdesc_opt ) )
 
      rea__AND_sigdesc_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_sigdesc_opt
+	  SIG spec END AND_rea_opt__AND_sigdesc_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_sigdesc_optright),
+				   spec, #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_sigdesc_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_sigdesc_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_sigdesc_opt)
@@ -2349,6 +2429,18 @@
 				      AND_rea_opt__AND_sigdesc_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_sigdesc_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_sigdesc_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_sigdesc_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					  AND_rea_opt__AND_sigdesc_optright),
+					tyvarseq, longtycon,
+					#1 AND_rea_opt__AND_sigdesc_opt)
 			  , #2 AND_rea_opt__AND_sigdesc_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_sigdesc_opt
@@ -2444,7 +2536,11 @@
 			  , #2 rea__AND_fundesc_opt ) )
 
      rea__AND_fundesc_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_fundesc_opt
+	  SIG spec END AND_rea_opt__AND_fundesc_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_fundesc_optright),
+				   spec, #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_fundesc_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_fundesc_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_fundesc_opt)
@@ -2473,6 +2569,18 @@
 				      AND_rea_opt__AND_fundesc_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_fundesc_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_fundesc_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_fundesc_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					  AND_rea_opt__AND_fundesc_optright),
+					tyvarseq, longtycon,
+					#1 AND_rea_opt__AND_fundesc_opt)
 			  , #2 AND_rea_opt__AND_fundesc_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_fundesc_opt
@@ -2701,7 +2809,11 @@
 			  , #2 rea__AND_stritem_opt ) )
 
      rea__AND_stritem_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_stritem_opt
+	  SIG spec END AND_rea_opt__AND_stritem_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_stritem_optright),
+				   spec, #1 AND_rea_opt__AND_stritem_opt)
+			  , #2 AND_rea_opt__AND_stritem_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_stritem_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_stritem_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_stritem_opt)
@@ -2730,6 +2842,18 @@
 				      AND_rea_opt__AND_stritem_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_stritem_opt)
+			  , #2 AND_rea_opt__AND_stritem_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_stritem_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_stritem_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_stritem_opt)
+			  , #2 AND_rea_opt__AND_stritem_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_stritem_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					  AND_rea_opt__AND_stritem_optright),
+					tyvarseq, longtycon,
+					#1 AND_rea_opt__AND_stritem_opt)
 			  , #2 AND_rea_opt__AND_stritem_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_stritem_opt
@@ -2839,7 +2963,11 @@
 			  , #2 rea__AND_funitem_opt ) )
 
      rea__AND_funitem_opt:
-	  VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_funitem_opt
+	  SIG spec END AND_rea_opt__AND_funitem_opt
+			( ( SIGRea(I(SIGleft,AND_rea_opt__AND_funitem_optright),
+				   spec, #1 AND_rea_opt__AND_funitem_opt)
+			  , #2 AND_rea_opt__AND_funitem_opt ) )
+	| VAL OP_opt longvid EQUALS OP_opt longvid AND_rea_opt__AND_funitem_opt
 			( ( VALRea(I(VALleft,AND_rea_opt__AND_funitem_optright),
 				   OP_opt1, longvid1, OP_opt2, longvid2,
 				   #1 AND_rea_opt__AND_funitem_opt)
@@ -2868,6 +2996,18 @@
 				      AND_rea_opt__AND_funitem_optright),
 				    tyvarseq, longtycon, ty,
 				    #1 AND_rea_opt__AND_funitem_opt)
+			  , #2 AND_rea_opt__AND_funitem_opt ) )
+	| EQTYPE tyvarseq longtycon AND_rea_opt__AND_funitem_opt
+			( ( EQTYPERea(I(EQTYPEleft,
+					AND_rea_opt__AND_funitem_optright),
+				      tyvarseq, longtycon,
+				      #1 AND_rea_opt__AND_funitem_opt)
+			  , #2 AND_rea_opt__AND_funitem_opt ) )
+	| EQEQTYPE tyvarseq longtycon AND_rea_opt__AND_funitem_opt
+			( ( EQEQTYPERea(I(EQEQTYPEleft,
+					  AND_rea_opt__AND_funitem_optright),
+					tyvarseq, longtycon,
+					#1 AND_rea_opt__AND_funitem_opt)
 			  , #2 AND_rea_opt__AND_funitem_opt ) )
 	| STRUCTURE longstrid COLON_sigexp_opt EQUALS longstrid
 						AND_rea_opt__AND_funitem_opt

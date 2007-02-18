@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -238,7 +238,7 @@ local
 
     end
 
-    __primitive eqtype time = "Time.time"
+    __primitive eqtype time = "''Time.time"
     __primitive functor Cast (structure X : TIME signature S) : S = "Cast"
 
 

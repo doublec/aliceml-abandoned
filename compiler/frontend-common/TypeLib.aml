@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -55,6 +55,8 @@ struct
     val _		= Type.starKind : unit -> kind		(* verify *)
     val lab_extKind	= vallab "extKind"
     val _		= Type.extKind : unit -> kind		(* verify *)
+    val lab_eqKind	= vallab "eqKind"
+    val _		= Type.eqKind : kind -> kind		(* verify *)
     val lab_arrowKind	= vallab "arrowKind"
     val _		= Type.arrowKind : kind * kind -> kind	(* verify *)
     val lab_singKind	= vallab "singKind"

@@ -17,8 +17,8 @@
     structure __pervasive :
     sig
 	(* to encode datatypes: *)
-	type 'a ref
-	type 'a strict
+	__eqeqtype 'a ref
+	eqtype 'a strict
 	type 'a conarrow
 
 	(* to enable derived forms: *)
@@ -58,7 +58,7 @@ local
 
 	    __primitive exttype exn      = "exn"
 	    __primitive type 'a ref      = "ref"
-	    __primitive type 'a strict   = "strict"
+	    __primitive eqtype 'a strict = "strict"
 	    __primitive type 'a conarrow = "conarrow"
 	end
 	__primitive type int    = "int"
@@ -100,6 +100,7 @@ local
 		val starKind :		unit -> kind
 		val extKind :		unit -> kind
 		val singKind :		typ -> kind
+		val eqKind :		kind -> kind
 		val arrowKind :		kind * kind -> kind
 
 		val unknown :		kind -> typ
@@ -255,7 +256,7 @@ local
 
 	__primitive exttype exn      = "exn"
 	__primitive type 'a ref      = "ref"
-	__primitive type 'a strict   = "strict"
+	__primitive eqtype 'a strict = "strict"
 	__primitive type 'a conarrow = "conarrow"
     end
 
@@ -289,11 +290,11 @@ end (* local *)
 
 structure Int		= struct __primitive eqtype int	   = "int"    end
 structure Word31	= struct __primitive eqtype word   = "word"   end
-structure Word32	= struct __primitive eqtype word   = "Word32.word" end
+structure Word32	= struct __primitive eqtype word   = "''Word32.word" end
 structure Real		= struct __primitive eqtype real   = "real"   end
 structure Char		= struct __primitive eqtype char   = "char"   end
 structure String	= struct __primitive eqtype string = "string" end
-structure IntInf	= struct __primitive eqtype int    = "IntInf.int" end
+structure IntInf	= struct __primitive eqtype int    = "''IntInf.int" end
 structure LargeInt	= IntInf
 structure Word          = Word31
 structure LargeWord	= Word32

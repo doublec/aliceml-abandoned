@@ -160,6 +160,7 @@ struct
     type FunBind   = G.StrBind
     type AppSigExp = G.SigExp
     type SigExp    = G.SigExp
+    type Spec      = G.Spec
     type ExDesc    = G.EconDesc
     type FunDesc   = G.StrDesc
     type ExItem    = G.EconItem
@@ -726,8 +727,6 @@ end
     (* Declarations *)
 
     val FUNDec			= G.FUNDec
-    val EQTYPEDec		= G.TYPEDec
-    val EQEQTYPEDec		= G.TYPEDec
     val EXCEPTIONDec		= G.CONSTRUCTORDec
     val FUNCTORDec		= G.STRUCTUREDec
     val PRIMITIVEFUNDec		= G.PRIMITIVEVALDec
@@ -909,8 +908,6 @@ end
     (* Specifications *)
 
     val FUNSpec			= G.VALSpec
-    val EQTYPESpec		= G.TYPESpec
-    val EQEQTYPESpec		= G.TYPESpec
     val SHARINGSpec		= G.SHARINGSpec
     val EXCEPTIONSpec		= G.CONSTRUCTORSpec
     val FUNCTORSpec		= G.STRUCTURESpec
@@ -971,9 +968,12 @@ end
     (* Signature expressions (Part 2) *)
 
     datatype Rea =
-	  VALRea         of Info * Op * LongVId * Op * LongVId * Rea option
+	  SIGRea         of Info * Spec * Rea option
+	| VALRea         of Info * Op * LongVId * Op * LongVId * Rea option
 	| CONSTRUCTORRea of Info * Op * LongVId * Op * LongVId * Rea option
 	| TYPERea        of Info * TyVarSeq * LongTyCon * Ty * Rea option
+	| EQTYPERea      of Info * TyVarSeq * LongTyCon * Rea option
+	| EQEQTYPERea    of Info * TyVarSeq * LongTyCon * Rea option
 	| STRUCTURERea   of Info * LongStrId * SigExp option * LongStrId
 							     * Rea option
 	| SIGNATURERea   of Info * LongSigId * StrPat list * AppSigExp
@@ -992,6 +992,10 @@ end
 						    op_opt2, longvid, NONE))
     fun buildTypSpec (tyvarseq, ty) (I, tycon) =
 	    G.TYPESpec(I, G.EQUALTypDesc(I, tyvarseq, tycon, ty, NONE))
+    fun buildEqTypSpec (tyvarseq) (I, tycon) =
+	    G.EQTYPESpec(I, G.NEWTypDesc(I, tyvarseq, tycon, NONE))
+    fun buildEqEqTypSpec (tyvarseq) (I, tycon) =
+	    G.EQEQTYPESpec(I, G.NEWTypDesc(I, tyvarseq, tycon, NONE))
     fun buildStrSpec (sigexp_opt, longstrid) (I, strid) =
 	    G.STRUCTURESpec(I, G.EQUALStrDesc(I, strid, sigexp_opt,
 						 longstrid, NONE))
@@ -1015,7 +1019,9 @@ end
 	end
 
 
-    fun Rea(VALRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
+    fun Rea(SIGRea(I, spec, rea_opt)) =
+	    ( G.ATSIGEXPSigExp(I, G.SIGAtSigExp(I, spec)), rea_opt )
+      | Rea(VALRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
 	    buildSigExp(buildValSpec(op_opt1, op_opt2, longvid2),
 			I, longvid1, rea_opt)
       | Rea(CONSTRUCTORRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
@@ -1023,6 +1029,10 @@ end
 			I, longvid1, rea_opt)
       | Rea(TYPERea(I, tyvarseq, longtycon, ty, rea_opt)) =
 	    buildSigExp(buildTypSpec(tyvarseq, ty), I, longtycon, rea_opt)
+      | Rea(EQTYPERea(I, tyvarseq, longtycon, rea_opt)) =
+	    buildSigExp(buildEqTypSpec(tyvarseq), I, longtycon, rea_opt)
+      | Rea(EQEQTYPERea(I, tyvarseq, longtycon, rea_opt)) =
+	    buildSigExp(buildEqEqTypSpec(tyvarseq), I, longtycon, rea_opt)
       | Rea(STRUCTURERea(I, longstrid1, sigexp_opt, longstrid2, rea_opt)) =
 	    buildSigExp(buildStrSpec(sigexp_opt, longstrid2),
 			I, longstrid1, rea_opt)

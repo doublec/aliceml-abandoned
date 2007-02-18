@@ -16,7 +16,7 @@ import signature SOCKET       from "SOCKET-sig"
 
 structure Socket :> SOCKET =
     struct
-	type socket
+	eqtype socket
 	type t = socket
 	type vector = string
 	type elem = char

@@ -17,7 +17,7 @@ import functor MkMonoArray                    from "MkMonoArray"
 
 structure Word8Array = MkMonoArray(
     structure Vector = Word8Vector
-    __primitive eqtype array = "Word8Array.array"
+    __primitive eqtype array = "''Word8Array.array"
 
     __primitive val maxLen: int = "Word8Array.maxLen"
 

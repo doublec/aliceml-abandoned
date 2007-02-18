@@ -90,7 +90,7 @@ struct
 
     withtype Inf = Info * InfStatus
     and      Fld = Info
-    and      Var = Info * stamp
+    and      Var = Info * stamp * bool
     and      Val = Info * stamp * IdStatus
     and      Ty  = Info * stamp * (Env * int)
     and      Str = Info * stamp * EnvFn
@@ -278,7 +278,7 @@ struct
     and compose'((x1,z1), (x2,z2))		= (compose(x1,x2), z1)
     and compose(INF(I1,fix1),   INF(I2,fix2))	= INF(I1,fix2)
       | compose(FLD(I1),        FLD(I2))	= FLD(I1)
-      | compose(VAR(I1,z1),     VAR(I2,z2))	= VAR(I1,z1)
+      | compose(VAR(I1,z1,b1),  VAR(I2,z2,b2))	= VAR(I1,z1,b1 orelse b2)
       | compose(VAL(I1,z1,is1), VAL(I2,z2,is2))	= VAL(I1,z1,
 						    composeIdStatus(is1,is2))
       | compose(TY (I1,z1,En1), TY (I2,z2,En2))	= ( unionCompose(#1 En1,#1 En2)

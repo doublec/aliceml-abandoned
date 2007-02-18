@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -123,10 +123,13 @@ struct
 	let
 	    val c = String.str(Char.chr(Char.ord #"a" + n mod 26))
 	    val i = n div 26
+	    val k = kindVar a
 	in
-	    text(if isBound then "'" else "'_") ^^
+	    text(if isEqKind k then "'" else "") ^^
+	    text "'" ^^
+	    text(if isBound then "" else "_") ^^
 	    text c ^^ (if i = 0 then empty else text(Int.toString i)) ^^
-	    (if isExtKind(kindVar a) then text "_ext" else empty) ^^
+	    (if isExtKind k then text "_ext" else empty) ^^
 	    ppConstraint(constraintVar a)
  	end
 
@@ -166,7 +169,8 @@ struct
 	 of Unknown c =>
 	    let
 		val k   = kind t
-		val doc = text("'" ^ Int.toString(holeIndex t))
+		val doc = text((if isEqKind k then "''" else "'") ^
+				Int.toString(holeIndex t))
 			  ^^ ppConstraint c
 	    in
 		ppAnn(ps,i,j,m,prec,doc,k)
@@ -323,6 +327,8 @@ struct
 		text "#"
 	  | ExtKind =>
 		text "#+"
+	  | EqKind k' =>
+		ppKind'(ps,i,j,m,atomPrec,k') ^^ text "="
 	  | ArrowKind _ =>
 	    let
 		val (ks,k') = unarrowKind k
@@ -346,6 +352,8 @@ struct
 	case Type.inspectKind k
 	 of (Type.StarKind | Type.ExtKind) =>
 		doc
+	  | Type.EqKind k' =>
+		ppAnn(ps,i,j,m,prec,doc,k')
 	  | Type.ArrowKind _ =>
 		parenPrec prec (annPrec,
 		    abox(below(nest(

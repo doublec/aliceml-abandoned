@@ -38,7 +38,7 @@ struct
   fun push x =
     let val newlast = #tail x
     in 
-      assert (!newlast = Nil) ;
+      assert !newlast of Nil ;
       !last := Cons x ;
       last := newlast
     end

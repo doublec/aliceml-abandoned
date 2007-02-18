@@ -395,7 +395,7 @@ local
 
 	end
 
-    __primitive __eqeqtype array = "'a Array2.array"
+    __primitive __eqeqtype array = "'a ''Array2.array"
     __primitive functor Cast (structure X : ARRAY2 signature S) : S = "Cast"
 in
     structure Array2 = Cast (signature S = ARRAY2 where type array = array

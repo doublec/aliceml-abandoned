@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -170,7 +170,7 @@ struct
     val ppInflab	= ppLab ppInflabInfo
     val ppValid		= ppId ppValidInfo
     val ppTypid		= ppId ppTypidInfo
-    val ppVarid		= ppId ppVaridInfo
+    fun ppVarid(id,_)	= ppId ppVaridInfo id
     val ppModid		= ppId ppModidInfo
     val ppInfid		= ppId ppInfidInfo
     val ppVallongid	= ppLongid(ppVallongidInfo, ppValidInfo, ppVallabInfo)
@@ -436,7 +436,8 @@ struct
       | ppTyp(SingTyp(i, vallongid))	= typtree "Sing" i (
 					    ppVallongid vallongid
 					  )
-      | ppTyp(AbsTyp(i, b))		= typtree "Abs" i (
+      | ppTyp(AbsTyp(i, eq, b))		= typtree "Abs" i (
+					    ppOption ppBool eq ^/^
 					    ppBool b
 					  )
 

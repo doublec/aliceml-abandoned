@@ -22,7 +22,7 @@ import __primitive signature MONO_VECTOR      from "MONO_VECTOR-sig"
 import __primitive signature MONO_ARRAY       from "MONO_ARRAY-sig"
 
 functor MkMonoArray(structure Vector : MONO_VECTOR
-		    type array
+		    eqtype array
 		    val maxLen :     int
 		    val length :     array -> int
 		    val sub :        array * int -> Vector.elem

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -30,7 +30,7 @@ import __primitive structure StringCvt                from "StringCvt"
 import __primitive signature WORD                     from "WORD-sig"
 
 functor MkWord(BaseWord: sig
-    type word
+    eqtype word
 
     val wordSize : int
 

@@ -13,7 +13,7 @@
 
 signature CORE =
 sig
-(**)type object
+(**)eqtype object
 (**)type gtype
 (**)type gvalue
 (**)type 'a prop

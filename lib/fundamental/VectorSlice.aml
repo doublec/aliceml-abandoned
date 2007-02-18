@@ -45,7 +45,7 @@ local
 	fun notContains sl	= VectorSlice.notContains op= sl
     end
 
-    __primitive eqtype slice = "'a VectorSlice.slice"
+    __primitive type 'a slice = "'a VectorSlice.slice"
     __primitive functor Cast (structure X : VECTOR_SLICE signature S) : S = "Cast"
 in
     structure VectorSlice =

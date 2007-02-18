@@ -19,7 +19,7 @@ binding analysis for identifiers:
 	EnvFn	= Env U (StrId^n * SigId) U (StrId * EnvFn)
 	InfEnv	= VId   -> InfStatus		(infix env)
 	FldEnv	= Lab   -> 0			(field env)
-	VarEnv	= TyVar -> Stamp		(type variable env)
+	VarEnv	= TyVar -> Stamp * bool		(type variable env)
 	ValEnv	= VId   -> Stamp * IdStatus	(value env)
 	TyEnv	= TyCon -> Stamp * Env * int	(type env)
 	StrEnv	= StrId -> Stamp * EnvFn	(module env)
@@ -71,7 +71,7 @@ sig
 		   | ABSTR of stamp * StrId list * SigId * EnvFn list
     type Inf = Info * InfStatus
     type Fld = Info
-    type Var = Info * stamp
+    type Var = Info * stamp * bool
     type Val = Info * stamp * IdStatus
     type Ty  = Info * stamp * (Env * int)
     type Str = Info * stamp * EnvFn

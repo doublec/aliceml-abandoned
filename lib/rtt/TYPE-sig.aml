@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -53,21 +53,25 @@ sig
 
     val starKind :	unit -> kind
     val extKind :	unit -> kind
+    val eqKind :	kind -> kind
     val arrowKind :	kind * kind -> kind
     val singKind :	typ -> kind
 
     datatype kind_desc =
 	  StarKind
 	| ExtKind
+	| EqKind    of kind
 	| ArrowKind of kind * kind
 	| SingKind  of typ
 
     val inspectKind :	kind -> kind_desc
 
-    val isStarKind :	kind -> bool			(* modulo subkind...*)
+    val isStarKind :	kind -> bool			(* modulo subkind... *)
     val isExtKind :	kind -> bool
+    val isEqKind :	kind -> bool
     val isArrowKind :	kind -> bool
     val isSingKind :	kind -> bool
+    val asEqKind :	kind -> kind			(* Kind *)
     val asArrowKind :	kind -> kind * kind		(* Kind *)
     val asSingKind :	kind -> typ			(* Kind *)
 

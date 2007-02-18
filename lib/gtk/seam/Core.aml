@@ -19,7 +19,7 @@ structure NativeCore = NativeLibs.NativeCore
 structure Core : CORE =
 struct
     (* object is an abstract type for pointers to Gtk structures *)
-    __primitive type object   = "Gtk.object"
+    __primitive eqtype object = "''Gtk.object"
     __primitive type gtype    = "Gtk.gtype"
     __primitive type gvalue   = "Gtk.gvalue"
     

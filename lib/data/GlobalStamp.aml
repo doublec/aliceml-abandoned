@@ -15,7 +15,7 @@ import signature GLOBAL_STAMP from "GLOBAL_STAMP-sig"
 
 structure GlobalStamp : GLOBAL_STAMP =
 struct
-    __primitive eqtype stamp = "GlobalStamp.stamp"
+    __primitive eqtype stamp = "''GlobalStamp.stamp"
     type t = stamp
 
     (*TODO: For Mozart it may be desirable to optimise by sharing

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,7 +17,7 @@ import __primitive structure Word8   from "Word8"
 import functor MkMonoVector          from "MkMonoVector"
 
 structure Word8Vector = MkMonoVector(
-    __primitive eqtype vector = "Word8Vector.vector"
+    __primitive eqtype vector = "''Word8Vector.vector"
     type elem = Word8.word
 
     __primitive val maxLen: int = "Word8Vector.maxLen"

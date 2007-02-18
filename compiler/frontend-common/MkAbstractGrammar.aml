@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -101,7 +101,7 @@ struct
     and      inflab		= inflab_info lab
     and      valid		= valid_info id
     and      typid		= typid_info id
-    and      varid		= varid_info id
+    and      varid		= varid_info id * bool  (* equality? *)
     and      modid		= modid_info id
     and      infid		= infid_info id
     and      vallongid		= (vallongid_info,valid_info,vallab_info) longid
@@ -186,7 +186,7 @@ struct
 	| AllTyp    of typ_info * varid * typ	(* universal quantification *)
 	| ExTyp     of typ_info * varid * typ	(* existential quantification *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
-	| AbsTyp    of typ_info * bool		(* abstract type (extensible?)*)
+	| AbsTyp    of typ_info * bool option * bool (* abstract type (eq?, ext?)*)
 
   (* Modules *)
 
@@ -345,7 +345,7 @@ struct
       | infoTyp(AllTyp(i,_,_))		= i
       | infoTyp(ExTyp(i,_,_))		= i
       | infoTyp(SingTyp(i,_))		= i
-      | infoTyp(AbsTyp(i,_))		= i
+      | infoTyp(AbsTyp(i,_,_))		= i
 
     fun infoMod(VarMod(i,_))		= i
       | infoMod(PrimMod(i,_,_))		= i

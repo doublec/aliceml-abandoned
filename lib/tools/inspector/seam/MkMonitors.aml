@@ -171,7 +171,7 @@ struct
     | isNotMarked _ = assert false
 
   fun filter trees = (trees := List.filter isNotMarked (!trees) ;
-		      !trees = [])
+		      List.null (!trees))
 
   fun removeReference (AbsTree.Value (_, v, Reference)) =
             let val r = (Reflect.reify v : Reflect.value ref)

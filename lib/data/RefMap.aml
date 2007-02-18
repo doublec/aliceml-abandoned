@@ -15,7 +15,7 @@ import signature REF_MAP from "REF_MAP-sig"
 
 structure RefMap : REF_MAP =
 struct
-    __primitive type map = "('a,'b) RefMap.map"
+    __primitive type map = "('a,'b) ''RefMap.map"
     type t = map
 
     __primitive exception Lookup' = "UnsafeMap.IllegalKey"

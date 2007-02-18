@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -114,6 +114,7 @@ struct
     fun arityFromKind k =
 	case Type.inspectKind k
 	  of (Type.StarKind | Type.ExtKind) => 0
+	   | Type.EqKind k => arityFromKind k
 	   | Type.ArrowKind(_,k') => 1 + arityFromKind k'
 	   | Type.SingKind t => arityFromKind(Type.kind t)
 

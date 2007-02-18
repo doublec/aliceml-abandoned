@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -138,6 +138,7 @@ local
 		val starKind :		unit -> kind
 		val extKind :		unit -> kind
 		val singKind :		typ -> kind
+		val eqKind :		kind -> kind
 		val arrowKind :		kind * kind -> kind
 
 		val unknown :		kind -> typ

@@ -5,7 +5,7 @@
  *
  * Copyright:
  *   Guido Tack, 2005
- *   Andreas Rossberg, 2005
+ *   Andreas Rossberg, 2005-2007
  * 
  * Last change:
  *   $Date$ by $Author$
@@ -66,7 +66,7 @@ struct
 
     structure Map =
     struct
-	__primitive type map = "('a,'b) Store.Map.map"
+	__primitive type ('a,'b) map = "('a,'b) Store.Map.map"
 	type t = map
 
 	__primitive exception Lookup' = "UnsafeMap.IllegalKey"

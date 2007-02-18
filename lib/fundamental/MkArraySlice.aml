@@ -23,7 +23,7 @@ import __primitive structure General                 from "General"
 import __primitive functor MkArray                   from "MkArray"
 import functor MkSlice                               from "MkSlice"
 
-functor MkArraySlice(type 'a array
+functor MkArraySlice(__eqeqtype 'a array
 		     type 'a vector
 		     type 'a vector_slice
 		     type 'a elem

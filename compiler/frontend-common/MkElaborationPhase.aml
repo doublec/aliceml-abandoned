@@ -1034,28 +1034,30 @@ struct
 
   (* Type identifiers *)
 
-    and elabVarid_bind'(E, k, c, I.Id(i, stamp, name)) =
+    and elabVarid_bind'(E, k, c, (I.Id(i, stamp, name), eq)) =
 	let
+	    val k = if eq then Type.eqKind k else k
 	    val a = Type.newVar(k,c)
 	in
-	    O.Id(varInfo(i,a), stamp, name)
+	    ( O.Id(varInfo(i,a), stamp, name), eq )
 	end
 
-    and elabVarid_bind(E, k, c, varid as I.Id(i, stamp, name)) =
+    and elabVarid_bind(E, k, c, varid as (I.Id(i, stamp, name), eq)) =
 	let
+	    val k = if eq then Type.eqKind k else k
 	    val a = Type.newVar(k,c)
 	    val u = ref false
-	    val _ = Env.insertVar(E, stamp, {id=varid, var=a, use=u})
+	    val _ = Env.insertVar(E, stamp, {id=(#1 varid), var=a, use=u})
 	in
-	    ( a, O.Id(varInfo(i,a), stamp, name) )
+	    ( a, ( O.Id(varInfo(i,a), stamp, name), eq ) )
 	end
 
-    and elabVarid(E, I.Id(i, stamp, name)) =
+    and elabVarid(E, (I.Id(i, stamp, name), eq)) =
 	let
 	    val {var=a, use, ...} = Env.lookupVar(E, stamp)
 	in
 	    use := true;
-	    ( a, O.Id(varInfo(i,a), stamp, name) )
+	    ( a, ( O.Id(varInfo(i,a), stamp, name), eq ) )
 	end
 
 
@@ -1106,52 +1108,62 @@ struct
      * ASSUMPTION: type lambdas are first order.
      *)
 
-    and elabTypKind(E, I.FunTyp(i, varid, typ)) =
+    and elabTypKind(E, typ) =
+	case elabTypKind'(E, typ)
+	 of (k, false) => k
+	  | (k, true)  => Type.eqKind k
+
+    and elabTypKind'(E, I.FunTyp(i, varid, typ)) =
 	let
 	    val k1 = Type.starKind()
-	    val k2 = elabTypKind(E, typ)
+	    val (k2,eq) = elabTypKind'(E, typ)
 	in
-	    Type.arrowKind(k1, k2)
+	    (Type.arrowKind(k1, k2), eq)
 	end
 
-      | elabTypKind(E, I.ConTyp(i, typlongid)) =
+      | elabTypKind'(E, I.ConTyp(i, typlongid)) =
 	let
 	    val (t,_) = elabTyplongid(E, typlongid)
 	in
-	    Type.kind t
+	    (Type.kind t, false)
 	end
 
-      | elabTypKind(E, I.PrimTyp(i, s)) =
+      | elabTypKind'(E, I.PrimTyp(i, s)) =
 	let
 	    val t = PervasiveType.lookup s handle PervasiveType.Lookup _ =>
 			error(i, E.PervasiveTypUnknown s)
 	in
-	    Type.kind t
+	    (Type.kind t, false)
 	end
 
-      | elabTypKind(E, I.VarTyp(i, varid)) =
+      | elabTypKind'(E, I.VarTyp(i, varid)) =
 	let
 	    val (a,_) = elabVarid(E, varid)
 	in
-	    Type.kindVar a
+	    (Type.kindVar a, false)
 	end
 
-      | elabTypKind(E, I.AppTyp(i, typ1, typ2)) =
+      | elabTypKind'(E, I.AppTyp(i, typ1, typ2)) =
 	let
-	    val  k      = elabTypKind(E, typ1)
+	    val (k,eq)  = elabTypKind'(E, typ1)
 	    val (k1,k2) = Type.asArrowKind k handle Type.Kind =>
 				error(i, E.AppTypFunKind(k))
 	in
-	    k2
+	    (k2, false)
 	end
 
-      | elabTypKind(E, I.AbsTyp(i, isExtensible)) =
-	    if isExtensible
-	    then Type.extKind()
-	    else Type.starKind()
+      | elabTypKind'(E, I.AbsTyp(i, eq, isExt)) =
+	let
+	    val k = if isExt then Type.extKind() else Type.starKind()
+	in
+	    case eq
+	     of NONE       => (k, false)
+	      | SOME false => (Type.eqKind k, false)
+	      | SOME true  => (k, true)
+	end
 
-      | elabTypKind(E, _) =
-	    Type.starKind()
+      | elabTypKind'(E, _) =
+	    (Type.starKind(), false)
 
 
   (* Types *)
@@ -1314,12 +1326,15 @@ struct
 	    ( t, gen, O.FunTyp(typInfo(i,t), varid', typ') )
 	end
 
-      | elabTypRep(E, p, mkKind, I.AbsTyp(i, isExtensible)) =
+      | elabTypRep(E, p, mkKind, I.AbsTyp(i, eq, isExt)) =
 	let
-	    val k = (if isExtensible then Type.extKind else Type.starKind)()
-	    val t = Type.con(p, mkKind k)
+	    val k0 = (if isExt then Type.extKind else Type.starKind)()
+	    val k  = case eq of NONE       => mkKind k0
+			      | SOME false => mkKind(Type.eqKind k0)
+			      | SOME true  => Type.eqKind(mkKind k0)
+	    val t  = Type.con(p, k)
 	in
-	    ( t, true, O.AbsTyp(typInfo(i,t), isExtensible) )
+	    ( t, true, O.AbsTyp(typInfo(i,t), eq, isExt) )
 	end
 
       | elabTypRep(E, p, mkKind, typ) =
@@ -1925,6 +1940,9 @@ TextIO.print "\n";
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
 	in
+(*DEBUG
+print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name typid)^"}\n");
+*)
 	    O.TypDec(nonInfo(i), typid', typ')
 	end
 
@@ -1990,6 +2008,12 @@ prInf "j'" j';
 	    (* ASSUME that only ValDec or TypDec are under RecDec *)
 	    (* ASSUME that recursive ValDecs are never expansive *)
 	    val _      = Env.appTyps (fn(x,entry)=> Env.insertTyp(E,x,entry)) E'
+(*DEBUG
+val _ = Env.appTyps (fn(x,entry as {id,typ,...})=> 
+let val k = Type.kind typ in
+print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name id)^"}\n");
+Env.insertTyp(E,x,entry)end) E'
+*)
 	    val _      = generaliseVals(i, E, s, az, E')
 	in
 	    O.RecDec(nonInfo(i), decs')
@@ -2020,11 +2044,13 @@ prInf "j'" j';
 	end
 
     and enterVarids(E, varids) =
-	List.map (fn varid as I.Id(_, stamp, name) =>
+	List.map (fn varid as (I.Id(_, stamp, name), eq) =>
 		  let
-		      val a = Type.newVar(Type.starKind(), Type.Unconstrained)
+		      val k = Type.starKind()
+		      val k = if eq then Type.eqKind k else k
+		      val a = Type.newVar(k, Type.Unconstrained)
 		  in
-		      Env.insertVar(E,stamp, {id=varid, var=a, use=ref false});
+		      Env.insertVar(E,stamp, {id=(#1 varid), var=a, use=ref false});
 		      a
 		  end
 		 ) varids
@@ -2177,6 +2203,9 @@ prInf "j'" j';
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
 	in
+(*DEBUG
+print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name typid)^"}\n");
+*)
 	    O.TypSpec(nonInfo(i), typid', typ')
 	end
 
@@ -2211,6 +2240,12 @@ prInf "j'" j';
 	    val _            = Type.fix eqs
 	    (* ASSUME that only TypSpec is under RecSpec *)
 	in
+(*DEBUG
+Env.appTyps (fn(x,entry as {id,typ,...})=> 
+let val k = Type.kind typ in
+print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name id)^"}\n")
+end) (Env.cloneScope E);
+*)
 	    O.RecSpec(nonInfo(i), specs')
 	end
 
@@ -2263,6 +2298,9 @@ prInf "j'" j';
 	    val  k            = (if gen then Type.kind else Type.singKind) t0
 	    val  _            = Inf.extendTyp(s, p, k)
 	in
+(*DEBUG
+print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name typid)^"}\n");
+*)
 	    ( O.TypSpec(nonInfo(i), typid', typ'), [(t0,t)] )
 	end
 

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,7 +23,7 @@ import __primitive signature THREAD           from "THREAD-sig"
 
 structure Thread : THREAD =				(**)
 struct
-    __primitive eqtype thread = "Thread.thread"
+    __primitive eqtype thread = "''Thread.thread"
     type t = thread
     datatype state = RUNNABLE | BLOCKED | TERMINATED
 

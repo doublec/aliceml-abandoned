@@ -27,8 +27,8 @@ import __primitive
 import __primitive structure General          from "General"
 import __primitive functor MkRow              from "MkRow"
 
-functor MkArray(type 'a array
-		type 'a dst_array
+functor MkArray(__eqeqtype 'a array
+		__eqeqtype 'a dst_array
 		type 'a vector
 		type 'a dst_vector
 		type 'a elem

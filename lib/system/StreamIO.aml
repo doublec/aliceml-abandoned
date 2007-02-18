@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,6 +18,7 @@ import signature STREAM_IO from "STREAM_IO-sig"
 import structure RefMap    from "../data/RefMap"
 
 functor StreamIO(structure PrimIO: PRIM_IO
+			   where eqtype elem
 		 structure Vector: MONO_VECTOR
 			   where type elem = PrimIO.elem
 			     and type vector = PrimIO.vector

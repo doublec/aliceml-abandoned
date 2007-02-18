@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -162,6 +162,8 @@ sig
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
 	| TYPEDec         of Info * TypBind
+	| EQTYPEDec       of Info * TypBind
+	| EQEQTYPEDec     of Info * TypBind
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
 	| EXTTYPEDec      of Info * ExtBind
@@ -302,6 +304,8 @@ sig
     and Spec =
 	  VALSpec           of Info * ValDesc
 	| TYPESpec          of Info * TypDesc
+	| EQTYPESpec        of Info * TypDesc
+	| EQEQTYPESpec      of Info * TypDesc
 	| DATATYPESpec      of Info * DatDesc
 	| REPLICATIONSpec   of Info * TyCon * LongTyCon
 	| EXTTYPESpec       of Info * ExtDesc

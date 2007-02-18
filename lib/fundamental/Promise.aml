@@ -21,7 +21,7 @@ import __primitive signature PROMISE                from "PROMISE-sig"
 
 structure Promise : PROMISE =						(**)
 struct
-    __primitive __eqeqtype 'a promise			= "'a promise"
+    __primitive __eqeqtype 'a promise			= "'a ''promise"
     type t						= promise
 
     __primitive exception Promise			= "Promise.Promise"
@@ -74,7 +74,7 @@ struct
     fun isFulfilled(ref(b,h)) = b
 end
 
-    __primitive __eqeqtype promise = "'a promise"
+    __primitive __eqeqtype 'a promise = "'a ''promise"
     __primitive functor Cast (structure X : PROMISE signature S) : S = "Cast"
 in
     structure Promise = Cast (signature S = PROMISE where type promise = promise

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -49,7 +49,7 @@ local
 	    end
     end
 
-    __primitive eqtype lock = "Lock.lock"
+    __primitive eqtype lock = "''Lock.lock"
     __primitive functor Cast (structure X : LOCK signature S) : S = "Cast"
 in
     structure Lock = Cast (signature S = LOCK where type lock = lock

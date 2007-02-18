@@ -82,11 +82,13 @@ struct
   fun getTyp (modl, label) = UnsafeValue.projPoly (modl, trTypLab label)
 
   (* Directly from PPComponent.aml *)
-  fun unarrowTKind' (k,ks) = 
-    case Type.inspectKind k of
-      Type.ArrowKind (k1,k2) => unarrowTKind' (k2,k1::ks)
-    | _ => (List.rev ks, k)
-  fun unarrowTKind k = unarrowTKind' (k,[])
+  fun makeEq(b,k) = if b then Type.eqKind k else k
+  fun unarrowTKind'(k,ks,eq) =
+      case Type.inspectKind k of
+        Type.ArrowKind(k1,k2) => unarrowTKind'(k2, makeEq(eq,k1)::ks, eq)
+       | Type.EqKind k1 => unarrowTKind'(k1, ks, true)
+       | _ => (List.rev ks, makeEq(eq,k))
+  fun unarrowTKind k = unarrowTKind' (k,[],false)
 
   fun unlambdaTyp'(t,vs) =
     case Type.inspect t of
@@ -95,30 +97,36 @@ struct
     | _	 => (List.rev vs, t)
   fun unlambdaTyp t = unlambdaTyp'(t,[])
 
-  fun ppVar prec (n,v) =
-    let
-      val k    = Type.kindVar v
-      val doc0 = PPType.ppVar(n,v)
-    in
-      case Type.inspectKind k
-        of (Type.StarKind | Type.ExtKind) =>
-          (doc0, doc0)
+  fun parenPrec p (p',doc) = if p > p' then paren doc else doc
+
+  fun ppVarAnnot(prec, doc0, k) =
+      case Type.inspectKind k of
+	(Type.StarKind | Type.ExtKind) =>
+	  (doc0, doc0)
+      | Type.EqKind k' =>
+	  ppVarAnnot(prec, doc0, k')
       | Type.ArrowKind _ =>
-          let
-            val doc1 = PPType.ppKind k
-            val doc  = abox(below(nest(doc0 ^^ text " :" ^/^ doc1)))
-          in
-            (doc0, if prec = 0 then doc else paren doc)
-          end
+	let
+	  val doc1 = PPType.ppKind k
+	  val doc  = abox(below(nest(doc0 ^^ text " :" ^/^ doc1)))
+	in
+	  (doc0, parenPrec prec (0,doc))
+	end
       | Type.SingKind t =>
-          let
-            val doc1 = PPType.ppTyp t
-            val doc  = abox(below(nest(doc0 ^^ text " =" ^/^ doc1)))
-          in
-            (doc1, if prec = 0 then doc else paren doc)
-          end
-    end
-  
+	let
+	  val doc1 = PPType.ppTyp t
+	  val doc  = abox(below(nest(doc0 ^^ text " =" ^/^ doc1)))
+	in
+	  (doc1, parenPrec prec (0,doc))
+	end
+
+  fun ppVar prec (n,a) =
+      let
+	val doc0 = PPType.ppVar(n,a)
+      in
+	ppVarAnnot(prec, doc0, Type.kindVar a)
+      end
+
   fun ppVars vs =
     let
       val m     = Type.Map.map()
@@ -174,7 +182,7 @@ struct
           val (vs, isExtType) =
             let
               val (ks, k') = unarrowTKind (Type.kind typ)
-              val isExtType = Type.inspectKind k' = Type.ExtKind
+              val isExtType = Type.isExtKind k'
               val vs2 = if isExtType
                          then List.map
                                  (fn k => Type.newVar(k, Type.Unconstrained))

@@ -21,7 +21,7 @@ import __primitive signature MONO_ARRAY_SLICE from "MONO_ARRAY_SLICE-sig"
 
 functor MkMonoArraySlice(type elem
 			 type vector
-			 type array
+			 eqtype array
 			 type vector_slice
 			 type slice
 			 val alength :   array -> int

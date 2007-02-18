@@ -35,12 +35,12 @@ type selection = {rect   : Gtk.object,
 
 val selection = ref ([]: selection list)
 
-fun isEmpty () = !selection = []
+fun isEmpty () = List.null (!selection)
 
 val setSens = Gtk.Widget.setSensitive
 
 fun initMenu () =
-    if !selection = [] then setSens (MainWindow.menuSelection, false)
+    if isEmpty () then setSens (MainWindow.menuSelection, false)
     else (setSens(MainWindow.menuSelection, true) ;
 	  setSens(MainWindow.menuItemExpand, true) ;
 	  setSens(MainWindow.menuItemExpandF, true) ;
@@ -213,7 +213,7 @@ fun getTrees () = getPredicateTrees alwaysTrue
 
 fun distinctPaths p1 p2 = Common.comparePaths (p1, p2) = Distinct
 
-fun unselectPath path = if !selection = [] then () (* Optimisation. *)
+fun unselectPath path = if isEmpty () then () (* Optimisation. *)
 			else ignore (getPredicateTrees (distinctPaths path))
 
 fun deselect () = (List.app deselectOne (!selection) ; setSelection ([], []))
@@ -343,7 +343,7 @@ fun highlightAdd (tree, path) =
       val oldsel = !selection
     in
       selection := item :: oldsel ;
-      if oldsel = [] then initMenu () else () ;
+      if List.null oldsel then initMenu () else () ;
       updMenu' (tree, item)
     end
 
@@ -611,7 +611,7 @@ fun mapSelection f =
    end
 
 fun reselect () =
-  if !selection = [] then () (* Optimization. *)
+  if isEmpty () then () (* Optimization. *)
   else let val paths = getPaths ()
        in
          deselect () ;

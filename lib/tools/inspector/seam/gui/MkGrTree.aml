@@ -162,7 +162,7 @@ fun fromAbsTree {group, delta, abstree, parent, index, depth, suffixes, id} =
           case suffix of [] => suffixes
                        | _  => (suffix, orient, depth) :: suffixes 
 
-	val delta' = if prefix = [] then delta else xpos1
+	val delta' = if List.null prefix then delta else xpos1
 	val (tree, theight, twidth) =
 	    fromAbsTree {group, parent, index, depth, delta = delta',
 			 abstree, suffixes, id = NONE}

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -163,6 +163,8 @@ struct
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
 	| TYPEDec         of Info * TypBind
+	| EQTYPEDec       of Info * TypBind
+	| EQEQTYPEDec     of Info * TypBind
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
 	| EXTTYPEDec      of Info * ExtBind
@@ -303,6 +305,8 @@ struct
     and Spec =
 	  VALSpec           of Info * ValDesc
 	| TYPESpec          of Info * TypDesc
+	| EQTYPESpec        of Info * TypDesc
+	| EQEQTYPESpec      of Info * TypDesc
 	| DATATYPESpec      of Info * DatDesc
 	| REPLICATIONSpec   of Info * TyCon * LongTyCon
 	| EXTTYPESpec       of Info * ExtDesc
@@ -473,6 +477,8 @@ struct
     fun infoDec(VALDec(I,_,_))				= I
       | infoDec(FUNDec(I,_,_))				= I
       | infoDec(TYPEDec(I,_))				= I
+      | infoDec(EQTYPEDec(I,_))				= I
+      | infoDec(EQEQTYPEDec(I,_))			= I
       | infoDec(DATATYPEDec(I,_))			= I
       | infoDec(REPLICATIONDec(I,_,_))			= I
       | infoDec(EXTTYPEDec(I,_))			= I
@@ -578,6 +584,8 @@ struct
 
     fun infoSpec(VALSpec(I,_))				= I
       | infoSpec(TYPESpec(I,_))				= I
+      | infoSpec(EQTYPESpec(I,_))			= I
+      | infoSpec(EQEQTYPESpec(I,_))			= I
       | infoSpec(DATATYPESpec(I,_))			= I
       | infoSpec(REPLICATIONSpec(I,_,_))		= I
       | infoSpec(EXTTYPESpec(I,_))			= I

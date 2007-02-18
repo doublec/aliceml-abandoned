@@ -1,6 +1,7 @@
 Language & Compiler:
 
 * [NEW] Full support for signature inclusion.
+* [NEW] Standard-conforming treatment of equality types.
 * [NEW] Compiler flag --recursive-compilation compiles imports if needed.
 * [CHG] Less frequent "datatype of constructor is not accessible" problems;
         OTOH, datatype replication now requires all constructors to be in scope.

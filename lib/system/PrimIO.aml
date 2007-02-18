@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,6 +16,7 @@ import structure IO      from "IO"
 import signature PRIM_IO from "PRIM_IO-sig"
 
 functor PrimIO(structure Vector: MONO_VECTOR
+		   where eqtype elem
 	       structure Array: MONO_ARRAY
 		   where type elem = Vector.elem
 		     and type vector = Vector.t

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -36,8 +36,14 @@ functor MkPervasiveType(val labid_false :	string
 			val valid_match :	string
 			val valid_bind :	string
 			val modid_pervasive :	string
+
+			val prefix_eq :		string
 			val prefix_arrow :	string
+			val prefix_arrowEq :	string
+			val prefix_eqArrow :	string
 			val prefix_arrow2 :	string
+			val prefix_arrow2Eq :	string
+			val prefix_eqArrow2 :	string
 			) :> PERVASIVE_TYPE =
 struct
     type lab		= Label.t
@@ -96,19 +102,24 @@ struct
 
     val kind_star	= Type.starKind()
     val kind_ext	= Type.extKind()
+    val kind_eqStar	= Type.eqKind kind_star
     val kind_arrow	= Type.arrowKind(kind_star, kind_star)
+    val kind_arrowEq	= Type.arrowKind(kind_star, kind_eqStar)
+    val kind_eqArrow	= Type.eqKind kind_arrow
     val kind_arrow2	= Type.arrowKind(kind_star, kind_arrow)
+    val kind_arrow2Eq	= Type.arrowKind(kind_star, kind_arrowEq)
+    val kind_eqArrow2	= Type.eqKind kind_arrow2
 
-    val typ_int		= Type.con(path_int,      kind_star)
-    val typ_word	= Type.con(path_word,     kind_star)
-    val typ_real	= Type.con(path_real,     kind_star)
-    val typ_char	= Type.con(path_char,     kind_star)
-    val typ_string	= Type.con(path_string,   kind_star)
+    val typ_int		= Type.con(path_int,      kind_eqStar)
+    val typ_word	= Type.con(path_word,     kind_eqStar)
+    val typ_real	= Type.con(path_real,     kind_eqStar)
+    val typ_char	= Type.con(path_char,     kind_eqStar)
+    val typ_string	= Type.con(path_string,   kind_eqStar)
     val typ_exn		= Type.con(path_exn,      kind_ext )
-    val typ_ref		= Type.con(path_ref,      kind_arrow)
-    val typ_vec		= Type.con(path_vec,      kind_arrow)
-    val typ_array	= Type.con(path_array,    kind_arrow)
-    val typ_strict	= Type.con(path_strict,   kind_arrow)
+    val typ_ref		= Type.con(path_ref,      kind_arrowEq)
+    val typ_vec		= Type.con(path_vec,      kind_eqArrow)
+    val typ_array	= Type.con(path_array,    kind_arrowEq)
+    val typ_strict	= Type.con(path_strict,   kind_eqArrow)
     val typ_conarrow	= Type.con(path_conarrow, kind_arrow)
     val typ_package	= Type.con(path_package,  kind_star)
 
@@ -121,6 +132,12 @@ struct
 
 
     exception Lookup of string
+
+    fun prefixed(prefix, s, k) =
+	if String.isPrefix prefix s
+	then SOME(Type.con(Path.pervasive(String.extract(s, String.size prefix,
+							 NONE)), k))
+	else NONE
 
     fun lookup s =
 	if      s = typid_int    then typ_int
@@ -136,11 +153,12 @@ struct
 	else if s = typid_conarrow then typ_conarrow
 	else if s = typid_package  then typ_package
 	else
-	if String.isPrefix prefix_arrow s
-	then Type.con(Path.pervasive(String.extract(s, String.size prefix_arrow,
-						    NONE)), kind_arrow)
-	else if String.isPrefix prefix_arrow2 s
-	then Type.con(Path.pervasive(String.extract(s, String.size prefix_arrow2,
-						    NONE)), kind_arrow2)
-	else Type.con(Path.pervasive s, kind_star)
+	case prefixed(prefix_eq, s, kind_eqStar) of SOME t => t | NONE =>
+	case prefixed(prefix_arrowEq, s, kind_arrowEq) of SOME t => t | NONE =>
+	case prefixed(prefix_eqArrow, s, kind_eqArrow) of SOME t => t | NONE =>
+	case prefixed(prefix_arrow, s, kind_arrow) of SOME t => t | NONE =>
+	case prefixed(prefix_arrow2Eq, s, kind_arrow2Eq) of SOME t => t | NONE =>
+	case prefixed(prefix_eqArrow2, s, kind_eqArrow2) of SOME t => t | NONE =>
+	case prefixed(prefix_arrow2, s, kind_arrow2) of SOME t => t | NONE =>
+	Type.con(Path.pervasive s, kind_star)
 end

@@ -177,8 +177,6 @@ sig
 
     val DODec:		Info * Exp					-> Dec
     val FUNDec:		Info * TyVarSeq * FvalBind			-> Dec
-    val EQTYPEDec:	Info * TypBind					-> Dec
-    val EQEQTYPEDec:	Info * TypBind					-> Dec
     val DATATYPEDec:	Info * DatBind * TypBind option			-> Dec
     val ABSTYPEDec:	Info * DatBind * TypBind option * Dec		-> Dec
     val EXCEPTIONDec:	Info * ExBind					-> Dec
@@ -230,8 +228,6 @@ sig
     (* Specifications *)
 
     val FUNSpec:          Info * ValDesc                           -> Spec
-    val EQTYPESpec:       Info * TypDesc                           -> Spec
-    val EQEQTYPESpec:     Info * TypDesc                           -> Spec
     val DATATYPESpec:     Info * DatDesc * TypDesc option          -> Spec
     val EXCEPTIONSpec:    Info * ExDesc                            -> Spec
     val FUNCTORSpec:      Info * FunDesc                           -> Spec
@@ -257,11 +253,14 @@ sig
     val WHERELONGSTRIDSigExp:
 			  Info * SigExp * LongStrId * LongStrId    -> SigExp
 
+    val SIGRea:           Info * Spec * Rea option                        -> Rea
     val VALRea:           Info * Op * LongVId * Op * LongVId * Rea option -> Rea
     val FUNRea:           Info * Op * LongVId * Op * LongVId * Rea option -> Rea
     val CONSTRUCTORRea:   Info * Op * LongVId * Op * LongVId * Rea option -> Rea
     val EXCEPTIONRea:     Info * Op * LongVId * Op * LongVId * Rea option -> Rea
     val TYPERea:          Info * TyVarSeq * LongTyCon * Ty * Rea option   -> Rea
+    val EQTYPERea:        Info * TyVarSeq * LongTyCon * Rea option        -> Rea
+    val EQEQTYPERea:      Info * TyVarSeq * LongTyCon * Rea option        -> Rea
     val STRUCTURERea:     Info * LongStrId * SigExp option * LongStrId
 							   * Rea option   -> Rea
     val FUNCTORRea:       Info * LongStrId * SigExp option * LongStrId

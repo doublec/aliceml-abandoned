@@ -31,9 +31,7 @@ struct
 	val changed = if !usefont1 = !usefont2 then changed
 		      else (usefont1 := !usefont2 ; true)
 	val changed = if !rgb1 = !rgb2 then changed
-		      else (rgb1 := !rgb2 ; true)
-	val changed = if !color1 = !color2 then changed
-		      else (color1 := !color2 ; true)
+		      else (rgb1 := !rgb2 ; color1 := !color2 ; true)
       in
 	changed
       end

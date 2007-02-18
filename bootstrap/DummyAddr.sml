@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,5 +12,5 @@
 
 structure Addr =
 struct
-    fun addr x = 0
+    fun addr c = Cell.hash c
 end

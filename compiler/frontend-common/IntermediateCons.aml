@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -213,10 +213,16 @@ handle Type.Row =>
 	    rttAppExp(env, r, modlab_type, lab_starKind, unitExp r)
 	  | Type.ExtKind =>
 	    rttAppExp(env, r, modlab_type, lab_extKind, unitExp r)
-	  | Type.ArrowKind(kind1, kind2) =>
+	  | Type.EqKind k1 =>
 	    let
-		val exp1 = kindExp(env, r, kind1)
-		val exp2 = kindExp(env, r, kind2)
+		val exp = kindExp(env, r, k1)
+	    in
+		rttAppExp(env, r, modlab_type, lab_eqKind, exp)
+	    end
+	  | Type.ArrowKind(k1, k2) =>
+	    let
+		val exp1 = kindExp(env, r, k1)
+		val exp2 = kindExp(env, r, k2)
 	    in
 		rttAppExp(env, r, modlab_type, lab_arrowKind,
 			  tupExp(r, #[exp1,exp2]))

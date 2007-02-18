@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,7 @@
 local
     structure __pervasive =
     struct
-	__primitive type 'a strict   = "strict"
+	__primitive eqtype 'a strict = "strict"
 	__primitive type 'a conarrow = "conarrow"
 	__primitive exttype exn      = "exn"
     end
@@ -55,6 +55,7 @@ in
 		val starKind = dummy
 		val extKind = dummy
 		val singKind = dummy
+		val eqKind = dummy
 		val arrowKind = dummy
 		val unknown = dummy
 		val var = dummy

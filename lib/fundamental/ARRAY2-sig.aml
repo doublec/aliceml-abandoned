@@ -73,8 +73,8 @@ sig
     val all : traversal -> ('a -> bool) -> 'a array -> bool   (**)
     val alli : traversal -> (int * int * 'a -> bool) -> 'a region -> bool (**)
 
-    val contains: traversal -> 'a array -> 'a -> bool     (**)
-    val notContains: traversal -> 'a array -> 'a -> bool  (**)
+    val contains: traversal -> ''a array -> ''a -> bool     (**)
+    val notContains: traversal -> ''a array -> ''a -> bool  (**)
 
     val equal: traversal -> ('a * 'a -> bool) -> 'a array * 'a array -> bool (**)
 end
