@@ -229,7 +229,7 @@ struct
     fun notContains a v = isNone (find (fn v' => v = v') a)
 
     fun equal eq (a1, a2) = length a1 = length a2 andalso
-                                alli (fn (i, v1) => v1 = sub (a2, i)) a1
+                                alli (fn (i, v1) => eq (v1, sub (a2, i))) a1
 
 
     fun collate cmp (r1,r2)     = collate'(cmp,r1,r2,0)
