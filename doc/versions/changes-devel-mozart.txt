@@ -22,6 +22,7 @@ Language:
 Compiler:
 
 * Signature inclusion has been implemented.
+* Equality types have been implemented.
 * Dynamic sealing has been implemented.
 * Warn about unused imports (switch --(no-)warn-unused-imports).
 * Warn about inaccessible type and signature names appearing in inferred
