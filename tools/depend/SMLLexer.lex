@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -39,7 +39,8 @@
 
     val nesting = ref [] : int list ref
 
-    fun nest yypos = nesting := yypos :: !nesting
+    fun nest yypos = nesting := yypos-2 :: !nesting
+    fun nested ()  = not (List.null(!nesting))
     fun unnest ()  = ( nesting := List.tl(!nesting) ; List.null(!nesting) )
 
     fun eof() =
@@ -132,7 +133,7 @@
 			  where type token = (Tokens.svalue,int) Tokens.token
 			  where type error = Error.error));
 
-%s COMMENT;
+%s COMMENT LCOMMENT;
 
 %full
 
@@ -187,12 +188,18 @@
   <INITIAL>{token}	=> ( token(OTHER,  yypos, yytext) );
   <INITIAL>{string}	=> ( tokenOf(STRING, toString, yypos, yytext) );
 
-  <INITIAL>"(*"		=> ( nest(yypos-2) ; YYBEGIN COMMENT ; continue() );
-  <COMMENT>"(*"		=> ( nest(yypos-2) ; continue() );
+  <INITIAL>"(*)"	=> ( YYBEGIN LCOMMENT ; continue() );
+  <INITIAL>"(*"		=> ( nest yypos ; YYBEGIN COMMENT ; continue() );
+  <COMMENT>"(*)"	=> ( YYBEGIN LCOMMENT ; continue() );
+  <COMMENT>"(*"		=> ( nest yypos ; continue() );
   <COMMENT>"*)"		=> ( if unnest() then YYBEGIN INITIAL else () ;
 			     continue() );
   <COMMENT>.		=> ( continue() );
   <COMMENT>"\n"		=> ( continue() );
+
+  <LCOMMENT>.		=> ( continue() );
+  <LCOMMENT>"\n"	=> ( YYBEGIN (if nested() then COMMENT else INITIAL);
+			     continue() );
 
   <INITIAL>"\""		=> ( error'(yypos, yytext, E.InvalidString) );
   <INITIAL>.		=> ( error'(yypos, yytext,

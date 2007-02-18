@@ -30,6 +30,10 @@ Other Libraries:
 * [NEW] Inspector: preferences can be saved now.
 * [FIX] Inspector: "Done" button did not close the window.
 
+Tools:
+
+* [FIX] alicedepend: recognize line comments.
+
 
 Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/08/28
 -------------------------------------------------------

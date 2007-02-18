@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2006
  *
  * Last change:
  *   $Date$ by $Author$
