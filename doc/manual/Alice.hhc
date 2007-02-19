@@ -384,6 +384,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/promise.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Rand">
+			<param name="Local" value="library/rand.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="REAL">
 			<param name="Local" value="library/real.html">
 			</OBJECT>

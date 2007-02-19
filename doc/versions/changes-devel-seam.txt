@@ -16,6 +16,7 @@ Interactive Toplevel:
 Basic Library:
 
 * [NEW] Fn: new structure with generic function combinators.
+* [NEW] Rand: interface to operating system's pseudo-random number generator.
 * [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
 * [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
 * [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.

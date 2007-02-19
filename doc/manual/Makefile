@@ -73,7 +73,7 @@ INSTALLFILES_LIBRARY_0 = \
 	os-path.html os-process.html \
 	package.html pair.html pickle.html prim-io.html print.html \
 	promise.html \
-	real.html ref.html ref-map.html \
+	rand.html real.html ref.html ref-map.html \
 	set.html sited.html sqlite.html stack.html stamp.html store.html \
 	stream-io.html \
 	string.html string-cvt.html substring.html \
