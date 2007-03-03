@@ -49,7 +49,7 @@
 
 	val app :         (elem -> unit) -> vector -> unit
 	val appr :        (elem -> unit) -> vector -> unit
-	val map :         (elem -> 'a) -> vector -> 'a vector
+	val map :         (elem -> elem) -> vector -> vector
 	val foldl :       (elem * 'a -> 'a) -> 'a -> vector -> 'a
 	val foldr :       (elem * 'a -> 'a) -> 'a -> vector -> 'a
 	val all :         (elem -> bool) -> vector -> bool
@@ -58,7 +58,7 @@
 
 	val appi :        (int * elem -> unit) -> vector -> unit
 	val appri :       (int * elem -> unit) -> vector -> unit
-	val mapi :        (int * elem -> 'a) -> vector -> 'a vector
+	val mapi :        (int * elem -> elem) -> vector -> vector
 	val foldli :      (int * elem * 'a -> 'a) -> 'a -> vector -> 'a
 	val foldri :      (int * elem * 'a -> 'a) -> 'a -> vector -> 'a
 	val alli :        (int * elem -> bool) -> vector -> bool
