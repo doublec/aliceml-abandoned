@@ -254,10 +254,10 @@ struct
 		    val new = Promise.promise ()
 		    val old = Ref.exchange (useFiles, Promise.future new)
 		in
-		    Promise.fulfill (new, old @ rest);
 		    case result
-		     of NONE      => env
-		      | SOME env' => loopUses (env', signal)
+		     of NONE      => (Promise.fulfill (new, nil); env)
+		      | SOME env' => (Promise.fulfill (new, old @ rest);
+				      loopUses (env', signal))
 		end
 (*
 	    let
@@ -282,7 +282,7 @@ struct
 		val env = Ref.exchange (currentEnv, Promise.future p)
 	    in
 		case evalString (true, env, source, signal)
-		 of NONE      => Promise.fulfill (p, env)
+		 of NONE      => (useFiles := nil; Promise.fulfill (p, env))
 		  | SOME env' => Promise.fulfill (p, loopUses (env', signal))
 	    end
 
