@@ -1892,23 +1892,26 @@ TextIO.print "\n";
 	in
 	    O.FixDec(nonInfo(i), vallab', fix')
 	end
-(*TODO: does not work, because of strange unification bug in sig matching :-(
+
       | elabDec(E, s,po,varids, I.ValDec(i, I.VarPat(i1, valid),
 					    I.VarExp(i2, vallongid))) =
 	let
 	    (* Keep full polymorphism (esp. wrt overloading!) *)
-	    val (t1,qt,valid')  = elabValid_bind(E, s, valid)
+	    val (t1,qt1,valid') = elabValid_bind(E, s, valid)
 	    val (t2,vallongid') = elabVallongid(E, vallongid)
-	    val  _              = Type.unify(t1,t2)
-	    val  _              = Type.unify(qt,t2)
+	    val  qt2            = case vallongid'
+				    of (O.ShortId(i,_) | O.LongId(i,_,_)) =>
+					  #typ i
+	    val  _              = Type.unify(t1, Type.rename t2)
+	    val  _              = Type.unify(qt1, Type.rename qt2)
 	    val  pat'           = O.VarPat(typInfo(i,t1), valid')
 	    val  exp'           = O.VarExp(typInfo(i,t2), vallongid')
 	    val  l              = Label.fromName(I.name valid)
-	    val  _              = Inf.extendVal(s, l, qt)
+	    val  _              = Inf.extendVal(s, l, qt1)
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
 	end
-*)
+
       | elabDec(E, s,po,varids, I.ValDec(i, pat, exp)) =
 	let
 	    val  _        = Env.insertScope E

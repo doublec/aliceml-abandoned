@@ -1,8 +1,13 @@
+Alice 1.4 (Kraftwerk 'Equaliser' Album) - 2007/04/28
+----------------------------------------------------
+
 Language & Compiler:
 
 * [NEW] Full support for signature inclusion.
 * [NEW] Standard-conforming treatment of equality types.
 * [NEW] Generalised open declarations: "open strexp".
+* [NEW] Open and plain renaming now retains overloading status, esp. of
+        intensionally polymorphic values like inspect, Print.printVal, etc.
 * [NEW] Compiler flag --recursive-compilation auto compiles missing imports.
 * [CHG] Less frequent "datatype of constructor is not accessible" problems;
         OTOH, datatype replication now requires all constructors to be in scope.
@@ -13,6 +18,7 @@ Interactive Toplevel:
 * [NEW] Window size and position are now saved across sessions.
 * [NEW] Extended and improved type information dispay in status bar.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
+* [FIX] Minor bug fixes.
 
 Basic Library:
 

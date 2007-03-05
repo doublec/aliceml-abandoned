@@ -10,11 +10,36 @@
 <P>Alice ML has an extended type language featuring:</P>
 
 <UL>
+<!--
+  <LI> <A href="#rebind">Overloaded rebinding</A> </LI>
+-->
   <LI> <A href="#datatype">Structural datatypes</A> </LI>
   <LI> <A href="#exttype">Extensible datatypes</A> </LI>
   <LI> <A href="#wildcards">Type wildcards</A> </LI>
   <LI> <A href="#packages">Dynamic typing</A> </LI>
 </UL>
+
+
+<!--
+<?php section("rebind", "overloaded rebinding") ?>
+
+<P>A value declaration that is merely a renaming of a (possibly qualified)
+overloaded identifier assigns the same overloaded type to the bound
+identifier:</P>
+
+<PRE class=code>
+val plus = op+
+val n = plus(1,2)
+val r = plus(1.0, 2.0)</PRE>
+
+<P>The same applies to implicit rebinding via <TT>open</TT> declarations:</P>
+
+<PRE class=code>
+structure M = struct val plus = op+ end
+open M
+val n = plus(1,2)
+val r = plus(1.0,2.0)</PRE>
+-->
 
 
 <?php section("datatype", "structural datatypes") ?>
@@ -205,6 +230,7 @@ are thus suitable to leave out any part of a type annotation:</P>
 <P>As a restriction, wildcards may not appear in any <I>ty</I> which is part of
 a <I>typbind</I>, <I>datbind</I>, <I>econbind</I>, <I>exbind</I> or
 <I>sigexp</I>.</P>
+
 
 
 <?php section("packages", "dynamic typing") ?>

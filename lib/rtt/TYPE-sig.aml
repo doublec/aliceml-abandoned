@@ -176,6 +176,7 @@ sig
 
   (* Copying and instantiation *)
 
+    val rename :	typ -> typ
     val instance :	typ -> typ
     val skolem :	typ -> typ
 

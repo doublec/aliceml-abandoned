@@ -1649,6 +1649,39 @@ val _ = checkMuFwd := checkMu
      * if called from matchCont!
      *)
 
+    fun renameVar a = newVar'(kind a, constraintVar a)
+    fun rename t = rename'(Map.map(), t)
+    and rename'(m,t) =
+	case content t
+	  of LINK t => rename'(m,t)
+	   | ABBREV(t1,t2) =>
+	     let
+		val t1' = rename'(m,t1)
+		val t2' = rename'(m,t2)
+	     in
+		if Cell.equal(t1,t1') andalso Cell.equal(t2,t2')
+		then t
+		else abbrev(t1',t2')
+	     end
+	   | ALL(a,t) =>
+	     let
+		val a' = renameVar a
+		val _  = Map.insert(m, canonical a, a')
+		val t' = rename'(m,t)
+	     in
+		all(a',t')
+	     end
+	   | EXIST(a,t)	=>
+	     let
+		val a' = renameVar a
+		val _  = Map.insert(m, canonical a, a')
+		val t' = rename'(m,t)
+	     in
+		exist(a',t')
+	     end
+	   | _ => subst(m,t)
+
+
     fun skolemVar a = newVar'(kind a, constraintVar a)
     fun instanceVar(a,r) =
 	let
@@ -1682,6 +1715,7 @@ val _ = checkMuFwd := checkMu
 				    | SOME t1 => f(m,abbrev'(t1,t))
 
     (*DEBUG*)
+    val rename   = trace rename "rename"
     val instance = trace instance "instance"
     val skolem   = trace skolem "skolem"
 

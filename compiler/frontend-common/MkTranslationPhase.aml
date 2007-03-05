@@ -335,7 +335,10 @@ struct
 	in
 	    case Type.inspect t2
 	     of Type.All(a,t) =>
-		(case Type.constraintVar a
+		(case Type.inspect t1
+		 of Type.All _ => O.VarExp(i, longid')
+		  | _ =>
+		 case Type.constraintVar a
 		 of Type.Unconstrained => O.VarExp(i, longid')
 		  | Type.Intensional =>
 		    let
