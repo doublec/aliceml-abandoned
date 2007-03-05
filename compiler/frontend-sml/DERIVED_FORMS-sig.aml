@@ -44,6 +44,8 @@
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
  *   - do declarations:
  *      do exp  ==>  val _ : {} = exp
+ *   - generalised open declarations:
+ *      open strexp  ==>  local structure strid = strexp in open strid end
  *   - derived form for function declarations extended with lazy keyword:
  *      <lazy> <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...
  *        ==>
@@ -180,8 +182,8 @@ sig
     val DATATYPEDec:	Info * DatBind * TypBind option			-> Dec
     val ABSTYPEDec:	Info * DatBind * TypBind option * Dec		-> Dec
     val EXCEPTIONDec:	Info * ExBind					-> Dec
-    val FUNCTORDec:     Info * FunBind                  	        -> Dec
-    val OPENMULTIDec:	Info * LongStrId list				-> Dec
+    val FUNCTORDec:     Info * FunBind					-> Dec
+    val OPENDec:	Info * StrExp					-> Dec
     val INFIXMULTIDec:	Info * int option * VId list			-> Dec
     val INFIXRMULTIDec:	Info * int option * VId list			-> Dec
     val NONFIXMULTIDec:	Info * VId list					-> Dec

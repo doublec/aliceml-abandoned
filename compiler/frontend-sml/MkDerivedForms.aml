@@ -44,6 +44,8 @@
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
  *   - do declarations:
  *      do exp  ==>  val _ : {} = exp
+ *   - generalised open declarations:
+ *      open strexp  ==>  local structure strid = strexp in open strid end
  *   - derived form for function declarations extended with lazy/spawn keyword:
  *      lazy <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...
  *        ==>
@@ -777,9 +779,26 @@ end
 	end
 
 
-    fun OPENMULTIDec(I, [])                    = G.EMPTYDec(I)
-      | OPENMULTIDec(I, longstrid::longstrids) =
-	    G.SEQDec(I, G.OPENDec(I,longstrid), OPENMULTIDec(I,longstrids))
+    fun OPENMULTIDec(I, G.ATSTREXPStrExp(_,G.LONGSTRIDAtStrExp(I',longstrid))) =
+	     SOME(G.OPENDec(I', longstrid))
+      | OPENMULTIDec(I, G.APPStrExp(_, strexp,
+				       G.LONGSTRIDAtStrExp(I', longstrid))) =
+	(case OPENMULTIDec(I, strexp)
+	   of NONE     => NONE
+	    | SOME dec => SOME(G.SEQDec(I, dec, G.OPENDec(I', longstrid)))
+	)
+      | OPENMULTIDec(I, _) = NONE
+
+    fun OPENDec(I, strexp) =
+	case OPENMULTIDec(I, strexp)
+	  of SOME dec => dec
+	   | NONE =>
+	     let
+		 val strid = G.StrId(I, StrId.invent())
+		 val dec   = G.STRUCTUREDec(I, G.StrBind(I, strid,strexp, NONE))
+	     in
+		G.LOCALDec(I, dec, G.OPENDec(I, G.SHORTLong(I, strid)))
+	     end
 
     fun INFIXMULTIDec(I, _, [])          = G.EMPTYDec(I)
       | INFIXMULTIDec(I, NONE, longvids) = INFIXMULTIDec(I, SOME 0, longvids)

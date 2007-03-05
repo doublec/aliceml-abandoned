@@ -53,6 +53,8 @@
 (*        fvalbind ::= spawn <|> <op> vid atpat11...atpat1n <: ty1> = exp1 |...	*)
 (*   - do declarations:								*)
 (*	  dec ::= do exp							*)
+(*   - generalised open declarations:						*)
+(*	  dec ::= open strexp							*)
 (*   - more relaxed constructor pattern syntax:					*)
 (*	  pat ::= pat atpat			(R)				*)
 (*   - generalized layered patterns:						*)
@@ -431,7 +433,6 @@
 	|    dec1''			of Dec (* excludes local and seq. *)
 	|    WITHTYPE_typbind_opt	of TypBind option
 	|    vid_list1			of VId list
-	|    longstrid_list1		of LongStrId list
 	|    d_opt			of int option
 	| valbind			of ValBind
 	|    AND_valbind_opt		of ValBind option
@@ -925,9 +926,7 @@
 			( SIGNATUREDec(I(SIGNATUREleft,sigbindright), sigbind) )
 	| FUNCTOR funbind
 			( FUNCTORDec(I(FUNCTORleft,funbindright), funbind) )
-	| OPEN longstrid_list1
-			( OPENMULTIDec(I(OPENleft,longstrid_list1right),
-				       longstrid_list1) )
+	| OPEN strexp	( OPENDec(I(OPENleft,strexpright), strexp) )
 	| INFIX d_opt vid_list1
 			( INFIXMULTIDec(I(INFIXleft,vid_list1right),
 					d_opt, vid_list1) )
@@ -992,10 +991,6 @@
      vid_list1:
 	  vid vid_list1		( vid::vid_list1 )
 	| vid			( vid::[] )
-
-     longstrid_list1:
-	  longstrid longstrid_list1	( longstrid::longstrid_list1 )
-	| longstrid			( longstrid::[] )
 
      d_opt:
 	  d			( SOME d )

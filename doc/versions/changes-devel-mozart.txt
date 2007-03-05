@@ -6,6 +6,7 @@ Language:
 * Allow optional bar before first clause of fn, case, handle, fun, and
   before first constructor in datatype definitions.
 * Allow "do exp" as abbreviation for "val _ = exp".
+* Generalised open declarations: "open strexp".
 * Pattern guards now use "if" keyword.
 * Syntactic sugar for finalization.
 * Nicer syntax (derived forms) for functors.

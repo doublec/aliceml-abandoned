@@ -2,7 +2,8 @@ Language & Compiler:
 
 * [NEW] Full support for signature inclusion.
 * [NEW] Standard-conforming treatment of equality types.
-* [NEW] Compiler flag --recursive-compilation compiles imports if needed.
+* [NEW] Generalised open declarations: "open strexp".
+* [NEW] Compiler flag --recursive-compilation auto compiles missing imports.
 * [CHG] Less frequent "datatype of constructor is not accessible" problems;
         OTOH, datatype replication now requires all constructors to be in scope.
 * [CHG] Paths in dependency files are now all interpreted relative to CWD.

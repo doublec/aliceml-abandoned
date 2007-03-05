@@ -10,6 +10,7 @@
 
 <UL>
   <LI> <A href="#local">Local modules</A> </LI>
+  <LI> <A href="#open">Generalised open declarations</A> </LI>
   <LI> <A href="#higher">Higher-order functors</A> </LI>
   <LI> <A href="#sigmembers">Signature members and abstract signatures</A> </LI>
 <!--
@@ -43,6 +44,32 @@ in
     Set.toList (foldr (flip Set.insert) Set.empty l)
 end</PRE>
 
+
+
+<?php section("open", "open declarations") ?>
+
+<P>Alice ML generalises SML's open declaration and allows not only
+structure identifiers, but arbitrary structure expressions:</P>
+
+<PRE class=code>
+open MkRedBlackSet(Int)
+open IntInf : INTEGER
+open unpack p : (val it : int -> int)</PRE>
+
+<P>Note that, for backwards compatibility with SML, a sequence of identifiers
+is <I>not</I> parsed as a <A href="#higher-strexp">functor application</A>,
+but as a multiple open declaration:
+
+<PRE class=code>
+open MkRedBlackSet Int</PRE>
+
+<P>is an attempt to open two structures <TT>MkRedBlackSet</TT> and <TT>Int</TT>,
+and will thus produce an error. Parentheses are needed to disambiguate, as in
+either of the following:</P>
+
+<PRE class=code>
+open MkRedBlackSet(Int)
+open (MkRedBlackSet Int)</PRE>
 
 
 <?php section("higher", "higher-order functors") ?>
@@ -731,6 +758,18 @@ expressions. Derived forms have been marked with (*).</P>
 
 <TABLE class=bnf>
   <TR>
+    <TD> <I>dec</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>open</TT> <I>strexp</I>
+    <TD> generalised open<SUP>1</SUP> (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
     <TD> <I>strbind</I> </TD>
     <TD align="center">::=</TD>
     <TD> ... </TD>
@@ -764,6 +803,9 @@ expressions. Derived forms have been marked with (*).</P>
 -->
 </TABLE>
 
+<P><SUP>1</SUP>) The structure expression <I>strexp</I> does not have the form
+<I>longstrid</I><SUB>1</SUB> ... <I>longstrid<SUB>n</SUB></I>.</P>
+
 
 <?php subsection("syntax-derived", "Derived forms") ?>
 
@@ -788,6 +830,11 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD> <TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT> </TD>
     <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT>&nbsp;<SUP>1</SUP><SUP>2</SUP> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>open</TT>&nbsp;<I>strexp</I> </TD>
+    <TD> <TT>local</TT>&nbsp;<TT>structure</TT>&nbsp;<I>strid</I>&nbsp;<TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<TT>in</TT>&nbsp;<TT>open</TT>&nbsp;<I>strid</I>&nbsp;<TT>end</TT>&nbsp;<SUP>1</SUP> </TD>
   </TR>
   <TR></TR>
   <TR>
