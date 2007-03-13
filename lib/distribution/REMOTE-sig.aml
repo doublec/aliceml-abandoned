@@ -12,6 +12,7 @@
  *   $Revision$
  *)
 
+import structure Socket    from "x-alice:/lib/system/Socket"
 import structure Component from "x-alice:/lib/system/Component"
 import signature COMPONENT_MANAGER
     from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
@@ -20,6 +21,7 @@ signature REMOTE =
     sig
 	type ticket = string
 
+	exception Port
 	exception Ticket
 	exception Proxy of exn
 	exception SitedArgument			(* only as proxy cause *)
@@ -28,6 +30,9 @@ signature REMOTE =
 	exception Remote of exn
 	exception Connection			(* only as remote cause *)
 	exception Exit of OS.Process.status	(* only as remote cause *)
+
+	val port: unit -> Socket.port option
+	val setPort: Socket.port -> unit                  (* Port *)
 
 	(*--** once-only offer and proxy are missing *)
 	val proxy: ('a -> 'b) -> 'a -> 'b

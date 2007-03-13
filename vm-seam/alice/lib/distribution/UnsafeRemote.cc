@@ -29,6 +29,7 @@
 
 #include "alice/Authoring.hh"
 
+static word PortConstructor;
 static word TicketConstructor;
 static word SitedArgumentConstructor;
 static word SitedResultConstructor;
@@ -115,6 +116,9 @@ DEFINE1(UnsafeRemote_unpackValue) {
 static word SitedConstructor;
 
 AliceDll word UnsafeRemote() {
+  PortConstructor =
+    UniqueConstructor::New("Port", "Remote.Port")->ToWord();
+  RootSet::Add(PortConstructor);
   TicketConstructor =
     UniqueConstructor::New("Ticket", "Remote.Ticket")->ToWord();
   RootSet::Add(TicketConstructor);
@@ -140,7 +144,9 @@ AliceDll word UnsafeRemote() {
     UniqueConstructor::New("Exit", "Remote.Exit")->ToWord();
   RootSet::Add(ExitConstructor);
 
-  Record *record = Record::New(24);
+  Record *record = Record::New(26);
+  record->Init("'Port", PortConstructor);
+  record->Init("Port", PortConstructor);
   record->Init("'Ticket", TicketConstructor);
   record->Init("Ticket", TicketConstructor);
   record->Init("'SitedInternal", Pickler::Sited);

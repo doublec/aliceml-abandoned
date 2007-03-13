@@ -31,6 +31,7 @@
     <A href="component-manager.html"><TT>COMPONENT_MANAGER</TT></A>,
     <A href="url.html"><TT>Url</TT></A>,
     <A href="pickle.html"><TT>Pickle</TT></A>,
+    <A href="socket.html"><TT>Socket</TT></A>,
     <A href="lock.html"><TT>Lock.Sync</TT></A>
   </P>
 
@@ -52,9 +53,13 @@
 	exception <A href="#SitedResult-exn">SitedResult</A>
 	exception <A href="#Protocol">Protocol</A> of string
 	exception <A href="#Ticket-exn">Ticket</A>
+	exception <A href="#Port-exn">Port</A>
 	exception <A href="#Remote-exn">Remote</A> of exn
 	exception <A href="#Connection-exn">Connection</A>
 	exception <A href="#Exit-exn">Exit</A> of OS.Process.status
+
+	val <A href="#port">port</A> : unit -> Socket.port option
+	val <A href="#setPort">setPort</A> : Socket.port -> unit
 
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
 
@@ -90,6 +95,14 @@
     </DD>
 
     <DT>
+      <TT>exception <A name="Port-exn">Port</A></TT>
+    </DT>
+    <DD>
+      <P>raised by <TT><A href="#setPort">setPort</A></TT> if the
+      port has already been set, either explicitly or implicitly.</P>
+    </DD>
+
+    <DT>
       <TT>exception <A name="Ticket-exn">Ticket</A></TT>
     </DT>
     <DD>
@@ -112,8 +125,8 @@
     </DT>
     <DD>
       <P>the former two exceptions indicate that the argument or result of
-      a call to a proxy, or to <TT><A href="eval">eval</A></TT> or
-      <TT><A href="run">run</A></TT>
+      a call to a proxy, or to <TT><A href="#eval">eval</A></TT> or
+      <TT><A href="#run">run</A></TT>
       contained a sited value. The third exception
       indicates an internal protocol error during execution of excute
       or a proxy call,
@@ -138,8 +151,43 @@
       <P>the former indicates that a connection for remote exection could not 
       be established; the latter indicates that a remote process has called
       <TT><A href="os-process.html">OS.Process.exit</A></TT>, or been terminated
-      by other means, before evaluation
-      of its root component has finished.</P>
+      by other means, before evaluation of its root component has finished.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="setPort">setPort</A> <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>sets the <A href="socket.html#port">port</A> used by the system to
+      <TT><A href="#offer">offer</A></TT> packages and accept incoming
+      <TT><A href="#proxy">proxy</A></TT> calls. If no port is set, it will
+      be chosen automatically when the first call to either
+      <TT><A href="#offer">offer</A></TT> or <TT><A href="#proxy">proxy</A></TT>
+      is performed. However, firewall configuration may require a fixed choice.
+      </P>
+      <P>
+      This function may only be called once, and must be called <I>before</I>
+      the first call to <TT><A href="#offer">offer</A></TT> or
+      <TT><A href="#proxy">proxy</A></TT>. In violation of this restriction,
+      the exception <TT><A href="Port-exn">Port</A></TT> will be raised.
+      </P>
+      <P>If the port number is invalid or the port unavailable, all
+      consecutive calls to <TT><A href="#offer">offer</A></TT> or
+      <TT><A href="#proxy">proxy</A></TT> will raise an
+      <TT><A href="io.html">IO.Io</A></TT> exception.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="port">port</A> ()</TT>
+    </DT>
+    <DD>
+      <P>returns the port set by <TT><A href="#setPort">setPort</A></TT> or
+      chosen automatically by the system, or <TT>NONE</TT> when no port has
+      been chosen yet. Raises <TT><A href="io.html">Io</A></TT> if the chosen
+      port was invalid or unavailable, or another error occured during the
+      attempt to bind it.
+      </P>
     </DD>
 
     <DT>
@@ -196,7 +244,7 @@
 	  termination of the remote process).</P>
 	<LI><P>An I/O problem occurs in the lower communication layers.
 	  In this case, <TT>Proxy(<A 
-	  href="io.html">Io</A> <I>args</I>)</TT> will be raised, with
+	  href="io.html">IO.Io</A> <I>args</I>)</TT> will be raised, with
 	  <TT><I>args</I></TT> carrying further information. Usually, this
 	  means that the process that exported the proxy is no
 	  longer alive.</P>
@@ -252,11 +300,22 @@
 	Returns a ticket suitable for <TT><A href="#take">take</A></TT>
 	or <TT><A href="#Take-fn">Take</A></TT>. Raises
 	<TT><A href="component.html#Sited">Sited</A></TT> if the package
-	contains sited values.
+	contains sited values, or <TT><A href="io.html">IO.Io</A></TT>
+	when the port set by <TT><A href="#setPort">setPort</A></TT> was
+	invalid or unavailable.
 	An offered package can be taken any number of times.
 	If the package contains mutable data, then each
 	<TT><A href="#take">take</A></TT> will return a clone of
 	a snapshot of the package made when offer is executed.</P>
+	<P>Tickets are URIs of the form</P>
+	<PRE>
+	x-alice://<I>ip</I>:<I>port</I>/offer/<I>n</I></PRE>
+	<P>where <TT><I>ip</I></TT> is the local IP address or domain,
+	<TT><I>port</I></TT> the port set by
+	<TT><A href="#setPort">setPort</A></TT> or chosen by the system,
+	and <TT><I>n</I></TT> a running number, starting with <TT>1</TT>.
+	By using <TT><A href="#setPort">setPort</A></TT>, the URI is made
+	deterministic, which may be important for server applications.</P>
     </DD>
 
     <DT>

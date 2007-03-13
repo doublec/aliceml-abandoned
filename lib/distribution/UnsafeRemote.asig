@@ -14,6 +14,7 @@ signature UNSAFE_REMOTE_COMPONENT =
     sig
 	structure UnsafeRemote:
 	    sig
+		exception Port
 		exception Ticket
 		exception SitedInternal
 		exception CorruptInternal

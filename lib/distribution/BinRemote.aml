@@ -139,7 +139,7 @@ sig
 
     val start: int option -> int   
 
-    val register:   int * handler -> unit
+    val register:   int * int * handler -> unit
 end
 =
 struct
@@ -161,16 +161,19 @@ struct
     fun notFoundHandler (request: message) = 
         (#1 request, BinaryMessage.tagNotFound, "")
 
-    structure IntMap = MkHashImpMap(Int)
+    structure Map = MkHashImpMap (type t = int * int
+				  val equal = op=
+				  fun hash (j, i) = Int.hash j + Int.hash i)
 
-    val handlerMap: handler IntMap.t = IntMap.map ()
+    val handlerMap: handler Map.t = Map.map ()
 
-    fun findHandler i =
-	case IntMap.lookup (handlerMap, i) of
+    fun findHandler key =
+	case Map.lookup (handlerMap, key) of
 	    SOME handler => handler
-        |   NONE => (trace ("could not find handler for: " ^
-			    Int.toString i ^ "\n"); 
-                     notFoundHandler)
+	|   NONE => (trace ("could not find handler for: " ^
+			    Int.toString (#1 key) ^ "/" ^
+			    Int.toString (#2 key) ^ "\n"); 
+		     notFoundHandler)
 
     (*--**  Currently have to pass token stream as reference
 	    in order to work around infamous thread space leak
@@ -194,7 +197,7 @@ struct
              * cannot be sent back).
              * There seems to be no way in the Mozart API to implement
              * the timeout properly, so for now, we simply keep
-             * conncections live forever.
+             * connections live forever.
             (trace "closing idle connection";
              Socket.close socket)
             *)
@@ -208,7 +211,7 @@ struct
 			   Int.toString port ^ "\n")
 	    val p = Promise.promise ()
 	    val _ = Stream.send (stream, Promise.future p)
-	    val handler = findHandler (#1 request)
+	    val handler = findHandler (#2 request, #1 request)
 	    val response = handler request
 		handle _ => (#1 request, BinaryMessage.tagInternalError, "")
 	in
@@ -256,7 +259,7 @@ struct
 		    end
 	end
 
-    fun register (id, handler) = IntMap.insert (handlerMap, id, handler)
+    fun register (tag, id, handler) = Map.insert (handlerMap, (tag, id), handler)
 end
 
 structure BinaryClient :>
@@ -331,7 +334,7 @@ struct
 	    val (host, port) = parseAuthority authority
 	    val path =
 		case Url.getPath url of
-		    ["ticket", s] =>
+		    [_, s] =>
 			(case Int.fromString s of
 			     SOME i => i
 			   | NONE => raise Authority
@@ -362,6 +365,7 @@ structure BinaryRemotePort :> REMOTE_PORT =
 struct
     type ticket = Url.t
 
+    exception Port = UnsafeRemote.Port
     exception Ticket = UnsafeRemote.Ticket
     exception Proxy = UnsafeRemote.Proxy
     exception SitedArgument = UnsafeRemote.SitedArgument
@@ -371,34 +375,61 @@ struct
     exception Connection = UnsafeRemote.Connection
     exception Exit = UnsafeRemote.Exit
 
-    val rootUrl =
-	lazy (Url.fromString
-		("x-alice://" ^ UnsafeRemote.getLocalIP () ^ ":" ^ 
-			Int.toString (BinaryServer.start NONE) ^ "/ticket/"))
+    val portState = ref NONE
 
-    val counter = ref 0
+    val rootUrl = lazy
+	let
+	    val p = Promise.promise ()
+	    val portOpt = Ref.exchange (portState, Promise.future p)
+	    val port = BinaryServer.start portOpt handle e =>
+			(Promise.fail (p, e); raise e)
+	in
+	    Promise.fulfill (p, SOME port);
+	    "x-alice://" ^ UnsafeRemote.getLocalIP () ^ ":" ^ Int.toString port
+	end
 
-    fun register handler =
+    fun port () = await (!portState)
+
+    fun setPort port =
+	let
+	    val p = Promise.promise ()
+	in
+	    case Ref.exchange (portState, Promise.future p) of
+	        NONE => Promise.fulfill (p, SOME port)
+	      | some => (Promise.fulfill (p, some); raise Port)
+	end
+
+
+    val tagImport   = BinaryMessage.tagUser 
+    val tagExport   = tagImport + 1
+    val tagCall     = tagExport + 1
+    val tagReturn   = tagCall	+ 1
+
+    fun tagToClass tag =
+	if tag = tagImport then "offer"
+	else if tag = tagCall then "proxy"
+	else raise Protocol "invalid tag"
+
+    val counterOffer = ref 1
+    val counterProxy = ref 1
+
+    fun register (tag, counter, handler) =
 	let
 	    val p   = Promise.promise ()
 	    val n   = Ref.exchange (counter, Promise.future p)
 	    val uri = Url.setPath (Url.empty, [Int.toString n])
+	    val class = tagToClass tag
 	in
 	    Promise.fulfill (p, n + 1);
-	    BinaryServer.register (n, handler);
-	    Url.resolve rootUrl uri
+	    BinaryServer.register (tag, n, handler);
+	    Url.resolve (Url.fromString (rootUrl ^ "/" ^ class ^ "/")) uri
 	end
 
    
-    val tagImport   = BinaryMessage.tagUser 
-    val tagExport   = tagImport + 1
-    val tagCall	    = tagExport + 1
-    val tagReturn   = tagCall	+ 1
-
-    fun checkTag (expected, actual) = 
+    fun checkTag (expected, actual) =
         if expected <> actual then 
             raise Protocol ("expected message of tag " ^ Int.toString expected
-                            ^ " got " ^ Int.toString actual) 
+                            ^ ", got " ^ Int.toString actual) 
         else ()
 
     fun export packedValue =
@@ -407,7 +438,7 @@ struct
 		(checkTag (tagImport, tag);
 		 (path, tagExport, packedValue))
 	in
-	    register handler
+	    register (tagImport, counterProxy, handler)
 	end
 
     fun download url =
@@ -426,7 +457,7 @@ struct
 		(checkTag (tagCall, tag);
 		 (path, tagReturn, f msg))
 	in
-	    register handler
+	    register (tagCall, counterOffer, handler)
 	end
 
     fun call (url, value) =

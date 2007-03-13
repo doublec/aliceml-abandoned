@@ -5,7 +5,7 @@ Language & Compiler:
 
 * [NEW] Full support for signature inclusion.
 * [NEW] Standard-conforming treatment of equality types.
-* [NEW] Generalised open declarations: "open strexp".
+* [NEW] Generalised syntax of open declarations: "open strexp".
 * [NEW] Open and plain renaming now retains overloading status, esp. of
         intensionally polymorphic values like inspect, Print.printVal, etc.
 * [NEW] Compiler flag --recursive-compilation auto compiles missing imports.
@@ -16,7 +16,7 @@ Language & Compiler:
 Interactive Toplevel:
 
 * [NEW] Window size and position are now saved across sessions.
-* [NEW] Extended and improved type information dispay in status bar.
+* [NEW] Extended and improved type information display in status bar.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
 * [FIX] Minor bug fixes.
 
@@ -24,6 +24,8 @@ Basic Library:
 
 * [NEW] Fn: new structure with generic function combinators.
 * [NEW] Rand: interface to operating system's pseudo-random number generator.
+* [NEW] Remote: new function setPort to choose fixed port number for
+        distributed operations (for firewall satisfaction and other purposes).
 * [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
 * [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
 * [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.

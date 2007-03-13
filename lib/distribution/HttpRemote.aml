@@ -24,6 +24,7 @@ structure HttpRemotePort :> REMOTE_PORT =
     struct
 	type ticket = Url.t
 
+	exception Port = UnsafeRemote.Port
 	exception Ticket = UnsafeRemote.Ticket
 	exception Proxy = UnsafeRemote.Proxy
 	exception SitedArgument = UnsafeRemote.SitedArgument
@@ -35,10 +36,30 @@ structure HttpRemotePort :> REMOTE_PORT =
 
 	val pickleContentType = "application/x-alice-pickle"
 
-	val rootUrl =
-	    lazy (Url.fromString
-		      ("http://" ^ (UnsafeRemote.getLocalIP ()) ^ ":" ^
-		       Int.toString (HttpServer.start NONE) ^ "/"))
+	val portState = ref NONE
+
+	val rootUrl = lazy
+	    let
+		val p = Promise.promise ()
+		val portOpt = Ref.exchange (portState, Promise.future p)
+		val port = HttpServer.start portOpt handle e =>
+			    (Promise.fail (p, e); raise e)
+	    in
+		Promise.fulfill (p, SOME port);
+		Url.fromString ("http://" ^ UnsafeRemote.getLocalIP () ^ ":" ^
+				Int.toString port ^ "/")
+	    end
+
+	fun port () = await (!portState)
+
+	fun setPort port =
+	    let
+		val p = Promise.promise ()
+	    in
+		case Ref.exchange (portState, Promise.future p) of
+	            NONE => Promise.fulfill (p, SOME port)
+		  | some => (Promise.fulfill (p, some); raise Port)
+	    end
 
 	val counter = ref 0
 
