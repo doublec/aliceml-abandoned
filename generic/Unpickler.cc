@@ -679,7 +679,7 @@ public:
   }
   word Load(u_int i) {
     Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
-    Assert( Store::WordToInt(GetArg(SIZE+i)) == INVALID_INT);
+    Assert(i == 0 || Store::WordToInt(GetArg(SIZE+i)) == INVALID_INT);
     return GetArg(SIZE+i);
   }
   void PushStore(u_int i, word value) {

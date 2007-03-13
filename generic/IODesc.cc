@@ -618,7 +618,7 @@ IODesc::result IODesc::Read(u_char *buf, int n, int &out) {
 
 IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
   const char *sys_buf = (const char *) buf;
-  Assert(n > 0);
+  Assert(n >= 0);
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
