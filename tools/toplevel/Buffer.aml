@@ -437,7 +437,7 @@ structure Buffer =
 		      val fileD = TextIO.openIn f
 		  in
 		      (Gtk.latin1ToUtf8(TextIO.inputAll fileD), timeStamp)
-		      before TextIO.closeIn fileD
+		      finally TextIO.closeIn fileD
 		  end
 		  handle (IO.Io _ | OS.SysErr _) =>
 		    if mode = SESSION then raise Abort{quit=false} else
@@ -529,6 +529,30 @@ structure Buffer =
           in
               Map.removeExistent(bufferMap, id);
 	      Channel.put(highlight, NONE)
+          end
+
+      fun revert id =
+          let
+              val {id,file,timeStamp,buf,undo,...} =
+		  Map.lookupExistent(bufferMap, id)
+          in
+              case !file of NONE => ()
+                          | SOME f =>
+		  let
+		      val file = TextIO.openIn f
+		  in 
+		      Lock.sync Gtk.lock
+			  (fn () =>
+                           let
+			      do timeStamp := OS.FileSys.modTime f
+			      val text = Gtk.latin1ToUtf8(TextIO.inputAll file)
+					 finally TextIO.closeIn file
+                           in
+                              Gtk.TextBuffer.setText(buf, text, ~1);
+	                      Gtk.TextBuffer.setModified(buf, false)
+			   end) ()
+		  end handle (IO.Io _ | OS.SysErr _) =>
+			     FileDialog.message ("I/O error: Could not load file " ^ f)
           end
 
       fun maySave(f, modified, timeStamp) =

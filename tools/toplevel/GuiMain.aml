@@ -120,7 +120,7 @@ structure GuiMain =
 
 	fun bufferMenus activate =
 	    (app (fn w => Gtk.Widget.setSensitive(w,activate))
-	     [Gui.save1,Gui.save_as1,Gui.go_to_line,
+	     [Gui.revert1,Gui.save1,Gui.save_as1,Gui.go_to_line,
 	      Gui.undo,Gui.find,Gui.replace,Gui.find_again,
 	      Gui.feedfile,Gui.syntax_colouring,
 	      Gui.compilefile,Gui.indent_region, Gui.outdent_region];
@@ -130,14 +130,6 @@ structure GuiMain =
         fun changeFocus view _ =
 	    let
 		val _ = curtextview := view
-		val _ = case getCurrentPage() of
-		    NONE =>
-			Gtk.Widget.setSensitive(Gui.compilefile,false)
-		  | SOME id =>
-			(Option.app (fn _ => Gtk.Widget.setSensitive(Gui.compilefile,true))
-			 (Buffer.getFileName id);
-			 Gtk.CheckMenuItem.setActive(Gui.syntax_colouring,
-					     Buffer.getSyntaxHighlighting id))
 		val _ = case view of
 		    BUFFER _ => (bufferMenus true;
 				 Gtk.Widget.setSensitive(Gui.feedregion,true))
@@ -145,15 +137,20 @@ structure GuiMain =
 				 Gtk.Widget.setSensitive(Gui.feedregion,true))
 		  | STDSTREAMS => (bufferMenus false;
 				   Gtk.Widget.setSensitive(Gui.feedregion,false))
-		val _ = if !currentPage > 0 then
-		            Gtk.Widget.setSensitive(Gui.previous_file, true)
-			else
-			    Gtk.Widget.setSensitive(Gui.previous_file, false)
-		val _ = if !currentPage <> ~1 andalso
-		            !currentPage < List.length (!pages) - 1 then
-		            Gtk.Widget.setSensitive(Gui.next_file, true)
-			else
-			    Gtk.Widget.setSensitive(Gui.next_file, false)
+		val _ = case getCurrentPage() of
+		    NONE =>
+			(Gtk.Widget.setSensitive(Gui.revert1,false);
+			 Gtk.Widget.setSensitive(Gui.compilefile,false))
+		  | SOME id =>
+			let val named = Option.isSome (Buffer.getFileName id) in
+			    Gtk.Widget.setSensitive(Gui.revert1,named);
+			    Gtk.Widget.setSensitive(Gui.compilefile,named);
+			    Gtk.CheckMenuItem.setActive(Gui.syntax_colouring,
+					     Buffer.getSyntaxHighlighting id)
+			end
+		val pages = List.length (!pages) > 0
+		val _ = Gtk.Widget.setSensitive(Gui.previous_file, pages)
+		val _ = Gtk.Widget.setSensitive(Gui.next_file, pages)
 	    in ()
 	    end
 
@@ -372,7 +369,6 @@ structure GuiMain =
 		saveSettings ()
 	    end
        
-
 	fun saveGivenFileAs id =
 	    let
 		val file =
@@ -394,6 +390,17 @@ structure GuiMain =
                                      if Buffer.save id then ()
                                      else saveGivenFileAs id;
 	     saveSettings ())
+
+        fun reallyRevert id _ = Buffer.revert id
+
+        fun revertFile () =
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            if Buffer.canClose id then
+		 reallyRevert id ()
+	    else FileDialog.modifiedWarning
+		 ("Buffer modified.", "Discard changes and proceed, or cancel?",
+		  reallyRevert id, !currentPage)
 
 
         (* Evaluation *)
@@ -857,12 +864,10 @@ structure GuiMain =
 	    let
 		val cp = !currentPage
 		val np = if direction then cp+1 else cp-1
+		val hi = List.length(!pages)-1
+		val np = if np < 0 then hi else if np > hi then 0 else np
 	    in
-		if np<0 orelse np>List.length(!pages) then
-		    ()
-		else
-		    Gtk.Notebook.setCurrentPage(Gui.notebook1,
-					       np)
+		Gtk.Notebook.setCurrentPage(Gui.notebook1, np)
 	    end
 
 	fun switchTo 0 =

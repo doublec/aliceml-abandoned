@@ -19,6 +19,7 @@ structure EventHandler : GUISIGNALS_SIG =
     struct
         fun on_new1_activate _ = GuiMain.new()
         fun on_open1_activate _ = GuiMain.openFile()
+        fun on_revert1_activate _ = GuiMain.revertFile()
         fun on_save1_activate _ = GuiMain.saveFile()
         fun on_save_as1_activate _ = GuiMain.saveFileAs()
         fun on_close1_activate _ = GuiMain.close()

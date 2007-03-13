@@ -84,6 +84,29 @@
 		  </child>
 
 		  <child>
+		    <widget class="GtkImageMenuItem" id="revert1">
+		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Reload current editor buffer from file</property>
+		      <property name="label" translatable="yes">_Revert</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_revert1_activate" last_modification_time="Mon, 28 Feb 2005 12:53:31 GMT"/>
+		      <accelerator key="O" modifiers="GDK_CONTROL_MASK | GDK_SHIFT_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image783">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-revert-to-saved</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
 		    <widget class="GtkImageMenuItem" id="save1">
 		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Write current editor buffer to original file</property>
