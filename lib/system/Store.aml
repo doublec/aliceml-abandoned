@@ -19,6 +19,8 @@ import structure UnsafeValue      from "UnsafeValue"
 
 structure Store : STORE =
 struct
+    exception Stack = UnsafeStore.Stack
+
     val same = UnsafeValue.same
 
     fun minimize a = let

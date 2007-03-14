@@ -32,6 +32,8 @@
   <PRE>
 signature STORE =
 sig
+    exception Stack
+
     val same      : 'a * 'a -> bool
     val equiv     : 'a * 'a -> bool
     val minimize  : 'a -> 'a
@@ -116,6 +118,16 @@ end
 
 
   <DL>
+
+    <DT>
+      <TT><B>exception</B> Stack</TT>
+    </DT>
+    <DD>
+      <P>Raised when a thread outgrows the maximum supported stack size
+      (64 MB per thread in the current system). Usually, this indicates a
+      diverging function.
+      </P>
+    </DD>
 
     <DT>
       <TT>same (<I>x</I>, <I>y</I>)</TT>

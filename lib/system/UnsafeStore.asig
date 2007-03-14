@@ -2,6 +2,7 @@ signature UNSAFE_STORE_SIG =
   sig
       structure UnsafeStore:
 	  sig
+	      exception Stack
 	      val size      : 'a -> {nodes : int, words : int,
                                      byneeds : int, futures : int,
                                      transients : int}

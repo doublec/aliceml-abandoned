@@ -13,12 +13,16 @@ Language & Compiler:
         OTOH, datatype replication now requires all constructors to be in scope.
 * [CHG] Paths in dependency files are now all interpreted relative to CWD.
 
+Runtime System:
+
+* [NEW] Stack overflow now raises Store.Stack exception instead of terminating.
+
 Interactive Toplevel:
 
 * [NEW] Window size and position are now saved across sessions.
 * [NEW] Extended and improved type information display in status bar.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
-* [FIX] Minor bug fixes.
+* [FIX] Minor additions and bug fixes.
 
 Basic Library:
 
@@ -26,6 +30,7 @@ Basic Library:
 * [NEW] Rand: interface to operating system's pseudo-random number generator.
 * [NEW] Remote: new function setPort to choose fixed port number for
         distributed operations (for firewall satisfaction and other purposes).
+* [NEW] Store: new exception `Stack' to signal stack overflows.
 * [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
 * [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
 * [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.
@@ -39,6 +44,7 @@ Other Libraries:
 
 * [NEW] Inspector: preferences can be saved now.
 * [FIX] Inspector: "Done" button did not close the window.
+* [FIX] Gtk: fixed a few badly generated structure names.
 
 Tools:
 

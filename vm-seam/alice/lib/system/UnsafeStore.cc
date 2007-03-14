@@ -349,8 +349,10 @@ DEFINE1(UnsafeStore_minimize) {
 AliceDll word UnsafeStore() {
   SizeWorker::Init();
   ReturnSizeWorker::Init();
-  Record *record = Record::New(6);
+  Record *record = Record::New(8);
 
+  record->Init("'Stack", Scheduler::StackError);
+  record->Init("Stack", Scheduler::StackError);
   INIT_STRUCTURE(record, "UnsafeStore", "size",
 		 StoreInterface_size, 1);
   INIT_STRUCTURE(record, "UnsafeStore", "sizeQuiet",
