@@ -49,7 +49,7 @@ struct
 			"Eval Your Own",
 			"Boost Your G-Thing",
 			"Propa Gators",
-			"Equal Rights"]
+			"Equaliser"]
 	]
     val minors = Vector.sub (allMinors, major) handle Subscript => #[]
 
