@@ -77,10 +77,12 @@ struct
 
     and fixsplit l    = fixsplit' (l, [])
 
-    and fixsplit' ([], r)             = List.rev r
-      | fixsplit' ("h" :: x :: xs, r) = fixsplit' (xs, ("h" ^ x) :: r)
-      | fixsplit' ("v" :: x :: xs, r) = fixsplit' (xs, ("v" ^ x) :: r)
-      | fixsplit' (x :: xs, r)        = fixsplit' (xs, x :: r)
+    and fixsplit' ([], r)           = List.rev r
+      | fixsplit' ([x], r)          = fixsplit' ([], x :: r)
+      | fixsplit' (s :: x :: xs, r) = if size s = 1 then
+					  fixsplit' (xs, (s ^ x) :: r)
+				      else
+					  fixsplit' (x :: xs, s :: r)
 
 
     fun isVocal #"a" = true
@@ -88,13 +90,17 @@ struct
       | isVocal #"i" = true
       | isVocal #"o" = true
       | isVocal #"u" = true
+      | isVocal #"y" = true
       | isVocal _    = false
 
 
-    fun capitalize "" = ""
+    fun capitalize ""   = ""
+      | capitalize "ui" = "UI"
+      | capitalize "im" = "IM"
+      | capitalize "gc" = "GC"
       | capitalize s  =
-        if String.sub (s, 0) = #"v" andalso String.size s > 2 andalso
-                not (isVocal (String.sub (s, 1))) then
+        if (String.sub (s, 0) = #"v" orelse String.sub (s, 0) = #"h") andalso
+                String.size s > 2 andalso not (isVocal (String.sub (s, 1))) then
             String.str (Char.toUpper (String.sub (s, 0))) ^
             String.str (Char.toUpper (String.sub (s, 1))) ^ 
             String.extract (s, 2, NONE)
@@ -102,7 +108,7 @@ struct
             String.str (Char.toUpper (String.sub (s, 0))) ^
             String.extract (s, 1, NONE)
 
-        (*
+    (*
     fun uncapitalize "" = ""
       | uncapitalize s  =
         String.str (Char.toLower (String.sub (s, 0))) ^
