@@ -27,6 +27,7 @@
 #include "generic/StackFrame.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Debug.hh"
+#include <csetjmp>
 
 #if PROFILE
 #include "generic/Profiler.hh"
@@ -202,6 +203,7 @@ void EmptyTaskWorker::DumpFrame(StackFrame *) {
 word TaskStack::emptyTask;
 word TaskStack::emptyStack;
 word TaskStack::uncaughtExceptionClosures;
+jmp_buf *TaskStack::overflowJmp = NULL;
 
 void TaskStack::AddExnClosure(word closure) {
   Tuple *cons = Tuple::New(2);
@@ -219,6 +221,10 @@ void TaskStack::Init() {
   UncaughtExceptionWorker::Init();
   uncaughtExceptionClosures = Store::IntToWord(0);
   RootSet::Add(uncaughtExceptionClosures);
+}
+
+void TaskStack::SetOverflowJump(jmp_buf *jmpbuf) {
+  overflowJmp = jmpbuf;
 }
 
 void TaskStack::SetTop(u_int top) {
@@ -241,8 +247,12 @@ TaskStack *TaskStack::Enlarge() {
   u_int size = GetSize();
   u_int newSize = size * 3 / 2;
   if (newSize > MAX_BIGBLOCKSIZE) {
-    fprintf(stderr, "Stack limit exceeded. Aborting.\n");
-    exit(2);
+    if (overflowJmp)
+      longjmp(*overflowJmp, 1);
+    else {
+      fprintf(stderr, "Stack limit exceeded. Aborting.\n");
+      exit(2);
+    }
   }
   TaskStack *newTaskStack = TaskStack::New(newSize);
   std::memcpy(newTaskStack->GetBase(), GetBase(), size * sizeof(u_int));

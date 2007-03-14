@@ -23,6 +23,7 @@
 #include "generic/Thread.hh"
 #include "generic/ThreadQueue.hh"
 #include "generic/PushCallWorker.hh"
+#include <csetjmp>
 
 class Backtrace;
 
@@ -48,7 +49,9 @@ private:
   static TaskStack *currentTaskStack; // Task stack
   static word *stackTop;              // Task stack top
   static word *stackMax;              // Task stack max
+  static jmp_buf stackOverflowJmp;    // Used to signal stack overflow
 public:
+  static word StackError;             // Overflow exception
 
 #if PROFILE
   static double gcTime;

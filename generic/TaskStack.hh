@@ -19,6 +19,9 @@
 #pragma interface "generic/TaskStack.hh"
 #endif
 
+#include <csetjmp>
+
+
 class StackFrame;
 
 class SeamDll TaskStack: private DynamicBlock {
@@ -26,7 +29,9 @@ private:
   static const u_int INITIAL_SIZE = 20;
   static word emptyTask;
   static word emptyStack;
+  static jmp_buf *overflowJmp;
 public:
+
   static const u_int initialNumberOfFrames = 1;
 
   using DynamicBlock::ToWord;
@@ -38,6 +43,7 @@ public:
   static void AddExnClosure(word closure);
 
   static void Init();
+  static void SetOverflowJump(jmp_buf*);
 
   u_int GetTop() {
     return GetActiveSize();

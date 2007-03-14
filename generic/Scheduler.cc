@@ -27,6 +27,8 @@
 #include "generic/PushCallWorker.hh"
 #include "generic/IOHandler.hh"
 #include "generic/Backtrace.hh"
+#include "generic/UniqueString.hh"
+#include <csetjmp>
 
 #if PROFILE
 #include "generic/Profiler.hh"
@@ -46,9 +48,14 @@ word Scheduler::currentArgs[Scheduler::maxArgs];
 word Scheduler::currentData;
 Backtrace *Scheduler::currentBacktrace;
 
+jmp_buf Scheduler::stackOverflowJmp;
+word Scheduler::StackError;
+
 void Scheduler::Init() {
   wThreadQueue = ThreadQueue::New()->ToWord();
   RootSet::Add(wThreadQueue);
+  StackError = UniqueString::New(String::New("Store.Stack"))->ToWord();
+  RootSet::Add(StackError);
 #if PROFILE
   gcTime = 0.0;
 #endif
@@ -101,18 +108,33 @@ inline void Scheduler::FlushThread() {
 }
 
 int Scheduler::Run() {
+  bool nextThread;
+  StackFrame *frame;
+  Worker *worker;
+  Worker::Result result;
+
+  if (!setjmp(stackOverflowJmp)) {
+    TaskStack::SetOverflowJump(&stackOverflowJmp);
+  } else {
+    // Stack Overflow occured
+    Scheduler::SetCurrentData(StackError);
+    SetCurrentBacktrace(Backtrace::New(GetFrame()->Clone()));
+    nextThread = false;
+    goto raise;
+  }
+
   while (true) {
     while ((currentThread =
 	    ThreadQueue::FromWordDirect(wThreadQueue)->Dequeue()) !=
 	   INVALID_POINTER) {
       SwitchToThread();
-      for (bool nextThread = false; !nextThread; ) {
-	StackFrame *frame = GetFrame();
-	Worker *worker = frame->GetWorker();
+      for (nextThread = false; !nextThread; ) {
+	frame = GetFrame();
+	worker = frame->GetWorker();
 #if PROFILE
 	Profiler::SampleHeap(frame);
 #endif
-	Worker::Result result = worker->Run(frame);
+	result = worker->Run(frame);
 #if PROFILE
 	Profiler::AddHeap();
 #endif
