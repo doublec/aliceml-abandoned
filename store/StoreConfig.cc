@@ -94,7 +94,8 @@ static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   unsigned long MUTABLE_MASK     = ComputeMask(MUTABLE_SHIFT, HEADER_MUTABLE_WIDTH);
   unsigned long CHILDISH_MASK    = ComputeMask(CHILDISH_SHIFT, HEADER_CHILDISH_WIDTH);
   unsigned long BIGSIZE_MIN      = (1 << SIZESHIFT_MASK);
-  unsigned long MAX_BIGBLOCKSIZE = ((MAX_BLOCKSIZE << SIZESHIFT_MASK)-1);
+  unsigned long MAX_BIGBLOCKSIZE = (MAX_BLOCKSIZE << SIZESHIFT_MASK);
+  unsigned long MAX_DYNBLOCKSIZE = (MAX_BIGBLOCKSIZE - 1);
 
   std::fprintf(f, "typedef enum {\n");
 
@@ -108,6 +109,7 @@ static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   std::fprintf(f, "  MAX_TAGSIZE      = 0x%lx,\n", MAX_TAGSIZE);
   std::fprintf(f, "  MAX_BLOCKSIZE    = 0x%lx,\n", MAX_BLOCKSIZE);
   std::fprintf(f, "  MAX_BIGBLOCKSIZE = 0x%lx,\n", MAX_BIGBLOCKSIZE);
+  std::fprintf(f, "  MAX_DYNBLOCKSIZE = 0x%lx,\n", MAX_DYNBLOCKSIZE);
   std::fprintf(f, "  BIGSIZE_MIN      = 0x%lx,\n", BIGSIZE_MIN);
 
   std::fprintf(f, "  GEN_GC_MASK      = 0x%lx,\n", GEN_GC_MASK);

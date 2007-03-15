@@ -95,7 +95,7 @@ public:
     if (size <= MAX_BLOCKSIZE) {
       return size;
     }
-    return ((((size + BIGSIZE_MIN) >> SIZESHIFT_MASK) << SIZESHIFT_MASK));
+    return ((((size + BIGSIZE_MIN - 1) >> SIZESHIFT_MASK) << SIZESHIFT_MASK));
   }
 };
 
