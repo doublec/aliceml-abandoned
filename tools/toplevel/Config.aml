@@ -57,7 +57,7 @@ structure Config =
 
       val editorHeight = 500
 
-      val sizeX = 750
+      val sizeX = 800
       val sizeY = 800
 
       val historySize = ref 100

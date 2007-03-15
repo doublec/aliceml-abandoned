@@ -19,6 +19,7 @@ Runtime System:
 
 Interactive Toplevel:
 
+* [NEW] Added toolbar.
 * [NEW] Window size and position are now saved across sessions.
 * [NEW] Extended and improved type information display in status bar.
 * [CHG] Changed semantics of `use' function to better match other SML systems.

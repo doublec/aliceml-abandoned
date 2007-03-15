@@ -176,25 +176,23 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkMenuItem" id="separatormenuitem1">
+		    <widget class="GtkMenuItem" id="separator14">
 		      <property name="visible">True</property>
 		    </widget>
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="compilefile">
+		    <widget class="GtkImageMenuItem" id="preferencesM">
 		      <property name="visible">True</property>
-		      <property name="sensitive">False</property>
-		      <property name="tooltip" translatable="yes">Compile current editor buffer to component file</property>
-		      <property name="label" translatable="yes">Co_mpile</property>
+		      <property name="tooltip" translatable="yes">Edit preferences</property>
+		      <property name="label" translatable="yes">_Preferences...</property>
 		      <property name="use_underline">True</property>
-		      <signal name="activate" handler="on_compilefile_activate" last_modification_time="Mon, 28 Feb 2005 13:00:52 GMT"/>
-		      <accelerator key="K" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+		      <signal name="activate" handler="on_preferences_activate" last_modification_time="Mon, 21 Mar 2005 13:26:43 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image789">
+			<widget class="GtkImage" id="image803">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-convert</property>
+			  <property name="stock">gtk-preferences</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -379,7 +377,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image796">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-goto-last</property>
+			  <property name="stock">gtk-indent</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -402,7 +400,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image797">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-goto-first</property>
+			  <property name="stock">gtk-unindent</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -539,34 +537,6 @@
 		      </child>
 		    </widget>
 		  </child>
-
-		  <child>
-		    <widget class="GtkMenuItem" id="separator14">
-		      <property name="visible">True</property>
-		    </widget>
-		  </child>
-
-		  <child>
-		    <widget class="GtkImageMenuItem" id="preferencesM">
-		      <property name="visible">True</property>
-		      <property name="tooltip" translatable="yes">Edit preferences</property>
-		      <property name="label" translatable="yes">_Preferences...</property>
-		      <property name="use_underline">True</property>
-		      <signal name="activate" handler="on_preferences_activate" last_modification_time="Mon, 21 Mar 2005 13:26:43 GMT"/>
-
-		      <child internal-child="image">
-			<widget class="GtkImage" id="image803">
-			  <property name="visible">True</property>
-			  <property name="stock">gtk-preferences</property>
-			  <property name="icon_size">1</property>
-			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
-			  <property name="xpad">0</property>
-			  <property name="ypad">0</property>
-			</widget>
-		      </child>
-		    </widget>
-		  </child>
 		</widget>
 	      </child>
 	    </widget>
@@ -595,7 +565,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image804">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-execute</property>
+			  <property name="stock">gtk-media-next</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -618,6 +588,30 @@
 
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image805">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-media-play</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="compilefile">
+		      <property name="visible">True</property>
+		      <property name="sensitive">False</property>
+		      <property name="tooltip" translatable="yes">Compile current editor buffer to component file</property>
+		      <property name="label" translatable="yes">_Compile</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_compilefile_activate" last_modification_time="Mon, 28 Feb 2005 13:00:52 GMT"/>
+		      <accelerator key="K" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image789">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-execute</property>
 			  <property name="icon_size">1</property>
@@ -648,7 +642,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image806">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-stop</property>
+			  <property name="stock">gtk-media-stop</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -671,7 +665,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image807">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-goto-bottom</property>
+			  <property name="stock">gtk-media-pause</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -698,6 +692,28 @@
 
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image808">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-media-rewind</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="clear_io">
+		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Clear program I/O pane</property>
+		      <property name="label" translatable="yes">_Clear I/O</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_clear_io_activate" last_modification_time="Thu, 21 Apr 2005 08:34:47 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image816">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-clear</property>
 			  <property name="icon_size">1</property>
@@ -822,6 +838,12 @@
 		  </child>
 
 		  <child>
+		    <widget class="GtkMenuItem" id="separatormenuitem1">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
 		    <widget class="GtkImageMenuItem" id="switch_to_editor">
 		      <property name="visible">True</property>
 		      <property name="sensitive">False</property>
@@ -857,7 +879,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image814">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-execute</property>
+			  <property name="stock">gtk-info</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -880,35 +902,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image815">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-dialog-question</property>
-			  <property name="icon_size">1</property>
-			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
-			  <property name="xpad">0</property>
-			  <property name="ypad">0</property>
-			</widget>
-		      </child>
-		    </widget>
-		  </child>
-
-		  <child>
-		    <widget class="GtkMenuItem" id="separator13">
-		      <property name="visible">True</property>
-		    </widget>
-		  </child>
-
-		  <child>
-		    <widget class="GtkImageMenuItem" id="clear_io">
-		      <property name="visible">True</property>
-		      <property name="tooltip" translatable="yes">Clear program I/O pane</property>
-		      <property name="label" translatable="yes">_Clear I/O</property>
-		      <property name="use_underline">True</property>
-		      <signal name="activate" handler="on_clear_io_activate" last_modification_time="Thu, 21 Apr 2005 08:34:47 GMT"/>
-
-		      <child internal-child="image">
-			<widget class="GtkImage" id="image816">
-			  <property name="visible">True</property>
-			  <property name="stock">gtk-clear</property>
+			  <property name="stock">gtk-italic</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -960,7 +954,7 @@
 		      <child internal-child="image">
 			<widget class="GtkImage" id="image817">
 			  <property name="visible">True</property>
-			  <property name="stock">gtk-dialog-info</property>
+			  <property name="stock">gtk-about</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>
@@ -973,6 +967,438 @@
 		</widget>
 	      </child>
 	    </widget>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkToolbar" id="toolbar1">
+	  <property name="visible">True</property>
+	  <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+	  <property name="toolbar_style">GTK_TOOLBAR_ICONS</property>
+	  <property name="tooltips">True</property>
+	  <property name="show_arrow">True</property>
+
+	  <child>
+	    <widget class="GtkToolButton" id="newbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-new</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_new1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="openbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-open</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_open1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="revertbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-revert-to-saved</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_revert1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="savebutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-save</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_save1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="saveasbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-save-as</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_save_as1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="closebutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-close</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_close1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkSeparatorToolItem" id="separatortoolitem1">
+	      <property name="visible">True</property>
+	      <property name="draw">True</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">False</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="undobutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-undo</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_undo_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="cutbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-cut</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_cut1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="copybutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-copy</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_copy1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="pastebutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-paste</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_paste1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="deletebutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-delete</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_delete1_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="indentbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-indent</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_indent_region_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="outdentbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-unindent</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_outdent_region_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkSeparatorToolItem" id="separatortoolitem2">
+	      <property name="visible">True</property>
+	      <property name="draw">True</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">False</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="findbutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-find</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_find_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="replacebutton">
+	      <property name="visible">True</property>
+	      <property name="stock_id">gtk-find-and-replace</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_replace_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="gotolinebutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Go to Line</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-jump-to</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_go_to_line_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="gotoerrorbutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Go to Error</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-dialog-warning</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_jump_to_last_error_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkSeparatorToolItem" id="separatortoolitem3">
+	      <property name="visible">True</property>
+	      <property name="draw">True</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">False</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="feedregionbutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Feed Region</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-media-next</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_feedregion_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="feedfilebutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Feed File</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-media-play</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_feedfile_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="compilebutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Compile File</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-execute</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_compilefile_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="interruptbutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Interrupt</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-media-stop</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_interrupt_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="backgroundbutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Continue in Background</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-media-pause</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_background_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="resetbutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Reset Environment</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-media-rewind</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_reset_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkToolButton" id="clearbutton">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Clear I/O</property>
+	      <property name="use_underline">True</property>
+	      <property name="stock_id">gtk-clear</property>
+	      <property name="visible_horizontal">True</property>
+	      <property name="visible_vertical">True</property>
+	      <property name="is_important">False</property>
+	      <signal name="clicked" handler="on_clear_io_activate"/>
+	    </widget>
+	    <packing>
+	      <property name="expand">False</property>
+	      <property name="homogeneous">True</property>
+	    </packing>
 	  </child>
 	</widget>
 	<packing>
