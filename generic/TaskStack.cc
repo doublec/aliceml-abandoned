@@ -246,8 +246,10 @@ TaskStack *TaskStack::New(u_int size) {
 TaskStack *TaskStack::Enlarge() {
   u_int size = GetSize();
   u_int newSize = size * 3 / 2;
-  if (newSize > MAX_BIGBLOCKSIZE) {
-    if (overflowJmp)
+  if (newSize > MAX_DYNBLOCKSIZE) {
+    if (size < MAX_DYNBLOCKSIZE)
+      newSize = MAX_DYNBLOCKSIZE;
+    else if (overflowJmp)
       longjmp(*overflowJmp, 1);
     else {
       fprintf(stderr, "Stack limit exceeded. Aborting.\n");
