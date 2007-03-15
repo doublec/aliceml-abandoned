@@ -59,6 +59,9 @@ blub
 ], ac_seam_default_jit=native,
    ac_seam_default_jit=no)
 
+# override: make byte code jitter the default
+ac_seam_default_jit=bytecode
+
 AC_ARG_WITH(jit,
    AC_HELP_STRING([--with-jit],
      [which JIT compiler to use (no/bytecode/native)]))
