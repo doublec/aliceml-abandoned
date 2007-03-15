@@ -27,6 +27,21 @@
 class SeamDll Backtrace: private Queue {
 private:
   static const u_int initialBacktraceSize = 12; // to be checked
+  static const u_int topCutoff = 20;
+  static const u_int bottomCutoff = 20;
+
+  void Dump1() {
+    // to be done: Hack Alert
+    word wFrame = Dequeue();
+    u_int size = Store::DirectWordToBlock(wFrame)->GetSize();
+    StackFrame *frame = Scheduler::PushFrame(size);
+    StackFrame::New(frame, size, wFrame);
+    Worker *worker = frame->GetWorker();
+    fprintf(stderr, "- ");
+    worker->DumpFrame(frame);
+    Scheduler::PopFrame(size);
+  }
+
 public:
   using Queue::ToWord;
   using Queue::Enqueue;
@@ -49,17 +64,16 @@ public:
   }
 
   void Dump() {
-    // to be done: Hack Alert
-    while (!IsEmpty()) {
-      word wFrame = Dequeue();
-      u_int size = Store::DirectWordToBlock(wFrame)->GetSize();
-      StackFrame *frame = Scheduler::PushFrame(size);
-      StackFrame::New(frame, size, wFrame);
-      Worker *worker = frame->GetWorker();
-      fprintf(stderr, "- ");
-      worker->DumpFrame(frame);
-      Scheduler::PopFrame(size);
+    for (int i = topCutoff; i > 0 && !IsEmpty(); i--)
+      Dump1();
+    if (GetNumberOfElements() > bottomCutoff + bottomCutoff/4) {
+      fprintf(stderr, "... (%d frames omitted)\n",
+              GetNumberOfElements() - bottomCutoff);
+      while (GetNumberOfElements() > bottomCutoff)
+        Dequeue();
     }
+    while (!IsEmpty())
+      Dump1();
   }
 };
 
