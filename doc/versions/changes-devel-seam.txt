@@ -33,6 +33,7 @@ Basic Library:
 * [NEW] Store: new exception `Stack' to signal stack overflows.
 * [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
 * [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
+* [CHG] Exn.dumpTrace: omit middle of very long traces (> 40 frames).
 * [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.
 
 Constraint Library:
