@@ -43,7 +43,7 @@ public:
   static void AddExnClosure(word closure);
 
   static void Init();
-  static void SetOverflowJump(jmp_buf*);
+  static void SetOverflowJump(jmp_buf *jmpbuf) { overflowJmp = jmpbuf; }
 
   u_int GetTop() {
     return GetActiveSize();

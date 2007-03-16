@@ -223,10 +223,6 @@ void TaskStack::Init() {
   RootSet::Add(uncaughtExceptionClosures);
 }
 
-void TaskStack::SetOverflowJump(jmp_buf *jmpbuf) {
-  overflowJmp = jmpbuf;
-}
-
 void TaskStack::SetTop(u_int top) {
   SetActiveSize(top);
   Block *p = (Block *) this;
