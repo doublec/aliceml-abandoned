@@ -11,6 +11,9 @@
  *
  *)
 
+import structure Print from "x-alice:/lib/system/Print"
+import structure Compiler from "x-alice:/lib/system/Compiler"
+import structure Evaluator    from "Evaluator"
 import structure Gtk  from "x-alice:/lib/gtk/Gtk"
 import structure Gdk  from "x-alice:/lib/gtk/Gdk"
 (*import structure GLib from "x-alice:/lib/gtk/GLib"*)
@@ -35,7 +38,15 @@ signature USER_CONFIG_2 =
       val loadFileHistory : bool
    end
 
-signature USER_CONFIG = USER_CONFIG_2
+signature USER_CONFIG_3 =
+   sig
+      include USER_CONFIG_2
+      val warnings : Compiler.warnings
+      val printDepth : int
+      val printWidth : int
+   end
+
+signature USER_CONFIG = USER_CONFIG_3
 
 signature GEOMETRY =
    sig
@@ -60,6 +71,7 @@ structure Config =
       val sizeX = 800
       val sizeY = 800
 
+      val warnings = ref Compiler.warnings
       val historySize = ref 100
       val useTabs = ref true
       val loadFileHistory = ref true
@@ -194,17 +206,29 @@ structure Config =
 	      commentColor := mkRgbColor C.commentColor;
 
 	      historySize := C.historySize;
+	      (* Extensions - try incrementally *)
 	      let
-		  structure D = unpack p : USER_CONFIG_2
+	          (* Alice 1.2 *)
+		  structure C = unpack p : USER_CONFIG_2
+		  do loadFileHistory := C.loadFileHistory
+	          (* Alice 1.4 *)
+	          structure C = unpack p : USER_CONFIG_3
+	          do warnings := C.warnings
+		  do Evaluator.setWarnings C.warnings
+		  do Print.depth := C.printDepth
+		  do Print.width := C.printWidth
 	      in
-		  loadFileHistory := D.loadFileHistory
-	      end handle Package.Mismatch _ => ()
+		  ()
+	      end
 	  end handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) => ()
 
       fun save () =
 	  let
 	      structure C = 
 	      struct
+		  val warnings = !warnings
+		  val printDepth = !Print.depth
+		  val printWidth = !Print.width
 		  val reservedColor = getRgbColor (!reservedColor)
 		  val errorColor = getRgbColor (!errorColor)
 		  val stringColor = getRgbColor (!stringColor)

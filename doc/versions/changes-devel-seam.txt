@@ -19,9 +19,10 @@ Runtime System:
 
 Interactive Toplevel:
 
+* [NEW] Extended and improved type information display in status bar.
+* [NEW] Can configure compiler warnings in preferences.
 * [NEW] Added toolbar.
 * [NEW] Window size and position are now saved across sessions.
-* [NEW] Extended and improved type information display in status bar.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
 * [FIX] Minor additions and bug fixes.
 
@@ -32,6 +33,7 @@ Basic Library:
 * [NEW] Remote: new function setPort to choose fixed port number for
         distributed operations (for firewall satisfaction and other purposes).
 * [NEW] Store: new exception `Stack' to signal stack overflows.
+* [NEW] Compiler: new function `withWarnings' for setting warnings.
 * [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
 * [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
 * [CHG] Exn.dumpTrace: omit middle of very long traces (> 40 frames).

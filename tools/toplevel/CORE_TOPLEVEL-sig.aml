@@ -10,6 +10,8 @@
  *   $Revision$
  *)
 
+import structure Compiler from "x-alice:/lib/system/Compiler"
+
 signature CORE_TOPLEVEL =
 sig
     datatype signal	= INTERRUPT | STOP
@@ -27,6 +29,7 @@ sig
     val traceStream	: TextIO.outstream
     val annotStream	: TextIO.outstream
     val annotActive	: bool ref
+    val warnings	: Compiler.warnings ref
 
     val banner		: string
     val bye		: string

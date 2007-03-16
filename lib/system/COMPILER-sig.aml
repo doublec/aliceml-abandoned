@@ -17,6 +17,11 @@ import structure Inf       from "../rtt/Inf"
 signature COMPILER =
 sig
     type env
+    type warnings	= {conventions		: bool,
+			   shadowing		: bool,
+			   unusedImports	: bool,
+			   addedImports		: bool,
+			   inaccessibleExports	: bool}
 
     exception Error
 
@@ -42,4 +47,7 @@ sig
 			   -> ('a -> 'b) -> 'a -> 'b
     val withWidths	: {out : int, err : int, trace : int}
 			   -> ('a -> 'b) -> 'a -> 'b
+    val withWarnings	: warnings -> ('a -> 'b) -> 'a -> 'b
+
+    val warnings	: warnings
 end

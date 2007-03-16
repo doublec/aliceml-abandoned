@@ -3,12 +3,14 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2005
+ *   Andreas Rossberg, 2005-2007
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import structure Compiler from "x-alice:/lib/system/Compiler"
 
 signature EVALUATOR =
 sig
@@ -27,4 +29,5 @@ sig
     val setTraceStream	: TextIO.StreamIO.outstream -> unit
     val setAnnotStream	: TextIO.StreamIO.outstream -> unit
     val setAnnotActive	: bool -> unit
+    val setWarnings	: Compiler.warnings -> unit
 end

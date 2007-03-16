@@ -18,6 +18,7 @@ structure Evaluator : EVALUATOR =
 struct
     open CoreToplevel
 
+    fun setWarnings w   = warnings := w
     fun setOutWidth n   = outWidth := n
     fun setErrWidth n   = errWidth := n
     fun setTraceWidth n = traceWidth := n

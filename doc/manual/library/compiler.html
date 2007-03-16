@@ -32,6 +32,13 @@
     signature COMPILER =
     sig
 	type env
+	type warnings = {conventions :         bool,
+	                 shadowing :           bool,
+	                 unusedImports :       bool,
+	                 addedImports :        bool,
+	                 inaccessibleExports : bool}
+
+	val warnings :        warnings
 
 	exception Error
 
@@ -54,6 +61,7 @@
 	                       -> ('a -> 'b) -> 'a -> 'b
 	val withWidths :      {out : int, err : int, trace : int}
 	                       -> ('a -> 'b) -> 'a -> 'b
+	val withWarnings :    warnings -> ('a -> 'b) -> 'a -> 'b
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -64,6 +72,23 @@
     </DT>
     <DD>
       <P>The type of compilation environments.</P>
+    </DD>
+
+    <DT>
+      <TT>type warning</TT>
+    </DT>
+    <DD>
+      <P>A record type collecting all possible warning switches.</P>
+      <P><B>Note:</B> This type may change in future versions of Alice.
+      Use record update on the default record <TT>warnings</TT> if you
+      want your code to be robust against changes.</P>
+    </DD>
+
+    <DT>
+      <TT>warning</TT>
+    </DT>
+    <DD>
+      <P>A record withg the default settings warning switches.</P>
     </DD>
 
     <DT>
@@ -176,6 +201,19 @@
     <DD>
       <P>Sets widths for pretty-printing output on the respective message
       streams. All values default to <TT>80</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>withWarnings <I>w</I> <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>Sets warning switches for compilation. For compatibily with future
+      versions of Alice ML, the argument <TT><I>w</I></TT> is best
+      given in terms of record update on the default switches represented
+      by the predefined record <TT>warnings</TT>, as in the following example:
+      </P>
+      <PRE>
+      withWarnings {warnings where conventions=false} eval source</PRE>
     </DD>
   </DL>
 

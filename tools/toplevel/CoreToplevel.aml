@@ -19,6 +19,7 @@ import structure PPComponent from "x-alice:/lib/system/PPComponent"
 import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure Compiler    from "x-alice:/lib/system/Compiler"
 import signature COMPILER    from "x-alice:/lib/system/COMPILER-sig"
 import structure Config      from "x-alice:/lib/system/Config"
 import signature CORE_TOPLEVEL from "CORE_TOPLEVEL-sig"
@@ -37,6 +38,7 @@ struct
     val traceStream = TextIO.mkOutstream null
     val annotStream = TextIO.mkOutstream null
     val annotActive = ref false
+    val warnings    = ref Compiler.warnings
 
     (* Signal handling *)
 
@@ -103,7 +105,7 @@ struct
 					  else NONE}
 	    (Compiler.withWidths {out = !outWidth, err = !errWidth,
 				  trace = !traceWidth}
-	     prepare) (env, source)
+	     (Compiler.withWarnings (!warnings) prepare)) (env, source)
 
 	fun eval' (prepare, cd) (printSig, env, source, signal) =
 	    (
@@ -234,11 +236,14 @@ struct
 	    let
 		val p   = Promise.promise ()
 		val env = Ref.exchange (currentEnv, Promise.future p)
+		val saveWarnings = !warnings
 	    in
 		await env; (* avoid deadlock *)
+		warnings := Compiler.warnings;
 		case evalFile (false, Compiler.initialEnv, startup, dummySignal)
-		 of NONE =>	raise Compiler.Error
-		  | SOME env' => Promise.fulfill (p, env')
+		 of NONE => (Promise.fail (p, Compiler.Error); raise Compiler.Error)
+		  | SOME env' => Promise.fulfill (p, env');
+		warnings := saveWarnings
 	    end
 
 

@@ -53,6 +53,21 @@ struct
     val implicitImport    = "x-alice:/alicec.import"
 
 
+    (* Warnings *)
+
+    type warnings	= {conventions		: bool,
+			   shadowing		: bool,
+			   unusedImports	: bool,
+			   addedImports		: bool,
+			   inaccessibleExports	: bool}
+
+    val warnings	= {conventions		= true,
+			   shadowing		= false,
+			   unusedImports	= true,
+			   addedImports		= false,
+			   inaccessibleExports	= true}
+
+
     (* Error handling *)
 
     exception Error = RecursiveCompiler.Error
@@ -281,8 +296,32 @@ struct
 	     traceWidth := saveTrace)
 	end
 
-    fun withStreams args f = Lock.sync lock (withStreams' args f)
-    fun withWidths args f  = Lock.sync lock (withWidths' args f)
+    fun withWarnings' {conventions, shadowing, unusedImports, addedImports,
+		       inaccessibleExports} f x =
+	let
+	    open RecursiveCompiler.Switches
+	    val saveConventions = !Warn.conventions
+	    val saveShadowing   = !Warn.shadowing
+	    val saveUnusedImports = !Warn.unusedImport
+	    val saveAddedImports = !Warn.insertedImport
+	    val saveInaccessibleExports = !Warn.inaccessibleExport
+	in
+	    Warn.conventions := conventions;
+	    Warn.shadowing := shadowing;
+	    Warn.unusedImport := unusedImports;
+	    Warn.insertedImport := addedImports;
+	    Warn.inaccessibleExport := inaccessibleExports;
+	    f x finally
+	    (Warn.conventions := saveConventions;
+	     Warn.shadowing := saveShadowing;
+	     Warn.unusedImport := saveUnusedImports;
+	     Warn.insertedImport := saveAddedImports;
+	     Warn.inaccessibleExport := saveInaccessibleExports)
+	end
+
+    fun withStreams args f  = Lock.sync lock (withStreams' args f)
+    fun withWidths args f   = Lock.sync lock (withWidths' args f)
+    fun withWarnings args f = Lock.sync lock (withWarnings' args f)
 
 
     (* Initialization *)
