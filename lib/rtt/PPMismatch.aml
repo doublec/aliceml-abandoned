@@ -93,7 +93,8 @@ struct
 	    indent(if Type.isSingKind k1
 		   then par[text"type",text(ppLab l),text"=",
 			    ppTyp(Type.asSingKind k1)]
-		   else textpar["type",ppLab l]) ^/^
+		   else textpar[if Type.isEqKind k1 then "eqtype" else "type",
+				ppLab l]) ^/^
 	    textpar["does","not","match","specification"] ^^
 	    indent(par[text"type",text(ppLab l),text"=",
 		       ppTyp(Type.asSingKind k2)])
