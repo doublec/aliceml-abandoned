@@ -320,7 +320,7 @@
 	| ANY | FCT | PACK | UNPACK
 
 	(* Alice component extensions *)
-	| IMPORT | FROM
+	| IMPORT | FROM | COMP
 
 	(* Secret internal keywords *)
 	| PRIMITIVE | OVERLOAD | EQEQTYPE | REFTYPE | PERVASIVE
@@ -347,7 +347,7 @@
 	 ASSERT FILE LINE
 	 LAZY SPAWN
 	 ANY FCT PACK UNPACK
-	 IMPORT FROM
+	 IMPORT FROM COMP
 	 PRIMITIVE OVERLOAD EQEQTYPE REFTYPE PERVASIVE
 
 %eop     EOF
@@ -414,6 +414,7 @@
 	|    exp_COMMA_list2		of Exp list
 	|    exp_SEMICOLON_list1	of Exp list
 	|    exp_SEMICOLON_list2	of Exp list
+	|    localann_IN_opt		of LocalAnn option
 	| exprow			of ExpRow
 	|    exprow_opt			of ExpRow option
 	|    COMMA_exprow_opt		of ExpRow option
@@ -621,6 +622,8 @@
 
 	| ann0				of Ann
 	|    ann1			of Ann
+	| localann			of LocalAnn
+	|    localann1			of LocalAnn
 	| program			of Program
 	|    program_opt		of Program option
 	|    program_opt'		of Program option
@@ -754,6 +757,9 @@
 	| LET dec IN exp_SEMICOLON_list1 END
 			( LETAtExp(I(LETleft,ENDright),
 				   dec, exp_SEMICOLON_list1) )
+	| COMP localann_IN_opt spec WITH dec END
+			( COMPAtExp(I(COMPleft,ENDright),
+				    localann_IN_opt, spec, dec) )
 	| LPAR exp RPAR	( PARAtExp(I(LPARleft,RPARright), exp) )
 
 
@@ -774,6 +780,10 @@
 
      exp_SEMICOLON_list2:
 	  exp SEMICOLON exp_SEMICOLON_list1	( exp::exp_SEMICOLON_list1 )
+
+     localann_IN_opt:
+	  localann IN			( SOME localann )
+	| (*empty*)			( NONE )
 
 
   exprow:
@@ -3093,6 +3103,19 @@
 				( SEQAnn(I(ann11left,ann12right),
 					 ann11, ann12) )
 	| SEMICOLON		( EMPTYAnn(I(SEMICOLONleft,SEMICOLONleft)) )
+
+  localann:
+	  localann1		( localann1 )
+	| (*empty*)		( EMPTYLocalAnn(I(defaultPos,defaultPos)) )
+
+     localann1:
+	  IMPORT spec FROM STRING
+	  			( IMPORTLocalAnn(I(IMPORTleft,STRINGright),
+						 spec, STRING) )
+	| localann1 localann1 %prec SEMICOLON
+				( SEQLocalAnn(I(localann11left,localann12right),
+					      localann11, localann12) )
+	| SEMICOLON		( EMPTYLocalAnn(I(SEMICOLONleft,SEMICOLONleft)))
 
 
   (* Components: Programs *)

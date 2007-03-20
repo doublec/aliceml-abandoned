@@ -218,9 +218,15 @@
 	<TT><I>CM</I></TT> can be used to import other
 	components inside the body. If the manager is not required, the
 	definition of functor <TT>F</TT> can be simplified to</P>
-	<PRE>
+	<PRE class=code>
 	functor F () = <I>X</I></PRE>
 	<P>thanks to subtyping on functor signatures.</P>
+	<P>Note that in most situations,
+	<A href="../components.html#firstclass">component expressions</A>
+	provide a more convenient means to create dynamic components.
+	However, the <TT>Create</TT> functor enables the creation of
+	<A href="../components.html#firstclass-higher">higher-order
+	components</A>.</P>
     </DD>
 
     <DT>

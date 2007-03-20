@@ -21,6 +21,7 @@ import structure VId
        structure TyCon
        structure SigId
        structure StrId              from "Ids"
+import structure InputGrammar       from "InputGrammar"
 import structure Infix              from "Infix"
 import signature BIND_ENV           from "BIND_ENV-sig"
 
@@ -92,10 +93,11 @@ struct
     and      Fld = Info
     and      Var = Info * stamp * bool
     and      Val = Info * stamp * IdStatus
-    and      Ty  = Info * stamp * (Env * int)
+    and      Ty  = Info * stamp * {CE : Env, arity : int, def : (InputGrammar.TyVarSeq * InputGrammar.Ty) option, eq : bool option, ext : bool}
     and      Str = Info * stamp * EnvFn
     and      Sig = Info * stamp * EnvFn
 
+    type TyStr = {CE : Env, arity : int, def : (InputGrammar.TyVarSeq * InputGrammar.Ty) option, eq : bool option, ext : bool}
     type t = Env
 
     fun asInfo(SOME(INF x,_)) = SOME x | asInfo _ = NONE
@@ -281,8 +283,7 @@ struct
       | compose(VAR(I1,z1,b1),  VAR(I2,z2,b2))	= VAR(I1,z1,b1 orelse b2)
       | compose(VAL(I1,z1,is1), VAL(I2,z2,is2))	= VAL(I1,z1,
 						    composeIdStatus(is1,is2))
-      | compose(TY (I1,z1,En1), TY (I2,z2,En2))	= ( unionCompose(#1 En1,#1 En2)
-						  ; TY(I1,z1,En1) )
+      | compose(TY (I1,z1,ts1), TY (I2,z2,ts2))	= TY(I1,z1,composeTyStr(ts1,ts2))
       | compose(STR(I1,z1,F1),  STR(I2,z2,F2))	= ( composeEnvFn(F1,F2)
 						  ; STR(I1,z1,F1) )
       | compose(SIG(I1,z1,F1),  SIG(I2,z2,F2))	= ( SIG(I1,z1,F1) )
@@ -299,6 +300,20 @@ struct
     and composeIdStatus(V, is)			= is
       | composeIdStatus(is, V)			= is
       | composeIdStatus(is1, is2)		= is2
+
+    and composeTyStr({CE=CE1, arity=arity1, def=def1, eq=eq1, ext=ext1},
+		     {CE=CE2, arity=arity2, def=def2, eq=eq2, ext=ext2}) =
+	(unionCompose(CE1,CE2); {CE=CE1, arity=arity1,
+				 def=composeDef(def1,def2),
+				 eq=composeEq(eq1,eq2),
+				 ext=ext1 orelse ext2})
+
+    and composeDef(NONE, def2) = def2
+      | composeDef(def1, _)    = def1
+
+    and composeEq(NONE, eq2) = eq2
+      | composeEq(eq1, NONE) = eq1
+      | composeEq(SOME b1, SOME b2) = SOME(b1 andalso b2)
 
     (* Extracting an infix environment *)
 

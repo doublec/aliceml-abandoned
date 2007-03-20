@@ -44,6 +44,7 @@ import structure VId
        structure TyCon
        structure SigId
        structure StrId  from "Ids"
+import structure InputGrammar from "InputGrammar"
 import structure Infix  from "Infix"
 
 
@@ -69,11 +70,13 @@ sig
 		   | PLAIN of Env
 		   | PARAM of stamp * EnvFn
 		   | ABSTR of stamp * StrId list * SigId * EnvFn list
+    type TyStr = {CE : Env, arity : int, def : (InputGrammar.TyVarSeq * InputGrammar.Ty) option, eq : bool option, ext : bool}
+
     type Inf = Info * InfStatus
     type Fld = Info
     type Var = Info * stamp * bool
     type Val = Info * stamp * IdStatus
-    type Ty  = Info * stamp * (Env * int)
+    type Ty  = Info * stamp * TyStr
     type Str = Info * stamp * EnvFn
     type Sig = Info * stamp * EnvFn
 

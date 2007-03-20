@@ -113,9 +113,20 @@ struct
 
     fun arityFromKind k =
 	case Type.inspectKind k
-	  of (Type.StarKind | Type.ExtKind) => 0
-	   | Type.EqKind k => arityFromKind k
-	   | Type.ArrowKind(_,k') => 1 + arityFromKind k'
+	  of Type.StarKind => (0,NONE,false)
+	   | Type.ExtKind  => (0,NONE,true)
+	   | Type.EqKind k =>
+	     let
+		val (n,q,x) = arityFromKind k
+	     in
+		(n, if isSome q then q else SOME(n<>0), x)
+	     end
+	   | Type.ArrowKind(_,k') =>
+	     let
+		val (n,q,x) = arityFromKind k'
+	     in
+		(n+1,q,x)
+	     end
 	   | Type.SingKind t => arityFromKind(Type.kind t)
 
 
@@ -344,9 +355,10 @@ struct
 				envFromTyp(I, E,s, t,
 					   TyCon.fromString(Label.toString l))
 			   | _ => env()
-		val n  = arityFromKind k
+		val (n,eq,ext) = arityFromKind k
+		val ts = {CE=E', arity=n, def=NONE, eq=eq, ext=ext}
 	    in
-		insertDisjointTy(E, tyconFromLabel l, (I,x,(E',n)))
+		insertDisjointTy(E, tyconFromLabel l, (I,x,ts))
 	    end
 	  | Inf.ModItem(p,j) =>
 	    let

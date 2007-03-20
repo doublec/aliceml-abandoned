@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2006
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -138,6 +138,7 @@ sig
     val RECExp:       Info * Pat * Exp                          -> Exp
     val TRANSPACKExp: Info * AtStrExp * AtSigExp                -> Exp
     val OPAQPACKExp:  Info * AtStrExp * AtSigExp                -> Exp
+    val COMPAtExp:    Info * LocalAnn option * Spec * Dec       -> AtExp
 
     val FILEAtExp:      Info * Source.desc                          -> AtExp
     val LINEAtExp:      Info * Source.desc                          -> AtExp
@@ -274,8 +275,6 @@ sig
     (* Imports *)
 
     val FUNImp:           Info * ValItem                           -> Imp
-    val EQTYPEImp:        Info * TypItem                           -> Imp
-    val EQEQTYPEImp:      Info * TypItem                           -> Imp
     val EXCEPTIONImp:     Info * ExItem                            -> Imp
     val FUNCTORImp:       Info * FunItem                           -> Imp
     val INFIXMULTIImp:    Info * int option * VId list             -> Imp

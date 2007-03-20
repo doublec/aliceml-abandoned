@@ -137,9 +137,9 @@ programming language (SML), as defined in</P>
 <P>Alice ML defines some additional identifiers as reserved words:</P>
 
 <PRE class=code>
-	any       assert    assert<I>d</I>   constructor   exttype   fct
-	finally   from      import    non           lazy      pack
-	spawn     unpack    withfun   withval       _file_    _line_</PRE>
+	any    assert    assert<I>d</I>   comp      constructor  exttype
+	fct    finally   from      import    non          lazy
+	pack   spawn     unpack    withfun   withval      _file_    _line_</PRE>
 
 <P>The following grammar collects all other syntactic extensions of Alice ML
 relative to Standard ML. Derived forms are marked (*).
@@ -169,6 +169,12 @@ relative to Standard ML. Derived forms are marked (*).
     <TD align="center">::=</TD>
     <TD> ... </TD>
     <TD> </TD>
+  </TR>
+  <TR valign=baseline>
+    <TD></TD> <TD></TD>
+    <TD> <TT>comp</TT> &lt;<I>ann</I> <TT>in</TT>&gt;
+         <I>spec</I> <TT>with</TT> <I>dec</I> <TT>end</TT> </TD>
+    <TD> <A href="components.html#firstclass">component</A><SUP>1</SUP> </TD>
   </TR>
   <TR valign=baseline>
     <TD></TD> <TD></TD>
@@ -289,6 +295,10 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <A href="sugar.html#records-extension">record extension</A> </TD>
   </TR>
 </TABLE>
+
+<P><SUP>1</SUP>) The syntax of import items in a first-class component is
+restricted to the syntactic subclass of the corresponding descriptions, as
+used in signatures.</P>
 
 
 <?php subsection("syntax-pats", "Patterns") ?>

@@ -484,7 +484,7 @@ struct
 					( vid, SHORTLong(i, tycon) )
 				     | DOTLong(_, longstrid, vid) =>
 					( vid, DOTLong(i, longstrid, tycon) )
-	    val (typlongid',(E',_)) = trLongTyCon E longtycon
+	    val (typlongid',{CE=E',...}) = trLongTyCon E longtycon
 	    val VId(_, vid')    = vid
 	in
 	    case lookupVal(E', vid')
@@ -512,6 +512,9 @@ struct
 
       | unguardedTyVarsAtExp E (LETAtExp(_, dec, exp)) =
 	    unguardedTyVarsDec E dec @ unguardedTyVarsExp E exp
+
+      | unguardedTyVarsAtExp E (COMPAtExp(_, _, _, dec)) =
+	    unguardedTyVarsDec E dec
 
       | unguardedTyVarsAtExp E (PARAtExp(_, exp)) =
 	    unguardedTyVarsExp E exp
@@ -769,7 +772,104 @@ struct
 	   in
 		O.LetExp(i, dec', exp')
 	   end
+	 | COMPAtExp(i, ann, spec, dec)	=>
+	   (* Hack alert... *)
+	   let
+		val i0         = Source.at i
+		val modid1'    = O.Id(i0, Stamp.stamp(), Name.ExId "_CM")
+		val linklab'   = O.Lab(i0, Label.fromString "link")
+		val modlongid' = O.LongId(i0, O.ShortId(i0, modid1'), linklab')
+		val  _         = insertScope E
+		val decs1'     = trLocalAnn (E,modlongid') ann
+		val E'         = cloneScope E
+
+		val i1         = Source.at(I.infoDec dec)
+		val decs2'     = trDec E dec
+		val  _         = removeScope E
+(*
+		val decs3'     = expandImport(i1, O.ShortId(i0, modid1'), E')
+*)
+		val decs'      = Vector.concat[decs1', decs2'(*, decs3'*)]
+
+		val  _         = insertScope E
+(*
+		val spec0      = expandInclude(i0, E')
+		val (inf',_)   = trSig(E, i0, I.SEQSpec(i0, spec0, spec))
+*)
+		val (inf',_)   = trSig(E, i0, spec)
+		val  _         = removeScope E
+
+		val sInfid'    = O.Id(i0, Stamp.stamp(), Name.ExId "S")
+		val dec1'      = O.InfDec(i0, sInfid', inf')
+		val (managerlongid',_) =
+		    trLongSigId E
+			(I.SHORTLong(i0,
+			   I.SigId(i0, SigId.fromString "COMPONENT_MANAGER")))
+		val inf1'      = O.ConInf(i0, managerlongid')
+		val body'      = O.StrMod(i0, decs')
+		val fModid'    = O.Id(i0, Stamp.stamp(), Name.ExId "F")
+		val dec2'      = O.ModDec(i0, fModid', O.FunMod(i0, modid1',
+								inf1', body'))
+		val mod2'      = O.StrMod(i0, #[dec1',dec2'])
+
+		val (createlongid',_) =
+		    trLongStrId E
+			(I.DOTLong(i0,
+				   I.SHORTLong(i0,
+				     I.StrId(i0, StrId.fromString "Component")),
+				   I.StrId(i0, StrId.fromString "Create")))
+		val mod1'      = O.VarMod(i0, createlongid')
+		val mod'       = O.AppMod(i0, mod1', mod2')
+
+		val modid2'    = O.Id(i0, Stamp.stamp(), Name.ExId "_Comp")
+		val dec'       = O.ModDec(i0, modid2', mod')
+		val complab'   = O.Lab(i0, Label.fromString "component")
+		val vallongid' = O.LongId(i0, O.ShortId(i0, modid2'), complab')
+		val exp'       = O.VarExp(i, vallongid')
+	   in
+		O.LetExp(i, #[dec'], exp')
+	   end
 	 | PARAtExp(i, exp)		=> trExp E exp
+
+
+    and expandImport(i, modlongid', E) =
+	Vector.fromList(
+	    BindEnv.foldri (#3, #3, #3, #3, expandImportTy(i, modlongid'),
+			    expandImportStr(i, modlongid'),
+			    expandImportSig(i, modlongid')) [] E)
+
+    and expandImportTy (i,modlongid') (tycon, _, acc) =
+	let
+	    val name = TyCon.toString tycon
+	    val lab' = O.Lab(i, Label.fromString name)
+	    val typ' = O.ConTyp(i, O.LongId(i, modlongid', lab'))
+	in
+	    O.TypDec(i, O.Id(i, Stamp.stamp(), Name.ExId name), typ') :: acc
+	end
+
+    and expandImportSig (i,modlongid') (sigid, _, acc) =
+	let
+	    val name = SigId.toString sigid
+	    val lab' = O.Lab(i, Label.fromString name)
+	    val inf' = O.ConInf(i, O.LongId(i, modlongid', lab'))
+	in
+	    O.InfDec(i, O.Id(i, Stamp.stamp(), Name.ExId name), inf') :: acc
+	end
+
+    and expandImportStr (i,modlongid') (strid, (_,_,F), acc) =
+	(case F
+	   of PLAIN E =>
+	      let
+		  val name  = StrId.toString strid
+		  val lab'  = O.Lab(i, Label.fromString name)
+		  val decs' = expandImport(i, O.LongId(i, modlongid', lab'), E)
+		  val mod'  = O.StrMod(i, decs')
+	      in
+		  O.ModDec(i, O.Id(i, Stamp.stamp(), Name.ExId name), mod')
+		  :: acc
+	      end
+	    | _ => acc
+	)
 
 
     and trExpRowo E exprowo =
@@ -1179,8 +1279,8 @@ struct
     and trTyWithEnv E =
 	fn TYCONTy(i, tyseq, longtycon) =>
 	   let
-		val (typlongid',(E',n)) = trLongTyCon E longtycon
-		val  typs'          = trTySeq E tyseq
+		val (typlongid',{CE=E',...}) = trLongTyCon E longtycon
+		val  typs'                   = trTySeq E tyseq
 	   in
 		( apptyp(typs', O.ConTyp(i, typlongid')), E' )
 	   end
@@ -1411,7 +1511,8 @@ struct
 	 | REPLICATIONDec(i, tycon as TyCon(i',tycon'), longtycon) =>
 	   let
 		val (typid',stamp)  = trTyCon_bind E tycon
-		val (typlongid',(E',n)) = trLongTyCon E longtycon
+		val (typlongid',{CE=E',arity=n,def,eq,ext})
+				    = trLongTyCon E longtycon
 		val  modlongido'    = case typlongid'
 					of O.LongId(_,modlongid',_) =>
 						SOME modlongid'
@@ -1424,7 +1525,8 @@ struct
 					of PLAIN E => E
 					 | _ => raise Crash.Crash("AbstractionPhase.trDec: REPLICATIONDec")
 		val E''             = env()
-		val _               = insertTy(E, tycon', (i', stamp, (E'',n)))
+		val ts              = {CE=E'', arity=n, eq=eq, ext=ext}
+		val _               = insertTy(E, tycon', (i', stamp, ts))
 *)
 		val dec' = O.TypDec(i, typid',
 				    O.ConTyp(infoLong longtycon, typlongid'))
@@ -1437,8 +1539,9 @@ struct
 		fun condecs() =
 		    let
 			val E'' = env()
+			val ts  = {CE=E'', arity=n, def=NONE, eq=eq, ext=ext}
 		    in
-			insertTy(E, tycon', (i', stamp, (E'',n)));
+			insertTy(E, tycon', (i', stamp, ts));
 			foldiVals (trOpenDecVal (E,i,modlongido',SOME tycon'))
 				  (dec' :: acc) E'
 			before
@@ -1450,7 +1553,10 @@ struct
 		 of SHORTLong(_, TyCon(_, tycon)) =>
 		    (checkCons E;
 		     if Option.isSome(lookupScopeTy(E, tycon))
-		     then (insertTy(E, tycon', (i', stamp, (E',n))); dec' :: acc)
+		     then let val ts = {CE=E', arity=n, def=NONE, eq=eq, ext=ext} in
+			      insertTy(E, tycon', (i', stamp, ts));
+			      dec' :: acc
+			  end
 		     else condecs())
 		  | DOTLong(_, longstrid, _) =>
 		case #2(trLongStrId E longstrid)
@@ -1644,7 +1750,8 @@ struct
 		val  _             = removeScope E
 		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertTy(E, tycon', (i, stamp, (env(),n)))
+		val  ts            = {CE=env(), arity=n, def=NONE, eq=NONE, ext=false}
+		val  _             = insertTy(E, tycon', (i, stamp, ts))
 	   in
 		dec' :: acc
 	   end
@@ -1657,7 +1764,8 @@ struct
 		val  _             = removeScope E
 		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertTy(E, tycon', (i, stamp, (env(),n)))
+		val  ts            = {CE=env(), arity=n, def=NONE, eq=NONE, ext=true}
+		val  _             = insertTy(E, tycon', (i, stamp, ts))
 	   in
 		dec' :: acc
 	   end
@@ -1681,7 +1789,8 @@ struct
 						  O.FunExp(i, #[mat']))
 		val  E'             = env()
 		val  _              = insertVal(E', vid', (i2', stamp2, R))
-		val  _              = insertTy(E, tycon', (i1', stamp1, (E',1)))
+		val  ts             = {CE=E', arity=1, def=NONE, eq=SOME false, ext=false}
+		val  _              = insertTy(E, tycon', (i1', stamp1, ts))
 		val  _              = union(E,E')
 	   in
 		dec2' :: dec1' :: acc
@@ -1790,7 +1899,8 @@ struct
 	    O.ValDec(i, pat', exp') :: acc
 	end
 
-    and trOpenDecTy (E,i,modlongido') (tycon', (_,stamp1,(E',n)), acc) =
+    and trOpenDecTy (E,i,modlongido')
+		    (tycon', (_,stamp1,{CE=E',arity=n,def,eq,ext}), acc) =
 	let
 	    val i'         = Source.at i
 	    val name       = TyCon.toString tycon'
@@ -1810,7 +1920,8 @@ struct
 						else (I,Stamp.stamp(),is)
 				       | NONE => (I,Stamp.stamp(),is))) E'
 	    val typ'       = O.ConTyp(i', typlongid')
-	    val _          = insertTy(E, tycon', (i',stamp2,(E'',n)))
+	    val ts         = {CE=E'', arity=n, def=NONE, eq=eq, ext=ext}
+	    val _          = insertTy(E, tycon', (i',stamp2,ts))
 	in
 	    O.TypDec(i, typid2', typ') :: acc
 	end
@@ -2230,8 +2341,8 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',eq,false))
 		val  dec'          = O.TypDec(i, typid', funtyp')
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E', tycon',
-						     (i', stamp, (env(),n)))
+		val  ts            = {CE=env(), arity=n, def=NONE, eq=eq, ext=false}
+		val  _             = insertDisjointTy(E', tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.TypBindDuplicate tycon')
 	   in
@@ -2250,9 +2361,9 @@ struct
 		val  funtyp'       = funtyp(varids', typ')
 		val  dec'          = O.TypDec(i', typid', funtyp')
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E', tycon',
-						      (i',stamp,(E'',n))
-)				     handle CollisionTy _ =>
+		val  ts            = {CE=E'', arity=n, def=NONE, eq=NONE, ext=false}
+		val  _             = insertDisjointTy(E', tycon', (i',stamp,ts))
+				     handle CollisionTy _ =>
 					error(i', E.TypBindDuplicate tycon')
 	   in
 		trTypBindo' (E,E',eq, dec'::acc) typbindo
@@ -2266,8 +2377,9 @@ struct
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
 		val  n               = trTyVarSeqArity tyvarseq
+		val  ts              = {CE=env(), arity=n, def=NONE, eq=NONE, ext=false}
 		val  _               = insertDisjointTy(E', tycon',
-						(i', stamp, (env(),n)))
+							(i',stamp,ts))
 				       handle CollisionTy _ =>
 					   error(i', E.DatBindDuplicate tycon')
 	   in
@@ -2289,7 +2401,7 @@ struct
 	   let
 		val  i'           = infoConBind conbind
 		val  i            = Source.span(infoSeq tyvarseq, i')
-		val (typid',(E'',_)) = trTyCon E tycon	(* bound before *)
+		val (typid',{CE=E'',...}) = trTyCon E tycon  (* bound before *)
 		val  _            = insertScope E
 		val  varids'      = trTyVarSeq E tyvarseq
 		val  i_typid      = O.infoId typid'
@@ -2371,8 +2483,8 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',NONE,true))
 		val  dec'          = O.TypDec(i, typid', funtyp')
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E', tycon',
-						     (i', stamp, (env(),n)))
+		val  ts            = {CE=env(), arity=n, def=NONE, eq=NONE, ext=true}
+		val  _             = insertDisjointTy(E', tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.ExtBindDuplicate tycon')
 	   in
@@ -2641,17 +2753,33 @@ struct
 
   (* Signatures and specifications *)
 
-    (* hack for at least having limited treatment of include *)
     and expandInclude(i, E) =
 	BindEnv.foldri (#3, #3, #3, #3, expandIncludeTy i, expandIncludeStr i,
 			expandIncludeSig i) (EMPTYSpec i) E
 
-    and expandIncludeTy i (tycon, (_,_,(_,n)), acc) =
+    and expandIncludeTy i (tycon, (_,_,{def=SOME(tyvarseq,ty),...}), acc) =
 	let
-	    val tyvarseq = Seq(i, List.tabulate(n, expandIncludeTyVar i))
-	    val typdesc  = NEWTypDesc(i, tyvarseq, TyCon(i, tycon), NONE)
+	    val typdesc = EQUALTypDesc(i, tyvarseq, TyCon(i, tycon), ty, NONE)
 	in
 	    SEQSpec(i, TYPESpec(i, typdesc), acc)
+	end
+
+      | expandIncludeTy i (tycon, (_,_,{arity,eq,ext=false,...}), acc) =
+	let
+	    val tyvarseq = Seq(i, List.tabulate(arity, expandIncludeTyVar i))
+	    val typdesc  = NEWTypDesc(i, tyvarseq, TyCon(i, tycon), NONE)
+	in
+	    SEQSpec(i, (case eq of NONE => TYPESpec
+				 | SOME true => EQTYPESpec
+				 | SOME false => EQEQTYPESpec)(i, typdesc), acc)
+	end
+
+      | expandIncludeTy i (tycon, (_,_,{arity,eq,ext=true,...}), acc) =
+	let
+	    val tyvarseq = Seq(i, List.tabulate(arity, expandIncludeTyVar i))
+	    val extdesc  = ExtDesc(i, tyvarseq, TyCon(i, tycon), NONE)
+	in
+	    SEQSpec(i, EXTTYPESpec(i, extdesc), acc)
 	end
 
     and expandIncludeTyVar i j =
@@ -2725,21 +2853,9 @@ struct
 
 	 | SIGAtSigExp(i, spec) =>
 	   let
-		val _  = insertScope E
-		val _  = insertSelf E
-		val (specs', includes) = trSpec E spec
-		val E' = splitScope E
-		val F  = PLAIN E'
+	       val (inf',E') = trSig(E, i, spec)
 	   in
-	        List.foldr (fn((Eincl,sigexp),(inf'',F')) =>
-			    let
-				val sigexp' = induceIncludePrefix(Eincl, sigexp)
-				val (inf',F) = trSigExp E sigexp'
-				val _ = BindEnv.composeEnvFn(F,F')
-			    in
-				( O.InterInf(i, inf', inf''), F )
-			    end)
-			   (O.SigInf(i, specs'), F) includes
+	       ( inf', PLAIN E' )
 	   end
 
 	 | LONGSIGIDAtSigExp(i, sigid) =>
@@ -2794,6 +2910,26 @@ struct
 		( O.InterInf(i, inf1', inf2'), F1 )
 	   end
 
+    and trSig(E, i, spec) =
+	let
+	    val _  = insertScope E
+	    val _  = insertSelf E
+	    val (specs', includes) = trSpec E spec
+	    val E' = splitScope E
+	in
+	    List.foldr (fn((Eincl,sigexp),(inf'',E'')) =>
+			let
+			    val sigexp' = induceIncludePrefix(Eincl, sigexp)
+			    val (inf',F') = trSigExp E sigexp'
+			    val E' = case F' of PLAIN E' => E'
+					      | _ => raise Crash.Crash "trSig"
+			    val _ = BindEnv.unionCompose(E',E'')
+			in
+			    ( O.InterInf(i, inf', inf''), E' )
+			end)
+		       (O.SigInf(i, specs'), E') includes
+	end
+
     and trSpec  E spec =
 	let
 	    val (specs',includes) = trSpec' (E,([],[])) spec
@@ -2824,7 +2960,8 @@ struct
 	 | REPLICATIONSpec(i, tycon as TyCon(i', tycon'), longtycon) =>
 	   let
 		val (typid',stamp)  = trTyCon_bind E tycon
-		val (typlongid',(E',n)) = trLongTyCon E longtycon
+		val (typlongid',{CE=E',arity=n,def,eq,ext})
+				    = trLongTyCon E longtycon
 		val  modlongido'    = case typlongid'
 					of O.ShortId _              => NONE
 					 | O.LongId(_,modlongid',_) =>
@@ -2837,8 +2974,8 @@ struct
 					of PLAIN E => E
 					 | _ => raise Crash.Crash("AbstractionPhase.trSpec: REPLICATIONSpec")
 		val E''             = env()
-		val  _              = insertDisjointTy(E, tycon',
-						       (i', stamp, (E'',n)))
+		val ts              = {CE=E'', arity=n, eq=eq, ext=ext}
+		val  _              = insertDisjointTy(E, tycon', (i',stamp,ts))
 				      handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 *)
@@ -2853,8 +2990,10 @@ struct
 		fun conspecs() =
 		    let
 			val E'' = env()
+			val ty  = TYCONTy(i, Seq(i,[]), longtycon)
+			val ts  = {CE=E'', arity=n, def=SOME(Seq(i,[]),ty), eq=eq, ext=ext}
 		    in
-			insertTy(E, tycon', (i', stamp, (E'',n)));
+			insertTy(E, tycon', (i', stamp, ts));
 			( foldiVals (trOpenSpecVal (E,i,modlongido',tycon'))
 				    (spec' :: acc1) E'
 			, acc2 )
@@ -2867,8 +3006,11 @@ struct
 		 of SHORTLong(_, TyCon(_, tycon)) =>
 		    (checkCons E;
 		     if Option.isSome(lookupScopeTy(E, tycon))
-		     then (insertTy(E, tycon', (i', stamp, (E',n)));
-			   ( spec'::acc1, acc2 ))
+		     then let val ty  = TYCONTy(i, Seq(i,[]), longtycon)
+			      val ts = {CE=E', arity=n, def=SOME(Seq(i,[]),ty), eq=eq, ext=ext} in
+			      insertTy(E, tycon', (i', stamp, ts));
+			      ( spec'::acc1, acc2 )
+			  end
 		     else conspecs())
 		  | DOTLong(_, longstrid, _) =>
 		case #2(trLongStrId E longstrid)
@@ -3064,8 +3206,8 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',eq,false))
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E, tycon',
-						   (i', stamp, (env(),n)))
+		val  ts            = {CE=env(), arity=n, def=NONE, eq=eq, ext=false}
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -3084,8 +3226,8 @@ struct
 		val  funtyp'       = funtyp(varids', typ')
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E, tycon',
-						      (i', stamp, (E',n)))
+		val  ts            = {CE=E', arity=n, def=SOME(tyvarseq,ty), eq=eq, ext=false}
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -3101,8 +3243,8 @@ struct
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
 		val n                = trTyVarSeqArity tyvarseq
-		val _                = insertDisjointTy(E, tycon',
-						   (i', stamp, (env(),n)))
+		val ts               = {CE=env(), arity=n, def=NONE, eq=NONE, ext=false}
+		val _                = insertDisjointTy(E, tycon',(i',stamp,ts))
 				       handle CollisionTy _ =>
 					 error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -3124,7 +3266,7 @@ struct
 	   let
 		val  i'            = infoConDesc condesc
 		val  i             = Source.span(infoSeq tyvarseq, i')
-		val (typid',(E',_))= trTyCon E tycon	(* bound before *)
+		val (typid',{CE=E',...}) = trTyCon E tycon  (* bound before *)
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
 		val  i_typid       = O.infoId typid'
@@ -3193,8 +3335,8 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',NONE,true))
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E, tycon',
-						   (i', stamp, (env(),n)))
+		val  ts            = {CE=env(), arity=n, def=NONE, eq=NONE, ext=true}
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -3357,7 +3499,13 @@ struct
 		trValItemo' (E,E',acc) (SOME valitem)
 
 	 | TYPEImp(i, typitem) =>
-		trTypItemo' (E,E',acc) (SOME typitem)
+		trTypItemo' (E,E',NONE,acc) (SOME typitem)
+
+	 | EQTYPEImp(i, typitem) =>
+		trTypItemo' (E,E',SOME true,acc) (SOME typitem)
+
+	 | EQEQTYPEImp(i, typitem) =>
+		trTypItemo' (E,E',SOME false,acc) (SOME typitem)
 
 	 | DATATYPEImp(i, datitem) =>
 	   let
@@ -3466,7 +3614,7 @@ struct
 	    O.ValImp(i, valid', O.NoDesc(i)) :: acc
 	end
 
-    and trOpenImpTy (E,i) (tycon', (_,_,(E',n)), acc) =
+    and trOpenImpTy (E,i) (tycon', (_,_,{CE=E',arity=n,def,eq,ext}), acc) =
 	let
 	    val i'     = Source.at i
 	    val name   = TyCon.toString tycon'
@@ -3476,7 +3624,8 @@ struct
 	    val _      = appiVals (fn(vid,_) =>
 			    insertDisjointVal(E'',vid,
 			    	Option.valOf(lookupVal(E,vid)))) E'
-	    val _      = insertDisjointTy(E, tycon', (i', stamp, (E'',n)))
+	    val ts     = {CE=E'', arity=n, def=NONE, eq=eq, ext=ext}
+	    val _      = insertDisjointTy(E, tycon', (i',stamp,ts))
 			 handle CollisionTy _ =>
 				error(i, E.ImpTyConDuplicate tycon')
 	in
@@ -3554,23 +3703,22 @@ struct
 	   end
 
 
-    and trTypItemo' (E,E',acc) =
+    and trTypItemo' (E,E',eq,acc) =
 	fn NONE => acc
 
 	 | SOME(PLAINTypItem(_, tycon as TyCon(i',tycon'), typitemo)) =>
 	   let
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  imp'          = O.TypImp(i', typid', O.NoDesc(i'))
-		val (E'',n)        = Future.byneed(fn() =>
+		val ts             = Future.byneed(fn() =>
 				     if Option.isSome(lookupTy(E',tycon'))
-				     then (env(),0)
+				     then {CE=env(),arity=0,def=NONE,eq=eq,ext=false}
 				     else error(i', E.TypItemUnbound tycon'))
-		val  _             = insertDisjointTy(E, tycon',
-						      (i', stamp, (E'',n)))
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.ImpTyConDuplicate tycon')
 	   in
-		trTypItemo' (E,E', imp'::acc) typitemo
+		trTypItemo' (E,E',eq, imp'::acc) typitemo
 	   end
 
 	 | SOME(DESCTypItem(_, tyvarseq, tycon as TyCon(i',tycon'), typitemo)) =>
@@ -3585,12 +3733,12 @@ struct
 		val  imp'          = O.TypImp(i, typid', desc')
 		val  E''           = env()
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E, tycon',
-						      (i', stamp, (E'',n)))
+		val  ts            = {CE=E'', arity=n, def=NONE, eq=eq, ext=false}
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
-		trTypItemo' (E,E', imp'::acc) typitemo
+		trTypItemo' (E,E',eq, imp'::acc) typitemo
 	   end
 
 
@@ -3602,8 +3750,8 @@ struct
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
 		val  E''             = env()
-		val  _               = insertDisjointTy(E, tycon',
-							(i', stamp, (E'',0)))
+		val  ts              = {CE=E'', arity=0, def=NONE, eq=NONE, ext=false}
+		val  _               = insertDisjointTy(E, tycon',(i',stamp,ts))
 				       handle CollisionTy _ =>
 					 error(i', E.ImpTyConDuplicate tycon')
 	   in
@@ -3615,8 +3763,8 @@ struct
 		val (typid',stamp)   = trTyCon_bind E tycon
 		val  E''             = env()
 		val  n               = trTyVarSeqArity tyvarseq
-		val  _               = insertDisjointTy(E, tycon',
-							(i', stamp, (E'',n)))
+		val  ts              = {CE=E'', arity=n, def=NONE, eq=NONE, ext=false}
+		val  _               = insertDisjointTy(E, tycon',(i',stamp,ts))
 				       handle CollisionTy _ =>
 					 error(i', E.ImpTyConDuplicate tycon')
 	   in
@@ -3635,10 +3783,10 @@ struct
 
 	 | SOME(PLAINDatItem(i, tycon as TyCon(i', tycon'), datitemo)) =>
 	   let
-		val (typid',(E'',_)) = trTyCon E tycon
+		val (typid',{CE=E'',...}) = trTyCon E tycon
 		val  imp'        = O.TypImp(i, typid', O.NoDesc(i))
 		val  E'''        = case lookupTy(E', tycon')
-				    of SOME(_,_,(E''',_)) => E'''
+				    of SOME(_,_,{CE,...}) => CE
 				     | NONE => error(i',E.DatItemUnbound tycon')
 		val  acc2'       = foldiVals (trOpenImpVal (E'',i)) acc2 E'''
 		val  _           = unionDisjoint(E,E'')
@@ -3653,7 +3801,7 @@ struct
 	   let
 		val  i'           = infoConItem conitem
 		val  i            = Source.span(infoSeq tyvarseq, i')
-		val (typid',(E'',_)) = trTyCon E tycon
+		val (typid',{CE=E'',...}) = trTyCon E tycon
 		val  _            = insertScope E
 		val  varids'      = trTyVarSeq E tyvarseq
 		val  i_typid      = O.infoId typid'
@@ -3722,13 +3870,12 @@ struct
 	   let
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  imp'          = O.TypImp(i', typid', O.NoDesc(i'))
-		val (E'',n)        = Future.byneed(fn() =>
+		val  ts            = Future.byneed(fn() =>
 				     case lookupTy(E',tycon')
-				       of SOME(_,_,E''n) => E''n
+				       of SOME(_,_,ts) => ts
 				        | NONE =>
 					  error(i', E.TypItemUnbound tycon'))
-		val  _             = insertDisjointTy(E, tycon', 
-						      (i', stamp, (E'',n)))
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.ImpTyConDuplicate tycon')
 	   in
@@ -3747,8 +3894,8 @@ struct
 		val  imp'          = O.TypImp(i, typid', desc')
 		val  E''           = env()
 		val  n             = trTyVarSeqArity tyvarseq
-		val  _             = insertDisjointTy(E, tycon',
-						      (i', stamp, (E'',n)))
+		val  ts            = {CE=E'', arity=n, def=NONE, eq=NONE, ext=true}
+		val  _             = insertDisjointTy(E, tycon', (i',stamp,ts))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -3945,6 +4092,42 @@ struct
 		val (acc1',acc2') = trAnn' (E,E',desc,acc1,acc2) ann1
 	   in
 		trAnn' (E,E',desc,acc1',acc2') ann2
+	   end
+
+    and trLocalAnn (E,vallongid') ann =
+	let
+	    val decs' = trLocalAnn' (E,vallongid',[]) ann
+	in
+	    Vector.rev(Vector.fromList decs')
+	end
+
+    and trLocalAnn'(E,vallongid',acc) =
+	fn IMPORTLocalAnn(i, spec, s) =>
+	   let
+	       val i0         = Source.at i 
+	       val (inf',E')  = trSig(E, infoSpec spec, spec)
+	       val urllongvid = DOTLong(i0,
+				  SHORTLong(i0, StrId(i0, StrId.fromString "Url")),
+				  VId(i0, VId.fromString "fromString"))
+	       val (urllongid',_) = trLongVId E urllongvid
+	       val exp1'      = O.AppExp(i0, O.VarExp(i0, urllongid'),
+					     O.LitExp(i0, O.StringLit s))
+	       val exp'       = O.AppExp(i0, O.VarExp(i0, vallongid'), exp1')
+	       val mod'       = O.LazyMod(i, O.UnpackMod(i, exp', inf'))
+	       val modid'     = O.Id(i0, Stamp.stamp(), Name.ExId "_Import")
+	       val dec'       = O.ModDec(i, modid', mod')
+	   in
+		trOpenDec (E, i0, SOME(O.ShortId(i,modid'))) (E', dec'::acc)
+	   end
+
+	 | EMPTYLocalAnn(i) =>
+		acc
+
+	 | SEQLocalAnn(i, ann1, ann2) =>
+	   let
+		val acc' = trLocalAnn' (E,vallongid',acc) ann1
+	   in
+		trLocalAnn' (E,vallongid',acc') ann2
 	   end
 
 

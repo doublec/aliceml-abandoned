@@ -218,14 +218,19 @@ Given a host and a service, a new site is created on the remote host (using
 <TT>ssh</TT>) and the service is run there.  Both the spawning and the spawned
 site open communication ports to connect to each other.  Note that communication
 is done via pickling.  This implies that you must be careful not to use 
-sited values in a service!  Many interesting structures in  (e.g <TT>Remote</TT>...) contain 
-Sited values.  In order to use these you would have to link them using 
-<TT>ComponentManager.Link</TT> on the spawned site.</P>
+sited values in a service!  Many interesting structures in  (e.g <TT>Remote</TT>) contain 
+Sited values.  In order to use these you would have to link them using on the
+spawned site.</P>
 
+<PRE class=code>
+run : string * component -> package</PRE>
+
+<!--
 <PRE class=code>
 Run : fct (val host : string
 	   signature S
 	   functor F : COMPONENT_MANAGER -> S) -> S</PRE>
+-->
 
 <?php subsection("remote-example", "Example") ?>
 
@@ -248,6 +253,7 @@ fail anyway because of references to <TT>TextIO.print</TT>).  Then five
 workers are spawned on different hosts, whereupon the manager can start
 to attend to its business.</P>
 
+<!--
 <PRE class=code>
 signature DATABASE =
     sig
@@ -297,6 +303,50 @@ val workers = List.map (fn oneHost =>
 			    Worker.executeTask
 			end) hosts
 ... (* use workers *) ...</PRE>
+-->
 
+<PRE class=code>
+signature DATABASE =
+    sig
+	val lookup : string -> string
+    end
+structure Database : DATABASE =
+    struct
+	fun lookup key = ...
+    end
+structure RemoteDatabase : DATABASE =
+    struct
+	val lookup = proxy Database.lookup
+    end
+signature WORKER =
+    sig
+	val executeTask : (unit -> 'a) -> 'a
+    end
+
+val worker =
+    comp
+        import structure TextIO from "x-alice:/lib/system/TextIO"
+        import structure Remote from "x-alice:/lib/distribution/Remote"
+    in
+        include WORKER
+    with
+        val executeTask = Remote.proxy
+            (fn f => ... RemoteDatabase.lookup ... TextIO.print ...)
+    end
+
+val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
+val workers = List.map (fn host =>
+			let
+			    structure Worker =
+				unpack run(host, worker) : WORKER
+			in
+			    Worker.executeTask
+			end) hosts
+... (* use workers *) ...</PRE>
+
+<P>Note that it is essential for the worker component to import the
+<TT>TextIO</TT> and <TT>Remote</TT> structures on the host site, because the
+used functions are <A href="pickling.html#semantics">sited</A> resources
+and thus cannot be pickled and transferred from the original site.</P>
 
 <?php footing() ?>

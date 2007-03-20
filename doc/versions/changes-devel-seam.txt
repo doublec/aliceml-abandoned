@@ -3,6 +3,7 @@ Alice 1.4 (Kraftwerk 'Equaliser' Album) - 2007/04/28
 
 Language & Compiler:
 
+* [NEW] Syntax for first-class components: "comp <import in> spec with dec end".
 * [NEW] Full support for signature inclusion.
 * [NEW] Standard-conforming treatment of equality types.
 * [NEW] Generalised syntax of open declarations: "open strexp".

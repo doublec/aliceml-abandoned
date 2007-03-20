@@ -128,6 +128,7 @@ struct
 	| VECTORAtExp    of Info * Exp list
 	| SEQAtExp       of Info * Exp list
 	| LETAtExp       of Info * Dec * Exp
+	| COMPAtExp      of Info * LocalAnn * Spec * Dec
 	| PARAtExp       of Info * Exp
 
     and ExpRow =
@@ -359,6 +360,8 @@ struct
     and Imp =
 	  VALImp          of Info * ValItem
 	| TYPEImp         of Info * TypItem
+	| EQTYPEImp       of Info * TypItem
+	| EQEQTYPEImp     of Info * TypItem
 	| DATATYPEImp     of Info * DatItem
 	| EXTTYPEImp      of Info * ExtItem
 	| CONSTRUCTORImp  of Info * EconItem
@@ -411,6 +414,11 @@ struct
 	| EMPTYAnn              of Info
 	| SEQAnn                of Info * Ann * Ann
 
+    and LocalAnn =
+	  IMPORTLocalAnn        of Info * Spec * string
+	| EMPTYLocalAnn         of Info
+	| SEQLocalAnn           of Info * LocalAnn * LocalAnn
+
     (* Programs and components *)
 
     and Program   = Program   of Info * Dec * Program option
@@ -451,6 +459,7 @@ struct
       | infoAtExp(VECTORAtExp(I,_))			= I
       | infoAtExp(SEQAtExp(I,_))			= I
       | infoAtExp(LETAtExp(I,_,_))			= I
+      | infoAtExp(COMPAtExp(I,_,_,_))			= I
       | infoAtExp(PARAtExp(I,_))			= I
 
     fun infoExpRow(DOTSExpRow(I,_))			= I
@@ -625,6 +634,8 @@ struct
 
     fun infoImp(VALImp(I,_))				= I
       | infoImp(TYPEImp(I,_))				= I
+      | infoImp(EQTYPEImp(I,_))				= I
+      | infoImp(EQEQTYPEImp(I,_))			= I
       | infoImp(DATATYPEImp(I,_))			= I
       | infoImp(EXTTYPEImp(I,_))			= I
       | infoImp(CONSTRUCTORImp(I,_))			= I
@@ -665,6 +676,10 @@ struct
       | infoAnn(PRIMITIVEIMPORTALLAnn(I,_))		= I
       | infoAnn(EMPTYAnn(I))				= I
       | infoAnn(SEQAnn(I,_,_))				= I
+
+    fun infoLocalAnn(IMPORTLocalAnn(I,_,_))		= I
+      | infoLocalAnn(EMPTYLocalAnn(I))			= I
+      | infoLocalAnn(SEQLocalAnn(I,_,_))		= I
 
     fun infoProgram(Program(I,_,_))			= I
     fun infoComponent(Component(I,_,_))			= I

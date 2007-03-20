@@ -202,12 +202,18 @@ struct
     fun longvid_CONS(I)		= longvid(I, vid_CONS(I))
     fun longvid_ASSERT(I)	= longvid(I, vid_ASSERT(I))
 
-    fun LONGVIDExp(I, longvid)	= G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,
-								  longvid))
-    fun LONGVIDPat(I, longvid)	= G.ATPATPat(I, G.LONGVIDAtPat(I, G.WITHOp,
-								  longvid))
+    fun LONGVIDAtExp(I,longvid)	= G.LONGVIDAtExp(I, G.WITHOp, longvid)
+    fun LONGVIDAtPat(I,longvid)	= G.LONGVIDAtPat(I, G.WITHOp, longvid)
+    fun LONGVIDExp(I, longvid)	= G.ATEXPExp(I, LONGVIDAtExp(I, longvid))
+    fun LONGVIDPat(I, longvid)	= G.ATPATPat(I, LONGVIDAtPat(I, longvid))
+    fun VIDAtExp(I, vid)	= LONGVIDAtExp(I, G.SHORTLong(I, vid))
+    fun VIDAtPat(I, vid)	= LONGVIDAtPat(I, G.SHORTLong(I, vid))
     fun VIDExp(I, vid)		= LONGVIDExp(I, G.SHORTLong(I, vid))
     fun VIDPat(I, vid)		= LONGVIDPat(I, G.SHORTLong(I, vid))
+    fun STRIDAtStrExp(I, strid)	= G.LONGSTRIDAtStrExp(I, G.SHORTLong(I, strid))
+    fun STRIDStrExp(I, strid)	= G.ATSTREXPStrExp(I, STRIDAtStrExp(I, strid))
+    fun SIGIDAtSigExp(I, sigid)	= G.LONGSIGIDAtSigExp(I, G.SHORTLong(I, sigid))
+    fun SIGIDSigExp(I, sigid)	= G.ATSIGEXPSigExp(I, SIGIDAtSigExp(I, sigid))
 
     fun FALSEExp(I)		= LONGVIDExp(I, longvid_FALSE(I))
     fun TRUEExp(I)		= LONGVIDExp(I, longvid_TRUE(I))
@@ -580,6 +586,11 @@ end
 	in
 	    G.ATEXPExp(I, G.LETAtExp(I, dec, exp))
 	end
+
+    fun COMPAtExp(I, SOME ann, spec, dec) =
+	    G.COMPAtExp(I, ann, spec, dec)
+      | COMPAtExp(I, NONE, spec, dec) =
+	    G.COMPAtExp(I, G.EMPTYLocalAnn(Source.at I), spec, dec)
 
     fun FILEAtExp(I, desc) =
 	let
@@ -1084,8 +1095,6 @@ end
     (* Imports *)
 
     val FUNImp		= G.VALImp
-    val EQTYPEImp	= G.TYPEImp
-    val EQEQTYPEImp	= G.TYPEImp
     val EXCEPTIONImp	= G.CONSTRUCTORImp
     val FUNCTORImp	= G.STRUCTUREImp
     val PLAINExItem	= G.PLAINEconItem

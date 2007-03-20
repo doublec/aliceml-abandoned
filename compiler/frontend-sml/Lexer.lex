@@ -330,6 +330,7 @@
   <INITIAL>"assert8"	=> ( token(ASSERT_(SOME 8), yypos, yytext) );
   <INITIAL>"assert9"	=> ( token(ASSERT_(SOME 9), yypos, yytext) );
   <INITIAL>"case"	=> ( token(CASE,      yypos, yytext) );
+  <INITIAL>"comp"	=> ( token(COMP,      yypos, yytext) );
   <INITIAL>"constructor"=> ( token(CONSTRUCTOR,yypos, yytext) );
   <INITIAL>"datatype"	=> ( token(DATATYPE,  yypos, yytext) );
   <INITIAL>"do"		=> ( token(DO,        yypos, yytext) );

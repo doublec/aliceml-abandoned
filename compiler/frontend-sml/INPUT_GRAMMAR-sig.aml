@@ -127,6 +127,7 @@ sig
 	| VECTORAtExp    of Info * Exp list
 	| SEQAtExp       of Info * Exp list
 	| LETAtExp       of Info * Dec * Exp
+	| COMPAtExp      of Info * LocalAnn * Spec * Dec
 	| PARAtExp       of Info * Exp
 
     and ExpRow =
@@ -358,6 +359,8 @@ sig
     and Imp =
 	  VALImp          of Info * ValItem
 	| TYPEImp         of Info * TypItem
+	| EQTYPEImp       of Info * TypItem
+	| EQEQTYPEImp     of Info * TypItem
 	| DATATYPEImp     of Info * DatItem
 	| EXTTYPEImp      of Info * ExtItem
 	| CONSTRUCTORImp  of Info * EconItem
@@ -409,6 +412,11 @@ sig
 	| PRIMITIVEIMPORTALLAnn of Info * string
 	| EMPTYAnn              of Info
 	| SEQAnn                of Info * Ann * Ann
+
+    and LocalAnn =
+	  IMPORTLocalAnn        of Info * Spec * string
+	| EMPTYLocalAnn         of Info
+	| SEQLocalAnn           of Info * LocalAnn * LocalAnn
 
     (* Programs and components *)
 
