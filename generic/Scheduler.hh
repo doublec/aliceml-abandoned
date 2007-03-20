@@ -51,7 +51,7 @@ private:
   static word *stackMax;              // Task stack max
   static jmp_buf stackOverflowJmp;    // Used to signal stack overflow
 public:
-  static word StackError;             // Overflow exception
+  static word StackError;             // Stack overflow exception
 
 #if PROFILE
   static double gcTime;

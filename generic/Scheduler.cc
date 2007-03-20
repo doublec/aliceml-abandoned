@@ -117,7 +117,7 @@ int Scheduler::Run() {
     TaskStack::SetOverflowJump(&stackOverflowJmp);
   } else {
     // Stack Overflow occured
-    Scheduler::SetCurrentData(StackError);
+    SetCurrentData(StackError);
     SetCurrentBacktrace(Backtrace::New(GetFrame()->Clone()));
     nextThread = false;
     goto raise;
