@@ -54,6 +54,8 @@ u_int StatusWord::status;
 Heap Store::roots[STORE_GENERATION_NUM];
 u_int Store::memFree;
 u_int Store::memTolerance;
+u_int Store::signalLimit = 0;
+void (*Store::signalLimitHandler)(u_int) = NULL;
 
 #if defined(STORE_PROFILE)
 u_int Store::totalMem  = 0;
@@ -68,6 +70,41 @@ double Store::sum_t;
 //
 // Method Implementations
 //
+void Store::Enlarge(const u_int g) {
+  roots[g].Enlarge();
+  if (signalLimit != 0 && Heap::GetTotalSize() > signalLimit) {
+#if defined(STORE_DEBUG)
+  std::fprintf(stderr, "Heap signal limit exceeded with %d bytes (limit: %d)\n",
+	       Heap::GetTotalSize(), signalLimit);
+  std::fflush(stderr);
+#endif
+    StatusWord::SetStatus(SignalLimitStatus());
+  }
+}
+
+void Store::SetSignal(const u_int limit, void (*handler)(u_int)) {
+#if defined(STORE_DEBUG)
+  std::fprintf(stderr, "Setting heap signal for %d bytes\n", limit);
+  std::fflush(stderr);
+#endif
+  signalLimit = limit;
+  signalLimitHandler = handler;
+}
+
+void Store::Signal() {
+#if defined(STORE_DEBUG)
+  std::fprintf(stderr, "Signal heap limit (current heap size: %d bytes)\n",
+	       Heap::GetTotalSize());
+  std::fflush(stderr);
+#endif
+  Assert(signalLimitHandler != NULL);
+  u_int limit = signalLimit;
+  signalLimit = 0;
+  signalLimitHandler(limit);
+  StatusWord::ClearStatus(SignalLimitStatus());
+}
+
+
 inline Block *Store::CloneBlock(Block *p, const u_int gen) {
   u_int size  = p->GetSize();
   Block *newp = (Block *) Store::Alloc(gen, p->GetLabel(), size);

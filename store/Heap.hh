@@ -43,6 +43,7 @@ class SeamDll Heap {
 protected:
   HeapChunk *chain;
   u_int size, limit;
+  static u_int total;
 public:
   Heap() {}
   Heap(const u_int chunkSize, u_int limit);
@@ -53,6 +54,7 @@ public:
   u_int GetExactSize();
   HeapChunk *GetChain()               { return chain; }
   u_int GetSize()                     { return size; }
+  static u_int GetTotalSize()         { return total; }
   u_int GetLimit()                    { return limit; }
   void SetLimit(u_int l)              { limit = l; }
   void *operator new(size_t, void *p) { return p; }

@@ -28,6 +28,8 @@ class JITStore;
 class Profiler;
 
 #define STORE_NEED_GC_STATUS 0
+//--**
+#define STORE_SIGNAL_LIMIT_STATUS 3
 
 class SeamDll Store : public StatusWord {
 protected:
@@ -38,6 +40,8 @@ protected:
   static u_int memFree;
   static u_int memTolerance;
   static u_int nbBlkTables;
+  static u_int signalLimit;
+  static void (*signalLimitHandler)(u_int);
 #if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
   static double sum_t;
 #endif
@@ -47,6 +51,7 @@ protected:
   static void FinalizeCheneyScan(HeapChunk *chunk, char *scan);
   static void HandleInterGenerationalPointers(const u_int gen);
   static void HandleWeakDictionaries(const u_int gen);
+  static void Enlarge(const u_int g);
   static char *Alloc(const u_int g, const BlockLabel l, const u_int s) {
     u_int header = HeaderOp::EncodeHeader(l, s,
 					  (g == STORE_GENERATION_NUM - 1) ?
@@ -57,7 +62,7 @@ protected:
       ((u_int *) p)[0] = header;
       char *newtop = p + SIZEOF_BLOCK(s);
       if (newtop >= current->GetMax()) {
-	roots[g].Enlarge();
+	Enlarge(g);
 	continue;
       }
       current->SetTop(newtop);
@@ -82,6 +87,13 @@ public:
   static void InitStore(u_int mem_max[STORE_GENERATION_NUM],
 			u_int mem_free, u_int mem_tolerance);
   static void CloseStore();
+
+  // Signalling heap size
+  static void SetSignal(u_int, void (*handler)(u_int));
+  static void Signal();
+  static u_int SignalLimitStatus() {
+    return (1 << STORE_SIGNAL_LIMIT_STATUS);
+  }
 
   // GC Related Functions
   static void DoGCWithoutFinalize(word &root);

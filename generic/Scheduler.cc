@@ -139,6 +139,8 @@ int Scheduler::Run() {
 	Profiler::AddHeap();
 #endif
       interpretResult:
+	if (StatusWord::GetStatus(Store::SignalLimitStatus()))
+	  Store::Signal();
 	switch (result) {
 	case Worker::CONTINUE:
 	  Assert(nArgs == 1 || nArgs < maxArgs);
@@ -253,6 +255,8 @@ int Scheduler::Run() {
 	gcTime += (afterGC - beforeGC);
 #endif
       }
+      if (StatusWord::GetStatus(Store::SignalLimitStatus()))
+	Store::Signal();
       IOHandler::Poll();
       if (SignalHandler::GetSignalStatus())
 	SignalHandler::HandlePendingSignals();

@@ -92,7 +92,7 @@ HeapChunk::HeapChunk(u_int size, HeapChunk *chain) : prev(NULL) {
       Error("mprotect: unknown error");
     }
   }
-#endif							       
+#endif
   if (chain != NULL)
     chain->SetPrev(this);
   memset(base, 1, size);
@@ -102,13 +102,17 @@ HeapChunk::~HeapChunk() {
   Free();
 }
 
+u_int Heap::total = 0;
+
 Heap::Heap(u_int chunkSize, u_int limit) {
   chain       = new HeapChunk(chunkSize, NULL);
   size        = chunkSize;
   this->limit = limit;
+  total       += size;
 }
 
 Heap::~Heap() {
+  total -= size;
   return;
 }
 
@@ -128,6 +132,7 @@ void Heap::Enlarge() {
   if (size >= limit)
     StatusWord::SetStatus(1);
   size += chunkSize;
+  total += chunkSize;
 }
 
 void Heap::Shrink() {
@@ -138,6 +143,7 @@ void Heap::Shrink() {
     chunks = next;
   }
   chain = new HeapChunk(STORE_MEMCHUNK_SIZE, NULL);
+  total -= size - STORE_MEMCHUNK_SIZE;
   size  = STORE_MEMCHUNK_SIZE;
 }
 
