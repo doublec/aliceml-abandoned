@@ -4,7 +4,7 @@ Alice 1.4 (Kraftwerk 'Equaliser' Album) - 2007/04/28
 Language & Compiler:
 
 * [NEW] Syntax for first-class components: "comp <import in> spec with dec end".
-* [NEW] Full support for signature inclusion.
+* [NEW] Full support for signature "include".
 * [NEW] Standard-conforming treatment of equality types.
 * [NEW] Generalised syntax of open declarations: "open strexp".
 * [NEW] Open and plain renaming now retains overloading status, esp. of
@@ -17,12 +17,15 @@ Language & Compiler:
 Runtime System:
 
 * [NEW] Stack overflow now raises Store.Stack exception instead of terminating.
+* [NEW] Ability to signal excessive memory usage.
+* [CHG] Had to bump version of pickle format; old pickles are incompatible.
 
 Interactive Toplevel:
 
+* [NEW] Added toolbar.
 * [NEW] Extended and improved type information display in status bar.
 * [NEW] Can configure compiler warnings in preferences.
-* [NEW] Added toolbar.
+* [NEW] Can activate heap limit to protect against runaway computations.
 * [NEW] Window size and position are now saved across sessions.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
 * [FIX] Minor additions and bug fixes.
@@ -34,6 +37,7 @@ Basic Library:
 * [NEW] Remote: new function setPort to choose fixed port number for
         distributed operations (for firewall satisfaction and other purposes).
 * [NEW] Store: new exception `Stack' to signal stack overflows.
+* [NEW] Store: new function `signal' to handle heap growth.
 * [NEW] Compiler: new function `withWarnings' for setting warnings.
 * [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
 * [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.

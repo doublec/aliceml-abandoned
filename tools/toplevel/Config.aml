@@ -11,6 +11,7 @@
  *
  *)
 
+import structure Store from "x-alice:/lib/system/Store"
 import structure Print from "x-alice:/lib/system/Print"
 import structure Compiler from "x-alice:/lib/system/Compiler"
 import structure Evaluator    from "Evaluator"
@@ -44,6 +45,8 @@ signature USER_CONFIG_3 =
       val warnings : Compiler.warnings
       val printDepth : int
       val printWidth : int
+      val heapLimit : int
+      val heapLimited : bool
    end
 
 signature USER_CONFIG = USER_CONFIG_3
@@ -70,6 +73,10 @@ structure Config =
 
       val sizeX = 800
       val sizeY = 800
+
+      val heapLimited = ref true
+      val heapLimit = ref 200
+      val heapHandler = ref ignore
 
       val warnings = ref Compiler.warnings
       val historySize = ref 100
@@ -191,6 +198,12 @@ structure Config =
 
       val workDir = ref (OS.FileSys.getDir ())
 
+      val mb = Int.toLarge(1024*1024)
+      fun initHeapHandler () =
+	  if !heapLimited
+	  then Store.signal(SOME(Int.toLarge(!heapLimit)*mb, !heapHandler))
+	  else Store.signal NONE
+
       fun init() =
 	  let
 	      val p = Pickle.load preferencesFile
@@ -217,6 +230,9 @@ structure Config =
 		  do Evaluator.setWarnings C.warnings
 		  do Print.depth := C.printDepth
 		  do Print.width := C.printWidth
+		  do heapLimited := C.heapLimited
+		  do heapLimit := C.heapLimit
+		  do initHeapHandler()
 	      in
 		  ()
 	      end
@@ -237,6 +253,8 @@ structure Config =
 		  val historySize = !historySize
 		  val stdFontName = !stdFontName
 		  val loadFileHistory = !loadFileHistory
+		  val heapLimited = !heapLimited
+		  val heapLimit = !heapLimit
 	      end
 	  in
 	      createConfigDir ();

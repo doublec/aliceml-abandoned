@@ -12,7 +12,9 @@
  *
  *)
 
+(*
 import structure Gui            from "Gui"
+*)
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
 import structure Config         from "x-alice:/lib/system/Config"
 import structure DialogUtils    from "DialogUtils"

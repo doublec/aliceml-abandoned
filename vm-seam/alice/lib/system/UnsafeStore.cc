@@ -20,6 +20,8 @@
     return Worker::CONTINUE;			\
 }
 
+static word HeapSignalCell;
+
 class SizeWorkerSeen: private Block {
 private:
   static const BlockLabel SEEN_LABEL = MIN_DATA_LABEL;
@@ -346,10 +348,35 @@ DEFINE1(UnsafeStore_minimize) {
   RETURN_UNIT;
 } END
 
+void heapSignalHandler(u_int limit) {
+  Block *b = Store::WordToBlock(HeapSignalCell);
+  Assert(b != INVALID_POINTER);
+  Assert(b->GetLabel() == Alice::Cell);
+  Cell *cell = Cell::FromWord(HeapSignalCell);
+  Transient *transient = Store::WordToTransient(cell->Access());
+  Assert(transient != INVALID_POINTER &&
+         transient->GetLabel() == FUTURE_LABEL);
+  Future *future = STATIC_CAST(Future *, transient);
+  future->ScheduleWaitingThreads();
+  future->Become(REF_LABEL, Store::IntToWord(limit/(1024*1024)));
+}
+
+DEFINE1(UnsafeStore_signalQuote) {
+  DECLARE_INT(mb, x0);
+  Cell *cell = Cell::FromWord(HeapSignalCell);
+  Future *future = Future::New();
+  cell->Assign(future->ToWord());
+  Store::SetSignal(1024*1024*u_int(mb), heapSignalHandler);
+  RETURN(future->ToWord());
+} END
+
 AliceDll word UnsafeStore() {
   SizeWorker::Init();
   ReturnSizeWorker::Init();
-  Record *record = Record::New(8);
+  Cell *cell = Cell::New(Store::IntToWord(0));
+  HeapSignalCell = cell->ToWord();
+  RootSet::Add(HeapSignalCell);
+  Record *record = Record::New(9);
 
   record->Init("'Stack", Scheduler::StackError);
   record->Init("Stack", Scheduler::StackError);
@@ -365,5 +392,7 @@ AliceDll word UnsafeStore() {
 		 UnsafeStore_loadGraph, 2);
   INIT_STRUCTURE(record, "UnsafeStore", "minimize",
 		 UnsafeStore_minimize, 1);  
+  INIT_STRUCTURE(record, "UnsafeStore", "signal'",
+		 UnsafeStore_signalQuote, 1);  
   RETURN_STRUCTURE("UnsafeStore$", record);
 }

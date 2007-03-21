@@ -66,6 +66,16 @@ struct
 	     byneed = byneeds}
 	end
 
+    val mb = Int.toLarge(1024*1024)
+    fun signal NONE = ignore(UnsafeStore.signal' 0)
+      | signal(SOME(limit, handler)) =
+	let
+	    val limit' = Int.max(Int.fromLarge(limit div mb), 64)
+	    val future = UnsafeStore.signal' limit'
+	in
+	    spawn handler(Int.toLarge future * mb); ()
+	end
+
     structure Map =
     struct
 	__primitive type ('a,'b) map = "('a,'b) Store.Map.map"

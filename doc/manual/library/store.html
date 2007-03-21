@@ -45,6 +45,7 @@ sig
     val sizeQuiet : 'a -> {nodes : int, words : int}
 
     val collect   : int -> unit
+    val signal    : (IntInf.int * (IntInf.int -> unit)) option -> unit
 
     structure Map :
     sig
@@ -213,6 +214,21 @@ end
     <DD>
       <P>Triggers a garbage collection up to generation <I>gen</I> (if
       the system features a generational garbage collector).
+      </P>
+    </DD>
+
+    <DT>
+      <TT>signal <I>arg</I> </TT>
+    </DT>
+    <DD>
+      <P>When called with <TT>SOME(<I>limit</I>, <I>f</I>)</TT>,
+      installs <TT><I>f</I></TT> as a handler that is invoked once memory
+      consumption of the virtual machine exceeds <TT><I>limit</I></TT>
+      bytes. Any previously
+      installed handler will be removed. Calling <TT>signal NONE</TT>
+      deinstalls the handler.
+      When the handler is called the chosen limit (probably rounded) is passed
+      as argument.
       </P>
     </DD>
 

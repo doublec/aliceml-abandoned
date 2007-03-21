@@ -13,5 +13,6 @@ signature UNSAFE_STORE_SIG =
 	      val newPartition : unit -> 'partition
 	      val loadGraph : 'partition * 'node -> unit
 	      val minimize : 'partition -> unit
+	      val signal' : int -> int
 	  end
   end

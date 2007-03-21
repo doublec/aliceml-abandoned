@@ -142,6 +142,9 @@ structure Preferences =
 				       #addedImports(!Config.warnings));
 	     Gtk.ToggleButton.setActive(Gui.warnInaccessibleExportsButton,
 				       #inaccessibleExports(!Config.warnings));
+	     Gtk.Entry.setText(Gui.heap_limit_entry, Int.toString (!Config.heapLimit));
+	     Gtk.ToggleButton.setActive(Gui.limitHeapButton,
+				       !Config.heapLimited);
 	     Gtk.Entry.setText(Gui.pp_depth_entry, Int.toString (!Print.depth));
 	     Gtk.Entry.setText(Gui.pp_width_entry, Int.toString (!Print.width));
 	     Gtk.Button.setLabel(Gui.font_button, !Config.stdFontName);
@@ -164,6 +167,9 @@ structure Preferences =
 			Gtk.ToggleButton.getActive Gui.warnAddedImportsButton,
 		     inaccessibleExports =
 			Gtk.ToggleButton.getActive Gui.warnInaccessibleExportsButton}
+		val heapLimit = Gtk.Entry.getText Gui.heap_limit_entry
+		val heapLimit = Option.getOpt(Int.fromString heapLimit, !Config.heapLimit)
+		val heapLimit = Int.max(heapLimit, 64)
 		val ppDepth = Gtk.Entry.getText Gui.pp_depth_entry
 		val ppWidth = Gtk.Entry.getText Gui.pp_width_entry
 		val ppDepth = Option.getOpt(Int.fromString ppDepth, !Print.depth)
@@ -177,6 +183,10 @@ structure Preferences =
 	    in
 		Config.warnings := warnings;
 		Evaluator.setWarnings warnings;
+		Config.heapLimit := heapLimit;
+		Config.heapLimited :=
+		    Gtk.ToggleButton.getActive Gui.limitHeapButton;
+		Config.initHeapHandler ();
 		Print.depth := ppDepth;
 		Print.width := ppWidth;
 		Config.historySize := historySize;

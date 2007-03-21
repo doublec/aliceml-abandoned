@@ -11,6 +11,7 @@
  *
  *)
 
+import structure Store from "x-alice:/lib/system/Store"
 import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gui from "Gui"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
@@ -924,6 +925,49 @@ structure GuiMain =
 
 	fun quit () = quit' true
 
+	fun heapLimitHandler limit =
+            let
+                val dialog =
+                    Gtk.MessageDialog.new(Gui.mainwidget,
+                                         [Gtk.DialogFlags.MODAL],
+                                         Gtk.MessageType.WARNING,
+                                         Gtk.ButtonsType.NONE,
+                                         "Configured heap limit of " ^
+					 Int.toString(!Config.heapLimit) ^
+					 "MB exceeded!\n\n\
+					 \Note: interrupting evaluation will \
+					 \only kill the main thread. If \
+					 \memory is consumed by concurrent \
+					 \computations you may need to \
+					 \exit and restart. Also, due to \
+					 \memory fragmentation, the limiter \
+					 \may become ineffective after \
+					 \multiple interruptions.")
+	        val _ = Gtk.Dialog.addButton(dialog, "Double Limit", 0)
+	        val _ = Gtk.Dialog.addButton(dialog, "Interrupt", 1)
+	        val _ = Gtk.Dialog.addButton(dialog, "Save & Exit", 2)
+		val response = Gtk.Dialog.run dialog
+            in
+                Gtk.Widget.destroy dialog;
+		case response of
+		    0 => (Config.heapLimit := !Config.heapLimit*2;
+		          Config.initHeapHandler ())
+		  | 1 => (interruptEval();
+			  Thread.yield (Thread.current ());
+			  (*) Collect twice to propagate all
+		          Store.collect 10; Store.collect 10;
+			  (*) Grant 10% more memory to proceed
+			  let val limit = !Config.heapLimit in
+			  Config.heapLimit := limit * 11 div 10;
+			  Config.initHeapHandler ();
+			  Config.heapLimit := limit end)
+		  | 2 => ((*)interruptEval();
+			  (*)Thread.yield (Thread.current ());
+		          (*)Store.collect 10; Store.collect 10;
+			  quit())
+		  | _ => OS.Process.exit OS.Process.failure
+            end
+
         fun init notebookSwitchEventId =
             ((* Gtk.setLogMode("GLib", Core.LOG_MODE_NULL);
              Gtk.setLogMode("Gtk", Core.LOG_MODE_NULL); 
@@ -963,7 +1007,9 @@ structure GuiMain =
 	     Gtk.Widget.setSensitive(Gui.feed1, true);
 	     Evaluator.setAnnotActive true;
 	     if not loadSession then () else
-	     app (openGivenFile SESSION) (Config.loadOpenFiles ()))
+	     app (openGivenFile SESSION) (Config.loadOpenFiles ());
+	     Config.heapHandler := heapLimitHandler;
+	     Config.initHeapHandler())
 
 	fun preferences () = 
 	    Preferences.showDialog()

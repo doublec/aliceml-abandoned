@@ -5,7 +5,7 @@
  *
  * Copyright:
  *   Guido Tack, 2005
- *   Andreas Rossberg, 2005
+ *   Andreas Rossberg, 2005-2007
  * 
  * Last change:
  *   $Date$ by $Author$
@@ -25,6 +25,7 @@ sig
     val sizeQuiet : 'a -> {nodes : int, words : int}
     val futures   : 'a -> {total : int, concurrent : int, byneed : int}
     val deepWait  : 'a -> {total : int, concurrent : int, byneed : int}
+    val signal    : (IntInf.int * (IntInf.int -> unit)) option -> unit
 
     structure Map :
     sig
