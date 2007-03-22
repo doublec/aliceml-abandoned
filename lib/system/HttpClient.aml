@@ -23,7 +23,7 @@ structure HttpClient :> HTTP_CLIENT =
 
 	exception Authority
 
-	val userAgent = "Alice/1.0"
+	val userAgent = "Alice/1.4"
 
 	fun parseAuthority authority =
 	    case CharVector.findi (fn (_, c) => c = #":") authority of
