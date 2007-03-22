@@ -102,9 +102,12 @@ structure HttpClient :> HTTP_CLIENT =
 	fun get url =
 	    let
 		val headers = Http.StringMap.map ()
+		val authority =
+		    case Url.getAuthority url of
+			SOME authority => authority
+		      | NONE => raise Authority
 	    in
-		Http.StringMap.insert (headers, "Host",
-				       Option.valOf (Url.getAuthority url));
+		Http.StringMap.insert (headers, "Host", authority);
 		Http.StringMap.insert (headers, "User-Agent", userAgent);
 		(*--** Date *)
 		request (url, {method = "GET",
@@ -116,9 +119,12 @@ structure HttpClient :> HTTP_CLIENT =
 	fun post (url, {contentType, body}) =
 	    let
 		val headers = Http.StringMap.map ()
+		val authority =
+		    case Url.getAuthority url of
+			SOME authority => authority
+		      | NONE => raise Authority
 	    in
-		Http.StringMap.insert (headers, "Host",
-				       Option.valOf (Url.getAuthority url));
+		Http.StringMap.insert (headers, "Host", authority);
 		Http.StringMap.insert (headers, "User-Agent", userAgent);
 		Http.StringMap.insert (headers, "Content-Type", contentType);
 		Http.StringMap.insert (headers, "Content-Length",
