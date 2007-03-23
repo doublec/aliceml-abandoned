@@ -16,7 +16,7 @@ Language & Compiler:
 
 Runtime System:
 
-* [NEW] Stack overflow now raises Store.Stack exception instead of terminating.
+* [NEW] Stack overflow now raises Store.Stack instead of terminating (bug 182).
 * [NEW] Ability to signal excessive memory usage.
 * [CHG] Had to bump version of pickle format; old pickles are incompatible.
 
@@ -33,7 +33,7 @@ Interactive Toplevel:
 Basic Library:
 
 * [NEW] Fn: new structure with generic function combinators.
-* [NEW] Rand: interface to operating system's pseudo-random number generator.
+* [NEW] Rand: interface to system's pseudo-random number generator (bug 185).
 * [NEW] Remote: new function setPort to choose fixed port number for
         distributed operations (for firewall satisfaction and other purposes).
 * [NEW] Store: new exception `Stack' to signal stack overflows.
@@ -42,7 +42,9 @@ Basic Library:
 * [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
 * [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
 * [CHG] Exn.dumpTrace: omit middle of very long traces (> 40 frames).
+* [FIX] Promise: pickling an unfulfilled promise now blocks (bug 162).
 * [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.
+* [FIX] HttpClient.{get,post}: raise Authority on invalid URL (bug 179).
 
 Constraint Library:
 

@@ -80,8 +80,8 @@
 	$bar .= "_";
     };
 
-    echo("<BR><H2><SUP><TT>________&nbsp;</TT></SUP>" .
-	 "<A name=" . $tag . ">" . ucfirst($name) . "</A>" .
+    echo("<BR><A name=" . $tag . ">" . ucfirst($name) . "</A>" .
+	 "<H2><SUP><TT>________&nbsp;</TT></SUP>" .
 	 "<SUP><TT>&nbsp;" . $bar . "</TT></SUP></H2>");
   };
 
