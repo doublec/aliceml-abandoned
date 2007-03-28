@@ -22,6 +22,7 @@ import structure Evaluator from "Evaluator"
 import structure Buffer from "Buffer"
 import structure Config from "Config"
 import structure History from "History"
+import structure TipDialog from "TipDialog"
 import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure BufferHighlight from "BufferHighlight"
@@ -1006,6 +1007,7 @@ structure GuiMain =
 			       compilerOutMarkSet);
 	     Gtk.Widget.setSensitive(Gui.feed1, true);
 	     Evaluator.setAnnotActive true;
+	     TipDialog.startup();
 	     if not loadSession then () else
 	     app (openGivenFile SESSION) (Config.loadOpenFiles ());
 	     Config.heapHandler := heapLimitHandler;

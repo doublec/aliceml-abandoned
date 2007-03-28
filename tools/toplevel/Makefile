@@ -23,6 +23,7 @@ SOURCES = \
 	History.aml \
 	BufferHighlight.aml \
 	BufferAnnotate.aml \
+	TipDialog.aml \
 	AboutDialog.aml \
 	Preferences.aml
 

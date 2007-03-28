@@ -55,13 +55,12 @@ structure FileDialog =
                 Gtk.Window.setKeepAbove (modifiedDia, true);
                 Gtk.Window.setPosition (modifiedDia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll modifiedDia;
-		Gtk.Widget.map modifiedDia;
 		Gtk.Window.present modifiedDia;
 		Gtk.Window.setModal(modifiedDia, true);
 		case Gtk.ResponseType.fromInt (Gtk.Dialog.run modifiedDia) of
 		    Gtk.ResponseType.CLOSE => close arg
 		  | _ => ();
-                Gtk.Widget.unmap modifiedDia;
+                Gtk.Widget.hide modifiedDia;
 		Gtk.Window.setModal(modifiedDia, false)
             end
 
@@ -76,13 +75,12 @@ structure FileDialog =
                 Gtk.Window.setKeepAbove (overwriteDia, true);
                 Gtk.Window.setPosition (overwriteDia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll overwriteDia;
-		Gtk.Widget.map overwriteDia;
 		Gtk.Window.present overwriteDia;
 		Gtk.Window.setModal(overwriteDia, true);
 		case Gtk.ResponseType.fromInt (Gtk.Dialog.run overwriteDia) of
 		    Gtk.ResponseType.CLOSE => close arg
 		  | _ => ();
-                Gtk.Widget.unmap overwriteDia;
+                Gtk.Widget.hide overwriteDia;
 		Gtk.Window.setModal(overwriteDia, false)
             end
 
@@ -100,11 +98,10 @@ structure FileDialog =
                 Gtk.Window.setKeepAbove (dia, true);
                 Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll dia;
-		Gtk.Widget.map dia;
 		Gtk.Window.present dia;
 		Gtk.Window.setModal(dia, true);
 		Gtk.Dialog.run dia
-		    before (Gtk.Widget.unmap dia;
+		    before (Gtk.Widget.hide dia;
 		            Gtk.Window.setModal(dia, false))
             end
 
@@ -122,11 +119,10 @@ structure FileDialog =
                 Gtk.Window.setKeepAbove (dia, true);
                 Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll dia;
-		Gtk.Widget.map dia;
 		Gtk.Window.present dia;
 		Gtk.Window.setModal (dia, true);
 		Gtk.Dialog.run dia
-		    before (Gtk.Widget.unmap dia;
+		    before (Gtk.Widget.hide dia;
 			    Gtk.Window.setModal (dia, false))
             end
 

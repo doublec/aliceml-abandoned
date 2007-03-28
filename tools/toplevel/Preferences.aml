@@ -232,7 +232,7 @@ structure Preferences =
         val _ = Gtk.signalConnect (Gui.font_button, "clicked", fontCallback)
 
         fun closeCallback _ = (Gtk.Window.setModal (Gui.preferences, false);
-			       Gtk.Widget.unmap Gui.preferences)
+			       Gtk.Widget.hide Gui.preferences)
 
                     
         val _ = Gtk.signalConnect(Gui.preferences, "delete-event",
@@ -262,8 +262,7 @@ structure Preferences =
 		fillDialog();
 		Gtk.Window.setPosition (Gui.preferences, Gtk.WindowPosition.MOUSE);
 		Gtk.Window.setModal(Gui.preferences, true);
-		Gtk.Widget.showAll Gui.preferences;
-		Gtk.Widget.map Gui.preferences;
-                DialogUtils.moveToMouse Gui.preferences
+                DialogUtils.moveToMouse Gui.preferences;
+		Gtk.Widget.showAll Gui.preferences
 	    end
     end

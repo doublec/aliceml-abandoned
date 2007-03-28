@@ -57,7 +57,7 @@ structure AboutDialog =
        val text4 = "     <tt><u>http://www.ps.uni-sb.de/alice/</u></tt>     "
         *)
        fun close _ =
-           Gtk.Widget.unmap dialog
+           Gtk.Widget.hide dialog
        val _ =
            ((*
             Gtk.Label.setMarkup (label1, text1) ;
@@ -73,13 +73,13 @@ structure AboutDialog =
             *)
             Gtk.Window.setKeepAbove (dialog, true);
    
+            Gtk.signalConnect(dialog, "delete-event", close);
             Gtk.signalConnect (dialog, "response", close)
             )
 
        fun openDialog() =
                (Gtk.Window.setPosition (dialog, Gtk.WindowPosition.MOUSE);
-		Gtk.Widget.showAll dialog;
-                Gtk.Widget.map dialog;
-                DialogUtils.moveToMouse dialog)
+                DialogUtils.moveToMouse dialog;
+		Gtk.Widget.showAll dialog)
 
     end

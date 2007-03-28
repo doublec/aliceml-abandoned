@@ -13,6 +13,7 @@
 
 import signature GUISIGNALS_SIG from "GuiSignals"
 import structure GuiMain from "GuiMain"
+import structure TipDialog from "TipDialog"
 import structure AboutDialog from "AboutDialog"
 
 structure EventHandler : GUISIGNALS_SIG =
@@ -39,6 +40,7 @@ structure EventHandler : GUISIGNALS_SIG =
 	fun on_jump_to_last_error_activate _ = GuiMain.jumpToLastError()
         fun on_interrupt_activate _ = GuiMain.interruptEval()
         fun on_background_activate _ = GuiMain.backgroundEval()
+        fun on_tip1_activate _ = TipDialog.openDialog()
         fun on_about1_activate _ = AboutDialog.openDialog()
         fun on_notebook1_switch_page (notebook,_) = GuiMain.switchPage notebook
 	fun on_forward_in_history_activate _ = GuiMain.forwardHistory ()

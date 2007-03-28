@@ -24,7 +24,7 @@ structure SearchDialog =
                         Gtk.ResponseType.toInt Gtk.ResponseType.OK)
 
         fun closeCallback _ = (Gtk.Window.setModal(searchDialog, false);
-			       Gtk.Widget.unmap searchDialog)
+			       Gtk.Widget.hide searchDialog)
         val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
         val _ = Gtk.signalConnect(Gui.search_cancel_button, "clicked", closeCallback)
 
@@ -80,10 +80,9 @@ structure SearchDialog =
 	     isReplace := false;
 	     Gtk.Window.setModal(searchDialog, false);
              Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
-             Gtk.Widget.showAll searchDialog;
-             Gtk.Widget.map searchDialog;
-	     Gtk.Window.present searchDialog;
              DialogUtils.moveToMouse searchDialog;
+             Gtk.Widget.showAll searchDialog;
+	     Gtk.Window.present searchDialog;
 	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
 	     Gtk.Widget.grabFocus Gui.searchString)
 
@@ -105,10 +104,9 @@ structure SearchDialog =
 	     isReplace := true;
 	     Gtk.Window.setModal(searchDialog, false);
              Gtk.Window.setPosition (searchDialog, Gtk.WindowPosition.MOUSE);
-             Gtk.Widget.showAll searchDialog;
-             Gtk.Widget.map searchDialog;
-	     Gtk.Window.present searchDialog;
 	     DialogUtils.moveToMouse searchDialog;
+             Gtk.Widget.showAll searchDialog;
+	     Gtk.Window.present searchDialog;
 	     Gtk.Editable.selectRegion (Gui.searchString, 0, ~1);
 	     Gtk.Widget.grabFocus Gui.searchString)
 
@@ -120,7 +118,6 @@ structure SearchDialog =
 		Gtk.Dialog.setDefaultResponse(dia, ~5);
                 Gtk.Window.setPosition (dia, Gtk.WindowPosition.MOUSE);
                 Gtk.Widget.showAll dia;
-		Gtk.Widget.map dia;
 		Gtk.Window.present dia;
                 if Gtk.Dialog.run dia = ~5 then
 		    (case Int.fromString (Gtk.Entry.getText Gui.go_to_line_entry) of
@@ -135,7 +132,7 @@ structure SearchDialog =
 				 Buffer.scrollToCursor id
 			     end)
                 else ();
-                Gtk.Widget.unmap dia;
+                Gtk.Widget.hide dia;
 		Gtk.Window.setModal(dia, false)
             end
     end

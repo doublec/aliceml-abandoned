@@ -46,6 +46,7 @@ signature GUISIGNALS_SIG =
     val on_switch_to_io_activate : Gtk.callback_function
     val on_clear_io_activate : Gtk.callback_function
     val on_syntax_colouring_activate : Gtk.callback_function
+    val on_tip1_activate : Gtk.callback_function
     val on_about1_activate : Gtk.callback_function
     val on_notebook1_switch_page : Gtk.callback_function
   end
@@ -87,6 +88,7 @@ functor GuiSignals(structure S : GUISIGNALS_SIG) =
     val switch_to_io_on_switch_to_io_activate = Gtk.signalConnect(Gui.switch_to_io, "activate",S.on_switch_to_io_activate)
     val clear_io_on_clear_io_activate = Gtk.signalConnect(Gui.clear_io, "activate",S.on_clear_io_activate)
     val syntax_colouring_on_syntax_colouring_activate = Gtk.signalConnect(Gui.syntax_colouring, "activate",S.on_syntax_colouring_activate)
+    val tip1_on_tip1_activate = Gtk.signalConnect(Gui.tip1, "activate",S.on_tip1_activate)
     val about1_on_about1_activate = Gtk.signalConnect(Gui.about1, "activate",S.on_about1_activate)
     val notebook1_on_notebook1_switch_page = Gtk.signalConnect(Gui.notebook1, "switch_page",S.on_notebook1_switch_page)
     val mainwidget_on_quit1_activate = Gtk.signalConnect(Gui.mainwidget, "delete-event",S.on_quit1_activate)
