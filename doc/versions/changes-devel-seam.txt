@@ -27,6 +27,7 @@ Interactive Toplevel:
 * [NEW] Can configure compiler warnings in preferences.
 * [NEW] Can activate heap limit to protect against runaway computations.
 * [NEW] Window size and position are now saved across sessions.
+* [NEW] Added Tip of the Day.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
 * [FIX] Minor additions and bug fixes.
 
