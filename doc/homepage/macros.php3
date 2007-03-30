@@ -79,9 +79,9 @@
 	$bar .= "_";
     };
 
-    echo("<BR><A name=" . $tag . ">" . ucfirst($name) . "</A>" .
-	 "<H2><SUP><TT>________&nbsp;</TT></SUP>" .
-	 "<SUP><TT>&nbsp;" . $bar . "</TT></SUP></H2>");
+    echo("<BR><A name=" . $tag . ">" .
+	 "<H2><SUP><TT>________&nbsp;</TT></SUP>" . ucfirst($name) .
+	 "<SUP><TT>&nbsp;" . $bar . "</TT></SUP></H2></A>");
   };
 
   function subsection($tag, $name)

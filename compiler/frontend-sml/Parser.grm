@@ -28,6 +28,8 @@
 (*	  exprow ::= vid <: ty> <, exprow>					*)
 (*   - recursive expressions (derived form):					*)
 (*	  exp ::= rec pat => exp						*)
+(*   - optional else branch (derived form):					*)
+(*	  exp ::= if exp_1 then exp_2						*)
 (*   - lazy expressions:							*)
 (*	  exp ::= lazy exp							*)
 (*   - spawn expressions:							*)
@@ -366,7 +368,7 @@
 %left  BAR		(* L/R is arbitrary *)
 %left  OF		(* L/R is arbitrary *)
 %left  DO		(* L/R is arbitrary *)
-%left  ELSE		(* L/R is arbitrary *)
+%right ELSE
 %left  LAZY		(* L/R is arbitrary *)
 %left  SPAWN		(* L/R is arbitrary *)
 %left  RAISE		(* L/R is arbitrary *)
@@ -421,6 +423,7 @@
 	| appexp			of AppExp
 	| infexp			of InfExp
 	| exp				of Exp
+	|    ELSE_exp_opt		of Exp option
 
 	| match				of Match
 	|    BAR_opt			of unit
@@ -828,8 +831,9 @@
 	| RAISE exp		( RAISEExp(I(RAISEleft,expright), exp) )
 	| LAZY exp		( LAZYExp(I(LAZYleft,expright), exp) )
 	| SPAWN exp		( SPAWNExp(I(SPAWNleft,expright), exp) )
-	| IF exp THEN exp ELSE exp
-				( IFExp(I(IFleft,exp3right), exp1, exp2, exp3) )
+	| IF exp THEN exp ELSE_exp_opt
+				( IFExp(I(IFleft,ELSE_exp_optright),
+					exp1, exp2, ELSE_exp_opt) )
 	| WHILE exp DO exp	( WHILEExp(I(WHILEleft,exp2right), exp1, exp2) )
 	| CASE exp OF BAR_opt match
 				( CASEExp(I(CASEleft,matchright), exp, match) )
@@ -853,7 +857,10 @@
 					      sourceDesc, ASSERT, exp, pat) )
 	| ASSERT exp RAISE pat  ( ASSERTRAISEExp(I(ASSERTleft, patright), 
 						 sourceDesc, ASSERT, exp, pat) )
-	
+     ELSE_exp_opt:	
+	  ELSE exp			( SOME exp )
+	| (*empty*)			( NONE )
+
 
   (* Core: Matches *)
 

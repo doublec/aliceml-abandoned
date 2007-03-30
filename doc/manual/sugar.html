@@ -16,6 +16,7 @@ expressible by other, less convenient means:</P>
   <LI> <A href="#records">Records</A> </LI>
   <LI> <A href="#patterns">Pattern language</A> </LI>
   <LI> <A href="#rec">Recursive definitions</A> </LI>
+  <LI> <A href="#if">Conditionals</A> </LI>
   <LI> <A href="#finally">Finalization</A> </LI>
   <LI> <A href="#assert">Assertions</A> </LI>
   <LI> <A href="#do">Statements</A> </LI>
@@ -503,6 +504,39 @@ val l = rec xs => 1::2::xs</PRE>
 </TABLE>
 
 <P>where <I>vid</I> is a new identifier.</P>
+
+
+<?php section("if", "Conditionals") ?>
+
+<P>For imperative code it is sometimes convenient to have a conditional without an obligatory <TT>else</TT> branch. Alice ML provides this as a trivial derived form.</P>
+
+
+<?php subsection("if-syntax", "Conditional syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> &lt;<TT>else</TT> <I>exp</I><SUB>3</SUB>&gt; </TD>
+    <TD> conditional </TD>
+  </TR>
+</TABLE>
+
+<P>A conditional with an omitted branch is a derived form:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> <TT>else</TT> <TT>()</TT> </TD>
+</TABLE>
+
+<P>Note that the expansion implies that <I>exp</I><SUB>2</SUB> must have type <TT>unit</TT>.</P>
 
 
 <?php section("finally", "Finalization") ?>

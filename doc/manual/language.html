@@ -101,6 +101,7 @@ programming language (SML), as defined in</P>
     <LI> <A href="sugar.html#records">sugar for records</A> </LI>
     <LI> <A href="sugar.html#patterns">extended pattern language</A> </LI>
     <LI> <A href="sugar.html#rec-expression">generalized recursive definitions</A> </LI>
+    <LI> <A href="sugar.html#if">conditional with optional <TT>else</TT> branch</A> </LI>
     <LI> <A href="sugar.html#finally">finalization</A> </LI>
     <LI> <A href="sugar.html#sourcepos">source position</A> </LI>
     <LI> <A href="sugar.html#assert">assertions</A> </LI>
@@ -220,6 +221,11 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>fn</TT> &lt;<TT>|</TT>&gt; <I>match</I>
     <TD> <A href="sugar.html#patterns-bar">function</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>if</TT> <I>exp</I><SUB>1</SUB> <TT>then</TT> <I>exp</I><SUB>2</SUB> &lt;<TT>else</TT> <I>exp</I><SUB>3</SUB>&gt;
+    <TD> <A href="sugar.html#if">conditional</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>

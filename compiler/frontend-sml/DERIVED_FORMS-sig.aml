@@ -28,6 +28,8 @@
  *   - recursive expressions:
  *	rec pat => exp     ==>     let val rec x as pat = exp in x end
  *     where x is a fresh identifier.
+ *   - optional else branch:
+ *	if exp_1 then exp_2     ==>     if exp_1 then exp_2 else ()
  *   - file and line expansion:
  *      _file_  ==>  "myfile.aml"
  *      _line_  ==>  42
@@ -127,7 +129,7 @@ sig
     val TUPLEAtExp:   Info * Exp list                           -> AtExp
     val HASHAtExp:    Info * Lab                                -> AtExp
     val CASEExp:      Info * Exp * Match                        -> Exp
-    val IFExp:        Info * Exp * Exp * Exp                    -> Exp
+    val IFExp:        Info * Exp * Exp * Exp option             -> Exp
     val ANDALSOExp:   Info * Exp * Exp                          -> Exp
     val ORELSEExp:    Info * Exp * Exp                          -> Exp
     val SEQAtExp:     Info * Exp list                           -> AtExp
