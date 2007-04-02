@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,7 @@ import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 signature PP_INTERMEDIATE_GRAMMAR =
 sig
     type doc = PrettyPrint.doc
-    type comp
+    type com
 
-    val ppComp : comp -> doc
+    val ppCom : com -> doc
 end

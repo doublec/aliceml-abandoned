@@ -411,8 +411,8 @@ structure Table :> TABLE =
 		    let
 			val head = hd is
 			val tail = tl is
-			val comp = Vector.tabulate (257, (getGroup head) )
-			val (equal, diff) = compare (comp, tail, [head], nil)
+			val cmp  = Vector.tabulate (257, (getGroup head) )
+			val (equal, diff) = compare (cmp, tail, [head], nil)
 		    in
 			if diff = nil then ()
 			else (changed := true;
@@ -455,20 +455,20 @@ structure Table :> TABLE =
 		(* compare: int vector * int list * int list * int list
 		 *         -> int list * inst list, returns (equal, diff),
 		 * where equal are those states of the first list that
-		 * switches for each char to the same group as comp
+		 * switches for each char to the same group as cmp
 		 * and diff are the other ones
 		 *)
-		and compare ( _  , nil    , equal, diff) = (equal, diff)
-		  | compare (comp, (x::xs), equal, diff) = 
+		and compare ( _ , nil    , equal, diff) = (equal, diff)
+		  | compare (cmp, (x::xs), equal, diff) = 
 		    let
 			val i = ref 0
 			val eq = ref true
 		    in
 			while !i < 257 do
-			     (eq := (Vector.sub (comp, !i)) = (getGroup x (!i));
+			     (eq := (Vector.sub (cmp, !i)) = (getGroup x (!i));
 			      if !eq then i := !i + 1 else i := 257);
-			     if !eq then compare (comp, xs, (x::equal), diff)
-			     else compare (comp, xs, equal, (x::diff) )
+			     if !eq then compare (cmp, xs, (x::equal), diff)
+			     else compare (cmp, xs, equal, (x::diff) )
 		    end
 
 	    in

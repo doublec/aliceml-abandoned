@@ -397,9 +397,9 @@ struct
 
     fun testSort () =
 	let
-	    val comp = Int.compare
+	    val cmp = Int.compare
 
-	    fun e (x, y) = case comp (x, y) of
+	    fun e (x, y) = case cmp (x, y) of
 		                 LESS  => true
 			       | EQUAL => true
 			       | _     => false
@@ -419,7 +419,7 @@ struct
 
 	in
 	    Gen.try 100 (Gen.list Gen.int)
-	      (Test.test (fn x => msort x = List.sort comp x))
+	      (Test.test (fn x => msort x = List.sort cmp x))
 	end
 
     fun testIndex () =

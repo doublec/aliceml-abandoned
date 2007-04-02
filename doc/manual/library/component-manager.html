@@ -103,16 +103,16 @@
     </DD>
 
     <DT>
-      <TT><A name="eval">eval</A> (<I>url</I>, <I>comp</I>)</TT>
+      <TT><A name="eval">eval</A> (<I>url</I>, <I>com</I>)</TT>
     </DT>
     <DD>
-      <P>evaluates <TT><I>comp</I></TT>, rooted at <TT><I>url</I></TT>,
+      <P>evaluates <TT><I>com</I></TT>, rooted at <TT><I>url</I></TT>,
 	in the context of the component table managed by this component
 	manager, and returns the computed module as a package.
 	No entry for <TT><I>url</I></TT>
 	is created in the component table, but entries may be created for
-	components imported (directly or indirectly) by <TT><I>comp</I></TT>.
-	Relative import URLs in <TT><I>comp</I></TT> are resolved using
+	components imported (directly or indirectly) by <TT><I>com</I></TT>.
+	Relative import URLs in <TT><I>com</I></TT> are resolved using
 	<TT><I>url</I></TT> as a base url, which should be absolute. Raises
 	<TT><A href="component.html#Failure">Component.Failure</A></TT> if
 	evaluation of the component fails.</P>
@@ -148,10 +148,10 @@
     </DD>
 
     <DT>
-      <TT><A name="enter">enter</A> (<I>url</I>, <I>comp</I>)</TT>
+      <TT><A name="enter">enter</A> (<I>url</I>, <I>com</I>)</TT>
     </DT>
     <DD>
-      <P>enters <TT><I>comp</I></TT> into the component table, under name
+      <P>enters <TT><I>com</I></TT> into the component table, under name
 	<TT><I>url</I></TT>.  Raises <TT><A href="#Conflict">Conflict</A></TT>
 	if the component table already had an entry for <TT><I>url</I
 	></TT>.</P>
@@ -161,13 +161,13 @@
       <TT><A name="lookup">lookup</A> <I>url</I></TT>
     </DT>
     <DD>
-      <P>returns <TT>SOME <I>comp</I></TT>, if the component table has
-	an entry mapping <TT><I>url</I></TT> to <TT><I>comp</I></TT>, or
+      <P>returns <TT>SOME <I>com</I></TT>, if the component table has
+	an entry mapping <TT><I>url</I></TT> to <TT><I>com</I></TT>, or
 	<TT>NONE</TT> otherwise.</P>
     </DD>
 
     <DT>
-      <TT><A name="Eval-fn">Eval</A> (val component = <I>comp</I>
+      <TT><A name="Eval-fn">Eval</A> (val component = <I>com</I>
 	val url = <I>url</I>
 	signature S = <I>S</I>)</TT>
     </DT>

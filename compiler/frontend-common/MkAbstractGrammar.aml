@@ -43,7 +43,7 @@ functor MkAbstractGrammar(type fix_info
 			  type spec_info
 			  type imp_info
 			  type ann_info
-			  type comp_info
+			  type com_info
 			 ) : ABSTRACT_GRAMMAR =
 struct
   (* Generic info *)
@@ -74,7 +74,7 @@ struct
     type spec_info	= spec_info
     type imp_info	= imp_info
     type ann_info	= ann_info
-    type comp_info	= comp_info
+    type com_info	= com_info
 
   (* Literals *)
 
@@ -258,11 +258,11 @@ struct
 
   (* Components *)
 
-    and ann  = ImpAnn of ann_info * imp vector * Url.t * bool
+    and ann = ImpAnn of ann_info * imp vector * Url.t * bool
 
-    and comp = Comp of comp_info * ann vector * dec vector
+    and com = Com of com_info * ann vector * dec vector
 
-    type t = comp
+    type t = com
 
 
   (* Projections *)
@@ -401,7 +401,7 @@ struct
     fun infoDesc(NoDesc(i))		= i
       | infoDesc(SomeDesc(i,_))		= i
 
-    fun infoComp(Comp(i,_,_))		= i
+    fun infoCom(Com(i,_,_))		= i
 
 
   (* Valuability *)

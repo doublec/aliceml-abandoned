@@ -32,7 +32,7 @@ signature ABSTRACT_GRAMMAR =
     type spec_info
     type imp_info
     type ann_info
-    type comp_info
+    type com_info
 
     (* Literals *)
 
@@ -69,7 +69,7 @@ signature ABSTRACT_GRAMMAR =
 	| VecExp    of exp_info * exp list	(* vector *)
 	| FunExp    of exp_info * match list	(* function *)
 	| AppExp    of exp_info * exp * exp	(* application *)
-	| CompExp   of exp_info * exp * exp	(* adjunction *)
+	| AdjExp    of exp_info * exp * exp	(* adjunction *)
 	| AndExp    of exp_info * exp * exp	(* short-circuit conjunction *)
 	| OrExp     of exp_info * exp * exp	(* short-circuit disjunction *)
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
@@ -148,7 +148,7 @@ signature ABSTRACT_GRAMMAR =
 	| SigInf    of inf_info * spec list	(* signature *)
 	| FunInf    of inf_info * id * inf * inf (* interface function *)
 	| AppInf    of inf_info * inf * mod	(* interface application *)
-	| CompInf   of inf_info * inf * inf	(* composition *)
+	| AdjInf    of inf_info * inf * inf	(* composition *)
 	| ArrInf    of inf_info * id * inf * inf (* arrow (functor) interface *)
 	| LetInf    of inf_info * dec list * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
@@ -196,11 +196,11 @@ signature ABSTRACT_GRAMMAR =
 
     (* Components *)
 
-    and ann  = ImpAnn of ann_info * imp list * string
+    and ann = ImpAnn of ann_info * imp list * string
 
-    and comp = Comp of comp_info * ann list * dec list
+    and com = Com of com_info * ann list * dec list
 
-    type t = comp
+    type t = com
 
 
     (* Operations *)
@@ -221,7 +221,7 @@ signature ABSTRACT_GRAMMAR =
     val infoImp :	imp	-> imp_info
     val infoAnn :	ann	-> ann_info
     val infoDesc :	('a,'b) desc -> 'a
-    val infoComp :	comp	-> comp_info
+    val infoCom :	com	-> com_info
 
   end
 
@@ -243,7 +243,7 @@ functor MakeAbstractGrammar(type fix_info
 			    type spec_info
 			    type imp_info
 			    type ann_info
-			    type comp_info
+			    type com_info
 			    val labToIdInfo: lab_info -> id_info
 			    val idToLabInfo: id_info -> lab_info
 			   ) =
@@ -268,7 +268,7 @@ functor MakeAbstractGrammar(type fix_info
     type spec_info	= spec_info
     type imp_info	= imp_info
     type ann_info	= ann_info
-    type comp_info	= comp_info
+    type com_info	= com_info
 
     (* Literals *)
 
@@ -305,7 +305,7 @@ functor MakeAbstractGrammar(type fix_info
 	| VecExp    of exp_info * exp list	(* vector *)
 	| FunExp    of exp_info * match list	(* function *)
 	| AppExp    of exp_info * exp * exp	(* application *)
-	| CompExp   of exp_info * exp * exp	(* adjunction *)
+	| AdjExp    of exp_info * exp * exp	(* adjunction *)
 	| AndExp    of exp_info * exp * exp	(* short-circuit conjunction *)
 	| OrExp     of exp_info * exp * exp	(* short-circuit disjunction *)
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
@@ -386,7 +386,7 @@ functor MakeAbstractGrammar(type fix_info
 	| SigInf    of inf_info * spec list	(* signature *)
 	| FunInf    of inf_info * id * inf * inf (* interface function *)
 	| AppInf    of inf_info * inf * mod	(* interface application *)
-	| CompInf   of inf_info * inf * inf	(* composition *)
+	| AdjInf    of inf_info * inf * inf	(* composition *)
 	| ArrInf    of inf_info * id * inf * inf (* arrow (functor) interface *)
 	| LetInf    of inf_info * dec list * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
@@ -434,11 +434,11 @@ functor MakeAbstractGrammar(type fix_info
 
     (* Components *)
 
-    and ann  = ImpAnn of ann_info * imp list * string
+    and ann = ImpAnn of ann_info * imp list * string
 
-    and comp = Comp of comp_info * ann list * dec list
+    and com = Com of com_info * ann list * dec list
 
-    type t = comp
+    type t = com
 
 
     (* Projections *)
@@ -460,7 +460,7 @@ functor MakeAbstractGrammar(type fix_info
       | infoExp(VecExp(i,_))		= i
       | infoExp(FunExp(i,_))		= i
       | infoExp(AppExp(i,_,_))		= i
-      | infoExp(CompExp(i,_,_))		= i
+      | infoExp(AdjExp(i,_,_))		= i
       | infoExp(AndExp(i,_,_))		= i
       | infoExp(OrExp(i,_,_))		= i
       | infoExp(IfExp(i,_,_,_))		= i
@@ -526,7 +526,7 @@ functor MakeAbstractGrammar(type fix_info
       | infoInf(SigInf(i,_))		= i
       | infoInf(FunInf(i,_,_,_))	= i
       | infoInf(AppInf(i,_,_))		= i
-      | infoInf(CompInf(i,_,_))		= i
+      | infoInf(AdjInf(i,_,_))		= i
       | infoInf(ArrInf(i,_,_,_))	= i
       | infoInf(LetInf(i,_,_))		= i
       | infoInf(SingInf(i,_))		= i
@@ -564,7 +564,7 @@ functor MakeAbstractGrammar(type fix_info
     fun infoDesc(NoDesc(i))		= i
       | infoDesc(SomeDesc(i,_))		= i
 
-    fun infoComp(Comp(i,_,_))		= i
+    fun infoCom(Com(i,_,_))		= i
 
   end
 
@@ -588,7 +588,7 @@ structure AbstractInfo =
     type spec_info	= (int * int) * (int * int)
     type imp_info	= (int * int) * (int * int)
     type ann_info	= (int * int) * (int * int)
-    type comp_info	= (int * int) * (int * int)
+    type com_info	= (int * int) * (int * int)
 
     fun labToIdInfo r	= r
     fun idToLabInfo r	= r
@@ -602,7 +602,7 @@ signature TRANSLATION_PHASE =
     structure I : ABSTRACT_GRAMMAR = AbstractGrammar
     structure O : ABSTRACT_GRAMMAR = AbstractGrammar
 
-    val translate : I.comp -> O.comp
+    val translate : I.com -> O.com
   end
 
-type comp = AbstractGrammar.comp
+type com = AbstractGrammar.com

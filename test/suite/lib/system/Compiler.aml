@@ -26,7 +26,7 @@ struct
 
     val url = Url.fromString "x-alice:/lib/test/Gen"
 
-    val comp = Component.load url
+    val com = Component.load url
 
 
     fun testInitialEnv () =
@@ -63,7 +63,7 @@ val initialEnv :      env
     fun testEval' () = 
 	let
 	    structure X = ComponentManager.Eval (
-		                       val component = comp 
+		                       val component = com 
 				       val url = url
 				       signature S = (structure Gen : GEN))
 	in

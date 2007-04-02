@@ -299,14 +299,14 @@ structure Mod = Pickle.Load(val file = modfile
  *)
 
 val file = "Url." ^ Pickle.extension
-val comp = "x-alice:/lib/system/" ^ file
+val com  = "x-alice:/lib/system/" ^ file
 
 import signature URL from "x-alice:/lib/system/URL-sig"
 
-structure Url' = Pickle.Load(val file = comp
+structure Url' = Pickle.Load(val file = com
 			     signature S = (structure Url : URL))
 
-val _ = print(Url'.Url.toString(Url'.Url.fromString comp) ^ "\n")
+val _ = print(Url'.Url.toString(Url'.Url.fromString com) ^ "\n")
 
 structure _ = Pickle.Save(val file = file
 			  structure X = Url'

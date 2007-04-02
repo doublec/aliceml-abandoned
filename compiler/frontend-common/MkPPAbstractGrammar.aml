@@ -53,7 +53,7 @@ functor MkPPAbstractGrammar(
 	val ppSpecInfo :      AbstractGrammar.spec_info -> PrettyPrint.doc
 	val ppImpInfo :       AbstractGrammar.imp_info  -> PrettyPrint.doc
 	val ppAnnInfo :       AbstractGrammar.ann_info  -> PrettyPrint.doc
-	val ppCompInfo :      AbstractGrammar.comp_info -> PrettyPrint.doc
+	val ppComInfo :       AbstractGrammar.com_info  -> PrettyPrint.doc
     ) : PP_ABSTRACT_GRAMMAR =
 struct
   (* Import *)
@@ -645,7 +645,7 @@ struct
 					    ppImps imps
 					  )
 
-    fun ppComp(Comp(i, anns, decs))	= tree "Comp" (ppCompInfo i) (
+    fun ppCom(Com(i, anns, decs))	= tree "Com" (ppComInfo i) (
 					    ppAnns anns ^/^
 					    ppDecs decs
 					  ) ^^ break

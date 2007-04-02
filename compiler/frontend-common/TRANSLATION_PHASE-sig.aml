@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,5 +25,5 @@ sig
     structure I : ABSTRACT_GRAMMAR     = TypedGrammar
     structure O : INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
-    val translate : Source.desc * C.t * I.comp -> C.t * O.comp
+    val translate : Source.desc * C.t * I.com -> C.t * O.com
 end

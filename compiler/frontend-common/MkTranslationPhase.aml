@@ -2289,7 +2289,7 @@ struct
 
   (* Components *)
 
-    fun trComp(env, I.Comp(i, anns, decs)) =
+    fun trCom(env, I.Com(i, anns, decs)) =
 	(* [anns; decs] = [anns]; [decs] *)
 	let
 	    val (idjus',decs1') = trAnns(env, anns)
@@ -2305,18 +2305,18 @@ struct
 	    ( idjus', decs', flds', Inf.sign s )
 	end
 
-    fun translate(desc, env, comp) =
+    fun translate(desc, env, com) =
 	let
-	    val _     = TypeTranslation.clear()
-	    val env'  = TranslationEnv.clone env
-	    val _     = TranslationEnv.setRtt(env', !Switches.Language.supportRtt)
-	    val comp' = trComp(env', comp)
+	    val _    = TypeTranslation.clear()
+	    val env' = TranslationEnv.clone env
+	    val _    = TranslationEnv.setRtt(env', !Switches.Language.supportRtt)
+	    val com' = trCom(env', com)
 	in
-	    (env', comp')
+	    (env', com')
 	end
 (*DEBUG
 handle Inf.Mismatch m =>
 (Error.warn'(true, Source.nowhere, "UNHANDLED in TRANSLATION:\n");
-ElaborationError.error(#region(I.infoComp comp), ElaborationError.AnnModMismatch m))
+ElaborationError.error(#region(I.infoCom com), ElaborationError.AnnModMismatch m))
 *)
 end

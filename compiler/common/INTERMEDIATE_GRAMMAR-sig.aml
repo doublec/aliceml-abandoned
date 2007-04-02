@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -125,9 +125,9 @@ sig
 
     (* Components *)
 
-    type imp  = id * sign * Url.t * bool (* is compile time *)
-    type comp = imp vector * dec vector * id fld vector * sign
-    type t    = comp
+    type imp = id * sign * Url.t * bool (* is compile time *)
+    type com = imp vector * dec vector * id fld vector * sign
+    type t   = com
 
 
     (* Operations *)

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -163,12 +163,12 @@ struct
      *)
 
     val file = "Url." ^ Pickle.extension
-    val comp = "x-alice:/lib/utility/" ^ file
+    val com  = "x-alice:/lib/utility/" ^ file
 
-    structure Url' = Pickle.Load(val file = comp
+    structure Url' = Pickle.Load(val file = com
 				 signature S = (structure Url : URL))
 
-    val _ = print(Url'.Url.toString(Url'.Url.fromString comp) ^ "\n")
+    val _ = print(Url'.Url.toString(Url'.Url.fromString com) ^ "\n")
 
     structure _ = Pickle.Save(val file = file
 			      structure X = Url'

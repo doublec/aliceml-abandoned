@@ -47,7 +47,7 @@ sig
     type spec_info
     type imp_info
     type ann_info
-    type comp_info
+    type com_info
 
   (* Literals *)
 
@@ -231,11 +231,11 @@ sig
 
   (* Components *)
 
-    and ann  = ImpAnn of ann_info * imp vector * Url.t * bool
+    and ann = ImpAnn of ann_info * imp vector * Url.t * bool
 
-    and comp = Comp of comp_info * ann vector * dec vector
+    and com = Com of com_info * ann vector * dec vector
 
-    type t = comp
+    type t = com
 
 
   (* Operations *)
@@ -264,5 +264,5 @@ sig
     val infoImp :	imp			-> imp_info
     val infoAnn :	ann			-> ann_info
     val infoDesc :	('a,'b) desc		-> 'a
-    val infoComp :	comp			-> comp_info
+    val infoCom :	com			-> com_info
 end
