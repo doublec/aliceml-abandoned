@@ -823,8 +823,8 @@ struct
 
 		val modid2'    = O.Id(i0, Stamp.stamp(), Name.ExId "_Comp")
 		val dec'       = O.ModDec(i0, modid2', mod')
-		val complab'   = O.Lab(i0, Label.fromString "component")
-		val vallongid' = O.LongId(i0, O.ShortId(i0, modid2'), complab')
+		val comlab'    = O.Lab(i0, Label.fromString "component")
+		val vallongid' = O.LongId(i0, O.ShortId(i0, modid2'), comlab')
 		val exp'       = O.VarExp(i, vallongid')
 	   in
 		O.LetExp(i, #[dec'], exp')
@@ -4160,7 +4160,7 @@ struct
 	    val  _             = removeScope E
 	    val  _             = union(E,E'')
 	in
-	    O.Comp(i, anns', Vector.concat[decs1',decs2'])
+	    O.Com(i, anns', Vector.concat[decs1',decs2'])
 	end
 
 

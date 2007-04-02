@@ -2580,7 +2580,7 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 						val loadMod = loadMod
 						structure Switches = Switches)
 
-    fun elabComp(E, desc, I.Comp(i, anns, decs)) =
+    fun elabCom(E, desc, I.Com(i, anns, decs)) =
 	let
 	    val _       = Env.insertScope E
 	    val anns'   = elabAnns(E, desc, anns)
@@ -2609,15 +2609,15 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 				 warn(!Switches.Warn.inaccessibleExport, i,
 				      E.ExportHiddenInf p)) (#inf bound)
 	    end;
-	    O.Comp(sigInfo(i,s'), anns'', decs')
+	    O.Com(sigInfo(i,s'), anns'', decs')
 	end
 
-    fun translate(desc, E, component) =
+    fun translate(desc, E, com) =
 	let
 	    val E' = Env.clone E
 	in
 	    annots := [];
-	    (E', elabComp(E', desc, component))
+	    (E', elabCom(E', desc, com))
 	    before dumpAnnots()
 	end
 	handle e as Error.Error _ =>

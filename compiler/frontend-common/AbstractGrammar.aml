@@ -44,7 +44,7 @@ struct
     type spec_info	= Source.region
     type imp_info	= Source.region
     type ann_info	= Source.region
-    type comp_info	= Source.region
+    type com_info	= Source.region
 end
 
 structure AbstractGrammar = MkAbstractGrammar(AbstractInfo)
@@ -79,4 +79,4 @@ structure PPAbstractGrammar = MkPPAbstractGrammar(
 	val ppSpecInfo		= ppInfo
 	val ppImpInfo		= ppInfo
 	val ppAnnInfo		= ppInfo
-	val ppCompInfo		= ppInfo)
+	val ppComInfo		= ppInfo)

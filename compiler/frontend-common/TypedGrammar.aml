@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -60,7 +60,7 @@ struct
     type spec_info	= { region: Source.region }
     type imp_info	= { region: Source.region }
     type ann_info	= { region: Source.region, sign: Inf.sign }
-    type comp_info	= { region: Source.region, sign: Inf.sign }
+    type com_info	= { region: Source.region, sign: Inf.sign }
 
     fun nonInfo r	= { region = r }
     fun fixInfo(r,f)	= { region = r, fix = f }

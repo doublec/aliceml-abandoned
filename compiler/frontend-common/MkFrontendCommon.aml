@@ -42,7 +42,7 @@ functor MkFrontendCommon (
     structure Switches: SWITCHES
 ) : PHASE =
 let
-    fun ppComp(TypedGrammar.Comp(i, anns, _)) =
+    fun ppCom(TypedGrammar.Com(i, anns, _)) =
 	let
 	    open PrettyPrint
 	    infixr ^^ ^/^
@@ -80,7 +80,7 @@ let
 		    structure Phase    = Phase1
 		    structure Switches = Switches
 		    val header = "Component Signature"
-		    val pp     = ppComp
+		    val pp     = ppCom
 		    val switch = Switches.Debug.dumpElaborationSig
 	      )
     structure Phase2' =
@@ -88,7 +88,7 @@ let
 		    structure Phase    = Phase2
 		    structure Switches = Switches
 		    val header = "Intermediate Syntax"
-		    val pp     = PPIntermediateGrammar.ppComp
+		    val pp     = PPIntermediateGrammar.ppCom
 		    val switch = Switches.Debug.dumpIntermediate
 	      )
     structure Phase3 =
@@ -99,10 +99,10 @@ let
 			structure I = Phase2'.O
 			structure O = I
 
-			fun translate(_, _, component) =
+			fun translate(_, _, com) =
 			    (if !Switches.Debug.checkIntermediate
-			     then CheckIntermediate.check component else ();
-			     ((), component))
+			     then CheckIntermediate.check com else ();
+			     ((), com))
 		    end
 		    structure Switches = Switches
 		    val name = "Verification (optional)"

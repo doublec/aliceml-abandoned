@@ -47,7 +47,7 @@ let
 		    structure Phase    = Phase2
 		    structure Switches = Switches
 		    val header = "Abstract Syntax"
-		    val pp     = PPAbstractGrammar.ppComp
+		    val pp     = PPAbstractGrammar.ppCom
 		    val switch = Switches.Debug.dumpAbstractionResult
 	      )
 in
