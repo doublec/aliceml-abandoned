@@ -400,7 +400,7 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 		val p = Promise.promise ()
 		val component = 
 		    case Ref.exchange (compOpt, Promise.future p) of
-			SOME comp => comp
+			SOME component => component
 		      | NONE =>
 			    UnsafeComponent.linkNative name
 			    handle cause' =>
