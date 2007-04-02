@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -398,7 +398,7 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 	  | eval'' (baseUrl, VNATIVE {name, component = compOpt}) =
 	    let
 		val p = Promise.promise ()
-		val comp = 
+		val component = 
 		    case Ref.exchange (compOpt, Promise.future p) of
 			SOME comp => comp
 		      | NONE =>
@@ -422,8 +422,8 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 				    Promise.fail (p, exn); raise exn
 				end
 	    in
-		Promise.fulfill (p, SOME comp);
-		eval'' (baseUrl, comp)
+		Promise.fulfill (p, SOME component);
+		eval'' (baseUrl, component)
 	    end
 
 	fun validate url =
