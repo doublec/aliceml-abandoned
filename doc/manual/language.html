@@ -101,6 +101,7 @@ programming language (SML), as defined in</P>
     <LI> <A href="sugar.html#records">sugar for records</A> </LI>
     <LI> <A href="sugar.html#patterns">extended pattern language</A> </LI>
     <LI> <A href="sugar.html#rec-expression">generalized recursive definitions</A> </LI>
+    <LI> <A href="sugar.html#optional">Optional bars and semicolons</A> </LI>
     <LI> <A href="sugar.html#if">conditional with optional <TT>else</TT> branch</A> </LI>
     <LI> <A href="sugar.html#finally">finalization</A> </LI>
     <LI> <A href="sugar.html#sourcepos">source position</A> </LI>
@@ -191,6 +192,18 @@ relative to Standard ML. Derived forms are marked (*).
   </TR>
   <TR>
     <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>exp</I><SUB>1</SUB> <TT>;</TT> ... <TT>;</TT>
+                    <I>exp</I><SUB><I>n</I></SUB> &lt;<TT>;</TT>&gt;<TT>)</TT> </TD>
+    <TD> <A href="sugar.html#optional-semicolon">sequential</A> (<I>n</I>&ge;2) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>let</TT> <I>dec</I> <TT>in</TT>
+         <I>exp</I><SUB>1</SUB> <TT>;</TT> ... <TT>;</TT>
+         <I>exp</I><SUB><I>n</I></SUB> &lt;<TT>;</TT>&gt; <TT>end</TT> </TD>
+    <TD> <A href="sugar.html#optional-semicolon">local declaration</A> (<I>n</I>&ge;1)   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
     <TD> <TT>_file_</TT> </TD>
     <TD> <A href="sugar.html#sourcepos">source file</A> (*) </TD>
   </TR>
@@ -210,17 +223,17 @@ relative to Standard ML. Derived forms are marked (*).
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>exp</I> <TT>handle</TT> &lt;<TT>|</TT>&gt; <I>match</I>
-    <TD> <A href="sugar.html#patterns-bar">handle exception</A> </TD>
+    <TD> <A href="sugar.html#optional-bar">handle exception</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>case</TT> <I>exp</I> <TT>of</TT> &lt;<TT>|</TT>&gt; <I>match</I>
-    <TD> <A href="sugar.html#patterns-bar">case analysis</A> </TD>
+    <TD> <A href="sugar.html#optional-bar">case analysis</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>fn</TT> &lt;<TT>|</TT>&gt; <I>match</I>
-    <TD> <A href="sugar.html#patterns-bar">function</A> </TD>
+    <TD> <A href="sugar.html#optional-bar">function</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
@@ -466,7 +479,7 @@ used in signatures.</P>
     <TD align="center">::=</TD>
     <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
          <I>conbind</T> &lt;<TT>and</TT> <I>datbind</I>&gt; </TD>
-    <TD> <A href="sugar.html#patterns-bar">datatype binding</A> </TD>
+    <TD> <A href="sugar.html#optional-bar">datatype binding</A> </TD>
   </TR>
 
   <TR></TR>
@@ -771,7 +784,7 @@ summary</A> for a more precise grammar of functor signatures.</P>
     <TD align="center">::=</TD>
     <TD> <I>tyvarseq</I> <I>tycon</I> <TT>=</TT> &lt;<TT>|</TT>&gt;
          <I>condesc</T> &lt;<TT>and</TT> <I>datdesc</I>&gt; </TD>
-    <TD> <A href="sugar.html#patterns-bar">datatype description</A> </TD>
+    <TD> <A href="sugar.html#optional-bar">datatype description</A> </TD>
   </TR>
 
   <TR></TR>

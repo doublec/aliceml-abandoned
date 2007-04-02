@@ -5,6 +5,7 @@ Language:
   section on record sugar for details.
 * Allow optional bar before first clause of fn, case, handle, fun, and
   before first constructor in datatype definitions.
+* Allow optional semicolon after sequence expressions.
 * Allow "do exp" as abbreviation for "val _ = exp".
 * Generalised open declarations: "open strexp".
 * Else branch in conditionals is now optional.

@@ -15,6 +15,7 @@ expressible by other, less convenient means:</P>
   <LI> <A href="#vectors">Vector expressions and patterns</A> </LI>
   <LI> <A href="#records">Records</A> </LI>
   <LI> <A href="#patterns">Pattern language</A> </LI>
+  <LI> <A href="#optional">Optional bars and semicolons</A> </LI>
   <LI> <A href="#rec">Recursive definitions</A> </LI>
   <LI> <A href="#if">Conditionals</A> </LI>
   <LI> <A href="#finally">Finalization</A> </LI>
@@ -281,34 +282,21 @@ values of the original record.</P>
 
 <?php section("patterns", "patterns") ?>
 
-<?php subsection("patterns-bar", "Optional bar") ?>
-
-<P>An optional bar is allowed before the first rule of a match, yielding more regular and editing-friendly notation:</P>
-
-<PRE class=code>
-case f n of
-   | LESS => f(n-1)
-   | EQUAL => n
-   | GREATER => f(n+1)</PRE>
-
-<P>This is also supported for <TT>fn</TT> and <TT>handle</TT>, and for function declarations using <TT>fun</TT>.</P>
-
-<P>Optional bars are also allowed with datatype declarations and specifications:</P>
-
-<PRE class=code>
-datatype order =
-   | LESS
-   | EQUAL
-   | GREATER</PRE>
-
 <?php subsection("patterns-alt", "Alternative patterns") ?>
 
 <P>Alternative patterns (also called <EM>or patterns</EM>) are present in SML/NJ
 as well and allow more compact case analysis:</P>
 
 <PRE class=code>
-fun f(1 | 2 | 3) = 0
-  | f n          = n</PRE>
+fun fac (0|1) = 1
+  | fac   n   = n * fac(n-1)</PRE>
+
+<P>The syntax subsumes multiple or-patterns and multiple matches:</P>
+
+<PRE class=code>
+case exp of
+  | A | B | C => 1
+  | D | E     => 2</PRE>
 
 <P>The patterns nested inside an alternative pattern may bind variables, but
 all patterns must bind exactly the same set of variables with the same
@@ -435,6 +423,51 @@ guard expression occurs whenever the pattern is tried to be matched.</P>
   </TR>
 
 </TABLE>
+
+
+<?php section("optional", "bars and semicolons") ?>
+
+<?php subsection("optional-bar", "Optional bar") ?>
+
+<P>An optional bar is allowed before the first rule of a match, yielding more regular and editing-friendly notation:</P>
+
+<PRE class=code>
+case f n of
+   | LESS => f(n-1)
+   | EQUAL => n
+   | GREATER => f(n+1)</PRE>
+
+<P>This is also supported for <TT>fn</TT> and <TT>handle</TT>, and for function declarations using <TT>fun</TT>.</P>
+
+<P>Optional bars are also allowed with datatype declarations and specifications:</P>
+
+<PRE class=code>
+datatype order =
+   | LESS
+   | EQUAL
+   | GREATER</PRE>
+
+<?php subsection("optional-semicolon", "Optional semicolon") ?>
+
+<P>In a similar vein, a terminating semicolon optionally is allowed in sequence expressions:</P>
+
+<PRE class=code>
+(
+    print "[";
+    print(Int.toString n);
+    print "]";
+)</PRE>
+
+<P>and</P>
+
+<PRE class=code>
+let
+    val s = Int.toString n
+in
+    print "[";
+    print s;
+    print "]";
+end</PRE>
 
 
 <?php section("rec", "recursive definitions") ?>

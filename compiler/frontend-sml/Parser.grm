@@ -2,7 +2,7 @@
 (*   Andreas Rossberg <rossberg@ps.uni-sb.de>					*)
 (*										*)
 (* Copyright:									*)
-(*   Andreas Rossberg, 2001-2006						*)
+(*   Andreas Rossberg, 2001-2007						*)
 (*										*)
 (* Last change:									*)
 (*   $Date$ by $Author$				*)
@@ -365,6 +365,7 @@
 %right LOCAL OPEN INFIX INFIXR NONFIX INCLUDE
 %right AND
 %left  DARROW		(* L/R is arbitrary *)
+%left  IF		(* L/R is arbitrary *)
 %left  BAR		(* L/R is arbitrary *)
 %left  OF		(* L/R is arbitrary *)
 %left  DO		(* L/R is arbitrary *)
@@ -416,6 +417,7 @@
 	|    exp_COMMA_list2		of Exp list
 	|    exp_SEMICOLON_list1	of Exp list
 	|    exp_SEMICOLON_list2	of Exp list
+	|    SEMICOLON_opt		of unit
 	|    localann_IN_opt		of LocalAnn option
 	| exprow			of ExpRow
 	|    exprow_opt			of ExpRow option
@@ -466,7 +468,6 @@
 	|    pat_COMMA_list0		of Pat list
 	|    pat_COMMA_list1		of Pat list
 	|    pat_COMMA_list2		of Pat list
-	|    pat_BAR_list2		of Pat list
 	| patrow			of PatRow
 	|    patrow_opt			of PatRow option
 	|    COMMA_patrow_opt		of PatRow option
@@ -763,7 +764,8 @@
 	| COMP localann_IN_opt spec WITH dec END
 			( COMPAtExp(I(COMPleft,ENDright),
 				    localann_IN_opt, spec, dec) )
-	| LPAR exp RPAR	( PARAtExp(I(LPARleft,RPARright), exp) )
+	| LPAR exp SEMICOLON_opt RPAR
+			( PARAtExp(I(LPARleft,RPARright), exp) )
 
 
      exp_COMMA_list0:
@@ -779,10 +781,14 @@
 
      exp_SEMICOLON_list1:
 	  exp SEMICOLON exp_SEMICOLON_list1	( exp::exp_SEMICOLON_list1 )
-	| exp					( exp::[] )
+	| exp SEMICOLON_opt			( exp::[] )
 
      exp_SEMICOLON_list2:
 	  exp SEMICOLON exp_SEMICOLON_list1	( exp::exp_SEMICOLON_list1 )
+
+     SEMICOLON_opt:
+	  SEMICOLON			( () )
+	| (*empty*)			( () )
 
      localann_IN_opt:
 	  localann IN			( SOME localann )
@@ -1165,9 +1171,6 @@
 	| HASHBRACK pat_COMMA_list0 RBRACK
 			( VECTORAtPat(I(HASHBRACKleft,RBRACKright),
 				    pat_COMMA_list0) )
-	| LPAR pat_BAR_list2 RPAR
-			( ALTAtPat(I(LPARleft,RPARright),
-				   pat_BAR_list2) )
 	| LPAR pat RPAR ( PARAtPat(I(LPARleft,RPARright), pat) )
 
 
@@ -1181,10 +1184,6 @@
 
      pat_COMMA_list2:
 	  pat COMMA pat_COMMA_list1	( pat::pat_COMMA_list1 )
-
-     pat_BAR_list2:
-	  pat BAR pat			( [pat1,pat2] )
-	| pat BAR pat_BAR_list2		( pat::pat_BAR_list2 )
 
 
   patrow:
@@ -1231,6 +1230,9 @@
 	| pat COLON ty	( TYPEDPat(I(patleft,tyright), pat, ty) )
 	| NON pat	( NONPat(I(NONleft,patright), pat) )
 	| pat AS pat	( ASPat(I(pat1left,pat2right), pat1, pat2) )
+	| pat BAR pat	( ATPATPat(I(pat1left,pat2right),
+				   ALTAtPat(I(pat1left,pat2right),
+					    [pat1, pat2])) )
 	| pat IF atexp
 			( IFPat(I(patleft,atexpright), pat, atexp) )
 	| pat WITHVAL valbind END
