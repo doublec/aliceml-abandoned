@@ -12,6 +12,7 @@
  *)
 
 import structure Store from "x-alice:/lib/system/Store"
+import structure Remote from "x-alice:/lib/distribution/Remote"
 import structure Print from "x-alice:/lib/system/Print"
 import structure Compiler from "x-alice:/lib/system/Compiler"
 import structure Evaluator    from "Evaluator"
@@ -47,6 +48,8 @@ signature USER_CONFIG_3 =
       val printWidth : int
       val heapLimit : int
       val heapLimited : bool
+      val port : int
+      val portStatic : bool
    end
 
 signature USER_CONFIG = USER_CONFIG_3
@@ -77,6 +80,9 @@ structure Config =
       val heapLimited = ref true
       val heapLimit = ref 200
       val heapHandler = ref ignore
+
+      val port = ref 22935
+      val portStatic = ref false
 
       val warnings = ref Compiler.warnings
       val historySize = ref 100
@@ -233,6 +239,10 @@ structure Config =
 		  do heapLimited := C.heapLimited
 		  do heapLimit := C.heapLimit
 		  do initHeapHandler()
+		  do port := C.port
+		  do portStatic := C.portStatic
+		  do if C.portStatic then Remote.setPort C.port
+		     handle Remote.Port => ()
 	      in
 		  ()
 	      end
@@ -255,6 +265,8 @@ structure Config =
 		  val loadFileHistory = !loadFileHistory
 		  val heapLimited = !heapLimited
 		  val heapLimit = !heapLimit
+		  val port = !port
+		  val portStatic = !portStatic
 	      end
 	  in
 	      createConfigDir ();
