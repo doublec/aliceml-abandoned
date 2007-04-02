@@ -99,10 +99,10 @@ let
 			structure I = Phase2'.O
 			structure O = I
 
-			fun translate(_, _, comp) =
+			fun translate(_, _, component) =
 			    (if !Switches.Debug.checkIntermediate
-			     then CheckIntermediate.check comp else ();
-			     ((), comp))
+			     then CheckIntermediate.check component else ();
+			     ((), component))
 		    end
 		    structure Switches = Switches
 		    val name = "Verification (optional)"
