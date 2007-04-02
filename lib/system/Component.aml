@@ -480,10 +480,11 @@ trace (!logger, id, "extended realisation after considering import " ^ Url.toStr
 		structure Sig = Reflect.ReflectSig(signature S = S)
 		val url = validate url
 		val (mod, inf) = eval' (url, component)
-	    in
-		matchWith (Inf.rea (), inf, SOME Sig.x) handle Inf.Mismatch m =>
+		do matchWith (Inf.rea (), inf, SOME Sig.x)
+		   handle Inf.Mismatch m =>
 		    raise Failure (url, Mismatch{component = Url.fromString "",
-						 request = NONE, cause = m});
+						 request = NONE, cause = m})
+	    in
 		Reflect.Reify(val x = mod signature S = S)
 	    end
 
@@ -555,9 +556,9 @@ trace (!logger, id, "extended realisation after considering import " ^ Url.toStr
 	val unsafe =
 	    fromPackage (pack (structure UnsafeComponent = MyUnsafeComponent)
 			    : (structure UnsafeComponent : UNSAFE_COMPONENT))
+	do Manager.enter (managerUrl, self)
+	do if Config.nested then Manager.enter (unsafeUrl, unsafe)
     in
-	Manager.enter (managerUrl, self);
-	if Config.nested then Manager.enter (unsafeUrl, unsafe);
 	Manager
     end
 
