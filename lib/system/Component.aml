@@ -28,6 +28,10 @@ import structure DynMatch          from "DynMatch"
 import structure UrlMap            from "UrlMap"
 import signature COMPONENT         from "COMPONENT-sig"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
+import structure Rand              from "Rand"
+
+(*) Cyclic but lazy!
+(*)import structure ComponentManager : COMPONENT_MANAGER from "x-alice:/lib/system/ComponentManager"
 
 local
 structure Component' =
@@ -222,7 +226,8 @@ struct
 
 
     signature MANAGER_CONFIG = (val initialTable : initial_table
-				val resolver : Resolver.t)
+				val resolver : Resolver.t
+				val nested : bool)
 
     val idCounter = ref 1
 
@@ -230,7 +235,7 @@ struct
     struct
 	(*--** should query and fragment be rejected instead of ignored? *)
 
-	val id = !idCounter before idCounter := !idCounter+1
+	val id = Rand.rand () (*) !idCounter before idCounter := !idCounter+1
 
 	exception Conflict
 
@@ -365,16 +370,13 @@ trace (!logger, id, "extended realisation after considering import " ^ Url.toStr
 			Url.resolve baseUrl url
 		    end
 		val rea = Inf.rea ()
-(*DEBUG
-val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
-*)
+		do trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl)
 		val imports' =
 		    Vector.map (fn (importUrlS, importInf) =>
 				   typedLink (resolve importUrlS, rea,
 					      importInf, SOME baseUrl))
 			       imports
-		val _ = trace (!logger, id,
-			       "evaluating " ^ Url.toStringRaw baseUrl)
+		do trace (!logger, id, "evaluating " ^ Url.toStringRaw baseUrl)
 		val mod = Exn.catch
 			  (fn packet =>
 			   case Exn.fromPacket packet of
@@ -385,13 +387,13 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 				      Url.toStringRaw baseUrl);
 			       reraiseAs (packet, Failure (baseUrl, Eval e))))
 			  (fn _ => body imports')
-		val _ = trace (!logger, id,
-			       "evaluated  " ^ Url.toStringRaw baseUrl)
+		do trace (!logger, id, "evaluated  " ^ Url.toStringRaw baseUrl)
 		val dynInf =
 		    case inf of
 			NONE => NONE
 		      | SOME inf' =>
 			SOME (lazy DynMatch.strengthenWith (rea, mod, inf'))
+		do trace (!logger, id, "linked " ^ Url.toStringRaw baseUrl)
 	    in
 		(mod, dynInf)
 	    end
@@ -448,7 +450,7 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 
 	fun link url =
 	    let
-		val _ = trace (!logger, id, "link " ^ Url.toStringRaw url)
+		do trace (!logger, id, "link " ^ Url.toStringRaw url)
 		val (mod, inf) = lazyLink (validate url)
 	    in
 		case inf of
@@ -478,12 +480,10 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 		structure Sig = Reflect.ReflectSig(signature S = S)
 		val url = validate url
 		val (mod, inf) = eval' (url, component)
-		val _ = matchWith (Inf.rea (), inf, SOME Sig.x)
-			handle Inf.Mismatch m =>
-			    raise Failure (url, Mismatch
-						{component = Url.fromString "",
-						 request = NONE, cause = m})
 	    in
+		matchWith (Inf.rea (), inf, SOME Sig.x) handle Inf.Mismatch m =>
+		    raise Failure (url, Mismatch{component = Url.fromString "",
+						 request = NONE, cause = m});
 		Reflect.Reify(val x = mod signature S = S)
 	    end
 
@@ -496,13 +496,55 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 	    end
 
 	functor Enter (val url: Url.t signature S structure X: S) =
-	    (val _ = enter (url, fromPackage (pack X : S)))
+	    (do enter (url, fromPackage (pack X : S)))
 
-	val _ = trace (!logger, id, "created")
+	do trace (!logger, id, "created")
     end
 
     val url = Url.fromString "x-alice:/lib/system/Component"
+    val unsafeUrl = Url.fromString "x-alice:/lib/system/UnsafeComponent"
     val managerUrl = Url.fromString "x-alice:/lib/system/ComponentManager"
+
+    (* Wild hack to implement proper manager nesting *)
+    signature UNSAFE_COMPONENT = (* copied from UnsafeComponent.asig *)
+    sig
+	exception SitedInternal
+	exception CorruptInternal
+	exception Sited
+	exception Corrupt
+	exception NotFound
+
+	exception Mismatch of {component : Url.t,
+			       request : Url.t option,
+			       cause : Inf.mismatch}
+	exception Eval of exn
+	exception Failure of Url.t * exn
+
+	exception Native of string
+
+	val extension: string
+
+	val getInitialTable: unit -> (string * 'sign * 'str) vector
+
+	val save: string * 'component -> unit   (* OS.SysErr,
+						   SitedInternal *)
+	val load: string -> 'component          (* OS.SysErr, NotFound,
+						   CorruptInternal *)
+	val linkNative: string -> 'component    (* Native *)
+
+	val pack_: 'component -> string         (* SitedInternal *)
+	val unpack_: string -> 'component       (* CorruptInternal *)
+
+        val unzip : string -> string            (* Corrupt *)
+    end
+
+    structure MyUnsafeComponent : UNSAFE_COMPONENT =
+    struct
+	open UnsafeComponent
+	val load = fn f => cast load f
+	val save = fn f => cast save f
+	fun getInitialTable () = #[]
+    end
 
     functor MkManager' (Config : MANAGER_CONFIG) : COMPONENT_MANAGER =
     let
@@ -510,28 +552,45 @@ val _ = trace (!logger, id, "linking " ^ Url.toStringRaw baseUrl ^ "...")
 	val self =
 	    fromPackage (pack (structure ComponentManager = Manager)
 			    : (structure ComponentManager : COMPONENT_MANAGER))
-	val _ = Manager.enter (managerUrl, self)
+	val unsafe =
+	    fromPackage (pack (structure UnsafeComponent = MyUnsafeComponent)
+			    : (structure UnsafeComponent : UNSAFE_COMPONENT))
     in
+	Manager.enter (managerUrl, self);
+	if Config.nested then Manager.enter (unsafeUrl, unsafe);
 	Manager
     end
 
     functor MkManager (val resolver : Resolver.t) =
-	MkManager' (val resolver = resolver val initialTable = defaultTable)
+	MkManager' (val resolver = resolver
+		    val initialTable = defaultTable
+		    val nested = true)
 end
 in
     structure Component : COMPONENT = Component'
     structure PrimalManager =
 	Component'.MkManager' (val resolver = Component'.primalResolver
-			       val initialTable = Component'.primalTable)
-    val _ =
+			       val initialTable = Component'.primalTable
+			       val nested = false)
+
+    do if Vector.length Component'.primalTable > 0 then
+	(*) We are the root manager...
 	let
 	    val self = pack (structure Component = Component
 			     structure PrimalManager = PrimalManager)
 			  : (structure Component : COMPONENT
 			     structure PrimalManager : COMPONENT_MANAGER)
 	in
-	    PrimalManager.enter (Component'.url, Component.fromPackage self)
+	    PrimalManager.enter (Component'.url, Component.fromPackage self);
+	    Promise.fulfill (Component'.defaultLoadPromise, PrimalManager.load);
+	    Promise.fulfill (Component'.defaultLinkPromise, PrimalManager.link)
 	end
-    val _ = Promise.fulfill (Component'.defaultLoadPromise, PrimalManager.load)
-    val _ = Promise.fulfill (Component'.defaultLinkPromise, PrimalManager.link)
+(*
+	else
+	(*) We are a nested manager...
+	(
+	    Promise.fulfill (Component'.defaultLoadPromise, ComponentManager.load);
+	    Promise.fulfill (Component'.defaultLinkPromise, ComponentManager.link)
+	)
+*)
 end
