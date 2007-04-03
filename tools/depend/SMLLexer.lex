@@ -185,9 +185,12 @@
 
   <INITIAL>{formatting}	=> ( continue() );
   <INITIAL>"import"	=> ( token(IMPORT, yypos, yytext) );
+  <INITIAL>"comp"	=> ( token(COMP,   yypos, yytext) );
+  <INITIAL>"with"	=> ( token(WITH,   yypos, yytext) );
   <INITIAL>{token}	=> ( token(OTHER,  yypos, yytext) );
   <INITIAL>{string}	=> ( tokenOf(STRING, toString, yypos, yytext) );
 
+  <INITIAL>"(*ignore*)import"	=> ( continue() );
   <INITIAL>"(*)"	=> ( YYBEGIN LCOMMENT ; continue() );
   <INITIAL>"(*"		=> ( nest yypos ; YYBEGIN COMMENT ; continue() );
   <COMMENT>"(*)"	=> ( YYBEGIN LCOMMENT ; continue() );
