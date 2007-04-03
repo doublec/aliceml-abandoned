@@ -2320,10 +2320,18 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 
   (* Announcements *)
 
+    (* Be careful to not make any lookups unless strictly needed!
+     * In particular, we cannot fully rely on laziness, because "byneed"
+     * is just a dummy for Fn.id during bootstrap build 1. Still we have to
+     * avoid access, otherwise the recursive import of ComponentManager in
+     * component lib/system/Component will loop.
+     *)
+
     fun elabAnn(E, desc, I.ImpAnn(i, imps, url, b)) =
 	let
 	    val isExplicit = Vector.all I.hasDesc imps
-	    val s          = Future.byneed(fn() => loadSig(desc, url))
+	    val s          = if isExplicit then Inf.emptySig()
+			     else Future.byneed(fn() => loadSig(desc, url))
 	    val s'         = Inf.emptySig()
 	    val imps'      = elabImps(E, s, s', isExplicit, imps)
 	    val s''        = if isExplicit then s'
@@ -2346,22 +2354,33 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
     and elabImp(E, s, s', isExplicit, I.FixImp(i, vallab, desc)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
-	    val f1          = Future.byneed(fn() =>
-			      Inf.lookupFix(s, l) handle Inf.Lookup _ =>
-				error(i, E.ImpMismatch(Inf.MissingFix l)))
-	    val desc'       =
+	    val (f2,desc')   =
 		case desc
-		 of I.NoDesc(i')       => O.NoDesc(fixInfo(i',f1))
+		 of I.NoDesc(i')       =>
+		    let
+			val f1 = Future.byneed(fn() =>
+				 Inf.lookupFix(s, l) handle Inf.Lookup _ =>
+				     error(i, E.ImpMismatch(Inf.MissingFix l)))
+		    in
+			(f1, O.NoDesc(fixInfo(i',f1)))
+		    end
 		  | I.SomeDesc(i',fix) =>
 		    let
 			val (f2,fix') = elabFix(E, fix)
 		    in
-			if isExplicit orelse f1 = f2
-			then O.SomeDesc(fixInfo(i',f2), fix')
-			else error(i, E.ImpMismatch(Inf.MismatchFix(l,f1,f2)))
+			if isExplicit then () else
+			let
+			    val f1 = Future.byneed(fn() =>
+				 Inf.lookupFix(s, l) handle Inf.Lookup _ =>
+				     error(i, E.ImpMismatch(Inf.MissingFix l)))
+			in
+			    if f1 = f2 then () else
+			    error(i, E.ImpMismatch(Inf.MismatchFix(l,f1,f2)))
+			end;
+			(f2, O.SomeDesc(fixInfo(i',f2), fix'))
 		    end
 	in
-	    Inf.extendFix(s', l, f1);
+	    Inf.extendFix(s', l, f2);
 	    O.FixImp(nonInfo(i), vallab', desc')
 	end
 
@@ -2369,21 +2388,31 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 	let
 	    val (t0,qt,valid') = elabValid_bind(E, s, valid)
 	    val  l             = Label.fromName(O.name valid')
-	    val  t1            = Future.byneed(fn() =>
-			         Inf.lookupVal(s, l) handle Inf.Lookup _ =>
-				   error(i, E.ImpMismatch(Inf.MissingVal l)))
 	    val (t2,desc')     =
 		case desc
-		 of I.NoDesc(i')       => (t1, O.NoDesc(typInfo(i',t1)))
+		 of I.NoDesc(i')       =>
+		    let
+			val  t1 = Future.byneed(fn() =>
+				  Inf.lookupVal(s, l) handle Inf.Lookup _ =>
+				      error(i, E.ImpMismatch(Inf.MissingVal l)))
+		    in
+			(t1, O.NoDesc(typInfo(i',t1)))
+		    end
 		  | I.SomeDesc(i',typ) =>
 		    let
 			val (t2,typ') = elabStarTyp(E, false, typ)
 		    in
 			if isExplicit then () else
-			(Type.enterLevel();
-			 Type.match(t1,t2) handle Type.Mismatch m =>
+			let
+			    val  t1 = Future.byneed(fn() =>
+				  Inf.lookupVal(s, l) handle Inf.Lookup _ =>
+				      error(i, E.ImpMismatch(Inf.MissingVal l)))
+			in
+			    Type.enterLevel();
+			    Type.match(t1,t2) handle Type.Mismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchVal(l,t1,t2,m)));
-			 Type.exitLevel());
+			    Type.exitLevel()
+			end;
 			(t2, O.SomeDesc(typInfo(i',t2),typ'))
 		    end
 	    val  _          = Type.unify(t0,t2)
@@ -2397,23 +2426,33 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
-	    val k1 = Future.byneed(fn() =>
-		     Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingTyp l)))
-	    val t1 = Future.byneed(fn() => Inf.lookupTyp'(s, l))
 	    val (k2,t2,desc') =
 		case desc
-		 of I.NoDesc(i')       => (k1, t1, O.NoDesc(typInfo(i', t1)))
+		 of I.NoDesc(i')       =>
+		    let
+			val k1 = Future.byneed(fn() =>
+				 Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
+				    error(i, E.ImpMismatch(Inf.MissingTyp l)))
+			val t1 = Future.byneed(fn() => Inf.lookupTyp'(s, l))
+		    in
+			(k1, t1, O.NoDesc(typInfo(i', t1)))
+		    end
 		  | I.SomeDesc(i',typ) =>
 		    let
 			val (t2,_,typ') = elabTypRep(E, p, Fn.id, typ)
 			val  k2         = Type.kind t2
 		    in
 			if isExplicit then () else
-			(Type.enterLevel();
-			 Type.matchKind(k1,k2) handle Type.KindMismatch m =>
+			let
+			    val k1 = Future.byneed(fn() =>
+				 Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
+				    error(i, E.ImpMismatch(Inf.MissingTyp l)))
+			in
+			    Type.enterLevel();
+			    Type.matchKind(k1,k2) handle Type.KindMismatch m =>
 			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
-			 Type.exitLevel());
+			    Type.exitLevel()
+			end;
 			(k2, t2, O.SomeDesc(typInfo(i',t2), typ'))
 		    end
 	    val (_,typid') = elabTypid_bind(E, p, true, t2, typid)
@@ -2426,14 +2465,14 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 	let
 	    val l  = Label.fromName(I.name modid)
 	    val p  = elabNewPath(NONE, I.name modid)
-	    val j1 = Future.byneed(fn() =>
-		     Inf.lookupMod(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingMod l)))
-	    val m1 = Future.byneed(fn() => Inf.lookupMod'(s, l))
 	    val (j2,jm2,desc') =
 		case desc
 		 of I.NoDesc(i') =>
 		    let
+			val j1 = Future.byneed(fn() =>
+				 Inf.lookupMod(s, l) handle Inf.Lookup _ =>
+				    error(i, E.ImpMismatch(Inf.MissingMod l)))
+			val m1 = Future.byneed(fn() => Inf.lookupMod'(s, l))
 			val jm1 = Future.byneed(fn() => Inf.sing m1)
 		    in
 			(j1, jm1, O.NoDesc(infInfo(i', jm1)))
@@ -2447,6 +2486,10 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 			end
 		    else
 		    let
+			val j1 = Future.byneed(fn() =>
+				 Inf.lookupMod(s, l) handle Inf.Lookup _ =>
+				    error(i, E.ImpMismatch(Inf.MissingMod l)))
+			val m1 = Future.byneed(fn() => Inf.lookupMod'(s, l))
 			val (j2,inf') = elabGroundInf(E, SOME p, inf)
 			val _   = Type.enterLevel()
 			val _   = Inf.match(j1,j2) handle Inf.Mismatch m =>
@@ -2467,23 +2510,33 @@ print("{"^(if Type.isEqKind k then "eq" else "")^"type "^Name.toString(I.name ty
 	let
 	    val l  = Label.fromName(I.name infid)
 	    val p  = elabNewPath(NONE, I.name infid)
-	    val k1 = Future.byneed(fn() =>
-		     Inf.lookupInf(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingInf l)))
-	    val j1 = Future.byneed(fn() => Inf.lookupInf'(s, l))
 	    val (k2,j2,desc') =
 		case desc
-		 of I.NoDesc(i')       => (k1, j1, O.NoDesc(infInfo(i',j1)))
+		 of I.NoDesc(i')       =>
+		    let
+			val k1 = Future.byneed(fn() =>
+				 Inf.lookupInf(s, l) handle Inf.Lookup _ =>
+				    error(i, E.ImpMismatch(Inf.MissingInf l)))
+			val j1 = Future.byneed(fn() => Inf.lookupInf'(s, l))
+		    in
+			(k1, j1, O.NoDesc(infInfo(i',j1)))
+		    end
 		  | I.SomeDesc(i',inf) =>
 		    let
 			val (j2,_,inf') = elabInfRep(E, p, Fn.id, inf)
 			val  k2         = Inf.kind j2
 		    in
 			if isExplicit then () else
-			(Type.enterLevel();
-			 Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
-			    error(i, E.ImpMismatch(Inf.MismatchInf(l,m)));
-			 Type.exitLevel());
+			let
+			    val k1 = Future.byneed(fn() =>
+				 Inf.lookupInf(s, l) handle Inf.Lookup _ =>
+				    error(i, E.ImpMismatch(Inf.MissingInf l)))
+			in
+			    Type.enterLevel();
+			    Inf.matchKind(k1,k2) handle Inf.KindMismatch m =>
+				error(i, E.ImpMismatch(Inf.MismatchInf(l,m)));
+			    Type.exitLevel()
+			end;
 			(k2, j2, O.SomeDesc(infInfo(i',j2),inf'))
 		    end
 	    val (_,infid') = elabInfid_bind(E, p, true, j2, infid)

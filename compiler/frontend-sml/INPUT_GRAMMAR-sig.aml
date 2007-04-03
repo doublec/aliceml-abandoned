@@ -503,4 +503,6 @@ sig
     val idSigId :	SigId		-> SigId.t
 
     val explodeLong :	'a Long		-> StrId list * 'a
+
+    val hasAllDescs :	Imp		-> bool
 end

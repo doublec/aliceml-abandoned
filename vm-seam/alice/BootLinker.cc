@@ -582,6 +582,11 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
     EnterComponent(key, sign, init());
     nativeComponents++;
   }
+  // HACK ALERT: Enter fake ComponentManager (under URL that will be
+  // derived by boot linker for resp. x-alice import in lib/system/Component)
+  String *key = String::New("lib/system/x-alice:/lib/system/ComponentManager");
+  word sign = Store::IntToWord(Types::NONE);
+  EnterComponent(key, sign, Store::IntToWord(0));
 }
 
 void BootLinker::EnterComponent(String *key, word sign, word str) {

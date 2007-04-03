@@ -30,8 +30,8 @@ import signature COMPONENT         from "COMPONENT-sig"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 import structure Rand              from "Rand"
 
-(*) Cyclic but lazy!
-(*)import structure ComponentManager : COMPONENT_MANAGER from "x-alice:/lib/system/ComponentManager"
+(* Lazy! Only used for nested instances, and should reference parent manager. *)
+(*ignore*)import structure ComponentManager : COMPONENT_MANAGER from "x-alice:/lib/system/ComponentManager"
 
 local
 structure Component' =
@@ -235,7 +235,7 @@ struct
     struct
 	(*--** should query and fragment be rejected instead of ignored? *)
 
-	val id = Rand.rand () (*) !idCounter before idCounter := !idCounter+1
+	val id = Rand.rand () (* !idCounter before idCounter := !idCounter+1 *)
 
 	exception Conflict
 
@@ -575,7 +575,7 @@ in
 			       val nested = false)
 
     do if Vector.length Component'.primalTable > 0 then
-	(*) We are the root manager...
+	(*) We are the root instance...
 	let
 	    val self = pack (structure Component = Component
 			     structure PrimalManager = PrimalManager)
@@ -586,12 +586,10 @@ in
 	    Promise.fulfill (Component'.defaultLoadPromise, PrimalManager.load);
 	    Promise.fulfill (Component'.defaultLinkPromise, PrimalManager.link)
 	end
-(*
 	else
-	(*) We are a nested manager...
+	(*) We are a nested manager's instance...
 	(
 	    Promise.fulfill (Component'.defaultLoadPromise, ComponentManager.load);
 	    Promise.fulfill (Component'.defaultLinkPromise, ComponentManager.link)
 	)
-*)
 end

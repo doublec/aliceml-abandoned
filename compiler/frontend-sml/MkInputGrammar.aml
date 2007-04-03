@@ -701,4 +701,35 @@ struct
     and explodeLong'(SHORTLong(_,id),      ids)	= id::ids
       | explodeLong'(DOTLong(_,longid,id), ids)	= explodeLong'(longid, id::ids)
 
+
+    fun hasAllValDescs(PLAINValItem _)		= false
+      | hasAllValDescs(DESCValItem _)		= true
+    fun hasAllTypDescs(PLAINTypItem _)		= false
+      | hasAllTypDescs(DESCTypItem _)		= true
+    fun hasAllDatDescs(PLAINDatItem _)		= false
+      | hasAllDatDescs(DESCDatItem _)		= true
+    fun hasAllExtDescs(PLAINExtItem _)		= false
+      | hasAllExtDescs(DESCExtItem _)		= true
+    fun hasAllEconDescs(PLAINEconItem _)	= false
+      | hasAllEconDescs(DESCEconItem _)		= true
+    fun hasAllStrDescs(PLAINStrItem _)		= false
+      | hasAllStrDescs(DESCStrItem _)		= true
+    fun hasAllSigDescs(PLAINSigItem _)		= false
+      | hasAllSigDescs(DESCSigItem _)		= true
+
+    fun hasAllDescs(VALImp(I,valitem))		= hasAllValDescs valitem
+      | hasAllDescs(TYPEImp(I,typitem))		= hasAllTypDescs typitem
+      | hasAllDescs(EQTYPEImp(I,typitem))	= hasAllTypDescs typitem
+      | hasAllDescs(EQEQTYPEImp(I,typitem))	= hasAllTypDescs typitem
+      | hasAllDescs(DATATYPEImp(I,datitem))	= hasAllDatDescs datitem
+      | hasAllDescs(EXTTYPEImp(I,extitem))	= hasAllExtDescs extitem
+      | hasAllDescs(CONSTRUCTORImp(I,econitem))	= hasAllEconDescs econitem
+      | hasAllDescs(STRUCTUREImp(I,stritem))	= hasAllStrDescs stritem
+      | hasAllDescs(SIGNATUREImp(I,sigitem))	= hasAllSigDescs sigitem
+      | hasAllDescs(EMPTYImp(I))		= true
+      | hasAllDescs(SEQImp(I,item1,item2))	= hasAllDescs item1 andalso
+						  hasAllDescs item2
+      | hasAllDescs(INFIXImp(I,_,_))		= true
+      | hasAllDescs(INFIXRImp(I,_,_))		= true
+      | hasAllDescs(NONFIXImp(I,_))		= true
 end

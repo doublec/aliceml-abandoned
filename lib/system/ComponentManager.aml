@@ -1,13 +1,19 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
+ *)
+
+(*
+ * HACK ALERT: The URL of the component manager is hardwired in several
+ * places in the runtime (e.g. BootLinker.cc) and library (e.g. Component.aml).
  *)
 
 import structure PrimalManager from "Component"

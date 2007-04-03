@@ -4052,7 +4052,8 @@ struct
 	fn ann as ( IMPORTAnn(i, imp, s) | PRIMITIVEIMPORTAnn(i, imp, s) ) =>
 	   let
 		val url   = Url.fromString s
-		val E''   = Future.byneed(fn() =>
+		val E''   = if I.hasAllDescs imp then env() else
+			    Future.byneed(fn() =>
 			    BindEnvFromSig.envFromSig(i, loadSig(desc, url)))
 		val _     = insertScope E
 		val imps' = trImp (E,E'') imp
