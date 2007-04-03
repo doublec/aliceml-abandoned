@@ -5,7 +5,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg, 2001-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -52,8 +52,8 @@ import structure Store from "x-alice:/lib/system/Store"
 *)
 (*
 import signature REMOTE from "x-alice:/lib/distribution/REMOTE-sig"
-import structure Remote from "x-alice:/lib/distribution/Remote"
 *)
+import structure Remote from "x-alice:/lib/distribution/Remote"
 (*
 import structure Space from "x-alice:/lib/gecode/Space"
 import structure Search from "x-alice:/lib/gecode/Search"
@@ -66,7 +66,10 @@ import structure FS from "x-alice:/lib/gecode/FS"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 (*import structure Explorer from "x-alice:/lib/tools/Explorer"
 *)
-import val use : string -> unit val reset : unit -> unit from "x-alice-toplevel:/Ops"
+
+import val use : string -> unit
+       val reset : unit -> unit
+       val exit : unit -> 'a from "x-alice-toplevel:/Ops"
 
 import val it : unit -> unit from "x-alice:/tools/ToplevelIt"
 
@@ -119,4 +122,4 @@ __overload 'a inspect : 'a -> unit = Inspector.inspectVal
 
 val use = use
 val reset = reset
-fun exit() = OS.Process.exit OS.Process.success
+val exit = exit

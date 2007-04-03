@@ -323,6 +323,8 @@ struct
     ]
     val resolver = Resolver.resolver {name = "toplevel", handlers, memoize = true}
 
+    fun exit () = OS.Process.exit OS.Process.success
+
     fun init () =
 	let
 	    structure CM = Component.MkManager (val resolver = resolver)
@@ -330,8 +332,10 @@ struct
 		CM.Link (val url = Url.fromString "x-alice:/lib/system/Compiler"
 			 signature S = (structure Compiler : COMPILER))
 	    structure Evaluator = MkEvaluator CompilerComponent.Compiler
-	    val ops = pack (val use = use val reset = init)
-			 : (val use : string -> unit val reset : unit -> unit)
+	    val ops = pack (val use = use val reset = init val exit = exit)
+			 : (val use : string -> unit
+			    val reset : unit -> unit
+			    val exit : unit -> 'a)
 	in
 	    if !firstInit then firstInit := false
 	    else TextIO.output (outStream, "### reset environment\n");
