@@ -1,0 +1,16 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
+import signature POLICY            from "POLICY-sig"
+
+signature SANDBOX =
+sig
+    exception Security of string
+    functor MkManager (Policy : POLICY) : COMPONENT_MANAGER
+end

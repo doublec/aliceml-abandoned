@@ -14,6 +14,7 @@
 import structure Url              from "Url"
 import structure Component        from "Component"
 import structure ComponentManager from "ComponentManager"
+import structure Sandbox          from "Sandbox"
 
 changequote([[,]])
 
@@ -84,6 +85,11 @@ ifdef([[CROSS]],[[
 		      printExn (TextIO.stdErr, exn);
 		      TextIO.output (TextIO.stdErr, "while linking\n   " ^
 		 			Url.toStringRaw url ^ "\n"))
+		   | Component.Failure (url, Sandbox.Security s) =>
+		     TextIO.output (TextIO.stdErr,
+				    "security violation:\n   " ^ s ^
+				    "\nwhile linking\n   " ^
+				    Url.toStringRaw url ^ "\n")
 		   | Component.Failure (url, exn) =>
 		     (TextIO.output (TextIO.stdErr, "unknown failure\n");
 		      printExn (TextIO.stdErr, exn);

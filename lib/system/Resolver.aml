@@ -171,7 +171,7 @@ structure Resolver: RESOLVER =
 		    end
 
 		fun custom (name, f) =
-		    ("custom " ^ name, fn url => f url handle _ => NONE)
+		    ("custom " ^ name, fn url => f url) (*handle _ => NONE)*)
 
 		val sep = Config.pathSeparator
 

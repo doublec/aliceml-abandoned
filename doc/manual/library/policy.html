@@ -1,0 +1,535 @@
+<?php include("macros.php3"); ?>
+<?php heading("The POLICY signature",
+	      "the <TT>POLICY</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature POLICY
+    functor MkPolicy () : POLICY
+    functor MkReadOnlyPolicy () : POLICY
+    functor MkNetworkPolicy () : POLICY
+    functor MkUnrestrictedPolicy () : POLICY</PRE>
+
+  <P>
+    A <EM>policy</EM> represents a set of rules governing capabilities
+    granted to components in a sandbox environment.
+    These rules are defined for <em>capabilities</em>, strings
+    representing individual or groups of critical operations in the library.
+    The rules are defined in terms of user-defined functions that
+    check the validity of individual
+    arguments passed to an operations, and may choose to rewrite these
+    arguments as they see fit.
+  </P>
+
+  <P>
+    A particularly important capability is <TT>"componentLoad"</TT>,
+    which controls what URLs are accepted for loading. By setting up rules
+    for this capability, the creator of a sandbox can control what comonents
+    are accessible for import inside a sandbox (either through the functions
+    of the component manager, or through the use of the Alice ML
+    <TT>import</TT> declaration, which maps to these functions).
+  </P>
+
+  <P>
+    Policy structures can be created via one of the predefined functors listed
+    above,
+    which differ in the capabilities initially granted.
+    They all set the <TT>"componentLoad"</TT> capability to replace system components
+    (those in the <TT>x-alice:/lib/system/</TT> space) with safe substitutes
+    that actually check the other capabilities for each call to a critical
+    operation.
+    The <tt>MkPolicy</tt> functor provides a clean ruleset with no
+    capabilities at all besides loading the safe components, while the other functors already provide
+    certain capabilities for typical scenarios.
+    In either case, the policy rules can be further customised by means of the operations
+    provided by the delivered structure.
+  </P>
+
+  <P>See
+    <A href="#capabilities">below</A> for a complete list
+    of capabilities defined in the system.
+  </P>
+ 
+  <P>
+    See also:
+    <A href="sandbox.html"><TT>Sandbox</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature POLICY               from "x-alice:/lib/system/POLICY-sig"
+    import functor   MkPolicy             from "x-alice:/lib/system/MkPolicy"
+    import functor   MkReadOnlyPolicy     from "x-alice:/lib/system/MkPolicy"
+    import functor   MkNetworkPolicy      from "x-alice:/lib/system/MkPolicy"
+    import functor   MkUnrestrictedPolicy from "x-alice:/lib/system/MkPolicy"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+signature POLICY =
+sig
+    datatype 'a <a href="#action">action</a> = ACCEPT of 'a | REJECT | PASS
+<!--
+    val <a href="#acceptImport">acceptImport</a> : <a href="url.html#t">Url.t</a> * <a href="#import_policy">import_policy</a> -> unit
+    val <a href="#checkImport">checkImport</a> : <a href="url.html#t">Url.t</a> -> <a href="url.html#t">Url.t</a> option
+    val <a href="#set">set</a> : string * <a href="#rule">rule</a> -> unit
+-->
+    signature <a href="#ARG_TYPE">ARG_TYPE</a> =
+    sig
+        type <a href="#ARG_TYPE_t">t</a>
+        val <a href="#rule">rule</a> : string * (<a href="#ARG_TYPE_t">t</a> -> <a href="#ARG_TYPE_t">t</a> action) -> unit<!--
+        val <a href="#default">default</a> : string * bool -> unit-->
+        val <a href="#check">check</a> : string * string * <a href="#ARG_TYPE_t">t</a> -> <a href="#ARG_TYPE_t">t</a>
+    end
+<!--
+    signature <a href="#STRING_ARG_TYPE">STRING_ARG_TYPE</a> = 
+    sig
+        include <a href="#ARG_TYPE">ARG_TYPE</a>
+        val <a href="#"acceptPrefix>acceptPrefix</a> : t -> <a href="#handler">handler</a>
+        val <a href="#rejectPrefix">rejectPrefix</a> : t -> <a href="#handler">handler</a>
+        val <a href="#acceptSuffix">acceptSuffix</a> : t -> <a href="#handler">handler</a>
+        val <a href="#rejectSuffix">rejectSuffix</a> : t -> <a href="#handler">handler</a>
+        val <a href="#acceptSubstring">acceptSubstring</a> : t -> <a href="#handler">handler</a>
+        val <a href="#rejectSubstring">rejectSubstring</a> : t -> <a href="#handler">handler</a>
+    end
+-->
+    functor <a href="#MkArgType">MkArgType</a> (type t) : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = t
+
+    structure <a href="#Unit">Unit</a> : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = unit
+    structure <a href="#Int">Int</a>  : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="int.html#t">Int.t</a>
+    structure <a href="#Url">Url</a>  : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="url.html#t">Url.t</a>
+    structure <a href="#String">String</a> : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="string.html#t">String.t</a>
+    structure <a href="#File">File</a>   : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="string.html#t">String.t</a>
+end</pre>
+
+<?php section("description", "description") ?>
+
+  <DL>
+<!--
+    <DT>
+      <TT>type <A name="rule">rule</A></TT>
+    </DT>
+    <DD>
+      <P>Represents handlers for checking and rewriting arguments to critical
+      operations (capabilities). Rules for a specific capability must be
+      created by the <A href"#rule"><TT>rule</TT></A> function for the
+      appropriate argument type.</P>
+    </DD>
+
+    <DT>
+      <TT>type <A name="instance">'a instance</a> = 'a -> 'a option option</TT>
+    </DT>
+    <DD>
+      <P>An <TT>'a</TT> instance is a general modification rule for <TT>'a</TT> values. Given
+       any <TT>'a</TT>, it decides if 1) that <TT>'a</TT> is an instance of the general
+       pattern this rule represents, and 2) in case the rule is applicable,
+       if the <TT>'a</TT> should be accepted or rejected. Thus, the return value should
+       be interpreted as follows:
+       <ul>
+       <li><TT>NONE</TT>: The rule hasn't been applicable: nothing happens.</li>
+       <li><TT>SOME (SOME a')</TT>: The rule has been applied, and returned some potentially
+       modified <TT>'a</TT> in stead of the original argument. This indicates acceptance
+       of <TT>'a</TT> by the rule.</li>
+       <li><TT>SOME NONE</TT>: The rule has been applicable, and the argument has been
+       rejected.</li></ul></P>
+    </DD>
+-->
+
+    <DT>
+      <TT>datatype 'a <A name="action">action</A> = ACCEPT of 'a | REJECT | PASS</TT>
+    </DT>
+    <DD>
+      <P>Describes the action to be taken for a specific argument.
+      A rule may either accept a call with the given argument value
+      reject the call, or indicate that it
+      does not apply, such that responsibility is passed on to the next rule.
+      In the case of acceptance the action decides which argument value
+      shall be used in the actual call - typically, this will be the original
+      value the rule was applied to, but a rule may choose to replace
+      the argument by a safe substitute.
+      </P>
+    </DD>
+<!--    
+    <DT>
+      <TT><A name="acceptImport">acceptImport</a> (<I>url</I> : <a href="url.html#t">Url.t</a>, <I>policy</I> : <a href="#import_policy">import_policy</a>) : unit</TT>
+    </DT>
+    <DD>
+      <P>Sets the import policy for <TT><I>url</I></TT>.
+       Every URL for which no policy has been set is rejected by default.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><a name="checkImport">checkImport</a> (<i>url</I> : <a href="url.html#t">Url.t</a>) : <a href="url.html#t">Url.t</a> option    </TT>
+    </DT>
+    <DD>
+      <P>Resolves a URL according to the defined import policy,
+      typically delivering the corresponding <TT>delegate-</TT> URL.
+      Returns <TT>NONE</TT> when <TT><i>url</i></tt> is to be rejected.
+      </P>
+    </DD> 
+
+    <DT>
+      <TT><a name="set">set</a> (<I>cap</I>, <I>rule</I>)</TT>
+    </DT>
+    <DD>
+      <P>Adds a rule
+      to the ruleset of the capability named <TT><I>cap</I></TT>.
+      When a rule was already set for <TT><I>cap</I></TT>, then
+      the new rule will override it, except for cases where its handler
+      function returns <TT>PASS</TT>.</P>
+    </DD> 
+-->    
+    <DT>
+      <TT>signature <A name="ARG_TYPE">ARG_TYPE</a></TT>
+    </DT>
+    <DD>
+      <P>A structure instantiating </tt>ARG_TYPE</tt> provides functions for
+       creating and checking rules for capabilities with a specific argument type<!-- <tt><a href="#ARG_TYPE_t">t</a></tt>-->. It defines the following entities:</P>
+
+	<DL>
+	    <DT>
+	      <TT>type <A name="ARG_TYPE_t">t</a></TT>
+	    </DT>
+	    <DD>
+	      <P>The actual argument type.</P>
+	    </DD>
+
+	<!--
+	    <DT>
+	      <TT>(ARG_TYPE) constructor <A name="ARG_TYPE_C">C</a> of <a href="#ARG_TYPE_t">t</a> <a href="#instance">instance</a> : <a href="#handler">handler</a></TT>
+	    </DT>
+	    <DD>
+	      <P>Wrap a modification rule for <tt><a href="#ARG_TYPE_t">t</a></tt> values inside
+        	the <tt><a href="#handler">handler</a></tt> type.</P>
+	    </DD>
+	-->
+
+	    <DT>
+	      <TT><A name="rule">rule</A> (<I>cap</I>, <I>f</I><!-- : <a href="#ARG_TYPE_t">t</a> -> <a href="#ARG_TYPE_t">t</a> <a href="#action">action</a>-->)</TT>
+	    </DT>
+	    <DD>
+	      <P>Adds a rule
+	      to the ruleset of the capability named <TT><I>cap</I></TT>, which
+	      applies to an argument of type <tt><a href="#ARG_TYPE_t">t</a></tt>.
+	      When a rule was already set for <TT><I>cap</I></TT>, then
+	      the new rule will override it, except for cases where
+	      <TT><I>f</I></TT> returns <TT>PASS</TT>.</P>
+	    </DD>
+<!--
+	    <DT>
+	      <TT><A name="setDefault">setDefault</a> (<I>cap</I> : string, <I>accept</I> : bool) : unit</TT>
+	    </DT>
+	    <DD>
+	      <P>Sets the default policy for the capability <tt><I>cap</I></tt>,
+	        used if no handler applies.
+		Initially set to <TT>false</TT>,
+		but can be set to <TT>true</TT> to realise black listing
+		instead of white listing.</P>
+		<P>Note that this creates a handler of suitable argument
+		type internally, thus the correct instance has to be chosen.
+		</P>
+	    </DD>
+-->
+	    <DT>
+	      <TT><A name="check">check</A> (<I>cap</I>, <I>caller</I>, <I>arg</I>)</TT>
+	    </DT>
+	    <DD>
+	      <P>Checks whether <TT><I>arg</i></tt>
+        	 is an acceptable argument for capability <TT><I>cap</i></tt>,
+		 and returns the rewritten value to be used for the actual
+		 call.
+<!--
+		 This can be used inside safe substitute components.
+-->
+                 The function sequentially checks the rules set for
+		 <TT><I>cap</i></tt>, the most recent first, until one
+		 returns a <TT>ACCEPT <I>x</I></TT> or <TT>REJECT</TT> action.
+		 In the former case, <TT><I>x</I></TT> is returned, in
+		 the latter the exception
+		 <tt>Sandbox.Security <I>caller</I></tt> is raised.
+		 This exception is also raised
+		 if no rule applies, i.e. all rules return <TT>PASS</TT>.</P>
+	    </DD> 
+	</DL>
+
+    </DD>
+
+<!--
+    <DT>
+      <TT>signature <A name="STRING_ARG_TYPE">STRING_ARG_TYPE</a></TT>
+    </DT>
+    <DD>
+      <P>An </tt>ARG_TYPE</tt> for string-like type, providing additional
+      convenience functions:</P>
+    </DD>
+    
+        <DL>
+	    <DT>
+	      <TT><A name="acceptPrefix">acceptPrefix</A> : string -> <a href="#handler">handler</a></TT><br />
+	      <TT><A name="rejectPrefix">rejectPrefix</A> : string -> <a href="#handler">handler</a></TT><br />
+	      <TT><A name="acceptSuffix">acceptSuffix</A> : string -> <a href="#handler">handler</a></TT><br />
+	      <TT><A name="rejectSuffix">rejectSuffix</A> : string -> <a href="#handler">handler</a></TT><br />
+	      <TT><A name="acceptSubstring">acceptSubstring</A> : string -> <a href="#handler">handler</a></TT><br />
+	      <TT><A name="rejectSubstring">rejectSubstring</A> : string -> <a href="#handler">handler</a></TT><br />
+	    </DT>
+	    <DD>
+	      <P>Create handlers which decides acceptability based on the
+	      presence or absence of a given substring. No rewriting takes
+	      place.</P>
+	    </DD>
+        </DL>
+-->
+    <DT>
+      <TT>functor <a name="MkArgType">MkArgType</a> (type t) : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = unit</TT><br />
+    </DT>
+    <DD>
+      <P>Functor to create rule operations for type <TT>t</TT>.</P>
+    </DD> 
+
+    <DT>
+      <TT>structure <a name="Unit">Unit</a> : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = unit</TT><br />
+      <TT>structure <a name="Int">Int</a> : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="int.html#t">Int.t</a></TT><br />
+      <TT>structure <a name="Url">Url</a> : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="url.html#t">Url.t</a></TT><br />
+      <TT>structure <a name="String">String</a> : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="string.html#t">String.t</a></TT><br />
+      <TT>structure <a name="File">File</a> : <a href="#ARG_TYPE">ARG_TYPE</a> where type <a href="#ARG_TYPE_t">t</a> = <a href="string.html#t">String.t</a></TT><br />
+    </DT>
+    <DD>
+      <P>Predefined argument structures for common argument types.</P>
+    </DD> 
+  </DL>
+
+
+<?php section("capabilities", "capabilities") ?>
+
+  <P>
+    This is a list of all capabilities provided by the standard library with their respective contexts,
+    and the functions from which they are checked.
+  </P>
+  <TABLE align=center border=1>
+<TR><TH>Capability</TH><TH>Functions</TH><TH>Context</TH>
+<!--
+	<TR>
+	  <TD><TT>import</TT></TD>
+	  <TD><TT>Component.load
+	    </TD>
+	    <TD><TT>Url</TT></TD>
+	</TR>
+-->	    
+	<TR>
+	  <TD><TT>readFile</TT></TD>
+	  <TD><TT>OS.FileSys.openDir<br /></TT>
+	      <TT>OS.FileSys.isDir<br /></TT>
+          <TT>OS.FileSys.fileSize<br /></TT>
+          <TT>OS.FileSys.modTime<br /></TT>
+          <TT>TextIO.openIn</TT>
+	    </TD>
+	    <TD><TT>File</TT></TD>
+	</TR>
+	    
+	<TR>
+	  <TD><TT>writeFile</TT></TD>
+	  <TD><TT>BinIO.openOut<br /></TT>
+<TT>BinIO.openAppend<br /></TT>
+<TT>BinIO.openOverwrite<br /></TT>
+<TT>Component.save<br /></TT>
+<TT>OS.FileSys.mkDir<br /></TT>
+<TT>OS.FileSys.rmDir<br /></TT>
+<TT>OS.FileSys.remove<br /></TT>
+<TT>OS.FileSys.tmpName<br /></TT>
+<TT>TextIO.openOut<br /></TT>
+<TT>TextIO.openAppend</TT>
+	  </TD>
+	  <TD><TT>File</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>commandLineName</TT></TD>
+	  <TD><TT>CommandLine.name</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>commandLineArgs</TT></TD>
+	  <TD><TT>CommandLine.arguments</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>componentLoad</TT></TD>
+	  <TD><TT>Component.load</TT>
+	  </TD>
+	  <TD><TT>Url</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>readUrl</TT></TD>
+	  <TD><TT>Component.load<br /></TT>
+<TT>HttpClient.request<br /></TT>
+<TT>HttpClient.get<br /></TT>
+<TT>HttpClient.post</TT>
+	  </TD>
+	  <TD><TT>Url</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>componentSave</TT></TD>
+	  <TD><TT>Component.save</TT>
+	  </TD>
+	  <TD><TT>File</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>MkManager</TT></TD>
+	  <TD><TT>Component.MkManager</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>getHomeDir</TT></TD>
+	  <TD><TT>Config.homeDir<br /></TT>
+<TT>OS.FileSys.getHomeDir<br /></TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>readSocket</TT></TD>
+	  <TD><TT>Http.readRequest<br /></TT>
+<TT>Http.readResponse</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>writeSocket</TT></TD>
+	  <TD><TT>Http.writeRequest<br /></TT>
+<TT>Http.writeResponse</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>    
+
+	<TR>
+	  <TD><TT>readPort</TT></TD>
+	  <TD><TT>Socket.server</TT>
+	  </TD>
+	  <TD><TT>Int</TT></TD>
+	</TR>    
+	
+	<TR>
+	  <TD><TT>writePort</TT></TD>
+	  <TD><TT>HttpClient.request<br /></TT>
+<TT>HttpClient.get<br /></TT>
+<TT>HttpClient.post<br /></TT>
+<TT>HttpServer.start<br /></TT>
+<TT>HttpServer.start<br /></TT>
+<TT>Socket.server</TT>
+	  </TD>
+	  <TD><TT>Int</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>getDir</TT></TD>
+	  <TD><TT>OS.FileSys.getDir</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>    
+
+	<TR>
+	  <TD><TT>getApplicationConfigDir</TT></TD>
+	  <TD><TT>OS.FileSys.getApplicationConfigDir</TT>
+	  </TD>
+	  <TD><TT>File</TT></TD>
+	</TR>    
+	
+	<TR>
+	  <TD><TT>sysCall</TT></TD>
+	  <TD><TT>OS.Process.system<br /></TT>
+<TT>Unix.execute</TT>
+	  </TD>
+	  <TD><TT>String</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>terminate</TT></TD>
+	  <TD><TT>OS.Process.exit<br /></TT>
+<TT>OS.Process.terminate</TT>
+	  </TD>
+	  <TD><TT>Int</TT></TD>
+	</TR>  
+
+	
+	<TR>
+	  <TD><TT>getEnv</TT></TD>
+	  <TD><TT>OS.Process.getEnv</TT>
+	  </TD>
+	  <TD><TT>String</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>pickleLoad</TT></TD>
+	  <TD><TT>Pickle.load<br /></TT>
+<TT>Pickle.Load<br /></TT>
+<TT>Pickle.LoadVal</TT>
+	  </TD>
+	  <TD><TT>File</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>pickleSave</TT></TD>
+	  <TD><TT>Pickle.save<br /></TT>
+<TT>Pickle.Save<br /></TT>
+<TT>Pickle.SaveVal</TT>
+	  </TD>
+	  <TD><TT>File</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>deepWait</TT></TD>
+	  <TD><TT>Store.deepWait</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>stdIn</TT></TD>
+	  <TD><TT>TextIO.stdIn</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+	
+	<TR>
+	  <TD><TT>stdOut</TT></TD>
+	  <TD><TT>TextIO.stdOut</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+
+	<TR>
+	  <TD><TT>stdErr</TT></TD>
+	  <TD><TT>TextIO.stdErr</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+
+	<TR>
+	  <TD><TT>processWait</TT></TD>
+	  <TD><TT>Unix.wait</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+
+	<TR>
+	  <TD><TT>processReap</TT></TD>
+	  <TD><TT>Unix.reap</TT>
+	  </TD>
+	  <TD><TT>Unit</TT></TD>
+	</TR>
+  </TABLE>
+  
+<?php footing() ?>

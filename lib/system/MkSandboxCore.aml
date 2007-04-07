@@ -1,0 +1,40 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein and Andreas Rossberg, 2006-2007
+ *)
+
+import structure OS                from "OS"
+import structure Url               from "Url"
+import structure Resolver          from "Resolver"
+import structure Component         from "Component"
+import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
+
+functor MkSandboxCore (val redirectUrl : Url.t -> Url.t option)
+	: COMPONENT_MANAGER =
+struct
+    val primalHandlers =
+        case OS.Process.getEnv "ALICE_LOAD" of
+        | SOME s => Resolver.Handler.parse s
+	| NONE => [Resolver.Handler.default]
+
+    fun delegateUrl url =
+	Url.setScheme (url, SOME ("delegate-" ^
+				  Option.getOpt (Url.getScheme url, "")))
+
+    val delegateRedirectUrl = Option.map delegateUrl o redirectUrl
+
+    val handlers =
+        Resolver.Handler.custom ("Redirect Component", delegateRedirectUrl) ::
+        Resolver.Handler.prefix ("x-alice:", "delegate-x-alice:") ::
+        primalHandlers
+
+    val resolver = Resolver.resolver {name = "load", handlers, memoize = true}
+
+    (* The component manager which is used to link the components
+     * belonging to the client application hosted by the sandbox. *)
+    open Component.MkManager (val resolver = resolver)
+end

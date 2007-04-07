@@ -1,0 +1,91 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import structure TextIO  from "../../system/TextIO"
+import signature TEXT_IO from "../../system/TEXT_IO-sig"
+import signature POLICY  from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure TextIO : TEXT_IO = 
+struct
+    structure StreamIO = TextIO.StreamIO
+
+    type vector = TextIO.vector
+    type elem = TextIO.elem
+    type instream = TextIO.instream
+    type outstream = TextIO.outstream
+
+    val stdIn = lazy let
+                         do Policy.Unit.check ("stdIn", "TextIO.stdIn", ())
+                     in
+                         TextIO.stdIn
+                     end
+                     
+    val stdOut = lazy let
+                          do Policy.Unit.check ("stdOut", "TextIO.stdOut", ())
+                      in
+                          TextIO.stdOut
+                      end
+                      
+    val stdErr = lazy let
+                          do Policy.Unit.check ("stdErr", "TextIO.stdErr", ())
+                      in
+                          TextIO.stdErr
+                      end
+
+    fun openIn file =
+        let
+            val file' = Policy.File.check ("readFile", "TextIO.openIn", file)
+        in
+            TextIO.openIn file'
+        end
+        
+    val input = TextIO.input
+    val input1 = TextIO.input1
+    val inputN = TextIO.inputN
+    val inputLine = TextIO.inputLine
+    val inputAll = TextIO.inputAll
+    val canInput = TextIO.canInput
+    val lookahead = TextIO.lookahead
+    val closeIn = TextIO.closeIn
+    val endOfStream = TextIO.endOfStream
+    val mkInstream = TextIO.mkInstream
+    val getInstream = TextIO.getInstream
+    val setInstream = TextIO.setInstream
+
+    fun openOut file =
+        let
+            val file' = Policy.File.check ("writeFile", "TextIO.openOut", file)
+        in
+            TextIO.openOut file'
+        end
+
+    fun openAppend file =
+        let
+            val file' = Policy.File.check ("writeFile", "TextIO.openAppend", file)
+        in
+            TextIO.openAppend file'
+        end
+
+    val openString = TextIO.openString
+    val output = TextIO.output
+    val output1 = TextIO.output1
+    val outputSubstr = TextIO.outputSubstr
+    val flushOut = TextIO.flushOut
+    val closeOut = TextIO.closeOut
+    val mkOutstream = TextIO.mkOutstream
+    val getOutstream = TextIO.getOutstream
+    val setOutstream = TextIO.setOutstream
+    val getPosOut = TextIO.getPosOut
+    val setPosOut = TextIO.setPosOut
+
+    val print = TextIO.print
+    val scanStream = TextIO.scanStream
+
+end
+val print = TextIO.print

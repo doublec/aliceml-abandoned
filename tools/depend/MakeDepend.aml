@@ -24,7 +24,7 @@ in
     structure MakeDepend :> MAKE_DEPEND =
 	struct
             fun version () =
-                (TextIO.print "alicedep 0.9.3\n\n\
+                (TextIO.print "alicedep 1.4\n\n\
                               \Copyright (C) 2003  Programming Systems Lab.\n\
                               \See the source for copying conditions.\n";
                  OS.Process.success)

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002-2006
+ *   Andreas Rossberg, 2002-2007
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,6 +27,7 @@ import signature PP_VALUE         from "PP_VALUE-sig"
 import structure IO               from "IO"
 import structure OS               from "OS"
 import structure Component        from "Component"
+import structure Sandbox          from "Sandbox"
 
 
 structure PPValue (*: PP_VALUE*) =
@@ -395,13 +396,15 @@ local
 	  | Package.Mismatch m =>
             ppExnWithArg fm x m
           | Component.Eval e =>
-            ppExnWithArg fm x e  
+            ppExnWithArg fm x e
           | Component.Failure e =>
             ppExnWithArg fm x e
           | Component.Internal e =>
-            ppExnWithArg fm x e  
+            ppExnWithArg fm x e
           | Component.Mismatch i =>
-            ppExnWithArg fm x i  
+            ppExnWithArg fm x i
+          | Sandbox.Security s =>
+            ppExnWithArg fm x s
           | IO.Io a =>
             ppExnWithArg fm x a
 	  | _ => NONE

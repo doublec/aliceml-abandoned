@@ -814,7 +814,10 @@ end
 		 val strid = G.StrId(I, StrId.invent())
 		 val dec   = G.STRUCTUREDec(I, G.StrBind(I, strid,strexp, NONE))
 	     in
+(* Leads to strange bug (Bugzille #187) for lib/system/MkPolicy...
 		G.LOCALDec(I, dec, G.OPENDec(I, G.SHORTLong(I, strid)))
+*)
+		G.SEQDec(I, dec, G.OPENDec(I, G.SHORTLong(I, strid)))
 	     end
 
     fun INFIXMULTIDec(I, _, [])          = G.EMPTYDec(I)

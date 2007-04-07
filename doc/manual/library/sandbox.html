@@ -1,0 +1,279 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Sandbox structure",
+	      "The <TT>Sandbox</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature SANDBOX
+    structure Sandbox : SANDBOX</PRE>
+
+  <P>
+    This structure realises an experimental <EM>sandbox</EM> infrastructure
+    for executing untrusted components.
+    To this end, it provides a means to create
+    <a href="component-manager.html">component managers</a> which can be
+    customised over a set of <em><a href="policy.html">policy</a></em> rules.
+  </P>
+
+  <P>
+    <B>Note:</B> The sandboxing mechanism should be
+    understood as a
+    proof-of-concept implementation, since some of the safety assumptions it
+    makes about the runtime system are not vindicated in the current Alice system.
+  </P>
+
+  <P>
+    See also:
+    <A href="policy.html"><TT>POLICY</TT></A>,
+    <A href="component.html"><TT>Component</TT></A>,
+    <A href="component-manager.html"><TT>ComponentManager</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature SANDBOX from "x-alice:/lib/system/SANDBOX-sig"
+    import structure Sandbox from "x-alice:/lib/system/Sandbox"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature SANDBOX =
+    sig
+        exception <a href="#Security">Security</a> of string
+        functor <a href="#MkManager">MkManager</a> (Policy : <a href="policy.html">POLICY</a>) : <a href="component-manager.html">COMPONENT_MANAGER</a>
+    end</pre>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>exception <a name="Security">Security</a> of string</TT>
+    </DT>
+    <DD>
+      <P>Raised whenever a component performs an operation that violates
+        the <a href="policy.html">policy rules</a> established by its
+	component manager for realising a sandbox.
+        <!--If the component does not handle the exception, it may ultimately
+	propagate to the manager itself.-->
+	The string either carries the name of the system function that was
+	rejected, or a generic error message.</P>
+    </DD>
+    
+    <DT>
+      <TT>functor <a name="MkManager">MkManager</a> (Policy : <a href="policy.html">POLICY</a>) : <a href="component-manager.html">COMPONENT_MANAGER</a></TT>
+    </DT>
+    <DD>
+      <P>Enables creation of custom <a href="component-manager.html">component managers</a> to realise a sandbox.
+        The <tt>Policy</tt> structure controls the rules governing access to <a href="policy.html">capabilities</a> inside the sandbox.</P>
+      <P>
+	Note that an arbitrary number of independent sandboxes can be created.
+	By creating a separate <TT>Policy</TT> structure for each sandbox,
+	they may implement different policies.</P>
+	<P>
+	A sandbox is said to be <em>nested</em> if it is created <em>inside</em>
+	another sandbox. Note that a nested sandbox cannot grant more
+	capabilities than its enclosing sandboxes, because the
+	latter limits the capabilities the nested sandbox has and thus
+	can provide itself.
+      </P>
+    </DD>
+  </DL>
+
+
+<?php section("example", "example") ?>
+
+  <P>
+     Assume that we want to link a component from a site that we do not trust,
+     and hence we want to restrict its write access to the file system.
+     We can do so by creating a sandbox component manager and evaluating
+     the component through it.
+  </P>
+
+  <P>
+    First, we have to create a suitable <tt>Policy</tt> structure.
+    This can be accomplished simply by applying the appropriate functor from
+    the <a href="policy.html"><tt>MkPolicy</tt></a> component:
+  </P>
+  <PRE class=code>
+    structure Policy = MkReadOnlyPolicy()</PRE>
+    
+  <P>
+    From this structure we create the sandbox manager:
+  </P>
+  <PRE class=code>
+    structure Safe = Sandbox.MkManager Policy</PRE>
+
+  <P>
+    The structure <TT>Safe</TT> will have the full interface of a
+    <a href="component-manager.html">component manager</a>. In particular,
+    we can use the function
+    <TT>Save.<a href="component-manager.html#link">link</a></TT> to
+    load the untrusted component:
+  </P>
+  <PRE class=code>
+    open unpack Safe.link(Url.fromString "http:/untrusted.com/Plugin") : SIG</PRE>
+
+  <P>
+    To make the example more concrete, let us create a component ourselves:
+  </P>
+  <PRE class=code>
+    val component =
+        comp
+            import structure TextIO : TEXT_IO from "x-alice:/lib/system/TextIO"
+        in
+            val run : unit -> string
+        with
+            fun run() =
+            let
+               val file = TextIO.openOut "message.txt"
+            in
+               TextIO.output(file, "Imperative programming rules!\n");
+               TextIO.closeOut file;
+               "Functional programming is nice."
+            end
+        end</PRE>
+
+  <P>
+    We cannot allow our file system to be spammed with such heretic messages
+    behind our backs, so it is a good choice to evaluate the component inside
+    the sandbox:
+  </P>
+  <PRE class=code>
+    open unpack Safe.eval(Url.fromString "local", component) : (val run : unit -> string)
+    val s = run()</PRE>
+
+  <P>
+    Evaluating the call to <TT>run</TT> will fail due to its attempt to
+    invoke <TT>TextIO.openOut</TT>, which causes
+    a <TT>Security</TT> exception to be raised.
+  </P>
+
+  <P class=note>
+    <em>Note:</em> The URL we choose here guides how relative imports performed by the component
+    are resolved. In this case the component does not have relative
+    imports, such that the choice is arbitrary.
+  </P>
+
+  <P>
+    But hey, maybe we have our noble, pluralistic day, and allow components
+    to spread their word as long as they keep it to the <TT>/tmp</TT> directory.
+    No problem, we just have to customize the policy accordingly, by defining
+    a new rule for the <TT>"writeFile"</TT> capability
+    (see the <a href="policy.html#capabilities">list of capabilities</a>):
+  </P>
+
+  <PRE class=code>
+    fun tempOnly path =
+	case OS.Path.fromString path of
+        | {isAbs=true, arcs="tmp"::_, ...} => Policy.ACCEPT path
+        | {isAbs=false, arcs=[name], vol} =>
+	     Policy.ACCEPT(OS.Path.toString{isAbs=true, arcs=["tmp",name], vol})
+	| _ => Policy.REJECT
+
+    do Policy.File.rule("writeFile", tempOnly)</PRE>
+
+  <P>
+    This rule does three things: (1) it freely allows opening files for writing
+    in the <TT>/tmp</TT> directory, (2) it redirects files
+    opened without specifying a directory to <TT>/tmp</TT>, and (3) it
+    prohibits all other file write access.
+
+    After setting this policy rule, our component
+    above can be evaluated successfully, and leaves its message in the file
+    <TT>/tmp/message.txt</TT>, where it should not cause any harm.
+  </P>
+
+  <P>
+    What if our policy was violated not during a call, but during evaluation
+    of the component itself? For example, consider the following variation:
+  </P>
+  <PRE class=code>
+    val component =
+        comp
+            import structure TextIO : TEXT_IO from "x-alice:/lib/system/TextIO"
+        in
+            val run : unit -> string
+        with
+            val file = TextIO.openOut "/message.txt"
+            do TextIO.output(file, "Imperative programming rules!\n")
+            do TextIO.closeOut file
+            fun run() = "Functional programming is nice."
+        end</PRE>
+
+  <P>
+    In this case, the <TT>Security</TT> exception would already be raised
+    during <TT>Safe.eval</TT>, which evaluates the component body.
+    (And the exception will be raised despite our relaxed policy, because the
+     component now tries to create the file in the root directory).
+  </P>
+
+
+<?php subsection("imports", "Controlling imports") ?>
+
+  <P>
+    A more radical way to prevent write access is to prevent the system
+    components that enable it from being imported <em>at all</em>.
+    A rule for the <a href="policy.html#capabilities><TT>"componentLoad"</TT></a>
+    capability can be set for this purpose:
+  </P>
+
+  <PRE class=code>
+    fun noIOCom url =
+        case Url.toString url of
+        | "x-alice:/lib/system/TextIO"
+        | "x-alice:/lib/system/BinIO" => REJECT
+        | _ => PASS
+
+    do Policy.Url.rule("componentLoad", noIOCom)</PRE>
+
+  <P>
+    This rule implements a form of <em>black-listing</em> of components.
+    When it is active, any attempt to import one of the listed components
+    will immediately raise a <TT>Security</TT> exception. Note that this
+    also applies to imports performed by the Alice ML <TT>import</TT>
+    declaration syntax, because that ultimately is mapped to the
+    <TT>Component.load</TT> function.
+    We only show this for presentational purposes.
+    This approach is very restrictive, because it does not only
+    disable write access, but actually any kind of I/O
+    (at least through these components).
+
+    Another major disadvantage of black-listing is that it is fragile:
+    should the sandbox run on a version of Alice that provides additional
+    components that enable write access then the policy is no longer safe.
+  </P>
+
+  <P>
+    A more realistic use of the <TT>"componentLoad"</TT> capability hence
+    would be for white-listing external domains from which components may
+    be imported:
+  </P>
+
+  <PRE class=code>
+    fun limitUrl url =
+        case (Url.getScheme url, Url.getAuthority url) of
+        | (NONE | SOME("file"|"x-alice"), _) => PASS
+        | (SOME "http", "www.ps.uni-sb.de"|"www.uni-saarland.com") => PASS
+	| _ => REJECT
+
+    do Policy.Url.rule("componentLoad", limitUrl)</PRE>
+
+  <P>
+    Instead of outright rejecting some components, a sandbox may also
+    redirect the imports to other URLs, which carry safe substitutes, for
+    example. This is precisely the approach taken by the
+    <a href="policy.html">predefined policy functors</a> to handle
+    system components: they redirect imports of these
+    components to safe wrappers that check capabilities for individual
+    operations.
+
+    For this reason, the action taken for white-listed URLs should be
+    <TT>PASS</TT> like above,
+    not <TT>ACCEPT</TT>, since accpeted URLs still have to be rewritten 
+    and delegated to the parent component manager, which is performed by the
+    initial rules already set by the functors.
+  </P>
+
+<?php footing() ?>

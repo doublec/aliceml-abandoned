@@ -1789,6 +1789,13 @@ TextIO.print "Inf.instance done.\n";
 	end
 				   (* should remove p,j refs from u! *)
 
+    fun rename j =
+	build({inf  = Map.map(),
+	       kind = KindMap.map(),
+	       typ  = Type.realiseStart(),
+	       rea  = rea(),
+	       inst = InstTop}, j)
+
 
   (* Breaking dependencies on paths b *)
 
@@ -2111,20 +2118,20 @@ TextIO.print "Inf.match done.\n")
 	  | (CON(p1,_), CON(p2,_)) =>
 		if Path.equal(p1,p2) then () else
 		(case PathMap.lookup(#inf_rea rea, p1)
-		   of SOME j1' => match'(mt,rea,j1',j2)
+		   of SOME j1' => match'(mt,rea,rename j1',j2)
 		    | NONE     =>
 		 case PathMap.lookup(#inf_rea rea, p2)
-		   of SOME j2' => match'(mt,rea,j1,j2')
+		   of SOME j2' => match'(mt,rea,j1,rename j2')
 		    | NONE     => raise Mismatch(Incompatible(j1,j2))
 		)
 	  | (CON(p1,_), _) =>
 		(case PathMap.lookup(#inf_rea rea, p1)
-		   of SOME j1' => match'(mt,rea,j1',j2)
+		   of SOME j1' => match'(mt,rea,rename j1',j2)
 		    | NONE     => raise Mismatch(Incompatible(j1,j2))
 		)
 	  | (_, CON(p2,_)) =>
 		(case PathMap.lookup(#inf_rea rea, p2)
-		   of SOME j2' => match'(mt,rea,j1,j2')
+		   of SOME j2' => match'(mt,rea,j1,rename j2')
 		    | NONE     => raise Mismatch(Incompatible(j1,j2))
 		)
 	  | (SIG s1, SIG s2) =>

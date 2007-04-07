@@ -41,6 +41,13 @@ static word MakeNativeError() {
 //
 // Primitives
 //
+static int UnsafeComponentCounter = 0;
+
+DEFINE0(UnsafeComponent_counter) {
+  ++UnsafeComponentCounter;
+  RETURN_INT(UnsafeComponentCounter);
+} END
+
 DEFINE3(UnsafeComponent_Mismatch) {
   ConVal *conVal =
     ConVal::New(Store::DirectWordToBlock(MismatchConstructor), 3);
@@ -170,7 +177,7 @@ AliceDll word UnsafeComponent() {
     UniqueConstructor::New("Native", "Component.Native")->ToWord();
   RootSet::Add(NativeConstructor);
 
-  Record *record = Record::New(26);
+  Record *record = Record::New(27);
   record->Init("'SitedInternal", Pickler::Sited);
   record->Init("SitedInternal", Pickler::Sited);
   record->Init("'CorruptInternal", Unpickler::Corrupt);
@@ -194,6 +201,8 @@ AliceDll word UnsafeComponent() {
   INIT_STRUCTURE(record, "UnsafeComponent", "Native",
 		 UnsafeComponent_Native, 1);
   record->Init("extension", String::New("alc")->ToWord());
+  INIT_STRUCTURE(record, "UnsafeComponent", "counter",
+		 UnsafeComponent_counter, 0);
   INIT_STRUCTURE(record, "UnsafeComponent", "getInitialTable",
 		 UnsafeComponent_getInitialTable, 0);
   INIT_STRUCTURE_N(record, "UnsafeComponent", "save",

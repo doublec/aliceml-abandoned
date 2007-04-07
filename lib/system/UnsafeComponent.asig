@@ -35,6 +35,7 @@ signature UNSAFE_COMPONENT_COMPONENT =
 		exception Native of string
 
 		val extension: string
+		val counter: unit -> int
 
 		val getInitialTable: unit -> (string * 'sign * 'str) vector
 

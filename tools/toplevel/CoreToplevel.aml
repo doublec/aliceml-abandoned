@@ -14,6 +14,7 @@ import structure TextIO      from "x-alice:/lib/system/TextIO"
 import structure Url         from "x-alice:/lib/system/Url"
 import structure Reflect     from "x-alice:/lib/system/Reflect"
 import structure Component   from "x-alice:/lib/system/Component"
+import structure Sandbox     from "x-alice:/lib/system/Sandbox"
 import structure PPValue     from "x-alice:/lib/system/PPValue"
 import structure PPComponent from "x-alice:/lib/system/PPComponent"
 import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
@@ -202,6 +203,13 @@ struct
 		  | Component.Failure (url, Component.Internal exn) =>
 			(TextIO.output (errStream, "Internal exception\n");
 			 printExn (errStream, exn);
+			 if String.isSuffix "/" (Url.toStringRaw url) then ()
+			 else
+			 TextIO.output (errStream, "while linking\n   " ^
+						   Url.toStringRaw url ^ "\n"))
+		  | Component.Failure (url, Sandbox.Security s) =>
+			(TextIO.output (errStream, "Security violation:\n   " ^
+						   s ^ "\n");
 			 if String.isSuffix "/" (Url.toStringRaw url) then ()
 			 else
 			 TextIO.output (errStream, "while linking\n   " ^

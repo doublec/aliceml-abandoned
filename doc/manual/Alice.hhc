@@ -368,6 +368,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/pickle.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="POLICY">
+			<param name="Local" value="library/policy.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="PRIM_IO">
 			<param name="Local" value="library/prim-io.html">
 			</OBJECT>
@@ -414,6 +418,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="RESOLVER_HANDLER">
 			<param name="Local" value="library/resolver-handler.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Sandbox">
+			<param name="Local" value="library/sandbox.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Search">

@@ -28,7 +28,6 @@ import structure DynMatch          from "DynMatch"
 import structure UrlMap            from "UrlMap"
 import signature COMPONENT         from "COMPONENT-sig"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
-import structure Rand              from "Rand"
 
 (* Lazy! Only used for nested instances, and should reference parent manager. *)
 (*ignore*)import structure ComponentManager : COMPONENT_MANAGER from "x-alice:/lib/system/ComponentManager"
@@ -229,13 +228,11 @@ struct
 				val resolver : Resolver.t
 				val nested : bool)
 
-    val idCounter = ref 1
-
     functor MkManager'' (Config: MANAGER_CONFIG) =
     struct
 	(*--** should query and fragment be rejected instead of ignored? *)
 
-	val id = Rand.rand () (* !idCounter before idCounter := !idCounter+1 *)
+	val id = UnsafeComponent.counter ()
 
 	exception Conflict
 
@@ -524,6 +521,7 @@ trace (!logger, id, "extended realisation after considering import " ^ Url.toStr
 	exception Native of string
 
 	val extension: string
+	val counter: unit -> int
 
 	val getInitialTable: unit -> (string * 'sign * 'str) vector
 

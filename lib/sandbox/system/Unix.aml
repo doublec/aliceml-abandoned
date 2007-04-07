@@ -1,0 +1,47 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import structure Unix   from "../../system/Unix"
+import signature UNIX   from "../../system/UNIX-sig"
+import signature POLICY from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure Unix : UNIX =
+struct
+    type ('a,'b) proc = ('a,'b) Unix.proc
+    type signal = Unix.signal
+
+    datatype exit_status =
+        W_EXITED
+      | W_EXITSTATUS of Word8.word
+      | W_SIGNALED of signal
+      | W_STOPPED of signal
+
+    fun execute (cmd, args) =
+        let
+            val cmd' = Policy.String.check ("sysCall", "Unix.execute", cmd)
+        in
+            Unix.execute (cmd', args)
+        end
+
+    val streamsOf = Unix.streamsOf
+
+    fun wait pr =
+        let
+            do Policy.Unit.check ("processWait", "Unix.wait", ())
+        in
+            Unix.wait pr
+        end
+        
+    fun reap pr =
+        let
+            do Policy.Unit.check ("processReap", "Unix.reap", ())
+        in
+            Unix.reap pr
+        end
+end

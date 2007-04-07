@@ -1,0 +1,72 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import structure Url         from "../../system/Url"
+import signature HTTP_CLIENT from "../../system/HTTP_CLIENT-sig"
+import structure HttpClient  from "../../system/HttpClient"
+import signature POLICY      from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure HttpClient : HTTP_CLIENT =
+    struct
+    type document = HttpClient.document
+
+    exception Authority = HttpClient.Authority
+
+    fun parseAuthority authority =
+        case CharVector.findi (fn (_, c) => c = #":") authority of
+            SOME (i, _) =>
+                let
+                    val host = String.substring (authority, 0, i)
+                    val port = String.extract (authority, i + 1, NONE)
+                in
+                    (host, case Int.fromString port of
+                           SOME port => port
+                         | NONE => raise Authority)
+                end
+          | NONE => (authority, 80)
+
+    fun request (url, request) =
+        let
+            val url' = Policy.Url.check ("readUrl", "HttpClient.request", url)
+            val authority = case Url.getAuthority url' of
+                            SOME authority => authority
+                          | NONE => raise Authority
+            val (host, port) = parseAuthority authority
+            val port' = Policy.Int.check ("writePort", "HttpClient.request", port)
+            val url' = Url.setAuthority (url', SOME (host^Int.toString port'))
+        in
+            HttpClient.request (url', request)
+        end
+                
+    fun get url =
+        let
+            val url' = Policy.Url.check ("readUrl", "HttpClient.get", url)
+            val authority = case Url.getAuthority url' of
+                            SOME authority => authority
+                          | NONE => raise Authority
+            val (host, port) = parseAuthority authority
+            val port' = Policy.Int.check ("writePort", "HttpClient.get", port)
+            val url' = Url.setAuthority (url', SOME (host^Int.toString port'))
+        in
+            HttpClient.get url'
+        end
+
+    fun post (url, document) =
+        let
+            val url' = Policy.Url.check ("readUrl", "HttpClient.post", url)
+            val authority = case Url.getAuthority url' of
+                            SOME authority => authority
+                          | NONE => raise Authority
+            val (host, port) = parseAuthority authority
+            val port' = Policy.Int.check ("writePort", "HttpClient.post", port)
+            val url' = Url.setAuthority (url', SOME (host^Int.toString port'))
+        in 
+            HttpClient.post (url', document)
+        end
+end

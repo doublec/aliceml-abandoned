@@ -1,0 +1,34 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein, 2006
+ *)
+
+import signature HTTP_SERVER from "../../system/HTTP_SERVER-sig"
+import structure HttpServer  from "../../system/HttpServer"
+import signature POLICY      from "../../system/POLICY-sig"
+(*ignore*)import structure Policy : POLICY from "x-alice:/lib/sandbox/Policy"
+
+structure HttpServer : HTTP_SERVER =
+struct
+    type handler = HttpServer.handler
+
+    val logOut = HttpServer.logOut
+    val idleTime = HttpServer.idleTime
+
+    fun start portOpt =
+        let
+            val port' = case portOpt of
+                (* Handle 0 as special case in writePort *)
+                NONE => Policy.Int.check ("writePort", "HttpServer.start", 0)
+              | SOME port => Policy.Int.check ("writePort", "HttpServer.start", port)
+        in
+            if port' = 0
+            then HttpServer.start NONE
+            else HttpServer.start (SOME port')
+        end
+
+    val register = HttpServer.register
+end

@@ -203,8 +203,16 @@ LIBSYSTEMSOURCES0 = \
 	ComponentManager.aml Boot.aml PP_VALUE-sig.aml PPValue.aml \
 	PP_COMPONENT-sig.aml PPComponent.aml \
 	COMPILER-sig.aml Compiler.aml \
+	SANDBOX-sig.aml Sandbox.aml MkSandboxCore.aml \
+	POLICY-sig.aml MkPolicy.aml \
 	UnsafeDebugger.asig DEBUGGER-sig.aml Debugger.aml \
 	UnsafeByteCode.asig BYTE_CODE-sig.aml ByteCode.aml
+LIBSANDBOXSOURCES0 = \
+	SecurityViolation.aml
+LIBSANDBOXSYSTEMSOURCES0 = \
+	BinIO.aml CommandLine.aml Component.aml Config.aml \
+	Http.aml HttpClient.aml HttpServer.aml OS.aml Pickle.aml \
+	Socket.aml Store.aml TextIO.aml Unix.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
@@ -228,6 +236,8 @@ LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 LIBSOURCES0 = \
 	$(LIBDATASOURCES0:%=data/%) \
 	$(LIBSYSTEMSOURCES0:%=system/%) \
+	$(LIBSANDBOXSOURCES0:%=sandbox/%) \
+	$(LIBSANDBOXSYSTEMSOURCES0:%=sandbox/system/%) \
 	$(LIBUTILITYSOURCES0:%=utility/%) \
 	$(LIBRTTSOURCES0:%=rtt/%) \
 	$(LIBMLYACCSOURCES0:%=ml-yacc/%)
@@ -379,7 +389,8 @@ ALLSOURCES = \
 	$(VMSOURCES) $(LIBSOURCES) $(COMPILERSOURCES) $(TOOLSSOURCES)
 
 SOURCEDIRS = \
-	lib lib/fundamental lib/data lib/system lib/utility lib/rtt lib/ml-yacc \
+	lib lib/fundamental lib/data lib/system lib/sandbox lib/sandbox/system \
+	lib/utility lib/rtt lib/ml-yacc \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
@@ -451,6 +462,10 @@ Rel2.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< | tr '\n' ' ' | \
 	sed 's|(\*END\*)|\n|g' > $@
 
+Rel3.import: lib/fundamental/Fundamental.import
+	sed 's|x-alice:/|../../../|g' < $< | tr '\n' ' ' | \
+	sed 's|(\*END\*)|\n|g' > $@
+
 build1/Build1.aml: Build1.aml
 	cp $< $@
 
@@ -462,6 +477,12 @@ build1/lib/fundamental/%.aml: lib/fundamental/%.aml
 
 build1/lib/fundamental/%.aml: lib/fundamental/%.aml.m4
 	$(M4) $< > $@
+
+build1/lib/sandbox/SecurityViolation.aml: lib/sandbox/SecurityViolation.aml Rel2.import
+	cat Rel2.import $< > $@
+
+build1/lib/sandbox/%.aml: lib/sandbox/%.aml Rel3.import
+	cat Rel3.import $< > $@
 
 build1/lib/%.asig: lib/%.asig Rel2.import
 	cat Rel2.import $< > $@
@@ -602,7 +623,8 @@ build1/install/tools/Linker.alc:
 
 BUILD2DIRS = \
 	build2 build2/lib build2/lib/fundamental build2/lib/data \
-	build2/lib/system build2/lib/utility build2/lib/rtt build2/lib/ml-yacc \
+	build2/lib/system build2/lib/sandbox build2/lib/sandbox/system \
+	build2/lib/utility build2/lib/rtt build2/lib/ml-yacc \
 	build2/compiler/frontend-common
 BUILD2SOURCES = \
 	build2/lib/fundamental/RTT.aml build2/lib/rtt/RTT.aml \
@@ -669,6 +691,8 @@ INSTALL3DIRS = \
 	build3/install/lib/data \
 	build3/install/lib/debugger \
 	build3/install/lib/system \
+	build3/install/lib/sandbox \
+	build3/install/lib/sandbox/system \
 	build3/install/lib/utility \
 	build3/install/lib/rtt \
 	build3/install/lib/ml-yacc \
@@ -846,6 +870,8 @@ INSTALLDIRS = \
 	${pkgdatadir}/lib/data \
 	${pkgdatadir}/lib/debugger \
 	${pkgdatadir}/lib/system \
+	${pkgdatadir}/lib/sandbox \
+	${pkgdatadir}/lib/sandbox/system \
 	${pkgdatadir}/lib/utility \
 	${pkgdatadir}/lib/rtt \
 	${pkgdatadir}/lib/ml-yacc \
@@ -887,7 +913,7 @@ $(INSTALL3TOOLSFILES:%=${pkgdatadir}/tools/%): ${pkgdatadir}/%: \
 ##
 
 clean:
-	-rm -f Rel1.import Rel2.import
+	-rm -f Rel1.import Rel2.import Rel3.import
 	-rm -rf build1 build2 build3
 
 veryclean: clean

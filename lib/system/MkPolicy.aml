@@ -1,0 +1,266 @@
+(*
+ * Author:
+ *   Andi Scharfstein <andi@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andi Scharfstein and Andreas Rossberg, 2006-2007
+ *)
+
+import structure Url           from "Url"
+import structure Sandbox       from "Sandbox"
+import signature POLICY        from "POLICY-sig"
+import structure MkHashImpMap  from "../data/MkHashImpMap"
+
+functor MkPolicy () :> POLICY =
+struct
+    (* This type collects representations of types of values that can be
+     * passed through a policy rule, and possibly be modified in the process.
+     *)
+    exttype handler
+    
+    (* An 'a action is a general modification rule for 'a values. Given
+     * any 'a, it decides if 1) that 'a is an instance of the general
+     * pattern this rule represents, and 2) in case the rule is applicable,
+     * if the 'a should be accepted or rejected. Thus, the return value should
+     * be interpreted as follows:
+     * PASS: The rule hasn't been applicable: nothing happens.
+     * ACCEPT a': The rule has been applied, and returned some potentially
+     * modified a' in stead of the original argument. This indicates acceptance
+     * of a' by the rule.
+     * REJECT: The rule has been applicable, and the argument has been
+     * rejected.
+     *)
+    datatype 'a action =
+        ACCEPT of 'a
+      | REJECT
+      | PASS
+
+    structure StringMap = MkHashImpMap String
+
+    (* A structure instantiating ARG_TYPE provides functions for all
+     * operations on a single type t that relate to argument policies. *)
+    signature ARG_TYPE =
+    sig
+	    type t
+	    val rule : string * (t -> t action) -> unit
+	    val check : string * string * t -> t
+    end
+
+    (* The main policy table where all policy rules are stored. It is accessed
+     * via addRule and Handler.check. *)
+    val policy : handler list StringMap.map ref = ref (StringMap.map())
+
+
+    (* Main handler for policy checks. Given the name of the capability to
+     * check ("accessor"), the name of the function that triggered this
+     * check ("caller"), a function to (de-)construct the proper values
+     * for this type (of the checked value), and a value to check, it returns
+     * either a modified permissible value or throws a Security exception carrying
+     * the name of the calling function. To this end, all instance rules for
+     * the accessor are asked in turn if they feel responsible for said value,
+     * and if so, whether to accept or reject it. *)
+    fun handlePolicy (accessor : string,
+                      caller   : string,
+                      deconstruct : handler -> 'a -> 'a action,
+		      x : 'a) : 'a =
+        let
+	    fun search [] = raise Sandbox.Security caller
+              | search (f::fs) =
+                case deconstruct f x of
+                    ACCEPT x' => x'
+                  | REJECT => raise Sandbox.Security caller
+		  | PASS => search fs
+        in
+            case StringMap.lookup (!policy, accessor) of
+                SOME handlers => search handlers
+              | NONE => raise Sandbox.Security caller
+        end
+
+    (* Convenience functor to create ARG_TYPE instantiations. *)
+    functor MkArgType (type t) =
+    struct
+        (* The type treated by this particular ARG_TYPE instantiation. *)
+        type t = t
+    
+        (* Wrap a modification rule for t values inside the handler type. *)
+        constructor C of t -> t action : handler
+        fun unC (C f) = f | unC _ = Fn.const PASS
+
+	(* Create a handler to accept (and possibly rewrite) the argument
+	 * value given to the handler based on an arbitrary function. *)
+        fun rule (accessor, f : t -> t action) =
+            StringMap.insertWith (fn (hs, h) => h@hs) (!policy, accessor, [C f])
+        (* Perform a check on whether a certain value is an acceptable argument
+	 * for a certain resource (should be used inside safe substitute
+	 * components). May raise Sandbox.Security if argument isn't acceptable.
+	 * The arguments denote:
+	 *   1) The resource which should be accessed
+	 *   2) The function which tries to access the resource
+	 *   3) The argument which should be checked
+	 * If the function returns normally, the return value is an acceptable
+	 * argument and should be used to access the resource in question.
+	 *)
+        fun check (accessor, caller, arg) =
+            handlePolicy (accessor, caller, unC, arg)
+    end
+
+    structure S = String
+    structure U = Url
+
+    (* Predefined ARG_TYPE structures for common datatypes. *)
+    structure Unit = MkArgType (type t = unit)
+    structure Int = MkArgType Int
+    structure String = MkArgType String
+    structure Url = MkArgType Url
+    structure File = String
+
+
+    (* Policies relating to component import. *)
+    val importCap = "componentLoad"
+
+    (* Checks if some url can always be regarded as trustworthy. *)
+    fun trusted url =
+	U.getScheme url = SOME "x-alice" andalso
+	U.getAuthority url = NONE andalso
+	U.getDevice url = NONE andalso
+	case U.getPath url of
+	| nil => false
+        | "lib"::("fundamental"|"data"|"sandbox")::_ => true
+        | arcs withval last = List.last arcs end =>
+             S.isSuffix "-sig" last orelse S.isSuffix "-sig.alc" last
+    do Url.rule (importCap, fn url => if trusted url then ACCEPT url else PASS)
+
+
+    structure PathMap = MkHashImpMap S
+    datatype system_desc = SAFE | UNSAFE
+
+    val systemDesc = PathMap.map ()
+    do Vector.app (fn path => PathMap.insert (systemDesc, path, SAFE))
+        #["Compiler", "Date", "Resolver", "Time", "Timer", "Url", "Policy"]
+    do Vector.app (fn path => PathMap.insert (systemDesc, path, UNSAFE))
+        #["CommandLine", "Config", "Http", "HttpClient", "HttpServer",
+	  "OS", "Store", "BinIO", "TextIO", "Unix", "Socket"]
+
+    (* Tests if a url denotes a system component. *)
+    fun system url =
+	if U.getScheme url = SOME "x-alice" andalso
+	   U.getAuthority url = NONE andalso
+	   U.getDevice url = NONE
+	then
+	    case U.getPath url of
+            | "lib"::"system"::arcs =>
+              (case PathMap.lookup (systemDesc, S.concatWith "/" arcs) of
+	      | NONE => PASS
+              | SOME SAFE => ACCEPT url
+	      | SOME UNSAFE =>
+		ACCEPT (U.setPath (url, "lib"::"sandbox"::"system"::arcs))
+	      )
+            | _ => PASS
+	else PASS
+    do Url.rule (importCap, system)
+end
+
+functor MkReadOnlyPolicy () : POLICY =
+struct
+    structure U = Url
+
+    open MkPolicy()
+
+    fun file url = (*) FIXME: This is dangerous!
+	U.getScheme url = SOME "file" orelse U.getScheme url = NONE
+    do Url.rule("componentLoad", fn url => if file url then ACCEPT url else PASS)
+    do Url.rule("readUrl", ACCEPT)
+
+    do String.rule("getEnv", ACCEPT)
+    do String.rule("getApplicationConfigDir", ACCEPT)
+
+    do File.rule("readFile", ACCEPT)
+
+    do Int.rule("readPort", ACCEPT)
+
+    do Unit.rule("commandLineArgs", ACCEPT)
+    do Unit.rule("commandLineName", ACCEPT)
+    do Unit.rule("getDir", ACCEPT)
+    do Unit.rule("getHomeDir", ACCEPT)
+    do Unit.rule("readSocket", ACCEPT)
+    do Unit.rule("stdErr", ACCEPT)
+    do Unit.rule("stdIn", ACCEPT)
+    do Unit.rule("stdOut", ACCEPT)
+end
+
+functor MkNetworkPolicy () : POLICY =
+struct
+    open MkPolicy()
+    
+    do Url.rule("componentLoad", ACCEPT)
+    do Url.rule("readUrl", ACCEPT)
+
+    do String.rule("getEnv", ACCEPT)
+    do String.rule("getApplicationConfigDir", ACCEPT)
+
+    do File.rule("readFile", ACCEPT)
+
+    do Int.rule("readPort", ACCEPT)
+    do Int.rule("writePort", ACCEPT)
+
+    do Unit.rule("commandLineArgs", ACCEPT)
+    do Unit.rule("commandLineName", ACCEPT)
+    do Unit.rule("getDir", ACCEPT)
+    do Unit.rule("getHomeDir", ACCEPT)
+    do Unit.rule("readSocket", ACCEPT)
+    do Unit.rule("writeSocket", ACCEPT)
+    do Unit.rule("stdErr", ACCEPT)
+    do Unit.rule("stdIn", ACCEPT)
+    do Unit.rule("stdOut", ACCEPT)
+end
+
+functor MkUnrestrictedPolicy () : POLICY =
+struct
+    open MkPolicy()
+    
+    val urlAccessors = ["componentLoad",
+                        "readUrl"]
+                        
+    val stringAccessors = ["getEnv",
+                           "getApplicationConfigDir",
+                           "sysCall"]
+
+    val fileAccessors = ["componentSave",
+                         "readFile",
+                         "writeFile"]
+
+    val intAccessors = ["readPort",
+                        "terminate",
+                        "writePort"]
+
+    val unitAccessors = ["commandLineArgs",
+                         "commandLineName",
+                         "ComponentManager",
+                         "deepWait",
+                         "getDir",
+                         "getHomeDir",
+                         "MkManager",
+                         "processReap",
+                         "processWait",
+                         "readSocket",
+                         "stdErr",
+                         "stdIn",
+                         "stdOut",
+                         "writeSocket"]
+                         
+    do List.app (fn accessor => String.rule(accessor, ACCEPT))
+            stringAccessors
+
+    do List.app (fn accessor => File.rule(accessor, ACCEPT))
+            fileAccessors
+
+    do List.app (fn accessor => Url.rule(accessor, ACCEPT))
+            urlAccessors
+
+    do List.app (fn accessor => Int.rule(accessor, ACCEPT))
+            intAccessors
+
+    do List.app (fn accessor => Unit.rule(accessor, ACCEPT))
+            unitAccessors
+end

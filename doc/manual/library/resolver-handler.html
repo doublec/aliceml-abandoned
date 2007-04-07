@@ -147,10 +147,11 @@
       <P>returns a handler that causes an attempt to locate the resource using
 	the custom function&nbsp;<TT><I>f</I></TT>.  <TT><I>s</I></TT>&nbsp;is
 	a name for the handler for use in trace messages (see <A
-	href="#tracingApply"><TT>tracingApply</TT></A>.  The handler is
+	href="#tracingApply"><TT>tracingApply</TT></A>).  The handler is
 	applicable if <TT><I>f</I></TT> returns <TT>SOME _</TT>.  It is not
-	applicable if <TT><I>f</I></TT> returns <TT>NONE</TT> or raises an
-	exception.</P>
+	applicable if <TT><I>f</I></TT> returns <TT>NONE</TT>. If it raises an
+	exception, this exception will be propagated to the caller of
+	the <A href="#apply"><TT>apply</TT></A>.</P>
     </DD>
 
     <DT>

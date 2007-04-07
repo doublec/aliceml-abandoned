@@ -71,11 +71,11 @@ INSTALLFILES_LIBRARY_0 = \
 	mono-vector.html mono-vector-slice.html \
 	option.html ordered.html os.html os-file-sys.html os-io.html \
 	os-path.html os-process.html \
-	package.html pair.html pickle.html prim-io.html print.html \
+	package.html pair.html pickle.html policy.html prim-io.html print.html \
 	promise.html \
 	rand.html real.html ref.html ref-map.html \
-	set.html sited.html sqlite.html stack.html stamp.html store.html \
-	stream-io.html \
+	sandbox.html set.html sited.html sqlite.html \
+	stack.html stamp.html store.html stream-io.html \
 	string.html string-cvt.html substring.html \
 	text.html text-io.html text-stream-io.html time.html timer.html \
 	toplevel.html \
