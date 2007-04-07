@@ -26,10 +26,11 @@ Runtime System:
 Interactive Toplevel:
 
 * [NEW] Added toolbar.
+* [NEW] Added Tip of the Day help.
 * [NEW] Extended and improved type information display in status bar.
 * [NEW] Window size and position are now saved across sessions.
-* [NEW] Extended preferences: compiler warnings, heap limit, port number.
-* [NEW] Added Tip of the Day help.
+* [NEW] Configurable heap limit to protect against runaway computations.
+* [NEW] Extended preferences: compiler warnings, ticket port number.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
 * [FIX] Minor additions and bug fixes.
 
