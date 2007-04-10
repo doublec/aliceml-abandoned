@@ -17,6 +17,16 @@
   </P>
 
   <P>
+    Sandboxing relies on the fact that
+    <A href="../pickling.html#semantics">resources</A> cannot be pickled.
+    A component can acquire relevant capabalities solely by means of
+    linking suitable <a href="index.html#system">system components</A>.
+    In a sandbox, link requests to such components are redirected to
+    safe wrappers that implement runtime tests to enforce the configured
+    policy.
+  </P>
+
+  <P>
     <B>Note:</B> The sandboxing mechanism should be
     understood as a
     proof-of-concept implementation, since some of the safety assumptions it

@@ -40,9 +40,9 @@ The highlights of this release are:
      the most significant gaps regarding SML conformance have been
      closed, particularly signature inclusion and equality types;
      also integrated additional proposals for Successor ML
-  First-class Components
+  First-class Components and Sandboxing
      Alice ML now features syntax for first-class components and
-     the library includes an experimental sandboxing infrastructure
+     an experimental sandboxing infrastructure
   Improved Toplevel
      a number of additions to the toplevel's GUI meant to improve
      "user experience", especially for beginners

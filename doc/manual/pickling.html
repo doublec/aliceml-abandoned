@@ -32,10 +32,12 @@ objects referenced by that value. We distinguish three sorts of values:</P>
      pickle is maintained. </LI>
 
 <LI> <I>Sited</I>
-     values contain resources.  A resource is an object which cannot be
-     meaningfully interpreted outside of the process it was created in.
+     values contain <EM>resources</EM>.  A resource is an object that cannot be
+     meaningfully interpreted outside of the process it was created in,
+     or that represents a security-relevant capability.
      Sited values may not be pickled: any attempt to pickle a sited value
-     results in a runtime exception. </LI>
+     results in a runtime exception. This is necessary to enable
+     security and <A href="components.html#managers">sandboxing</A>.</LI>
 </UL>
 
 <P>Special care must be taken to avoid runtime errors from attempts to

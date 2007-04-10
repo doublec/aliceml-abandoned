@@ -167,7 +167,7 @@ struct
 
     open MkPolicy()
 
-    fun file url = (*) FIXME: This is dangerous!
+    fun file url = (*) FIXME: This is dangerous, we can access lib/system/ dir!
 	U.getScheme url = SOME "file" orelse U.getScheme url = NONE
     do Url.rule("componentLoad", fn url => if file url then ACCEPT url else PASS)
     do Url.rule("readUrl", ACCEPT)

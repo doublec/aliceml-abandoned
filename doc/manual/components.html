@@ -9,9 +9,12 @@
 when executing the component. A component can <EM>import</EM> other components,
 which may reside at remote URLs. Imported components are loaded and evaluated
 lazily. This <EM>linking</EM> operation includes a dynamic type check between
-import and export signatures. An <EM>application</EM> is defined by a set of
+import and export signatures.</P>
+
+<P>An <EM>application</EM> is defined by a set of
 components and a designated <EM>root</EM> component that represents its main
-body.</P>
+body. Linking is performed and controlled by user-definable <EM>component managers</EM>, enabling the definition of <EM>sandboxes</EM> for evaluating untrusted components.
+</P>
 
 
 <?php section("source", "defining components") ?>
@@ -221,7 +224,7 @@ for handling pickles.</P>
 -->
 
 
-<?php section("managers", "component managers") ?>
+<?php section("managers", "component managers and Sandboxing") ?>
 
 <P>An application's root component is located and loaded by the root <A
 href="library/component-manager.html">component manager</A>. An application may
@@ -230,8 +233,12 @@ href="library/component.html#MkManager"><TT>Component.MkManager</TT></A>
 functor. By evaluating a <A href="#firstclass">first-class component</A> using
 the <A href="library/component-manager.html#Eval-fn"><TT>Eval</TT></A> functor
 of a custom manager, all direct and indirect imports of that component will be
-handled by that respective manager. This particularly allows setting up custom
-<EM>sandbox environments</EM> for untrusted components.</P>
+handled by that respective manager.</P>
+
+<P>User-defined component managers particularly allow setting up custom
+<EM>sandbox environments</EM> for untrusted components. The library structure <A
+href="library/sandbox.html"><TT>Sandbox</TT></A> contains some infrastructure to readily create sandboxes - see the <A
+href="library/sandbox.html#example">examples</A> shown there.</P>
 
 
 <?php section("syntax", "syntax") ?>

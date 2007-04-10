@@ -5,8 +5,10 @@
 <?php section("synopsis", "synopsis") ?>
 
   <PRE>
+    signature COMPONENT_MANAGER
     structure ComponentManager : COMPONENT_MANAGER
-    signature COMPONENT_MANAGER</PRE>
+    functor Component.MkManager (val resolver : Resolver.t) : COMPONENT_MANAGER
+    functor Sandboox.MkManager (Policy : POLICY) : COMPONENT_MANAGER</PRE>
 
   <P>
     A <EM>component manager</EM> is responsible for loading and linking
@@ -29,6 +31,10 @@
 
   <P>
     The structure <TT>ComponentManager</TT> is the root component manager.
+    User-defined managers can be created through the
+    <a href="component.html#MkManager"><TT>Component.MkManager</TT></A>
+    or the
+    <a href="sandbox.html#MkManager"><TT>Sandbox.MkManager</TT></A> functors.
   </P>
 
   <P>
