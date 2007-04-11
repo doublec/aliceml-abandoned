@@ -42,8 +42,8 @@
     The <tt>MkPolicy</tt> functor provides a clean ruleset with no
     capabilities at all besides loading the safe components, while the other functors already provide
     certain capabilities for typical scenarios: <TT>MkReadOnlyPolicy</TT>
-    allows read-only access to the file system, <TT>MkNetworkPolicy</TT>
-    allows access to the network, and <TT>MkUnrestrictedPolicy</TT> does
+    allows passive, read-only access to file system and network, <TT>MkNetworkPolicy</TT> also
+    allows sends to the network, and <TT>MkUnrestrictedPolicy</TT> does
     enable all capabilities.
     In either case, the policy rules can be further customised by means of the operations
     provided by the delivered structure.
