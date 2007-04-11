@@ -167,9 +167,12 @@ struct
 
     open MkPolicy()
 
+(*
     fun file url = (*) FIXME: This is dangerous, we can access lib/system/ dir!
 	U.getScheme url = SOME "file" orelse U.getScheme url = NONE
     do Url.rule("componentLoad", fn url => if file url then ACCEPT url else PASS)
+*)
+    do Url.rule("componentLoad", ACCEPT)
     do Url.rule("readUrl", ACCEPT)
 
     do String.rule("getEnv", ACCEPT)
@@ -191,28 +194,10 @@ end
 
 functor MkNetworkPolicy () : POLICY =
 struct
-    open MkPolicy()
-    
-    do Url.rule("componentLoad", ACCEPT)
-    do Url.rule("readUrl", ACCEPT)
+    open MkReadOnlyPolicy()
 
-    do String.rule("getEnv", ACCEPT)
-    do String.rule("getApplicationConfigDir", ACCEPT)
-
-    do File.rule("readFile", ACCEPT)
-
-    do Int.rule("readPort", ACCEPT)
     do Int.rule("writePort", ACCEPT)
-
-    do Unit.rule("commandLineArgs", ACCEPT)
-    do Unit.rule("commandLineName", ACCEPT)
-    do Unit.rule("getDir", ACCEPT)
-    do Unit.rule("getHomeDir", ACCEPT)
-    do Unit.rule("readSocket", ACCEPT)
     do Unit.rule("writeSocket", ACCEPT)
-    do Unit.rule("stdErr", ACCEPT)
-    do Unit.rule("stdIn", ACCEPT)
-    do Unit.rule("stdOut", ACCEPT)
 end
 
 functor MkUnrestrictedPolicy () : POLICY =
