@@ -265,8 +265,8 @@
     fun limitUrl url =
         case (Url.getScheme url, Url.getAuthority url) of
         | (NONE | SOME("file"|"x-alice"), _) => PASS
-        | (SOME "http", "www.ps.uni-sb.de"|"www.uni-saarland.com") => PASS
-	| _ => REJECT
+        | (SOME "http", "www.ps.uni-sb.de"|"www.uni-saarland.de") => PASS
+        | _ => REJECT
 
     do Policy.Url.rule("componentLoad", limitUrl)</PRE>
 

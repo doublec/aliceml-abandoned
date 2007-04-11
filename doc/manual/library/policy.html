@@ -18,14 +18,14 @@
     representing individual or groups of critical operations in the library.
     The rules are defined in terms of user-defined functions that
     check the validity of individual
-    arguments passed to an operations, and may choose to rewrite these
+    arguments passed to an operation, and may choose to rewrite these
     arguments as they see fit.
   </P>
 
   <P>
     A particularly important capability is <TT>"componentLoad"</TT>,
     which controls what URLs are accepted for loading. By setting up rules
-    for this capability, the creator of a sandbox can control what comonents
+    for this capability, the creator of a sandbox can control what components
     are accessible for import inside a sandbox (either through the functions
     of the component manager, or through the use of the Alice ML
     <TT>import</TT> declaration, which maps to these functions).
@@ -41,7 +41,10 @@
     operation.
     The <tt>MkPolicy</tt> functor provides a clean ruleset with no
     capabilities at all besides loading the safe components, while the other functors already provide
-    certain capabilities for typical scenarios.
+    certain capabilities for typical scenarios: <TT>MkReadOnlyPolicy</TT>
+    allows read-only access to the file system, <TT>MkNetworkPolicy</TT>
+    allows access to the network, and <TT>MkUnrestrictedPolicy</TT> does
+    enable all capabilities.
     In either case, the policy rules can be further customised by means of the operations
     provided by the delivered structure.
   </P>
