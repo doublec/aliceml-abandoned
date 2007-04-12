@@ -17,8 +17,8 @@
 signature FD =
 sig
     type space
-    type intvar
-    type boolvar
+    eqtype intvar
+    eqtype boolvar
 
     exception NotAssigned
 		       

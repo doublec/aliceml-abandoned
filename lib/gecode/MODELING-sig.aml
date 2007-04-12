@@ -88,7 +88,7 @@ sig
 	
     val distinct : space * term vector * conlevel -> unit
     val branch : space * term vector * b_var_sel * b_val_sel -> unit
-	
+
     datatype b_term = 
 	BV of boolvar
       | BC of bool

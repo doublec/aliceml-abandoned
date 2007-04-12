@@ -410,7 +410,7 @@ struct
 	|notFalse(_)=true
 	
     fun hasNoSameNegated nil = true
-      | hasNoSameNegated(`!(h)::t) =
+      | hasNoSameNegated((`!h)::t) =
 	(not (List.contains t h)) andalso hasNoSameNegated t
       | hasNoSameNegated(h::t) =
 	(not (List.contains t (`! h))) andalso hasNoSameNegated t

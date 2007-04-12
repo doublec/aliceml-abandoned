@@ -64,8 +64,8 @@ struct
    
 (*   open UnsafeGecode*)
 
-   type intvar
-   type boolvar = intvar
+   eqtype intvar
+   eqtype boolvar = intvar
 
 (*   val varStamp = UnsafeGecode.varStamp*)
 		 

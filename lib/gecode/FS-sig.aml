@@ -17,9 +17,9 @@
 signature FS =
 sig
     type space
-    type intvar
-    type boolvar
-    type setvar
+    eqtype intvar
+    eqtype boolvar
+    eqtype setvar
 
     type domain = (int*int) vector
     exception InvalidDomain

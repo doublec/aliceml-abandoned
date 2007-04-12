@@ -53,7 +53,7 @@ struct
 
    exception InvalidDomain = UnsafeGecode.InvalidDomain
 
-   type setvar
+   eqtype setvar
 
    val setvar = UnsafeGecode.new_setvar
 		      
