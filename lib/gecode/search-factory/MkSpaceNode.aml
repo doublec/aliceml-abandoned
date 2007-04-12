@@ -55,7 +55,7 @@ struct
 
   fun dbPrint (mask, msg) = Debug.dbPrint (mask, Problem.mask, msg)
 
-  fun cloneSpace space = (assert Space.status space <> Space.FAILED ;
+  fun cloneSpace space = ((*assert Space.status space <> Space.FAILED ;*)
 			  Space.clone space)
 
   val root =
@@ -106,7 +106,7 @@ struct
   fun hardCompare (currentBest, space) =
     let val testSpace = cloneSpace space 
     in
-      assert (Space.status testSpace = Space.SOLVED) ;
+      (*assert (Space.status testSpace = Space.SOLVED) ;*)
       bound (testSpace, currentBest) ;
       case Space.status testSpace of
         Space.SOLVED => true (* Better. *)
@@ -161,12 +161,11 @@ struct
       case (wspace, !rcopy) of 
         (NONE  , SOME s) => cloneSpace s  (* clone copy   *)
       | (NONE  , NONE  ) => recompute node (* recomputation *)
-      | (SOME s, acopy ) =>                (* donate space *)
-          if acopy = NONE andalso Problem.copyq (#depth node)
-            then (dbPrint (dbClone, "CLONE at path " ^ 
+      | (SOME s, NONE  ) if (Problem.copyq (#depth node)) =>
+	  (dbPrint (dbClone, "CLONE at path " ^ 
                            (Path.toString (getPath (Node node))) ^ "\n") ;
-                  updateCloneRef (rcopy, s))
-            else s
+           updateCloneRef (rcopy, s))
+      | (SOME s, acopy ) => s              (* donate space *)
     end
 
   fun getSpace (Node node) = 
@@ -230,12 +229,13 @@ struct
                 
           val status = Space.status space
         in
-          assert(!spaceRef = NONE) ;
+          (*assert(!spaceRef = NONE) ;*)
           spaceRef := SOME space ;
 
           (* When a solution is found, BOUND *)
-          if status = Space.SOLVED andalso bab then
-            let
+          case status of Space.SOLVED  =>
+            if bab then
+	    let
               val solution = Problem.readSolution space
               (* This solution is not always better than previous solutions:
                * the current node might have been bound too early
@@ -248,7 +248,8 @@ struct
 				      orelse hardCompare(best,space))))
             end
             handle FD.NotAssigned => ()
-            else () ;
+	    else ()
+          | _ => () ;
           status  
         end
     in

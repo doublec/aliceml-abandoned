@@ -97,7 +97,7 @@ struct
       (fn StopIt p => (Promise.fulfill (p,()) ; (Stopped, NONE))
         | (Stopped | Running ) =>
                     let val anode = getNode ()
-                    in (if anode = NONE then Stopped else Running, anode) end)
+                    in (case anode of NONE => Stopped | _ => Running, anode) end)
       of
         NONE   => NONE
       | SOME n =>
