@@ -52,7 +52,7 @@
 
 class Pickle {
 public:
-  static const u_int majorVersion = 4;
+  static const u_int majorVersion = 5;
   static const u_int minorVersion = 0;
 
   enum Tag {
