@@ -165,7 +165,7 @@ let
               val p = Promise.promise ()
               val oldbest = Ref.exchange (best, Promise.future p)
           in
-              if oldbest = NONE orelse LProblem.compare (valOf oldbest, sol)
+              if isNone oldbest orelse LProblem.compare (valOf oldbest, sol)
 	      then
 		  (Promise.fulfill (p, SOME sol) ;
 		   spawn (Array.app (fn w => #bestMsg w sol) workers) ;
@@ -320,7 +320,7 @@ let
           Array.update (workers, id, interface) ;
 	  
 	  if isFinished () then #stop interface ()
-          else (if !best <> NONE then #bestMsg interface (valOf (!best))
+          else (if isSome (!best) then #bestMsg interface (valOf (!best))
 		else () ;
 		#start interface ())
       end

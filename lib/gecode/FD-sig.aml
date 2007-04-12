@@ -16,7 +16,7 @@
 
 signature FD =
 sig
-    type space
+    eqtype space
     eqtype intvar
     eqtype boolvar
 

@@ -16,8 +16,8 @@
 
 signature SPACE =
 sig
-    type space
-    type description
+    eqtype space
+    eqtype description
 
     (* Exception thrown by all operations on spaces *)
     (* if the space has been discarded *)

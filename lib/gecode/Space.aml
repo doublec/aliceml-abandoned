@@ -19,8 +19,8 @@ import structure UnsafeGecode from "UnsafeGecode"
 
 structure Space :> SPACE =
 struct
-    type space
-    type description
+    eqtype space
+   eqtype description
 
     datatype status = BRANCH of int * description | FAILED | SOLVED
 
