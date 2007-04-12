@@ -44,7 +44,7 @@ structure PrimPickle :> PRIM_PICKLE =
 	type label = int
 	type size = int
 
-        val majorVersion = 4
+        val majorVersion = 5
         val minorVersion = 0
         val magicS = Word8.fromInt (Char.ord #"s")
         val magicE = Word8.fromInt (Char.ord #"e")
