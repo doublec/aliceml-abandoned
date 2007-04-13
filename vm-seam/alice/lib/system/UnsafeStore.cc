@@ -366,7 +366,7 @@ DEFINE1(UnsafeStore_signalQuote) {
   Cell *cell = Cell::FromWord(HeapSignalCell);
   Future *future = Future::New();
   cell->Assign(future->ToWord());
-  Store::SetSignal(1024*1024*u_int(mb), heapSignalHandler);
+  Store::SetSignal(1024*1024*(u_int)(mb), heapSignalHandler);
   RETURN(future->ToWord());
 } END
 
