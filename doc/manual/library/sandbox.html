@@ -178,7 +178,7 @@
     fun tempOnly path =
 	case OS.Path.fromString path of
         | {isAbs=true, arcs="tmp"::_, ...} => Policy.ACCEPT path
-        | {isAbs=false, arcs=[name], vol} =>
+        | {isAbs=false, arcs=[name], vol} =>  (*) redirect!
 	     Policy.ACCEPT(OS.Path.toString{isAbs=true, arcs=["tmp",name], vol})
 	| _ => Policy.REJECT
 
@@ -186,7 +186,7 @@
 
   <P>
     This rule does three things: (1) it freely allows opening files for writing
-    in the <TT>/tmp</TT> directory, (2) it redirects files
+    in the <TT>/tmp</TT> directory, (2) it <EM>redirects</EM> files
     opened without specifying a directory to <TT>/tmp</TT>, and (3) it
     prohibits all other file write access.
 
@@ -216,7 +216,7 @@
     In this case, the <TT>Security</TT> exception would already be raised
     during <TT>Safe.eval</TT>, which evaluates the component body.
     (And the exception will be raised despite our relaxed policy, because the
-     component now tries to create the file in the root directory).
+     component now tries to create the file in the root directory.)
   </P>
 
 
@@ -281,7 +281,7 @@
 
     For this reason, the action taken for white-listed URLs should be
     <TT>PASS</TT> like above,
-    not <TT>ACCEPT</TT>, since accpeted URLs still have to be rewritten 
+    not <TT>ACCEPT</TT>, since accepted URLs still have to be rewritten 
     and delegated to the parent component manager, which is performed by the
     initial rules already set by the functors.
   </P>
