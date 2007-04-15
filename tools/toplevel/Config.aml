@@ -246,7 +246,9 @@ structure Config =
 	      in
 		  ()
 	      end
-	  end handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) => ()
+	  end handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) =>
+		     OS.FileSys.remove preferencesFile
+	             handle OS.SysErr _ => ()
 
       fun save () =
 	  let

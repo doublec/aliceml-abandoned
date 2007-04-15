@@ -20,10 +20,10 @@ structure TipDialog =
 struct
     val tips =
     #[
-	"You can retrieve your previous interpreter input \
-	\by pressing <tt>Ctrl-Up</tt> (or selecting <i>Eval/Back in History</i>)?",
+	"You can retrieve and edit your previous interpreter input \
+	\by pressing <tt>Ctrl-Up</tt> (or selecting <i>Eval/Back in History</i>) in the interpreter pane?",
 
-	"You can feed the paragraph surrounding the cursor \
+	"In an edit buffer, you can feed the paragraph surrounding the cursor \
 	\by pressing <tt>Ctrl-Return</tt> (or selecting <i>Eval/Feed Selection</i>)?",
 
 	"You can browse arbitrary ML values \
