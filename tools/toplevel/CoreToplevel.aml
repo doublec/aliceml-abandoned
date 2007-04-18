@@ -119,7 +119,8 @@ struct
 		       fn _ =>
 		       let
 			   val dir  = OS.FileSys.getDir ()
-			   val dir' = OS.Path.getParent source
+			   val dir' = if not cd then dir else
+				      OS.Path.getParent source
 				      handle OS.Path.Path => dir
 			   val cd   = cd andalso dir' <> dir andalso
 				      case Url.getScheme (Url.fromString source)

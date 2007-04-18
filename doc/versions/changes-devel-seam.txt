@@ -32,6 +32,7 @@ Interactive Toplevel:
 * [NEW] Configurable heap limit to protect against runaway computations.
 * [NEW] Extended preferences: compiler warnings, ticket port number.
 * [CHG] Changed semantics of `use' function to better match other SML systems.
+* [FIX] Internal exception InvalidArc on certain inputs (bug 191).
 * [FIX] Minor additions and bug fixes.
 
 Basic Library:
