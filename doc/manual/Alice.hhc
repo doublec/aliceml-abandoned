@@ -329,11 +329,11 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="ORDERED">
-			<param name="Local" value="library/os.html">
+			<param name="Local" value="library/ordered.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="OS">
-			<param name="Local" value="library/ordered.html">
+			<param name="Local" value="library/os.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="OS.FileSys">
