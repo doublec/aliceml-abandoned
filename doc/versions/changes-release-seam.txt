@@ -1,3 +1,74 @@
+Alice 1.4 (Kraftwerk 'Equaliser' Album) - 2007/05/04
+----------------------------------------------------
+
+Language & Compiler:
+
+* [NEW] Syntax for first-class components: "comp [import in] spec with dec end".
+* [NEW] Full support for signature "include".
+* [NEW] Proper treatment of equality types.
+* [NEW] Generalised syntax of open declarations: "open strexp".
+* [NEW] Else branch of conditionals may be omitted.
+* [NEW] Allow optional semicolon after sequence expressions.
+* [NEW] Parentheses around alternative patterns are no longer required.
+* [NEW] Open and plain renaming now retains overloading status, esp. of
+        intensionally polymorphic values like inspect, Print.printVal, etc.
+* [NEW] Compiler flag --recursive-compilation auto compiles missing imports.
+* [CHG] Less frequent "datatype of constructor is not accessible" problems;
+        OTOH, datatype replication now requires all constructors to be in scope.
+* [CHG] Paths in dependency files are now all interpreted relative to CWD.
+
+Runtime System:
+
+* [NEW] Stack overflow now raises Store.Stack instead of terminating (bug 182).
+* [NEW] Ability to signal excessive memory usage.
+* [CHG] Had to bump version of pickle format; old pickles are incompatible.
+
+Interactive Toplevel:
+
+* [NEW] Added toolbar.
+* [NEW] Added Tip of the Day help.
+* [NEW] Extended and improved type information display in status bar.
+* [NEW] Window size and position are now saved across sessions.
+* [NEW] Configurable heap limit to protect against runaway computations.
+* [NEW] Extended preferences: compiler warnings, ticket port number.
+* [CHG] Changed semantics of `use' function to better match other SML systems.
+* [FIX] Internal exception InvalidArc on certain inputs (bug 191).
+* [FIX] Minor additions and bug fixes.
+
+Basic Library:
+
+* [NEW] Sandbox, Policy: experimental sandboxing infrastructure.
+* [NEW] Fn: new structure with generic function combinators.
+* [NEW] Rand: interface to system's pseudo-random number generator (bug 185).
+* [NEW] Remote: new function setPort to choose fixed port number for
+        distributed operations (for firewall satisfaction and other purposes).
+* [NEW] Store: new exception `Stack' to signal stack overflows.
+* [NEW] Store: new function `signal' to handle heap growth.
+* [NEW] Compiler: new function `withWarnings' for setting warnings.
+* [CHG] General.{id,const,curry,uncurry,flip}: moved to Fn structure.
+* [CHG] {id,const,curry,uncurry,flip}: no longer available unqualified.
+* [CHG] Exn.dumpTrace: omit middle of very long traces (> 40 frames).
+* [FIX] Promise: pickling an unfulfilled promise now blocks (bug 162).
+* [FIX] HttpClient.{get,post}: raise Authority on invalid URL (bug 179).
+* [FIX] ComponentManager.MkManager: fixed a few bugs with load delegation.
+* [FIX] OS.FileSys: missing documentation for get{Home,ApplicationConfig}Dir.
+
+Constraint Library:
+
+* [NEW] Now incorporates Gecode 1.3.0.
+* [FIX] Resync'ed documentation.
+
+Other Libraries:
+
+* [NEW] Inspector: preferences can be saved now.
+* [FIX] Inspector: "Done" button did not close the window.
+* [FIX] Gtk: fixed a few badly generated structure names.
+
+Tools:
+
+* [FIX] alicedepend: recognize line comments; recognize first-class components.
+
+
 Alice 1.3 (Kraftwerk 'Propa Gators' Album) - 2006/08/28
 -------------------------------------------------------
 
