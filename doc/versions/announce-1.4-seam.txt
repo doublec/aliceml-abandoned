@@ -1,5 +1,5 @@
-We are happy to announce version 1.4 of the Alice programming
-system:
+We are happy to announce version 1.4 of the Alice Programming
+System:
 
      http://www.ps.uni-sb.de/alice/
 
@@ -32,17 +32,19 @@ featuring:
   Virtual Machine
      portable implementation with just-in-time compilation
   Interactive tools
-     graphical browsers for data structures and search spaces
+     easy to use interactive toplevel with graphical interface
+     and graphical browsers for data structures and search spaces
 
 The highlights of this release are:
 
-  Improved SML Conformance
-     the most significant gaps regarding SML conformance have been
-     closed, particularly signature inclusion and equality types;
-     also integrated additional proposals for Successor ML
   First-class Components and Sandboxing
      Alice ML now features syntax for first-class components and
      an experimental sandboxing infrastructure
+  Improved SML Conformance
+     the most significant gaps regarding SML conformance have been
+     closed, particularly signature inclusion and equality types
+  Potential Successor ML Features
+     integrated additional proposals for Successor ML
   Improved Toplevel
      a number of additions to the toplevel's GUI meant to improve
      "user experience", especially for beginners
