@@ -1,0 +1,51 @@
+(* Auxiliary *)
+functor Export (signature S; structure X : S) =
+    Remote.Proxy (signature S = S
+                  structure X = Lock.Sync (val lock = Lock.lock ()
+                                           signature S = S
+                                           structure X = X))
+
+signature CLIENT =
+sig
+    val send : string -> unit
+end
+
+signature SERVER =
+sig
+    val register :  package -> unit
+    val broadcast : {name : string, message : string} -> unit
+end
+
+
+(* Server *)
+val clients : package list ref = ref nil
+
+structure Server =
+struct
+    fun register package = clients := package :: !clients
+    fun broadcast {name, message} =
+	List.app (fn client =>
+		  let structure Client = unpack client : CLIENT
+		  in spawn Client.send (name ^ ": " ^ message)
+		  end) (!clients)
+end
+structure ServerEx = Export (signature S = SERVER; structure X = Server)
+
+val ticket = Remote.offer (pack ServerEx : SERVER)
+val _ = print (ticket ^ "\n")
+
+
+
+(* Client *)
+val [ticket, name] = CommandLine.arguments ()
+
+structure Server = unpack Remote.take ticket : SERVER
+structure Client = Export (signature S = CLIENT
+			   structure X = (val send = print))
+val _ = Server.register (pack Client : CLIENT)
+
+fun loop () =
+    case TextIO.inputLine TextIO.stdIn of
+        NONE => OS.Process.exit OS.Process.success
+      | SOME message => (Server.broadcast {name, message}; loop())
+val _ = loop ()

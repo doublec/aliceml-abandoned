@@ -1,0 +1,68 @@
+import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+import signature REMOTE from "x-alice:/lib/distribution/REMOTE-sig"
+import structure Remote from "x-alice:/lib/distribution/Remote"
+
+val url = Url.fromString
+val remoteUrl = url "x-alice:/lib/distribution/Remote"
+val osUrl = url "x-alice:/lib/system/OS"
+
+type test = string * int
+val test = ("bla", 9)
+
+signature S = (val backward : test -> test)
+
+val forward = Remote.proxy (fn x => print "Forward OK\n")
+functor Mobile (CM : COMPONENT_MANAGER) :> S =
+struct
+    val _ = forward test
+
+    structure RemoteComp =
+	CM.Link (val url = remoteUrl signature S = (structure Remote : REMOTE))
+    open RemoteComp
+
+    structure OSComp =
+	CM.Link (val url = osUrl signature S = (structure OS : OS))
+    open OSComp
+
+    val backward = Remote.proxy (fn x => OS.Process.exit OS.Process.success)
+end
+
+structure Result = Remote.Eval (val host = "localhost"
+				signature S = S
+				structure F = Mobile)
+
+val _ = print "Link established. Now testing the link.\n"
+
+val _ =
+    Result.backward test
+    handle Remote.Proxy ex => (print "*** PROXY exception ***\n" ; raise ex)
+    handle IO.Io {name, function, cause} =>
+	   (print ("**** IO exception : name = " ^ name ^
+		   " function = " ^ function ^ " ****\n") ;
+	    raise cause)
+    handle e as OS.SysErr (s, n) =>
+	(print ("***** SysErr exception : string = " ^ s ^ " *****\n"); raise e)
+
+val _ = print "Link tested.\n"
+
+val _ = OS.Process.exit OS.Process.success
+
+(*
+val url = Url.fromString "x-alice:/lib/system/TextIO"
+
+functor Mobile (CM : COMPONENT_MANAGER) : () =
+struct
+    structure TextIOComp = CM.Link (val url = url
+				    signature S = (structure TextIO : TEXT_IO))
+    open TextIOComp
+    val f = TextIO.openOut "/tmp/aliceremote.run"
+    val _ = TextIO.output (f, "OK\n")
+end
+
+val _ = print "Starting... "
+structure _ = Remote.Eval (val host = "localhost"
+			   signature S = any
+			   structure F = Mobile)
+val _ = print "OK\n"
+val _ = OS.Process.exit OS.Process.success
+*)

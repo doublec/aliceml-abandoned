@@ -1,0 +1,18 @@
+structure Promise :> PROMISE =
+struct
+    type 'a promise = {isFree : bool ref, value : 'a option ref}
+    type t = promise
+
+    exception Promise
+
+    fun promise () = {isFree = ref true, value = ref NONE}
+
+    fun poll r = case !r of SOME x => x | NONE => poll r
+
+    fun future {isFree, value} = spawn poll value
+
+    fun fulfill ({isFree, value}, x) =
+        if Ref.exchange (isFree, false) then value := SOME x else raise Promise
+
+    fun fail (p, e) = fulfill (p, spawn raise e)
+end

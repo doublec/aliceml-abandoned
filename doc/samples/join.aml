@@ -1,0 +1,30 @@
+-- OneCell
+
+fun onecell ()                = empty ()
+fun put x  & spawn empty ()   = contains x
+fun get () & spawn contains x = empty (); x
+
+
+-- ReaderWriter
+
+fun rw ()                             = sem 0
+fun shared ()           & spawn sem n = sem (n+1)
+fun releaseShared ()    & spawn sem n = sem (n-1)
+fun exclusive ()        & spawn sem 0 = ()
+fun releaseExclusive ()               = sem 0
+
+
+-- ReaderWriterPrivate
+
+fun rw ()                                          = let r = ref 0 in idle r; r
+fun shared r        & spawn idle r' where (r = r') = r:=1; s r
+fun shared r        & spawn s r'    where (r = r') = r:=!r+1; s r
+fun releaseShared r & spawn s r'    where (r = r' andalso !r = 1) = r:=0; idle r
+fun releaseShared r & spawn s r'    where (r = r') = r:=!r-1; s r
+fun exclusive r     & spawn idle r' where (r = r') = ()
+fun releaseExclusive r                             = idle r
+
+fun releaseShared r & spawn t r'    where (r = r' andalso !r = 1) = r:=0; idleEx r
+fun releaseShared r & spawn t r'    where (r = r') = r:=!r-1; t r
+fun exclusive r     & spawn s r'    where (r = r') = t r; wait r
+fun wait r          & spawn idleEx r' where (r = r') = ()

@@ -1,0 +1,248 @@
+signature HEAVY =
+sig
+    type t
+    type init_arg
+    type use_arg
+    type use_result
+    val init : init_arg -> t			(* slow *)
+    val use  : t * use_arg -> use_result	(* faster *)
+    val free : t -> unit
+end
+
+
+functor MkBurst (H : HEAVY) =
+struct
+    type burst = (H.use_arg * H.use_result promise) channel
+
+    fun loop (ch, x) =
+	let
+	    val _ = Channel.peek ch
+	    val h = H.init x
+	in
+	    Channel.appNB (fn (y, r) => fulfill (r, H.use (h, y))) ch;
+	    H.free h;
+	    loop (ch, x)
+	end
+
+    fun burst x =
+	let
+	    val ch = Channel.channel ()
+	in
+	    spawn loop (ch, x);
+	    ch
+	end
+
+    fun work (ch, y) =
+	let
+	    val r = promise ()
+	in
+	    Channel.put (ch, (y, r));
+	    await (future r)
+	end
+end
+
+
+
+functor MkBurst (H : HEAVY) =
+struct
+    type burst = (H.use_arg * H.use_result promise) channel
+
+    fun help (ch, x, hr) (y, r) =
+	let
+	    val h = case hr of
+		      NONE => (hr := H.init x; !hr)
+		    | SOME h => h
+	in
+	    fulfill (r, H.use (h, y));
+	    if Channel.isEmpty ch
+	    then (hr := NONE; H.free h)
+	    else ()
+	end
+
+    fun burst x =
+	let
+	    val ch = Channel.channel ()
+	in
+	    spawn Channel.app (help (ch, x, ref NONE)) ch;
+	    ch
+	end
+
+    fun work (ch, y) =
+	let
+	    val r = promise ()
+	in
+	    Channel.put (ch, (y, r));
+	    await (future r)
+	end
+end
+
+
+
+functor MkBurst (H : HEAVY) :
+sig
+    type burst
+    val burst : H.init_arg -> burst
+    val work :  burst * H.use_arg -> H.use_result
+end
+=
+struct
+    datatype burst_desc = Idle of H.init_arg
+			| Busy of (H.use_arg * H.use_result promise) channel
+    type burst = burst_desc ref
+
+    fun burst x = ref (Idle x)
+
+    fun help (ch, h, b, x) (y, r) =
+	let
+	    val p = promise ()
+	in
+	    fulfill (r, H.use (h, y));
+	    case Ref.exchange (b, future p) of
+	      Busy ch =>
+		if Channel.isEmpty ch
+		then (fulfill (p, Idle x); H.free h)
+		else  fulfill (p, Busy ch);
+	    | Idle _ => assert false
+	end
+
+    fun work (b, y) =
+	let
+	    val p = promise ()
+	in
+	    case Ref.exchange (b, future p) of
+	      Idle x =>
+		let
+		    val ch = channel ()
+		    val h  = H.init x
+		    val r  = promise ()
+		in
+		    Channel.put (ch, (y, r));
+		    fulfill (p, Busy ch);
+		    spawn Channel.app (help (ch, h, b, x)) ch;
+		    await (future r)
+		end
+	    | Busy ch =>
+		let
+		    val r = promise ()
+		in
+		    Channel.put (ch, (y, r));
+		    await (future r)
+		end
+	end
+end
+
+
+
+functor MkBurst (H : HEAVY) =
+struct
+    datatype burst_desc = Idle of H.init_arg
+			| Busy of (H.use_arg * H.use_result promise) list
+    type burst = burst_desc ref
+
+    fun burst x = ref (Idle x)
+
+    fun help (b, h, x) =
+	let
+	    val p = promise ()
+	in
+	    case Ref.exchange (b, future p) of
+	      Busy [] =>
+		(
+		    fulfill (p, Idle x);
+		    H.free h
+		)
+	    | Busy ((y,r)::l) =>
+		(
+		    fulfill (p, Busy l);
+		    fulfill (r, H.use (h, y));
+		    help (b, h)
+		)
+	    | Idle _ => assert false
+	end
+
+    fun work (b, y) =
+	let
+	    val p = promise ()
+	in
+	    case Ref.exchange (b, future p) of
+	      Idle x => (spawn help (b, H.init x, x); work' (p, y, []))
+	    | Busy l => work' (p, y, l)
+	end
+
+    and work' (p, y, l) =
+	let
+	    val r = promise ()
+	in
+	    fulfill (p, Busy ((y,r)::l));
+	    await (future r)
+	end
+end
+
+
+
+fun update r f =
+    let
+	val p = promise ()
+    in
+	f (fn x => fulfill (p, x)) (Ref.exchange (r, future p))
+    end
+
+functor MkBurst (H : HEAVY) =
+struct
+    datatype burst_desc = Idle of H.init_arg
+			| Busy (H.use_arg * H.use_result promise) list
+    type burst = burst_desc ref
+
+    fun burst x = ref (Idle x)
+
+    fun help (b, h, x) = update r (fn reply =>
+	fn Busy [] =>
+	    (
+		reply (Idle x);
+		H.free h
+	    )
+	 | Busy ((y,r)::l) =>
+	    (
+		reply (Busy l);
+		fulfill (r, H.use (h, y));
+		help (b, h)
+	    )
+	 | Idle _ => assert false
+	)
+
+    fun work (b, y) = update b (fn reply =>
+	fn Idle x => (spawn help (b, H.init x, x); work' (reply, y, []))
+	 | Busy l => work' (reply, y, l)
+	)
+    and work' (reply, y, l) =
+	let
+	    val r = promise ()
+	in
+	    reply (Busy ((y,r)::l));
+	    await (future r)
+	end
+end
+
+
+
+
+
+module mkBurst (heavy : Heavy) : Burst heavy = struct
+    type Burst = Channel (heavy.UseArg, Promise heavy.UseResult)
+
+    loop ch x = let
+	Channel.block ch
+	h = heavy.init x
+	Channel.appNB (fun (y, r) -> fulfill r (heavy.use h y)) ch
+	heavy.free h
+	loop ch x
+
+    burst x = let
+	ch = Channel.channel ()
+	spawn loop ch x
+	ch
+
+    work ch y = let
+	r = promise ()
+	Channel.put ch (y, r)
+	await (future r)

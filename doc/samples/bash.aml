@@ -1,0 +1,28 @@
+structure Shell =
+struct
+   type shell = TextIO.outstream
+   fun pipe(instream, outstream) =
+       case TextIO.inputLine instream
+         of NONE => ()
+          | SOME line =>
+            (TextIO.output(outstream, line);
+             pipe(instream, outstream))
+
+   fun bash outstream =
+       let
+           val (procin, procout) = Unix.streamsOf(Unix.execute("bash", []))
+       in
+           spawn pipe(procin, outstream);
+           procout
+       end
+
+   fun execute shell command =
+       TextIO.output(shell, command ^ "\n")
+end
+
+
+(**)
+val (procin, procout) = Unix.streamsOf(Unix.execute("bash", []))
+do spawn (TextIO.inputLine procin; OS.Process.exit OS.Process.success)
+do print "Hi\n"
+(**)

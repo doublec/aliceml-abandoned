@@ -1,0 +1,544 @@
+import "x-alice:/lib/data/MkRedBlackMap"
+
+signature LAMBDA =
+sig
+    eqtype var
+    type term
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val var   : unit -> var
+    val term  : view -> term
+    val view  : term -> view
+    val eq    : term * term -> bool
+    val subst : var * term -> term -> term
+end
+
+signature LAMBDA' =
+sig
+    eqtype var
+    type term
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val var   : unit -> var
+    val term  : view -> term
+    val view  : term -> view
+    val eq    : term * term -> bool
+    val subst : (var -> term) -> term -> term
+end
+
+structure ByName : LAMBDA =
+struct
+    type var      = int
+    datatype term = Var of var | App of term * term | Lam of var * term
+    type view     = term
+
+    val counter                   = ref 0
+    fun var ()                    = (counter := !counter+1; !counter)
+
+    fun subst (x,t) (Var y)       = if x = y then t else Var y
+      | subst (x,t) (App(u,v))    = App(subst (x,t) u, subst (x,t) v)
+      | subst (x,t) (Lam(y,u))    = let val y' = var ()
+                                    in Lam(y', subst (x,t) (subst (y,Var y') u)) end
+
+    fun eq (Var x, Var x')        = x = x'
+      | eq (App(t,u), App(t',u')) = t == t' andalso u == u'
+      | eq (Lam(x,t), Lam(x',t')) = let val y = var ()
+                                    in subst (x,Var y) t == subst (x',Var y) t' end
+      | eq _                      = false
+
+    fun term t                    = t
+
+    fun view (Lam(x,t))           = let val x' = var ()
+                                    in Lam(x', subst (x,Var x') t) end
+      | view t                    = t
+end
+
+structure ByName' : LAMBDA' =
+struct
+    type var      = int
+    datatype term = Var of var | App of term * term | Lam of var * term
+    type view     = term
+
+    val counter                   = ref 0
+    fun var ()                    = (counter := !counter+1; !counter)
+
+    val id                        = fn x => Var x
+    fun ext s (x,t)               = fn y => if y = z then t else s x
+    fun sing (x,t)                = ext id (x,t)
+
+    fun subst s (Var x)           = s x
+      | subst s (App(t,u))        = App(subst s t, subst s u)
+      | subst s (Lam(x,t))        = let val x' = var ()
+				    in Lam(x', subst (ext s (x,Var x')) t) end
+
+    fun term t                    = t
+    fun view (t as Lam _)         = subst id t
+      | view t                    = t
+
+    fun eq (t,t')                       = eq' (id,t, id,t')
+    and eq' (s,Var x,    s',Var x')     = s x = s x'
+      | eq' (s,App(t,u), s',App(t',u')) = eq' (s,t, s',t') andalso
+                                          eq' (s,u, s',u')
+      | eq' (s,Lam(x,t), s',Lam(x',t')) = let val y = var ()
+      	                                  in eq' (ext s (x,Var y), t,
+      	                                          ext s' (x',Var y), t')
+      	                                  end
+      | eq' _                           = false
+end
+
+(* Why not
+
+    fun eq (t,t')                    = eq' (id,t, t')
+    and eq' (s,Var x,    Var x')     = s x = x'
+      | eq' (s,App(t,u), App(t',u')) = eq' (s,t,t') andalso eq' (s,u,u')
+      | eq' (s,Lam(x,t), Lam(x',t')) = eq' (ext s (x,x'), t, t')
+      | eq' _                        = false
+*)
+
+
+(*
+    structure Subst = MkRedBlackMap (Int)
+
+    fun eq (t, t')                       = eq' Subst.empty (t, t')
+    and eq' s (Var x, Var x')            = (case Subst.lookup (s, x)
+					    of SOME x'' => x'' = x'
+					     | NONE => x = x')
+      | eq' s (App(t1,t2), App(t1',t2')) = eq' s (t1, t1') andalso eq' s (t2, t2')
+      | eq' s (Lam(x,t), Lam(x',t'))     = eq' (Subst.insert (s,x,x')) (t, t')
+      | eq' s (_, _)                     = false
+
+    fun subst (x,t) t'        = subst' (Subst.singleton (x, t)) t'
+    and subst' s (Var x)      = (case Subst.lookup (s, x)
+				  of SOME t => t
+				   | NONE => Var x)
+      | subst' s (App(t1,t2)) = App(subst' s t1, subst' s t2)
+      | subst' s (Lam(x,t))   = let val x' = var ()
+				in Lam(x', subst (Subst.insert (s, x, Var x')) t) end
+*)
+
+(* Give an example of an application of subst that would not deliver the correct result
+   if the renaming in the lambda case had been omitted. *)
+
+
+structure DeBruijn : LAMBDA =
+struct
+    type var      = int
+    datatype term = VAR of int | APP of term * term | LAM of term
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val counter                  = ref 0
+    fun var ()                   = (counter := !counter+1; !counter)
+
+    fun shift (j,k) (VAR i)      = VAR(if i < k then i else i+j)
+      | shift (j,k) (APP(t1,t2)) = APP(shift (j,k) t1, shift (j,k) t2)
+      | shift (j,k) (LAM t)      = LAM(shift (j,k+1) t)
+
+    fun subst (x,t) (VAR i)      = if i = x then t else VAR i
+      | subst (x,t) (APP(t1,t2)) = APP(subst (x,t) t1, subst (x,t) t2)
+      | subst (x,t) (LAM t')     = LAM(subst (x+1, shift (1,0) t) t')
+
+    fun term (Var x)             = VAR x
+      | term (App(t1,t2))        = APP(t1,t2)
+      | term (Lam(x,t))          = LAM(subst (x+1,VAR 0) (shift (1,0) t))
+
+    fun view (VAR i)             = Var i
+      | view (APP(t1,t2))        = App(t1,t2)
+      | view (LAM t)             = let val x = var ()
+				   in Lam(x, shift (~1,0) (subst (0,VAR(x+1)) t)) end
+
+    val eq                       = op=
+end
+
+structure DeBruijn' : LAMBDA' =
+struct
+    type var      = int
+    datatype term = VAR of int | APP of term * term | LAM of term
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val counter                  = ref 0
+    fun var ()                   = (counter := !counter+1; !counter)
+
+    val id                        = fn i => VAR i
+    fun shifter k                 = fn i => VAR(i+k)
+    fun ext s (i,t)               = fn j => if i = j then t else s i
+    fun sing (i,t)                = ext id (i,t)
+
+    fun subst s                   = subst' (0,s)
+    and subst' (k,s) (VAR i)      = if i < k then VAR i else shift k (s(i-k))
+      | subst' (k,s) (APP(t1,t2)) = APP(subst' (k,s) t1, subst' (k,s) t2)
+      | subst' (k,s) (LAM t')     = LAM(subst' (k+1,s) t')
+    and shift 0 t                 = t
+      | shift k t                 = subst (shifter k) t
+
+    fun term (Var x)             = VAR x
+      | term (App(t1,t2))        = APP(t1,t2)
+      | term (Lam(x,t))          = LAM(subst (ext (shifter 1) (x,VAR 0)) t)
+
+    fun view (VAR i)             = Var i
+      | view (APP(t1,t2))        = App(t1,t2)
+      | view (LAM t)             = let val x = var ()
+				   in Lam(x, subst (ext (shifter ~1) (0,VAR x)) t) end
+
+    val eq                       = op=
+end
+
+
+(*
+val t = A(V 0, A(V 1, L(A(V 0, A(V 1, A(V 2, L(A(V 0, A(V 1, V 2)))))))))
+val t0 = L(A(V 0,A(V 1,V 2)))
+val t1 = subst 0 (fn 0 => t | i => V i) t0
+
+structure Backedge :> LAMBDA =
+struct
+    type var      = int
+    datatype node = VAR of int | APP of term * term | LAM of term
+    withtype term = int * node
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val counter                     = ref 0
+    fun new ()                      = (counter := !counter+1; !counter)
+    val var                         = new
+
+    fun subst (x,t) (i, VAR y)      = if x = y then t else (i, VAR y)
+      | subst (x,t) (i, APP(t1,t2)) = (new (), APP(subst (x,t) t1, subst (x,t) t2))
+      | subst (x,t) (i, LAM t1)     = let val i' = new ()
+				      in (i', LAM(subst (x,t) (subst (i,Var i') t'))) end
+    infix ==
+    fun (_,Var x)      == (_,Var x')       = x = x'
+      | (_,App(t1,t2)) == (_,App(t1',t2')) = t1 == t1' andalso t2 == t2'
+      | (i,Lam t)      == (i',Lam t')      = t == subst (i',Var i) t'
+      | _              == _                = false
+
+    fun term (Var x)                = (new (), VAR x)
+      | term (App(t1,t2))           = (new (), APP(t1,t2))
+      | term (Lam(x,t))             = let val i = new ()
+                                      in (i, LAM(subst (x,VAR i) t)) end
+
+    fun view (_, VAR j)             = Var j
+      | view (_, APP(t1,t2))        = App(t1,t2)
+      | view (i, LAM t)             = let val x = var ()
+                                      in Lam(x, subst (i,VAR x) t)) end
+end
+
+
+structure HAS : LAMBDA =
+struct
+    type var      = int
+    datatype term = VAR of var | APP of term * term | LAM of term -> term
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val counter                     = ref 0
+    fun var ()                      = (counter := !counter+1; !counter)
+
+    fun subst (x,t) (VAR y)      = if x = y then t else VAR y
+      | subst (x,t) (APP(t1,t2)) = APP(subst (x,t) t1, subst (x,t) t2)
+      | subst (x,t) (LAM f)      = LAM(fn t' => subst
+
+    fun term (Var x)      = LAM(fn t => t)
+      | term (App(t1,t2)) = APP(t1,t2)
+      | term (Lam(x,t))   = LAM(fn t' => subst (x,t') t)
+
+    fun view (VAR x)      = Var x
+      | view (APP(t1,t2)) = App(t1,t2)
+      | view (LAM f)      = let val x = var () in Lam(x, f (VAR x)) end
+end
+
+
+structure Backedge :> LAMBDA =
+struct
+    type var      = int
+    datatype term = VAR of int | APP of term * term | LAM of int * term
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val counter = ref 0
+    fun new () = (counter := !counter+1; !counter)
+    val var = new
+
+    fun exch (x,x') (VAR y)      = VAR(if x = y then x' else y)
+      | exch (x,x') (APP(t1,t2)) = APP(exch (x,x') t1, exch (x,x') t2)
+      | exch (x,x') (LAM(y,t))   = LAM(y, exch (x,x') t)
+
+    fun term (Var x)      = VAR x
+      | term (App(t1,t2)) = APP(t1, t2)
+      | term (Lam(x,t))   = let val i = new () in LAM(i, exch (x,i) t) end
+
+    fun view (VAR i)      = Var i
+      | view (APP(t1,t2)) = App(t1, t2)
+      | view (LAM(i,t))   = let val x = new () in Lam(x, exch (i,x) t) end
+
+    structure Subst = MkRedBlackMap Int
+
+    fun eq (t, t') = eq' Subst.empty (t, t')
+    and eq' s (t as Var x, t') =
+        (case Subst.lookup (s, x)
+         of SOME t => eq' s (t, t')
+          | NONE => eq'' s (t, t'))
+      | eq' s (t, t') = eq'' s (t, t')
+    and eq'' s (Var x, Var x')            = x = x'
+      | eq'' s (App(t1,t2), App(t1',t2')) = eq' s (t1, t1') andalso eq' s (t2, t2')
+      | eq'' s (Lam(x,t), Lam(x',t'))     = eq' (Subst.insert (s, x, Var x')) (t, t')
+      | eq'' s (_, _)                     = false
+
+    fun subst' s (Var x)      = (case Subst.lookup (s, x)
+				  of SOME t => t
+				   | NONE => Var x)
+      | subst' s (App(t1,t2)) = App(subst' s t1, subst' s t2)
+      | subst' s (Lam(x,t))   = let val x' = var ()
+				in Lam(x', subst (Subst.insert (s, x, Var x')) t) end
+end
+
+
+
+structure Graph :> LAMBDA =
+struct
+    type var      = int
+    datatype node = VAR of int | APP of term * term | LAM of term
+    withtype term = int * node
+    datatype view = Var of var | App of term * term | Lam of var * term
+
+    val counter = ref 0
+    fun new () = (counter := !counter+1; !counter)
+    val var = new
+
+    structure Subst = MkRedBlackMap (Int)
+
+    fun same ((i,_), (i',_)) = (i = i')
+
+    val inf = 1000000000
+
+    fun subst (x,t) t' = #1 (subst'(1, Subst.singleton (x,(t,0)), t')
+    and subst'(k, s, t as (i,n)) =
+        case Subst.lookup (s, i)
+	 of SOME (t,k') => (t, s, k')
+	  | NONE =>
+	    let
+		val (t',s',k') = subst''(k, s, t)
+	    in
+		(t', Subst.insert (s', i, (t',k')), k')
+	    end
+    and subst''(k, s, t as (i, VAR j)) =
+	(case Subst.lookup (s, j)
+	 of SOME ((j',_), k') => ((new (), VAR j'), s, k')
+	  | NONE => (t, s, inf))
+      | subst''(k, s, t as (i, APP(t1,t2))) =
+	let
+	    val (t1', s1, k1) = subst'(k, s, t1)
+	    val (t2', s2, k2) = subst'(k, s1, t2)
+	    val  k'           = Int.min (k1, k2)
+	    val (t', k')      = if k' > k then (t, inf) else (new (), APP(t1',t2'))
+	in
+	    (t, s2, k')
+	end
+      | subst''(k, s, t as (i, LAM t1)) =
+	let
+	    val  i'           = new ()
+	    val  t'dummy      = (i', VAR i')
+	    val (t1', s', k') = subst'(k+1, Subst.insert (s, i, (t'dummy, k+1)), t1)
+	    val  t'           = if k' > k then (t, inf) else (i', LAM t1')
+	in
+	    (t, s', Int.min (k', ))
+	end
+
+    fun term (Var x)      = (x, VAR)
+      | term (App(t1,t2)) = (new (), APP(t1, t2))
+      | term (Lam(x,t))   = let val i = new () in (i, LAM(subst (x,VAR i) t)) end
+
+    fun view (VAR i)      = Var i
+      | view (APP(t1,t2)) = App(t1, t2)
+      | view (LAM t)      = let val x = new () in Lam(x, exch (i,x) t) end
+
+    fun eq (t, t') = eq' Subst.empty (t, t')
+    and eq' s (t as Var x, t') =
+        (case Subst.lookup (s, x)
+         of SOME t => eq' s (t, t')
+          | NONE => eq'' s (t, t'))
+      | eq' s (t, t') = eq'' s (t, t')
+    and eq'' s (Var x, Var x')            = x = x'
+      | eq'' s (App(t1,t2), App(t1',t2')) = eq' s (t1, t1') andalso eq' s (t2, t2')
+      | eq'' s (Lam(x,t), Lam(x',t'))     = eq' (Subst.insert (s, x, Var x')) (t, t')
+      | eq'' s (_, _)                     = false
+
+    fun subst' s (Var x)      = (case Subst.lookup (s, x)
+				  of SOME t => t
+				   | NONE => Var x)
+      | subst' s (App(t1,t2)) = App(subst' s t1, subst' s t2)
+      | subst' s (Lam(x,t))   = let val x' = var ()
+				in Lam(x', subst (Subst.insert (s, x, Var x')) t) end
+end
+
+*)
+
+functor LambdaHelpers(Lambda : LAMBDA) =
+struct
+    open Lambda
+    val ` = term o Var
+    infix 9 $ val op$ = term o App
+    val \ = curry (term o Lam)
+
+    val x = var ()
+    val y = var ()
+    val z = var ()
+
+    (* Bool *)
+
+    fun fromBool false = \x (\y (`y))
+      | fromBool true  = \x (\y (`x))
+
+    fun toBool t =
+	case view t of
+	    Lam(tr,t') =>
+	        (case view t' of
+		    Lam(fl, t'') =>
+			(case view t' of
+			    Var x =>
+				if x = tr then SOME true
+				else if x = fl then SOME false
+				else NONE
+			  | _ => NONE)
+		  | _ => NONE)
+	  | _ => NONE
+
+    val test = \x (\y (\z (`x $ `y $ `z)))
+
+    (* Pairs *)
+
+    val pair = \x (\y (\z (`z $ `x $ `y)))
+    val fst  = \x (`x $ fromBool true)
+    val snd  = \x (`x $ fromBool false)
+
+    (* Int *)
+
+    val s = var ()
+
+    fun fromInt n  = \s (\z (fromInt' n))
+    and fromInt' 0 = `z
+      | fromInt' n = `s $ fromInt'(n-1)
+
+    fun toInt t =
+	case view t of
+	    Lam(s,t') =>
+	        (case view t' of
+		    Lam(z, t'') => toInt'(s, z, t'', 0)
+		  | _ => NONE)
+	  | _ => NONE
+    and toInt'(s, z, t, i) =
+	case view t of
+	    Var x => if x = z then SOME i else NONE
+	  | App(t1,t2) =>
+		(case view t1 of
+		    Var x => if x = s then toInt'(s, z, t2, i+1) else NONE
+		  | _ => NONE)
+	  | _ => NONE
+
+    val zero   = \s (\z (`z))
+    val succ   = \x (\s (\z (`x $ `s $ (`s $ `z))))
+    val plus   = \x (\y (\s (\z (`x $ `s $ (`y $ `s $ `z)))))
+    val times  = \x (\y (`x $ (plus $ `y) $ fromInt 0))
+    val isZero = \x (`x $ \y (fromBool false) $ fromBool true)
+
+    val zz     = pair $ zero $ zero
+    val ss     = \x (pair $ (snd $ `x) $ (plus $ (succ $ zero) $ (snd $ `x)))
+    val pred   = \x (fst $ (`x $ ss $ zz))
+
+    (* Pretty printing *)
+
+    val vars = ref []
+    val counter = ref ~1
+
+    fun varToString x =
+	let
+	    val i = case List.find (fn (y,i) => x = y) (!vars) of
+			SOME (_,i) => i
+		      | NONE => (counter := !counter+1;
+				 vars := (x,!counter)::(!vars);
+				 !counter)
+	    val c = String.str (Char.chr (Char.ord #"a" + i mod 26))
+	    val j = i div 26
+	in
+	    if j = 0
+	    then c
+	    else c ^ Int.toString j
+	end
+
+    fun paren (currentPrec, requiredPrec, s) =
+	if currentPrec <= requiredPrec
+	then s
+	else "(" ^ s ^ ")"
+
+    fun toString t = toString' (t, 0)
+    and toString'(t, prec) =
+	case view t of
+	    Var x => varToString x
+	  | App(t1, t2) =>
+	    let
+		val s = toString'(t1, 1) ^ " " ^ toString'(t2, 2)
+	    in
+		paren (prec, 1, s)
+	    end
+	  | Lam(x,t') =>
+	    case toInt t of
+		SOME i => Int.toString i
+	      | NONE =>
+		let
+		    val s = "\\" ^ varToString x ^ " " ^ toString'(t', 0)
+		in
+		    paren (prec, 0, s)
+		end
+
+    fun whnf t =
+	case view t of
+	    (Var _ | Lam _) => t
+	  | App(t1,t2) =>
+	    let
+		val t1' = whnf t1
+	    in
+		case view t1' of
+		    (Var _ | App _) => term (App(t1', t2))
+		  | Lam(x, t1') => whnf (subst (x,t2) t1')
+	    end
+
+    fun wnf t =
+	case view t of
+	    (Var _ | Lam _) => t
+	  | App(t1,t2) =>
+	    let
+		val t1' = wnf t1
+	    in
+		case view t1' of
+		    (Var _ | App _) => term (App(t1', wnf t2))
+		  | Lam(x, t1') => wnf (subst (x,t2) t1')
+	    end
+
+    fun hnf t =
+	case view t of
+	    Var _ => t
+	  | Lam(x, t') => term (Lam(x, hnf t'))
+	  | App(t1,t2) =>
+	    let
+		val t1' = hnf t1
+	    in
+		case view t1' of
+		    (Var _ | App _) => term (App(t1', t2))
+		  | Lam(x, t1') => hnf (subst (x,t2) t1')
+	    end
+
+    fun nf t =
+	case view t of
+	    Var _ => t
+	  | Lam(x, t') => term (Lam(x, nf t'))
+	  | App(t1,t2) =>
+	    let
+		val t1' = nf t1
+	    in
+		case view t1' of
+		    (Var _ | App _) => term (App(t1', nf t2))
+		  | Lam(x, t1') => nf (subst (x,t2) t1')
+	    end
+end
+
+structure B = ByName
+structure D = DeBruijn
+structure L = B
+structure H = LambdaHelpers L
+structure L = (open L open H)
+open L
