@@ -1,5 +1,5 @@
 Name: alice-complete
-Version: 1.2
+Version: 1.4
 Release: 1
 License: X11
 Summary: The Alice Programming System
