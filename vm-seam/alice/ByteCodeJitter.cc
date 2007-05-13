@@ -1328,13 +1328,16 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
 	      Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
 	      if(rets->GetLength() != 1) {
-		Error("Uups. BCJ::AppVar inline prim, #rets != 1");
+		// We cannot inline this anyway, as we only know how to inline
+		// primitives that return one value
+		idDefInstrOpt = INVALID_POINTER;
+	      } else {
+		idDefInstrOpt = TagVal::New(idDefsInstrOpt->GetTag(),2);
+		Tuple *tuple = Tuple::New(2);
+		tuple->Init(0,rets->Sub(0));
+		tuple->Init(1,idDefsInstr->Sel(1));
+		idDefInstrOpt->Init(0,tuple->ToWord());
 	      }
-	      idDefInstrOpt = TagVal::New(idDefsInstrOpt->GetTag(),2);
-	      Tuple *tuple = Tuple::New(2);
-	      tuple->Init(0,rets->Sub(0));
-	      tuple->Init(1,idDefsInstr->Sel(1));
-	      idDefInstrOpt->Init(0,tuple->ToWord());
 	    }
 	    if(InlinePrimitive(cFunction,args,idDefInstrOpt)) {
 	      if(idDefInstrOpt == INVALID_POINTER) {
