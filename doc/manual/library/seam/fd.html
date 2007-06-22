@@ -446,17 +446,17 @@ end
     </P></DD>
 
     <DT>
-      <TT>countII (<I>s, v, rel1, n, rel2, m level</I>)</TT><BR>
-      <TT>countVI (<I>s, v, rel1, x, rel2, m level</I>)</TT><BR>
-      <TT>countIV (<I>s, v, rel1, n, rel2, y level</I>)</TT><BR>
-      <TT>countVV (<I>s, v, rel1, x, rel2, y level</I>)</TT><BR>                  
+      <TT>countII (<I>s, v, n, rel, m</I>)</TT><BR>
+      <TT>countVI (<I>s, v, x, rel, m</I>)</TT><BR>
+      <TT>countIV (<I>s, v, n, rel, y</I>)</TT><BR>
+      <TT>countVV (<I>s, v, x, rel, y</I>)</TT><BR>                  
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> for the following:
-      The number of elements in <I>v</I> in <I>rel1</I> with <I>n</I> (or <I>x</I>)
-      is in <I>rel2</I> with <I>m</I> (or <I>y</I>).<BR>
-      For example, There are exactly 5 non-zero elements of v:<BR>
-      <TT>countII (<I>s, v, NQ, 0, EQ, 5 DEF</I>)</TT><BR>
+      The number of elements in <I>v</I> equal to <I>n</I> (or <I>x</I>)
+      is in <I>rel</I> with <I>m</I> (or <I>y</I>).<BR>
+      For example, There are exactly 5 elements equal to 3 of v:<BR>
+      <TT>countII (<I>s, v, 3, EQ, 5</I>)</TT><BR>
     </P></DD>
 
     <DT>
