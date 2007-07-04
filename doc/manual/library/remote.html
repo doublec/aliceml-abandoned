@@ -490,10 +490,43 @@
     </DD>
   </DL>
 
-<?php section("example", "example") ?>
+<?php section("examples", "examples") ?>
 
-<P>Here is an example of a simplistic program that creates a component to read the content of a file on a remote site. Note how the mobile component refers to dynamically acquired data, namely the respective file name:</P>
+<?php subsection("examples-file", "remote file access") ?>
 
+<P>Here is an example of a simple program that creates a component to read the content of a file on a remote site. Note how the mobile component refers to dynamically acquired data, namely the respective file name:</P>
+
+<PRE>
+import structure Remote  from "x-alice:/lib/distribution/Remote"
+import signature TEXT_IO from "x-alice:/lib/system/TEXT_IO-sig"
+
+structure Main =
+struct
+   val (hostname, filename) =
+	case CommandLine.arguments ()
+	 of [s1, s2] => (s1, s2)
+	  | _ => (TextIO.output (TextIO.stdErr, "usage: fetch <host> <file>\n");
+		  OS.Process.exit OS.Process.failure)
+
+   val component =
+       comp
+           import structure TextIO : TEXT_IO from "x-alice:/lib/system/TextIO"
+       in
+           val content : string
+       with
+           val file = TextIO.openIn filename
+           val content = TextIO.inputAll file
+           do TextIO.closeIn file
+       end
+
+   structure Result =
+       unpack Remote.eval (hostname, component) : (val content : string)
+
+   do TextIO.print Result.content
+   do OS.Process.exit OS.Process.success
+end</PRE>
+
+<!--
 <PRE>
 import structure Url       from "x-alice:/lib/system/Url"
 import structure Remote    from "x-alice:/lib/distribution/Remote"
@@ -510,11 +543,8 @@ struct
 
    functor Comp (CM : COMPONENT_MANAGER) =
    let
-      structure TextIOComp =
-	 CM.Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
-		  signature S = (structure TextIO : TEXT_IO))
-      open TextIOComp
-
+      open CM.Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
+		    signature S = (structure TextIO : TEXT_IO))
       val file = TextIO.openIn filename
    in
       (val content = TextIO.inputAll file before TextIO.closeIn file)
@@ -524,8 +554,89 @@ struct
 				   signature S = (val content : string)
 				   structure F = Comp)
 
-   val _ = TextIO.print Result.content
-   val _ = OS.Process.exit OS.Process.success
+   do TextIO.print Result.content
+   do OS.Process.exit OS.Process.success
 end</PRE>
+-->
+
+
+<?php subsection("examples-chat", "chat room") ?>
+
+<P>A more interesting example is a simple client/server application with bidirectional communication:
+a simplistic chat room consisting of a chat server to which multiple clients can connect.</P>
+
+<P>The application consists of two programs: one for the server and one for clients. Both have to agree on the server interface, which we define in a shared component:</P>
+
+<PRE>
+(*) SERVER-sig.aml
+
+signature SERVER =
+sig
+   val register : (string -> unit) -> unit
+   val broadcast : string -> unit
+end</PRE>
+
+<P>Clients that register with the server will receive all messages sent by other clients, and they can broadcast messages themselves.</P>
+
+<P>Here is the code for the server:</P>
+
+<PRE>
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import signature SERVER from "SERVER-sig.aml"
+
+val clients = ref nil
+fun register client = clients := clients :: !clients
+fun broadcast message =
+    List.app (fn receive => spawn receive message) (!clients)
+
+structure Server =
+struct
+   val register = Remote.proxy (Lock.sync (Lock.lock ()) register)
+   val broadcast = Remote.proxy broadcast
+end
+
+val url = Remote.offer (pack Server : SERVER)
+do TextIO.print (url ^ "\n")</PRE>
+
+<P>The server simply keeps a list of registered clients
+(represented by their receive functions);
+broadcasting iterates over this list and forwards the message to each client.
+In order to avoid having to wait for each client in turn
+to receive its message, forwarding happens asynchronously,
+using a <A href="../futures.html">future</A> created with
+<A href="../futures.html#spawn"><TT>spawn</TT></A>.
+
+<P>Moreover, since the client list is stateful,
+we have to avoid race conditions when updating it during potentially concurrent
+calls to <TT>register</TT> from multiple clients.
+The exported <TT>register</TT> function hence synchronises using a fresh
+mutex <A href="lock.html">lock</A> (note that we do not need to
+synchronise broadcast, since it accesses the reference atomically).</P>
+
+<P>On startup, the server prints a URL for clients to connect. The code for clients is even simpler:</P>
+
+<PRE>
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import signature SERVER from "SERVER-sig.aml"
+
+val [url, name] = CommandLine.arguments ()
+
+structure Server = unpack Remote.take url : SERVER
+do Server.register (Remote.proxy TextIO.print)
+
+fun loop () = case TextIO.inputLine TextIO.stdIn of
+              | NONE => OS.Process.exit OS.Process.success
+              | SOME line => (Server.broadcast (name ^ ": " ^ line); loop ())
+do loop ()</PRE>
+
+<P>It expects a server URL and a user name on the command line, registers with the server, and simply forwards everything typed by the user to the server.
+Note that the call to <TT>register</TT> passes a proxy to the local
+<TT>print</TT> as argument, so that printing happens on the right site.</P>
+
+<P>This completes the application. Obviously, the implementation is quite simplistic: a user
+will see an echo of everything he types. More seriously, there is no error
+handling, and disconnecting clients do not notify the server (it will simply go on creating forwarding threads that fail with an <TT>Io</TT> exception).
+However, it should be clear how the program could be refined in that
+respect.</P>
 
 <?php footing() ?>
