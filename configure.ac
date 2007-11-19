@@ -10,7 +10,7 @@ dnl
 
 AC_REVISION([$Id$])
 AC_PREREQ(2.53)
-AC_INIT(SEAM, 1.3, seam@ps.uni-sb.de)
+AC_INIT(SEAM, 1.4, seam@ps.uni-sb.de)
 AC_CONFIG_SRCDIR(Seam.hh)
 AM_INIT_AUTOMAKE
 
@@ -57,9 +57,9 @@ AC_SEAM_ENABLE_LIGHTNING
 
 # checks for types
 
-AC_CHECK_TYPE(u_int,
-  [AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_U_INT=1)
-   AC_DEFINE(HAVE_U_INT, 1)])
+#AC_CHECK_TYPE(u_int,
+#  [AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_U_INT=1)
+#   AC_DEFINE(HAVE_U_INT, 1)])
 
 # checks for structures
 
