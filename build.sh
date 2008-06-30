@@ -6,7 +6,7 @@ AUTOMAKE="yes"
 : ${LIGHTNING=1}
 : ${BUILD_GMP=0}
 : ${BUILD_SQLITE=0}
-: ${LIBXML=0}
+: ${BUILD_LIBXML=0}
 SUPPORTDIR="$(pwd)"
 
 : ${prefix="$SUPPORTDIR/install"}
@@ -191,6 +191,7 @@ fi
 ##
 
 echo "### Clean up aclocal path mess" >&2
+mkdir -p "$prefix"/share/aclocal
 cp "$prefix"/share/aclocal-1.7/* "$prefix"/share/aclocal/
 
 
