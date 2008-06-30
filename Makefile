@@ -213,6 +213,8 @@ build-windows: build-gecode-windows build-seam-windows build-alice-ll-windows bu
 
 build-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap build-suffix 
 
+build-linux64: build-gecode-linux build-seam-linux64 build-alice-ll-linux build-alice-bootstrap build-suffix
+
 build-freebsd:
 	@echo TODO
 
@@ -238,6 +240,7 @@ release-ppc-darwin: build-ppc-darwin
 .PHONY: all windows linux freebsd ppc-darwin
 windows:    setup-wingtk build-windows
 linux:	    build-linux
+linux64:    build-linux64
 freebsd:    build-freebsd
 ppc-darwin: build-ppc-darwin
 
@@ -341,6 +344,10 @@ clean-seam:
 setup-seam:
 	(cd $(PWD)/seam/sources && make -f Makefile.cvs)
 
+.PHONY: setup-seam64
+setup-seam64:
+	(cd $(PWD)/seam/sources && make -f Makefile.cvs autotools)
+
 .PHONY:	configure-seam-windows
 configure-seam-windows:
 	(cd $(PWD)/seam/build && \
@@ -359,6 +366,14 @@ configure-seam-linux:
 		--with-warnings=yes \
 		--with-zlib='$(PWD)/seam-support/install')
 
+.PHONY:	configure-seam-linux64
+configure-seam-linux64:
+	(cd $(PWD)/seam/build && \
+	 ../sources/configure \
+		--prefix='$(PREFIX)' \
+		--with-warnings=yes \
+		--disable-lightning)
+
 .PHONY:	rebuild-seam
 rebuild-seam:
 	(cd $(PWD)/seam/build && make install)
@@ -366,6 +381,7 @@ rebuild-seam:
 .PHONY:	build-seam-windows build-seam-linux
 build-seam-windows: setup-seam configure-seam-windows rebuild-seam
 build-seam-linux: setup-seam configure-seam-linux rebuild-seam
+build-seam-linux64: setup-seam64 configure-seam-linux64 rebuild-seam
 
 ########### Alice Language Layer ############
 
