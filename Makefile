@@ -82,7 +82,7 @@ CVSROOT = :pserver:anoncvs:anoncvs@ps.uni-sb.de:/services/alice/CVS
 DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
 GECODE_VERSION=1.3.1
-VERSION=1.4
+VERSION=1.4.gareth
 
 # From here on no change should be needed
 
@@ -149,7 +149,7 @@ setup:
 	(cd $(PWD)/seam && cvs -d $(CVSROOT) get seam && mv seam sources)
 	mkdir -p $(PWD)/gecode
 	mkdir -p $(PWD)/gecode/build
-	(cd $(PWD)/gecode; wget $(GECODE_URL) -O - | tar xz; mv $(GECODE_ARCHIVE_NAME) sources)
+	(cd $(PWD)/gecode && wget $(GECODE_URL) -O - | tar xz && mv $(GECODE_ARCHIVE_NAME) sources && cd sources && patch -p0 < $(PWD)/make/patches/gecode1-3-1_gcc4-4.patch)
 	mkdir -p $(PWD)/alice
 	mkdir -p $(PWD)/alice/build
 	(cd $(PWD)/alice && cvs -d $(CVSROOT) get alice && mv alice sources)
