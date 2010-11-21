@@ -8,7 +8,7 @@ fi
 system="`$UNAME -m` `$UNAME -s` `$UNAME -r`"
 
 case $system in
-   i[3456]86\ Linux\ *)
+   *86*Linux*)
 	OZARCH=linux-i486
 	SMLNJARCH=x86-linux
    ;;
