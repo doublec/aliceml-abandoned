@@ -208,7 +208,7 @@ clean: clean-distro clean-gecode clean-seam clean-alice-ll clean-alice-bootstrap
 .PHONY:	cleanbuild
 cleanbuild: clean all
 
-.PHONY:	build-windows build-linux build-freebsd build-ppc-darwin
+.PHONY:	build-windows build-linux build-linux64 build-freebsd build-ppc-darwin
 build-windows: build-gecode-windows build-seam-windows build-alice-ll-windows build-alice-bootstrap build-suffix
 
 build-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-alice-bootstrap build-suffix 
@@ -237,7 +237,7 @@ release-linux: build-gecode-linux build-seam-linux build-alice-ll-linux build-al
 release-freebsd:    build-freebsd
 release-ppc-darwin: build-ppc-darwin
 
-.PHONY: all windows linux freebsd ppc-darwin
+.PHONY: all windows linux linux64 freebsd ppc-darwin
 windows:    setup-wingtk build-windows
 linux:	    build-linux
 linux64:    build-linux64
@@ -251,6 +251,10 @@ all:
 		echo "building for Linux" ; \
 		make linux ; \
 	   	;; \
+	   *x86_64*linux*) \
+	    echo "building for Linux64" ; \
+	    make linux64 ; \
+	    ;; \
 	   *i[3456]86*freebsd*) \
 		echo "building for FreeBSD" ; \
 	        make freebsd ; \
@@ -378,7 +382,7 @@ configure-seam-linux64:
 rebuild-seam:
 	(cd $(PWD)/seam/build && make install)
 
-.PHONY:	build-seam-windows build-seam-linux
+.PHONY:	build-seam-windows build-seam-linux build-seam-linux64
 build-seam-windows: setup-seam configure-seam-windows rebuild-seam
 build-seam-linux: setup-seam configure-seam-linux rebuild-seam
 build-seam-linux64: setup-seam64 configure-seam-linux64 rebuild-seam
