@@ -16,7 +16,7 @@ AliceLexer.alc:	AliceParser.alc
 
 AliceLexer-MLLex.aml:	AliceLexer-MLLex.lex
 	ml-lex $<
-	echo -e 'import structure AliceParser from "AliceParser"\n' | cat - $<.sml > $@
+	printf 'import structure AliceParser from "AliceParser"\n\n' | cat - $<.sml > $@
 	rm $<.sml
 
 AliceLexer-MLLex.alc:	AliceParser.alc

@@ -59,7 +59,7 @@ distclean:	clean
 
 HoseParser.aml HOSE_PARSER-sig.aml:	hose.grm
 	ml-yacc hose.grm
-	echo -e 'import signature PARSER_DATA from "x-alice:/lib/ml-yacc/base-sig"\n' > HOSE_PARSER-sig.aml
+	printf 'import signature PARSER_DATA from "x-alice:/lib/ml-yacc/base-sig"\n\n' > HOSE_PARSER-sig.aml
 	awk -f $(FIXPARSER) < hose.grm.sig  >> HOSE_PARSER-sig.aml
 	cat HoseParser.aml.header hose.grm.sml > HoseParser.aml
 	rm hose.grm.sml
@@ -68,7 +68,7 @@ HoseParser.aml HOSE_PARSER-sig.aml:	hose.grm
 
 HoseLexer.aml: hose.lex  
 	ml-lex hose.lex
-	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "HOSE_PARSER-sig"\n import structure AbsSyn from "AbsSyn"\n' > HoseLexer.aml.tmp
+	printf 'import signature Parser_TOKENS signature Parser_LRVALS from "HOSE_PARSER-sig"\nimport structure AbsSyn from "AbsSyn"\n\n' > HoseLexer.aml.tmp
 	cat hose.lex.sml >> HoseLexer.aml.tmp
 	sed -e 's/Unsafe.//g' HoseLexer.aml.tmp > HoseLexer.aml
 	rm HoseLexer.aml.tmp

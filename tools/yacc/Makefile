@@ -53,7 +53,7 @@ distclean:	clean
 
 JackeParser.aml JACKE_PARSER-sig.aml:	jacke.grm
 	ml-yacc jacke.grm
-	echo -e 'import signature PARSER_DATA from "Sigs"\n' > JACKE_PARSER-sig.aml
+	printf 'import signature PARSER_DATA from "Sigs"\n\n' > JACKE_PARSER-sig.aml
 	awk -f $(FIXPARSER) < jacke.grm.sig  >> JACKE_PARSER-sig.aml
 	cat JackeParser.aml.header jacke.grm.sml > JackeParser.aml
 	rm jacke.grm.sml
@@ -62,7 +62,7 @@ JackeParser.aml JACKE_PARSER-sig.aml:	jacke.grm
 
 Lexer.aml: Jacke.lex  
 	ml-lex Jacke.lex
-	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "JACKE_PARSER-sig"\nimport structure ErrorMsg from "ErrorMsg"' > Lexer.aml.tmp
+	printf 'import signature Parser_TOKENS signature Parser_LRVALS from "JACKE_PARSER-sig"\nimport structure ErrorMsg from "ErrorMsg"\n\n' > Lexer.aml.tmp
 	cat Jacke.lex.sml >> Lexer.aml.tmp
 	sed -e 's/Unsafe.//g' Lexer.aml.tmp > Lexer.aml
 	rm Lexer.aml.tmp
