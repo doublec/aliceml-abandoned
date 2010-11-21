@@ -1098,7 +1098,7 @@
   (values
     '("user-style" "PRIVATE_GTK_USER_STYLE")
     '("resize-pending" "PRIVATE_GTK_RESIZE_PENDING")
-    '("leave-pending" "PRIVATE_GTK_LEAVE_PENDING")
+;;    '("leave-pending" "PRIVATE_GTK_LEAVE_PENDING")
     '("has-shape-mask" "PRIVATE_GTK_HAS_SHAPE_MASK")
     '("in-reparent" "PRIVATE_GTK_IN_REPARENT")
     '("direction-set" "PRIVATE_GTK_DIRECTION_SET")
