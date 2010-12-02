@@ -83,7 +83,7 @@ HGROOT = https://bitbucket.org/gareth0/alice-experimental-
 DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
 GECODE_VERSION=1.3.1
-VERSION=1.4.gareth
+VERSION=1.4
 
 # From here on no change should be needed
 
