@@ -281,29 +281,56 @@ public:
   }
 };
 
+
+/**
+ * Links the boot component and invokes the boot function
+ */
 class StartFrame: private StackFrame {
 private:
-  enum { KEY_POS, SIZE };
+  enum { KEY_POS, ACTION_POS, SIZE };
 public:
-  // StartFrame Accessors
+  enum Action { MAKE_URL, LINK_BOOT_COMPONENT, FORCE_BOOT_COMPONENT, INVOKE_BOOT_FUNCTION };
+
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
   }
+  
   String *GetKey() {
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
-  // StartFrame Constructor
+  
+  Action GetAction() {
+    return STATIC_CAST(Action, Store::WordToInt(GetArg(ACTION_POS)));
+  }
+  
+  void SetAction(Action action) {
+    ReplaceArg(ACTION_POS, Store::IntToWord(action));
+  }
+  
   static StartFrame *New(Worker *worker, String *key) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
+    frame->InitArg(ACTION_POS, Store::IntToWord(MAKE_URL));
     return STATIC_CAST(StartFrame *, frame);
   }
+  
   static StartFrame *New(Thread *thread, Worker *worker, String *key) {
     NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
+    frame->InitArg(ACTION_POS, Store::IntToWord(MAKE_URL));
     return STATIC_CAST(StartFrame *, frame);
   }
+  
+  static const char* StringOfAction(Action action){
+    switch(action){
+      case MAKE_URL             : return "MAKE_URL";
+      case LINK_BOOT_COMPONENT  : return "LINK_BOOT_COMPONENT";
+      case FORCE_BOOT_COMPONENT : return "FORCE_BOOT_COMPONENT";
+      case INVOKE_BOOT_FUNCTION : return "INVOKE_BOOT_FUNCTION";
+    }
+  }
 };
+
 
 //
 // Worker Implementations
@@ -530,14 +557,65 @@ u_int StartWorker::GetFrameSize(StackFrame *sFrame) {
 Worker::Result StartWorker::Run(StackFrame *sFrame) {
   StartFrame *frame = STATIC_CAST(StartFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  String *arg = frame->GetKey();
-  Scheduler::PopFrame(frame->GetSize());
   Assert(Scheduler::GetNArgs() == 1);
-  Record *record = Record::FromWordDirect(Scheduler::GetCurrentArg(0));
-  word boot = record->PolySel(UniqueString::New(String::New("boot")));
-  Scheduler::SetNArgs(1);
-  Scheduler::SetCurrentArg(0, arg->ToWord());
-  return Scheduler::PushCall(boot);
+  
+  word appUrl = frame->GetKey()->ToWord();
+  Trace(StartFrame::StringOfAction(frame->GetAction()), String::FromWord(appUrl));
+  
+  switch(frame->GetAction()){
+    
+    // turn boot-component url *string* into a url value
+    case StartFrame::MAKE_URL: {
+  
+      // note that the (ComponentManager component) argument is ignored
+      // assumption: Url component will have been entered during linking of ComponentManager
+  
+      Record *urlWrap =
+        Record::FromWordDirect(BootLinker::LookupComponent(String::New("lib/system/Url"))->GetStr());
+      word urlFromString = Record::FromWord(urlWrap->PolySel("Url$"))->PolySel("fromString");
+    
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, String::New("x-alice:/lib/system/Boot")->ToWord());
+
+      frame->SetAction(StartFrame::LINK_BOOT_COMPONENT);
+      return Scheduler::PushCall(urlFromString);
+    }
+    
+    // link the boot component, using the primal component manager
+    case StartFrame::LINK_BOOT_COMPONENT: {
+      
+      // /lib/system/ComponentManager will have been entered already
+      Record *cmWrap = Record::FromWord(
+        BootLinker::LookupComponent(String::New("lib/system/ComponentManager"))->GetStr());
+      Record *cm = Record::FromWord(cmWrap->PolySel("ComponentManager$"));
+      word link = cm->PolySel("link");
+
+      // the argument url is already in the argument register
+      frame->SetAction(StartFrame::FORCE_BOOT_COMPONENT);
+      return Scheduler::PushCall(link);
+    }
+    
+    // force the boot component to be evaluated
+    case StartFrame::FORCE_BOOT_COMPONENT: {
+      
+      Tuple *bootPackage = Tuple::FromWord(Scheduler::GetCurrentArg(0));
+      Scheduler::SetCurrentData(bootPackage->Sel(0));
+      frame->SetAction(StartFrame::INVOKE_BOOT_FUNCTION);
+      return Worker::REQUEST;
+    }
+    
+    // invoke the boot function
+    case StartFrame::INVOKE_BOOT_FUNCTION: {
+    
+      Tuple *bootPackage = Tuple::FromWord(Scheduler::GetCurrentArg(0));
+      Record *bootStr = Record::FromWord(bootPackage->Sel(0));
+      word boot = bootStr->PolySel("boot");
+    
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, appUrl);
+      return Scheduler::PushCall(boot);
+    }
+  }
 }
 
 const char *StartWorker::Identify() {
@@ -608,11 +686,13 @@ Component *BootLinker::LookupComponent(String *key) {
 }
 
 void BootLinker::Link(String *url) {
+  Trace("init-link", url);
   StartWorker::PushFrame(url);
-  LoadWorker::PushFrame(String::New("lib/system/Boot"));
+  LoadWorker::PushFrame(String::New("lib/system/ComponentManager"));
 }
 
 void BootLinker::Link(Thread *thread, String *url) {
+  Trace("init-link", url);
   StartWorker::PushFrame(thread, url);
-  LoadWorker::PushFrame(thread, String::New("lib/system/Boot"));
+  LoadWorker::PushFrame(thread, String::New("lib/system/ComponentManager"));
 }
