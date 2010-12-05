@@ -625,6 +625,12 @@ public:
   void AssertLabel(u_int i, UniqueString *label) {
     Assert(GetArg(BASE_SIZE + i * 2) == label->ToWord()); i = i; label = label;
   }
+  
+  
+  /**
+   * Select the value from this Record that has the specified label, or
+   * exit with an error message if this Record has no such label.
+   */
   word PolySel(UniqueString *label) {
     word wLabel = label->ToWord();
     u_int n = Store::DirectWordToInt(GetArg(WIDTH_POS));
@@ -636,9 +642,45 @@ public:
 	return GetArg(BASE_SIZE + i * 2 + 1);
       i = (i + 1) % n;
     } while (i != index);
-    fprintf(stderr, "Could not find field %s in structure.\n",
-	    label->ToString()->ExportC());
+    
+    fprintf(stderr, "Could not find field %s in structure ", label->ToString()->ExportC());
+    this->Dump();
     Error("Aborting.");
+  }
+  
+  
+  /**
+   * A convenience method over PolySel(UniqueString *)
+   */
+  word PolySel(String *label) {
+    return this->PolySel(UniqueString::New(label));
+  }
+  
+  
+  /**
+   * A convenience method over PolySel(UniqueString *)
+   */
+  word PolySel(const char *label) {
+    return this->PolySel(String::New(label));
+  }
+  
+  
+  /**
+   * Used for debugging
+   */
+  void Dump(){
+    fprintf(stderr, "{");
+    
+    u_int width = Store::DirectWordToInt(GetArg(WIDTH_POS));
+    for (int i=0; i<width; i++) {
+      if (i) {
+	    fprintf(stderr, ", ");
+      }
+      UniqueString *label = UniqueString::FromWord(GetArg(BASE_SIZE + i * 2));
+      fprintf(stderr, "%s", label->ToString()->ExportC());
+    }
+    
+    fprintf(stderr, "}\n");
   }
 };
 
