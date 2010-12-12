@@ -676,8 +676,12 @@ public:
       if (i) {
 	    fprintf(stderr, ", ");
       }
-      UniqueString *label = UniqueString::FromWord(GetArg(BASE_SIZE + i * 2));
-      fprintf(stderr, "%s", label->ToString()->ExportC());
+      word lab = GetArg(BASE_SIZE + i * 2);
+      if (!lab) {
+        fprintf(stderr, "?");
+      } else {
+        fprintf(stderr, "%s", UniqueString::FromWord(lab)->ToString()->ExportC());
+      }
     }
     
     fprintf(stderr, "}\n");
