@@ -19,6 +19,24 @@
 #include "alice/Authoring.hh"
 #include "alice/BootLinker.hh"
 
+
+static const bool traceFlag = std::getenv("ALICE_TRACE_UNSAFE_COMPONENT") != NULL;
+
+
+static void Trace(char *prefix, String *key) {
+  if (traceFlag) {
+    std::fprintf(stderr, "[UnsafeComponent] %s %.*s\n", prefix, (int) key->GetSize(), key->GetValue());
+  }
+}
+
+
+static void Trace(char *str) {
+  if (traceFlag) {
+    std::fprintf(stderr, "[UnsafeComponent] %s\n", str);
+  }
+}
+
+
 static word SitedConstructor;
 static word CorruptConstructor;
 static word NotFoundConstructor;
@@ -85,6 +103,7 @@ DEFINE0(UnsafeComponent_getInitialTable) {
     u_int numberOfEntries = BootLinker::GetNumberOfEntries();
     Queue *keyQueue = BootLinker::GetKeyQueue();
     Vector *vector = Vector::New(numberOfEntries);
+    Trace("creating & returning initial table");
     while (numberOfEntries--) {
       String *key = String::FromWordDirect(keyQueue->Dequeue());
       Component *component = BootLinker::LookupComponent(key);
@@ -94,10 +113,14 @@ DEFINE0(UnsafeComponent_getInitialTable) {
       triple->Init(1, component->GetSign());
       triple->Init(2, component->GetStr());
       vector->Init(numberOfEntries, triple->ToWord());
+      Trace("creating initial table entry:", key);
     }
     Assert(keyQueue->IsEmpty());
     result = vector->ToWord();
     RootSet::Add(result);
+  }
+  else{
+    Trace("returning cached initial table");
   }
   RETURN(result);
 } END
