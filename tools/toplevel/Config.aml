@@ -63,13 +63,15 @@ signature GEOMETRY =
 structure Config =
    struct
 
+      val configDir    = OS.FileSys.getApplicationConfigDir "Toplevel"
+      val instanceFile = configDir ^ "/instance.lock"
+      
       fun createConfigDir () =
 	  let
-	      val dir = OS.FileSys.getApplicationConfigDir "Toplevel"
-	      val parent = OS.Path.getParent dir
+	      val parent = OS.Path.getParent configDir
 	  in
 	      OS.FileSys.mkDir parent handle OS.SysErr _ => ();
-	      OS.FileSys.mkDir dir handle OS.SysErr _ => ()
+	      OS.FileSys.mkDir configDir handle OS.SysErr _ => ()
 	  end
 
       val editorHeight = 500

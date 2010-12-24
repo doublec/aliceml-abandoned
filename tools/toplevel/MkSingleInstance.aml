@@ -1,0 +1,149 @@
+
+import structure IO                  from "x-alice:/lib/system/IO"
+import structure TextIO              from "x-alice:/lib/system/TextIO"
+import structure Socket              from "x-alice:/lib/system/Socket"
+import structure Channel             from "x-alice:/lib/data/Channel"
+(*) FIXME: use something safe instead?
+import structure UnsafeComponent     from "x-alice:/lib/system/UnsafeComponent"
+
+
+functor MkSingleInstance (type request) :>
+sig
+
+    (*
+     * If an application instance already exists, then the instance
+     * will be sent the specified request, and NONE will be returned.
+     * If this is the first instance, then the request is ignored,
+     * and a lazy list of requests from other attempts to start
+     * the application will be returned.
+     *
+     * The file given uniquely identifies the application. It must be
+     * creatable and writable.
+     *)
+    val init : string * request -> request list option
+
+end
+ =
+struct
+
+    signature REQUEST =
+    sig
+        val request : request
+    end
+
+
+    (*) FIXME: there must be a better way to do this?
+    fun fileExists path =
+        (ignore (OS.FileSys.modTime path); true)
+        handle OS.SysErr _ => false
+
+
+    (*) FIXME: move this somewhere public (OS.FileSys?)
+    (*
+     * Ensure that the specified directory, along
+     * with all its parents, exists.
+     *)
+    fun mkDirs path =
+       let
+           val {dir, file} = OS.Path.splitDirFile path
+       in
+           if not (fileExists dir)  then mkDirs dir else ();
+           if not (fileExists path) then OS.FileSys.mkDir path else ();
+       end
+    
+    
+    (*) FIXME: this should live in TextIO
+    (*
+     * Get the entire content of the specified file.
+     *)
+    fun getFile path =
+        let
+            val f = TextIO.openIn path
+            val c = TextIO.inputAll f
+        in
+            TextIO.closeIn f;
+            c;
+        end
+    
+    
+    (*) FIXME: this should live in TextIO
+    (*
+     * Set the entire content of the specified file.
+     *)
+    fun setFile (path, content) =
+        let
+            val f = TextIO.openOut path
+        in
+            TextIO.output (f, content);
+            TextIO.closeOut f;
+        end
+    
+    
+    (*) FIXME: this should live in TextIO
+    fun truncate path =
+        setFile (path, "")
+    
+    
+    fun writePackage (sock, pkg) =
+        let
+            val pkg' = UnsafeComponent.pack_ pkg
+            val len  = Int.toString (size pkg') ^ "\n"
+        in
+            Socket.output (sock, len);
+            Socket.output (sock, pkg');
+        end
+
+
+    fun readPackage sock =
+        let
+            val len = valOf (Int.fromString (valOf (Socket.inputLine sock)))
+            val pkg = Socket.inputN (sock, len)
+        in
+            if size pkg = len then
+                UnsafeComponent.unpack_ pkg
+            else
+                raise IO.Io {name = "MkSingleInstance", function = "readPackage", cause = Subscript}
+        end
+
+
+    fun init (portFile, request) =
+        let
+            (*) FIXME: exclusively lock the portFile
+            do mkDirs (OS.Path.dir portFile)
+            val port =
+                Int.fromString (getFile portFile)
+                handle IO.Io _ => NONE
+        in
+            case port
+            of NONE =>
+                let
+                    val chan = Channel.channel ()
+                    
+                    fun accept (sock, _, _) =
+                        let
+                            structure Request = unpack (readPackage sock) : REQUEST
+                        in
+                            Channel.put (chan, Request.request);
+                            Socket.close sock;
+                        end
+                    
+                    (*) FIXME: listen on localhost, not all interfaces...
+                    val (servSock, port) = Socket.server (NONE, accept)
+                in
+                    setFile (portFile, Int.toString port);
+                    SOME (Channel.toList chan);
+                end
+            |  SOME p => 
+                let
+                    val sock = Socket.client ("localhost", p)
+                    val pkg  = pack (val request = request) : REQUEST
+                in
+                    writePackage (sock, pkg);
+                    Socket.close sock;
+                    NONE;
+                end
+                handle IO.Io _ =>
+                    (truncate portFile; init (portFile, request))
+        end
+
+end

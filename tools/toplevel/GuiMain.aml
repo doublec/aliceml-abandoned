@@ -325,6 +325,7 @@ structure GuiMain =
 		val (buf,id) = Buffer.getBufferByName
 		(OS.Path.mkAbsolute {path=f,relativeTo=OS.FileSys.getDir()})
 	    in
+	        Gtk.Window.present Gui.mainwidget;
 		case buf of
 		    SOME buf =>
 		    Gtk.Notebook.setCurrentPage(Gui.notebook1, valOf (findPage id))
