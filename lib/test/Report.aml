@@ -10,8 +10,12 @@
  *   $Revision$
  *)
 
-import structure Test from "Test"
-import signature REPORT from "REPORT-sig"
+import structure PrettyPrint   from "x-alice:/lib/utility/PrettyPrint"
+import structure PPValue       from "x-alice:/lib/system/PPValue"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Test          from "Test"
+import signature REPORT        from "REPORT-sig"
+
 
 structure Report :> REPORT =
 struct
@@ -30,26 +34,31 @@ struct
 	   print' (23 - String.size n, n)
         end
 
+
+    fun printFailExn (out, n, exn, sample) =
+        (TextIO.output      (out, "\t" ^ printSpc (n ^ ":") ^ "exception raised:\n");
+         PrettyPrint.output (out, PPValue.ppVal PervasiveType.typ_exn exn, 80);
+         TextIO.output      (out, "\n");
+         TextIO.output      (out, "\t" ^ printSpc "with argument:" ^ sample ^ "\n"))
+    
+    
     fun fmtFail (out, _) ((n, _), Test.FAIL_ASSERT _, sample) = 
 	TextIO.output (out, "\t" ^ printSpc (n ^ ":")
 			^ "testcase failed!\n\t   " 
                         ^ printSpc "with argument:"
 			^ sample ^ "\n")
-      | fmtFail (out, true) ((n, _), Test.FAIL_EXN name, sample) =
-	if exnName name = "MissingFunction"
+      | fmtFail (out, true) ((n, _), Test.FAIL_EXN exn, sample) =
+	if exnName exn = "MissingFunction"
 	then TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ 
 				 "missing function in structure\n\n")
-	else TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ "exception "
-                        ^ exnName name ^ " raised\n\t   " 
-			^ printSpc "with argument:" ^ sample ^ "\n")
-      | fmtFail (out, false) ((n, _), Test.FAIL_EXN name, sample) =
-	if exnName name = "MissingFunction"
+	else printFailExn (out, n, exn, sample)
+      | fmtFail (out, false) ((n, _), Test.FAIL_EXN exn, sample) =
+	if exnName exn = "MissingFunction"
 	then ()
-	else TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ "exception "
-                        ^ exnName name ^ " raised\n\t   " 
-			^ printSpc "with argument:" ^ sample ^ "\n")
+	else printFailExn (out, n, exn, sample)
       | fmtFail (out, _) ((n, _), Test.FAIL_TIMEOUT, sample) =
 	TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ "timeout expired\n")
+
 
     fun report (out, cfg : Test.config) { name, passed, failed, failures } =
 	let
@@ -67,7 +76,9 @@ struct
 	    List.app (fmtFail (out, showM)) failures)
 	end
 
+
     fun run out cfg = report (out, cfg) o (Test.run cfg)
+
 
     fun runAll out cfg = List.app (run out cfg)  
 end
