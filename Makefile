@@ -142,18 +142,14 @@ info:
 
 .PHONY:	setup setup-wingtk setup-release
 setup:
-	cvs -d $(CVSROOT) login
-	(cd $(PWD) && cvs -d $(CVSROOT) get seam-support)
+	(cd $(PWD) && hg clone $(HGROOT)seam-support seam-support)
 	make build-seam-support
-	mkdir -p $(PWD)/seam
 	mkdir -p $(PWD)/seam/build
-	(cd $(PWD)/seam && cvs -d $(CVSROOT) get seam && mv seam sources)
-	mkdir -p $(PWD)/gecode
+	(cd $(PWD)/seam && hg clone $(HGROOT)seam sources)
 	mkdir -p $(PWD)/gecode/build
 	(cd $(PWD)/gecode && wget $(GECODE_URL) -O - | tar xz && mv $(GECODE_ARCHIVE_NAME) sources && cd sources && patch -p0 < $(PWD)/make/patches/gecode1-3-1_gcc4-4.patch)
-	mkdir -p $(PWD)/alice
 	mkdir -p $(PWD)/alice/build
-	(cd $(PWD)/alice && hg clone $(HGROOT)alice alice && mv alice sources)
+	(cd $(PWD)/alice && hg clone $(HGROOT)alice sources)
 	@echo Setup complete.
 	@echo Include $(PWD)/seam-support/install/bin into your PATH.
 
@@ -198,8 +194,8 @@ setup-release:
 
 .PHONY:	update
 update:
-	(cd $(PWD)/seam-support && cvs -q -d $(CVSROOT) update -dP) && \
-	(cd $(PWD)/seam/sources && cvs -q -d $(CVSROOT) update -dP) && \
+	(cd $(PWD)/seam-support && hg pull -u $(HGROOT)seam-support) && \
+	(cd $(PWD)/seam/sources && hg pull -u $(HGROOT)seam) && \
 	(cd $(PWD)/alice/sources && hg pull -u $(HGROOT)alice)
 
 .PHONY:	clean
