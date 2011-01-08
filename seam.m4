@@ -360,7 +360,7 @@ dnl
 dnl Author:
 dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 dnl
-AC_DEFUN(AC_PROG_SEAMTOOL,
+AC_DEFUN([AC_PROG_SEAMTOOL],
   [AC_BEFORE([$0], [AC_PROG_CXX])dnl
    AC_BEFORE([$0], [AC_PROG_CPP])dnl
    AC_CHECK_PROG(SEAMTOOL, seamtool, seamtool, none)
@@ -393,7 +393,7 @@ dnl
 dnl Author:
 dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 dnl
-AC_DEFUN(AC_PATH_SEAM,
+AC_DEFUN([AC_PATH_SEAM],
   [ac_seam_ok=""
    AC_REQUIRE([AC_PROG_SEAMTOOL])
    AC_LANG_PUSH(C++)
