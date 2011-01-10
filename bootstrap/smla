@@ -29,4 +29,4 @@ esac
 
 export AML2SML
 
-cat `dirname $0`/alice-$CM.sml - | $sml
+cat `dirname $0`/alice-$CM.sml - | $sml "$@"

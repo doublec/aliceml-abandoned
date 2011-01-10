@@ -13,6 +13,8 @@
 SRCDIR=..
 
 SML := $(shell pwd)/smla
+SMLFLAGS = -Ccontrol.poly-eq-warn=false
+
 PLATFORM := $(shell ./platform.sh smlnj)
 ifeq ("$(PLATFORM)", "")
   $(error Unknown platform)
@@ -55,27 +57,27 @@ Prebound.ozf: $(SRCDIR)/vm-mozart/Prebound.oz
 
 alicedep.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-alicedep.sml";' | $(SML)
+	echo 'use "make-alicedep.sml";' | $(SML) $(SMLFLAGS)
 	if [ ! -f $@ ]; then exit 1; fi
 
 alicec-mozart.$(PLATFORM): $(SRCDIR)/compiler/backend-mozart/PickleOutStream.aml
 	-rm -f $@
-	echo 'use "make-alicec-mozart.sml";' | $(SML)
+	echo 'use "make-alicec-mozart.sml";' | $(SML) $(SMLFLAGS)
 	if [ ! -f $@ ]; then exit 1; fi
 
 alice-mozart.$(PLATFORM): $(SRCDIR)/compiler/backend-mozart/PickleOutStream.aml
 	-rm -f $@
-	echo 'use "make-alice-mozart.sml";' | $(SML)
+	echo 'use "make-alice-mozart.sml";' | $(SML) $(SMLFLAGS)
 	if [ ! -f $@ ]; then exit 1; fi
 
 alicec-dotnet.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-alicec-dotnet.sml";' | $(SML)
+	echo 'use "make-alicec-dotnet.sml";' | $(SML) $(SMLFLAGS)
 	if [ ! -f $@ ]; then exit 1; fi
 
 alicec-seam.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-alicec-seam.sml";' | $(SML)
+	echo 'use "make-alicec-seam.sml";' | $(SML) $(SMLFLAGS)
 	if [ ! -f $@ ]; then exit 1; fi
 
 clean:
