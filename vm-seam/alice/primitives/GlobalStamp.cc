@@ -110,7 +110,7 @@ DEFINE1(GlobalStamp_toString) {
   } else {
     Tuple *tuple = STATIC_CAST(Tuple *, globalStamp);
     static char buf[20];
-    std::sprintf(buf, "%u", Store::DirectWordToInt(tuple->Sel(1)));
+    std::sprintf(buf, "%"U_INTF, Store::DirectWordToInt(tuple->Sel(1)));
     RETURN(String::New(buf)->ToWord());
   }
 } END

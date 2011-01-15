@@ -709,7 +709,7 @@ void PPAnalyser::RunAnalysis(TagVal *instr, InlineAnalyser *analyser) {
 	  }
 	  break;
 	default:
-	  fprintf(stderr,"invalid abstractCode tag %d\n",
+	  fprintf(stderr,"invalid abstractCode tag %"U_INTF"\n",
 		  (u_int)AbstractCode::GetInstr(instr));
 	  return;
 	}

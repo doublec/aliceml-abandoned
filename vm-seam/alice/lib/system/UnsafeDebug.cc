@@ -31,12 +31,12 @@ DEFINE1(UnsafeDebug_unimplemented) {
 void PrintLiveness(TagVal *abstractCode) {
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
   u_int size = liveness->GetLength();
-  fprintf(stderr,"print liveness of size %d:\n",size/3);
+  fprintf(stderr,"print liveness of size %"U_INTF":\n", size/3);
   for(u_int i = 0, j = 1; i<size; i+=3, j++) {
     u_int index = Store::DirectWordToInt(liveness->Sub(i));
     u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
     u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
-    fprintf(stderr,"%d. %d -> [%d, %d]\n",j,index,start,end);
+    fprintf(stderr, "%"U_INTF". %"U_INTF" -> [%"U_INTF", %"U_INTF"]\n", j, index, start, end);
   }
 }
 

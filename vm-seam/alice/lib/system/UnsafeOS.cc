@@ -291,7 +291,7 @@ DEFINE1(UnsafeOS_FileSys_readLink) {
   String *buffer = String::FromWordDirect(wBufferString);
   u_int size = buffer->GetSize();
  retry:
-  int res = readlink(name->ExportC(), (char *) buffer->GetValue(), size);
+  s_int res = readlink(name->ExportC(), (char *) buffer->GetValue(), size);
   if (res < 0) RAISE_SYS_ERR();
   if (STATIC_CAST(u_int, res) == size) {
     size = size * 3 / 2;
@@ -389,8 +389,10 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
   RETURN(name->ToWord());
 #else
   static const char path[] = "/tmp/aliceXXXXXX";
-  String *s = String::New(path, sizeof(path));
-  mkstemp(reinterpret_cast<char *>(s->GetValue()));
+  String *s = String::New(path, (u_int) sizeof(path));
+  if (mkstemp(reinterpret_cast<char *>(s->GetValue())) == -1) {
+    RAISE_SYS_ERR();
+  }
   RETURN(s->ToWord());
 #endif
 } END
@@ -473,7 +475,7 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
       goto retry;
     }
   } else {
-    int len = strlen(envVal);
+    u_int len = strlen(envVal);
     if (len + pluslen >= size) {
       size = len + pluslen + 1;
       buffer = String::New(size);
@@ -612,7 +614,7 @@ DEFINE2(UnsafeOS_SysErr) {
 
 DEFINE1(UnsafeOS_errorMsg) {
   DECLARE_INT(errorCode, x0);
-  RETURN(ErrorCodeToString(errorCode)->ToWord());
+  RETURN(ErrorCodeToString((int) errorCode)->ToWord());
 } END
 
 AliceDll word UnsafeOS() {

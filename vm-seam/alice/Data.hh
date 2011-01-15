@@ -437,7 +437,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= -128 && i <= 127);
-    GetValue()[index] = i;
+    GetValue()[index] = (u_char) i;
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -480,7 +480,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= -128 && i <= 127);
-    GetValue()[index] = i;
+    GetValue()[index] = (u_char) i;
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -528,7 +528,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= 0 && i <= 0xFF);
-    GetValue()[index] = i;
+    GetValue()[index] = (u_char) i;
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -570,7 +570,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= 0 && i <= 0xFF);
-    GetValue()[index] = i;
+    GetValue()[index] = (u_char) i;
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -698,9 +698,9 @@ public:
   static BigInt *New(s_int i);
   static BigInt *New(u_int i);
   static BigInt *New(double d);
-  int toInt(void);
+  s_int toInt(void);
   void destroy(void);
-  bool operator==(int i);
+  bool operator==(signed long int i);
 
 
   static BigInt *FromWordDirect(word x) {
@@ -751,16 +751,16 @@ public:
   BigInt *shiftl(unsigned long int b);
 
   int compare(BigInt *b);
-  int compare(int i);
+  int compare(signed long int i);
   bool less(BigInt *b);
   bool lessEq(BigInt *b);
   bool greater(BigInt *b);
   bool greaterEq(BigInt *b);
 
-  bool less(int i);
-  bool lessEq(int i);
-  bool greater(int i);
-  bool greaterEq(int i);
+  bool less(signed long int i);
+  bool lessEq(signed long int i);
+  bool greater(signed long int i);
+  bool greaterEq(signed long int i);
 
 };
 

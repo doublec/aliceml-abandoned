@@ -27,7 +27,7 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
 					Chunk *code, Tuple *imEnv) {
   ReadBuffer *codeBuffer = ReadBuffer::New(code);
 
-  fprintf(f,"PC %d: ",PC);
+  fprintf(f, "PC %p: ", PC);
   u_int instr;
   GET_INSTR(codeBuffer,PC,instr);
 

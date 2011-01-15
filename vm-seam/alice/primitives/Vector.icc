@@ -129,7 +129,7 @@ const char *VectorTabulateWorker::Identify() {
 void VectorTabulateWorker::DumpFrame(StackFrame *sFrame) {
   VectorTabulateFrame *frame = STATIC_CAST(VectorTabulateFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  std::fprintf(stderr, STRINGIFY(XVector)".tabulate %d of %d\n",
+  std::fprintf(stderr, STRINGIFY(XVector)".tabulate %"U_INTF" of %"U_INTF"\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
 }
 

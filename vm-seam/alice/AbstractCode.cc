@@ -62,7 +62,7 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
 
 #define VECTOR(w, X) {					\
   Vector *vector = Vector::FromWordDirect(w);		\
-  std::fprintf(file, " %d#[", vector->GetLength());	\
+  std::fprintf(file, " %"U_INTF"#[", vector->GetLength());	\
   for (u_int i = 0; i < vector->GetLength(); i++) {	\
     X(vector->Sub(i));					\
   }							\
@@ -135,12 +135,12 @@ private:
       todo->SlowPush(instr->ToWord());
   }
   void Int(word w) {
-    std::fprintf(file, " %d", Store::DirectWordToInt(w));
+    std::fprintf(file, " %"S_INTF, Store::DirectWordToInt(w));
   }
   void Value(word value) {
     s_int i = Store::WordToInt(value);
     if (i != INVALID_INT)
-      std::fprintf(file, " int(%d)", i);
+      std::fprintf(file, " int(%"S_INTF")", i);
     else {
       //--** treat chunks specially
       immediates->Enqueue(value);
@@ -152,7 +152,7 @@ private:
     if (idDef == INVALID_POINTER)
       std::fprintf(file, " Wildcard");
     else
-      std::fprintf(file, " IdDef(%d)", Store::DirectWordToInt(idDef->Sel(0)));
+      std::fprintf(file, " IdDef(%"S_INTF")", Store::DirectWordToInt(idDef->Sel(0)));
   }
   void IdDefs(word w) {
     VECTOR(w, IdDef);
@@ -166,14 +166,14 @@ private:
       std::fprintf(file, " )");
       break;
     case AbstractCode::Local:
-      std::fprintf(file, " Local(%d)", Store::DirectWordToInt(idRef->Sel(0)));
+      std::fprintf(file, " Local(%"S_INTF")", Store::DirectWordToInt(idRef->Sel(0)));
       break;
     case AbstractCode::LastUseLocal:
-      std::fprintf(file, " LastUseLocal(%d)",
+      std::fprintf(file, " LastUseLocal(%"S_INTF")",
 		   Store::DirectWordToInt(idRef->Sel(0)));
       break;
     case AbstractCode::Global:
-      std::fprintf(file, " Global(%d)", Store::DirectWordToInt(idRef->Sel(0)));
+      std::fprintf(file, " Global(%"S_INTF")", Store::DirectWordToInt(idRef->Sel(0)));
       break;
     default:
       Assert(false);

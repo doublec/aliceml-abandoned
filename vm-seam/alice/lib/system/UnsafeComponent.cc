@@ -23,14 +23,14 @@
 static const bool traceFlag = std::getenv("ALICE_TRACE_UNSAFE_COMPONENT") != NULL;
 
 
-static void Trace(char *prefix, String *key) {
+static void Trace(const char *prefix, String *key) {
   if (traceFlag) {
     std::fprintf(stderr, "[UnsafeComponent] %s %.*s\n", prefix, (int) key->GetSize(), key->GetValue());
   }
 }
 
 
-static void Trace(char *str) {
+static void Trace(const char *str) {
   if (traceFlag) {
     std::fprintf(stderr, "[UnsafeComponent] %s\n", str);
   }

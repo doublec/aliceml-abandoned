@@ -30,7 +30,7 @@
 #define CHAR_TO_BOOL(name, test)	\
   DEFINE1(name) {			\
     DECLARE_INT(c, x0);			\
-    RETURN_BOOL(test(c));		\
+    RETURN_BOOL(test((int) c));		\
   } END
 
 INT_INT_TO_BOOL_OP(Char_opless, <)
@@ -63,12 +63,12 @@ DEFINE1(Char_ord) {
 
 DEFINE1(Char_toLower) {
   DECLARE_INT(c, x0);
-  RETURN_INT(tolower(c));
+  RETURN_INT(tolower((int) c));
 } END
 
 DEFINE1(Char_toUpper) {
   DECLARE_INT(c, x0);
-  RETURN_INT(toupper(c));
+  RETURN_INT(toupper((int) c));
 } END
 
 void PrimitiveTable::RegisterChar() {

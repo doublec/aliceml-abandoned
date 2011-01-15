@@ -48,12 +48,12 @@ using namespace ByteCodeInstr;
 
 void Jitter_PrintLiveness(Vector *liveness) {
   u_int size = liveness->GetLength();
-  fprintf(stderr,"size = %d\n",size/3);
+  fprintf(stderr, "size = %"U_INTF"\n", size/3);
   for(u_int i = 0, j = 1; i<size; i+=3, j++) {
     u_int index = Store::DirectWordToInt(liveness->Sub(i));
     u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
     u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
-    fprintf(stderr,"%d. %d -> [%d, %d]\n",j,index,start,end);
+    fprintf(stderr, "%"U_INTF". %"U_INTF" -> [%"U_INTF", %"U_INTF"]\n", j, index, start, end);
   }
 }
 
@@ -2448,7 +2448,7 @@ public:
   void Print() {
     for(u_int i=0; i<size; i++)
       if(IsMember(i))
-	fprintf(stderr," %d -> %p\n",i,map[i]);
+	fprintf(stderr, " %"U_INTF" -> %p\n", i, map[i]);
   }
 };
 
@@ -2603,7 +2603,7 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 	}
 	break;
       default:
-	fprintf(stderr,"unkown tag %d\n",marker->GetTag());
+	fprintf(stderr,"unkown tag %"U_INTF"\n", marker->GetTag());
 	Error("internal consistancy error");
       }
     }

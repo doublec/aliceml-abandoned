@@ -254,7 +254,7 @@ void ConstProp_PrePass::Run() {
 	  }
 	  break;
 	default:
-	  fprintf(stderr,"PrePass: invalid abstractCode tag %d\n",
+	  fprintf(stderr,"PrePass: invalid abstractCode tag %"U_INTF"\n",
 		  (u_int)AbstractCode::GetInstr(instr));
 	  return;
 	}
@@ -816,9 +816,9 @@ void ConstProp_MainPass::Run() {
 	      for(u_int i = testsN->GetLength(); i--; ) {
 		Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
 		if(Store::DirectWordToInt(triple->Sel(0)) == tag) {
-		  fprintf(stderr,"%d. could eliminate tag test %p:",
+		  fprintf(stderr,"%"U_INTF". could eliminate tag test %p:",
 			  ++counter,instr);
-		  fprintf(stderr," value has tag %d\n",tag);		  
+		  fprintf(stderr," value has tag %"U_INTF"\n",tag);		  
 		  tagFound = true;
 		  break;
 		}
@@ -827,18 +827,18 @@ void ConstProp_MainPass::Run() {
 	      for(u_int i = tests0->GetLength(); i--; ) {
 		Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
 		if(Store::DirectWordToInt(pair->Sel(0)) == tag) {
-		  fprintf(stderr,"%d. could eliminate tag test %p:",
+		  fprintf(stderr,"%"U_INTF". could eliminate tag test %p:",
 			  ++counter,instr);
-		  fprintf(stderr," value has tag %d\n",tag);		  
+		  fprintf(stderr," value has tag %"U_INTF"\n",tag);		  
 		  tagFound = true;
 		  break;
 		}
 	      }
 	      if(!tagFound) {
 		// choose else branch
-		fprintf(stderr,"%d. could eliminate tag test %p:",
+		fprintf(stderr,"%"U_INTF". could eliminate tag test %p:",
 			++counter,instr);		  
-		fprintf(stderr," value has tag %d\n",tag);
+		fprintf(stderr," value has tag %"U_INTF"\n",tag);
 	      }
 	    } else if (isLocal) {
 	      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4)));
@@ -947,9 +947,9 @@ void ConstProp_MainPass::Run() {
 	      for(u_int i = tests->GetLength(); i--; ) {
 		Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
 		if(i == tag) {
-		  fprintf(stderr,"%d. eliminate compact tag %p test:",
+		  fprintf(stderr,"%"U_INTF". eliminate compact tag %p test:",
 			  ++counter,instr);
-		  fprintf(stderr," value has tag %d\n",tag);		  
+		  fprintf(stderr," value has tag %"U_INTF"\n",tag);		  
 		  // save information
 		  tagtestInfo->Put(instr->ToWord(),pair->ToWord());
 		  tagFound = true;
@@ -958,15 +958,15 @@ void ConstProp_MainPass::Run() {
 	      }
 	      if(!tagFound) {
 		if(elseInstrOpt != INVALID_POINTER) {
-		  fprintf(stderr,"%d. eliminate compact tag %p test:",
+		  fprintf(stderr,"%"U_INTF". eliminate compact tag %p test:",
 			  ++counter,instr);		  
-		  fprintf(stderr," value has tag %d\n",tag);
+		  fprintf(stderr," value has tag %"U_INTF"\n",tag);
 		  Tuple *pair = Tuple::New(2);
 		  pair->Init(0, Store::IntToWord(0));
 		  pair->Init(1, elseInstrOpt->Sel(0));
 		  tagtestInfo->Put(instr->ToWord(),pair->ToWord());
 		} else {
-		  fprintf(stderr,"ERROR: tag %d\n",tag);
+		  fprintf(stderr,"ERROR: tag %"U_INTF"\n",tag);
 		  AbstractCode::Disassemble(stderr,instr);
 		  Error("internal consistancy error\n");
 		}
@@ -1024,7 +1024,7 @@ void ConstProp_MainPass::Run() {
 	  }
 	  break;
 	default:
-	  fprintf(stderr,"main pass: invalid abstractCode tag %d\n",
+	  fprintf(stderr,"main pass: invalid abstractCode tag %"U_INTF"\n",
 		  (u_int)AbstractCode::GetInstr(instr));
 	  return;
 	}

@@ -802,7 +802,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	GET_1R2I(codeBuffer,PC,reg,offset,size);
 	REQUEST_INT(relJump,GETREG(reg));
-	int index = relJump - offset; 
+	s_int index = relJump - offset; 
 	if(index < size) {
 	  ProgramCounter addr = PC + index;
 	  GET_1I(codeBuffer,addr,target);
@@ -1754,7 +1754,7 @@ void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
   Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
   String *name         = String::FromWord(coord->Sel(0));
   std::fprintf(stderr, //"Alice native %s %.*s, line %d, column %d\n",
-	       "ByteCode %.*s:%d.%d frame %p\n",
+	       "ByteCode %.*s:%"S_INTF".%"S_INTF" frame %p\n",
 	       /*frameType,*/ (int) name->GetSize(), name->GetValue(),
 	       Store::WordToInt(coord->Sel(1)),
 	       Store::WordToInt(coord->Sel(2)),

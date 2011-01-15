@@ -96,15 +96,15 @@ public:
     Scheduler::SetCurrentArg(NODES_POS, Store::IntToWord(GetNodes()+1));
   }
   static void IncrementByneeds() {
-    int byneeds = Store::DirectWordToInt(Scheduler::GetCurrentArg(BYNEEDS_POS));
+    s_int byneeds = Store::DirectWordToInt(Scheduler::GetCurrentArg(BYNEEDS_POS));
     Scheduler::SetCurrentArg(BYNEEDS_POS, Store::IntToWord(byneeds+1));
   }
   static void IncrementFutures() {
-    int futures = Store::DirectWordToInt(Scheduler::GetCurrentArg(FUTURES_POS));
+    s_int futures = Store::DirectWordToInt(Scheduler::GetCurrentArg(FUTURES_POS));
     Scheduler::SetCurrentArg(FUTURES_POS, Store::IntToWord(futures+1));
   }
   static void IncrementTransients() {
-    int transients =
+    s_int transients =
       Store::DirectWordToInt(Scheduler::GetCurrentArg(TRANSIENTS_POS));
     Scheduler::SetCurrentArg(TRANSIENTS_POS, Store::IntToWord(transients+1));
   }
@@ -215,13 +215,12 @@ Worker::Result SizeWorker::Run(StackFrame *sFrame) {
 
   Block *b = Store::WordToBlock(x0);
 
-  int size;
   u_int oldIndex = seen->Find(b);
   if (oldIndex == SizeWorkerSeen::NOT_FOUND) {
     seen->Add(b);
 
     SizeWorkerArgs::IncrementNodes();
-    size = b->GetSize();
+    u_int size = b->GetSize();
     SizeWorkerArgs::AddSize(size+1);
 
     switch(b->GetLabel()) {

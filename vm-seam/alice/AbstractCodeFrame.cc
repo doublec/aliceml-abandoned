@@ -55,7 +55,7 @@ word AbstractCodeFrame::Environment::Lookup(word id) {
   if (p != INVALID_POINTER) {
     if (p->GetLabel() == DEAD_LABEL) {
       std::fprintf(stderr, "### USING KILLED VALUE ###\n");
-      std::fprintf(stderr, "### killed as Local(%d)\n",
+      std::fprintf(stderr, "### killed as Local(%"S_INTF")\n",
 		   Store::DirectWordToInt(p->GetArg(0)));
       std::fprintf(stderr, "### value before kill:\n");
       Debug::Dump(p->GetArg(1));
@@ -93,7 +93,7 @@ void AbstractCodeFrame::Environment::Kill(word id, TagVal *, Closure *) {
 AbstractCodeFrame::Environment *
 AbstractCodeFrame::Environment::New(u_int size) {
   Array *array = Array::New(size);
-  for(int index = size; index--; ) {
+  for(u_int index = size; index--; ) {
     array->Init(index, AliceLanguageLayer::undefinedValue);
   }
   return STATIC_CAST(Environment *, array);

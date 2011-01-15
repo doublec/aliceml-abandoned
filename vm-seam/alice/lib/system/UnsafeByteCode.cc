@@ -204,7 +204,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
   WriteBuffer::Init();
 
   for(u_int IC = 0; IC < len; IC++) {
-    DEBUG_PRINT(("IC %d. ",IC));
+    DEBUG_PRINT(("IC %"U_INTF". ", IC));
     // label handling
     patchTable.setConcreteAddr(IC,PC);
     patchTable.patchForwardJumps(IC,PC,imEnv);
@@ -225,7 +225,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	u_int jumpTablePC = PC;
 
 	for(u_int i=0; i<nTests; i++) {
-	  int jumpTarget = Store::WordToInt(tests->Sub(i));
+	  u_int jumpTarget = Store::WordToInt(tests->Sub(i));
 	  u_int oldJumpTablePC = jumpTablePC;
 	  SET_1I(jumpTablePC,0);	  
 	  if(jumpTarget < IC) {  // backward jump
@@ -253,7 +253,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	for (u_int i = nTests; i--;) {
 	  DECLARE_TUP(pair, tests->Sub(i));
 	  word key = pair->Sel(0);
-	  int jumpTarget = Store::WordToInt(pair->Sel(1));
+	  u_int jumpTarget = Store::WordToInt(pair->Sel(1));
 	  if(jumpTarget < IC) { // backward jump
 	    s_int offset = patchTable.computeBackwardJump(jumpTarget,PC);
 	    map->Put(key,Store::IntToWord(offset)); 
@@ -754,7 +754,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
       }
       break;
     default:
-      fprintf(stderr,"UnsafeByteCode::assemble: unkown instruction tag %d\n",
+      fprintf(stderr,"UnsafeByteCode::assemble: unkown instruction tag %"U_INTF"\n",
 	      instr);
     }
   }

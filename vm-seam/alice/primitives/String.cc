@@ -75,7 +75,7 @@ DEFINE1(String_hash) {
 
 DEFINE1(String_str) {
   DECLARE_INT(i, x0);
-  char c = i;
+  char c = (char) i;
   RETURN(String::New(&c, 1)->ToWord());
 } END
 

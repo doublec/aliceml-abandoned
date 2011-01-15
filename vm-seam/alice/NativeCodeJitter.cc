@@ -2001,7 +2001,7 @@ TagVal *NativeCodeJitter::InstrAppVar(TagVal *pc) {
   info.mode     = MODE_REQUEST_ALL;
   info.pc       = Store::DirectWordToInt(initialPC);
   info.nLocals  = 0;
-  info.outArity = INVALID_INT;
+  info.outArity = (u_int) INVALID_INT;
   AnalyzeApply(&info, pc, wClosure);
   if (info.type == PRIMITIVE_CALL)
     return CompileApplyPrimitive(&info, pc);

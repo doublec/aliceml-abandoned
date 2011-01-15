@@ -12,8 +12,10 @@
 //   $Revision$
 //
 
-//#include <cmath> // does not work under Cygwin: linking fails for isnan, isinf!
-#include <math.h>
+// does not work under Cygwin: linking fails for isnan, isinf!
+// but <math.h> gives (nonsensical - isnan and isinf take only floats?) warnings under linux64!
+#include <cmath>
+//#include <math.h>
 #include <cstdio>
 #include "alice/Authoring.hh"
 
@@ -98,7 +100,7 @@ REAL_REAL_TO_BOOL_OP(Real_opless, <)
 REAL_REAL_TO_BOOL_OP(Real_opgreater, >)
 REAL_REAL_TO_BOOL_OP(Real_oplessEq, <=)
 REAL_REAL_TO_BOOL_OP(Real_opgreaterEq, >=)
-  REAL_TO_INT(Real_ceil, /*std::*/ceil)
+REAL_TO_INT(Real_ceil, /*std::*/ceil)
 REAL_TO_INTINF(Real_largeCeil, /*std::*/ceil)
 
 DEFINE2(Real_compare) {

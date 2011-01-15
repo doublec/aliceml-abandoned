@@ -466,7 +466,7 @@ static void generic_marshaller(GClosure *closure, GValue *return_value,
 			(GPOINTER_TO_INT(closure->data) == 2) ? TRUE : FALSE);
 }
 
-word NativeCore_SignalConnect(void *object, char *signalname, bool after) {
+word NativeCore_SignalConnect(void *object, const char *signalname, bool after) {
   gint userData = (!strcmp(signalname, "delete-event") ? 2 : 1);
   GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
                                      GINT_TO_POINTER(userData), NULL);
@@ -637,8 +637,8 @@ DEFINE1(NativeCore_unrefObject) {
 //////////////////////////////////////////////////////////////////////
 // INIT AND MAIN LOOP FUNCTIONS
 
-static void __die(char *s) {
-  g_warning(s);
+static void __die(const char *s) {
+  g_warning("%s", s);
   exit(0);
 }
 
@@ -664,7 +664,7 @@ static void Init() {
 					  GLIB_MINOR_VERSION,
 					  GLIB_MICRO_VERSION);
     if (res != NULL) {
-      fprintf(stderr, res);
+      fprintf(stderr, "%s", res);
       fprintf(stderr, "\nAborting.\n");
       exit(2);
     }
@@ -674,7 +674,7 @@ static void Init() {
 					 GTK_MINOR_VERSION,
 					 GTK_MICRO_VERSION);
     if (res != NULL) {
-      fprintf(stderr, res);
+      fprintf(stderr, "%s", res);
       fprintf(stderr, "\nAborting.\n");
       exit(2);
     }
@@ -735,8 +735,8 @@ static void Init() {
   DestroyWindow(hWnd);
 #endif
   int argc = 1;
-  static char *args[2] = {"alice", NULL};
-  char **argv = args;
+  static const char *args[2] = {"alice", NULL};
+  char **argv = (char**) args;
   gtk_init(&argc, &argv);
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))

@@ -14,7 +14,7 @@
 #include <time.h>
 
 #define INT_TO_WORD(i) Store::IntToWord(i)
-#define WORD_TO_INT(w) Store::WordToInt(w)
+#define WORD_TO_INT(w) (int) Store::WordToInt(w)
 
 #define AWAIT(y,x) \
         if (Store::WordToTransient(x) != INVALID_POINTER) REQUEST(x); \
@@ -123,7 +123,7 @@ DEFINE2(UnsafeDate_fmt) {
     struct tm tm;
     char buf[512];
     to_tm (t, &tm);
-    int size = strftime(buf, sizeof(buf), fmt->ExportC (), &tm);
+    s_int size = strftime(buf, sizeof(buf), fmt->ExportC (), &tm);
     if (size > 0) {
         RETURN(String::New (buf, size)->ToWord ());
     } else if (size == 0 && !strcmp(fmt->ExportC (), "%p")) {

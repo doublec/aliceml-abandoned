@@ -137,7 +137,7 @@ DEFINE1(Word_fromLargeInt) {
 DEFINE1(Word_fromLarge) {
   DECLARE_WORD32(w, x0);
   if (w & 1<<31)
-    RETURN_WORD(w & ((1<<31)-1));
+    RETURN_WORD(w & ((1U<<31)-1));
   RETURN_WORD(w);
 } END
 

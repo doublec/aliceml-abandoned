@@ -144,7 +144,7 @@ BigInt* BigInt::New(double d) {
   return STATIC_CAST(BigInt *, c);
 }
 
-int BigInt::toInt(void) {
+s_int BigInt::toInt(void) {
   MP_INT *b = big();
   if (mpz_fits_slong_p(b)) {
     long int i = mpz_get_si(b);
@@ -162,7 +162,7 @@ void BigInt::destroy(void) {
   mpz_clear(b);
 }
 
-bool BigInt::operator==(int i) {
+bool BigInt::operator==(signed long int i) {
   return mpz_cmp_si(big(), i)==0;
 }
 
@@ -256,7 +256,7 @@ int BigInt::compare(BigInt *b) {
   if (this==b) return 0;
   return mpz_cmp(big(), b->big());
 }
-int BigInt::compare(int i) {
+int BigInt::compare(signed long int i) {
   return mpz_cmp_si(big(), i);
 }
 bool BigInt::less(BigInt *b) {
@@ -272,15 +272,15 @@ bool BigInt::greaterEq(BigInt *b) {
   return mpz_cmp(big(), b->big()) >= 0;
 }
 
-bool BigInt::less(int i) {
+bool BigInt::less(signed long int i) {
   return mpz_cmp_si(big(), i) < 0;
 }
-bool BigInt::lessEq(int i) {
+bool BigInt::lessEq(signed long int i) {
   return mpz_cmp_si(big(), i) <= 0;
 }
-bool BigInt::greater(int i) {
+bool BigInt::greater(signed long int i) {
   return mpz_cmp_si(big(), i) > 0;
 }
-bool BigInt::greaterEq(int i) {
+bool BigInt::greaterEq(signed long int i) {
   return mpz_cmp_si(big(), i) >= 0;
 }

@@ -130,7 +130,7 @@ const char *ArrayTabulateWorker::Identify() {
 void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame) {
   ArrayTabulateFrame *frame = STATIC_CAST(ArrayTabulateFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  std::fprintf(stderr, STRINGIFY(XArray)".tabulate %d of %d\n",
+  std::fprintf(stderr, STRINGIFY(XArray)".tabulate %"U_INTF" of %"U_INTF"\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
 }
 

@@ -62,9 +62,9 @@ static int GetProcessId() {
 
 static int GetTimeStamp() {
   struct tms buffer;
-  int t = times(&buffer);
-  double t2 = t * 1000.0 / STATIC_CAST(double, sysconf(_SC_CLK_TCK));
-  return STATIC_CAST(int, t2);
+  clock_t ticks = times(&buffer);
+  double stamp = (double) ticks * 1000.0 / (double) sysconf(_SC_CLK_TCK);
+  return (int) stamp;
 }
 #endif
 

@@ -19,7 +19,7 @@ DEFINE0(UnsafeRand_rand) {
 
 DEFINE1(UnsafeRand_srand) {
   DECLARE_INT(seed, x0);
-  srand(seed);
+  srand((unsigned int) seed);
   RETURN_UNIT;
 } END
 

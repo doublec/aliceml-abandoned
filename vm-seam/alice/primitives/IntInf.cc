@@ -69,8 +69,8 @@ public:
       c->GetBase()[0] = 0; // 0 means 0
     } else {
       // compute required space      
-      int numb = 8*size - nails;
-      int count = (mpz_sizeinbase(value, 2) + numb-1) / numb;
+      u_int numb = 8*size - nails;
+      u_int count = (mpz_sizeinbase(value, 2) + numb-1) / numb;
       c = Store::AllocChunk(count*size+1);
       char *base = c->GetBase();
       if (sig<0)
@@ -150,6 +150,10 @@ DEFINE1(IntInf_toInt) {
   RAISE(PrimitiveTable::General_Overflow);
 } END
 
+static s_int sAbs (const s_int a) {
+  return a < 0 ? -a : a;
+}
+
 // unary operators
 #define MKOP1(op, bigop, smallop)                       \
 DEFINE1(IntInf_ ## op) {                                \
@@ -167,7 +171,7 @@ DEFINE1(IntInf_ ## op) {                                \
   }                                                     \
 } END
 MKOP1(opnegate, negate, -);
-MKOP1(abs, abs, abs);
+MKOP1(abs, abs, sAbs);
 MKOP1(notb, notb, ~);
 #undef MKOP1
 
@@ -429,7 +433,7 @@ DEFINE2(IntInf_quotRem) {
 
 DEFINE1(IntInf_log2) {
   DECLARE_INTINF_PROMOTE(i, flag, x0);
-  if (i->compare(0)<=0) {
+  if (i->compare((signed long int) 0) <= 0) {
     DISCARD_PROMOTED(i, flag);
     RAISE(PrimitiveTable::General_Domain);
   }
@@ -472,7 +476,7 @@ static word BigIntegerHandler(word x) {
     int sig = base[0];
     base = base+1;
     BigInt *b = BigInt::New();
-    int count = c->GetSize()-1;
+    u_int count = c->GetSize()-1;
     mpz_import(b->big(), count,
                GMPHandler::order, GMPHandler::size,
                GMPHandler::endian, GMPHandler::nails,

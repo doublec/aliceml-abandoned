@@ -1148,8 +1148,8 @@ void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame) {
   TagVal *abstractCode = concreteCode->GetAbstractCode();
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   String *name = String::FromWordDirect(coord->Sel(0));
-  std::fprintf(stderr, "Alice %s %.*s, line %d\n",
-	       frame->IsHandlerFrame()? "handler": "function",
+  std::fprintf(stderr, "Alice %s %.*s, line %"S_INTF"\n",
+	       frame->IsHandlerFrame() ? "handler" : "function",
 	       (int) name->GetSize(), name->GetValue(),
 	       Store::DirectWordToInt(coord->Sel(1)));
 }

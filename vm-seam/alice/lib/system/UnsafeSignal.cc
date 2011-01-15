@@ -25,7 +25,7 @@
 
 enum { ALICE_SIGINT, ALICE_SIGSTOP };
 
-static int AliceSignalToNativeSignal(int signal) {
+static int AliceSignalToNativeSignal(u_int signal) {
   switch (signal) {
 #if HAVE_CONSOLECTRL
   case ALICE_SIGINT:
@@ -48,7 +48,7 @@ static int AliceSignalToNativeSignal(int signal) {
   }
 }
 
-static int NativeSignalToAliceSignal(int signal) {
+static int NativeSignalToAliceSignal(u_int signal) {
   switch (signal) {
 #if HAVE_CONSOLECTRL
   case CTRL_C_EVENT:
@@ -157,11 +157,11 @@ Worker::Result SignalTranslationInterpreter::Handle(word) {
 }
 
 u_int SignalTranslationInterpreter::GetInArity(ConcreteCode *) {
-  return INVALID_INT;
+  return (u_int) INVALID_INT;
 }
 
 u_int SignalTranslationInterpreter::GetOutArity(ConcreteCode *) {
-  return INVALID_INT;
+  return (u_int) INVALID_INT;
 }
 
 const char *SignalTranslationInterpreter::Identify() {
@@ -175,7 +175,7 @@ void SignalTranslationInterpreter::DumpFrame(StackFrame *) {
 DEFINE2(UnsafeSignal_register) {
   DECLARE_INT(signal, x0);
   word closure = x1;
-  u_int nativeSignal = AliceSignalToNativeSignal(signal);
+  int nativeSignal = AliceSignalToNativeSignal(signal);
   ConcreteCode *concreteCode =
     ConcreteCode::New(SignalTranslationInterpreter::self, 0);
   Closure *translateClosure = Closure::New(concreteCode->ToWord(), 1);
