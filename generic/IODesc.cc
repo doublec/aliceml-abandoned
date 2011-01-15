@@ -597,7 +597,7 @@ IODesc::result IODesc::Read(u_char *buf, int n, int &out) {
     {
       int fd = GetFD();
     retry:
-      Interruptible(res, read(fd, sys_buf, n));
+      Interruptible(res, (int) read(fd, sys_buf, n));
       out = res;
       if (res == -1)
 	if (errno == EWOULDBLOCK) {
@@ -653,7 +653,7 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
     {
       int fd = GetFD();
     retry:
-      Interruptible(res, write(fd, sys_buf, n));
+      Interruptible(res, (int) write(fd, sys_buf, n));
       out = res;
       if (res == -1)
 	if (errno == EWOULDBLOCK) {
@@ -750,7 +750,7 @@ IODesc::result IODesc::ReadNonblocking(u_char *buf, int n, int &out) {
     Error("non-blocking reads not supported for files");
 #else
   case TYPE_FD:
-    Interruptible(res, read(GetFD(), sys_buf, n));
+    Interruptible(res, (int) read(GetFD(), sys_buf, n));
     out = res;
     return res == -1?
       (errno == EWOULDBLOCK?
@@ -778,7 +778,7 @@ IODesc::result IODesc::WriteNonblocking(const u_char *buf, int n, int &out) {
     Error("non-blocking writes not supported for files");
 #else
   case TYPE_FD:
-    Interruptible(res, write(GetFD(), sys_buf, n));
+    Interruptible(res, (int) write(GetFD(), sys_buf, n));
     out = res;
     return res == -1?
       (errno == EWOULDBLOCK?

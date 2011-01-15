@@ -124,7 +124,7 @@ void Heap::Enlarge() {
   u_int chunkSize = STORE_MEMCHUNK_SIZE;
   itemSize += sizeof(u_int);
   if (chunkSize < itemSize) {
-    div_t d   = div(itemSize, STORE_MEMCHUNK_SIZE);
+    div_t d   = div((int) itemSize, (int) STORE_MEMCHUNK_SIZE);
     chunkSize = ((d.quot + (d.rem ? 1 : 0)) * STORE_MEMCHUNK_SIZE);
   }
   chain = new HeapChunk(chunkSize, chain);

@@ -25,7 +25,7 @@ void DynamicArray::Init() {
   RootSet::Add(INVALID_ARRAY_ELEM);
 }
 
-DynamicArray *DynamicArray::New(int initialSize) {
+DynamicArray *DynamicArray::New(u_int initialSize) {
   Block *p = Store::AllocMutableBlock(DYNARRAY_LABEL, SIZE);
   Block *a = Store::AllocMutableBlock(MIN_DATA_LABEL, initialSize);
   
@@ -35,7 +35,7 @@ DynamicArray *DynamicArray::New(int initialSize) {
   return STATIC_CAST(DynamicArray *, p);
 }
 
-DynamicArray *DynamicArray::NewInit(int initialSize, word initElem) {
+DynamicArray *DynamicArray::NewInit(u_int initialSize, word initElem) {
   // Creates a new DynamicArray and initializes it
   // with the initElem
   Block *p = Store::AllocMutableBlock(DYNARRAY_LABEL, SIZE);
@@ -45,7 +45,7 @@ DynamicArray *DynamicArray::NewInit(int initialSize, word initElem) {
   p->InitArg(ARRAY_POS,a->ToWord());
   p->InitArg(INIT_ELEM_POS, initElem);
   
-  for (int i=initialSize; i--;) {
+  for (u_int i=initialSize; i--;) {
     a->InitArg(i, initElem);
   }
 
@@ -68,7 +68,7 @@ u_int DynamicArray::GetLength() {
   return Store::DirectWordToInt(GetArg(SIZE_POS));
 }
 
-void DynamicArray::EnlargeArray(int upTo) {
+void DynamicArray::EnlargeArray(u_int upTo) {
   // tries to double the array's size
   // if that is not enough (upTo > doubled size),
   // it is resized to upTo+1 (does that make sense?)
@@ -76,17 +76,17 @@ void DynamicArray::EnlargeArray(int upTo) {
   
   word initElem = GetArg(INIT_ELEM_POS);
 
-  int length = GetLength();
-  int newLength = length*2;
+  u_int length = GetLength();
+  u_int newLength = length*2;
   
   if (newLength<=upTo) newLength=upTo+1;
 
   Block *newA = Store::AllocMutableBlock(MIN_DATA_LABEL, newLength);
-  for (int i=length; i--;) {
+  for (u_int i=length; i--;) {
     newA->InitArg(i, a->GetArg(i));
   }
 
-  for (int i=length; i<newLength; i++) {
+  for (u_int i=length; i<newLength; i++) {
     newA->InitArg(i, initElem);
   }
 
@@ -124,7 +124,7 @@ void DynamicArray::Clear() {
   Block *a = Store::DirectWordToBlock(GetArg(ARRAY_POS));
   word initElem = GetArg(INIT_ELEM_POS);
   u_int length = GetLength();    
-  for (int i=length; i--;) {
+  for (u_int i=length; i--;) {
     a->ReplaceArg(i, initElem);
   }
 }

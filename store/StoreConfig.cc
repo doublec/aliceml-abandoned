@@ -68,11 +68,11 @@ static floatEndianness CheckDoubleEndianness() {
 // Helper Functions
 //
 
-static unsigned long ComputeMask(int pos, int width) {
+static unsigned long ComputeMask(unsigned long pos, unsigned long width) {
   unsigned long mask = 0;
 
   for (unsigned long i = 0; i < width; i++) {
-    mask += (1lu << (pos + i));
+    mask += (1LU << (pos + i));
   }
 
   return mask;
@@ -85,15 +85,15 @@ static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   unsigned long TAG_SHIFT        = (SIZE_SHIFT + header_size_width);
   unsigned long MUTABLE_SHIFT    = (TAG_SHIFT + HEADER_TAG_WIDTH);
   unsigned long CHILDISH_SHIFT   = (MUTABLE_SHIFT + HEADER_MUTABLE_WIDTH);
-  unsigned long MAX_TAGSIZE      = ((1 << HEADER_TAG_WIDTH) - 1);
-  unsigned long MAX_BLOCKSIZE    = ((1 << HEADER_SIZE_WIDTH) - 1); // to be determined
+  unsigned long MAX_TAGSIZE      = ((1LU << HEADER_TAG_WIDTH) - 1);
+  unsigned long MAX_BLOCKSIZE    = ((1LU << HEADER_SIZE_WIDTH) - 1); // to be determined
   unsigned long GEN_GC_MASK      = ComputeMask(GEN_GC_SHIFT, HEADER_GEN_GC_MARK_WIDTH);
   unsigned long SIZESHIFT_MASK   = ComputeMask(SIZESHIFT_SHIFT, HEADER_SIZESHIFT_WIDTH);
   unsigned long SIZE_MASK        = ComputeMask(SIZE_SHIFT, header_size_width);
   unsigned long TAG_MASK         = ComputeMask(TAG_SHIFT, HEADER_TAG_WIDTH);
   unsigned long MUTABLE_MASK     = ComputeMask(MUTABLE_SHIFT, HEADER_MUTABLE_WIDTH);
   unsigned long CHILDISH_MASK    = ComputeMask(CHILDISH_SHIFT, HEADER_CHILDISH_WIDTH);
-  unsigned long BIGSIZE_MIN      = (1 << SIZESHIFT_MASK);
+  unsigned long BIGSIZE_MIN      = (1LU << SIZESHIFT_MASK);
   unsigned long MAX_BIGBLOCKSIZE = (MAX_BLOCKSIZE << SIZESHIFT_MASK);
   unsigned long MAX_DYNBLOCKSIZE = (MAX_BIGBLOCKSIZE - 1);
 
@@ -154,7 +154,7 @@ static void CreateLabel(std::FILE *f, unsigned long size) {
 }
 
 int main(int argc, char **argv) {
-  const char *int_val = NULL;
+  const char *int_val = NULL, *int_format = NULL, *uint_format = NULL;
   std::FILE *f;
 
   if (((sizeof(unsigned long) * 8) < HEADER_FULL_WIDTH)) {
@@ -202,15 +202,21 @@ int main(int argc, char **argv) {
 
   if (MIN_WIDTH <= sizeof(short)) {
     MIN_WIDTH = sizeof(short);
-    int_val   = "short";
+    int_val     = "short";
+    int_format  = "i";
+    uint_format = "u";
   }
   else if (MIN_WIDTH <= sizeof(int)) {
     MIN_WIDTH = sizeof(int);
-    int_val = "int";
+    int_val     = "int";
+    int_format  = "i";
+    uint_format = "u";
   }
   else if (MIN_WIDTH <= sizeof(long)) {
     MIN_WIDTH = sizeof(long);
-    int_val = "long";
+    int_val     = "long";
+    int_format  = "li";
+    uint_format = "lu";
   }
   // #if defined(__GNUC__)
   // else if (MIN_WIDTH <= sizeof(long long)) {
@@ -253,6 +259,9 @@ int main(int argc, char **argv) {
   std::fprintf(f, "#else\n");
   std::fprintf(f, "#include <sys/types.h>\n");
   std::fprintf(f, "#endif\n");
+  
+  std::fprintf(f, "#define S_INTF \"%s\"\n", int_format);
+  std::fprintf(f, "#define U_INTF \"%s\"\n", uint_format);
 
   switch (CheckFloatEndianness()) {
   case bigEndian:

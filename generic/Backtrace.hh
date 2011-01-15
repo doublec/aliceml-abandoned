@@ -67,7 +67,7 @@ public:
     for (int i = topCutoff; i > 0 && !IsEmpty(); i--)
       Dump1();
     if (GetNumberOfElements() > bottomCutoff + bottomCutoff/4) {
-      fprintf(stderr, "... (%d frames omitted)\n",
+      fprintf(stderr, "... (%"U_INTF" frames omitted)\n",
               GetNumberOfElements() - bottomCutoff);
       while (GetNumberOfElements() > bottomCutoff)
         Dequeue();

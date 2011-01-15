@@ -820,8 +820,7 @@ void Store::MemStat() {
       total += (u_int) (chunk->GetMax() - base);
       chunk = chunk->GetNext();
     }
-    std::fprintf(stderr, "G%d --> Used: %8u; Total: %8u; GC-Limit: %8u.\n",
-		 i, used, total, roots[i].GetLimit());
+    std::fprintf(stderr, "G%8"U_INTF" --> Used: %16"U_INTF"; Total: %16"U_INTF"; GC-Limit: %16"U_INTF".\n", i, used, total, roots[i].GetLimit());
   }
   std::fprintf(stderr, "---\n");
 }

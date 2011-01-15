@@ -71,8 +71,9 @@ static const char *TransLabel(BlockLabel l) {
 }
 
 static void
-PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
+PerformDump(FILE *file, word x, int index, int level, int depth) {
   word_data w;
+  
   if (depth > Debug::maxDepth) {
     std::fprintf(file, "%*c...\n", level, ' ');
   }
@@ -81,7 +82,7 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
   }
   else if (PointerOp::IsInt(x)) {
     w.pi = Store::WordToInt(x);
-    std::fprintf(file, "%*cINT[%d]=%d\n", level, ' ', index, w.pi);
+    std::fprintf(file, "%*cINT[%d]=%"S_INTF"\n", level, ' ', index, w.pi);
   }
   else if (PointerOp::IsTransient(x)) {
     Block *p = PointerOp::RemoveTag(x);
@@ -92,16 +93,16 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
   }
   else if ((w.pb = Store::WordToBlock(x)) != INVALID_POINTER) {
     if (w.pb->GetLabel() == CHUNK_LABEL) {
-      std::fprintf(file, "%*cCHUNK(%d)[%d]='%.*s'\n", level, ' ',
+      std::fprintf(file, "%*cCHUNK(%"U_INTF")[%d]='%.*s'\n", level, ' ',
 		   w.pc->GetSize(), index,
 		   (int) w.pc->GetSize(), w.pc->GetBase());
     } else {
       u_int size  = w.pb->GetSize();
-      std::fprintf(file, "%*cBLOCK(%s=%d, %d)[%d]\n", level, ' ',
+      std::fprintf(file, "%*cBLOCK(%s=%d, %"U_INTF")[%d]\n", level, ' ',
 		   TransLabel(w.pb->GetLabel()), w.pb->GetLabel(),
 		   size, index);
       u_int showSize = (size <= Debug::maxWidth ? size : Debug::maxWidth);
-      for (u_int i = 0; i < showSize; i++) {
+      for (int i = 0; i < showSize; i++) {
 	PerformDump(file, w.pb->GetArg(i), i, level + 2, depth + 1);
       }
       std::fprintf(file, "%*cENDBLOCK\n", level, ' ');

@@ -118,7 +118,7 @@ public:
       GetArray()->ReplaceArg(top, v);
     }
   }
-  void SlowPush(int v) {
+  void SlowPush(s_int v) {
     u_int top = GetTop();
     Block *a  = GetArray();
     u_int max = a->GetSize();

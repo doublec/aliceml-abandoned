@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <limits.h>
 #include "generic/ZLib.hh"
 #include "adt/Stack.hh"
 #include "adt/ChunkMap.hh"
@@ -269,7 +270,9 @@ public:
 	// here bytes and size indicate the buffer to fill;
 	// tl still needs to be written back
 	gzFile file = GetFile();
-	int nread = gzread(file, bytes, size);
+    if (size > UINT_MAX)
+      Error("InputStream::FillBuffer");
+	int nread = gzread(file, bytes, (unsigned int) size);
 	if (nread < 0) {
 	  Scheduler::SetCurrentData(Pickler::IOError);
 	  StackFrame *frame = Scheduler::GetFrame();
@@ -633,7 +636,7 @@ private:
          SIZE };
 public:
   // UnpickleFrame Constructor
-  static UnpickleFrame *New(Worker *worker, int stackSize, int locals) {
+  static UnpickleFrame *New(Worker *worker, u_int stackSize, u_int locals) {
     u_int frSize = SIZE+stackSize+locals;
     NEW_STACK_FRAME(frame, worker, frSize);
     frame->InitArg(SIZE_POS, frame->GetSize() + frSize);
@@ -701,7 +704,7 @@ public:
     self = new UnpickleWorker();
   }
   // Frame Handling
-  static void PushFrame(int, int);
+  static void PushFrame(u_int, u_int);
   virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame);
@@ -813,7 +816,7 @@ public:
 //
 UnpickleWorker *UnpickleWorker::self;
 
-void UnpickleWorker::PushFrame(int stackSize, int localsSize) {
+void UnpickleWorker::PushFrame(u_int stackSize, u_int localsSize) {
   UnpickleFrame::New(self, stackSize, localsSize);
 }
 
@@ -1364,12 +1367,16 @@ String *Unpickler::Unzip (String *s) {
 
     if (gzip::parse_meta_data (str, s->GetSize (), compressed_start,
                 compressed_len, uncompressed_len)) {
+      
+        if ((uInt) compressed_len != compressed_len || (uInt) uncompressed_len != uncompressed_len)
+          Error("Unpickler::Unzip");
+        
         String *res = String::New (uncompressed_len);
         z_stream stream;
         stream.next_in   = (Bytef*)compressed_start;
-        stream.avail_in  = compressed_len;
+        stream.avail_in  = (uInt) compressed_len;
         stream.next_out  = res->GetValue ();
-        stream.avail_out = uncompressed_len;
+        stream.avail_out = (uInt) uncompressed_len;
         stream.zalloc    = (alloc_func) 0;
         stream.zfree     = (free_func) 0;
 

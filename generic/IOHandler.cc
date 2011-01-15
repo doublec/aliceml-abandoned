@@ -63,7 +63,7 @@ namespace {
     }
 
     int GetFD() {
-      return Store::DirectWordToInt(GetArg(FD_POS));
+      return (int) Store::DirectWordToInt(GetArg(FD_POS));
     }
     Future *GetFuture() {
       Transient *transient = Store::WordToTransient(GetArg(FUTURE_POS));

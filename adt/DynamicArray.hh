@@ -28,7 +28,7 @@ protected:
   enum { SIZE_POS, INIT_ELEM_POS, ARRAY_POS, SIZE };
 
 
-  void EnlargeArray(int upTo=0);
+  void EnlargeArray(u_int upTo=0);
   
 public:
   using Block::ToWord;
@@ -37,8 +37,8 @@ public:
 
   static void Init();
 
-  static DynamicArray *New(int initialSize);
-  static DynamicArray *NewInit(int initialSize, word initialElement);
+  static DynamicArray *New(u_int initialSize);
+  static DynamicArray *NewInit(u_int initialSize, word initialElement);
   static DynamicArray *FromWord(word x);
   static DynamicArray *FromWordDirect(word x);
   u_int GetLength();

@@ -239,13 +239,13 @@ private:
 	 PRED_COUNT_POS,
 	 SIZE };
 
-  static int compareLabels(BlockLabel vl, BlockLabel wl);
-  static int compareSize(::Block *v, ::Block *w);
-  static int compareChildren(::Block *v, ::Block *w);
-  static int compareChunks(Chunk *c1, Chunk *c2);
-  static int compareBlocks(::Block *v, BlockLabel vl,
+  static s_int compareLabels(BlockLabel vl, BlockLabel wl);
+  static s_int compareSize(::Block *v, ::Block *w);
+  static s_int compareChildren(::Block *v, ::Block *w);
+  static s_int compareChunks(Chunk *c1, Chunk *c2);
+  static s_int compareBlocks(::Block *v, BlockLabel vl,
 			   ::Block *w);
-  static int compare(PNode *n1, PNode *n2);
+  static s_int compare(PNode *n1, PNode *n2);
 
 public:
   using DynamicArray::ToWord;
@@ -262,14 +262,14 @@ public:
   word GetNode();
   s_int GetPredCount();
   word Pred(s_int index);
-  int Compare(PNode *pn);
+  s_int Compare(PNode *pn);
 };
 
 ///////////////////////
 // Comparison function establishes a total order
 // on nodes of the data graph
 //
-int PNode::compareLabels(BlockLabel vl, BlockLabel wl) {
+s_int PNode::compareLabels(BlockLabel vl, BlockLabel wl) {
   if (vl==wl) return 0;
   if (vl==CHUNK_LABEL)
     return -1;
@@ -279,7 +279,7 @@ int PNode::compareLabels(BlockLabel vl, BlockLabel wl) {
     return 1;
 }
 
-int PNode::compareSize(::Block *v, ::Block *w) {
+s_int PNode::compareSize(::Block *v, ::Block *w) {
   u_int vs = v->GetSize();
   u_int ws = w->GetSize();
   if (vs == ws) return 0;
@@ -287,7 +287,7 @@ int PNode::compareSize(::Block *v, ::Block *w) {
   return 1;
 }
 
-int PNode::compareChildren(::Block *v, ::Block *w) {
+s_int PNode::compareChildren(::Block *v, ::Block *w) {
   // This comparison only looks for integers as children
   u_int vs = v->GetSize();
   
@@ -307,7 +307,7 @@ int PNode::compareChildren(::Block *v, ::Block *w) {
   return 0;
 }
 
-int PNode::compareChunks(Chunk *c1, Chunk *c2) {
+s_int PNode::compareChunks(Chunk *c1, Chunk *c2) {
   // lexicographic ordering by size and then std::memcmp
   u_int size1 = c1->GetSize();
   u_int size2 = c2->GetSize();
@@ -321,7 +321,7 @@ int PNode::compareChunks(Chunk *c1, Chunk *c2) {
   return 0;
 }
 
-int PNode::compareBlocks(::Block *v, BlockLabel vl,
+s_int PNode::compareBlocks(::Block *v, BlockLabel vl,
                          ::Block *w) {
   // this is a comparison of blocks which have
   // THE SAME label!
@@ -382,7 +382,7 @@ int PNode::compareBlocks(::Block *v, BlockLabel vl,
   }
 }
 
-int PNode::compare(PNode *n1, PNode *n2) {
+s_int PNode::compare(PNode *n1, PNode *n2) {
   word a = n1->GetNode();
   word b = n2->GetNode();
   
@@ -693,7 +693,7 @@ s_int PNode::GetPredCount() {
   return Store::WordToInt(DynamicArray::Sub(PRED_COUNT_POS));
 }
 
-int PNode::Compare(PNode *pn) {
+s_int PNode::Compare(PNode *pn) {
   // wrapper for compare
   return compare(this, pn);
 }

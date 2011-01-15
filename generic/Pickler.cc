@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <limits.h>
 #include "generic/ZLib.hh"
 #include "store/Map.hh"
 #include "adt/Stack.hh"
@@ -153,10 +154,10 @@ public:
 // OutputStream Methods
 void OutputStream::PutUInt(u_int i) {
   while (i >= 0x80) {
-    OutputStream::PutByte(i & 0x7F | 0x80);
+    OutputStream::PutByte((u_char)(i & 0x7F | 0x80));
     i >>= 7;
   }
-  OutputStream::PutByte(i);
+  OutputStream::PutByte((u_char) i);
 }
 
 void OutputStream::PutByte(u_char byte) {
@@ -198,11 +199,14 @@ void FileOutputStream::PutByte(u_char byte) {
 }
 
 void FileOutputStream::PutBytes(Chunk *c) {
-  gzwrite(GetFile(), c->GetBase(), c->GetSize());
+  PutBytes((u_char*) c->GetBase(), c->GetSize());
 }
 
 void FileOutputStream::PutBytes(u_char *buf, u_int size) {
-  gzwrite(GetFile(), buf, size);
+  if (size > UINT_MAX) {
+    Error("FileOutputStream::PutBytes");
+  }
+  gzwrite(GetFile(), buf, (unsigned int) size);
 }
 
 word FileOutputStream::Close() {
@@ -271,9 +275,9 @@ class OutputBuffer : private Block {
 
   // Quicksort implementation needed for
   // local variable tracking
-  static void Swap(Block *b, int i, int j);
-  static int Partition(Block *b, int l, int r);
-  static void Sort(Block *b, int l, int r);
+  static void Swap(Block *b, s_int i, s_int j);
+  static s_int Partition(Block *b, s_int l, s_int r);
+  static void Sort(Block *b, s_int l, s_int r);
   
 public:
   using Block::ToWord;
@@ -326,7 +330,7 @@ void OutputBuffer::Reset() {
   ReplaceArg(LOC_COUNT_POS, Store::IntToWord(0));
 }
 
-void OutputBuffer::Swap(Block *b, int i, int j) {
+void OutputBuffer::Swap(Block *b, s_int i, s_int j) {
   word v = b->GetArg(i*2);
   word l = b->GetArg(i*2+1);
   b->ReplaceArg(i*2, b->GetArg(j*2));
@@ -335,10 +339,10 @@ void OutputBuffer::Swap(Block *b, int i, int j) {
   b->ReplaceArg(j*2+1, l);
 }
   
-int OutputBuffer::Partition(Block *b, int l, int r) {
-  int i = l-1, j = r;
+s_int OutputBuffer::Partition(Block *b, s_int l, s_int r) {
+  s_int i = l-1, j = r;
   
-  int v = Store::DirectWordToInt(b->GetArg(r*2));
+  s_int v = Store::DirectWordToInt(b->GetArg(r*2));
   
   for(;;) {
     while (Store::DirectWordToInt(b->GetArg((++i)*2)) < v);
@@ -349,12 +353,11 @@ int OutputBuffer::Partition(Block *b, int l, int r) {
   }
   Swap(b, i, r);
   return i;
-  
 }
 
-void OutputBuffer::Sort(Block *b, int l, int r) {
+void OutputBuffer::Sort(Block *b, s_int l, s_int r) {
   if (r <= l) return;
-  int i = Partition(b, l, r);
+  s_int i = Partition(b, l, r);
   Sort(b, l, i-1);
   Sort(b, i+1, r);
 }
@@ -381,7 +384,7 @@ void OutputBuffer::ResizeLocals() {
   u_int pos  = Store::DirectWordToInt(GetArg(LOC_COUNT_POS));
   Block *buf = Store::DirectWordToBlock(GetArg(LOCALS_POS));
   Block *newBuf = Store::AllocMutableBlock(MIN_DATA_LABEL, newSize);
-  for (int i=pos+1; i--;) {
+  for (u_int i=pos+1; i--;) {
     newBuf->InitArg(i*2, buf->GetArg(i*2));
     newBuf->InitArg(i*2+1, buf->GetArg(i*2+1));
   }
@@ -434,18 +437,18 @@ void OutputBuffer::PutUInt(u_int i) {
   u_int pos = Store::DirectWordToInt(GetArg(POS_POS));
   u_int size = Store::DirectWordToInt(GetArg(SIZE_POS));
 
-  // HACK: u_int of 32 bit can be 5 bytes at most!
-  if (pos + 5 >= size) ResizeBuffer();
+  // HACK: u_int of 64 bit can be 10 bytes at most (but what if ResizeBuffer adds < 10 bytes?)!
+  if (pos + 10 >= size) ResizeBuffer();
 
   Chunk *buf = Store::DirectWordToChunk(GetArg(BUFFER_POS));
   u_char *c = (u_char *)buf->GetBase();
 
   while (i >= 0x80) {
-    c[pos] = (i & 0x7F | 0x80);
+    c[pos] = (u_char) (i & 0x7F | 0x80);
     pos++;
     i >>= 7;
   }
-  c[pos] = i;
+  c[pos] = (u_char) i;
   ReplaceArg(POS_POS, Store::IntToWord(pos+1));
 
 }
@@ -509,7 +512,7 @@ public:
     map->Clear();
   }
 
-  void Add(Block *v, int index) {
+  void Add(Block *v, s_int index) {
     Map *map     = Map::FromWordDirect(GetArg(TABLE_POS));
     Block *b = Store::AllocMutableBlock(MIN_DATA_LABEL, 2);
     b->InitArg(0, Store::IntToWord(index));
@@ -517,7 +520,7 @@ public:
     map->Put(v->ToWord(), b->ToWord());
   }
 
-  void SetIndex(Block *v, int index) {
+  void SetIndex(Block *v, s_int index) {
     Map *map     = Map::FromWordDirect(GetArg(TABLE_POS));
     Block *b = Store::DirectWordToBlock(map->Get(v->ToWord()));
     b->ReplaceArg(0, Store::IntToWord(index));
@@ -534,14 +537,14 @@ public:
     }
   }
 
-  void SetVarNo(Block *v, int varNo) {
+  void SetVarNo(Block *v, s_int varNo) {
     Assert(Find(v) != NOT_FOUND);
     Map *map = Map::FromWordDirect(GetArg(TABLE_POS));
     word vw  = v->ToWord();
     Block *b = Store::DirectWordToBlock(map->Get(vw));
     b->ReplaceArg(1, Store::IntToWord(varNo));
   }
-  int GetVarNo(Block *v) {
+  s_int GetVarNo(Block *v) {
     Assert(Find(v) != NOT_FOUND);
     word vw  = v->ToWord();
     Map *map = Map::FromWordDirect(GetArg(TABLE_POS));

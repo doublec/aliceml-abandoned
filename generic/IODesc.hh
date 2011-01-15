@@ -104,7 +104,7 @@ public:
 #else
     Assert(GetType() == TYPE_FD);
 #endif
-    return Store::DirectWordToInt(GetArg(FD_POS));
+    return (int) Store::DirectWordToInt(GetArg(FD_POS));
   }
 #if USE_WINSOCK
   HANDLE GetHandle() {

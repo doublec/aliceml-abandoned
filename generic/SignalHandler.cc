@@ -288,7 +288,7 @@ void SignalHandler::Init() {
 #endif
 }
 
-static int FindSignal(int signal) {
+static u_int FindSignal(int signal) {
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
     if (sigHandlers[i].signal == signal)
       return i;

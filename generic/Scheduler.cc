@@ -240,7 +240,7 @@ int Scheduler::Run() {
 	  nextThread = true;
 	  break;
 	case Worker::EXIT:
-	  return Store::DirectWordToInt(currentData);
+	  return (int) Store::DirectWordToInt(currentData);
 	}
       }
       if (Store::NeedGC()) {

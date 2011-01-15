@@ -47,7 +47,7 @@ void BaseMap<T>::Resize() {
     Store::AllocMutableBlock((BlockLabel) HASHNODEARRAY_LABEL, newsize);
   // Correct possibly blown up size
   newsize = newp->GetSize();
-  u_int percent = (u_int) (1 + (newsize * MAP_FILL_RATIO));
+  u_int percent = (u_int) (1.0 + ((double) newsize * MAP_FILL_RATIO));
   SetPercent(percent);
   SetTable(newp->ToWord());
   // init the new table with zero
@@ -147,7 +147,7 @@ BaseMap<T> *BaseMap<T>::New(BlockLabel l, u_int size) {
   size = ((size < 2) ? 2 : size); // Enforce Invariant: size must be > 1
   Block *map    = Store::AllocMutableBlock(l, SIZE);
   Block *arr    = Store::AllocMutableBlock(HASHNODEARRAY_LABEL, size);
-  s_int percent = STATIC_CAST(s_int, size * MAP_FILL_RATIO);
+  s_int percent = (s_int) ((double) size * MAP_FILL_RATIO);
   map->InitArg(COUNTER_POS, STATIC_CAST(s_int, 0));
   map->InitArg(PERCENT_POS, percent);
   map->InitArg(TABLE_POS, arr->ToWord());
