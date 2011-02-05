@@ -648,6 +648,7 @@ Worker::Result StartWorker::Run(StackFrame *sFrame) {
       Record *mod = Record::FromWord(bootCp->Sel(1));
       word boot = mod->PolySel("boot");
       
+      Scheduler::PopFrame(frame->GetSize());
       Scheduler::SetNArgs(1);
       Scheduler::SetCurrentArg(0, appUrl);
       return Scheduler::PushCall(boot);
