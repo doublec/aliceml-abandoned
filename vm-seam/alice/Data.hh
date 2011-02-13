@@ -411,9 +411,6 @@ class AliceDll Word8Array: private Chunk {
 public:
   static const u_int maxLen = String::maxSize;
 
-  static const s_int nonbits_exp =
-  STATIC_CAST(u_int,1) << (STORE_WORD_WIDTH - 8);
-
   using Chunk::ToWord;
 
   static Word8Array *New(u_int length) {
@@ -451,8 +448,7 @@ public:
     InitChunk(index, size, chunk);
   }
   word Sub(u_int index) {
-    s_int i = GetValue()[index];
-    return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
+    return Store::IntToWord((signed char) GetValue()[index]);
   }
 };
 
@@ -492,18 +488,13 @@ public:
     Init(index, value);
   }
   word Sub(u_int index) {
-    s_int i = GetValue()[index];
-    return Store::IntToWord(mydiv(i * Word8Array::nonbits_exp,
-				  Word8Array::nonbits_exp));
+    return Store::IntToWord((signed char) GetValue()[index]);
   }
 };
 
 class AliceDll CharArray: private Chunk {
 public:
   static const u_int maxLen = String::maxSize;
-
-  static const s_int nonbits_exp =
-  STATIC_CAST(u_int,1) << (STORE_WORD_WIDTH - 8);
 
   using Chunk::ToWord;
 
