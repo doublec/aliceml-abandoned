@@ -13,6 +13,7 @@
 #ifndef __ALICE__AUTHORING_HH__
 #define __ALICE__AUTHORING_HH__
 
+#include <stdint.h>
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/PrimitiveTable.hh"
@@ -127,23 +128,24 @@
   RETURN(w);                                    \
 }
 
-#define DECLARE_WORD32(w,x)                              \
-  u_int w;                                               \
-  { \
-  Chunk *c = Store::WordToChunk(x);                    \
-    if (c == INVALID_POINTER)                            \
-     {  REQUEST(x); } else {}                            \
-    char *to = reinterpret_cast<char *>(&w);             \
-    char *from = c->GetBase();                            \
-    std::memcpy(to,from,sizeof(word));         }  
+#define DECLARE_WORD32(w,x)                               \
+  uint32_t w;                                             \
+  {                                                       \
+    Chunk *c = Store::WordToChunk(x);                     \
+    if (c == INVALID_POINTER)                             \
+      { REQUEST(x); } else {}                             \
+    u_char *from = (u_char*) c->GetBase();                \
+    w = from[0]<<24 | from[1]<<16 | from[2]<<8 | from[3]; \
+  }                                                       \
 
 inline
-word Word32ToWord(u_int w) {
-  u_int ww = w;
-  Chunk *c = Store::AllocChunk(sizeof(word));
+word Word32ToWord(uint32_t from) {
+  Chunk *c = Store::AllocChunk(4);
   char *to = c->GetBase();
-  char *from = reinterpret_cast<char *>(&ww);
-  std::memcpy(to, from, sizeof(word));
+  to[0] = (char) (from >> 24);
+  to[1] = (char) (from >> 16);
+  to[2] = (char) (from >> 8);
+  to[3] = (char) from;
   return c->ToWord();
 }
 

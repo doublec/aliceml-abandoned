@@ -78,13 +78,12 @@ WORD_WORD_TO_BOOL_OP(Word_opgreaterEq, >=)
 
 // In the shifting operations, we need to check whether
 // the shift count exceeds WORD_PRECISION explicitly:
-// gcc on x86 generates code that modulos the shift count by word size (= 32).
-// (Although this seems to contradict the ISO standard.)
+// in C results of shifts >= the size of the data type are undefined
 
 DEFINE2(Word_opshl) {
   DECLARE_WORD(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION)
+  if (j >= WORD_PRECISION)
     RETURN_WORD(0); // see above
   RETURN_WORD(i << j);
 } END
@@ -94,7 +93,7 @@ DEFINE2(Word_opshl) {
 DEFINE2(Word_opshr) {
   DECLARE_WORD(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION)
+  if (j >= WORD_PRECISION)
     RETURN_WORD(0); // see above
   RETURN_WORD(i >> j);
 } END
@@ -191,15 +190,15 @@ DEFINE1(Word_toLargeIntX) {
 
 DEFINE1(Word_toLarge) {
   DECLARE_WORD(i, x0);
-  RETURN_LARGE_WORD(i);
+  RETURN_LARGE_WORD((uint32_t) i);
 } END
 
 DEFINE1(Word_toLargeX) {
   DECLARE_WORD(i, x0);
   if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_LARGE_WORD(i | ~(STATIC_CAST(u_int, -1) >> NONBITS));
+    RETURN_LARGE_WORD((uint32_t) (i | ~(STATIC_CAST(u_int, -1) >> NONBITS)));
   } else {
-    RETURN_LARGE_WORD(i);
+    RETURN_LARGE_WORD((uint32_t) i);
   }
 } END
 

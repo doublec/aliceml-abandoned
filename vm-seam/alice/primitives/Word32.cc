@@ -15,7 +15,7 @@
 #define WORD_PRECISION 32
 #define STANDARD_WORD_PRECISION 31
 #define STANDARD_WORD_NONBITS (STORE_WORD_WIDTH - STANDARD_WORD_PRECISION)
-#define STANDARD_WORD_NONBITS_EXP (1 << STANDARD_WORD_NONBITS)
+#define STANDARD_WORD_NONBITS_EXP ((u_int) 1 << STANDARD_WORD_NONBITS)
 
 #define DECLARE_WORDN(w, x, n)						\
   u_int w = Store::WordToInt(x);					\
@@ -58,7 +58,7 @@ WORD32_WORD_TO_BOOL_OP(Word32_opgreaterEq, >=)
 DEFINE2(Word32_opshl) {
   DECLARE_WORD32(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION)
+  if (j >= WORD_PRECISION)
     RETURN_WORD32(0); // see comment in Word.icc
   RETURN_WORD32(i << j);
 } END
@@ -66,7 +66,7 @@ DEFINE2(Word32_opshl) {
 DEFINE2(Word32_opshr) {
   DECLARE_WORD32(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION)
+  if (j >= WORD_PRECISION)
     RETURN_WORD32(0); // see comment in Word.icc
   RETURN_WORD32(i >> j);
 } END
@@ -77,7 +77,7 @@ DEFINE2(Word32_oparithshr) {
   if (j > WORD_PRECISION - 1) j = WORD_PRECISION - 1; // see above
   //--** this implementation can be improved on many architectures
   if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_WORD32((i >> j) | ~(static_cast<u_int>(-1) >> j));
+    RETURN_WORD32(i >> j | ~((uint32_t) -1 >> j));
   } else {
     RETURN_WORD32(i >> j);
   }
@@ -95,7 +95,7 @@ DEFINE2(Word32_div) {
 
 DEFINE1(Word32_fromInt) {
   DECLARE_INT(i, x0);
-  RETURN_WORD32(i);
+  RETURN_WORD32((uint32_t) i);
 } END
 
 DEFINE1(Word32_fromLargeWord) {
@@ -135,14 +135,14 @@ DEFINE1(Word32_toIntX) {
 DEFINE1(Word32_fromLargeInt) {
   TEST_INTINF(i, x0);
   if (i!=INVALID_INT)
-    RETURN_WORD32(i);
+    RETURN_WORD32((uint32_t) i);
   DECLARE_INTINF(ii, x0);
-  RETURN_WORD32(mpz_get_ui(ii->big()));
+  RETURN_WORD32((uint32_t) mpz_get_ui(ii->big()));
 } END
 
 DEFINE1(Word32_toLargeInt) {
   DECLARE_WORD32(i, x0);
-  BigInt *b = BigInt::New(i);
+  BigInt *b = BigInt::New((u_int) i);
   RETURN_INTINF(b);
 } END
 
