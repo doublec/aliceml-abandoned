@@ -691,7 +691,7 @@ public:
   static BigInt *New(double d);
   s_int toInt(void);
   void destroy(void);
-  bool operator==(signed long int i);
+  bool operator==(long i);
 
 
   static BigInt *FromWordDirect(word x) {
@@ -708,12 +708,12 @@ public:
   BigInt *notb(void);
   
   BigInt *add(BigInt *b);
-  BigInt *add(unsigned long int i);
+  BigInt *add(unsigned long i);
   BigInt *sub(BigInt *b);
-  BigInt *sub(unsigned long int i);
+  BigInt *sub(unsigned long i);
 
   BigInt *mul(BigInt *b);
-  BigInt *mul(long int i);
+  BigInt *mul(long i);
 
   BigInt *div(BigInt *b);
   BigInt *div(MP_INT *b);
@@ -733,25 +733,25 @@ public:
   void divMod(BigInt *b, BigInt *d, BigInt *m);
   void quotRem(BigInt *b, BigInt *q, BigInt *r);
 
-  BigInt *pow(unsigned long int exp);
+  BigInt *pow(unsigned long exp);
 
-  unsigned long int log2(void);
+  unsigned long log2(void);
 
-  BigInt *shiftr(unsigned long int b);
+  BigInt *shiftr(unsigned long b);
 
-  BigInt *shiftl(unsigned long int b);
+  BigInt *shiftl(unsigned long b);
 
   int compare(BigInt *b);
-  int compare(signed long int i);
+  int compare(long i);
   bool less(BigInt *b);
   bool lessEq(BigInt *b);
   bool greater(BigInt *b);
   bool greaterEq(BigInt *b);
 
-  bool less(signed long int i);
-  bool lessEq(signed long int i);
-  bool greater(signed long int i);
-  bool greaterEq(signed long int i);
+  bool less(long i);
+  bool lessEq(long i);
+  bool greater(long i);
+  bool greaterEq(long i);
 
 };
 

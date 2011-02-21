@@ -433,7 +433,7 @@ DEFINE2(IntInf_quotRem) {
 
 DEFINE1(IntInf_log2) {
   DECLARE_INTINF_PROMOTE(i, flag, x0);
-  if (i->compare((signed long int) 0) <= 0) {
+  if (i->compare((long) 0) <= 0) {
     DISCARD_PROMOTED(i, flag);
     RAISE(PrimitiveTable::General_Domain);
   }

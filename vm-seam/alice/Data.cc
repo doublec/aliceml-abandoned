@@ -147,7 +147,7 @@ BigInt* BigInt::New(double d) {
 s_int BigInt::toInt(void) {
   MP_INT *b = big();
   if (mpz_fits_slong_p(b)) {
-    long int i = mpz_get_si(b);
+    long i = mpz_get_si(b);
     if (i>MAX_VALID_INT || i<MIN_VALID_INT) {
       return INVALID_INT;
     } else {
@@ -162,7 +162,7 @@ void BigInt::destroy(void) {
   mpz_clear(b);
 }
 
-bool BigInt::operator==(signed long int i) {
+bool BigInt::operator==(long i) {
   return mpz_cmp_si(big(), i)==0;
 }
 
@@ -183,7 +183,7 @@ bool BigInt::operator==(signed long int i) {
     mpop(n->big(), big(), b->big()); \
     return n; \
   } \
-  BigInt::BigInt *BigInt::op(unsigned long int i) { \
+  BigInt::BigInt *BigInt::op(unsigned long i) { \
     BigInt *n = BigInt::New(); \
     mpop ## _ui(n->big(), big(), i); \
     return n; \
@@ -197,7 +197,7 @@ BigInt *BigInt::mul(BigInt *b) {
   mpz_mul(n->big(), big(), b->big());
   return n;
 }
-BigInt *BigInt::mul(long int i) {
+BigInt *BigInt::mul(long i) {
   BigInt *n = BigInt::New();
   mpz_mul_si(n->big(), big(), i);
   return n;
@@ -230,23 +230,23 @@ void BigInt::quotRem(BigInt *b, BigInt *q, BigInt *r) {
   mpz_tdiv_qr(q->big (), r->big (), big(), b->big());
 }
 
-BigInt *BigInt::pow(unsigned long int exp) {
+BigInt *BigInt::pow(unsigned long exp) {
   BigInt *n = BigInt::New();
   mpz_pow_ui(n->big(), big(), exp);
   return n;
 }
 
-unsigned long int BigInt::log2(void) {
+unsigned long BigInt::log2(void) {
   return mpz_sizeinbase(big(), 2)-1;
 }
 
-BigInt *BigInt::shiftr(unsigned long int b) {
+BigInt *BigInt::shiftr(unsigned long b) {
   BigInt *n = BigInt::New();
   mpz_fdiv_q_2exp(n->big(), big(), b);
   return n;
 }
 
-BigInt *BigInt::shiftl(unsigned long int b) {
+BigInt *BigInt::shiftl(unsigned long b) {
   BigInt *n = BigInt::New();
   mpz_mul_2exp(n->big(), big(), b);
   return n;
@@ -256,7 +256,7 @@ int BigInt::compare(BigInt *b) {
   if (this==b) return 0;
   return mpz_cmp(big(), b->big());
 }
-int BigInt::compare(signed long int i) {
+int BigInt::compare(long i) {
   return mpz_cmp_si(big(), i);
 }
 bool BigInt::less(BigInt *b) {
@@ -272,15 +272,15 @@ bool BigInt::greaterEq(BigInt *b) {
   return mpz_cmp(big(), b->big()) >= 0;
 }
 
-bool BigInt::less(signed long int i) {
+bool BigInt::less(long i) {
   return mpz_cmp_si(big(), i) < 0;
 }
-bool BigInt::lessEq(signed long int i) {
+bool BigInt::lessEq(long i) {
   return mpz_cmp_si(big(), i) <= 0;
 }
-bool BigInt::greater(signed long int i) {
+bool BigInt::greater(long i) {
   return mpz_cmp_si(big(), i) > 0;
 }
-bool BigInt::greaterEq(signed long int i) {
+bool BigInt::greaterEq(long i) {
   return mpz_cmp_si(big(), i) >= 0;
 }
