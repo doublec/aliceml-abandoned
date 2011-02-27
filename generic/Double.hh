@@ -35,22 +35,22 @@ public:
 #else
     std::memcpy(to, from, sizeof(double));
 #endif
-    return STATIC_CAST(Double *, chunk);
+    return static_cast<Double *>(chunk);
   }
   static Double *NewFromNetworkRepresentation(u_char *from) {
     Chunk *chunk = Store::AllocChunk(sizeof(double));
     std::memcpy(chunk->GetBase(), from, sizeof(double));
-    return STATIC_CAST(Double *, chunk);
+    return static_cast<Double *>(chunk);
   }
   static Double *FromWord(word x) {
     Chunk *chunk = Store::WordToChunk(x);
     Assert(chunk == INVALID_POINTER || chunk->GetSize() == sizeof(double));
-    return STATIC_CAST(Double *, chunk);
+    return static_cast<Double *>(chunk);
   }
   static Double *FromWordDirect(word x) {
     Chunk *chunk = Store::DirectWordToChunk(x);
     Assert(chunk->GetSize() == sizeof(double));
-    return STATIC_CAST(Double *, chunk);
+    return static_cast<Double *>(chunk);
   }
 
   double GetValue() {

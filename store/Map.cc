@@ -45,12 +45,12 @@ public:
     Block *p = Store::AllocBlock(MIN_DATA_LABEL, SIZE);
     p->InitArg(MAP_POS, map->ToWord());
     p->InitArg(NEXT_POS, next);
-    return STATIC_CAST(ListNode *, p);
+    return static_cast<ListNode *>(p);
   }
   static ListNode *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == MIN_DATA_LABEL);
-    return STATIC_CAST(ListNode *, p);
+    return static_cast<ListNode *>(p);
   }
 };
 
@@ -65,7 +65,7 @@ void Map::Rehash() {
     while (nodes != Store::IntToWord(0)) {
       MapNode *node   = MapNode::FromWordDirect(nodes);
       word key        = node->GetKey();
-      u_int hashedKey = ((u_int) key % size);
+      u_int hashedKey = reinterpret_cast<u_int>(key) % size;
       if (hashedKey != i) {
 	nodes = node->GetNext(); // Order is important
 	// Remove from old chain
@@ -98,10 +98,10 @@ void Map::RehashAll(const u_int gen) {
       map = INVALID_POINTER;
     // Do rehash only if map is alive
     if (map != INVALID_POINTER) {
-      Map *newMap = STATIC_CAST(Map *, map);
+      Map *newMap = static_cast<Map *>(map);
       newMap->Rehash();
       ListNode *node =
-	(ListNode *) Store::Alloc(gen, MIN_DATA_LABEL, ListNode::GetSize());
+        reinterpret_cast<ListNode *>(Store::Alloc(gen, MIN_DATA_LABEL, ListNode::GetSize()));
       node->Init(newMap, mapLs);
       mapLs = node->ToWord();
     }
@@ -114,7 +114,7 @@ void Map::Init() {
 }
 
 Map *Map::New(u_int size) {
-  Map *map = STATIC_CAST(Map *, BaseMap<WordKey>::New(MAP_LABEL, size));
+  Map *map = static_cast<Map *>(BaseMap<WordKey>::New(MAP_LABEL, size));
   mapLs = ListNode::New(map, mapLs)->ToWord();
   return map;
 }

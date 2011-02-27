@@ -700,7 +700,7 @@ public:
   static Block *New(PrimType type) {
     Block *p = Store::AllocBlock((BlockLabel) T_PRIMOP, SIZE);
 
-    p->InitArg(TYPE_POS, (u_int) type);
+    p->InitArg(TYPE_POS, static_cast<u_int>(type));
     return p;
   }
   static PrimOpNode *FromBlock(Block *x) {

@@ -51,7 +51,7 @@ void HeapChunk::Alloc(u_int size) {
 #endif
 				);
 #else
-  block = (char *) std::malloc(size);
+  block = reinterpret_cast<char *>(std::malloc(size));
 #endif
   Assert(block != NULL);
 }
@@ -71,7 +71,7 @@ HeapChunk::HeapChunk(u_int size, HeapChunk *chain) : prev(NULL) {
   AssertStore(block != NULL);
   // Align base pointer
   base = block;
-  base += (STORE_MEM_ALIGN - ((u_int) base & (STORE_MEM_ALIGN - 1)));
+  base += (STORE_MEM_ALIGN - (reinterpret_cast<u_int>(base) & (STORE_MEM_ALIGN - 1)));
   max  = (base + size - sizeof(word)); // Header must always fit
   top  = base;
   next = chain;
@@ -118,13 +118,13 @@ Heap::~Heap() {
 
 void Heap::Enlarge() {
   // Compute itemSize
-  Block *p = (Block *) chain->GetTop();
+  Block *p = reinterpret_cast<Block *>(chain->GetTop());
   u_int itemSize = SIZEOF_BLOCK(HeaderOp::DecodeSize(p));
   // Compute required HeapChunk Size
   u_int chunkSize = STORE_MEMCHUNK_SIZE;
   itemSize += sizeof(u_int);
   if (chunkSize < itemSize) {
-    div_t d   = div((int) itemSize, (int) STORE_MEMCHUNK_SIZE);
+    div_t d   = div(static_cast<int>(itemSize), static_cast<int>(STORE_MEMCHUNK_SIZE));
     chunkSize = ((d.quot + (d.rem ? 1 : 0)) * STORE_MEMCHUNK_SIZE);
   }
   chain = new HeapChunk(chunkSize, chain);

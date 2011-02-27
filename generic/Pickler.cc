@@ -47,14 +47,14 @@ enum OUT_STREAM_TYPE {
 class OutputStream: private Block {
 public:
   static OutputStream *New(OUT_STREAM_TYPE type, u_int size) {
-    Block *p = Store::AllocMutableBlock((BlockLabel) type, size);
-    return STATIC_CAST(OutputStream *, p);
+    Block *p = Store::AllocMutableBlock(static_cast<BlockLabel>(type), size);
+    return static_cast<OutputStream *>(p);
   }
   static OutputStream *FromWordDirect(word stream) {
     Block *p = Store::DirectWordToBlock(stream);
-    Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM ||
-	   p->GetLabel() == (BlockLabel) STRING_OUTPUT_STREAM);
-    return STATIC_CAST(OutputStream *, p);
+    Assert(p->GetLabel() == static_cast<BlockLabel>(FILE_OUTPUT_STREAM) ||
+           p->GetLabel() == static_cast<BlockLabel>(STRING_OUTPUT_STREAM));
+    return static_cast<OutputStream *>(p);
   }
 
   using Block::InitArg;
@@ -63,7 +63,7 @@ public:
   using Block::ToWord;
 
   OUT_STREAM_TYPE GetType() {
-    return STATIC_CAST(OUT_STREAM_TYPE, STATIC_CAST(u_int, this->GetLabel()));
+    return static_cast<OUT_STREAM_TYPE>(static_cast<u_int>(this->GetLabel()));
   }
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
@@ -93,16 +93,16 @@ public:
     outputStream->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
     outputStream->InitArg(FINALIZATION_KEY_POS,
 			  finalizationSet->Register(outputStream->ToWord()));
-    return STATIC_CAST(FileOutputStream *, outputStream);
+    return reinterpret_cast<FileOutputStream *>(outputStream);
   }
   static FileOutputStream *FromWordDirect(word stream) {
     ::Block *p = Store::DirectWordToBlock(stream);
-    Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM);
-    return STATIC_CAST(FileOutputStream *, p);
+    Assert(p->GetLabel() == static_cast<BlockLabel>(FILE_OUTPUT_STREAM));
+    return reinterpret_cast<FileOutputStream *>(p);
   }
 
   gzFile GetFile() {
-    return STATIC_CAST(gzFile, Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+    return static_cast<gzFile>(Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
 
   void PutByte(u_char byte);
@@ -138,7 +138,7 @@ private:
   void Enlarge();
 public:
   static StringOutputStream *New() {
-    StringOutputStream *stream = STATIC_CAST(StringOutputStream *, OutputStream::New(STRING_OUTPUT_STREAM, SIZE));
+    StringOutputStream *stream = static_cast<StringOutputStream *>(OutputStream::New(STRING_OUTPUT_STREAM, SIZE));
     stream->SetPos(0);
     stream->SetSize(INITIAL_SIZE);
     stream->SetString(String::New(INITIAL_SIZE));
@@ -154,36 +154,36 @@ public:
 // OutputStream Methods
 void OutputStream::PutUInt(u_int i) {
   while (i >= 0x80) {
-    OutputStream::PutByte((u_char)(i & 0x7F | 0x80));
+    OutputStream::PutByte(static_cast<u_char>(i & 0x7F | 0x80));
     i >>= 7;
   }
-  OutputStream::PutByte((u_char) i);
+  OutputStream::PutByte(static_cast<u_char>(i));
 }
 
 void OutputStream::PutByte(u_char byte) {
   switch (GetType()) {
   case FILE_OUTPUT_STREAM:
-    STATIC_CAST(FileOutputStream *, this)->PutByte(byte); break;
+    static_cast<FileOutputStream *>(this)->PutByte(byte); break;
   case STRING_OUTPUT_STREAM:
-    STATIC_CAST(StringOutputStream *, this)->PutByte(byte); break;
+    static_cast<StringOutputStream *>(this)->PutByte(byte); break;
   }
 }
 
 void OutputStream::PutBytes(Chunk *c) {
   switch (GetType()) {
   case FILE_OUTPUT_STREAM:
-    STATIC_CAST(FileOutputStream *, this)->PutBytes(c); break;
+    static_cast<FileOutputStream *>(this)->PutBytes(c); break;
   case STRING_OUTPUT_STREAM:
-    STATIC_CAST(StringOutputStream *, this)->PutBytes(c); break;
+    static_cast<StringOutputStream *>(this)->PutBytes(c); break;
   }
 }
 
 void OutputStream::PutBytes(u_char *buf, u_int size) {
   switch (GetType()) {
   case FILE_OUTPUT_STREAM:
-    STATIC_CAST(FileOutputStream *, this)->PutBytes(buf, size); break;
+    static_cast<FileOutputStream *>(this)->PutBytes(buf, size); break;
   case STRING_OUTPUT_STREAM:
-    STATIC_CAST(StringOutputStream *, this)->PutBytes(buf, size); break;
+    static_cast<StringOutputStream *>(this)->PutBytes(buf, size); break;
   }
 }
 
@@ -199,14 +199,14 @@ void FileOutputStream::PutByte(u_char byte) {
 }
 
 void FileOutputStream::PutBytes(Chunk *c) {
-  PutBytes((u_char*) c->GetBase(), c->GetSize());
+  PutBytes(reinterpret_cast<u_char*>(c->GetBase()), c->GetSize());
 }
 
 void FileOutputStream::PutBytes(u_char *buf, u_int size) {
   if (size > UINT_MAX) {
     Error("FileOutputStream::PutBytes");
   }
-  gzwrite(GetFile(), buf, (unsigned int) size);
+  gzwrite(GetFile(), buf, static_cast<unsigned int>(size));
 }
 
 word FileOutputStream::Close() {
@@ -295,13 +295,13 @@ public:
     b->InitArg(SIZE_POS, Store::IntToWord(initialSize));
     b->InitArg(LOC_COUNT_POS, Store::IntToWord(0));
     b->InitArg(LOC_SIZE_POS, Store::IntToWord(locInitialSize*2));
-    return STATIC_CAST(OutputBuffer *, b);
+    return static_cast<OutputBuffer *>(b);
   }
 
   static OutputBuffer *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == OBUF_LABEL);
-    return STATIC_CAST(OutputBuffer *, b);
+    return static_cast<OutputBuffer *>(b);
   }
 
   void Reset();
@@ -415,7 +415,7 @@ void OutputBuffer::PutByte(u_char byte) {
   if (pos >= size) ResizeBuffer();
   Chunk *buf = Store::DirectWordToChunk(GetArg(BUFFER_POS));
 
-  u_char *c = (u_char *)buf->GetBase();
+  u_char *c = reinterpret_cast<u_char *>(buf->GetBase());
   c[pos] = byte;
   ReplaceArg(POS_POS, Store::IntToWord(pos+1));
 }
@@ -441,14 +441,14 @@ void OutputBuffer::PutUInt(u_int i) {
   if (pos + 10 >= size) ResizeBuffer();
 
   Chunk *buf = Store::DirectWordToChunk(GetArg(BUFFER_POS));
-  u_char *c = (u_char *)buf->GetBase();
+  u_char *c = reinterpret_cast<u_char *>(buf->GetBase());
 
   while (i >= 0x80) {
-    c[pos] = (u_char) (i & 0x7F | 0x80);
+    c[pos] = static_cast<u_char>(i & 0x7F | 0x80);
     pos++;
     i >>= 7;
   }
-  c[pos] = (u_char) i;
+  c[pos] = static_cast<u_char>(i);
   ReplaceArg(POS_POS, Store::IntToWord(pos+1));
 
 }
@@ -491,20 +491,20 @@ private:
   enum { TABLE_POS, SIZE };
   static const u_int initialSize = 256; //--** to be checked
 public:
-  static const u_int NOT_WRITTEN = STATIC_CAST(u_int, -1);
-  static const u_int NOT_FOUND = STATIC_CAST(u_int, -2);
+  static const u_int NOT_WRITTEN = static_cast<u_int>(-1);
+  static const u_int NOT_FOUND = static_cast<u_int>(-2);
 
   using Block::ToWord;
 
   static Seen *New() {
     Block *p = Store::AllocBlock(SEEN_LABEL, SIZE);
     p->InitArg(TABLE_POS, Map::New(initialSize)->ToWord());
-    return STATIC_CAST(Seen *, p);
+    return static_cast<Seen *>(p);
   }
   static Seen *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == SEEN_LABEL);
-    return STATIC_CAST(Seen *, b);
+    return static_cast<Seen *>(b);
   }
 
   void Reset() {
@@ -568,12 +568,12 @@ public:
 
   static PickleStack *New() {
     Stack *s = Stack::New(initialSize);
-    return STATIC_CAST(PickleStack *, s);
+    return static_cast<PickleStack *>(s);
   }
 
   static PickleStack *FromWordDirect(word w) {
     Stack *s = Stack::FromWordDirect(w);
-    return STATIC_CAST(PickleStack *, s);
+    return static_cast<PickleStack *>(s);
   }
 
   void Push(word data);
@@ -778,7 +778,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	{
 	  outputBuffer->PutByte(Pickle::TRANSFORM);
 	  //	  outputBuffer->PutByte(Pickle::BLOCK);
-	  //	  outputBuffer->PutUInt((u_int) TRANSFORM_LABEL);
+	  //	  outputBuffer->PutUInt(static_cast<u_int>(TRANSFORM_LABEL));
 	  //	  outputBuffer->PutUInt(2);
 	  PickleArgs::SimulatePop(1);
 	  seen->SetIndex(v, outputBuffer->GetPos());
@@ -806,7 +806,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	    outputBuffer->PutByte(Pickle::MBLOCK);
 	  else
 	    outputBuffer->PutByte(Pickle::BLOCK);
-	  outputBuffer->PutUInt((u_int) l);
+	  outputBuffer->PutUInt(static_cast<u_int>(l));
 	  outputBuffer->PutUInt(size);
 	  PickleArgs::SimulatePop(size-1);
 	  seen->SetIndex(v, outputBuffer->GetPos());
@@ -901,7 +901,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 		outputBuffer->PutByte(Pickle::aMBLOCK);
 	      else
 		outputBuffer->PutByte(Pickle::aBLOCK);
-	      outputBuffer->PutUInt((u_int) v->GetLabel());
+	      outputBuffer->PutUInt(static_cast<u_int>(v->GetLabel()));
 	      u_int size = v->GetSize();
 	      outputBuffer->PutUInt(size);	
 	      u_int ann = outputBuffer->PutLocal(0);
@@ -954,7 +954,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
       return Worker::RAISE;
     case CHUNK_LABEL:
       {
-	Chunk *c = STATIC_CAST(Chunk *, v);
+	Chunk *c = reinterpret_cast<Chunk *>(v);
 	if (c->IsMutable())
 	  outputBuffer->PutByte(Pickle::MCHUNK);
 	else
@@ -975,7 +975,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	nps->SetBack();
 
 	seen->Add(v, Seen::NOT_WRITTEN);
-	UniqueString *s = STATIC_CAST(UniqueString *, v);
+	UniqueString *s = reinterpret_cast<UniqueString *>(v);
 
 	nps->Push(s->ToString()->ToWord());
 	continue;
@@ -987,7 +987,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 
 	seen->Add(v, Seen::NOT_WRITTEN);
 	ConcreteRepresentation *concrete =
-	  STATIC_CAST(ConcreteRepresentation *, v);
+			reinterpret_cast<ConcreteRepresentation *>(v);
 	Transform *abstract =
 	  concrete->GetHandler()->GetAbstractRepresentation(concrete);
 	Block *ablock = Store::DirectWordToBlock(abstract->ToWord());
@@ -1088,7 +1088,7 @@ void PickleSaveWorker::WriteToStream(OutputBuffer *obf,
   outputStream->PutUInt(noOfLoc+1);
 
   u_int curPos = 0;
-  u_char *ibf = (u_char *)c->GetBase();
+  u_char *ibf = reinterpret_cast<u_char *>(c->GetBase());
 
   // write the output buffer to file, filling in the missing
   // STOREs where indicated by the locals array
@@ -1139,7 +1139,7 @@ Worker::Result PickleSaveWorker::Run(StackFrame *sFrame) {
     PickleSaveWorker::WriteToStream(obf, os);
     
     FileOutputStream *outputStream =
-      STATIC_CAST(FileOutputStream *, os);
+      static_cast<FileOutputStream *>(os);
     
     outputStream->Close();
     Scheduler::SetNArgs(0);
@@ -1213,7 +1213,7 @@ Worker::Result PicklePackWorker::Run(StackFrame *sFrame) {
     PickleSaveWorker::WriteToStream(obf, os);
 
     StringOutputStream *outputStream =
-      STATIC_CAST(StringOutputStream *, os);
+      static_cast<StringOutputStream *>(os);
   
     Scheduler::SetNArgs(1);
     Scheduler::SetCurrentArg(0, outputStream->Close());

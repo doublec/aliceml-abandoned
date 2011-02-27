@@ -22,7 +22,7 @@ class WordKey {
 public:
   static u_int Hash(word key, u_int size) {
     Assert(size > 0);
-    return ((u_int) key % size);
+    return reinterpret_cast<u_int>(key) % size;
   }
   static bool Equals(word a, word b) {
     return a == b;
@@ -43,12 +43,12 @@ public:
   static Map *FromWord(word x) {
     Block *map = Store::WordToBlock(x);
     Assert(map == INVALID_POINTER || map->GetLabel() == MAP_LABEL);
-    return STATIC_CAST(Map *, map);
+    return static_cast<Map *>(map);
   }
   static Map *FromWordDirect(word x) {
     Block *map = Store::DirectWordToBlock(x);
     Assert(map->GetLabel() == MAP_LABEL);
-    return STATIC_CAST(Map *, map);
+    return static_cast<Map *>(map);
   }
 };
 

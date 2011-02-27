@@ -63,15 +63,15 @@ PBlock *PBlock::New(s_int start, s_int end) {
   // block was put on the agenda
   p->Update(SIZE+0, Store::IntToWord(0));
 
-  return STATIC_CAST(PBlock *, p);    
+  return static_cast<PBlock *>(p);    
 }
 
 PBlock *PBlock::FromWord(word x) {
-  return STATIC_CAST(PBlock *, DynamicArray::FromWord(x));
+  return static_cast<PBlock *>(DynamicArray::FromWord(x));
 }
 
 PBlock *PBlock::FromWordDirect(word x) {
-  return STATIC_CAST(PBlock *, DynamicArray::FromWordDirect(x));
+  return static_cast<PBlock *>(DynamicArray::FromWordDirect(x));
 }
 
 void PBlock::SetEnd(s_int end) {
@@ -422,7 +422,7 @@ s_int PNode::compare(PNode *n1, PNode *n2) {
 
 class DynNodeArray : private Block {
 private:
-  static const BlockLabel DYNNODEARRAY_LABEL = (BlockLabel) (MIN_DATA_LABEL+1);
+  static const BlockLabel DYNNODEARRAY_LABEL = static_cast<BlockLabel>(MIN_DATA_LABEL+1);
   enum { ARRAY_POS, LUA_ARRAY_POS, COUNT_POS, SIZE };
 
   static void swap(DynamicArray* a, DynamicArray *lua, s_int i, s_int j);
@@ -503,22 +503,22 @@ void DynNodeArray::sort(DynamicArray *a, DynamicArray *lua, s_int l, s_int r) {
 DynNodeArray *DynNodeArray::New(u_int initialSize) {
   Block *p = Store::AllocMutableBlock(DYNNODEARRAY_LABEL, SIZE);
   
-  p->InitArg(COUNT_POS, STATIC_CAST(s_int, 0));
+  p->InitArg(COUNT_POS, static_cast<s_int>(0));
   p->InitArg(ARRAY_POS, DynamicArray::New(initialSize)->ToWord());
   p->InitArg(LUA_ARRAY_POS, DynamicArray::New(initialSize)->ToWord());
-  return STATIC_CAST(DynNodeArray *, p);
+  return static_cast<DynNodeArray *>(p);
 }
 
 DynNodeArray *DynNodeArray::FromWord(word x) {
   Block *b = Store::WordToBlock(x);
   Assert(b == INVALID_POINTER || b->GetLabel() == DYNNODEARRAY_LABEL);
-  return STATIC_CAST(DynNodeArray *, b);
+  return static_cast<DynNodeArray *>(b);
 }
 
 DynNodeArray *DynNodeArray::FromWordDirect(word x) {
   Block *b = Store::DirectWordToBlock(x);
   Assert(b->GetLabel() == DYNNODEARRAY_LABEL);
-  return STATIC_CAST(DynNodeArray *, b);
+  return static_cast<DynNodeArray *>(b);
 }
 
 s_int DynNodeArray::InitNext(PNode *pn) {
@@ -611,14 +611,14 @@ PNode *PNode::New(word node) {
   p->Update(NODE_POS, node);
   p->Update(NUM_POS, Store::IntToWord(-1));
   p->Update(PRED_COUNT_POS, Store::IntToWord(0));
-  return STATIC_CAST(PNode *, p);    
+  return static_cast<PNode *>(p);    
 }
 
 PNode *PNode::FromWord(word x) {
-  return STATIC_CAST(PNode *, DynamicArray::FromWord(x));
+  return static_cast<PNode *>(DynamicArray::FromWord(x));
 }
 PNode *PNode::FromWordDirect(word x) {
-  return STATIC_CAST(PNode *, DynamicArray::FromWordDirect(x));
+  return static_cast<PNode *>(DynamicArray::FromWordDirect(x));
 }
 
 s_int PNode::GetBlock() {
@@ -706,20 +706,20 @@ Partition *Partition::New() {
   b->InitArg(NA_POS, DynNodeArray::New(100)->ToWord());
   b->InitArg(BA_POS, DynamicArray::New(100)->ToWord());
   b->InitArg(TO_DO_POS, 1); /* nil */
-  b->InitArg(BLOCK_COUNT_POS, STATIC_CAST(s_int, 0));
-  return STATIC_CAST(Partition *, b);    
+  b->InitArg(BLOCK_COUNT_POS, static_cast<s_int>(0));
+  return static_cast<Partition *>(b);    
 }
 
 Partition *Partition::FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == PARTITION_LABEL);
-    return STATIC_CAST(Partition *, b);
+    return static_cast<Partition *>(b);
   }
 
 Partition *Partition::FromWordDirect(word x) {
   Block *b = Store::DirectWordToBlock(x);
   Assert(b->GetLabel() == PARTITION_LABEL);
-  return STATIC_CAST(Partition *, b);
+  return static_cast<Partition *>(b);
 }
 
 //////////////////////////////////////

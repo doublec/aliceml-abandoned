@@ -77,7 +77,7 @@ PerformDump(FILE *file, word x, int index, int level, int depth) {
   if (depth > Debug::maxDepth) {
     std::fprintf(file, "%*c...\n", level, ' ');
   }
-  else if (x == STATIC_CAST(word, NULL)) {
+  else if (x == static_cast<word>(NULL)) {
     std::fprintf(file, "%*cNULL POINTER[%d]\n", level, ' ', index);
   }
   else if (PointerOp::IsInt(x)) {
@@ -95,7 +95,7 @@ PerformDump(FILE *file, word x, int index, int level, int depth) {
     if (w.pb->GetLabel() == CHUNK_LABEL) {
       std::fprintf(file, "%*cCHUNK(%"U_INTF")[%d]='%.*s'\n", level, ' ',
 		   w.pc->GetSize(), index,
-		   (int) w.pc->GetSize(), w.pc->GetBase());
+		   static_cast<int>(w.pc->GetSize()), w.pc->GetBase());
     } else {
       u_int size  = w.pb->GetSize();
       std::fprintf(file, "%*cBLOCK(%s=%d, %"U_INTF")[%d]\n", level, ' ',

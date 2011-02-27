@@ -15,17 +15,17 @@
 #include "store/StoreConfig.hh"
 
 #define INVALID_POINTER 0
-#define INVALID_INT     STATIC_CAST(s_int, STATIC_CAST(u_int, 1) << (STORE_WORD_WIDTH - 1))
+#define INVALID_INT     static_cast<s_int>(static_cast<u_int>(1) << (STORE_WORD_WIDTH - 1))
 // We must define INT_PRECISION to be 31 such that pickles remain
 // platform independent
 //#define INT_PRECISION   (STORE_WORD_WIDTH - 1)
 #define INT_PRECISION   31
-#define MIN_VALID_INT   STATIC_CAST(s_int, -(STATIC_CAST(u_int, 1) << (INT_PRECISION - 1)))
-#define MAX_VALID_INT   STATIC_CAST(s_int, (STATIC_CAST(u_int, 1) << (INT_PRECISION - 1)) - STATIC_CAST(u_int, 1))
+#define MIN_VALID_INT   static_cast<s_int>(-(static_cast<u_int>(1) << (INT_PRECISION - 1)))
+#define MAX_VALID_INT   static_cast<s_int>((static_cast<u_int>(1) << (INT_PRECISION - 1)) - static_cast<u_int>(1))
 #define MIN_BLOCKSIZE   0
 
 #define SIZEOF_BLOCK(s) \
-  (u_int) ((s + 1) * sizeof(u_int))
+  static_cast<u_int>((s + 1) * sizeof(u_int))
 
 // Word Datatype
 typedef struct {

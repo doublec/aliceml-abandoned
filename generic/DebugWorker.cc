@@ -34,7 +34,7 @@ void DebugWorker::PushFrame(word event) {
 }
 
 u_int DebugWorker::GetFrameSize(StackFrame *sFrame) {
-  DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, sFrame);
+  DebugFrame *debugFrame = static_cast<DebugFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return debugFrame->GetSize();
 }
@@ -56,7 +56,7 @@ void DebugWorker::DumpFrame(StackFrame *) {
 }
 
 word DebugWorker::GetEvent(StackFrame *sFrame) {
-  DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, sFrame);
+  DebugFrame *debugFrame = static_cast<DebugFrame *>(sFrame);
   Assert(debugFrame->GetWorker() == self);
   return debugFrame->GetEvent();
 }

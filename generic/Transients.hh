@@ -42,8 +42,8 @@ public:
   // Future Constructor
   static Future *New() {
     Transient *transient = Store::AllocTransient(FUTURE_LABEL);
-    transient->InitArg(STATIC_CAST(s_int, 0)); // empty wait queue
-    return STATIC_CAST(Future *, transient);
+    transient->InitArg(static_cast<s_int>(0)); // empty wait queue
+    return static_cast<Future *>(transient);
   }
 
   // Future Functions
@@ -79,13 +79,13 @@ public:
   // Hole Constructor
   static Hole *New() {
     Transient *transient = Store::AllocTransient(HOLE_LABEL);
-    transient->InitArg(STATIC_CAST(s_int, 0)); // no associated future
-    return STATIC_CAST(Hole *, transient);
+    transient->InitArg(static_cast<s_int>(0)); // no associated future
+    return static_cast<Hole *>(transient);
   }
 
   // Hole Functions
   Future *GetFuture() {
-    Future *future = STATIC_CAST(Future *, Store::WordToTransient(GetArg()));
+    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
     if (future == INVALID_POINTER) {
       future = Future::New();
       ReplaceArg(future->ToWord());
@@ -96,7 +96,7 @@ public:
     Transient *t = Store::WordToTransient(w);
     if (t == this) // cyclic bind
       return false;
-    Future *future = STATIC_CAST(Future *, Store::WordToTransient(GetArg()));
+    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
     if (future != INVALID_POINTER) { // eliminate associated future
       if (t == future) // cyclic bind
 	return false;
@@ -107,7 +107,7 @@ public:
     return true;
   }
   void Fail(word exn) {
-    Future *future = STATIC_CAST(Future *, Store::WordToTransient(GetArg()));
+    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
     Tuple *package = Tuple::New(2);
     Backtrace *backtrace = Backtrace::New(); // TODO: have primitive in BT
     package->Init(0, exn);
@@ -126,7 +126,7 @@ public:
   static Byneed *New(word closure) {
     Transient *transient = Store::AllocTransient(BYNEED_LABEL);
     transient->InitArg(closure);
-    return STATIC_CAST(Byneed *, transient);
+    return static_cast<Byneed *>(transient);
   }
 
   // Byneed Accessors

@@ -98,20 +98,20 @@ public:
   static Queue *New(u_int initialSize) {
     Block *b = Store::AllocMutableBlock(QUEUE_LABEL, SIZE);
     Block *array = Store::AllocMutableBlock(MIN_DATA_LABEL, initialSize);
-    b->InitArg(READ_INDEX_POS, STATIC_CAST(s_int,0));
-    b->InitArg(WRITE_INDEX_POS, STATIC_CAST(s_int,0));
+    b->InitArg(READ_INDEX_POS, static_cast<s_int>(0));
+    b->InitArg(WRITE_INDEX_POS, static_cast<s_int>(0));
     b->InitArg(ARRAY_POS, array->ToWord());
-    return STATIC_CAST(Queue *, b);
+    return static_cast<Queue *>(b);
   }
   static Queue *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == QUEUE_LABEL);
-    return STATIC_CAST(Queue *, b);
+    return static_cast<Queue *>(b);
   }
   static Queue *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == QUEUE_LABEL);
-    return STATIC_CAST(Queue *, b);
+    return static_cast<Queue *>(b);
   }
 
   void Enqueue(word w) {
@@ -211,12 +211,12 @@ public:
     if (readIndex < writeIndex) {
       u_int i;
       for (i = 0; i < readIndex; i++)
-	array->ReplaceArg(i, STATIC_CAST(s_int, 0));
+	array->ReplaceArg(i, static_cast<s_int>(0));
       for (i = writeIndex; i < newSize; i++)
-	array->ReplaceArg(i, STATIC_CAST(s_int, 0));
+	array->ReplaceArg(i, static_cast<s_int>(0));
     } else { // wrap-around layout
       for (u_int i = writeIndex; i < readIndex; i++)
-	array->ReplaceArg(i, STATIC_CAST(s_int, 0));
+	array->ReplaceArg(i, static_cast<s_int>(0));
     }
   }
 };

@@ -22,7 +22,7 @@ class TokenKey {
 public:
   static u_int Hash(word key, u_int size) {
     Assert(PointerOp::IsInt(key));
-    return ((u_int) key % size);
+    return reinterpret_cast<u_int>(key) % size;
   }
   static bool Equals(word a, word b) {
     return a == b;
@@ -39,25 +39,25 @@ protected:
   friend class Store;
 
   word GetHandler() {
-    return STATIC_CAST(Block *, this)->GetArg(RESERVED_POS);
+    return static_cast<Block *>(this)->GetArg(RESERVED_POS);
   }
 public:
   static WeakMap *New(u_int size, Finalization *handler) {
     BaseMap<TokenKey> *map = BaseMap<TokenKey>::New(WEAK_MAP_LABEL, size);
-    STATIC_CAST(Block *, map)
+    static_cast<Block *>(map)
       ->InitArg(RESERVED_POS, Store::UnmanagedPointerToWord(handler));
-    Store::RegisterWeakDict(STATIC_CAST(WeakMap *, map));
-    return STATIC_CAST(WeakMap *, map);
+    Store::RegisterWeakDict(static_cast<WeakMap *>(map));
+    return static_cast<WeakMap *>(map);
   }
   static WeakMap *FromWord(word x) {
     Block *map = Store::WordToBlock(x);
     Assert(map == INVALID_POINTER || map->GetLabel() == WEAK_MAP_LABEL);
-    return STATIC_CAST(WeakMap *, map);
+    return static_cast<WeakMap *>(map);
   }
   static WeakMap *FromWordDirect(word x) {
     Block *map = Store::DirectWordToBlock(x);
     Assert(map->GetLabel() == WEAK_MAP_LABEL);
-    return STATIC_CAST(WeakMap *, map);
+    return static_cast<WeakMap *>(map);
   }
 };
 

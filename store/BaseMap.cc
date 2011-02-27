@@ -44,15 +44,15 @@ void BaseMap<T>::Resize() {
   Assert(newsize > oldsize);
   Block *oldp   = GetTable();
   Block *newp   =
-    Store::AllocMutableBlock((BlockLabel) HASHNODEARRAY_LABEL, newsize);
+    Store::AllocMutableBlock(static_cast<BlockLabel>(HASHNODEARRAY_LABEL), newsize);
   // Correct possibly blown up size
   newsize = newp->GetSize();
-  u_int percent = (u_int) (1.0 + ((double) newsize * MAP_FILL_RATIO));
+  u_int percent = static_cast<u_int>(1.0 + (static_cast<double>(newsize) * MAP_FILL_RATIO));
   SetPercent(percent);
   SetTable(newp->ToWord());
   // init the new table with zero
   for (u_int i = newsize; i--;)
-    newp->InitArg(i, STATIC_CAST(s_int, 0));
+    newp->InitArg(i, static_cast<s_int>(0));
   // reinsert the items
   for (u_int i = oldsize; i--;) {
     word nodes = oldp->GetArg(i);
@@ -147,11 +147,11 @@ BaseMap<T> *BaseMap<T>::New(BlockLabel l, u_int size) {
   size = ((size < 2) ? 2 : size); // Enforce Invariant: size must be > 1
   Block *map    = Store::AllocMutableBlock(l, SIZE);
   Block *arr    = Store::AllocMutableBlock(HASHNODEARRAY_LABEL, size);
-  s_int percent = (s_int) ((double) size * MAP_FILL_RATIO);
-  map->InitArg(COUNTER_POS, STATIC_CAST(s_int, 0));
+  s_int percent = static_cast<s_int>(static_cast<double>(size) * MAP_FILL_RATIO);
+  map->InitArg(COUNTER_POS, static_cast<s_int>(0));
   map->InitArg(PERCENT_POS, percent);
   map->InitArg(TABLE_POS, arr->ToWord());
   for (u_int i = size; i--;)
-    arr->InitArg(i, STATIC_CAST(s_int, 0));
-  return STATIC_CAST(BaseMap<T> *, map);
+    arr->InitArg(i, static_cast<s_int>(0));
+  return static_cast<BaseMap<T> *>(map);
 }

@@ -41,12 +41,12 @@ DllLoader::libhandle DllLoader::OpenLibrary(String *fileName) {
 #elif HAVE_LIBLTDL
     ret = lt_dlopen(fileName->ExportC());
 #endif
-    trace(" = %p]\n", (char*)ret);
+    trace(" = %p]\n", reinterpret_cast<char*>(ret));
     return ret;
 }
 
 void DllLoader::CloseLibrary(DllLoader::libhandle handle) {
-    trace("[DllLoader::CloseLibrary(%p)", (char*)handle);
+    trace("[DllLoader::CloseLibrary(%p)", reinterpret_cast<char*>(handle));
 #if HAVE_LOADLIBRARY
     FreeLibrary(handle);
 #elif HAVE_LIBLTDL
@@ -58,9 +58,9 @@ void DllLoader::CloseLibrary(DllLoader::libhandle handle) {
 void *DllLoader::GetSymbol(DllLoader::libhandle libraryHandle,
 			   String *symbolName) {
 #if HAVE_LOADLIBRARY
-  return (void *) GetProcAddress(libraryHandle, symbolName->ExportC());
+  return reinterpret_cast<void *>(GetProcAddress(libraryHandle, symbolName->ExportC()));
 #elif HAVE_LIBLTDL
-  return (void *) lt_dlsym(libraryHandle, symbolName->ExportC());
+  return reinterpret_cast<void *>(lt_dlsym(libraryHandle, symbolName->ExportC()));
 #endif
 }
 

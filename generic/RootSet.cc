@@ -26,16 +26,16 @@ public:
   static Element *New(word *pointer) {
     Block *b = Store::AllocMutableBlock(ROOTSETELEMENT_LABEL, SIZE);
     b->InitArg(POINTER_POS, Store::UnmanagedPointerToWord(pointer));
-    return STATIC_CAST(Element *, b);
+    return static_cast<Element *>(b);
   }
   static Element *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == ROOTSETELEMENT_LABEL);
-    return STATIC_CAST(Element *, b);
+    return static_cast<Element *>(b);
   }
 
   word *GetPointer() {
-    return STATIC_CAST(word *, Store::DirectWordToUnmanagedPointer(GetArg(POINTER_POS)));
+    return static_cast<word *>(Store::DirectWordToUnmanagedPointer(GetArg(POINTER_POS)));
   }
   void PreGC() {
     ReplaceArg(VALUE_POS, *GetPointer());
@@ -53,10 +53,10 @@ public:
   using Queue::ToWord;
 
   static Set *New() {
-    return STATIC_CAST(Set *, Queue::New(initialSize));
+    return static_cast<Set *>(Queue::New(initialSize));
   }
   static Set *FromWordDirect(word x) {
-    return STATIC_CAST(Set *, Queue::FromWordDirect(x));
+    return static_cast<Set *>(Queue::FromWordDirect(x));
   }
 
   void Add(word &root) {

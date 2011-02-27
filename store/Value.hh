@@ -19,7 +19,7 @@
 class SeamDll Block {
 public:
   word *GetBase() {
-    return (word *) this + 1;
+    return reinterpret_cast<word *>(this) + 1;
   }
   BlockLabel GetLabel() {
     return HeaderOp::DecodeLabel(this);
@@ -36,12 +36,12 @@ public:
   }
   word GetArg(u_int f) {
     AssertStore(f < GetSize());
-    return ((word *) this)[f + 1];
+    return reinterpret_cast<word *>(this)[f + 1];
   }
   void InitArg(u_int f, word v) {
     AssertStore(f < GetSize());
     AssertStore(v != NULL);
-    ((word *) this)[f + 1] = v;
+    reinterpret_cast<word *>(this)[f + 1] = v;
   }
   void InitArg(u_int f, s_int v) {
     InitArg(f, Store::IntToWord(v));
@@ -49,7 +49,7 @@ public:
   void ReplaceArgUnchecked(u_int f, word v) {
     AssertStore(f < GetSize());
     AssertStore(v != NULL);
-    ((word *) this)[f + 1] = v;
+    reinterpret_cast<word *>(this)[f + 1] = v;
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);
@@ -129,7 +129,7 @@ public:
   using Block::ToWord;
 
   char *GetBase() {
-    return (char *) this + 2 * sizeof(u_int);
+    return reinterpret_cast<char *>(this) + 2 * sizeof(u_int);
   }
   u_int GetSize() {
     return Store::DirectWordToInt(GetArg(BYTESIZE_POS));
@@ -155,13 +155,13 @@ public:
     Block *p = Store::WordToBlock(x);
 
     AssertStore((p == INVALID_POINTER) || (p->GetLabel() == CHUNK_LABEL));
-    return (Chunk *) p;
+    return reinterpret_cast<Chunk *>(p);
   }
   static Chunk *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     
     AssertStore((p == INVALID_POINTER) || (p->GetLabel() == CHUNK_LABEL));
-    return (Chunk *) p;
+    return reinterpret_cast<Chunk *>(p);
   }
 };
 
@@ -210,12 +210,12 @@ public:
   static DynamicBlock *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     AssertStore((p == INVALID_POINTER) || (p->GetLabel() == DYNAMIC_LABEL));
-    return STATIC_CAST(DynamicBlock *, p);
+    return static_cast<DynamicBlock *>(p);
   }
   static DynamicBlock *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     AssertStore(p->GetLabel() == DYNAMIC_LABEL);
-    return STATIC_CAST(DynamicBlock *, p);
+    return static_cast<DynamicBlock *>(p);
   }
 };
 

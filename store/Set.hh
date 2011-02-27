@@ -21,7 +21,7 @@ protected:
   Set *Enlarge(u_int oldsize, u_int newsize, u_int gen) {
     DynamicBlock *p = Store::AllocDynamicBlock(newsize, 0, gen);
     std::memcpy(p->GetBase(), GetBase(), (oldsize + 1) * sizeof(u_int));
-    return STATIC_CAST(Set *, p);
+    return static_cast<Set *>(p);
   }
 public:
   using DynamicBlock::InitArg;
@@ -54,10 +54,10 @@ public:
   }
 
   static Set *New(u_int s, u_int gen = STORE_GEN_OLDEST) {
-    return STATIC_CAST(Set *, Store::AllocDynamicBlock(s, 0, gen));
+    return static_cast<Set *>(Store::AllocDynamicBlock(s, 0, gen));
   }
   static Set *FromWordDirect(word x) {
-    return STATIC_CAST(Set *, DynamicBlock::FromWordDirect(x));
+    return static_cast<Set *>(DynamicBlock::FromWordDirect(x));
   }
 };
 

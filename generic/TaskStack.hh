@@ -51,10 +51,10 @@ public:
   void SetTop(u_int top);
 
   StackFrame *GetFrame(u_int index) {
-    return (StackFrame *) (GetBase() + (index + 1));
+    return reinterpret_cast<StackFrame *>(GetBase() + (index + 1));
   }
   StackFrame *GetFrameBase() {
-    return (StackFrame *) GetBase();
+    return reinterpret_cast<StackFrame *>(GetBase());
   }
 
   static TaskStack *New(u_int size);
@@ -63,7 +63,7 @@ public:
   }
   static TaskStack *FromWordDirect(word x) {
     DynamicBlock *b = DynamicBlock::FromWordDirect(x);
-    return STATIC_CAST(TaskStack *, b);
+    return static_cast<TaskStack *>(b);
   }
 
   TaskStack *Enlarge();

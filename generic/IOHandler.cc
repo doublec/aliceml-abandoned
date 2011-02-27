@@ -42,7 +42,7 @@
 #include "generic/IOHandler.hh"
 
 namespace {
-  const BlockLabel ENTRY_LABEL = (BlockLabel) MIN_DATA_LABEL;
+  const BlockLabel ENTRY_LABEL = static_cast<BlockLabel>(MIN_DATA_LABEL);
 
   class Entry: private Block {
   private:
@@ -54,22 +54,22 @@ namespace {
       Block *block = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
       block->InitArg(FD_POS, fd);
       block->InitArg(FUTURE_POS, future->ToWord());
-      return STATIC_CAST(Entry *, block);
+      return static_cast<Entry *>(block);
     }
     static Entry *FromWordDirect(word w) {
       Block *block = Store::DirectWordToBlock(w);
       Assert(block->GetLabel() == ENTRY_LABEL);
-      return STATIC_CAST(Entry *, block);
+      return static_cast<Entry *>(block);
     }
 
     int GetFD() {
-      return (int) Store::DirectWordToInt(GetArg(FD_POS));
+      return static_cast<int>(Store::DirectWordToInt(GetArg(FD_POS)));
     }
     Future *GetFuture() {
       Transient *transient = Store::WordToTransient(GetArg(FUTURE_POS));
       Assert(transient != INVALID_POINTER &&
 	     transient->GetLabel() == FUTURE_LABEL);
-      return STATIC_CAST(Future *, transient);
+      return static_cast<Future *>(transient);
     }
   };
 
@@ -81,10 +81,10 @@ namespace {
     using Queue::Blank;
 
     static Set *New() {
-      return STATIC_CAST(Set *, Queue::New(initialQueueSize));
+      return static_cast<Set *>(Queue::New(initialQueueSize));
     }
     static Set *FromWordDirect(word w) {
-      return STATIC_CAST(Set *, Queue::FromWordDirect(w));
+      return static_cast<Set *>(Queue::FromWordDirect(w));
     }
 
     void Add(Entry *entry) {

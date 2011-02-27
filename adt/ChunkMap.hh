@@ -28,17 +28,17 @@ class SeamDll ChunkMap: public BaseMap<ChunkKey> {
 public:
   static ChunkMap *New(u_int size) {
     BaseMap<ChunkKey> *map = BaseMap<ChunkKey>::New(CHUNK_MAP_LABEL, size);
-    return STATIC_CAST(ChunkMap *, map);
+    return static_cast<ChunkMap *>(map);
   }
   static ChunkMap *FromWord(word x) {
     Block *map = Store::WordToBlock(x);
     Assert(map == INVALID_POINTER || map->GetLabel() == CHUNK_MAP_LABEL);
-    return STATIC_CAST(ChunkMap *, map);
+    return static_cast<ChunkMap *>(map);
   }
   static ChunkMap *FromWordDirect(word x) {
     Block *map = Store::DirectWordToBlock(x);
     Assert(map->GetLabel() == CHUNK_MAP_LABEL);
-    return STATIC_CAST(ChunkMap *, map);
+    return static_cast<ChunkMap *>(map);
   }
 };
 

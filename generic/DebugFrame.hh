@@ -20,7 +20,7 @@
 
 #include "generic/StackFrame.hh"
 
-class SeamDll DebugFrame: public StackFrame {
+class SeamDll DebugFrame: private StackFrame {
 private:
   enum { EVENT_POS, SIZE };
 public:
@@ -28,7 +28,7 @@ public:
   static DebugFrame *New(Worker *worker, word event) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(EVENT_POS, event);
-    return STATIC_CAST(DebugFrame *, frame);
+    return static_cast<DebugFrame *>(frame);
   }
 
   // DebugFrame Accessors

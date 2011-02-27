@@ -32,7 +32,7 @@ DynamicArray *DynamicArray::New(u_int initialSize) {
   p->InitArg(SIZE_POS, initialSize);
   p->InitArg(ARRAY_POS, a->ToWord());
   p->InitArg(INIT_ELEM_POS, INVALID_ARRAY_ELEM);
-  return STATIC_CAST(DynamicArray *, p);
+  return static_cast<DynamicArray *>(p);
 }
 
 DynamicArray *DynamicArray::NewInit(u_int initialSize, word initElem) {
@@ -49,19 +49,19 @@ DynamicArray *DynamicArray::NewInit(u_int initialSize, word initElem) {
     a->InitArg(i, initElem);
   }
 
-  return STATIC_CAST(DynamicArray *, p);
+  return static_cast<DynamicArray *>(p);
 }
 
 DynamicArray *DynamicArray::FromWord(word x) {
   Block *b = Store::WordToBlock(x);
   Assert(b == INVALID_POINTER || b->GetLabel() == DYNARRAY_LABEL);
-  return STATIC_CAST(DynamicArray *, b);
+  return static_cast<DynamicArray *>(b);
 }
 
 DynamicArray *DynamicArray::FromWordDirect(word x) {
   Block *b = Store::DirectWordToBlock(x);
   Assert(b->GetLabel() == DYNARRAY_LABEL);
-  return STATIC_CAST(DynamicArray *, b);
+  return static_cast<DynamicArray *>(b);
 }
 
 u_int DynamicArray::GetLength() {

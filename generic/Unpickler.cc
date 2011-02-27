@@ -96,10 +96,10 @@ private:
 
   static InputStream *New(IN_STREAM_TYPE type, u_int size) {
     InputStream *is =
-      (InputStream *) Store::AllocMutableBlock((BlockLabel) type, size);
-    is->InitArg(HD_POS, STATIC_CAST(s_int, 0));
-    is->InitArg(RD_POS, STATIC_CAST(s_int, 0));
-    is->InitArg(EOB_POS, STATIC_CAST(s_int, false));
+      static_cast<InputStream *>(Store::AllocMutableBlock(static_cast<BlockLabel>(type), size));
+    is->InitArg(HD_POS, static_cast<s_int>(0));
+    is->InitArg(RD_POS, static_cast<s_int>(0));
+    is->InitArg(EOB_POS, static_cast<s_int>(false));
     return is;
   }
 public:
@@ -119,7 +119,7 @@ public:
 	Store::AllocMutableChunk(READ_BUFFER_SIZE + READ_BUFFER_OVERSHOOT);
       is->InitArg(BUFFER_POS, buffer->ToWord());
     }
-    is->InitArg(TL_POS, STATIC_CAST(s_int, 0));
+    is->InitArg(TL_POS, static_cast<s_int>(0));
     is->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(is->ToWord()));
     return is;
   }
@@ -134,21 +134,21 @@ public:
   static InputStream *FromWordDirect(word stream) {
     Block *p = Store::DirectWordToBlock(stream);
     Assert(p != INVALID_POINTER);
-    Assert(p->GetLabel() == (BlockLabel) FILE_INPUT_STREAM ||
-	   p->GetLabel() == (BlockLabel) STRING_INPUT_STREAM);
-    return STATIC_CAST(InputStream *, p);
+    Assert(p->GetLabel() == static_cast<BlockLabel>(FILE_INPUT_STREAM) ||
+           p->GetLabel() == static_cast<BlockLabel>(STRING_INPUT_STREAM));
+    return static_cast<InputStream *>(p);
   }
 
   // InputStream Methods
   gzFile GetFile() {
-    Assert(GetLabel() == (BlockLabel) FILE_INPUT_STREAM);
-    return STATIC_CAST(gzFile, Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+    Assert(GetLabel() == static_cast<BlockLabel>(FILE_INPUT_STREAM));
+    return static_cast<gzFile>(Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
   bool IsEOB() {
     return Store::DirectWordToInt(Block::GetArg(EOB_POS));
   }
   bool IsEOF() {
-    switch ((IN_STREAM_TYPE) GetLabel()) {
+    switch (static_cast<IN_STREAM_TYPE>(GetLabel())) {
     case FILE_INPUT_STREAM:
       if (GetRd() >= GetTl() &&
 	  gzgetc(GetFile()) < 0) {
@@ -167,7 +167,7 @@ public:
     u_int rd = GetRd();
     if (rd >= GetTl()) {
       SetEOB(true);
-      return (u_char) 0;
+      return static_cast<u_char>(0);
     } else {
       SetRd(rd + 1);
       u_char *buffer = GetBuffer()->GetValue();
@@ -192,7 +192,7 @@ public:
     do {
       b = GetByte(); if (IsEOB()) return 0;
       u_char c = b & 0x7F;
-      if ((u_int) c >= (u_int) (1 << freeBits)) {
+      if (static_cast<u_int>(c) >= static_cast<u_int>(1 << freeBits)) {
       	Error("Unpickler: integer out of range"); //--** raise exception
       }
       value |= c << shift;
@@ -205,7 +205,7 @@ public:
     SetHd(GetRd());
   }
   void Close() {
-    switch ((IN_STREAM_TYPE) GetLabel()) {
+    switch (static_cast<IN_STREAM_TYPE>(GetLabel())) {
     case FILE_INPUT_STREAM:
       {
 	gzclose(GetFile());
@@ -220,7 +220,7 @@ public:
     }
   }
   void Rewind() {
-    switch ((IN_STREAM_TYPE) GetLabel()) {
+    switch (static_cast<IN_STREAM_TYPE>(GetLabel())) {
     case FILE_INPUT_STREAM:
       {
 	gzrewind(GetFile());
@@ -240,7 +240,7 @@ public:
     SetEOB(false);
   }
   Worker::Result FillBuffer() {
-    switch ((IN_STREAM_TYPE) GetLabel()) {
+    switch (static_cast<IN_STREAM_TYPE>(GetLabel())) {
     case FILE_INPUT_STREAM:
       {
 	u_int hd = GetHd(), tl = GetTl();
@@ -272,7 +272,7 @@ public:
 	gzFile file = GetFile();
     if (size > UINT_MAX)
       Error("InputStream::FillBuffer");
-	int nread = gzread(file, bytes, (unsigned int) size);
+	int nread = gzread(file, bytes, static_cast<unsigned int>(size));
 	if (nread < 0) {
 	  Scheduler::SetCurrentData(Pickler::IOError);
 	  StackFrame *frame = Scheduler::GetFrame();
@@ -402,14 +402,14 @@ public:
     frame->InitArg(FUTURE_POS, future->ToWord());
     frame->InitArg(NAME_POS, name->ToWord());
     frame->InitArg(ARG_POS, arg);
-    return STATIC_CAST(TransformFrame *, frame);
+    return static_cast<TransformFrame *>(frame);
   }
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
   }
   Future *GetFuture() {
     return
-      STATIC_CAST(Future *, Store::DirectWordToTransient(GetArg(FUTURE_POS)));
+      static_cast<Future *>(Store::DirectWordToTransient(GetArg(FUTURE_POS)));
   }
   String *GetName() {
     return String::FromWordDirect(GetArg(NAME_POS));
@@ -445,7 +445,7 @@ void TransformWorker::PushFrame(Future *future,
 }
 
 u_int TransformWorker::GetFrameSize(StackFrame *sFrame) {
-  TransformFrame *frame = STATIC_CAST(TransformFrame *, sFrame);
+  TransformFrame *frame = reinterpret_cast<TransformFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
@@ -459,7 +459,7 @@ void TransformWorker::DumpFrame(StackFrame *) {
 }
 
 Worker::Result TransformWorker::Run(StackFrame *sFrame) {
-  TransformFrame *frame = STATIC_CAST(TransformFrame *, sFrame);
+  TransformFrame *frame = reinterpret_cast<TransformFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
 
   Future *f = frame->GetFuture();
@@ -471,13 +471,13 @@ Worker::Result TransformWorker::Run(StackFrame *sFrame) {
   ChunkMap *map = ChunkMap::FromWordDirect(handlerTable);
   
   if (map->IsMember(name->ToWord())) {
-    Unpickler::handler handler = (Unpickler::handler)
-      Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
+    Unpickler::handler handler = reinterpret_cast<Unpickler::handler>
+      (Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord())));
     f->Become(REF_LABEL, handler(argument));
   } else {
     Scheduler::SetCurrentData(Unpickler::Corrupt);
     Scheduler::SetCurrentBacktrace(
-      Backtrace::New(STATIC_CAST(StackFrame *, frame)->Clone()));
+      Backtrace::New(reinterpret_cast<StackFrame *>(frame)->Clone()));
     Scheduler::PopFrame();
     return Worker::RAISE;
   }
@@ -497,8 +497,8 @@ bool ApplyTransform(String *name, word argument, word *newBlock,
   ChunkMap *map = ChunkMap::FromWordDirect(handlerTable);
 
   if (map->IsMember(name->ToWord())) {
-    Unpickler::handler handler = (Unpickler::handler)
-      Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
+    Unpickler::handler handler = reinterpret_cast<Unpickler::handler>
+      (Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord())));
     *newBlock = handler(argument);
     return false;
   } else {
@@ -647,7 +647,7 @@ public:
     for (u_int i = frSize - SIZE; i--;) {
       frame->InitArg(SIZE+i, Store::IntToWord(0));
     }
-    return STATIC_CAST(UnpickleFrame *, frame);
+    return static_cast<UnpickleFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -664,7 +664,7 @@ public:
   }
   word Pop() {
     u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
-    Assert(tp > (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    Assert(tp > static_cast<u_int>(Store::DirectWordToInt(GetArg(LOCALS_POS))));
     tp--;
     word result = GetArg(tp);
     ReplaceArg(TOP_POS, Store::IntToWord(tp));
@@ -672,16 +672,16 @@ public:
   }
   word Top() {
     u_int tp = Store::DirectWordToInt(GetArg(TOP_POS));
-    Assert(tp > (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    Assert(tp > static_cast<u_int>(Store::DirectWordToInt(GetArg(LOCALS_POS))));
     return GetArg(tp-1);
   }
   void Store(u_int i, word value) {
-    Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    Assert(i < static_cast<u_int>(Store::DirectWordToInt(GetArg(LOCALS_POS))));
     Assert( Store::WordToInt(GetArg(SIZE+i)) == 0);
     ReplaceArg(SIZE+i, value);
   }
   word Load(u_int i) {
-    Assert(i < (u_int) Store::DirectWordToInt(GetArg(LOCALS_POS)));
+    Assert(i < static_cast<u_int>(Store::DirectWordToInt(GetArg(LOCALS_POS))));
     Assert(i == 0 || Store::WordToInt(GetArg(SIZE+i)) == INVALID_INT);
     return GetArg(SIZE+i);
   }
@@ -799,7 +799,7 @@ public:
       *newBlock = b->ToWord();
       return false;
     } else {
-      Future *f = STATIC_CAST(Future *,	Store::DirectWordToTransient(future));
+      Future *f = static_cast<Future *>(Store::DirectWordToTransient(future));
 
       word argument  = frame->Pop();
       String *name   = String::FromWordDirect(frame->Pop());
@@ -849,14 +849,14 @@ void UnpickleWorker::PushFrame(u_int stackSize, u_int localsSize) {
 
 
 u_int UnpickleWorker::GetFrameSize(StackFrame *sFrame) {
-  UnpickleFrame *frame = STATIC_CAST(UnpickleFrame *, sFrame);
+  UnpickleFrame *frame = reinterpret_cast<UnpickleFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 // Core Unpickling Function
 Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
-  UnpickleFrame *frame = STATIC_CAST(UnpickleFrame *, sFrame);
+  UnpickleFrame *frame = reinterpret_cast<UnpickleFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
 
   InputStream *is = UnpickleArgs::GetInputStream();
@@ -867,7 +867,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
     word newBlock;
     bool mustContinue = false;
     u_char tag = is->GetByte(); NCHECK_EOB();
-    switch (STATIC_CAST(Pickle::Tag, tag)) {
+    switch (static_cast<Pickle::Tag>(tag)) {
     case Pickle::INIT:
       {
 	NCORRUPT();
@@ -952,7 +952,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	is->Commit();
 
 	mustContinue =
-	  StoreAbstraction::AllocBlock(STATIC_CAST(BlockLabel, label),
+	  StoreAbstraction::AllocBlock(static_cast<BlockLabel>(label),
 				       size, frame, &newBlock, true);
 	frame->Push(newBlock);
       }
@@ -964,7 +964,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	is->Commit();
 
 	mustContinue =
-	  StoreAbstraction::AllocBlock(STATIC_CAST(BlockLabel, label),
+	  StoreAbstraction::AllocBlock(static_cast<BlockLabel>(label),
 				       size, frame, &newBlock);
 	frame->Push(newBlock);
       }
@@ -1008,7 +1008,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	is->Commit();
 
 	word block =
-	  StoreAbstraction::AnnounceBlock(STATIC_CAST(BlockLabel, label),
+	  StoreAbstraction::AnnounceBlock(static_cast<BlockLabel>(label),
 					  size);
 	frame->PushStore(addr, block);
       }
@@ -1022,7 +1022,7 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 
 	word block =
 	  StoreAbstraction::AnnounceBlock
-	  (STATIC_CAST(BlockLabel, label), size, true);
+	  (static_cast<BlockLabel>(label), size, true);
 	frame->PushStore(addr, block);
       }
       break;
@@ -1156,7 +1156,7 @@ Worker::Result PickleCheckWorker::Run(StackFrame *sFrame) {
   u_int stackSize = 0;
   u_int localsSize = 0;
 
-  if (!strncmp((char*)magic, "seam", 4)) {
+  if (!strncmp(reinterpret_cast<char*>(magic), "seam", 4)) {
     is->Commit();
     u_int major = is->GetUInt(); PCHECK_EOB();
     is->Commit();
@@ -1167,7 +1167,7 @@ Worker::Result PickleCheckWorker::Run(StackFrame *sFrame) {
         is->Commit();
         u_char tag = is->GetByte(); PCHECK_EOB();
 
-        if (STATIC_CAST(Pickle::Tag, tag) == Pickle::INIT) {
+        if (static_cast<Pickle::Tag>(tag) == Pickle::INIT) {
           is->Commit();
           stackSize = is->GetUInt(); PCHECK_EOB();
           is->Commit();
@@ -1254,7 +1254,7 @@ void Unpickler::Init() {
 }
 
 void Unpickler::RegisterHandler(String *name, handler handler) {
-  word x = Store::UnmanagedPointerToWord((void *) handler);
+  word x = Store::UnmanagedPointerToWord(reinterpret_cast<void *>(handler));
   ChunkMap::FromWordDirect(handlerTable)->Put(name->ToWord(), x);
 }
 
@@ -1279,14 +1279,14 @@ namespace gzip {
 
     namespace {
         unsigned long number2 (const ubyte_t *arr) {
-            return (unsigned long)arr[0] + (unsigned long)arr[1] * 256UL;
+            return static_cast<unsigned long>(arr[0]) + static_cast<unsigned long>(arr[1]) * 256UL;
         }
 
         unsigned long number4 (const ubyte_t *arr) {
-            return ((unsigned long)arr[0] + 
-                    (unsigned long)arr[1] * 256UL + 
-                    (unsigned long)arr[2] * 256UL * 256UL + 
-                    (unsigned long)arr[3] * 256UL * 256UL);
+            return (static_cast<unsigned long>(arr[0]) +
+                    static_cast<unsigned long>(arr[1]) * 256UL +
+                    static_cast<unsigned long>(arr[2]) * 256UL * 256UL +
+                    static_cast<unsigned long>(arr[3]) * 256UL * 256UL);
         }
     }
 
@@ -1319,7 +1319,7 @@ namespace gzip {
                           unsigned long &compressed_len,
                           unsigned long &uncompressed_len) {
         if (srclen < sizeof(header) + sizeof(trailer)) return false;
-        const header  *h = (const header*)src;
+        const header  *h = reinterpret_cast<const header*>(src);
         src += sizeof(header);
         srclen -= (sizeof(header) + sizeof(trailer));
         // correct gzip magic identification numbers?
@@ -1348,7 +1348,7 @@ namespace gzip {
         
         compressed_start = src;
         
-        const trailer *t = (const trailer*)(src + srclen);
+        const trailer *t = reinterpret_cast<const trailer*>(src + srclen);
 
         uncompressed_len = number4 (t->isize);
         compressed_len = srclen;
@@ -1368,17 +1368,17 @@ String *Unpickler::Unzip (String *s) {
     if (gzip::parse_meta_data (str, s->GetSize (), compressed_start,
                 compressed_len, uncompressed_len)) {
       
-        if ((uInt) compressed_len != compressed_len || (uInt) uncompressed_len != uncompressed_len)
+        if (static_cast<uInt>(compressed_len) != compressed_len || static_cast<uInt>(uncompressed_len) != uncompressed_len)
           Error("Unpickler::Unzip");
         
         String *res = String::New (uncompressed_len);
         z_stream stream;
-        stream.next_in   = (Bytef*)compressed_start;
-        stream.avail_in  = (uInt) compressed_len;
+        stream.next_in   = static_cast<Bytef*>(compressed_start);
+        stream.avail_in  = static_cast<uInt>(compressed_len);
         stream.next_out  = res->GetValue ();
-        stream.avail_out = (uInt) uncompressed_len;
-        stream.zalloc    = (alloc_func) 0;
-        stream.zfree     = (free_func) 0;
+        stream.avail_out = static_cast<uInt>(uncompressed_len);
+        stream.zalloc    = static_cast<alloc_func>(0);
+        stream.zfree     = static_cast<free_func>(0);
 
         // raw deflate no zlib / gzip header handling
         // as we have already done that

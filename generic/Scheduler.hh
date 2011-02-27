@@ -112,9 +112,9 @@ public:
     return currentThread;
   }
   static u_int GetCurrentStackTop() {
-    word *base = (word *) currentTaskStack->GetFrameBase();
+    word *base = reinterpret_cast<word *>(currentTaskStack->GetFrameBase());
     Assert(stackTop < stackMax);
-    return STATIC_CAST(u_int, stackTop - base);
+    return static_cast<u_int>(stackTop - base);
   }
 
   // Scheduler Thread Functions
@@ -156,7 +156,7 @@ public:
   static void EnlargeTaskStack() {
     u_int top = GetCurrentStackTop();
     currentTaskStack = currentTaskStack->Enlarge();
-    word *base = (word *) currentTaskStack->GetFrameBase();
+    word *base = reinterpret_cast<word *>(currentTaskStack->GetFrameBase());
     stackTop = base + top;
     stackMax = base + currentTaskStack->GetSize();
   }
@@ -168,15 +168,15 @@ public:
       goto loop;
     }
     stackTop = newTop;
-    return (StackFrame *) newTop;
+    return reinterpret_cast<StackFrame *>(newTop);
   }
   static StackFrame *GetFrame() {
-    return (StackFrame *) stackTop;
+    return reinterpret_cast<StackFrame *>(stackTop);
   }
   // We need two PopFrame's: one for known frame size and generic
   static void PopFrame(u_int size) {
-    Assert((u_int) (stackTop - 1 - size) >= 
-	   (u_int) currentTaskStack->GetFrameBase());
+    Assert(reinterpret_cast<u_int>(stackTop - 1 - size) >=
+           reinterpret_cast<u_int>(currentTaskStack->GetFrameBase()));
     stackTop -= size;
   }
   static void PopFrame() {

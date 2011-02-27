@@ -66,7 +66,7 @@ inline void Scheduler::SwitchToThread() {
   Assert(currentThread->GetState() == Thread::RUNNABLE);
   Assert(!currentThread->IsSuspended());
   currentTaskStack = currentThread->GetTaskStack();
-  word *base = (word *) currentTaskStack->GetFrameBase();
+  word *base = reinterpret_cast<word *>(currentTaskStack->GetFrameBase());
   stackTop = base + currentTaskStack->GetTop();
   stackMax = base + currentTaskStack->GetSize();
   word args = currentThread->GetArgs(nArgs);
@@ -199,7 +199,7 @@ int Scheduler::Run() {
 	      {
 		FlushThread();
 		currentThread->Purge();
-		Future *future = STATIC_CAST(Future *, transient);
+		Future *future = static_cast<Future *>(transient);
 		future->AddToWaitQueue(currentThread);
 		currentThread->BlockOn(transient->ToWord());
 		nextThread = true;
@@ -216,13 +216,13 @@ int Scheduler::Run() {
 	      {
 		Thread *newThread = NewThread(0, Store::IntToWord(0));
 		BindFutureWorker::PushFrame(newThread, transient);
-		Closure *byneedClosure = STATIC_CAST(Byneed*, transient)->GetClosure();
+		Closure *byneedClosure = static_cast<Byneed*>(transient)->GetClosure();
 		PushCallWorker::PushFrame(newThread, byneedClosure->ToWord());
 		// The future's argument is an empty wait queue:
 		transient->Become(FUTURE_LABEL, Store::IntToWord(0));
 		FlushThread();
 		currentThread->Purge();
-		Future *future = STATIC_CAST(Future *, transient);
+		Future *future = static_cast<Future *>(transient);
 		future->AddToWaitQueue(currentThread);
 		currentThread->BlockOn(transient->ToWord());
 		nextThread = true;
@@ -240,7 +240,7 @@ int Scheduler::Run() {
 	  nextThread = true;
 	  break;
 	case Worker::EXIT:
-	  return (int) Store::DirectWordToInt(currentData);
+	  return static_cast<int>(Store::DirectWordToInt(currentData));
 	}
       }
       if (Store::NeedGC()) {

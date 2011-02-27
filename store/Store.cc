@@ -107,7 +107,7 @@ void Store::Signal() {
 
 inline Block *Store::CloneBlock(Block *p, const u_int gen) {
   u_int size  = p->GetSize();
-  Block *newp = (Block *) Store::Alloc(gen, p->GetLabel(), size);
+  Block *newp = reinterpret_cast<Block *>(Store::Alloc(gen, p->GetLabel(), size));
   if (HeaderOp::DecodeMutableFlag(p))
     HeaderOp::EncodeMutableFlag(newp, 1);
   std::memcpy(newp->GetBase(), p->GetBase(), size * sizeof(u_int));
@@ -139,7 +139,7 @@ inline void Store::CheneyScan(HeapChunk *chunk, char *scan, const u_int gen) {
     scan = chunk->GetBase();
   have_scan:
     while (scan < chunk->GetTop()) {
-      Block *p   = (Block *) scan;
+      Block *p   = reinterpret_cast<Block *>(scan);
       u_int size = p->GetSize();
       // Move scan pointer ahead
       scan += SIZEOF_BLOCK(size);
@@ -153,7 +153,7 @@ inline void Store::CheneyScan(HeapChunk *chunk, char *scan, const u_int gen) {
 	}
       }
       else if (l == DYNAMIC_LABEL) {
-    	size = ((DynamicBlock *) p)->GetScanSize();
+    	size = reinterpret_cast<DynamicBlock *>(p)->GetScanSize();
 //  	// Purge non-active size
 //  	u_int scanSize = ((DynamicBlock *) p)->GetScanSize();
 //  	for (u_int i = size - 1; i >= scanSize; i--)
@@ -191,7 +191,7 @@ inline void Store::FinalizeCheneyScan(HeapChunk *chunk, char *scan) {
     scan = chunk->GetBase();
   have_scan:
     while (scan < chunk->GetTop()) {
-      Block *p   = (Block *) scan;
+      Block *p   = reinterpret_cast<Block *>(scan);
       u_int size = p->GetSize();
       // Move scan pointer ahead
       scan += SIZEOF_BLOCK(size);
@@ -208,7 +208,7 @@ inline void Store::FinalizeCheneyScan(HeapChunk *chunk, char *scan) {
 	      sp   = GCHelper::GetForwardPtr(sp);
 	      item = PointerOp::EncodeTag(sp, PointerOp::DecodeTag(item)); 
 	    }
-	    else if (IsInFromSpace(roots, (char *) sp)) {
+	    else if (IsInFromSpace(roots, reinterpret_cast<char *>(sp))) {
 	      sp   = CloneBlock(sp, STORE_GENERATION_NUM - 1);
 	      item = PointerOp::EncodeTag(sp, PointerOp::DecodeTag(item)); 
 	    }
@@ -217,8 +217,8 @@ inline void Store::FinalizeCheneyScan(HeapChunk *chunk, char *scan) {
 	}
       }
       else if (l == DYNAMIC_LABEL) {
-	size = ((DynamicBlock *) p)->GetScanSize();
-	goto scan;
+        size = reinterpret_cast<DynamicBlock *>(p)->GetScanSize();
+        goto scan;
       }
     }
     chunk = chunk->GetPrev();
@@ -229,7 +229,7 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
 		      u_int mem_free, u_int mem_tolerance) {
   StatusWord::Init();
   for (u_int i = STORE_GENERATION_NUM; i--;) {
-    char *p = (char *) roots + sizeof(Heap) * i;
+    char *p = reinterpret_cast<char *>(roots) + sizeof(Heap) * i;
     new(p) Heap(STORE_MEMCHUNK_SIZE, mem_max[i]);
   }
   Store::memFree      = mem_free;
@@ -286,7 +286,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
 	bool foundYoungPtrs = false;
 	u_int entrySize =
 	  ((entry->GetLabel() == DYNAMIC_LABEL) ?
-	   ((DynamicBlock *) entry)->GetScanSize() : entry->GetSize());
+	   reinterpret_cast<DynamicBlock *>(entry)->GetScanSize() : entry->GetSize());
 	for (u_int k = entrySize; k--;) {
 	  word wItem = GCHelper::Deref(entry->GetArg(k));
 	  if (PointerOp::IsInt(wItem))
@@ -316,7 +316,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
 // Value is non Dict or empty Dict ?
 #define FINALIZE_PERMITTED(p) \
   ((p->GetLabel() != WEAK_MAP_LABEL) || \
-   ((p->GetLabel() == WEAK_MAP_LABEL) && ((WeakMap *) p)->GetCounter() == 0))
+   ((p->GetLabel() == WEAK_MAP_LABEL) && reinterpret_cast<WeakMap *>(p)->GetCounter() == 0))
 
 void Store::HandleWeakDictionaries(const u_int gen) {
 #if defined(STORE_DEBUG)
@@ -345,8 +345,8 @@ void Store::HandleWeakDictionaries(const u_int gen) {
       Block *newp = CloneBlock(dp, gen);
       ndict = PointerOp::EncodeTag(newp, PointerOp::DecodeTag(dict));
       // Finalize only empty dict
-      if (((WeakMap *) newp)->GetCounter() == 0) {
-	word handler = ((WeakMap *) newp)->GetHandler();
+      if (reinterpret_cast<WeakMap *>(newp)->GetCounter() == 0) {
+	word handler = reinterpret_cast<WeakMap *>(newp)->GetHandler();
 	finSet = finSet->Add(ndict, gen);
 	finSet = finSet->Add(handler, gen);
       }
@@ -512,9 +512,9 @@ void Store::DoGCWithoutFinalize(word &root) {
   case STORE_GEN_OLDEST:
     {
       // Major collection
-      intgenSet = (Set *) CloneBlock((Block *) intgenSet, STORE_GEN_OLDEST + 1);
-      wkDictSet = (Set *) CloneBlock((Block *) wkDictSet, STORE_GEN_OLDEST + 1);
-      finSet    = (Set *) CloneBlock((Block *) finSet, STORE_GEN_OLDEST + 1);
+      intgenSet = reinterpret_cast<Set *>(CloneBlock(reinterpret_cast<Block *>(intgenSet), STORE_GEN_OLDEST + 1));
+      wkDictSet = reinterpret_cast<Set *>(CloneBlock(reinterpret_cast<Block *>(wkDictSet), STORE_GEN_OLDEST + 1));
+      finSet    = reinterpret_cast<Set *>(CloneBlock(reinterpret_cast<Block *>(finSet), STORE_GEN_OLDEST + 1));
       GC(root, STORE_GEN_OLDEST + 1);
       // Calc limits for next major GC
       // to be done: find appropriate heuristics
@@ -568,7 +568,7 @@ void Store::DoFinalize() {
   Set *set = finSet;
   for (u_int i = set->GetSize(); i--;) {
     Finalization *handler =
-      (Finalization *) Store::DirectWordToUnmanagedPointer(set->GetArg(i--));
+      reinterpret_cast<Finalization *>(Store::DirectWordToUnmanagedPointer(set->GetArg(i--)));
     handler->Finalize(set->GetArg(i));
   }
 }
@@ -728,7 +728,7 @@ static void Verify(Heap *roots, word x) {
       PrintFailurePath();
       AssertStore(0);
     }
-    u_int key = ((u_int) p % MAX_ITERATION_STEPS);
+    u_int key = static_cast<u_int>(p) % MAX_ITERATION_STEPS;
     if (elems[key] == NULL) {
       elems[key] = p;
       size++;
@@ -766,7 +766,7 @@ static void Locate(word x, word v) {
   AssertStore(size < MAX_ITERATION_STEPS);
   if (!PointerOp::IsInt(x)) {
     Block *p = PointerOp::RemoveTag(x);
-    u_int key = ((u_int) p % MAX_ITERATION_STEPS);
+    u_int key = static_cast<u_int>(p) % MAX_ITERATION_STEPS;
     if (elems[key] == NULL) {
       elems[key] = p;
       size++;
@@ -816,8 +816,8 @@ void Store::MemStat() {
     u_int total     = 0;
     while (chunk != NULL) {
       char *base = chunk->GetBase();
-      used  += (u_int) (chunk->GetTop() - base);
-      total += (u_int) (chunk->GetMax() - base);
+      used  += static_cast<u_int>(chunk->GetTop() - base);
+      total += static_cast<u_int>(chunk->GetMax() - base);
       chunk = chunk->GetNext();
     }
     std::fprintf(stderr, "G%8"U_INTF" --> Used: %16"U_INTF"; Total: %16"U_INTF"; GC-Limit: %16"U_INTF".\n", i, used, total, roots[i].GetLimit());

@@ -50,7 +50,7 @@ static DllLoader::libhandle LoadLanguageLayer(String *languageId) {
   word wLanguageId = languageId->ToWord();
   if (languageLayerTable->IsMember(wLanguageId)) {
     word w = languageLayerTable->Get(wLanguageId);
-    return (DllLoader::libhandle) Store::DirectWordToUnmanagedPointer(w);
+    return reinterpret_cast<DllLoader::libhandle>(Store::DirectWordToUnmanagedPointer(w));
   } else {
     u_int n = languageId->GetSize();
     String *filename = String::New(n + 4);
@@ -76,7 +76,7 @@ void Broker::Start(String *languageId, int argc, char *argv[]) {
     Error("could not link language layer library");
   }
   void (*Start)(int, char *[]) =
-    (void (*)(int, char *[])) DllLoader::GetSymbol(handle, String::New("Start"));
+    reinterpret_cast<void (*)(int, char *[])>(DllLoader::GetSymbol(handle, String::New("Start")));
   if (Start == NULL) {
     Error("could not start language layer");
   }
@@ -87,8 +87,8 @@ Worker::Result Broker::Load(String *languageId, String *key) {
   DllLoader::libhandle handle = LoadLanguageLayer(languageId);
   if (handle == NULL) RAISE(BrokerError);
   Worker::Result (*Load)(String *) =
-    (Worker::Result (*)(String *)) DllLoader::GetSymbol(handle, 
-							String::New("Load"));
+    reinterpret_cast<Worker::Result (*)(String *)>
+      (DllLoader::GetSymbol(handle,  String::New("Load")));
   if (Load == NULL) RAISE(BrokerError);
   return Load(key);
 }
@@ -102,5 +102,5 @@ word Broker::Lookup(String *name) {
   ChunkMap *nameValueTable = ChunkMap::FromWordDirect(wNameValueTable);
   if (nameValueTable->IsMember(name->ToWord()))
     return nameValueTable->Get(name->ToWord());
-  return (word) 0; //--**
+  return static_cast<word>(0); //--**
 }

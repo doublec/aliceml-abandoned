@@ -59,11 +59,11 @@ protected:
     for (;;) {
       HeapChunk *current = roots[g].GetChain();
       char *p = current->GetTop();
-      ((u_int *) p)[0] = header;
+      reinterpret_cast<u_int *>(p)[0] = header;
       char *newtop = p + SIZEOF_BLOCK(s);
       if (newtop >= current->GetMax()) {
-	Enlarge(g);
-	continue;
+        Enlarge(g);
+        continue;
       }
       current->SetTop(newtop);
       return p;
@@ -72,7 +72,7 @@ protected:
   static Block *InternalAlloc(u_int g, BlockLabel l, u_int s) {
     AssertStore(g <= (STORE_GENERATION_NUM - 1));
     AssertStore(s <= MAX_BIGBLOCKSIZE);
-    return (Block *) Store::Alloc(g, l, HeaderOp::TranslateSize(s));
+    return reinterpret_cast<Block *>(Store::Alloc(g, l, HeaderOp::TranslateSize(s)));
   }
   static void GC(word &root, const u_int gen);
 public:
@@ -111,7 +111,7 @@ public:
   // DataLabel Function
   static BlockLabel MakeLabel(u_int l) {
     AssertStore(l <= MAX_HELPER_LABEL);
-    return (BlockLabel) l;
+    return static_cast<BlockLabel>(l);
   }
   // Allocation Functions
   static Block *AllocBlock(BlockLabel l, u_int s, u_int gen = 0) {
@@ -127,27 +127,27 @@ public:
   static Chunk *AllocChunk(u_int s, u_int gen = 0) {
     u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
     Block *p = Store::InternalAlloc(gen, CHUNK_LABEL, ws);
-    ((word *) p)[1] = PointerOp::EncodeInt(s);
-    return (Chunk *) p;
+    reinterpret_cast<word *>(p)[1] = PointerOp::EncodeInt(s);
+    return reinterpret_cast<Chunk *>(p);
   }
   static Chunk *AllocMutableChunk(u_int s, u_int gen = 0) {
     u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
     Block *p = Store::InternalAlloc(gen, CHUNK_LABEL, ws);
-    ((word *) p)[1] = PointerOp::EncodeInt(s);
+    reinterpret_cast<word *>(p)[1] = PointerOp::EncodeInt(s);
     HeaderOp::EncodeMutableFlag(p, 1);
-    return (Chunk *) p;
+    return reinterpret_cast<Chunk *>(p);
   }
   static Transient *AllocTransient(BlockLabel l) {
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     Block *p = Store::InternalAlloc(0, l, 1);
     HeaderOp::EncodeMutableFlag(p, 1);
-    return (Transient *) p;
+    return reinterpret_cast<Transient *>(p);
   }
   static DynamicBlock *AllocDynamicBlock(u_int size, u_int scan, u_int g = 0) {
     Block *p = Store::InternalAlloc(g, DYNAMIC_LABEL, size + 1);
-    ((word *) p)[1] = PointerOp::EncodeInt(scan);
+    reinterpret_cast<word *>(p)[1] = PointerOp::EncodeInt(scan);
     HeaderOp::EncodeMutableFlag(p, 1);
-    return (DynamicBlock *) p;
+    return reinterpret_cast<DynamicBlock *>(p);
   }
   // Conversion Functions
   static word IntToWord(s_int v) {
@@ -161,7 +161,7 @@ public:
     return p;
   }
   static Transient *DirectWordToTransient(word v) {
-    AssertStore(((u_int) v & TAGMASK) == TRTAG);
+    AssertStore((static_cast<u_int>(v) & TAGMASK) == TRTAG);
     Transient *p = PointerOp::DirectDecodeTransient(PointerOp::Deref(v));
     return p;
   }
@@ -183,11 +183,11 @@ public:
     return PointerOp::DecodeUnmanagedPointer(PointerOp::Deref(x));
   }
   static s_int DirectWordToInt(word x) {
-    AssertStore(((u_int) x & INTMASK) == INTTAG);
+    AssertStore((static_cast<u_int>(x) & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeInt(x);
   }
   static Block *DirectWordToBlock(word x) {
-    AssertStore(((u_int) x & TAGMASK) == BLKTAG);
+    AssertStore((static_cast<u_int>(x) & TAGMASK) == BLKTAG);
     Block *p = PointerOp::DirectDecodeBlock(x);
     return p;
   }
@@ -198,7 +198,7 @@ public:
     return p;
   }
   static void *DirectWordToUnmanagedPointer(word x) {
-    AssertStore(((u_int) x & INTMASK) == INTTAG);
+    AssertStore((static_cast<u_int>(x) & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeUnmanagedPointer(x);
   }
   // Calculate Block Size according to given size (used only for assertions)

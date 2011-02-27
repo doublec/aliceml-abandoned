@@ -34,17 +34,17 @@ class SeamDll IntMap: public BaseMap<IntKey> {
 public:
   static IntMap *New(u_int size) {
     BaseMap<IntKey> *map = BaseMap<IntKey>::New(INT_MAP_LABEL, size);
-    return STATIC_CAST(IntMap *, map);
+    return static_cast<IntMap *>(map);
   }
   static IntMap *FromWord(word x) {
     Block *map = Store::WordToBlock(x);
     Assert(map == INVALID_POINTER || map->GetLabel() == INT_MAP_LABEL);
-    return STATIC_CAST(IntMap *, map);
+    return static_cast<IntMap *>(map);
   }
   static IntMap *FromWordDirect(word x) {
     Block *map = Store::DirectWordToBlock(x);
     Assert(map->GetLabel() == INT_MAP_LABEL);
-    return STATIC_CAST(IntMap *, map);
+    return static_cast<IntMap *>(map);
   }
 };
 

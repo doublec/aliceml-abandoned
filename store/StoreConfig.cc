@@ -128,7 +128,7 @@ static void CreateLabel(std::FILE *f, unsigned long size) {
 
   std::fprintf(f, "typedef enum {\n");
 
-  std::fprintf(f, "  MIN_DATA_LABEL      = 0x%lx,\n", (unsigned long) 0);
+  std::fprintf(f, "  MIN_DATA_LABEL      = 0x%lx,\n", 0LU);
   std::fprintf(f, "  MAX_DATA_LABEL      = 0x%lx,\n", (size - 8 - arr_size));
   std::fprintf(f, "  MIN_HELPER_LABEL    = 0x%lx,\n\n", (size - 7 - arr_size));
 

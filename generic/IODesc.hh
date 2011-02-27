@@ -84,12 +84,12 @@ public:
   static IODesc *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER || p->GetLabel() == IODESC_LABEL);
-    return STATIC_CAST(IODesc *, p);
+    return static_cast<IODesc *>(p);
   }
   static IODesc *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == IODESC_LABEL);
-    return STATIC_CAST(IODesc *, p);
+    return static_cast<IODesc *>(p);
   }
 
   u_int GetType() {
@@ -104,7 +104,7 @@ public:
 #else
     Assert(GetType() == TYPE_FD);
 #endif
-    return (int) Store::DirectWordToInt(GetArg(FD_POS));
+    return static_cast<int>(Store::DirectWordToInt(GetArg(FD_POS)));
   }
 #if USE_WINSOCK
   HANDLE GetHandle() {

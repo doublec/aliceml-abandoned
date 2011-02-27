@@ -25,15 +25,15 @@ protected:
   enum {WORKER_POS, BASE_SIZE};
 
   word UnsafeGetArg(u_int pos) {
-    return ((word *) this - pos)[0];
+    return (reinterpret_cast<word *>(this) - pos)[0];
   }
   void UnsafeInitArg(u_int pos, word value) {
-    ((word *) this - pos)[0] = value;
+    (reinterpret_cast<word *>(this) - pos)[0] = value;
   }
 public:
   // StackFrame Constructors
   void New(Worker *worker) {
-    ((word *) this)[WORKER_POS] = Store::UnmanagedPointerToWord(worker);
+    reinterpret_cast<word *>(this)[WORKER_POS] = Store::UnmanagedPointerToWord(worker);
   }
   static void New(StackFrame *frame, u_int size, word wFrame) {
     Block *p    = Store::DirectWordToBlock(wFrame);
@@ -48,8 +48,8 @@ public:
     return BASE_SIZE;
   }
   Worker *GetWorker() {
-    word wWorker = ((word *) this)[WORKER_POS];
-    return STATIC_CAST(Worker *, Store::WordToUnmanagedPointer(wWorker));
+    word wWorker = reinterpret_cast<word *>(this)[WORKER_POS];
+    return static_cast<Worker *>(Store::WordToUnmanagedPointer(wWorker));
   }
   word GetArg(u_int pos) {
     return UnsafeGetArg(BASE_SIZE + pos);

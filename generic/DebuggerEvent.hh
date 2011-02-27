@@ -47,12 +47,11 @@ public:
     Block *b = Store::AllocBlock((BlockLabel) l, BASE_SIZE);
     b->InitArg(ACCESSOR_POS, Store::UnmanagedPointerToWord(accessor));
     b->InitArg(EVENT_POS,    event);
-    return STATIC_CAST(DebuggerEvent *, b);
+    return static_cast<DebuggerEvent *>(b);
   }
 
   EventAccessor *GetAccessor() {
-    return STATIC_CAST(EventAccessor *, 
-      (Store::WordToUnmanagedPointer(Block::GetArg(ACCESSOR_POS))));
+    return static_cast<EventAccessor *>((Store::WordToUnmanagedPointer(Block::GetArg(ACCESSOR_POS))));
   }
 
   word GetEvent() {
@@ -64,14 +63,14 @@ public:
     Assert(b == INVALID_POINTER || 
 	   (b->GetLabel() > (BlockLabel) MIN_EVENT_LABEL 
 	    && b->GetLabel() < (BlockLabel) MAX_EVENT_LABEL));
-  return STATIC_CAST(DebuggerEvent *, b);
+  return static_cast<DebuggerEvent *>(b);
   }
 
   static DebuggerEvent *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() > (BlockLabel) MIN_EVENT_LABEL 
 	   && b->GetLabel() < (BlockLabel)MAX_EVENT_LABEL);
-    return STATIC_CAST(DebuggerEvent *, b);
+    return static_cast<DebuggerEvent *>(b);
   }
 };
 #endif

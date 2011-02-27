@@ -180,7 +180,7 @@ public:
     // Assert(top >= 0);
     Assert(a->GetLabel() == MIN_DATA_LABEL);
     word value = a->GetArg(top);
-    a->InitArg(top, STATIC_CAST(s_int, 0));
+    a->InitArg(top, static_cast<s_int>(0));
     SetTop(top);
     return value;
   }
@@ -196,7 +196,7 @@ public:
     newmax = ((newmax <= max) ? newmax : max);
 
     for (u_int i = top; i < newmax; i++) {
-      a->InitArg(i, STATIC_CAST(s_int, 0));
+      a->InitArg(i, static_cast<s_int>(0));
     }
     HeaderOp::EncodeSize(a, newmax);
   }
@@ -204,22 +204,22 @@ public:
     Block *p = Store::AllocMutableBlock(STACK_LABEL, SIZE);
     Block *a = Store::AllocMutableBlock(MIN_DATA_LABEL, s);
     
-    p->InitArg(TOP_POS, STATIC_CAST(s_int, 0));
+    p->InitArg(TOP_POS, static_cast<s_int>(0));
     p->InitArg(ARR_POS, a->ToWord());
 
-    return (Stack *) p;
+    return reinterpret_cast<Stack *>(p);
   }
   static Stack *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == STACK_LABEL));
-    return (Stack *) p;
+    return reinterpret_cast<Stack *>(p);
   }
   static Stack *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
 
     Assert(p->GetLabel() == STACK_LABEL);
-    return (Stack *) p;
+    return reinterpret_cast<Stack *>(p);
   }
 };
 

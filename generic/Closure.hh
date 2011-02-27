@@ -29,18 +29,18 @@ public:
   static Closure *New(word concreteCode, u_int size) {
     Block *b = Store::AllocMutableBlock(CLOSURE_LABEL, BASE_SIZE + size);
     b->InitArg(CONCRETE_CODE_POS, concreteCode);
-    return STATIC_CAST(Closure *, b);
+    return static_cast<Closure *>(b);
   }
   // Closure Untagging
   static Closure *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == CLOSURE_LABEL);
-    return STATIC_CAST(Closure *, b);
+    return static_cast<Closure *>(b);
   }
   static Closure *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == CLOSURE_LABEL);
-    return STATIC_CAST(Closure *, b);
+    return static_cast<Closure *>(b);
   }
 
   // Closure Accessors

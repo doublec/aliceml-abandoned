@@ -101,12 +101,12 @@ public:
     Block *entry = Store::AllocBlock(SIGNAL_ENTRY_LABEL, SIZE);
     entry->InitArg(CLOSURE_POS, closure);
     entry->InitArg(NEXT_POS, next);
-    return STATIC_CAST(SignalEntry *, entry);
+    return static_cast<SignalEntry *>(entry);
   }
   static SignalEntry *FromWordDirect(word entry) {
     Block *b = Store::DirectWordToBlock(entry);
     Assert(b->GetLabel() == SIGNAL_ENTRY_LABEL && b->GetSize() == SIZE);
-    return STATIC_CAST(SignalEntry *, b);
+    return static_cast<SignalEntry *>(b);
   }
 
   word GetClosure() {
@@ -126,13 +126,13 @@ public:
     Block *entry = Store::AllocMutableBlock(TIMER_ENTRY_LABEL, SIZE);
     entry->InitArg(TIME_POS, time);
     entry->InitArg(FUTURE_POS, future->ToWord());
-    entry->InitArg(NEXT_POS, STATIC_CAST(s_int, 0));
-    return STATIC_CAST(TimerEntry *, entry);
+    entry->InitArg(NEXT_POS, static_cast<s_int>(0));
+    return static_cast<TimerEntry *>(entry);
   }
   static TimerEntry *FromWordDirect(word entry) {
     Block *b = Store::DirectWordToBlock(entry);
     Assert(b->GetLabel() == TIMER_ENTRY_LABEL && b->GetSize() == SIZE);
-    return STATIC_CAST(TimerEntry *, b);
+    return static_cast<TimerEntry *>(b);
   }
 
   u_int GetTime() {
@@ -141,7 +141,7 @@ public:
   Future *GetFuture() {
     Transient *transient = Store::DirectWordToTransient(GetArg(FUTURE_POS));
     Assert(transient->GetLabel() == FUTURE_LABEL);
-    return STATIC_CAST(Future *, transient);
+    return static_cast<Future *>(transient);
   }
   TimerEntry *GetNext() {
     word next = GetArg(NEXT_POS);
@@ -233,7 +233,7 @@ HANDLE Timer::thread;
 #if HAVE_CONSOLECTRL
 static BOOL CALLBACK MyConsoleCtrlHandler(DWORD signal) {
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
-    if (STATIC_CAST(DWORD, sigHandlers[i].signal) == signal &&
+    if (static_cast<DWORD>(sigHandlers[i].signal) == signal &&
 	sigHandlers[i].handlers != Store::IntToWord(0)) {
       sigHandlers[i].pending++;
       StatusWord::SetStatus(SignalHandler::SignalStatus());

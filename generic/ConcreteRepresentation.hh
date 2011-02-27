@@ -30,21 +30,21 @@ public:
 				     u_int size) {
     Block *b = Store::AllocMutableBlock(CONCRETE_LABEL, BASE_SIZE + size);
     b->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
-    return STATIC_CAST(ConcreteRepresentation *, b);
+    return static_cast<ConcreteRepresentation *>(b);
   }
   static ConcreteRepresentation *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == CONCRETE_LABEL);
-    return STATIC_CAST(ConcreteRepresentation *, b);
+    return static_cast<ConcreteRepresentation *>(b);
   }
   static ConcreteRepresentation *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == CONCRETE_LABEL);
-    return STATIC_CAST(ConcreteRepresentation *, b);
+    return static_cast<ConcreteRepresentation *>(b);
   }
 
   ConcreteRepresentationHandler *GetHandler() {
-    return STATIC_CAST(ConcreteRepresentationHandler *, Store::DirectWordToUnmanagedPointer(GetArg(HANDLER_POS)));
+    return static_cast<ConcreteRepresentationHandler *>(Store::DirectWordToUnmanagedPointer(GetArg(HANDLER_POS)));
   }
   void ReplaceHandler(ConcreteRepresentationHandler *handler) {
     ReplaceArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));

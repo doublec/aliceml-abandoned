@@ -34,7 +34,7 @@
 #endif
 
 // UncaughtExceptionFrame
-class UncaughtExceptionFrame : public StackFrame {
+class UncaughtExceptionFrame : private StackFrame {
 protected:
   enum { EXN_POS, BACKTRACE_POS, EXN_HANDLERS_POS, SIZE };
 public:
@@ -87,7 +87,7 @@ UncaughtExceptionFrame::New(word exn, word backtrace, word exnHandlers) {
   frame->InitArg(EXN_POS, exn);
   frame->InitArg(BACKTRACE_POS, backtrace);
   frame->InitArg(EXN_HANDLERS_POS, exnHandlers);
-  return STATIC_CAST(UncaughtExceptionFrame *, frame);
+  return static_cast<UncaughtExceptionFrame *>(frame);
 }
 
 void 
@@ -98,14 +98,14 @@ UncaughtExceptionWorker::PushFrame(word exn, word backtrace, word exnHandlers) {
 u_int UncaughtExceptionWorker::GetFrameSize(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   UncaughtExceptionFrame *uncaughtExceptionFrame =
-    STATIC_CAST(UncaughtExceptionFrame *, sFrame);
+    reinterpret_cast<UncaughtExceptionFrame *>(sFrame);
   return uncaughtExceptionFrame->GetSize();
 }
 
 Worker::Result UncaughtExceptionWorker::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   UncaughtExceptionFrame *uncaughtExceptionFrame =
-    STATIC_CAST(UncaughtExceptionFrame *, sFrame);
+    reinterpret_cast<UncaughtExceptionFrame *>(sFrame);
   word exnHandlers = uncaughtExceptionFrame->GetExnHandlers();
   if (exnHandlers == Store::IntToWord(0)) {
     Scheduler::PopFrame(uncaughtExceptionFrame->GetSize());
@@ -225,7 +225,7 @@ void TaskStack::Init() {
 
 void TaskStack::SetTop(u_int top) {
   SetActiveSize(top);
-  Block *p = (Block *) this;
+  Block *p = static_cast<Block *>(this);
   if (!HeaderOp::IsChildish(p))
     Store::AddToIntgenSet(p);
 }
@@ -235,8 +235,8 @@ TaskStack *TaskStack::New(u_int size) {
   DynamicBlock *b = Store::AllocDynamicBlock(size, 1);
   // Create Empty Task
   b->InitArg(0, emptyTask);
-  Store::AddToIntgenSet((Block *) b);
-  return STATIC_CAST(TaskStack *, b);
+  Store::AddToIntgenSet(reinterpret_cast<Block *>(b));
+  return static_cast<TaskStack *>(b);
 }
 
 TaskStack *TaskStack::Enlarge() {
@@ -254,7 +254,7 @@ TaskStack *TaskStack::Enlarge() {
   }
   TaskStack *newTaskStack = TaskStack::New(newSize);
   std::memcpy(newTaskStack->GetBase(), GetBase(), size * sizeof(u_int));
-  Block *p = (Block *) this;
+  Block *p = static_cast<Block *>(this);
   // Prevent scanning of old stack
   if (HeaderOp::IsChildish(p))
     GCHelper::MarkMoved(p, Store::DirectWordToBlock(emptyStack));
@@ -265,11 +265,11 @@ void TaskStack::Purge() {
   // Shrink stack to a reasonable size:
   // to be done: find policy here (when to shrink grown stacks)
   // Purge all frames:
-  word *base = (word *) GetFrame(0);
+  word *base = reinterpret_cast<word *>(GetFrame(0));
   word *top  = base + GetTop() - 1;
   // to be done: maybe PurgeFrame should return frame size
   while (top >= base) {
-    StackFrame *frame = (StackFrame *) top;
+    StackFrame *frame = reinterpret_cast<StackFrame *>(top);
     Worker *worker = frame->GetWorker();
     top -= worker->GetFrameSize(frame);
     worker->PurgeFrame(frame);
@@ -277,10 +277,10 @@ void TaskStack::Purge() {
 }
 
 void TaskStack::Dump(u_int stackTop) {
-  word *base = (word *) GetFrame(0);
+  word *base = reinterpret_cast<word *>(GetFrame(0));
   word *top  = base + stackTop - 1;
   while (top >= base) {
-    StackFrame *frame = (StackFrame *) top;
+    StackFrame *frame = reinterpret_cast<StackFrame *>(top);
     Worker *worker = frame->GetWorker();
     top -= worker->GetFrameSize(frame);
     worker->DumpFrame(frame);

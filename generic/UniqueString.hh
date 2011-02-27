@@ -39,12 +39,12 @@ public:
   static UniqueString *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == UNIQUESTRING_LABEL);
-    return STATIC_CAST(UniqueString *, b);
+    return static_cast<UniqueString *>(b);
   }
   static UniqueString *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == UNIQUESTRING_LABEL);
-    return STATIC_CAST(UniqueString *, b);
+    return static_cast<UniqueString *>(b);
   }
 };
 

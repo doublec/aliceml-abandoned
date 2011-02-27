@@ -28,18 +28,18 @@ public:
     Block *p = Store::AllocBlock(TRANSFORM_LABEL, 2);
     p->InitArg(NAME_POS, name->ToWord());
     p->InitArg(ARGUMENT_POS, argument);
-    return STATIC_CAST(Transform *, p);
+    return static_cast<Transform *>(p);
   }
   // Transform Untagging
   static Transform *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER || p->GetLabel() == TRANSFORM_LABEL);
-    return STATIC_CAST(Transform *, p);
+    return static_cast<Transform *>(p);
   }
   static Transform *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == TRANSFORM_LABEL);
-    return STATIC_CAST(Transform *, p);
+    return static_cast<Transform *>(p);
   }
 
   // Transform Accessors

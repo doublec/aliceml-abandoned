@@ -27,20 +27,20 @@ private:
   enum { COUNTER_POS, TABLE_POS, SIZE };
   static const u_int initialSize = 8; //--** to be checked
 public:
-  static const u_int NOT_FOUND = STATIC_CAST(u_int, -1);
+  static const u_int NOT_FOUND = static_cast<u_int>(-1);
 
   using Block::ToWord;
 
   static PartitionSeen *New() {
     Block *p = Store::AllocMutableBlock(SEEN_LABEL, SIZE);
-    p->InitArg(COUNTER_POS, STATIC_CAST(s_int, 0));
+    p->InitArg(COUNTER_POS, static_cast<s_int>(0));
     p->InitArg(TABLE_POS, Map::New(initialSize)->ToWord());
-    return STATIC_CAST(PartitionSeen *, p);
+    return static_cast<PartitionSeen *>(p);
   }
   static PartitionSeen *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == SEEN_LABEL);
-    return STATIC_CAST(PartitionSeen *, b);
+    return static_cast<PartitionSeen *>(b);
   }
 
   void Add(Block *v) {
@@ -77,12 +77,12 @@ public:
 
   static PLoaderStack *New() {
     Stack *s = Stack::New(initialSize);
-    return STATIC_CAST(PLoaderStack *, s);
+    return static_cast<PLoaderStack *>(s);
   }
 
   static PLoaderStack *FromWordDirect(word w) {
     Stack *s = Stack::FromWordDirect(w);
-    return STATIC_CAST(PLoaderStack *, s);
+    return static_cast<PLoaderStack *>(s);
   }
 
   void Push(word data, s_int edge, s_int parent) {

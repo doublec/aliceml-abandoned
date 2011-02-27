@@ -31,11 +31,11 @@ protected:
     jit_sti_p(addr, Value);
   }
   void StackFrame_InitArg(u_int This, u_int index, u_int Value) {
-    s_int offset = (0 - (s_int) index) * sizeof(word);
+    s_int offset = (0 - static_cast<s_int>(index)) * sizeof(word);
     jit_stxi_p(offset, This, Value);
   }
   void StackFrame_GetArg(u_int Dest, u_int This, u_int index) {
-    s_int offset = (0 - (s_int) index) * sizeof(word);
+    s_int offset = (0 - static_cast<s_int>(index)) * sizeof(word);
     jit_ldxi_p(Dest, This, offset);
   }
 
@@ -64,13 +64,13 @@ public:
     jit_stxi_p(pos * sizeof(word), Ptr, Value);
   }
   void *Scheduler_GetZeroArg() {
-    return (void *) &Scheduler::currentArgs[0];
+    return reinterpret_cast<void *>(&Scheduler::currentArgs[0]);
   }
   void Scheduler_GetZeroArg(u_int Dest) {
     Scheduler_Sel(&Scheduler::currentArgs[0], Dest);
   }
   void *Scheduler_GetOneArg() {
-    return (void *) &Scheduler::currentArgs[1];
+    return reinterpret_cast<void *>(&Scheduler::currentArgs[1]);
   }
   void Scheduler_GetOneArg(u_int Dest) {
     Scheduler_Sel(&Scheduler::currentArgs[1], Dest);

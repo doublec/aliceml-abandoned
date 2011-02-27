@@ -33,7 +33,7 @@ public:
   // PrimitiveFrame Constructor
   static PrimitiveFrame *New(Worker *worker) {
     NEW_STACK_FRAME(frame, worker, SIZE);
-    return STATIC_CAST(PrimitiveFrame *, frame);
+    return static_cast<PrimitiveFrame *>(frame);
   }
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
@@ -107,7 +107,7 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
 
 Transform *
 PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  ConcreteCode *concreteCode = STATIC_CAST(ConcreteCode *, b);
+  ConcreteCode *concreteCode = reinterpret_cast<ConcreteCode *>(b);
   word wAbstract = concreteCode->Get(0);
   if (wAbstract == Store::IntToWord(0))
     return INVALID_POINTER;
@@ -118,11 +118,11 @@ PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
 void PrimitiveInterpreter::PushCall(Closure *closure) {
   Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
 	 GetInterpreter() == this); closure = closure;
-  PrimitiveFrame::New(STATIC_CAST(Worker *, this));
+  PrimitiveFrame::New(static_cast<Worker *>(this));
 }
 
 u_int PrimitiveInterpreter::GetFrameSize(StackFrame *sFrame) {
-  PrimitiveFrame *frame = STATIC_CAST(PrimitiveFrame *, sFrame);
+  PrimitiveFrame *frame = reinterpret_cast<PrimitiveFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
@@ -168,8 +168,8 @@ word Primitive::MakeFunction(const char *name, Interpreter::function function,
 }
 
 Worker::Result Primitive::Execute(Interpreter *interpreter) {
-  PrimitiveFrame::New(STATIC_CAST(Worker *, interpreter));
+  PrimitiveFrame::New(static_cast<Worker *>(interpreter));
   Interpreter::function function =
-    STATIC_CAST(PrimitiveInterpreter *, interpreter)->GetFunction();
+    static_cast<PrimitiveInterpreter *>(interpreter)->GetFunction();
   return function();
 }

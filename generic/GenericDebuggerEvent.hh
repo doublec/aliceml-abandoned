@@ -76,7 +76,7 @@ public:
 	       Store::UnmanagedPointerToWord(GenericEventAccessor::self));
     b->InitArg(EVENT_POS,    event->ToWord());
 
-    return STATIC_CAST(GenericDebuggerEvent *, b);
+    return static_cast<GenericDebuggerEvent *>(b);
   }
 
   static GenericDebuggerEvent *FromWord(word w);
