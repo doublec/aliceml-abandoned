@@ -101,7 +101,7 @@ DEFINE1(xml_parseString) {
   DECLARE_STRING(str, x0);
   xmlDocPtr doc;
   xmlNodePtr cur;
-  char* strv = STATIC_CAST(char*, str->GetValue());
+  char* strv = reinterpret_cast<char*>(str->GetValue());
   doc = xmlParseMemory(strv, str->GetSize());
 
   if (doc==NULL) {

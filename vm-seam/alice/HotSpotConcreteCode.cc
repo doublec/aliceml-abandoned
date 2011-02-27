@@ -65,7 +65,7 @@ Worker::Result HotSpotInterpreter::Run(StackFrame *) {
 
 Transform *
 HotSpotInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  return STATIC_CAST(HotSpotConcreteCode *, b)->GetAbstractRepresentation();
+  return reinterpret_cast<HotSpotConcreteCode *>(b)->GetAbstractRepresentation();
 }
 
 const char *HotSpotInterpreter::Identify() {
@@ -94,7 +94,7 @@ void HotSpotInterpreter::DumpFrame(StackFrame *sFrame) {
 
 u_int HotSpotInterpreter::GetInArity(ConcreteCode *concreteCode) {
   HotSpotConcreteCode *wrapper = 
-    STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+    reinterpret_cast<HotSpotConcreteCode *>(concreteCode);
   ConcreteCode *realConcreteCode = 
     ConcreteCode::FromWordDirect(wrapper->GetCode());
   return AbstractCodeInterpreter::self->GetInArity(realConcreteCode);
@@ -102,7 +102,7 @@ u_int HotSpotInterpreter::GetInArity(ConcreteCode *concreteCode) {
 
 u_int HotSpotInterpreter::GetOutArity(ConcreteCode *concreteCode) {
   HotSpotConcreteCode *wrapper = 
-    STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+    reinterpret_cast<HotSpotConcreteCode *>(concreteCode);
   ConcreteCode *realConcreteCode = 
     ConcreteCode::FromWordDirect(wrapper->GetCode());
   return AbstractCodeInterpreter::self->GetOutArity(realConcreteCode);

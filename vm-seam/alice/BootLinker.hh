@@ -44,16 +44,16 @@ public:
   }
   // Component Constructor
   static Component *New(word sign, word str) {
-    Block *p = Store::AllocBlock((BlockLabel) ENTRY_LABEL, SIZE);
+    Block *p = Store::AllocBlock(static_cast<BlockLabel>(ENTRY_LABEL), SIZE);
     p->InitArg(SIGN_POS, sign);
     p->InitArg(STR_POS, str);
-    return STATIC_CAST(Component *, p);
+    return static_cast<Component *>(p);
   }
   // Component Untagging
   static Component *FromWordDirect(word entry) {
     Block *p = Store::DirectWordToBlock(entry);
-    Assert(p->GetLabel() == (BlockLabel) ENTRY_LABEL);
-    return STATIC_CAST(Component *, p);
+    Assert(p->GetLabel() == static_cast<BlockLabel>(ENTRY_LABEL));
+    return static_cast<Component *>(p);
   }
 };
 

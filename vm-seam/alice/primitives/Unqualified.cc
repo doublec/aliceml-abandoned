@@ -29,7 +29,7 @@ static int Compare(word x0, word x1) {
         // test if x1 is a bigInt
         if (b->GetLabel()==CONCRETE_LABEL) {
           ConcreteRepresentation *cr =
-            STATIC_CAST(ConcreteRepresentation *, b);
+            reinterpret_cast<ConcreteRepresentation *>(b);
           if (cr->GetHandler()==PrimitiveTable::gmpHandler) {
             return BigInt::FromWordDirect(cr->Get(0))->compare(i)==0;
           }
@@ -53,7 +53,7 @@ static int Compare(word x0, word x1) {
     // test if x0 is a bigInt
     if (a->GetLabel()==CONCRETE_LABEL) {
       ConcreteRepresentation *cr =
-        STATIC_CAST(ConcreteRepresentation *, a);
+        reinterpret_cast<ConcreteRepresentation *>(a);
       if (cr->GetHandler()==PrimitiveTable::gmpHandler) {
         return BigInt::FromWordDirect(cr->Get(0))->compare(j)==0;
       }
@@ -82,8 +82,8 @@ static int Compare(word x0, word x1) {
     }
   case CONCRETE_LABEL:
     {
-      ConcreteRepresentation *ac = STATIC_CAST(ConcreteRepresentation *, a);
-      ConcreteRepresentation *bc = STATIC_CAST(ConcreteRepresentation *, b);
+      ConcreteRepresentation *ac = reinterpret_cast<ConcreteRepresentation *>(a);
+      ConcreteRepresentation *bc = reinterpret_cast<ConcreteRepresentation *>(b);
       if (ac->GetHandler()==PrimitiveTable::gmpHandler &&
           ac->GetHandler()==bc->GetHandler()) {
         BigInt *a = BigInt::FromWordDirect(ac->Get(0));
@@ -99,8 +99,8 @@ static int Compare(word x0, word x1) {
 	Assert(b->IsMutable());
 	return (a == b);
       }
-      Chunk *ac = STATIC_CAST(Chunk *, a);
-      Chunk *bc = STATIC_CAST(Chunk *, b);
+      Chunk *ac = reinterpret_cast<Chunk *>(a);
+      Chunk *bc = reinterpret_cast<Chunk *>(b);
       u_int size = ac->GetSize();
       return bc->GetSize() == size &&
 	!std::memcmp(ac->GetBase(), bc->GetBase(), size);

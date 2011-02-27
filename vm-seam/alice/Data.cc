@@ -33,7 +33,7 @@ public:
 
 Transform *
 ConstructorHandler::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  Constructor *constructor = STATIC_CAST(Constructor *, b);
+  Constructor *constructor = reinterpret_cast<Constructor *>(b);
   return constructor->GetTransform();
 }
 
@@ -72,7 +72,7 @@ Constructor *Constructor::New(String *name, ::Block *guid) {
     b->Init(NAME_POS, name->ToWord());
     b->Init(TRANSFORM_POS, MakeConstructorTransform(name, wKey)->ToWord());
     constructorMap->Put(wKey, b->ToWord());
-    return STATIC_CAST(Constructor *, b);
+    return static_cast<Constructor *>(b);
   }
 }
 
@@ -115,33 +115,33 @@ void Record::Init(const char *s, word value) {
 
 BigInt* BigInt::BigInt::New(void) {
   Chunk *c = Store::AllocChunk(SIZE);
-  MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+  MP_INT *big = reinterpret_cast<MP_INT*>(c->GetBase());
   mpz_init(big);
-  return STATIC_CAST(BigInt *, c);
+  return static_cast<BigInt *>(c);
 }
 BigInt* BigInt::New(BigInt *old) {
   Chunk *c = Store::AllocChunk(SIZE);
-  MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+  MP_INT *big = reinterpret_cast<MP_INT*>(c->GetBase());
   mpz_init_set(big, old->big());
-  return STATIC_CAST(BigInt *, c);
+  return static_cast<BigInt *>(c);
 }
 BigInt* BigInt::New(s_int i) {
   Chunk *c = Store::AllocChunk(SIZE);
-  MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+  MP_INT *big = reinterpret_cast<MP_INT*>(c->GetBase());
   mpz_init_set_si(big, i);
-  return STATIC_CAST(BigInt *, c);
+  return static_cast<BigInt *>(c);
 }
 BigInt* BigInt::New(u_int i) {
   Chunk *c = Store::AllocChunk(SIZE);
-  MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+  MP_INT *big = reinterpret_cast<MP_INT*>(c->GetBase());
   mpz_init_set_ui(big, i);
-  return STATIC_CAST(BigInt *, c);
+  return static_cast<BigInt *>(c);
 }
 BigInt* BigInt::New(double d) {
   Chunk *c = Store::AllocChunk(SIZE);
-  MP_INT *big = STATIC_CAST(MP_INT*, c->GetBase());
+  MP_INT *big = reinterpret_cast<MP_INT*>(c->GetBase());
   mpz_init_set_d(big, d);
-  return STATIC_CAST(BigInt *, c);
+  return static_cast<BigInt *>(c);
 }
 
 s_int BigInt::toInt(void) {

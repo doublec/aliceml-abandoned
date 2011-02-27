@@ -24,10 +24,11 @@
 #include "alice/AliceLanguageLayer.hh"
 
 // AbstractCodeInterpreter StackFrames
-class AbstractCodeFrame: public StackFrame {
+class AbstractCodeFrame: private StackFrame {
 protected:
   enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
 public:
+  using StackFrame::Clone;
   class Environment : private Array {
   public:
     using Array::ToWord;
@@ -76,7 +77,7 @@ public:
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(LOCAL_ENV_POS, env->ToWord());
     frame->InitArg(FORMAL_ARGS_POS, formalArgs);
-    return STATIC_CAST(AbstractCodeFrame *, frame);
+    return static_cast<AbstractCodeFrame *>(frame);
   }
 #ifdef DEBUG_CHECK
   static void Init();

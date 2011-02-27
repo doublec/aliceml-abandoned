@@ -51,8 +51,8 @@ static verylong GetTimeStamp() {
   GetSystemTime(&st);
   FILETIME ft;
   SystemTimeToFileTime(&st, &ft);
-  verylong x1 = ((verylong) (u_int) ft.dwHighDateTime) << 32;
-  verylong x2 = x1 + (u_int) ft.dwLowDateTime;
+  verylong x1 = static_cast<verylong>(static_cast<u_int>(ft.dwHighDateTime)) << 32;
+  verylong x2 = x1 + static_cast<u_int>(ft.dwLowDateTime);
   return x2 / 10000;
 }
 #else
@@ -63,8 +63,8 @@ static int GetProcessId() {
 static int GetTimeStamp() {
   struct tms buffer;
   clock_t ticks = times(&buffer);
-  double stamp = (double) ticks * 1000.0 / (double) sysconf(_SC_CLK_TCK);
-  return (int) stamp;
+  double stamp = static_cast<double>(ticks) * 1000.0 / static_cast<double>(sysconf(_SC_CLK_TCK));
+  return static_cast<int>(stamp);
 }
 #endif
 
@@ -74,11 +74,11 @@ struct GuidComponents {
 
 Guid *Guid::New() {
   GuidComponents gcs;
-  gcs.pid = STATIC_CAST(int, GetProcessId());
-  gcs.time = STATIC_CAST(int, time(0));
+  gcs.pid = static_cast<int>(GetProcessId());
+  gcs.time = static_cast<int>(time(0));
   gcs.stamp = GetTimeStamp();
   gcs.rand = rand();
-  return STATIC_CAST(Guid *, String::New((char *) &gcs, sizeof(gcs)));
+  return static_cast<Guid *>(String::New(reinterpret_cast<char *>(&gcs), sizeof(gcs)));
 }
 
 int Guid::Compare(Guid *guid1, Guid *guid2) {

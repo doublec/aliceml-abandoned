@@ -57,16 +57,14 @@ DEFINE1(UnsafeDebug_disassemble) {
   } 
   else if (interpreter == HotSpotInterpreter::self) {
     HotSpotConcreteCode *hscc = HotSpotConcreteCode::FromWord(cc);
-    Transform *transform =
-      STATIC_CAST(Transform *, hscc->GetAbstractRepresentation());
+    Transform *transform = hscc->GetAbstractRepresentation();
     TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
     AbstractCode::Disassemble(stderr,
 			      TagVal::FromWordDirect(abstractCode->Sel(5)));
   }
   else if (interpreter == ByteCodeInterpreter::self) {
     ByteConcreteCode *bcc = ByteConcreteCode::FromWord(cc);
-    Transform *transform =
-      STATIC_CAST(Transform *, bcc->GetAbstractRepresentation());
+    Transform *transform = bcc->GetAbstractRepresentation();
     TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
     PrintLiveness(abstractCode);
     bcc->Disassemble(stderr);
@@ -74,8 +72,7 @@ DEFINE1(UnsafeDebug_disassemble) {
 #if HAVE_LIGHTNING
   else if (interpreter == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
-    Transform *transform =
-      STATIC_CAST(Transform *, ncc->GetAbstractRepresentation());
+    Transform *transform = ncc->GetAbstractRepresentation();
     TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
     PrintLiveness(abstractCode);
     ncc->Disassemble(stderr);
@@ -104,8 +101,7 @@ DEFINE1(UnsafeDebug_byteCompile) {
 #if HAVE_LIGHTNING
   else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
-    Transform *transform =
-      STATIC_CAST(Transform *, ncc->GetAbstractRepresentation());
+    Transform *transform = ncc->GetAbstractRepresentation();
     abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   }
 #endif
@@ -146,8 +142,7 @@ DEFINE1(UnsafeDebug_lazyByteCompile) {
 #if HAVE_LIGHTNING
   else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
-    Transform *transform =
-      STATIC_CAST(Transform *, ncc->GetAbstractRepresentation());
+    Transform *transform = ncc->GetAbstractRepresentation();
     abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   }
 #endif

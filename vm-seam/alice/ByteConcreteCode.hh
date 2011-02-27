@@ -50,13 +50,13 @@ public:
     return Tuple::FromWordDirect(Get(IMMEDIATE_ENV_POS));
   }
   u_int GetNLocals() {
-    return (u_int) Store::DirectWordToInt(Get(NLOCALS_POS));
+    return static_cast<u_int>(Store::DirectWordToInt(Get(NLOCALS_POS)));
   } 
   Transform *GetAbstractRepresentation() {
     return Transform::FromWordDirect(Get(TRANSFORM_POS));
   }
   u_int GetInArity() {
-    return (u_int) Store::DirectWordToInt(Get(IN_ARITY_POS));
+    return static_cast<u_int>(Store::DirectWordToInt(Get(IN_ARITY_POS)));
   }
   s_int GetOutArity() {
     return Store::DirectWordToInt(Get(OUT_ARITY_POS));
@@ -86,12 +86,12 @@ public:
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
     Assert(concreteCode == INVALID_POINTER ||
 	   concreteCode->GetInterpreter() == ByteCodeInterpreter::self);
-    return STATIC_CAST(ByteConcreteCode *, concreteCode);
+    return static_cast<ByteConcreteCode *>(concreteCode);
   }
   static ByteConcreteCode *FromWordDirect(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWordDirect(code);
     Assert(concreteCode->GetInterpreter() == ByteCodeInterpreter::self);
-    return STATIC_CAST(ByteConcreteCode *, concreteCode);
+    return static_cast<ByteConcreteCode *>(concreteCode);
   }
 };
 

@@ -142,7 +142,7 @@ class ByteCode; // forward declaration
 #ifdef THREADED
 // ensure that the lookup table is initialized
 #define ENCODE_INSTR(index,instr) \
-  ENCODE_1I(index,(u_int) ByteCode::LookupInstr(instr))
+  ENCODE_1I(index, reinterpret_cast<u_int>(ByteCode::LookupInstr(instr)))
 #else
 #define ENCODE_INSTR(index,instr)	\
   ENCODE_1I(index,instr)
@@ -272,7 +272,7 @@ class ByteCode; // forward declaration
 
 #ifdef THREADED
 #define REWRITE_INSTR(buffer,index,instr) {				\
-    *index = (u_int) ByteCode::LookupInstr(instr);			\
+    *index = reinterpret_cast<u_int>(ByteCode::LookupInstr(instr));			\
   }
 #else
 #define REWRITE_INSTR(buffer,index,instr) {	\

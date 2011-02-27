@@ -57,7 +57,7 @@ public:
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(INDEX_POS, index);
     frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
-    return STATIC_CAST(VectorTabulateFrame *, frame);
+    return static_cast<VectorTabulateFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -88,13 +88,13 @@ void VectorTabulateWorker::PushFrame(XVector *vector,
 }
 
 u_int VectorTabulateWorker::GetFrameSize(StackFrame *sFrame) {
-  VectorTabulateFrame *frame = STATIC_CAST(VectorTabulateFrame *, sFrame);
+  VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result VectorTabulateWorker::Run(StackFrame *sFrame) {
-  VectorTabulateFrame *frame = STATIC_CAST(VectorTabulateFrame *, sFrame);
+  VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   XVector *vector = frame->GetVector();
   word closure    = frame->GetClosure();
@@ -127,7 +127,7 @@ const char *VectorTabulateWorker::Identify() {
 }
 
 void VectorTabulateWorker::DumpFrame(StackFrame *sFrame) {
-  VectorTabulateFrame *frame = STATIC_CAST(VectorTabulateFrame *, sFrame);
+  VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, STRINGIFY(XVector)".tabulate %"U_INTF" of %"U_INTF"\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
@@ -164,7 +164,7 @@ DEFINE3(Vector_extract) {
   DECLARE_XVECTOR(vector, x0);
   DECLARE_INT(i, x1);
   DECLARE_INT(n, x2);
-  if (i < 0 || n < 0 || STATIC_CAST(u_int, i + n) > vector->GetLength())
+  if (i < 0 || n < 0 || static_cast<u_int>(i + n) > vector->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   XVector *newVector = XVector::New(n);
 #if REQUEST_ELEMS_INT
@@ -201,7 +201,7 @@ DEFINE1(Vector_length) {
 DEFINE2(Vector_sub) {
   DECLARE_XVECTOR(vector, x0);
   DECLARE_INT(index, x1);
-  if (STATIC_CAST(u_int, index) >= vector->GetLength())
+  if (static_cast<u_int>(index) >= vector->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   RETURN(vector->Sub(index));
 } END
@@ -210,7 +210,7 @@ DEFINE2(Vector_tabulate) {
   DECLARE_INT(length, x0);
   if (length == 0) {
     RETURN(XVector::New(0)->ToWord());
-  } else if (length < 0 || STATIC_CAST(u_int, length) > XVector::maxLen) {
+  } else if (length < 0 || static_cast<u_int>(length) > XVector::maxLen) {
     RAISE(PrimitiveTable::General_Size);
   } else {
     word wClosure = x1;

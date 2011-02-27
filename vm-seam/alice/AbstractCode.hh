@@ -75,28 +75,28 @@ public:
   };
 
   static con GetCon(TagVal *tagVal) {
-    return STATIC_CAST(con, tagVal->GetTag());
+    return static_cast<con>(tagVal->GetTag());
   }
   static args GetArgs(TagVal *tagVal) {
-    return STATIC_CAST(args, tagVal->GetTag());
+    return static_cast<args>(tagVal->GetTag());
   }
   static instr GetInstr(TagVal *tagVal) {
-    return STATIC_CAST(instr, tagVal->GetTag());
+    return static_cast<instr>(tagVal->GetTag());
   }
   static idRef GetIdRef(TagVal *tagVal) {
-    return STATIC_CAST(idRef, tagVal->GetTag());
+    return static_cast<idRef>(tagVal->GetTag());
   }
   static abstractCode GetAbstractCode(TagVal *tagVal) {
-    return STATIC_CAST(abstractCode, tagVal->GetTag());
+    return static_cast<abstractCode>(tagVal->GetTag());
   }
   static entryPoint GetEntryPoint(TagVal *tagVal) {
-    return STATIC_CAST(entryPoint, tagVal->GetTag());
+    return static_cast<entryPoint>(tagVal->GetTag());
   }
   static exitPoint GetExitPoint(TagVal *tagVal) {
-    return STATIC_CAST(exitPoint, tagVal->GetTag());
+    return static_cast<exitPoint>(tagVal->GetTag());
   }
   static annotation GetAnnotation(TagVal *tagVal) {
-    return STATIC_CAST(annotation, tagVal->GetTag());
+    return static_cast<annotation>(tagVal->GetTag());
   }
 
   static void Disassemble(std::FILE *f, TagVal *pc);

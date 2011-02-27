@@ -29,7 +29,7 @@ static bool traceFlag;
 static void Trace(const char *prefix, String *key) {
   if (traceFlag) {
     std::fprintf(stderr, "[boot-linker] %s %.*s\n", prefix,
-		 (int) key->GetSize(), key->GetValue());
+		 static_cast<int>(key->GetSize()), key->GetValue());
   }
 }
 
@@ -212,7 +212,7 @@ public:
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(IMPORTS_POS, imports->ToWord());
-    return STATIC_CAST(ApplyFrame *, frame);
+    return static_cast<ApplyFrame *>(frame);
   }
 };
 
@@ -235,7 +235,7 @@ public:
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(SIGN_POS, sign);
-    return STATIC_CAST(EnterFrame *, frame);
+    return static_cast<EnterFrame *>(frame);
   }
 };
 
@@ -254,7 +254,7 @@ public:
   static LinkFrame *New(Worker *worker, String *key) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
-    return STATIC_CAST(LinkFrame *, frame);
+    return static_cast<LinkFrame *>(frame);
   }
 };
 
@@ -273,12 +273,12 @@ public:
   static LoadFrame *New(Worker *worker, String *key) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
-    return STATIC_CAST(LoadFrame *, frame);
+    return static_cast<LoadFrame *>(frame);
   }
   static LoadFrame *New(Thread *thread, Worker *worker, String *key) {
     NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
-    return STATIC_CAST(LoadFrame *, frame);
+    return static_cast<LoadFrame *>(frame);
   }
 };
 
@@ -311,12 +311,12 @@ public:
   }
   
   Action GetAction() {
-    return STATIC_CAST(Action, Store::WordToInt(GetArg(ACTION_POS)));
+    return static_cast<Action>(Store::WordToInt(GetArg(ACTION_POS)));
   }
   
   void NextAction() {
     Assert(GetAction() != INVOKE_BOOT_FUNCTION);
-    ReplaceArg(ACTION_POS, Store::IntToWord((Action) (GetAction() + 1)));
+    ReplaceArg(ACTION_POS, Store::IntToWord(static_cast<Action>(GetAction() + 1)));
   }
   
   word GetBootUrl() {
@@ -332,7 +332,7 @@ public:
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(ACTION_POS, Store::IntToWord(MAKE_URL));
     frame->InitArg(BOOT_URL_POS, Store::IntToWord(0));
-    return STATIC_CAST(StartFrame *, frame);
+    return static_cast<StartFrame *>(frame);
   }
   
   static StartFrame *New(Thread *thread, Worker *worker, String *key) {
@@ -340,7 +340,7 @@ public:
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(ACTION_POS, Store::IntToWord(MAKE_URL));
     frame->InitArg(BOOT_URL_POS, Store::IntToWord(0));
-    return STATIC_CAST(StartFrame *, frame);
+    return static_cast<StartFrame *>(frame);
   }
   
   static const char* StringOfAction(Action action){
@@ -366,13 +366,13 @@ void ApplyWorker::PushFrame(String *key, word closure, Vector *imports) {
 }
 
 u_int ApplyWorker::GetFrameSize(StackFrame *sFrame) {
-  ApplyFrame *frame = STATIC_CAST(ApplyFrame *, sFrame);
+  ApplyFrame *frame = reinterpret_cast<ApplyFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result ApplyWorker::Run(StackFrame *sFrame) {
-  ApplyFrame *frame = STATIC_CAST(ApplyFrame *, sFrame);
+  ApplyFrame *frame = reinterpret_cast<ApplyFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   word closure = frame->GetClosure();
@@ -400,10 +400,10 @@ const char *ApplyWorker::Identify() {
 }
 
 void ApplyWorker::DumpFrame(StackFrame *sFrame) {
-  ApplyFrame *frame = STATIC_CAST(ApplyFrame *, sFrame);
+  ApplyFrame *frame = reinterpret_cast<ApplyFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
-  std::fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetValue());
+  std::fprintf(stderr, "Apply %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
 }
 
 // EnterWorker
@@ -414,13 +414,13 @@ void EnterWorker::PushFrame(String *key, word sign) {
 }
 
 u_int EnterWorker::GetFrameSize(StackFrame *sFrame) {
-  EnterFrame *frame = STATIC_CAST(EnterFrame *, sFrame);
+  EnterFrame *frame = reinterpret_cast<EnterFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result EnterWorker::Run(StackFrame *sFrame) {
-  EnterFrame *frame = STATIC_CAST(EnterFrame *, sFrame);
+  EnterFrame *frame = reinterpret_cast<EnterFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   word sign = frame->GetSign();
@@ -436,10 +436,10 @@ const char *EnterWorker::Identify() {
 }
 
 void EnterWorker::DumpFrame(StackFrame *sFrame) {
-  EnterFrame *frame = STATIC_CAST(EnterFrame *, sFrame);
+  EnterFrame *frame = reinterpret_cast<EnterFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
-  std::fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetValue());
+  std::fprintf(stderr, "Enter %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
 }
 
 // LinkWorker
@@ -450,13 +450,13 @@ void LinkWorker::PushFrame(String *key) {
 }
 
 u_int LinkWorker::GetFrameSize(StackFrame *sFrame) {
-  LinkFrame *frame = STATIC_CAST(LinkFrame *, sFrame);
+  LinkFrame *frame = reinterpret_cast<LinkFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result LinkWorker::Run(StackFrame *sFrame) {
-  LinkFrame *frame = STATIC_CAST(LinkFrame *, sFrame);
+  LinkFrame *frame = reinterpret_cast<LinkFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
@@ -509,10 +509,10 @@ const char *LinkWorker::Identify() {
 }
 
 void LinkWorker::DumpFrame(StackFrame *sFrame) {
-  LinkFrame *frame = STATIC_CAST(LinkFrame *, sFrame);
+  LinkFrame *frame = reinterpret_cast<LinkFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
-  std::fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetValue());
+  std::fprintf(stderr, "Link %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
 }
 
 // LoadWorker
@@ -527,13 +527,13 @@ void LoadWorker::PushFrame(Thread *thread, String *key) {
 }
 
 u_int LoadWorker::GetFrameSize(StackFrame *sFrame) {
-  LoadFrame *frame = STATIC_CAST(LoadFrame *, sFrame);
+  LoadFrame *frame = reinterpret_cast<LoadFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result LoadWorker::Run(StackFrame *sFrame) {
-  LoadFrame *frame = STATIC_CAST(LoadFrame *, sFrame);
+  LoadFrame *frame = reinterpret_cast<LoadFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   Scheduler::PopFrame(frame->GetSize());
@@ -554,10 +554,10 @@ const char *LoadWorker::Identify() {
 }
 
 void LoadWorker::DumpFrame(StackFrame *sFrame) {
-  LoadFrame *frame = STATIC_CAST(LoadFrame *, sFrame);
+  LoadFrame *frame = reinterpret_cast<LoadFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
-  std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetValue());
+  std::fprintf(stderr, "Load %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
 }
 
 // StartWorker
@@ -572,7 +572,7 @@ void StartWorker::PushFrame(Thread *thread, String *key) {
 }
 
 u_int StartWorker::GetFrameSize(StackFrame *sFrame) {
-  StartFrame *frame = STATIC_CAST(StartFrame *, sFrame);
+  StartFrame *frame = reinterpret_cast<StartFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
@@ -591,7 +591,7 @@ static Worker::Result CallPrimalComponentManager(const char* name){
 
 
 Worker::Result StartWorker::Run(StackFrame *sFrame) {
-  StartFrame *frame = STATIC_CAST(StartFrame *, sFrame);
+  StartFrame *frame = reinterpret_cast<StartFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   Construct();
   
@@ -661,10 +661,10 @@ const char *StartWorker::Identify() {
 }
 
 void StartWorker::DumpFrame(StackFrame *sFrame) {
-  StartFrame *frame = STATIC_CAST(StartFrame *, sFrame);
+  StartFrame *frame = reinterpret_cast<StartFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
-  std::fprintf(stderr, "Start %.*s\n", (int) key->GetSize(), key->GetValue());
+  std::fprintf(stderr, "Start %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
 }
 
 //

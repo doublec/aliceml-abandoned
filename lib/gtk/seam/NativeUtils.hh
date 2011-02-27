@@ -201,7 +201,7 @@ static inline void __parentObject(word wContainer, word wWidget) {
   // Strengthen new container object
   __refObject(wContainer);
   // TODO: tuple with update?
-  STATIC_CAST(Block *, widget)->ReplaceArgUnchecked(2, wContainer);
+  reinterpret_cast<Block *>(widget)->ReplaceArgUnchecked(2, wContainer);
 }
 
 // Convert a C pointer to an object tuple.
@@ -233,7 +233,7 @@ const char *Alice_Gtk_OBJECT_TO_WORD = "Alice.Gtk.OBJECT_TO_WORD";
 
 static static word LazyBrokerLookup(const void *objectPointer, int type, GType gtype) {
   word value = Broker::Lookup(String::New(Alice_Gtk_OBJECT_TO_WORD));
-  if (value == (word) 0)
+  if (value == reinterpret_cast<word>(0))
     Error("LazyBrokerLookup: OBJECT_TO_WORD not registered");
   void *pointer = Store::DirectWordToUnmanagedPointer(value);
   Assert(pointer != INVALID_POINTER);

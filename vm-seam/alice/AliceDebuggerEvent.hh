@@ -45,18 +45,18 @@ public:
     b->InitArg(ACCESSOR_POS, 
 	       Store::UnmanagedPointerToWord(AliceEventAccessor::self));
     b->InitArg(EVENT_POS,    event);
-    return STATIC_CAST(AliceDebuggerEvent *, b);
+    return static_cast<AliceDebuggerEvent *>(b);
   }
   static AliceDebuggerEvent *FromWord(word w) {
     Block *b = Store::WordToBlock(w);
     Assert(b == INVALID_POINTER || 
 	   b->GetLabel() == (BlockLabel) ALICE_EVENT_LABEL);
-    return STATIC_CAST(AliceDebuggerEvent *, b);
+    return static_cast<AliceDebuggerEvent *>(b);
   }
   static AliceDebuggerEvent *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == (BlockLabel) ALICE_EVENT_LABEL);
-    return STATIC_CAST(AliceDebuggerEvent *, b);
+    return static_cast<AliceDebuggerEvent *>(b);
   }
 };
 #endif

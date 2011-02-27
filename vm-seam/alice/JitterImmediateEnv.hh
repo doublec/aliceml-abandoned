@@ -29,7 +29,7 @@ public:
     values = Tuple::New(size);
   }
   u_int Register(word item) {
-    Assert(item != (word) 0);
+    Assert(item != reinterpret_cast<word>(0));
     if (index >= size) {
       u_int oldsize = size;
       size = ((size * 3) >> 1); 

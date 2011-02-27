@@ -30,7 +30,7 @@ public:
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(RECORD_POS, record);
     frame->InitArg(LABEL_POS, label->ToWord());
-    return STATIC_CAST(LazySelFrame *, frame);
+    return static_cast<LazySelFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -54,18 +54,18 @@ void LazySelInterpreter::Init() {
 }
 
 void LazySelInterpreter::PushCall(Closure *closure0) {
-  LazySelClosure *closure = STATIC_CAST(LazySelClosure *, closure0);
+  LazySelClosure *closure = reinterpret_cast<LazySelClosure *>(closure0);
   LazySelFrame::New(self, closure->GetRecord(), closure->GetLabel());
 }
 
 u_int LazySelInterpreter::GetFrameSize(StackFrame *sFrame) {
-  LazySelFrame *frame = STATIC_CAST(LazySelFrame *, sFrame);
+  LazySelFrame *frame = reinterpret_cast<LazySelFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result LazySelInterpreter::Run(StackFrame *sFrame) {
-  LazySelFrame *frame = STATIC_CAST(LazySelFrame *, sFrame);
+  LazySelFrame *frame = reinterpret_cast<LazySelFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   word wRecord = frame->GetRecord();
   Transient *transient = Store::WordToTransient(wRecord);
@@ -94,7 +94,7 @@ const char *LazySelInterpreter::Identify() {
 }
 
 void LazySelInterpreter::DumpFrame(StackFrame *sFrame) {
-  LazySelFrame *frame = STATIC_CAST(LazySelFrame *, sFrame);
+  LazySelFrame *frame = reinterpret_cast<LazySelFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, "Select %s\n", frame->GetLabel()->ToString()->ExportC());
 }

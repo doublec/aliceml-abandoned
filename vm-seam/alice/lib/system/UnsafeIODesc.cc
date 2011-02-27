@@ -172,13 +172,13 @@ DEFINE1(UnsafeIODesc_readerCapabilities) {
 DEFINE2(UnsafeIODesc_readVec) {
   DECLARE_IODESC(ioDesc, x0);
   DECLARE_INT(n, x1);
-  if (n < 0 || STATIC_CAST(u_int, n) > Vector::maxLen)
+  if (n < 0 || static_cast<u_int>(n) > Vector::maxLen)
     RAISE(PrimitiveTable::General_Size);
   if (n == 0) RAISE(PrimitiveTable::General_Domain);
   String *string0 = String::New(n);
   u_char *buf = string0->GetValue();
   int out;
-  IODesc::result result = ioDesc->Read(buf, (int) n, out);
+  IODesc::result result = ioDesc->Read(buf, static_cast<int>(n), out);
   if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   if (out == n) RETURN(string0->ToWord());
   String *string = String::New(out);
@@ -189,7 +189,7 @@ DEFINE2(UnsafeIODesc_readVec) {
 DEFINE4(UnsafeIODesc_readArr) {
   DECLARE_BUF(DECLARE_WORD8ARRAY);
   int out;
-  IODesc::result result = ioDesc->Read(buf, (int) sz, out);
+  IODesc::result result = ioDesc->Read(buf, static_cast<int>(sz), out);
   if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
@@ -197,13 +197,13 @@ DEFINE4(UnsafeIODesc_readArr) {
 DEFINE2(UnsafeIODesc_readVecNB) {
   DECLARE_IODESC(ioDesc, x0);
   DECLARE_INT(n, x1);
-  if (n < 0 || STATIC_CAST(u_int, n) > Vector::maxLen)
+  if (n < 0 || static_cast<u_int>(n) > Vector::maxLen)
     RAISE(PrimitiveTable::General_Size);
   if (n == 0) RAISE(PrimitiveTable::General_Domain);
   String *string0 = String::New(n);
   u_char *buf = string0->GetValue();
   int out;
-  IODesc::result result = ioDesc->ReadNonblocking(buf, (int) n, out);
+  IODesc::result result = ioDesc->ReadNonblocking(buf, static_cast<int>(n), out);
   if (result == IODesc::result_ok) {
     if (out == n) RETURN(string0->ToWord());
     String *string = String::New(out);
@@ -219,7 +219,7 @@ DEFINE2(UnsafeIODesc_readVecNB) {
 DEFINE4(UnsafeIODesc_readArrNB) {
   DECLARE_BUF(DECLARE_WORD8ARRAY);
   int out;
-  IODesc::result result = ioDesc->ReadNonblocking(buf, (int) sz, out);
+  IODesc::result result = ioDesc->ReadNonblocking(buf, static_cast<int>(sz), out);
   if (result == IODesc::result_ok) {
     TagVal *some = TagVal::New(Types::SOME, 1);
     some->Init(0, Store::IntToWord(out));
@@ -252,7 +252,7 @@ DEFINE1(UnsafeIODesc_writerCapabilities) {
 DEFINE4(UnsafeIODesc_writeVec) {
   DECLARE_BUF(DECLARE_WORD8VECTOR);
   int out;
-  IODesc::result result = ioDesc->Write(buf, (int) sz, out);
+  IODesc::result result = ioDesc->Write(buf, static_cast<int>(sz), out);
   if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
@@ -260,7 +260,7 @@ DEFINE4(UnsafeIODesc_writeVec) {
 DEFINE4(UnsafeIODesc_writeArr) {
   DECLARE_BUF(DECLARE_WORD8ARRAY);
   int out;
-  IODesc::result result = ioDesc->Write(buf, (int) sz, out);
+  IODesc::result result = ioDesc->Write(buf, static_cast<int>(sz), out);
   if (result != IODesc::result_ok) INTERPRET_RESULT(result);
   RETURN_INT(out);
 } END
@@ -268,7 +268,7 @@ DEFINE4(UnsafeIODesc_writeArr) {
 DEFINE4(UnsafeIODesc_writeVecNB) {
   DECLARE_BUF(DECLARE_WORD8VECTOR);
   int out;
-  IODesc::result result = ioDesc->WriteNonblocking(buf, (int) sz, out);
+  IODesc::result result = ioDesc->WriteNonblocking(buf, static_cast<int>(sz), out);
   if (result == IODesc::result_ok) {
     TagVal *some = TagVal::New(Types::SOME, 1);
     some->Init(0, Store::IntToWord(out));
@@ -281,7 +281,7 @@ DEFINE4(UnsafeIODesc_writeVecNB) {
 DEFINE4(UnsafeIODesc_writeArrNB) {
   DECLARE_BUF(DECLARE_WORD8ARRAY);
   int out;
-  IODesc::result result = ioDesc->WriteNonblocking(buf, (int) sz, out);
+  IODesc::result result = ioDesc->WriteNonblocking(buf, static_cast<int>(sz), out);
   if (result == IODesc::result_ok) {
     TagVal *some = TagVal::New(Types::SOME, 1);
     some->Init(0, Store::IntToWord(out));

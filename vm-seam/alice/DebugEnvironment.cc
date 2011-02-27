@@ -163,19 +163,19 @@ DebugEnvironment *DebugEnvironment::New(
   b->InitArg(TYPE_POS,        types->ToWord());
   b->InitArg(TYPE_SCHEME_POS, GetTypeScheme(globalEnv));
   b->InitArg(BOUNDING_POS,    boundingEnv);
-  return STATIC_CAST(DebugEnvironment *, b);
+  return static_cast<DebugEnvironment *>(b);
 }
 
 DebugEnvironment *DebugEnvironment::FromWord(word w) {
   Block *b = Store::WordToBlock(w);
   Assert(b == INVALID_POINTER || b->GetLabel() == DEBUG_ENVIRONMENT_LABEL);
-  return STATIC_CAST(DebugEnvironment *, b);
+  return static_cast<DebugEnvironment *>(b);
 }
 
 DebugEnvironment *DebugEnvironment::FromWordDirect(word w){
   Block *b = Store::DirectWordToBlock(w);
   Assert(b->GetLabel() == DEBUG_ENVIRONMENT_LABEL);
-  return STATIC_CAST(DebugEnvironment *, b);
+  return static_cast<DebugEnvironment *>(b);
 }
 
 word DebugEnvironment::Lookup(String *name) {

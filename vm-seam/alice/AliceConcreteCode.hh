@@ -39,12 +39,12 @@ public:
     ConcreteCode *b = ConcreteCode::FromWord(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetInterpreter() == AbstractCodeInterpreter::self);
-    return STATIC_CAST(AliceConcreteCode *, b);
+    return static_cast<AliceConcreteCode *>(b);
   }
   static AliceConcreteCode *FromWordDirect(word x) {
     ConcreteCode *b = ConcreteCode::FromWordDirect(x);
     Assert(b->GetInterpreter() == AbstractCodeInterpreter::self);
-    return STATIC_CAST(AliceConcreteCode *, b);
+    return static_cast<AliceConcreteCode *>(b);
   }
 };
 

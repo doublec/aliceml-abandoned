@@ -165,7 +165,7 @@ DEFINE1(UnsafeDebugger_getRuntimeEnvironment) {
   while (top >= base) {
     frame = (StackFrame *) top;
     Worker *worker = frame->GetWorker();
-    if (worker == STATIC_CAST(Worker *, AbstractCodeInterpreter::self)) { 
+    if (worker == static_cast<Worker *>(AbstractCodeInterpreter::self)) {
       break;
     }
     top -= worker->GetFrameSize(frame);
@@ -175,7 +175,7 @@ DEFINE1(UnsafeDebugger_getRuntimeEnvironment) {
     RETURN1(Store::IntToWord(Types::nil));
   }
   // compute the DebugEnvironment
-  AbstractCodeFrame *aFrame = STATIC_CAST(AbstractCodeFrame *, frame);
+  AbstractCodeFrame *aFrame = static_cast<AbstractCodeFrame *>(frame);
   DebugEnvironment *dEnv = 
     DebugEnvironment::New(aFrame->GetLocalEnv(), aFrame->GetClosure());
   RETURN1(dEnv->GetNameValueList()->ToWord());
@@ -199,13 +199,13 @@ DEFINE2(UnsafeDebugger_lookup) {
   while (top >= base) {
     frame = (StackFrame *) top;
     Worker *worker = frame->GetWorker();
-    if (worker == STATIC_CAST(Worker *, AbstractCodeInterpreter::self)) { 
+    if (worker == static_cast<Worker *>(AbstractCodeInterpreter::self)) { 
       break;
     }
     top -= worker->GetFrameSize(frame);
   }
   // compute the DebugEnvironment
-  AbstractCodeFrame *aFrame = STATIC_CAST(AbstractCodeFrame *, frame);
+  AbstractCodeFrame *aFrame = static_cast<AbstractCodeFrame *>(frame);
   DebugEnvironment *dEnv = 
     DebugEnvironment::New(aFrame->GetLocalEnv(), aFrame->GetClosure());
   word val = dEnv->Lookup(name);

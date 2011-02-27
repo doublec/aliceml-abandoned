@@ -310,7 +310,7 @@ static word GdkEventToDatatype(GdkEvent *event) {
 
 // put a word on a stream
 static inline void put_on_stream(word *stream, word value) {
-  Future *f = static_cast<Future*>(Store::WordToTransient(*stream));
+  Future *f = reinterpret_cast<Future*>(Store::WordToTransient(*stream));
   *stream = (Future::New())->ToWord();  
   f->ScheduleWaitingThreads();
   f->Become(REF_LABEL, push_front(*stream, value));
@@ -334,23 +334,23 @@ static word create_object(GType t, gpointer p) {
   word value;
   if (g_type_is_a(t, G_LIST_TYPE)) {
     tag = gtkLIST;
-    value = GLIST_OBJECT_TO_WORD(static_cast<GList*>(p));
+    value = GLIST_OBJECT_TO_WORD(reinterpret_cast<GList*>(p));
   }
   else
     if (g_type_is_a(t, G_SLIST_TYPE)) {
       tag = gtkLIST;
-      value = GSLIST_OBJECT_TO_WORD(static_cast<GSList*>(p));
+      value = GSLIST_OBJECT_TO_WORD(reinterpret_cast<GSList*>(p));
     }
     else
       if (t == GDK_EVENT_TYPE) {
 	tag = gtkEVENT;
-	value = GdkEventToDatatype(gdk_event_copy(static_cast<GdkEvent*>(p)));
+	value = GdkEventToDatatype(gdk_event_copy(reinterpret_cast<GdkEvent*>(p)));
       }
       else
         if (g_type_is_a(t, GTK_TYPE_TEXT_ITER)) {
           tag = gtkINT;
           value =
-            INT_TO_WORD(gtk_text_iter_get_offset(static_cast<GtkTextIter*>(p)));
+            INT_TO_WORD(gtk_text_iter_get_offset(reinterpret_cast<GtkTextIter*>(p)));
         } else
           if (g_type_is_a(t, GTK_OBJECT_TYPE))
             value = OBJECT_TO_WORD(p, TYPE_GTK_OBJECT);
@@ -736,7 +736,7 @@ static void Init() {
 #endif
   int argc = 1;
   static const char *args[2] = {"alice", NULL};
-  char **argv = (char**) args;
+  char **argv = const_cast<char**>(args);
   gtk_init(&argc, &argv);
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))

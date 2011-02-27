@@ -71,7 +71,7 @@ static int NativeSignalToAliceSignal(u_int signal) {
   }
 }
 
-class SignalTranslationFrame : public StackFrame {
+class SignalTranslationFrame : private StackFrame {
 protected:
   enum {
     CLOSURE_POS, RE_ENTER_POS, SIZE
@@ -92,8 +92,8 @@ public:
   static SignalTranslationFrame *New(Interpreter *interpreter, word wClosure) {
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(CLOSURE_POS, wClosure);
-    frame->InitArg(RE_ENTER_POS, STATIC_CAST(s_int, 0));
-    return STATIC_CAST(SignalTranslationFrame *, frame);
+    frame->InitArg(RE_ENTER_POS, static_cast<s_int>(0));
+    return static_cast<SignalTranslationFrame *>(frame);
   }
 };
 
@@ -123,13 +123,13 @@ void SignalTranslationInterpreter::PushCall(Closure *closure) {
 }
 
 u_int SignalTranslationInterpreter::GetFrameSize(StackFrame *sFrame) {
-  SignalTranslationFrame *frame = STATIC_CAST(SignalTranslationFrame *, sFrame);
+  SignalTranslationFrame *frame = reinterpret_cast<SignalTranslationFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result SignalTranslationInterpreter::Run(StackFrame *sFrame) {
-  SignalTranslationFrame *frame = STATIC_CAST(SignalTranslationFrame *, sFrame);
+  SignalTranslationFrame *frame = reinterpret_cast<SignalTranslationFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   if (frame->ReEntered()) {
     Scheduler::PopFrame(frame->GetSize());
@@ -148,7 +148,7 @@ Worker::Result SignalTranslationInterpreter::Run(StackFrame *sFrame) {
 Worker::Result SignalTranslationInterpreter::Handle(word) {
   StackFrame *sFrame = Scheduler::GetFrame();
   SignalTranslationFrame *frame =
-    STATIC_CAST(SignalTranslationFrame *, sFrame);
+	reinterpret_cast<SignalTranslationFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::PopFrame(frame->GetSize());
   Scheduler::SetNArgs(1);
@@ -157,11 +157,11 @@ Worker::Result SignalTranslationInterpreter::Handle(word) {
 }
 
 u_int SignalTranslationInterpreter::GetInArity(ConcreteCode *) {
-  return (u_int) INVALID_INT;
+  return static_cast<u_int>(INVALID_INT);
 }
 
 u_int SignalTranslationInterpreter::GetOutArity(ConcreteCode *) {
-  return (u_int) INVALID_INT;
+  return static_cast<u_int>(INVALID_INT);
 }
 
 const char *SignalTranslationInterpreter::Identify() {

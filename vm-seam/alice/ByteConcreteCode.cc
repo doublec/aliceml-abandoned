@@ -49,7 +49,7 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
   concreteCode->Init(OUT_ARITY_POS, outArity);
   concreteCode->Init(INLINE_INFO_POS, inlineInfo);
 
-  return STATIC_CAST(ByteConcreteCode *, concreteCode);
+  return static_cast<ByteConcreteCode *>(concreteCode);
 }
 
 // and this is used in the byte code jitter
@@ -59,9 +59,9 @@ void ByteConcreteCode::Convert(HotSpotCode *hsc,
 			       word nbLocals,
 			       word inlineInfo) {
   Transform *transform =
-    STATIC_CAST(Transform *, hsc->GetAbstractRepresentation());
+    static_cast<Transform *>(hsc->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  ConcreteCode *concreteCode = (ConcreteCode *) hsc;
+  ConcreteCode *concreteCode = reinterpret_cast<ConcreteCode *>(hsc);
   concreteCode->ReplaceInterpreter(ByteCodeInterpreter::self);
   concreteCode->Replace(BYTE_CODE_POS, code->ToWord());
   concreteCode->Replace(IMMEDIATE_ENV_POS, immediateEnv);
@@ -95,7 +95,7 @@ void ByteConcreteCode::Disassemble(std::FILE *file) {
   Chunk *code = GetByteCode();
   Tuple *imEnv = GetImmediateArgs();
 #ifdef THREADED
-  ByteCode::Disassemble(file,(u_int *)code->GetBase(),code,imEnv);
+  ByteCode::Disassemble(file, reinterpret_cast<u_int *>(code->GetBase()), code, imEnv);
 #else
   ByteCode::Disassemble(file,0,code,imEnv);
 #endif

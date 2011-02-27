@@ -48,7 +48,7 @@ public:
     Closure *closure = Closure::New(concreteCode->ToWord(), SIZE);
     closure->Init(RECORD_POS, record);
     closure->Init(LABEL_POS, label->ToWord());
-    return STATIC_CAST(LazySelClosure *, closure);
+    return static_cast<LazySelClosure *>(closure);
   }
 
   word GetRecord() {

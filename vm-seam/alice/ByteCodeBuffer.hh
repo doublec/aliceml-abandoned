@@ -33,8 +33,8 @@ typedef CodeSlot ProgramCounter; // index into the code
 #endif
 
 #define CODE_SLOT_SIZE sizeof(CodeSlot)
-#define SLOT_TO_INT(slot) (u_int) slot
-#define INT_TO_SLOT(i) (CodeSlot) i
+#define SLOT_TO_INT(slot) static_cast<u_int>(slot)
+#define INT_TO_SLOT(i) static_cast<CodeSlot>(i)
 
 #define INITIAL_WRITEBUFFER_SIZE 10000 // TODO: find reasonable size
 
@@ -94,13 +94,13 @@ public:
 class AliceDll ReadBuffer : private Chunk {
 public:
   static ReadBuffer *New(Chunk *code) {
-    return STATIC_CAST(ReadBuffer *, code->GetBase());
+    return reinterpret_cast<ReadBuffer *>(code->GetBase());
   }			     
   void RewriteSlot(u_int index, CodeSlot slot) {
-    ((CodeSlot *) this)[index] = slot;
+    reinterpret_cast<CodeSlot *>(this)[index] = slot;
   }
   CodeSlot GetSlot(u_int index) {
-    return ((CodeSlot *) this)[index];
+    return reinterpret_cast<CodeSlot *>(this)[index];
   }
   u_int GetSlotInt(u_int index) {
     return SLOT_TO_INT(GetSlot(index));

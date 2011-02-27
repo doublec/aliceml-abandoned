@@ -39,20 +39,20 @@ public:
   enum { VISIT, SET_CONSTTABLE, INLINE_EXIT, STOP };
   ControlStack(u_int s = 400) : size(s), top(-1) { stack = new u_int[size]; }
   u_int PopCommand() { return Pop(); }
-  TagVal *PopInstr() { return (TagVal *) Pop(); }
-  Tuple *PopInlineExit() { return (Tuple *) Pop(); }
-  Array *PopConstTable() { return (Array *) Pop(); }
+  TagVal *PopInstr() { return reinterpret_cast<TagVal *>(Pop()); }
+  Tuple *PopInlineExit() { return reinterpret_cast<Tuple *>(Pop()); }
+  Array *PopConstTable() { return reinterpret_cast<Array *>(Pop()); }
   void PushInstr(TagVal *instr) {
-    Push((u_int) (instr));
+    Push(reinterpret_cast<u_int>(instr));
     Push(VISIT);
   }
   void PushInlineExit(Tuple *tup) {
-    Push((u_int) tup);
+    Push(reinterpret_cast<u_int>(tup));
     Push(INLINE_EXIT);
   }
   void PushStop() { Push(STOP); }
   void PushConstTable(Array *constants) {
-    Push((u_int) constants);
+    Push(reinterpret_cast<u_int>(constants));
     Push(SET_CONSTTABLE);
   }
   bool Empty() { return top == -1; }
@@ -255,7 +255,7 @@ void ConstProp_PrePass::Run() {
 	  break;
 	default:
 	  fprintf(stderr,"PrePass: invalid abstractCode tag %"U_INTF"\n",
-		  (u_int)AbstractCode::GetInstr(instr));
+		  static_cast<u_int>(AbstractCode::GetInstr(instr)));
 	  return;
 	}
       }
@@ -332,11 +332,11 @@ private:
   }
   const_kind ExtractKind(Array *table, u_int index) {
     TagVal *valKind = TagVal::FromWordDirect(table->Sub(index));
-    return (const_kind) valKind->GetTag();
+    return static_cast<const_kind>(valKind->GetTag());
   }
   const_kind ExtractKind(u_int index) {
     TagVal *valKind = TagVal::FromWordDirect(constants->Sub(index));
-    return (const_kind) valKind->GetTag();
+    return static_cast<const_kind>(valKind->GetTag());
   }
   word ExtractValue(u_int index) {
     Assert(ExtractKind(index) != UNKNOWN);
@@ -348,7 +348,7 @@ private:
     if(tagVal != INVALID_POINTER) {
       u_int index = Store::DirectWordToInt(tagVal->Sel(0));
       TagVal *valKind = TagVal::FromWordDirect(constants->Sub(index));
-      return (const_kind) valKind->GetTag();
+      return static_cast<const_kind>(valKind->GetTag());
     }
     return UNKNOWN;
   }
@@ -1025,7 +1025,7 @@ void ConstProp_MainPass::Run() {
 	  break;
 	default:
 	  fprintf(stderr,"main pass: invalid abstractCode tag %"U_INTF"\n",
-		  (u_int)AbstractCode::GetInstr(instr));
+		  static_cast<u_int>(AbstractCode::GetInstr(instr)));
 	  return;
 	}
       }

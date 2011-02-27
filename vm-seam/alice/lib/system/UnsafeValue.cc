@@ -37,7 +37,7 @@ public:
   virtual void PushCall(Closure *closure);
 };
 
-class RequestFrame: public StackFrame {
+class RequestFrame: private StackFrame {
 protected:
   enum { FUTURE_POS, CLOSURE_POS, SIZE };
 public:
@@ -45,7 +45,7 @@ public:
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(FUTURE_POS, future);
     frame->InitArg(CLOSURE_POS, closure);
-    return STATIC_CAST(RequestFrame *, frame);
+    return static_cast<RequestFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -53,7 +53,7 @@ public:
   }
   Future *GetFuture() {
     word wFuture = StackFrame::GetArg(FUTURE_POS);
-    return STATIC_CAST(Future *, Store::WordToTransient(wFuture));
+    return static_cast<Future *>(Store::WordToTransient(wFuture));
   }
   word GetClosure() {
     return StackFrame::GetArg(CLOSURE_POS);
@@ -63,13 +63,13 @@ public:
 RequestInterpreter *RequestInterpreter::self;
 
 u_int RequestInterpreter::GetFrameSize(StackFrame *sFrame) {
-  RequestFrame *frame = STATIC_CAST(RequestFrame *, sFrame);
+  RequestFrame *frame = reinterpret_cast<RequestFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
-  RequestFrame *frame = STATIC_CAST(RequestFrame *, sFrame);
+  RequestFrame *frame = reinterpret_cast<RequestFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   Construct(); // TODO: Is this really necessary?
   Future *future = frame->GetFuture();
@@ -120,7 +120,7 @@ DEFINE1(UnsafeValue_awaitRequest) {
     RETURN_INT(0);
 }
   if (transient->GetLabel() == BYNEED_LABEL) {
-    Closure *closure = STATIC_CAST(Byneed *, transient)->GetClosure();
+    Closure *closure = static_cast<Byneed *>(transient)->GetClosure();
     ConcreteCode *concreteCode =
       ConcreteCode::FromWord(closure->GetConcreteCode());
     word wFuture;
@@ -360,8 +360,8 @@ DEFINE1(UnsafeValue_inArity) {
   if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int arity = interpreter->GetInArity(concreteCode);
-  RETURN_INT(arity == STATIC_CAST(u_int, INVALID_INT)? -2:
-	     arity == 1? -1: STATIC_CAST(s_int, arity));
+  RETURN_INT(arity == static_cast<u_int>(INVALID_INT)? -2:
+	     arity == 1? -1: static_cast<s_int>(arity));
 } END
 
 DEFINE1(UnsafeValue_outArity) {
@@ -371,8 +371,8 @@ DEFINE1(UnsafeValue_outArity) {
   if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int arity = interpreter->GetOutArity(concreteCode);
-  RETURN_INT(arity == STATIC_CAST(u_int, INVALID_INT)? -2:
-	     arity == 1? -1: STATIC_CAST(s_int, arity));
+  RETURN_INT(arity == static_cast<u_int>(INVALID_INT)? -2:
+	     arity == 1? -1: static_cast<s_int>(arity));
 } END
 
 AliceDll word UnsafeValue() {

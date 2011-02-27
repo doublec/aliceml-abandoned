@@ -25,7 +25,7 @@ static const bool traceFlag = std::getenv("ALICE_TRACE_UNSAFE_COMPONENT") != NUL
 
 static void Trace(const char *prefix, String *key) {
   if (traceFlag) {
-    std::fprintf(stderr, "[UnsafeComponent] %s %.*s\n", prefix, (int) key->GetSize(), key->GetValue());
+    std::fprintf(stderr, "[UnsafeComponent] %s %.*s\n", prefix, static_cast<int>(key->GetSize()), key->GetValue());
   }
 }
 
@@ -153,8 +153,8 @@ DEFINE1(UnsafeComponent_linkNative) {
   DllLoader::libhandle handle = DllLoader::OpenLibrary(filename);
   if (handle == NULL) RAISE(MakeNativeError());
 
-  word (*InitComponent)() = (word (*)())
-    DllLoader::GetSymbol(handle, String::New("InitComponent"));
+  word (*InitComponent)() = reinterpret_cast<word (*)()>
+    (DllLoader::GetSymbol(handle, String::New("InitComponent")));
 
   if (InitComponent == NULL) {
     DllLoader::CloseLibrary(handle);

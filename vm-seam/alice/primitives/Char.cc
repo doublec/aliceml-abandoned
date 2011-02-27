@@ -30,7 +30,7 @@
 #define CHAR_TO_BOOL(name, test)	\
   DEFINE1(name) {			\
     DECLARE_INT(c, x0);			\
-    RETURN_BOOL(test((int) c));		\
+    RETURN_BOOL(test(static_cast<int>(c)));		\
   } END
 
 INT_INT_TO_BOOL_OP(Char_opless, <)
@@ -40,7 +40,7 @@ INT_INT_TO_BOOL_OP(Char_opgreaterEq, >=)
 
 DEFINE1(Char_chr) {
   DECLARE_INT(c, x0);
-  if (STATIC_CAST(u_char, c) != c) RAISE(PrimitiveTable::General_Chr);
+  if (static_cast<u_char>(c) != c) RAISE(PrimitiveTable::General_Chr);
   RETURN(x0);
 } END
 
@@ -63,12 +63,12 @@ DEFINE1(Char_ord) {
 
 DEFINE1(Char_toLower) {
   DECLARE_INT(c, x0);
-  RETURN_INT(tolower((int) c));
+  RETURN_INT(tolower(static_cast<int>(c)));
 } END
 
 DEFINE1(Char_toUpper) {
   DECLARE_INT(c, x0);
-  RETURN_INT(toupper((int) c));
+  RETURN_INT(toupper(static_cast<int>(c)));
 } END
 
 void PrimitiveTable::RegisterChar() {

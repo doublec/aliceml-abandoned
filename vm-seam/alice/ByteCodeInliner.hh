@@ -42,7 +42,7 @@ public:
     tup->Init(ALIASES_POS,aliases->ToWord());
     tup->Init(NLOCALS_POS,Store::IntToWord(nLocals));
     tup->Init(NNODES_POS,Store::IntToWord(nNodes));
-    return (InlineInfo *) tup;
+    return reinterpret_cast<InlineInfo *>(tup);
   }
   Map *GetInlineMap() { 
     return Map::FromWordDirect(Tuple::Sel(INLINE_MAP_POS)); 
@@ -61,10 +61,10 @@ public:
   }
 
   static InlineInfo *FromWord(word info) {
-    return STATIC_CAST(InlineInfo *, Tuple::FromWord(info));
+    return static_cast<InlineInfo *>(Tuple::FromWord(info));
   }
   static InlineInfo *FromWordDirect(word info) {
-    return STATIC_CAST(InlineInfo *, Tuple::FromWordDirect(info));
+    return static_cast<InlineInfo *>(Tuple::FromWordDirect(info));
   }
 };
 

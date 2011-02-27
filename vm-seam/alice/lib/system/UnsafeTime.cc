@@ -20,7 +20,7 @@
 DEFINE0(UnsafeTime_now) {
   struct timeval tv;
   gettimeofday(&tv, 0);
-  BigInt *res = BigInt::New((double)tv.tv_sec);
+  BigInt *res = BigInt::New(static_cast<double>(tv.tv_sec));
   mpz_mul_ui(res->big(), res->big(), 1000000UL);
   mpz_add_ui(res->big(), res->big(), tv.tv_usec);
   RETURN_INTINF(res);

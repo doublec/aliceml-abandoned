@@ -30,18 +30,18 @@ public:
     Block *b = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
     b->InitArg(KEY_POS, key->ToWord());
     b->InitArg(VALUE_POS, value);
-    b->InitArg(PREV_POS, STATIC_CAST(s_int, 0));
+    b->InitArg(PREV_POS, static_cast<s_int>(0));
     if (next != INVALID_POINTER) {
       b->InitArg(NEXT_POS, next->ToWord());
       next->ReplaceArg(PREV_POS, b->ToWord());
     } else
-      b->InitArg(NEXT_POS, STATIC_CAST(s_int, 0));
-    return STATIC_CAST(CellMapEntry *, b);
+      b->InitArg(NEXT_POS, static_cast<s_int>(0));
+    return static_cast<CellMapEntry *>(b);
   }
   static CellMapEntry *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == ENTRY_LABEL && b->GetSize() == SIZE);
-    return STATIC_CAST(CellMapEntry *, b);
+    return static_cast<CellMapEntry *>(b);
   }
 
   Cell *GetKey() {
@@ -97,14 +97,14 @@ public:
   static CellMap *New() {
     Block *b = Store::AllocMutableBlock(CELLMAP_LABEL, SIZE);
     b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
-    b->InitArg(HEAD_POS, STATIC_CAST(s_int, 0));
-    return STATIC_CAST(CellMap *, b);
+    b->InitArg(HEAD_POS, static_cast<s_int>(0));
+    return static_cast<CellMap *>(b);
   }
   static CellMap *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == CELLMAP_LABEL && b->GetSize() == SIZE);
-    return STATIC_CAST(CellMap *, b);
+    return static_cast<CellMap *>(b);
   }
 
   void Insert(Cell *key, word value) {
@@ -131,7 +131,7 @@ public:
   }
   void RemoveAll() {
     GetHashTable()->Clear();
-    ReplaceArg(HEAD_POS, STATIC_CAST(s_int, 0));
+    ReplaceArg(HEAD_POS, static_cast<s_int>(0));
   }
   CellMapEntry *LookupEntry(Cell *key) {
     word wKey = key->ToWord();
@@ -201,7 +201,7 @@ public:
   static CellMapInsertFrame *New(Worker *worker, CellMapEntry *entry) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
-    return STATIC_CAST(CellMapInsertFrame *, frame);
+    return static_cast<CellMapInsertFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -219,13 +219,13 @@ void CellMapInsertWorker::PushFrame(CellMapEntry *entry) {
 }
 
 u_int CellMapInsertWorker::GetFrameSize(StackFrame *sFrame) {
-  CellMapInsertFrame *frame = STATIC_CAST(CellMapInsertFrame *, sFrame);
+  CellMapInsertFrame *frame = reinterpret_cast<CellMapInsertFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result CellMapInsertWorker::Run(StackFrame *sFrame) {
-  CellMapInsertFrame *frame = STATIC_CAST(CellMapInsertFrame *, sFrame);
+  CellMapInsertFrame *frame = reinterpret_cast<CellMapInsertFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   CellMapEntry *entry = frame->GetEntry();
   Scheduler::PopFrame(frame->GetSize());
@@ -279,7 +279,7 @@ public:
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
-    return STATIC_CAST(CellMapIteratorFrame *, frame);
+    return static_cast<CellMapIteratorFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -295,7 +295,7 @@ public:
     return GetArg(CLOSURE_POS);
   }
   CellMapIteratorWorker::operation GetOperation() {
-    return STATIC_CAST(CellMapIteratorWorker::operation, Store::DirectWordToInt(GetArg(OPERATION_POS)));
+    return static_cast<CellMapIteratorWorker::operation>(Store::DirectWordToInt(GetArg(OPERATION_POS)));
   }
 };
 
@@ -307,13 +307,13 @@ void CellMapIteratorWorker::PushFrame(CellMapEntry *entry,
 }
 
 u_int CellMapIteratorWorker::GetFrameSize(StackFrame *sFrame) {
-  CellMapIteratorFrame *frame = STATIC_CAST(CellMapIteratorFrame *, sFrame);
+  CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result CellMapIteratorWorker::Run(StackFrame *sFrame) {
-  CellMapIteratorFrame *frame = STATIC_CAST(CellMapIteratorFrame *, sFrame);
+  CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   CellMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
@@ -355,7 +355,7 @@ const char *CellMapIteratorWorker::Identify() {
 }
 
 void CellMapIteratorWorker::DumpFrame(StackFrame *sFrame) {
-  CellMapIteratorFrame *frame = STATIC_CAST(CellMapIteratorFrame *, sFrame);
+  CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   const char *name;
   switch (frame->GetOperation()) {
@@ -404,7 +404,7 @@ public:
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
-    return STATIC_CAST(CellMapFindFrame *, frame);
+    return static_cast<CellMapFindFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -420,7 +420,7 @@ public:
     return GetArg(CLOSURE_POS);
   }
   CellMapFindWorker::operation GetOperation() {
-    return STATIC_CAST(CellMapFindWorker::operation, Store::DirectWordToInt(GetArg(OPERATION_POS)));
+    return static_cast<CellMapFindWorker::operation>(Store::DirectWordToInt(GetArg(OPERATION_POS)));
   }
 };
 
@@ -432,13 +432,13 @@ void CellMapFindWorker::PushFrame(CellMapEntry *entry,
 }
 
 u_int CellMapFindWorker::GetFrameSize(StackFrame *sFrame) {
-  CellMapFindFrame *frame = STATIC_CAST(CellMapFindFrame *, sFrame);
+  CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
-  CellMapFindFrame *frame = STATIC_CAST(CellMapFindFrame *, sFrame);
+  CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   CellMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
@@ -499,7 +499,7 @@ const char *CellMapFindWorker::Identify() {
 }
 
 void CellMapFindWorker::DumpFrame(StackFrame *sFrame) {
-  CellMapFindFrame *frame = STATIC_CAST(CellMapFindFrame *, sFrame);
+  CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   const char *name;
   switch (frame->GetOperation()) {

@@ -16,14 +16,14 @@
 //
 // CatchWorker
 //
-class CatchWorkerFrame : public StackFrame {
+class CatchWorkerFrame : private StackFrame {
 protected:
   enum { HANDLER_POS, SIZE };
 public:
   static CatchWorkerFrame *New(Worker *worker, word wClosure) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(HANDLER_POS, wClosure);
-    return STATIC_CAST(CatchWorkerFrame *, frame);
+    return static_cast<CatchWorkerFrame *>(frame);
   }
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
@@ -58,13 +58,13 @@ CatchWorker *CatchWorker::self;
 
 u_int CatchWorker::GetFrameSize(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
-  CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
+  CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
   return catchWorkerFrame->GetSize();
 }
 
 Worker::Result CatchWorker::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
-  CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
+  CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
   Scheduler::PopHandler();
   Scheduler::PopFrame(catchWorkerFrame->GetSize());
   return Worker::CONTINUE;
@@ -73,7 +73,7 @@ Worker::Result CatchWorker::Run(StackFrame *sFrame) {
 Worker::Result CatchWorker::Handle(word) {
   StackFrame *sFrame = Scheduler::GetFrame();
   Assert(sFrame->GetWorker() == this);
-  CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
+  CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
   word handler = catchWorkerFrame->GetHandler();
   Scheduler::PopFrame(catchWorkerFrame->GetSize());
   Scheduler::SetNArgs(2);

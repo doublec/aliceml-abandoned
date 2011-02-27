@@ -41,11 +41,11 @@
     if (/*std::*/isnan(value))				\
       RAISE(PrimitiveTable::General_Domain);      	\
     double result = op(value);				\
-    if (result > STATIC_CAST(double, MAX_VALID_INT) ||	\
-	result < STATIC_CAST(double, MIN_VALID_INT)) {	\
+    if (result > static_cast<double>(MAX_VALID_INT) ||	\
+	result < static_cast<double>(MIN_VALID_INT)) {	\
       RAISE(PrimitiveTable::General_Overflow);      	\
     }							\
-    RETURN_INT(STATIC_CAST(s_int, result));		\
+    RETURN_INT(static_cast<s_int>(result));		\
   } END
 
 #define REAL_TO_INTINF(name, op)		\
@@ -81,7 +81,7 @@
     DECLARE_REAL(real1, x0);					\
     DECLARE_REAL(real2, x1);					\
     double result = op(real1->GetValue(), real2->GetValue());	\
-    RETURN_INT(STATIC_CAST(s_int, result));			\
+    RETURN_INT(static_cast<s_int>(result));			\
   } END
 
 static inline double Trunc(double x) {
@@ -124,7 +124,7 @@ REAL_TO_INT(Real_floor, /*std::*/floor)
 
 DEFINE1(Real_fromInt) {
   DECLARE_INT(i, x0);
-  RETURN_REAL(STATIC_CAST(double, i));
+  RETURN_REAL(static_cast<double>(i));
 } END
 
 DEFINE1(Real_fromLargeInt) {

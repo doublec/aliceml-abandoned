@@ -27,7 +27,7 @@ class Transform;
 inline s_int mydiv(s_int a, s_int b) {
   // This function is only here to bypass a constant folding bug in g++.
   // If we define RETURN_WORD as
-  //   RETURN_INT(STATIC_CAST(s_int, (w) * NONBITS_EXP) / NONBITS_EXP)
+  //   RETURN_INT(static_cast<s_int>((w) * NONBITS_EXP) / NONBITS_EXP)
   // then RETURN_WORD(0x80000000) evaluates to RETURN_WORD(0x80000000)
   // instead of RETURN_WORD(0).
   return a / b;
@@ -36,13 +36,13 @@ inline s_int mydiv(s_int a, s_int b) {
 class AliceDll Alice {
 public:
   static const BlockLabel Array   = MIN_DATA_LABEL;
-  static const BlockLabel Promise = (BlockLabel) (MIN_DATA_LABEL + 1);
-  static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 2);
-  static const BlockLabel ConVal  = (BlockLabel) (MIN_DATA_LABEL + 3);
-  static const BlockLabel Record  = (BlockLabel) (MIN_DATA_LABEL + 4);
-  static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 5);
-  static const BlockLabel BIG_TAG = (BlockLabel) (MIN_DATA_LABEL + 6);
-  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 7);
+  static const BlockLabel Promise = static_cast<BlockLabel>(MIN_DATA_LABEL + 1);
+  static const BlockLabel Cell    = static_cast<BlockLabel>(MIN_DATA_LABEL + 2);
+  static const BlockLabel ConVal  = static_cast<BlockLabel>(MIN_DATA_LABEL + 3);
+  static const BlockLabel Record  = static_cast<BlockLabel>(MIN_DATA_LABEL + 4);
+  static const BlockLabel Vector  = static_cast<BlockLabel>(MIN_DATA_LABEL + 5);
+  static const BlockLabel BIG_TAG = static_cast<BlockLabel>(MIN_DATA_LABEL + 6);
+  static const BlockLabel MIN_TAG = static_cast<BlockLabel>(MIN_DATA_LABEL + 7);
   static const BlockLabel MAX_TAG = MAX_DATA_LABEL;
 
   static bool IsTag(BlockLabel l) {
@@ -72,17 +72,17 @@ public:
   static Array *New(u_int length) {
     Block *b = Store::AllocMutableBlock(Alice::Array, BASE_SIZE + length);
     b->InitArg(LENGTH_POS, length);
-    return STATIC_CAST(Array *, b);
+    return static_cast<Array *>(b);
   }
   static Array *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Array);
-    return STATIC_CAST(Array *, b);
+    return static_cast<Array *>(b);
   }
   static Array *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::Array);
-    return STATIC_CAST(Array *, b);
+    return static_cast<Array *>(b);
   }
 
   u_int GetLength() {
@@ -112,17 +112,17 @@ public:
     Block *b = Store::AllocMutableBlock(Alice::Promise, SIZE);
     b->InitArg(FLAG_POS, Store::IntToWord(false));
     b->InitArg(FUTURE_POS, Future::New()->ToWord());
-    return STATIC_CAST(Promise *, b);
+    return static_cast<Promise *>(b);
   }
   static Promise *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Promise);
-    return STATIC_CAST(Promise *, b);
+    return static_cast<Promise *>(b);
   }
   static Promise *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::Promise);
-    return STATIC_CAST(Promise *, b);
+    return static_cast<Promise *>(b);
   }
 
   bool IsFulfilled() {
@@ -135,7 +135,7 @@ public:
     if (IsFulfilled()) return false;
     ReplaceArg(FLAG_POS, Store::IntToWord(true));
     Future *future =
-      STATIC_CAST(Future *, Store::WordToTransient(GetArg(FUTURE_POS)));
+      static_cast<Future *>(Store::WordToTransient(GetArg(FUTURE_POS)));
     future->ScheduleWaitingThreads();
     future->Become(REF_LABEL, value);
     return true;
@@ -144,7 +144,7 @@ public:
     if (IsFulfilled()) return false;
     ReplaceArg(FLAG_POS, Store::IntToWord(true));
     Future *future =
-      STATIC_CAST(Future *, Store::WordToTransient(GetArg(FUTURE_POS)));
+      static_cast<Future *>(Store::WordToTransient(GetArg(FUTURE_POS)));
     Tuple *package = Tuple::New(2);
     Backtrace *backtrace = Backtrace::New(); // TODO: have primitive in BT
     package->Init(0, exn);
@@ -162,22 +162,22 @@ public:
   using Block::ToWord;
 
   static Cell *New() {
-    return STATIC_CAST(Cell *, Store::AllocMutableBlock(Alice::Cell, SIZE));
+    return static_cast<Cell *>(Store::AllocMutableBlock(Alice::Cell, SIZE));
   }
   static Cell *New(word value) {
     Block *b = Store::AllocMutableBlock(Alice::Cell, SIZE);
     b->InitArg(VALUE_POS, value);
-    return STATIC_CAST(Cell *, b);
+    return static_cast<Cell *>(b);
   }
   static Cell *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Cell);
-    return STATIC_CAST(Cell *, b);
+    return static_cast<Cell *>(b);
   }
   static Cell *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::Cell);
-    return STATIC_CAST(Cell *, b);
+    return static_cast<Cell *>(b);
   }
 
   void Init(word value) {
@@ -210,17 +210,17 @@ public:
     ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
     b->Init(NAME_POS, name->ToWord());
     b->Init(TRANSFORM_POS, Store::IntToWord(0)); // constructed lazily
-    return STATIC_CAST(Constructor *, b);
+    return static_cast<Constructor *>(b);
   }
   static Constructor *FromWord(word x) {
     ConcreteRepresentation *b = ConcreteRepresentation::FromWord(x);
     Assert(b == INVALID_POINTER || b->GetSize() == SIZE);
-    return STATIC_CAST(Constructor *, b);
+    return static_cast<Constructor *>(b);
   }
   static Constructor *FromWordDirect(word x) {
     ConcreteRepresentation *b = ConcreteRepresentation::FromWordDirect(x);
     Assert(b->GetSize() == SIZE);
-    return STATIC_CAST(Constructor *, b);
+    return static_cast<Constructor *>(b);
   }
 
   String *GetName() {
@@ -238,7 +238,7 @@ public:
   static ConVal *New(Block *constructor, u_int n) {
     Block *b = Store::AllocBlock(Alice::ConVal, BASE_SIZE + n);
     b->InitArg(CON_POS, constructor->ToWord());
-    return STATIC_CAST(ConVal *, b);
+    return static_cast<ConVal *>(b);
   }
   static ConVal *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -246,14 +246,14 @@ public:
 	   b->GetLabel() == Alice::ConVal ||
 	   b->GetLabel() == UNIQUESTRING_LABEL ||
 	   b->GetLabel() == CONCRETE_LABEL);
-    return STATIC_CAST(ConVal *, b);
+    return static_cast<ConVal *>(b);
   }
   static ConVal *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::ConVal ||
 	   b->GetLabel() == UNIQUESTRING_LABEL ||
 	   b->GetLabel() == CONCRETE_LABEL);
-    return STATIC_CAST(ConVal *, b);
+    return static_cast<ConVal *>(b);
   }
 
   bool IsConVal() { // as opposed to a Constructor, see FromWord
@@ -281,17 +281,17 @@ public:
   using Block::ToWord;
 
   static TagVal *New(u_int tag, u_int n) {
-    return STATIC_CAST(TagVal *, Store::AllocBlock(Alice::TagToLabel(tag), n));
+    return static_cast<TagVal *>(Store::AllocBlock(Alice::TagToLabel(tag), n));
   }
   static TagVal *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER || Alice::IsTag(p->GetLabel()));
-    return STATIC_CAST(TagVal *, p);
+    return static_cast<TagVal *>(p);
   }
   static TagVal *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(Alice::IsTag(p->GetLabel()));
-    return STATIC_CAST(TagVal *, p);
+    return static_cast<TagVal *>(p);
   }
 
   u_int GetTag() {
@@ -320,17 +320,17 @@ public:
   static BigTagVal *New(u_int tag, u_int n) {
     Block *b = Store::AllocBlock(Alice::BIG_TAG, n + BASE_SIZE);
     b->InitArg(BIG_TAG_POS, Store::IntToWord(tag));
-    return STATIC_CAST(BigTagVal *, b);
+    return static_cast<BigTagVal *>(b);
   }
   static BigTagVal *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER || p->GetLabel() == Alice::BIG_TAG);
-    return STATIC_CAST(BigTagVal *, p);
+    return static_cast<BigTagVal *>(p);
   }
   static BigTagVal *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == Alice::BIG_TAG);
-    return STATIC_CAST(BigTagVal *, p);
+    return static_cast<BigTagVal *>(p);
   }
 
   u_int GetTag() {
@@ -353,17 +353,17 @@ public:
 class AliceDll UniqueConstructor: public Constructor {
 public:
   static UniqueConstructor *New(String *name, String *id) {
-    return STATIC_CAST(UniqueConstructor *, Constructor::New(name, Store::DirectWordToBlock(id->ToWord())));
+    return static_cast<UniqueConstructor *>(Constructor::New(name, Store::DirectWordToBlock(id->ToWord())));
   }
   static UniqueConstructor *New(const char *name, const char *id) {
-    return STATIC_CAST(UniqueConstructor *, Constructor::New(String::New(name),
+    return static_cast<UniqueConstructor *>(Constructor::New(String::New(name),
 			Store::DirectWordToBlock(String::New(id)->ToWord())));
   }
   static UniqueConstructor *FromWord(word x) {
-    return STATIC_CAST(UniqueConstructor *, Constructor::FromWord(x));
+    return static_cast<UniqueConstructor *>(Constructor::FromWord(x));
   }
   static UniqueConstructor *FromWordDirect(word x) {
-    return STATIC_CAST(UniqueConstructor *, Constructor::FromWordDirect(x));
+    return static_cast<UniqueConstructor *>(Constructor::FromWordDirect(x));
   }
 };
 
@@ -379,17 +379,17 @@ public:
     Block *b =
       Store::AllocBlock(Alice::Vector, BASE_SIZE + length);
     b->InitArg(LENGTH_POS, length);
-    return STATIC_CAST(Vector *, b);
+    return static_cast<Vector *>(b);
   }
   static Vector *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Vector);
-    return STATIC_CAST(Vector *, b);
+    return static_cast<Vector *>(b);
   }
   static Vector *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::Vector);
-    return STATIC_CAST(Vector *, b);
+    return static_cast<Vector *>(b);
   }
 
   u_int GetLength() {
@@ -415,13 +415,13 @@ public:
 
   static Word8Array *New(u_int length) {
     Chunk *c = Store::AllocMutableChunk(length);
-    return STATIC_CAST(Word8Array *, c);
+    return static_cast<Word8Array *>(c);
   }
   static Word8Array *FromWord(word x) {
-    return STATIC_CAST(Word8Array *, Store::WordToChunk(x));
+    return static_cast<Word8Array *>(Store::WordToChunk(x));
   }
   static Word8Array *FromWordDirect(word x) {
-    return STATIC_CAST(Word8Array *, Store::DirectWordToChunk(x));
+    return static_cast<Word8Array *>(Store::DirectWordToChunk(x));
   }
 
   u_char *GetValue() {
@@ -434,7 +434,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= -128 && i <= 127);
-    GetValue()[index] = (u_char) i;
+    GetValue()[index] = static_cast<u_char>(i);
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -448,7 +448,7 @@ public:
     InitChunk(index, size, chunk);
   }
   word Sub(u_int index) {
-    return Store::IntToWord((signed char) GetValue()[index]);
+    return Store::IntToWord(static_cast<signed char>(GetValue()[index]));
   }
 };
 
@@ -460,13 +460,13 @@ public:
   using String::GetValue;
 
   static Word8Vector *New(u_int length) {
-    return STATIC_CAST(Word8Vector *, String::New(length));
+    return static_cast<Word8Vector *>(String::New(length));
   }
   static Word8Vector *FromWord(word x) {
-    return STATIC_CAST(Word8Vector *, String::FromWord(x));
+    return static_cast<Word8Vector *>(String::FromWord(x));
   }
   static Word8Vector *FromWordDirect(word x) {
-    return STATIC_CAST(Word8Vector *, String::FromWordDirect(x));
+    return static_cast<Word8Vector *>(String::FromWordDirect(x));
   }
 
   u_int GetLength() {
@@ -476,7 +476,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= -128 && i <= 127);
-    GetValue()[index] = (u_char) i;
+    GetValue()[index] = static_cast<u_char>(i);
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -488,7 +488,7 @@ public:
     Init(index, value);
   }
   word Sub(u_int index) {
-    return Store::IntToWord((signed char) GetValue()[index]);
+    return Store::IntToWord(static_cast<signed char>(GetValue()[index]));
   }
 };
 
@@ -500,13 +500,13 @@ public:
 
   static CharArray *New(u_int length) {
     Chunk *c = Store::AllocMutableChunk(length);
-    return STATIC_CAST(CharArray *, c);
+    return static_cast<CharArray *>(c);
   }
   static CharArray *FromWord(word x) {
-    return STATIC_CAST(CharArray *, Store::WordToChunk(x));
+    return static_cast<CharArray *>(Store::WordToChunk(x));
   }
   static CharArray *FromWordDirect(word x) {
-    return STATIC_CAST(CharArray *, Store::DirectWordToChunk(x));
+    return static_cast<CharArray *>(Store::DirectWordToChunk(x));
   }
 
   u_char *GetValue() {
@@ -519,7 +519,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= 0 && i <= 0xFF);
-    GetValue()[index] = (u_char) i;
+    GetValue()[index] = static_cast<u_char>(i);
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -545,13 +545,13 @@ public:
   using String::GetValue;
 
   static CharVector *New(u_int length) {
-    return STATIC_CAST(CharVector *, String::New(length));
+    return static_cast<CharVector *>(String::New(length));
   }
   static CharVector *FromWord(word x) {
-    return STATIC_CAST(CharVector *, String::FromWord(x));
+    return static_cast<CharVector *>(String::FromWord(x));
   }
   static CharVector *FromWordDirect(word x) {
-    return STATIC_CAST(CharVector *, String::FromWordDirect(x));
+    return static_cast<CharVector *>(String::FromWordDirect(x));
   }
 
   u_int GetLength() {
@@ -561,7 +561,7 @@ public:
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= 0 && i <= 0xFF);
-    GetValue()[index] = (u_char) i;
+    GetValue()[index] = static_cast<u_char>(i);
   }
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
@@ -586,7 +586,7 @@ public:
   static Record *New(u_int n) {
     Block *b = Store::AllocBlock(Alice::Record, BASE_SIZE + n * 2);
     b->InitArg(WIDTH_POS, n);
-    return STATIC_CAST(Record *, b);
+    return static_cast<Record *>(b);
   }
   static Record *New(Vector *labels) {
     u_int n = labels->GetLength();
@@ -596,17 +596,17 @@ public:
       UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
       b->InitArg(BASE_SIZE + i * 2, label->ToWord());
     }
-    return STATIC_CAST(Record *, b);
+    return static_cast<Record *>(b);
   }
   static Record *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER || p->GetLabel() == Alice::Record);
-    return STATIC_CAST(Record *, p);
+    return static_cast<Record *>(p);
   }
   static Record *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(p->GetLabel() == Alice::Record);
-    return STATIC_CAST(Record *, p);
+    return static_cast<Record *>(p);
   }
 
   void Init(u_int i, word value) {
@@ -697,10 +697,10 @@ public:
   static BigInt *FromWordDirect(word x) {
     Chunk *c = Store::DirectWordToChunk(x);
     Assert(c->GetSize() == SIZE);
-    return STATIC_CAST(BigInt *, c);
+    return static_cast<BigInt *>(c);
   }
   MP_INT *big(void) { 
-    return STATIC_CAST(MP_INT*, this->GetBase());
+    return reinterpret_cast<MP_INT*>(this->GetBase());
   }
 
   BigInt *negate(void);

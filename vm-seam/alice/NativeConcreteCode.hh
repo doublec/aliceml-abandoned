@@ -47,7 +47,7 @@ public:
 
   static LazyCompileClosure *New(TagVal *abstractCode);
   static LazyCompileClosure *FromWordDirect(word wClosure) {
-    return STATIC_CAST(LazyCompileClosure *, Closure::FromWordDirect(wClosure));
+    return static_cast<LazyCompileClosure *>(Closure::FromWordDirect(wClosure));
   }
 };
 
@@ -86,13 +86,13 @@ public:
     return Tuple::FromWordDirect(Get(IMMEDIATE_ENV_POS));
   }
   u_int GetNLocals() {
-    return (u_int) Store::DirectWordToInt(Get(NLOCALS_POS));
+    return static_cast<u_int>(Store::DirectWordToInt(Get(NLOCALS_POS)));
   }
   u_int GetCCCPC() {
-    return (u_int) Store::DirectWordToInt(Get(CCC_PC_POS));
+    return static_cast<u_int>(Store::DirectWordToInt(Get(CCC_PC_POS)));
   }
   u_int GetSkipCCCPC() {
-    return (u_int) Store::DirectWordToInt(Get(SKIP_CCC_PC_POS));
+    return static_cast<u_int>(Store::DirectWordToInt(Get(SKIP_CCC_PC_POS)));
   }
   Transform *GetAbstractRepresentation() {
     return Transform::FromWordDirect(Get(TRANSFORM_POS));
@@ -115,12 +115,12 @@ public:
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
     Assert(concreteCode == INVALID_POINTER ||
 	   concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-    return STATIC_CAST(NativeConcreteCode *, concreteCode);
+    return static_cast<NativeConcreteCode *>(concreteCode);
   }
   static NativeConcreteCode *FromWordDirect(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWordDirect(code);
     Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-    return STATIC_CAST(NativeConcreteCode *, concreteCode);
+    return static_cast<NativeConcreteCode *>(concreteCode);
   }
 };
 

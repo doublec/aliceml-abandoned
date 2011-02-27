@@ -128,24 +128,24 @@
   RETURN(w);                                    \
 }
 
-#define DECLARE_WORD32(w,x)                               \
-  uint32_t w;                                             \
-  {                                                       \
-    Chunk *c = Store::WordToChunk(x);                     \
-    if (c == INVALID_POINTER)                             \
-      { REQUEST(x); } else {}                             \
-    u_char *from = (u_char*) c->GetBase();                \
-    w = from[0]<<24 | from[1]<<16 | from[2]<<8 | from[3]; \
-  }                                                       \
+#define DECLARE_WORD32(w,x)                                 \
+  uint32_t w;                                               \
+  {                                                         \
+    Chunk *c = Store::WordToChunk(x);                       \
+    if (c == INVALID_POINTER)                               \
+      { REQUEST(x); } else {}                               \
+    u_char *from = reinterpret_cast<u_char*>(c->GetBase()); \
+    w = from[0]<<24 | from[1]<<16 | from[2]<<8 | from[3];   \
+  }                                                         \
 
 inline
 word Word32ToWord(uint32_t from) {
   Chunk *c = Store::AllocChunk(4);
   char *to = c->GetBase();
-  to[0] = (char) (from >> 24);
-  to[1] = (char) (from >> 16);
-  to[2] = (char) (from >> 8);
-  to[3] = (char) from;
+  to[0] = static_cast<char>(from >> 24);
+  to[1] = static_cast<char>(from >> 16);
+  to[2] = static_cast<char>(from >> 8);
+  to[3] = static_cast<char>(from);
   return c->ToWord();
 }
 

@@ -272,7 +272,7 @@ void AbstractCodeInterpreter::Init() {
 
 Transform *
 AbstractCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  return STATIC_CAST(AliceConcreteCode *, b)->GetAbstractRepresentation();
+  return reinterpret_cast<AliceConcreteCode *>(b)->GetAbstractRepresentation();
 }
 
 void AbstractCodeInterpreter::PushCall_Internal(AliceConcreteCode *acc,
@@ -339,13 +339,13 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 }
 
 u_int AbstractCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
-  AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
+  AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
-  AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
+  AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   TagVal *pc = frame->GetPC();
   Closure *globalEnv = frame->GetClosure();
@@ -407,7 +407,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	DebugWorker::PushFrame(event);
 	pc = TagVal::FromWordDirect(pc->Sel(2));
   	PushState(pc, globalEnv, localEnv, formalArgs);
-	frame = STATIC_CAST(AbstractCodeFrame *, Scheduler::GetFrame());
+	frame = static_cast<AbstractCodeFrame *>(Scheduler::GetFrame());
 	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
 	  Debugger::SendEvent(event);
 	  return Worker::SUSPEND;
@@ -427,14 +427,14 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	// Check for and pop DebugFrame
 	StackFrame *dFrame = Scheduler::GetFrame();
 	Assert(dFrame->GetWorker() == DebugWorker::self);
-	DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, dFrame);
+	DebugFrame *debugFrame = static_cast<DebugFrame *>(dFrame);
 	Scheduler::PopFrame(debugFrame->GetSize());
 	word coord = pc->Sel(0);
 	word stepPoint = pc->Sel(1);
 	word idRef = pc->Sel(2);
 	pc = TagVal::FromWordDirect(pc->Sel(3));
   	PushState(pc, globalEnv, localEnv, formalArgs);
-	frame = STATIC_CAST(AbstractCodeFrame *,Scheduler::GetFrame());
+	frame = static_cast<AbstractCodeFrame *>(Scheduler::GetFrame());
 	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
 	  word idRefRes = GetIdRef(idRef, globalEnv, localEnv);
 	  Debugger::SendEvent(GenerateExitEvent(coord, idRefRes, stepPoint));
@@ -476,7 +476,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	u_int offset;
 	if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
 	  tagVal =
-	    (TagVal *) BigTagVal::New(Store::DirectWordToInt(pc->Sel(2)), nargs);
+	    reinterpret_cast<TagVal *>(BigTagVal::New(Store::DirectWordToInt(pc->Sel(2)), nargs));
 	  offset = BigTagVal::GetOffset();
 	} else {
 	  tagVal = TagVal::New(Store::DirectWordToInt(pc->Sel(2)), nargs);
@@ -569,7 +569,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
 	template_->AssertWidth(AbstractCode::functionWidth);
 	abstractCode->Init(0, template_->Sel(0));
-	Assert(STATIC_CAST(u_int, Store::DirectWordToInt(template_->Sel(1))) ==
+	Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
 	       nGlobals);
 	Vector *subst = Vector::New(nGlobals);
 	for (u_int i = nGlobals; i--; )
@@ -625,7 +625,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	// Construct closure from concrete code:
 	Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nGlobals = idRefs->GetLength();
-	Assert(STATIC_CAST(u_int, Store::DirectWordToInt(template_->Sel(1))) ==
+	Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
 	       nGlobals);
 	Vector *subst = Vector::New(nGlobals);
 #if DEBUGGER
@@ -846,7 +846,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	if (value == INVALID_INT) REQUEST(requestWord);
 	KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
 	s_int offset = Store::DirectWordToInt(pc->Sel(1));
-	u_int index = STATIC_CAST(u_int, value - offset);
+	u_int index = static_cast<u_int>(value - offset);
 	Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	if (index < tests->GetLength())
 	  pc = TagVal::FromWordDirect(tests->Sub(index));
@@ -903,7 +903,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	TagVal *tagVal;
 	if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1))))
-	  tagVal = (TagVal *) BigTagVal::FromWord(requestWord);
+	  tagVal = reinterpret_cast<TagVal *>(BigTagVal::FromWord(requestWord));
 	else
 	  tagVal = TagVal::FromWord(requestWord);
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
@@ -924,7 +924,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  s_int tag;
 	  u_int offset;
 	  if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
-	    tag    = ((BigTagVal *) tagVal)->GetTag();
+	    tag    = reinterpret_cast<BigTagVal *>(tagVal)->GetTag();
 	    offset = BigTagVal::GetOffset();
 	  } else {
 	    tag    = tagVal->GetTag();
@@ -955,7 +955,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	TagVal *tagVal;
 	if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1))))
-	  tagVal = (TagVal *) BigTagVal::FromWord(requestWord);
+	  tagVal = reinterpret_cast<TagVal *>(BigTagVal::FromWord(requestWord));
 	else
 	  tagVal = TagVal::FromWord(requestWord);
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
@@ -963,7 +963,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  if (tag == INVALID_INT) REQUEST(requestWord);
 	  KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
-	  if (STATIC_CAST(u_int, tag) < tests->GetLength()) {
+	  if (static_cast<u_int>(tag) < tests->GetLength()) {
 	    Tuple *tuple = Tuple::FromWordDirect(tests->Sub(tag));
 	    Assert(tuple->Sel(0) == Store::IntToWord(Types::NONE));
 	    pc = TagVal::FromWordDirect(tuple->Sel(1));
@@ -974,14 +974,14 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  s_int tag;
 	  u_int offset;
 	  if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
-	    tag    = ((BigTagVal *) tagVal)->GetTag();
+	    tag    = reinterpret_cast<BigTagVal *>(tagVal)->GetTag();
 	    offset = BigTagVal::GetOffset();
 	  } else {
 	    tag    = tagVal->GetTag();
 	    offset = TagVal::GetOffset();
 	  }
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
-	  if (STATIC_CAST(u_int, tag) < tests->GetLength()) {
+	  if (static_cast<u_int>(tag) < tests->GetLength()) {
 	    Tuple *tuple = Tuple::FromWordDirect(tests->Sub(tag));
 	    TagVal *idDefsOpt = TagVal::FromWordDirect(tuple->Sel(0));
 	    Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
@@ -1100,7 +1100,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 Worker::Result AbstractCodeInterpreter::Handle(word data) {
   StackFrame *sFrame = Scheduler::GetFrame();
   Assert(sFrame->GetWorker() == this);
-  AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
+  AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
   Tuple *package = Tuple::New(2);
   word exn = Scheduler::GetCurrentData();
   package->Init(0, exn);
@@ -1117,7 +1117,7 @@ Worker::Result AbstractCodeInterpreter::Handle(word data) {
 u_int AbstractCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
   Assert(concreteCode->GetInterpreter() == AbstractCodeInterpreter::self);
   AliceConcreteCode *aliceConcreteCode =
-    STATIC_CAST(AliceConcreteCode *, concreteCode);
+    reinterpret_cast<AliceConcreteCode *>(concreteCode);
   TagVal *abstractCode = aliceConcreteCode->GetAbstractCode();
   Vector *idDefs = Vector::FromWordDirect(abstractCode->Sel(3));
   u_int nArgs = idDefs->GetLength();
@@ -1127,7 +1127,7 @@ u_int AbstractCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
 u_int AbstractCodeInterpreter::GetOutArity(ConcreteCode *concreteCode) {
   Assert(concreteCode->GetInterpreter() == AbstractCodeInterpreter::self);
   AliceConcreteCode *aliceConcreteCode =
-    STATIC_CAST(AliceConcreteCode *, concreteCode);
+    reinterpret_cast<AliceConcreteCode *>(concreteCode);
   TagVal *abstractCode = aliceConcreteCode->GetAbstractCode();
   TagVal *outArityOpt = TagVal::FromWord(abstractCode->Sel(4));
   return ((outArityOpt == INVALID_POINTER) ? INVALID_INT :
@@ -1139,7 +1139,7 @@ const char *AbstractCodeInterpreter::Identify() {
 }
 
 void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame) {
-  AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
+  AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   Closure *closure = frame->GetClosure();
   AliceConcreteCode *concreteCode =
@@ -1150,13 +1150,13 @@ void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame) {
   String *name = String::FromWordDirect(coord->Sel(0));
   std::fprintf(stderr, "Alice %s %.*s, line %"S_INTF"\n",
 	       frame->IsHandlerFrame() ? "handler" : "function",
-	       (int) name->GetSize(), name->GetValue(),
+	       static_cast<int>(name->GetSize()), name->GetValue(),
 	       Store::DirectWordToInt(coord->Sel(1)));
 }
 
 #if PROFILE
 word AbstractCodeInterpreter::GetProfileKey(StackFrame *sFrame) {
-  AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
+  AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   ConcreteCode *concreteCode =
     ConcreteCode::FromWord(frame->GetClosure()->GetConcreteCode());
@@ -1182,7 +1182,7 @@ MakeProfileName(AliceConcreteCode *concreteCode, const char *type) {
 }
 
 String *AbstractCodeInterpreter::GetProfileName(StackFrame *sFrame) {
-  AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
+  AbstractCodeFrame *frame = static_cast<AbstractCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   Closure *closure = frame->GetClosure();
   AliceConcreteCode *concreteCode =
@@ -1192,7 +1192,7 @@ String *AbstractCodeInterpreter::GetProfileName(StackFrame *sFrame) {
 }
 
 String *AbstractCodeInterpreter::GetProfileName(ConcreteCode *concreteCode) {
-  return MakeProfileName(STATIC_CAST(AliceConcreteCode *, concreteCode),
+  return MakeProfileName(static_cast<AliceConcreteCode *>(concreteCode),
 			 "function");
 }
 #endif

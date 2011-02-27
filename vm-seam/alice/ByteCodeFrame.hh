@@ -20,10 +20,11 @@
 #include "alice/Base.hh"
 #include "alice/ByteCodeInterpreter.hh"
 
-class AliceDll ByteCodeFrame : public StackFrame {
+class AliceDll ByteCodeFrame : private StackFrame {
 protected:
   enum { CODE_POS, PC_POS, CP_POS, IP_POS, SIZE_POS, BASE_SIZE };
 public:
+  using StackFrame::Clone;
   // ByteCodeFrame Accessors
   
   void GetState(u_int *pc, 
@@ -83,7 +84,7 @@ public:
     word defaultValue = Store::IntToWord(0);
     for (u_int i = nbLocals; i--; )
       frame->InitArg(BASE_SIZE + i, defaultValue);
-    return STATIC_CAST(ByteCodeFrame *, frame);
+    return static_cast<ByteCodeFrame *>(frame);
   }
 };
 

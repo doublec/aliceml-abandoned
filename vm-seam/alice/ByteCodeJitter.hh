@@ -74,7 +74,7 @@ public:
     @return index into environment where the value is stored
   */
   u_int Register(word item) {
-    Assert(item != (word) 0);
+    Assert(item != reinterpret_cast<word>(0));
     if(!PointerOp::IsTransient(item) && map->IsMember(item))
       return Store::DirectWordToInt(map->Get(item));
     if (index >= size) {

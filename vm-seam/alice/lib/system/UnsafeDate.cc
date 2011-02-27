@@ -14,7 +14,7 @@
 #include <time.h>
 
 #define INT_TO_WORD(i) Store::IntToWord(i)
-#define WORD_TO_INT(w) (int) Store::WordToInt(w)
+#define WORD_TO_INT(w) static_cast<int>(Store::WordToInt(w))
 
 #define AWAIT(y,x) \
         if (Store::WordToTransient(x) != INVALID_POINTER) REQUEST(x); \
@@ -25,7 +25,7 @@ static word exceptionDate;
 
 #define RAISE_DATE              \
     { \
-        ConVal *conVal = ConVal::New ((Block*)Constructor::FromWordDirect (exceptionDate), 0); \
+        ConVal *conVal = ConVal::New(reinterpret_cast<Block*>(Constructor::FromWordDirect(exceptionDate)), 0); \
         RAISE(conVal->ToWord ()); \
     }
 
@@ -103,14 +103,14 @@ DEFINE1(UnsafeDate_toTime) {
     struct tm tm;
     to_tm (t, &tm);
     time_t time = mktime (&tm);
-    if (time == (time_t) -1) {
+    if (time == static_cast<time_t>(-1)) {
       RAISE_DATE;
     } else {
-        double d        = static_cast<double> (time);
+        double d = static_cast<double>(time);
         if (d >= MIN_VALID_INT && d <= MAX_VALID_INT) {
-            RETURN_INT(static_cast<int> (d));
+            RETURN_INT(static_cast<int>(d));
         } else {
-            BigInt *ret = BigInt::New (static_cast<double> (time));
+            BigInt *ret = BigInt::New(static_cast<double>(time));
             RETURN_INTINF(ret);
         }
     }
@@ -129,7 +129,7 @@ DEFINE2(UnsafeDate_fmt) {
     } else if (size == 0 && !strcmp(fmt->ExportC (), "%p")) {
         // educated guess: if size = 0 resulting string
         // might be empty iff fmt = "%p" (AM|PM)
-        RETURN(String::New (STATIC_CAST(u_int, 0))->ToWord ());
+        RETURN(String::New (static_cast<u_int>(0))->ToWord ());
     } else {
         RAISE_DATE;
     }

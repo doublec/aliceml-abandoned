@@ -26,7 +26,7 @@
 //
 // Interpreter StackFrames
 //
-class NativeCodeFrame : public StackFrame {
+class NativeCodeFrame : private StackFrame {
 protected:
   enum {
     PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS, BASE_SIZE
@@ -40,7 +40,7 @@ public:
     return Store::DirectWordToInt(GetImmediateArgs()->Sel(0));
   }
   u_int GetPC() {
-    return (u_int) Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
+    return static_cast<u_int>(Store::DirectWordToInt(StackFrame::GetArg(PC_POS)));
   }
   void SetPC(u_int pc) {
     StackFrame::InitArg(PC_POS, Store::IntToWord(pc));
@@ -66,7 +66,7 @@ public:
     frame->InitArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
     for (u_int i = nbLocals; i--;)
       frame->InitArg(BASE_SIZE + i, Store::IntToWord(0));
-    return STATIC_CAST(NativeCodeFrame *, frame);
+    return static_cast<NativeCodeFrame *>(frame);
   }
 };
 
@@ -93,11 +93,11 @@ u_int NativeCodeInterpreter::GetOutArity(TagVal *abstractCode) {
 
 Transform *
 NativeCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  return STATIC_CAST(NativeConcreteCode *, b)->GetAbstractRepresentation();
+  return reinterpret_cast<NativeConcreteCode *>(b)->GetAbstractRepresentation();
 }
 
 u_int NativeCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
-  NativeCodeFrame *frame = STATIC_CAST(NativeCodeFrame *, sFrame);
+  NativeCodeFrame *frame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
@@ -116,16 +116,16 @@ void NativeCodeInterpreter::PushCall(Closure *closure) {
 }
 
 Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {
-  NativeCodeFrame *frame = STATIC_CAST(NativeCodeFrame *, sFrame);
+  NativeCodeFrame *frame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   Chunk *code        = frame->GetCode();
-  native_fun execute = (native_fun) code->GetBase();
+  native_fun execute = reinterpret_cast<native_fun>(code->GetBase());
   return execute();
 }
 
 Worker::Result NativeCodeInterpreter::Handle(word data) {
   StackFrame *sFrame = Scheduler::GetFrame();
-  NativeCodeFrame *frame = STATIC_CAST(NativeCodeFrame *, sFrame);
+  NativeCodeFrame *frame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   frame->SetPC(Store::DirectWordToInt(data));
   Tuple *package = Tuple::New(2);
@@ -141,7 +141,7 @@ Worker::Result NativeCodeInterpreter::Handle(word data) {
 u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
   Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
   NativeConcreteCode *nativeConcreteCode =
-    STATIC_CAST(NativeConcreteCode *, concreteCode);
+    reinterpret_cast<NativeConcreteCode *>(concreteCode);
   Transform *transform = nativeConcreteCode->GetAbstractRepresentation();
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   return GetInArity(abstractCode);
@@ -150,7 +150,7 @@ u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
 u_int NativeCodeInterpreter::GetOutArity(ConcreteCode *concreteCode) {
   Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
   NativeConcreteCode *nativeConcreteCode =
-    STATIC_CAST(NativeConcreteCode *, concreteCode);
+    reinterpret_cast<NativeConcreteCode *>(concreteCode);
   Transform *transform = nativeConcreteCode->GetAbstractRepresentation();
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   return GetOutArity(abstractCode);
@@ -161,7 +161,7 @@ const char *NativeCodeInterpreter::Identify() {
 }
 
 void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame) {
-  NativeCodeFrame *codeFrame = STATIC_CAST(NativeCodeFrame *, sFrame);
+  NativeCodeFrame *codeFrame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   const char *frameType;
   frameType = "function";
@@ -171,20 +171,20 @@ void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame) {
   NativeConcreteCode *concreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
   Transform *transform =
-    STATIC_CAST(Transform *, concreteCode->GetAbstractRepresentation());
+    static_cast<Transform *>(concreteCode->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
   String *name         = String::FromWord(coord->Sel(0));
   std::fprintf(stderr, //"Alice native %s %.*s, line %d, column %d\n",
 	       "%.*s:%d.%d\n",
-	       /*frameType,*/ (int) name->GetSize(), name->GetValue(),
+	       /*frameType,*/ static_cast<int>(name->GetSize()), name->GetValue(),
 	       Store::WordToInt(coord->Sel(1)),
 	       Store::WordToInt(coord->Sel(2)));
 }
 
 #if PROFILE
 word NativeCodeInterpreter::GetProfileKey(StackFrame *sFrame) {
-  NativeCodeFrame *frame = STATIC_CAST(NativeCodeFrame *, sFrame);
+  NativeCodeFrame *frame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   word concreteCode = frame->GetClosure()->GetConcreteCode();
   return ConcreteCode::FromWord(concreteCode)->ToWord();
@@ -197,7 +197,7 @@ word NativeCodeInterpreter::GetProfileKey(ConcreteCode *concreteCode) {
 static String *
 MakeProfileName(NativeConcreteCode *concreteCode, const char *type) {
   Transform *transform =
-    STATIC_CAST(Transform *, concreteCode->GetAbstractRepresentation());
+    static_cast<Transform *>(concreteCode->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
   String *name         = String::FromWord(coord->Sel(0));
@@ -210,7 +210,7 @@ MakeProfileName(NativeConcreteCode *concreteCode, const char *type) {
 }
 
 String *NativeCodeInterpreter::GetProfileName(StackFrame *sFrame) {
-  NativeCodeFrame *frame = STATIC_CAST(NativeCodeFrame *, sFrame);
+  NativeCodeFrame *frame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   const char *frameType;
   frameType = "function";
@@ -223,7 +223,7 @@ String *NativeCodeInterpreter::GetProfileName(StackFrame *sFrame) {
 
 String *NativeCodeInterpreter::GetProfileName(ConcreteCode *concreteCode) {
   NativeConcreteCode *nativeConcreteCode =
-    STATIC_CAST(NativeConcreteCode *, concreteCode);
+    reinterpret_cast<NativeConcreteCode *>(concreteCode);
   return MakeProfileName(nativeConcreteCode, "function");
 }
 #endif

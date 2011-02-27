@@ -52,7 +52,7 @@ typedef int socklen_t;
   int i; \
   { \
     DECLARE_INT(DECLARE_FD_i, x); \
-    i = (int) DECLARE_FD_i; \
+    i = static_cast<int>(DECLARE_FD_i); \
   }
 
 #define DECLARE_PORT(i, x) \
@@ -62,7 +62,7 @@ typedef int socklen_t;
     if (DECLARE_PORT_p < 0 || DECLARE_PORT_p >= 1<<16) { \
       RAISE(PrimitiveTable::General_Domain); \
     } \
-    i = (uint16_t) DECLARE_PORT_p; \
+    i = static_cast<uint16_t>(DECLARE_PORT_p); \
   }
 
 static word SysErrConstructor;
@@ -218,7 +218,7 @@ DEFINE2(UnsafeSocket_inputN) {
   DECLARE_FD(sock, x0);
   DECLARE_INT(count, x1);
 
-  if (count < 0 || STATIC_CAST(u_int, count) > String::maxSize) {
+  if (count < 0 || static_cast<u_int>(count) > String::maxSize) {
     RAISE(PrimitiveTable::General_Size);
   }
   String *buffer = String::New(count);
@@ -237,7 +237,7 @@ DEFINE2(UnsafeSocket_inputN) {
       RAISE_SOCK_ERR();
     }
   } else if (n == 0) {
-    RETURN(String::New(STATIC_CAST(u_int, 0))->ToWord());
+    RETURN(String::New(static_cast<u_int>(0))->ToWord());
   } else if (n == count) {
     RETURN(buffer->ToWord());
   } else {
@@ -250,7 +250,7 @@ DEFINE2(UnsafeSocket_inputN) {
 DEFINE2(UnsafeSocket_output1) {
   DECLARE_FD(sock, x0);
   DECLARE_INT(i, x1);
-  u_char c = (u_char) i;
+  u_char c = static_cast<u_char>(i);
  retry:
   Interruptible(s_int, res, send(sock, reinterpret_cast<char *>(&c), 1, 0));
   if (res < 0) {
@@ -273,7 +273,7 @@ DEFINE3(UnsafeSocket_output) {
   DECLARE_STRING(string, x1);
   DECLARE_INT(offset, x2);
 
-  Assert(offset >= 0 && STATIC_CAST(u_int, offset) < string->GetSize());
+  Assert(offset >= 0 && static_cast<u_int>(offset) < string->GetSize());
   u_char *buffer = string->GetValue() + offset;
   u_int count = string->GetSize() - offset;
  retry:

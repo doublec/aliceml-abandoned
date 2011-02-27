@@ -96,12 +96,12 @@ AbstractCodeFrame::Environment::New(u_int size) {
   for(u_int index = size; index--; ) {
     array->Init(index, AliceLanguageLayer::undefinedValue);
   }
-  return STATIC_CAST(Environment *, array);
+  return static_cast<Environment *>(array);
 }
 // Environment Untagging
 AbstractCodeFrame::Environment *
 AbstractCodeFrame::Environment::FromWordDirect(word x) {
-  return STATIC_CAST(Environment *, Array::FromWordDirect(x));
+  return static_cast<Environment *>(Array::FromWordDirect(x));
 }
 
 #ifdef DEBUG_CHECK

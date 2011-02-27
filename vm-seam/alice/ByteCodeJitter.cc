@@ -396,13 +396,13 @@ void ByteCodeJitter::Init() {
 
   // prepare inlineTable
 #define INIT_INLINE_TABLE(primitiveName,primitiveNumber) {		\
-  Chunk *name = (Chunk *) (String::New(primitiveName));			\
+  Chunk *name = reinterpret_cast<Chunk *>(String::New(primitiveName));			\
   word value = PrimitiveTable::LookupValue(name);			\
   Closure *closure = Closure::FromWordDirect(value);			\
   ConcreteCode *concreteCode =						\
     ConcreteCode::FromWord(closure->GetConcreteCode());			\
   Interpreter *interpreter = concreteCode->GetInterpreter();		\
-  inlineTable[primitiveNumber] = (void *) interpreter->GetCFunction();	\
+  inlineTable[primitiveNumber] = reinterpret_cast<void *>(interpreter->GetCFunction());	\
 }
 
   INIT_INLINE_TABLE("Int.+",INT_PLUS);
@@ -1035,7 +1035,7 @@ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure,
   Interpreter *interpreter = concreteCode->GetInterpreter();
 
   // we can directly store the address in the code as chunks are not GC'd
-  u_int interpreterAddr = (u_int) interpreter;
+  u_int interpreterAddr = reinterpret_cast<u_int>(interpreter);
 
   u_int inArity = interpreter->GetInArity(concreteCode);
   u_int argRegs[inArity];
@@ -1143,7 +1143,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
     ConcreteCode::FromWord(closure->GetConcreteCode());		
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int outArity = interpreter->GetOutArity(concreteCode);
-  void *cFunction = (void*) interpreter->GetCFunction();
+  void *cFunction = reinterpret_cast<void*>(interpreter->GetCFunction());
 
   // check if we can inline the primitive
   if(InlinePrimitive(cFunction,args,idDefInstrOpt)) {
@@ -1281,7 +1281,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	if ((transient != INVALID_POINTER) &&
 	(transient->GetLabel() == BYNEED_LABEL)) {
 	  Closure *byneedClosure = 
-	    STATIC_CAST(Byneed *, transient)->GetClosure();
+	    static_cast<Byneed *>(transient)->GetClosure();
 	  ConcreteCode *concreteCode =
 	    ConcreteCode::FromWord(byneedClosure->GetConcreteCode());
 	  // select from lazy-sel closure
@@ -1314,7 +1314,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 	if(concreteCode != INVALID_POINTER) {
 	  Interpreter *interpreter = concreteCode->GetInterpreter();
 	  outArity = interpreter->GetOutArity(concreteCode);
-	  void *cFunction = (void*) interpreter->GetCFunction();
+	  void *cFunction = reinterpret_cast<void*>(interpreter->GetCFunction());
 	  // check if this is a primitive
 	  if(cFunction != NULL) { 
 	    // try to inline some other common primitives
@@ -2803,7 +2803,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   BCJIT_DEBUG("start compilation (%d times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
   Transform *transform =
-    STATIC_CAST(Transform *, hsc->GetAbstractRepresentation());
+    static_cast<Transform *>(hsc->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
 #ifdef DEBUG_DISASSEMBLE 
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));

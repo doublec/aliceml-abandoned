@@ -139,12 +139,12 @@ public:
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
     Assert(concreteCode == INVALID_POINTER ||
 	   concreteCode->GetInterpreter() == HotSpotInterpreter::self);
-    return STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+    return static_cast<HotSpotConcreteCode *>(concreteCode);
   }
   static HotSpotConcreteCode *FromWordDirect(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWordDirect(code);
     Assert(concreteCode->GetInterpreter() == HotSpotInterpreter::self);
-    return STATIC_CAST(HotSpotConcreteCode *, concreteCode);
+    return static_cast<HotSpotConcreteCode *>(concreteCode);
   }
 };
 

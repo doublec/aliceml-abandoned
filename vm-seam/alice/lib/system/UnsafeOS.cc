@@ -113,7 +113,7 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
 #else
   DECLARE_UNMANAGED_POINTER(d, x0);
   
-  if (struct dirent *n = readdir((DIR *)d)) {
+  if (struct dirent *n = readdir(reinterpret_cast<DIR *>(d))) {
     TagVal *some = TagVal::New(1,1);
     some->Init(0, String::New(n->d_name)->ToWord());
     RETURN(some->ToWord());
@@ -158,7 +158,7 @@ DEFINE1(UnsafeOS_FileSys_rewindDir) {
   RETURN_UNIT;
 #else
   DECLARE_UNMANAGED_POINTER(d, x0);
-  rewinddir((DIR *)d);
+  rewinddir(reinterpret_cast<DIR *>(d));
 
   RETURN_UNIT;
 #endif
@@ -178,7 +178,7 @@ DEFINE1(UnsafeOS_FileSys_closeDir) {
 #else
   DECLARE_UNMANAGED_POINTER(d, x0);
 
-  if (closedir((DIR *)d) != 0)
+  if (closedir(reinterpret_cast<DIR *>(d)) != 0)
     RAISE_SYS_ERR();
   
   RETURN_UNIT;
@@ -201,7 +201,7 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
   u_int size = buffer->GetSize();
  retry:
   {
-    char *buf = (char *) buffer->GetValue();
+    char *buf = reinterpret_cast<char *>(buffer->GetValue());
 #if defined(__MINGW32__) || defined(_MSC_VER)
     u_int n = GetCurrentDirectory(size, (CHAR *) buf);
     if (n == 0) RAISE_SYS_ERR();
@@ -291,15 +291,15 @@ DEFINE1(UnsafeOS_FileSys_readLink) {
   String *buffer = String::FromWordDirect(wBufferString);
   u_int size = buffer->GetSize();
  retry:
-  s_int res = readlink(name->ExportC(), (char *) buffer->GetValue(), size);
+  s_int res = readlink(name->ExportC(), reinterpret_cast<char *>(buffer->GetValue()), size);
   if (res < 0) RAISE_SYS_ERR();
-  if (STATIC_CAST(u_int, res) == size) {
+  if (static_cast<u_int>(res) == size) {
     size = size * 3 / 2;
     buffer = String::New(size);
     wBufferString = buffer->ToWord();
     goto retry;
   }
-  RETURN(String::New((char *) buffer->GetValue(), res)->ToWord());
+  RETURN(String::New(reinterpret_cast<char *>(buffer->GetValue()), res)->ToWord());
 #endif
 } END
 
@@ -342,7 +342,7 @@ DEFINE1(UnsafeOS_FileSys_modTime) {
   struct stat info;
   Interruptible(res, stat(name->ExportC(), &info));
   if (res) RAISE_SYS_ERR();
-  BigInt *b = BigInt::New((u_int)info.st_mtime);
+  BigInt *b = BigInt::New(static_cast<u_int>(info.st_mtime));
   mpz_mul_ui(b->big(), b->big(), 1000);
   RETURN_INTINF(b);
 #endif
@@ -389,7 +389,7 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
   RETURN(name->ToWord());
 #else
   static const char path[] = "/tmp/aliceXXXXXX";
-  String *s = String::New(path, (u_int) sizeof(path));
+  String *s = String::New(path, static_cast<u_int>(sizeof(path)));
   if (mkstemp(reinterpret_cast<char *>(s->GetValue())) == -1) {
     RAISE_SYS_ERR();
   }
@@ -424,14 +424,14 @@ DEFINE0(UnsafeOS_FileSys_getHomeDir) {
 
   if (envVal==NULL) {
   retry:
-    if (getcwd((char *) buffer->GetValue(), size) == NULL) {
+    if (getcwd(reinterpret_cast<char *>(buffer->GetValue()), size) == NULL) {
       if (errno != ERANGE) RAISE_SYS_ERR();
       size = size * 3 / 2;
       buffer = String::New(size);
       wBufferString = buffer->ToWord();
       goto retry;
     }
-    RETURN(String::New((char *) buffer->GetValue())->ToWord());
+    RETURN(String::New(reinterpret_cast<char *>(buffer->GetValue()))->ToWord());
   }
   RETURN(String::New(envVal)->ToWord());
 #endif
@@ -439,7 +439,7 @@ DEFINE0(UnsafeOS_FileSys_getHomeDir) {
 
 DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   String *buffer = String::FromWordDirect(wBufferString);
-  char *buf = (char *) buffer->GetValue();
+  char *buf = reinterpret_cast<char *>(buffer->GetValue());
   u_int size = buffer->GetSize();
 #if defined(__MINGW32__) || defined(_MSC_VER)
   ITEMIDLIST* pidl;
@@ -479,7 +479,7 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
     if (len + pluslen >= size) {
       size = len + pluslen + 1;
       buffer = String::New(size);
-      buf = (char *) buffer->GetValue();
+      buf = reinterpret_cast<char *>(buffer->GetValue());
       wBufferString = buffer->ToWord();
     }
     strcpy(buf, envVal);
@@ -614,7 +614,7 @@ DEFINE2(UnsafeOS_SysErr) {
 
 DEFINE1(UnsafeOS_errorMsg) {
   DECLARE_INT(errorCode, x0);
-  RETURN(ErrorCodeToString((int) errorCode)->ToWord());
+  RETURN(ErrorCodeToString(static_cast<int>(errorCode))->ToWord());
 } END
 
 AliceDll word UnsafeOS() {

@@ -28,20 +28,20 @@ private:
   enum { COUNTER_POS, TABLE_POS, SIZE };
   static const u_int initialSize = 8; //--** to be checked
 public:
-  static const u_int NOT_FOUND = STATIC_CAST(u_int, -1);
+  static const u_int NOT_FOUND = static_cast<u_int>(-1);
 
   using Block::ToWord;
 
   static SizeWorkerSeen *New() {
     Block *p = Store::AllocMutableBlock(SEEN_LABEL, SIZE);
-    p->InitArg(COUNTER_POS, STATIC_CAST(s_int, 0));
+    p->InitArg(COUNTER_POS, static_cast<s_int>(0));
     p->InitArg(TABLE_POS, Map::New(initialSize)->ToWord());
-    return STATIC_CAST(SizeWorkerSeen *, p);
+    return static_cast<SizeWorkerSeen *>(p);
   }
   static SizeWorkerSeen *FromWordDirect(word w) {
     Block *b = Store::DirectWordToBlock(w);
     Assert(b->GetLabel() == SEEN_LABEL);
-    return STATIC_CAST(SizeWorkerSeen *, b);
+    return static_cast<SizeWorkerSeen *>(b);
   }
 
   void Add(Block *v) {
@@ -126,7 +126,7 @@ public:
   static SizeWorkerFrame *New(Worker *worker, word data) {
     NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(DATA_POS, data);
-    return STATIC_CAST(SizeWorkerFrame *, frame);
+    return static_cast<SizeWorkerFrame *>(frame);
   }
 
   u_int GetSize() {
@@ -168,13 +168,13 @@ void SizeWorker::PushFrame(word data) {
 u_int SizeWorker::GetFrameSize(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   SizeWorkerFrame *frame =
-    STATIC_CAST(SizeWorkerFrame *, sFrame);  
+    reinterpret_cast<SizeWorkerFrame *>(sFrame);
   return frame->GetSize();
 }
 
 Worker::Result SizeWorker::Run(StackFrame *sFrame) {
   SizeWorkerFrame *frame =
-    STATIC_CAST(SizeWorkerFrame *, sFrame);
+    reinterpret_cast<SizeWorkerFrame *>(sFrame);
   word x0 = frame->GetData();
 
   bool req = SizeWorkerArgs::GetReq();
@@ -355,7 +355,7 @@ void heapSignalHandler(u_int limit) {
   Transient *transient = Store::WordToTransient(cell->Access());
   Assert(transient != INVALID_POINTER &&
          transient->GetLabel() == FUTURE_LABEL);
-  Future *future = STATIC_CAST(Future *, transient);
+  Future *future = static_cast<Future *>(transient);
   future->ScheduleWaitingThreads();
   future->Become(REF_LABEL, Store::IntToWord(limit/(1024*1024)));
 }

@@ -176,7 +176,7 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
     Transient *transient = Store::WordToTransient(wClosure);
     if ((transient != INVALID_POINTER) &&
 	(transient->GetLabel() == BYNEED_LABEL)) {
-      Closure *byneedClosure = STATIC_CAST(Byneed *, transient)->GetClosure();
+      Closure *byneedClosure = static_cast<Byneed *>(transient)->GetClosure();
       ConcreteCode *concreteCode =
 	ConcreteCode::FromWord(byneedClosure->GetConcreteCode());
       if ((concreteCode != INVALID_POINTER) &&
@@ -198,7 +198,7 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
   if(interpreter == ByteCodeInterpreter::self) {
     ByteConcreteCode *bcc = ByteConcreteCode::FromWordDirect(cc->ToWord());
     Transform *transform =
-      STATIC_CAST(Transform *, bcc->GetAbstractRepresentation());
+      static_cast<Transform *>(bcc->GetAbstractRepresentation());
     TagVal *acc = TagVal::FromWordDirect(transform->GetArgument());
     if(CheckCycle(acc)) return; // break inline cycle
     InlineInfo *inlineInfo = bcc->GetInlineInfo();
@@ -211,7 +211,7 @@ void InlineAnalyser::AnalyseAppVar(TagVal *instr, u_int appVarPP) {
     HotSpotConcreteCode *hscc = 
       HotSpotConcreteCode::FromWordDirect(cc->ToWord());
     Transform *transform = 
-      STATIC_CAST(Transform *, hscc->GetAbstractRepresentation());
+      static_cast<Transform *>(hscc->GetAbstractRepresentation());
     TagVal *acc = TagVal::FromWordDirect(transform->GetArgument());
     if(CheckCycle(acc)) return; // break inline cycle
     TagVal *inlineInfoOpt = hscc->GetInlineInfoOpt();
@@ -446,17 +446,17 @@ public:
   ControlStack(u_int s = 400) : size(s), top(-1) { stack = new u_int[size]; }
   u_int PopInt() { return Pop(); }
   u_int PopCommand() { return Pop(); }
-  TagVal *PopInstr() { return (TagVal *) Pop(); }
-  word PopWord() { return (word) Pop(); }
-  TagVal *PopTagVal() { return (TagVal *) Pop(); }
+  TagVal *PopInstr() { return reinterpret_cast<TagVal *>(Pop()); }
+  word PopWord() { return reinterpret_cast<word>(Pop()); }
+  TagVal *PopTagVal() { return reinterpret_cast<TagVal *>(Pop()); }
   void PushInstr(word instr) {
-    Push((u_int) (TagVal::FromWordDirect(instr)));
+    Push(reinterpret_cast<u_int>(TagVal::FromWordDirect(instr)));
     Push(VISIT);
   }
   void PushInc() { Push(1); Push(INC); }
   void PushInc(u_int i) { Push(i); Push(INC); }
   void PushAnalyseAppVar(TagVal *instr) {
-    Push((u_int) instr);
+    Push(reinterpret_cast<u_int>(instr));
     Push(ANALYSE_APPVAR);
   }
   void PushStop() { Push(STOP); }
@@ -710,7 +710,7 @@ void PPAnalyser::RunAnalysis(TagVal *instr, InlineAnalyser *analyser) {
 	  break;
 	default:
 	  fprintf(stderr,"invalid abstractCode tag %"U_INTF"\n",
-		  (u_int)AbstractCode::GetInstr(instr));
+		  static_cast<u_int>(AbstractCode::GetInstr(instr)));
 	  return;
 	}
       }

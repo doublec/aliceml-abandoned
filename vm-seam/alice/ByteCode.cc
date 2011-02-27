@@ -32,7 +32,7 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
   GET_INSTR(codeBuffer,PC,instr);
 
 #ifdef THREADED			
-  instr = ThreadedToNumber((void*)instr);
+  instr = ThreadedToNumber(reinterpret_cast<void*>(instr));
 #endif
 
   switch(instr) {
@@ -45,7 +45,7 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter PC,
 void ByteCode::Disassemble(std::FILE *f, ProgramCounter pc, 
 			   Chunk *code, Tuple *imEnv) {
 #ifdef THREADED
-  ProgramCounter end = (ProgramCounter) (code->GetBase() + code->GetSize());
+  ProgramCounter end = reinterpret_cast<ProgramCounter>(code->GetBase() + code->GetSize());
   while(pc < end) {
 #else
   u_int max = code->GetSize();

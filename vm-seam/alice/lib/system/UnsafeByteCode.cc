@@ -363,7 +363,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	  ConcreteCode::FromWord(closure->GetConcreteCode());		
 	Interpreter *interpreter = concreteCode->GetInterpreter();
 
-	SET_INSTR_1R1I(PC,instr,reg,(u_int) interpreter);
+	SET_INSTR_1R1I(PC,instr,reg, reinterpret_cast<u_int>(interpreter));
       }
       break;
 
@@ -405,7 +405,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	  ConcreteCode::FromWord(closure->GetConcreteCode());		
 	Interpreter *interpreter = concreteCode->GetInterpreter();
 
-	SET_INSTR_2I(PC,instr,iaddr,(u_int) interpreter);
+	SET_INSTR_2I(PC,instr,iaddr, reinterpret_cast<u_int>(interpreter));
       }
       break;
     case ByteCodeInstr::install_handler:
@@ -717,7 +717,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	  ConcreteCode::FromWord(closure->GetConcreteCode());		
 	Interpreter *interpreter = concreteCode->GetInterpreter();
 
-	SET_INSTR_1I(PC,instr,(u_int) interpreter);	
+	SET_INSTR_1I(PC,instr, reinterpret_cast<u_int>(interpreter));
       }
       break;
     case ByteCodeInstr::seam_prim_call2:
@@ -733,7 +733,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	  ConcreteCode::FromWord(closure->GetConcreteCode());		
 	Interpreter *interpreter = concreteCode->GetInterpreter();
 
-	SET_INSTR_2R1I(PC,instr,r0,r1,(u_int) interpreter);	
+	SET_INSTR_2R1I(PC,instr,r0,r1, reinterpret_cast<u_int>(interpreter));
       }
       break;
     case ByteCodeInstr::seam_prim_call3:
@@ -750,7 +750,7 @@ word assemble(Vector *code, Vector *imVec, word nbLocals) {
 	  ConcreteCode::FromWord(closure->GetConcreteCode());		
 	Interpreter *interpreter = concreteCode->GetInterpreter();
 
-	SET_INSTR_3R1I(PC,instr,r0,r1,r2,(u_int) interpreter);	
+	SET_INSTR_3R1I(PC,instr,r0,r1,r2, reinterpret_cast<u_int>(interpreter));
       }
       break;
     default:
@@ -845,7 +845,7 @@ DEFINE1(UnsafeByteCode_compile) {
 #if HAVE_LIGHTNING
   else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
-    abstractCode = (TagVal*)(ncc->GetAbstractRepresentation());
+    abstractCode = reinterpret_cast<TagVal*>(ncc->GetAbstractRepresentation());
   }
 #endif
   else if (b->GetInterpreter() == ByteCodeInterpreter::self) {
@@ -884,7 +884,7 @@ DEFINE1(UnsafeByteCode_lazyCompile) {
 #if HAVE_LIGHTNING
   else if (b->GetInterpreter() == NativeCodeInterpreter::self) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
-    abstractCode = (TagVal*)(ncc->GetAbstractRepresentation());
+    abstractCode = reinterpret_cast<TagVal*>(ncc->GetAbstractRepresentation());
   }
 #endif
   else if (b->GetInterpreter() == ByteCodeInterpreter::self) {

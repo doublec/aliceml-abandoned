@@ -280,7 +280,7 @@ word GdkEventToDatatype(GdkEvent *event) {
 
 // put a word on a stream
 inline void put_on_stream(word *stream, word value) {
-  Future *f = static_cast<Future*>(Store::WordToTransient(*stream));
+  Future *f = reinterpret_cast<Future*>(Store::WordToTransient(*stream));
   *stream = (Future::New())->ToWord();  
   f->ScheduleWaitingThreads();
   f->Become(REF_LABEL, push_front(*stream, value));
@@ -304,17 +304,17 @@ word create_object(GType t, gpointer p) {
   word value;
   if (g_type_is_a(t, G_LIST_TYPE)) {
     tag = LIST;
-    value = GLIST_OBJECT_TO_WORD(static_cast<GList*>(p));
+    value = GLIST_OBJECT_TO_WORD(reinterpret_cast<GList*>(p));
   }
   else
     if (g_type_is_a(t, G_SLIST_TYPE)) {
       tag = LIST;
-      value = GSLIST_OBJECT_TO_WORD(static_cast<GSList*>(p));
+      value = GSLIST_OBJECT_TO_WORD(reinterpret_cast<GSList*>(p));
     }
     else
       if (t == GDK_EVENT_TYPE) {
 	tag = EVENT;
-	value = GdkEventToDatatype(gdk_event_copy(static_cast<GdkEvent*>(p)));
+	value = GdkEventToDatatype(gdk_event_copy(reinterpret_cast<GdkEvent*>(p)));
       }
       else
 	if (g_type_is_a(t, GTK_OBJECT_TYPE))

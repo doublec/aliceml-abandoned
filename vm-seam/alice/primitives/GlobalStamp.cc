@@ -27,8 +27,8 @@ DEFINE2(GlobalStamp_compare) {
   DECLARE_GLOBAL_STAMP(globalStamp2, x1);
   if (globalStamp1->GetLabel() == CHUNK_LABEL) {
     if (globalStamp2->GetLabel() == CHUNK_LABEL) { // compare two strings
-      String *string1 = STATIC_CAST(String *, globalStamp1);
-      String *string2 = STATIC_CAST(String *, globalStamp2);
+      String *string1 = reinterpret_cast<String *>(globalStamp1);
+      String *string2 = reinterpret_cast<String *>(globalStamp2);
       u_int length1 = string1->GetSize();
       u_int length2 = string2->GetSize();
       u_int length = length1 < length2? length1: length2;
@@ -52,8 +52,8 @@ DEFINE2(GlobalStamp_compare) {
     if (globalStamp2->GetLabel() == CHUNK_LABEL) {
       RETURN_INT(Types::LESS);
     } else {
-      Tuple *tuple1 = STATIC_CAST(Tuple *, globalStamp1);
-      Tuple *tuple2 = STATIC_CAST(Tuple *, globalStamp2);
+      Tuple *tuple1 = reinterpret_cast<Tuple *>(globalStamp1);
+      Tuple *tuple2 = reinterpret_cast<Tuple *>(globalStamp2);
       Guid *guid1 = Guid::FromWordDirect(tuple1->Sel(0));
       Guid *guid2 = Guid::FromWordDirect(tuple2->Sel(0));
       int result = Guid::Compare(guid1, guid2);
@@ -83,7 +83,7 @@ DEFINE1(GlobalStamp_fromString) {
 DEFINE1(GlobalStamp_hash) {
   DECLARE_GLOBAL_STAMP(globalStamp, x0);
   if (globalStamp->GetLabel() == CHUNK_LABEL) {
-    String *string = STATIC_CAST(String *, globalStamp);
+    String *string = reinterpret_cast<String *>(globalStamp);
     u_int size = string->GetSize();
     if (size == 0) {
       RETURN_INT(0);
@@ -91,7 +91,7 @@ DEFINE1(GlobalStamp_hash) {
     u_char *value = string->GetValue();
     RETURN_INT(value[0] * value[size - 1]);
   } else {
-    Tuple *tuple = STATIC_CAST(Tuple *, globalStamp);
+    Tuple *tuple = reinterpret_cast<Tuple *>(globalStamp);
     Guid *guid = Guid::FromWordDirect(tuple->Sel(0));
     s_int counter = Store::DirectWordToInt(tuple->Sel(1));
     RETURN_INT(guid->Hash() ^ counter);
@@ -108,7 +108,7 @@ DEFINE1(GlobalStamp_toString) {
   if (globalStamp->GetLabel() == CHUNK_LABEL) {
     RETURN(globalStamp->ToWord());
   } else {
-    Tuple *tuple = STATIC_CAST(Tuple *, globalStamp);
+    Tuple *tuple = reinterpret_cast<Tuple *>(globalStamp);
     static char buf[20];
     std::sprintf(buf, "%"U_INTF, Store::DirectWordToInt(tuple->Sel(1)));
     RETURN(String::New(buf)->ToWord());

@@ -47,7 +47,7 @@ public:
     ConcreteRepresentation *unsafeMap =
       ConcreteRepresentation::New(UnsafeMapHandler::self, SIZE);
     unsafeMap->Init(MAP_POS, Map::New(size)->ToWord());
-    return STATIC_CAST(UnsafeMap *, unsafeMap);
+    return static_cast<UnsafeMap *>(unsafeMap);
   }
 
   // Map Accessors
@@ -64,13 +64,13 @@ public:
   static UnsafeMap *FromWord(word x) {
     ConcreteRepresentation *unsafeMap = ConcreteRepresentation::FromWord(x);
     Assert(unsafeMap->GetHandler() == UnsafeMapHandler::self);
-    return STATIC_CAST(UnsafeMap *, unsafeMap);
+    return static_cast<UnsafeMap *>(unsafeMap);
   }
   static UnsafeMap *FromWordDirect(word x) {
     ConcreteRepresentation *unsafeMap =
       ConcreteRepresentation::FromWordDirect(x);
     Assert(unsafeMap->GetHandler() == UnsafeMapHandler::self);
-    return STATIC_CAST(UnsafeMap *, unsafeMap);
+    return static_cast<UnsafeMap *>(unsafeMap);
   }
 };
 
@@ -170,7 +170,7 @@ DEFINE1(UnsafeMap_toVector) {
 
 Transform *
 UnsafeMapHandler::GetAbstractRepresentation(ConcreteRepresentation *concRep) {
-  UnsafeMap *unsafeMap = STATIC_CAST(UnsafeMap *, concRep);
+  UnsafeMap *unsafeMap = static_cast<UnsafeMap *>(concRep);
   itemVector = Vector::New(unsafeMap->GetMapSize());
   itemIndex  = 0;
   unsafeMap->Apply(PopulateItemVector);

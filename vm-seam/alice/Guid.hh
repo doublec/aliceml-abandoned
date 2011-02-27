@@ -29,10 +29,10 @@ public:
 
   static Guid *New();
   static Guid *FromWord(word x) {
-    return STATIC_CAST(Guid *, String::FromWord(x));
+    return static_cast<Guid *>(String::FromWord(x));
   }
   static Guid *FromWordDirect(word x) {
-    return STATIC_CAST(Guid *, String::FromWordDirect(x));
+    return static_cast<Guid *>(String::FromWordDirect(x));
   }
 
   static int Compare(Guid *guid1, Guid *guid2);
