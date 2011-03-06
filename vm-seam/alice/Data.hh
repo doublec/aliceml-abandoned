@@ -586,6 +586,9 @@ public:
   static Record *New(u_int n) {
     Block *b = Store::AllocBlock(Alice::Record, BASE_SIZE + n * 2);
     b->InitArg(WIDTH_POS, n);
+    for (u_int i = n; i--; ) {
+      b->InitArg(BASE_SIZE + i * 2, Store::IntToWord(0));
+    }
     return static_cast<Record *>(b);
   }
   static Record *New(Vector *labels) {
@@ -668,7 +671,7 @@ public:
 	    fprintf(stderr, ", ");
       }
       word lab = GetArg(BASE_SIZE + i * 2);
-      if (!lab) {
+      if (lab == Store::IntToWord(0)) {
         fprintf(stderr, "?");
       } else {
         fprintf(stderr, "%s", UniqueString::FromWord(lab)->ToString()->ExportC());

@@ -99,7 +99,7 @@ void Record::Init(const char *s, word value) {
   u_int index = label->Hash() % n;
   u_int i = index;
   while (true) {
-    if (Store::WordToInt(GetArg(BASE_SIZE + i * 2)) != INVALID_INT) {
+    if (GetArg(BASE_SIZE + i * 2) == Store::IntToWord(0)) {
       InitArg(BASE_SIZE + i * 2, label->ToWord());
       InitArg(BASE_SIZE + i * 2 + 1, value);
       return;
