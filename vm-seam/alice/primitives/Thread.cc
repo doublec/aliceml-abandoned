@@ -148,7 +148,8 @@ DEFINE1(Thread_suspend) {
   }
 } END
 
-DEFINE0(Thread_yield) {
+DEFINE1(Thread_yield) {
+  // ignore (thread) argument
   PREEMPT0;
 } END
 
@@ -164,5 +165,5 @@ void PrimitiveTable::RegisterThread() {
   Register("Thread.resume", Thread_resume, 1);
   Register("Thread.state", Thread_state, 1);
   Register("Thread.suspend", Thread_suspend, 1);
-  Register("Thread.yield", Thread_yield, 0);
+  Register("Thread.yield", Thread_yield, 1);
 }
