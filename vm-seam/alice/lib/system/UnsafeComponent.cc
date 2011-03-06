@@ -23,16 +23,13 @@
 static const bool traceFlag = std::getenv("ALICE_TRACE_UNSAFE_COMPONENT") != NULL;
 
 
-static void Trace(const char *prefix, String *key) {
+static void Trace(const char *prefix, String *key = INVALID_POINTER) {
   if (traceFlag) {
-    std::fprintf(stderr, "[UnsafeComponent] %s %.*s\n", prefix, static_cast<int>(key->GetSize()), key->GetValue());
-  }
-}
-
-
-static void Trace(const char *str) {
-  if (traceFlag) {
-    std::fprintf(stderr, "[UnsafeComponent] %s\n", str);
+    std::fprintf(stderr, "[UnsafeComponent] %s", prefix);
+    if (key != INVALID_POINTER) {
+      std::fprintf(stderr, " %.*s", static_cast<int>(key->GetSize()), key->GetValue());
+    }
+    std::fprintf(stderr, "\n");
   }
 }
 
@@ -127,29 +124,33 @@ DEFINE0(UnsafeComponent_getInitialTable) {
 
 DEFINE2(UnsafeComponent_save) {
   DECLARE_STRING(filename, x0);
+  Trace("saving file", filename);
   PUSH_PRIM_SELF();
   return Pickler::Save(filename, x1);
 } END
 
 DEFINE1(UnsafeComponent_load) {
   DECLARE_STRING(filename, x0);
+  Trace("loading file", filename);
   PUSH_PRIM_SELF();
   return Unpickler::Load(filename);
 } END
 
 DEFINE1(UnsafeComponent_unzip) {
-    DECLARE_STRING(str, x0);
-    String *res = Unpickler::Unzip (str);
-    if (res == NULL) {
-        RAISE(Unpickler::Corrupt);
-    } else {
-        RETURN(res->ToWord ());
-    }
+  DECLARE_STRING(str, x0);
+  String *res = Unpickler::Unzip (str);
+  if (res == NULL) {
+    RAISE(Unpickler::Corrupt);
+  } else {
+    RETURN(res->ToWord ());
+  }
 } END
 
 
 DEFINE1(UnsafeComponent_linkNative) {
   DECLARE_STRING(filename, x0);
+  Trace("linking native", filename);
+  
   DllLoader::libhandle handle = DllLoader::OpenLibrary(filename);
   if (handle == NULL) RAISE(MakeNativeError());
 
