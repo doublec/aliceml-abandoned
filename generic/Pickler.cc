@@ -151,8 +151,13 @@ public:
   word Close();
 };
 
+static bool CanPickle(u_int i) {
+  return (i & ((static_cast<u_int>(1) << INT_PRECISION)-1)) == i;
+}
+
 // OutputStream Methods
 void OutputStream::PutUInt(u_int i) {
+  Assert(CanPickle(i));
   while (i >= 0x80) {
     OutputStream::PutByte(static_cast<u_char>(i & 0x7F | 0x80));
     i >>= 7;
@@ -434,11 +439,13 @@ void OutputBuffer::PutBytes(Chunk *c) {
 }
 
 void OutputBuffer::PutUInt(u_int i) {
+  Assert(CanPickle(i));
+
   u_int pos = Store::DirectWordToInt(GetArg(POS_POS));
   u_int size = Store::DirectWordToInt(GetArg(SIZE_POS));
 
-  // HACK: u_int of 64 bit can be 10 bytes at most (but what if ResizeBuffer adds < 10 bytes?)!
-  if (pos + 10 >= size) ResizeBuffer();
+  // 31 bit int can be 5 bytes at most
+  if (pos + 5 >= size) ResizeBuffer();
 
   Chunk *buf = Store::DirectWordToChunk(GetArg(BUFFER_POS));
   u_char *c = reinterpret_cast<u_char *>(buf->GetBase());

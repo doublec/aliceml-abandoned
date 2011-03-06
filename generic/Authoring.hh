@@ -115,6 +115,7 @@
 }
 
 #define REQUEST(w) {				\
+  Assert(Store::WordToTransient(w) != INVALID_POINTER); \
   Scheduler::SetCurrentData(w);			\
   PUSH_PRIM_SELF()				\
   return Worker::REQUEST;			\

@@ -83,10 +83,12 @@ public:
   }
   static s_int DirectDecodeInt(word v) {
     AssertStore((reinterpret_cast<u_int>(v) & INTMASK) == INTTAG);
-    return static_cast<s_int>
+    s_int i = static_cast<s_int>
     		((reinterpret_cast<u_int>(v) & (static_cast<u_int>(1) << (STORE_WORD_WIDTH - 1))) ?
 		    ((static_cast<u_int>(1) << (STORE_WORD_WIDTH - 1)) | (reinterpret_cast<u_int>(v) >> 1)) :
 		    (reinterpret_cast<u_int>(v) >> 1));
+    AssertStore(i >= MIN_VALID_INT && i <= MAX_VALID_INT);
+    return i;
   }
   static s_int DecodeInt(word v) {
     if ((reinterpret_cast<u_int>(v) & INTMASK) == INTTAG)

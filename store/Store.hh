@@ -161,7 +161,7 @@ public:
     return p;
   }
   static Transient *DirectWordToTransient(word v) {
-    AssertStore((static_cast<u_int>(v) & TAGMASK) == TRTAG);
+    AssertStore((reinterpret_cast<u_int>(v) & TAGMASK) == TRTAG);
     Transient *p = PointerOp::DirectDecodeTransient(PointerOp::Deref(v));
     return p;
   }
@@ -183,11 +183,11 @@ public:
     return PointerOp::DecodeUnmanagedPointer(PointerOp::Deref(x));
   }
   static s_int DirectWordToInt(word x) {
-    AssertStore((static_cast<u_int>(x) & INTMASK) == INTTAG);
+    AssertStore((reinterpret_cast<u_int>(x) & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeInt(x);
   }
   static Block *DirectWordToBlock(word x) {
-    AssertStore((static_cast<u_int>(x) & TAGMASK) == BLKTAG);
+    AssertStore((reinterpret_cast<u_int>(x) & TAGMASK) == BLKTAG);
     Block *p = PointerOp::DirectDecodeBlock(x);
     return p;
   }
@@ -198,7 +198,7 @@ public:
     return p;
   }
   static void *DirectWordToUnmanagedPointer(word x) {
-    AssertStore((static_cast<u_int>(x) & INTMASK) == INTTAG);
+    AssertStore((reinterpret_cast<u_int>(x) & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeUnmanagedPointer(x);
   }
   // Calculate Block Size according to given size (used only for assertions)
