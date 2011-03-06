@@ -17,6 +17,7 @@
 #endif
 
 #include <cstdio>
+#include "Seam.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
@@ -323,6 +324,7 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 
 #undef REQUEST
 #define REQUEST(w) {				\
+  Assert(Store::WordToTransient(w) != INVALID_POINTER); \
   Scheduler::PopFrame(frame->GetSize());        \
   PushState(pc, globalEnv, localEnv);		\
   Scheduler::SetCurrentData(w);			\
@@ -573,7 +575,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	       nGlobals);
 	Vector *subst = Vector::New(nGlobals);
 	for (u_int i = nGlobals; i--; )
-	  subst->Init(0, Store::IntToWord(Types::NONE));
+	  subst->Init(i, Store::IntToWord(Types::NONE));
 	abstractCode->Init(1, subst->ToWord());
 	abstractCode->Init(2, template_->Sel(2));
 	abstractCode->Init(3, template_->Sel(3));
