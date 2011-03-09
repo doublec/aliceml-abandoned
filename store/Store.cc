@@ -74,7 +74,7 @@ void Store::Enlarge(const u_int g) {
   roots[g].Enlarge();
   if (signalLimit != 0 && Heap::GetTotalSize() > signalLimit) {
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "Heap signal limit exceeded with %d bytes (limit: %d)\n",
+  std::fprintf(stderr, "Heap signal limit exceeded with %"U_INTF" bytes (limit: %"U_INTF")\n",
 	       Heap::GetTotalSize(), signalLimit);
   std::fflush(stderr);
 #endif
@@ -84,7 +84,7 @@ void Store::Enlarge(const u_int g) {
 
 void Store::SetSignal(const u_int limit, void (*handler)(u_int)) {
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "Setting heap signal for %d bytes\n", limit);
+  std::fprintf(stderr, "Setting heap signal for %"U_INTF" bytes\n", limit);
   std::fflush(stderr);
 #endif
   signalLimit = limit;
@@ -93,7 +93,7 @@ void Store::SetSignal(const u_int limit, void (*handler)(u_int)) {
 
 void Store::Signal() {
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "Signal heap limit (current heap size: %d bytes)\n",
+  std::fprintf(stderr, "Signal heap limit (current heap size: %"U_INTF" bytes)\n",
 	       Heap::GetTotalSize());
   std::fflush(stderr);
 #endif
@@ -320,7 +320,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
 
 void Store::HandleWeakDictionaries(const u_int gen) {
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "initial weakdict_size is %d\n", wkDictSet->GetSize()); 
+  std::fprintf(stderr, "initial weakdict_size is %"U_INTF"\n", wkDictSet->GetSize()); 
   std::fflush(stderr);
 #endif
   // Clone wkDictSet and initialize finSet
@@ -438,7 +438,7 @@ void Store::HandleWeakDictionaries(const u_int gen) {
   else
     Store::CheneyScan(chunk, scan, gen);
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "new_weakdict_size is %d\n", wkDictSet->GetSize());
+  std::fprintf(stderr, "new_weakdict_size is %"U_INTF"\n", wkDictSet->GetSize());
   std::fflush(stderr);
 #endif
 }
@@ -480,7 +480,7 @@ u_int Store::gcCounter = 0;
 
 void Store::DoGCWithoutFinalize(word &root) {
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "GC Nb %d...\n", gcCounter++);
+  std::fprintf(stderr, "GC Nb %"U_INTF"...\n", gcCounter++);
   std::fflush(stderr);
 #endif
 #if defined(STORE_GC_DEBUG)
@@ -499,9 +499,9 @@ void Store::DoGCWithoutFinalize(word &root) {
   while ((gen > 0) && (roots[gen].GetSize()) <= roots[gen].GetLimit())
     gen--;
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "GCing up to %d...\n", gen);
-  std::fprintf(stderr, "FinSet = %p is %d/%d\n", finSet,
-	       finSet->GetSize(), ((Block *) finSet)->GetSize());
+  std::fprintf(stderr, "GCing up to %"U_INTF"...\n", gen);
+  std::fprintf(stderr, "FinSet = %p is %"U_INTF"/%"U_INTF"\n", finSet,
+	       finSet->GetSize(), reinterpret_cast<Block *>(finSet)->GetSize());
   std::fflush(stderr);
 #endif
   switch (gen) {
