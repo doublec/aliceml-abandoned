@@ -30,15 +30,14 @@ private:
   static const u_int topCutoff = 20;
   static const u_int bottomCutoff = 20;
 
-  void Dump1() {
-    // to be done: Hack Alert
-    word wFrame = Dequeue();
+  void DumpNth(u_int n) {
+    // FIXME: Hack Alert
+    word wFrame = GetNthElement(n);
     u_int size = Store::DirectWordToBlock(wFrame)->GetSize();
     StackFrame *frame = Scheduler::PushFrame(size);
     StackFrame::New(frame, size, wFrame);
-    Worker *worker = frame->GetWorker();
     fprintf(stderr, "- ");
-    worker->DumpFrame(frame);
+    frame->GetWorker()->DumpFrame(frame);
     Scheduler::PopFrame(size);
   }
 
@@ -64,16 +63,18 @@ public:
   }
 
   void Dump() {
-    for (int i = topCutoff; i > 0 && !IsEmpty(); i--)
-      Dump1();
-    if (GetNumberOfElements() > bottomCutoff + bottomCutoff/4) {
-      fprintf(stderr, "... (%"U_INTF" frames omitted)\n",
-              GetNumberOfElements() - bottomCutoff);
-      while (GetNumberOfElements() > bottomCutoff)
-        Dequeue();
+    u_int n = GetNumberOfElements();
+  
+    for (u_int i=0; i<n; i++) {
+      if (i == topCutoff && i <= n-bottomCutoff-bottomCutoff/4){
+        u_int ommited = n - topCutoff - bottomCutoff;
+        fprintf(stderr, "    ... %"U_INTF" frames omitted ...\n", ommited);
+        i += ommited-1;
+      }
+      else {
+        DumpNth(i);
+      }
     }
-    while (!IsEmpty())
-      Dump1();
   }
 };
 
