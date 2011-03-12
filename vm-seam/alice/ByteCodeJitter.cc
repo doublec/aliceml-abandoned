@@ -571,7 +571,7 @@ inline void ByteCodeJitter::Inline_FutureByneed(Vector *args,
   
   // try first to compile the special case
   word wY = ExtractImmediate(args->Sub(1));
-  if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
+  if(PointerOp::IsInt(wY) && Store::DirectWordToInt(wY) == 1) {
     u_int x = LoadIdRefKill(args->Sub(0));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_2R(PC,iinc,x,x);
@@ -587,7 +587,7 @@ inline void ByteCodeJitter::Inline_FutureByneed(Vector *args,
   }
 
   word wX = ExtractImmediate(args->Sub(0));
-  if(wX != INVALID_POINTER && Store::DirectWordToInt(wX) == 1) {
+  if(PointerOp::IsInt(wX) && Store::DirectWordToInt(wX) == 1) {
     u_int y = LoadIdRefKill(args->Sub(1));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_2R(PC,iinc,y,y);
@@ -625,7 +625,7 @@ inline void ByteCodeJitter::Inline_FutureByneed(Vector *args,
   // try first to compile the special case
 
   word wY = ExtractImmediate(args->Sub(1));
-  if(wY != INVALID_POINTER && Store::DirectWordToInt(wY) == 1) {
+  if(PointerOp::IsInt(wY) && Store::DirectWordToInt(wY) == 1) {
     u_int x = LoadIdRefKill(args->Sub(0));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_2R(PC,idec,x,x);
@@ -641,7 +641,7 @@ inline void ByteCodeJitter::Inline_FutureByneed(Vector *args,
   }
 
   word wX = ExtractImmediate(args->Sub(0));
-  if(wX != INVALID_POINTER && Store::DirectWordToInt(wX) == 1) {
+  if(PointerOp::IsInt(wX) && Store::DirectWordToInt(wX) == 1) {
     u_int y = LoadIdRefKill(args->Sub(1));
     if(idDefInstrOpt == INVALID_POINTER) { // tailcall
       SET_INSTR_2R(PC,idec,y,y);
