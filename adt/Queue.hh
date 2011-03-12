@@ -28,12 +28,14 @@ private:
     return Store::DirectWordToInt(GetArg(WRITE_INDEX_POS));
   }
   void SetWriteIndex(u_int writeIndex) {
+    Assert(writeIndex < GetArray()->GetSize());
     ReplaceArg(WRITE_INDEX_POS, writeIndex);
   }
   u_int GetReadIndex() {
     return Store::DirectWordToInt(GetArg(READ_INDEX_POS));
   }
   void SetReadIndex(u_int readIndex) {
+    Assert(readIndex < GetArray()->GetSize());
     ReplaceArg(READ_INDEX_POS, readIndex);
   }
   Block *GetArray() {
@@ -54,9 +56,9 @@ private:
     word *newBase = newArray->GetBase();
     std::memcpy(newBase, oldBase + index, (oldSize - index) * sizeof(word));
     std::memcpy(newBase + oldSize - index, oldBase, index * sizeof(word));
+    SetArray(newArray);
     SetReadIndex(0);
     SetWriteIndex(oldSize);
-    SetArray(newArray);
   }
 protected:
   u_int GetNumberOfElements() {
@@ -147,25 +149,25 @@ public:
     if (readIndex > writeIndex) { // queue has a wrap-around layout
       u_int length = array->GetSize();
       while (scanIndex < length) {
-	if (array->GetArg(scanIndex) == w) { // shorten queue at beginning
-	  word *base = array->GetBase();
-	  std::memmove(base + readIndex + 1, base + readIndex,
-		       (scanIndex - readIndex) * sizeof(word));
-	  SetReadIndex(readIndex + 1);
-	  return;
-	}
-	scanIndex++;
+        if (array->GetArg(scanIndex) == w) { // shorten queue at beginning
+          word *base = array->GetBase();
+          std::memmove(base + readIndex + 1, base + readIndex,
+                       (scanIndex - readIndex) * sizeof(word));
+          SetReadIndex((readIndex + 1) % length);
+          return;
+        }
+        scanIndex++;
       }
       // not found: scan first half of queue
       scanIndex = 0;
     }
     while (scanIndex < writeIndex) {
       if (array->GetArg(scanIndex) == w) { // shorten queue at end
-	word *base = array->GetBase();
-	std::memmove(base + scanIndex, base + scanIndex + 1,
-		     (writeIndex - scanIndex) * sizeof(word));
-	SetWriteIndex(writeIndex - 1);
-	return;
+        word *base = array->GetBase();
+        std::memmove(base + scanIndex, base + scanIndex + 1,
+                     (writeIndex - scanIndex) * sizeof(word));
+        SetWriteIndex(writeIndex - 1);
+        return;
       }
       scanIndex++;
     }
