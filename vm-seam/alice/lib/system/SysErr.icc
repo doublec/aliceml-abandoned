@@ -43,6 +43,17 @@ static word MakeSysErr(int errorCode, String *message) {
   return sysErr->ToWord();
 }
 
+static word MakeSysErr(String *message) {
+  ConVal *sysErr = ConVal::New(Store::DirectWordToBlock(SysErrConstructor), 2);
+  sysErr->Init(0, message->ToWord());
+  sysErr->Init(1, Store::IntToWord(Types::NONE));
+  return sysErr->ToWord();
+}
+
+static word MakeSysErr(const char *message) {
+  return MakeSysErr(String::New(message));
+}
+
 #define RAISE_SYS_ERR() {					\
   int errorCode = GetLastError();				\
   RAISE(MakeSysErr(errorCode, ErrorCodeToString(errorCode)));	\

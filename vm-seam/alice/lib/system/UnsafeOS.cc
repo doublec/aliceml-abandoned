@@ -16,32 +16,55 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "alice/NativeCodeJitter.hh"
+#include "alice/Authoring.hh"
+
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+
 #include <windows.h>
 #include <shlobj.h>
+
 #else
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>
-#define Interruptible(res, call)		\
-  int res;					\
-  do {						\
-    res = call;					\
+#define Interruptible(res, call)        \
+  int res;                  \
+  do {                      \
+    res = call;                 \
   } while (res < 0 && errno == EINTR);
 #define GetLastError() errno
+
+#define DECLARE_LINUXDIR(ld, x) \
+  DECLARE_WRAPPEDUNMANAGEDPOINTER(DIR, ld, x) \
+
+class LinuxDirFinalizationSet : public FinalizationSet {
+public:
+  virtual void Finalize(word w) {
+    WrappedUnmanagedPointer<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
+    if (!ld->IsNull()) {
+      closedir(ld->GetValue());
+      ld->SetNull();
+    }
+  }
+};
+
+static LinuxDirFinalizationSet *linuxDirFinalizationSet;
+
 #endif
 
-#include "alice/NativeCodeJitter.hh"
-#include "alice/Authoring.hh"
 
 static word wBufferString;
 
 // Also Needed for UnsafeUnix
 word SysErrConstructor;
 #include "SysErr.icc"
+
+static const char *DIRECTORY_STREAM_CLOSED = "Directory stream is closed and cannot be used.";
 
 //
 // UnsafeOS.FileSys Structure
@@ -77,8 +100,10 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
 #else
   DIR *d = opendir(name->ExportC());
   if (!d) RAISE_SYS_ERR();
-
-  RETURN(Store::UnmanagedPointerToWord(d));
+  
+  word ld = WrappedUnmanagedPointer<DIR>::New(d)->ToWord();
+  linuxDirFinalizationSet->Register(ld);
+  RETURN(ld);
 #endif
 } END
 
@@ -111,14 +136,18 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
   some->Init(0, entry);
   RETURN(some->ToWord());
 #else
-  DECLARE_UNMANAGED_POINTER(d, x0);
+  DECLARE_LINUXDIR(ld, x0);
   
-  if (struct dirent *n = readdir(reinterpret_cast<DIR *>(d))) {
-    TagVal *some = TagVal::New(1,1);
+  if (ld->IsNull()) {
+    RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
+  }
+  
+  if (struct dirent *n = readdir(ld->GetValue())) {
+    TagVal *some = TagVal::New(Types::SOME, 1);
     some->Init(0, String::New(n->d_name)->ToWord());
     RETURN(some->ToWord());
   } else {
-    RETURN_INT(0);
+    RETURN_INT(Types::NONE);
   }
 #endif
 } END
@@ -157,8 +186,13 @@ DEFINE1(UnsafeOS_FileSys_rewindDir) {
 
   RETURN_UNIT;
 #else
-  DECLARE_UNMANAGED_POINTER(d, x0);
-  rewinddir(reinterpret_cast<DIR *>(d));
+  DECLARE_LINUXDIR(ld, x0);
+  
+  if (ld->IsNull()) {
+    RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
+  }
+  
+  rewinddir(ld->GetValue());
 
   RETURN_UNIT;
 #endif
@@ -176,10 +210,15 @@ DEFINE1(UnsafeOS_FileSys_closeDir) {
   }
   RETURN_UNIT;
 #else
-  DECLARE_UNMANAGED_POINTER(d, x0);
-
-  if (closedir(reinterpret_cast<DIR *>(d)) != 0)
-    RAISE_SYS_ERR();
+  DECLARE_LINUXDIR(ld, x0);
+  
+  if (!ld->IsNull()) {
+    DIR *d = ld->GetValue();
+    if (closedir(d) == 0)
+      ld->SetNull();
+    else
+      RAISE_SYS_ERR();
+  }
   
   RETURN_UNIT;
 #endif
@@ -512,7 +551,7 @@ static word UnsafeOS_FileSys() {
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "remove",
 		 UnsafeOS_FileSys_remove, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "tmpName",
-		 UnsafeOS_FileSys_tmpName, 1);
+         UnsafeOS_FileSys_tmpName, 0);
   INIT_STRUCTURE(record, "UnsafeOS_FileSys", "openDir",
 		 UnsafeOS_FileSys_openDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS_FileSys", "readDir",
@@ -625,6 +664,7 @@ AliceDll word UnsafeOS() {
   wBufferString = String::New(MAX_PATH+20)->ToWord();
 #else
   wBufferString = String::New(1024)->ToWord();
+  linuxDirFinalizationSet = new LinuxDirFinalizationSet();
 #endif
   RootSet::Add(wBufferString);
 
