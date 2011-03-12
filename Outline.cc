@@ -30,6 +30,7 @@
 #pragma implementation "generic/Pickle.hh"
 #pragma implementation "generic/Float.hh"
 #pragma implementation "generic/Double.hh"
+#pragma implementation "generic/WrappedUnmanagedPointer.hh"
 #if DEBUGGER
 #pragma implementation "generic/DebuggerEvent.hh"
 #pragma implementation "generic/DebugFrame.hh"
@@ -55,6 +56,7 @@
 #include "generic/Pickle.hh"
 #include "generic/Float.hh"
 #include "generic/Double.hh"
+#include "generic/WrappedUnmanagedPointer.hh"
 #if DEBUGGER
 #include "generic/DebuggerEvent.hh"
 #endif

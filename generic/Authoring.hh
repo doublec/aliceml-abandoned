@@ -18,6 +18,7 @@
 #include "generic/Worker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
+#include "generic/WrappedUnmanagedPointer.hh"
 
 // to be done: better solution without hacks
 #define POP_PRIM_SELF()					\
@@ -154,5 +155,7 @@
 #define DECLARE_CHUNK_MAP(chunkmap, x) \
   DECLARE_BLOCKTYPE(ChunkMap, chunkmap, x)
 #define DECLARE_IODESC(ioDesc, x) DECLARE_BLOCKTYPE(IODesc, ioDesc, x)
+#define DECLARE_WRAPPEDUNMANAGEDPOINTER(t, wup, x) \
+  DECLARE_BLOCKTYPE(WrappedUnmanagedPointer<t>, wup, x)
 
 #endif

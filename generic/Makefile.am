@@ -78,7 +78,8 @@ dist_genericinclude_HEADERS = \
 	Tuple.hh \
 	UniqueString.hh \
 	Unpickler.hh \
-	Worker.hh
+	Worker.hh \
+	WrappedUnmanagedPointer.hh
 
 dist_noinst_HEADERS = \
 	ZLib.hh
