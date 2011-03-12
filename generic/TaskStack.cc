@@ -93,6 +93,7 @@ UncaughtExceptionFrame::New(word exn, word backtrace, word exnHandlers) {
 void 
 UncaughtExceptionWorker::PushFrame(word exn, word backtrace, word exnHandlers) {
   UncaughtExceptionFrame::New(exn, backtrace, exnHandlers);
+  Scheduler::PushHandler(Store::IntToWord(0));
 }
 
 u_int UncaughtExceptionWorker::GetFrameSize(StackFrame *sFrame) {
@@ -109,8 +110,9 @@ Worker::Result UncaughtExceptionWorker::Run(StackFrame *sFrame) {
   word exnHandlers = uncaughtExceptionFrame->GetExnHandlers();
   if (exnHandlers == Store::IntToWord(0)) {
     Scheduler::PopFrame(uncaughtExceptionFrame->GetSize());
-    Scheduler::SetNArgs(0);
-    return Worker::CONTINUE;
+    Scheduler::PopHandler();
+    Scheduler::SetCurrentData(Store::IntToWord(1));
+    return Worker::EXIT;
   } else {
     Tuple *cons = Tuple::FromWordDirect(exnHandlers);
     uncaughtExceptionFrame->SetExnHandlers(cons->Sel(1));
@@ -123,7 +125,21 @@ Worker::Result UncaughtExceptionWorker::Run(StackFrame *sFrame) {
 }
 
 Worker::Result UncaughtExceptionWorker::Handle(word) {
-  // Silently ignore exceptions caused by uncaught exception handlers
+  StackFrame *sFrame = Scheduler::GetFrame();
+  UncaughtExceptionFrame *frame = reinterpret_cast<UncaughtExceptionFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  
+  std::fprintf(stderr, "uncaught exception inside uncaught exception handler:\n");
+  Debug::Dump(Scheduler::GetCurrentData());
+  std::fprintf(stderr, "backtrace:\n");
+  Scheduler::GetCurrentBacktrace()->Dump();
+  std::fprintf(stderr, "the original uncaught exception was:\n");
+  Debug::Dump(frame->GetExn());
+  std::fprintf(stderr, "backtrace:\n");
+  Backtrace::FromWord(frame->GetBacktrace())->Dump();
+  
+  // re-push handler incase another exn handler raises an exception
+  Scheduler::PushHandler(Store::IntToWord(0));
   Scheduler::SetNArgs(0);
   return Worker::CONTINUE;
 }
@@ -175,8 +191,8 @@ Worker::Result EmptyTaskWorker::Handle(word) {
     Scheduler::GetCurrentBacktrace()->Dump();
     // Flush stderr (needed for redirection on windows (e.g. rxvt))
     std::fflush(stderr);
-    Scheduler::SetNArgs(0);
-    return Worker::TERMINATE;
+    Scheduler::SetCurrentData(Store::IntToWord(1));
+    return Worker::EXIT;
   } else {
     word exn = Scheduler::GetCurrentData();
     word backtrace = Scheduler::GetCurrentBacktrace()->ToWord();
