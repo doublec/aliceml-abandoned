@@ -71,11 +71,11 @@ using namespace ByteCodeInstr;
 #undef REQUEST							
 #undef RAISE
 
-// TODO: add backtrace
-#define RAISE(w) {						\
-  Scheduler::SetCurrentData(w);					\
-  Scheduler::PopFrame();					\
-  return Worker::RAISE;						\
+#define RAISE(w) {                                                \
+  Scheduler::SetCurrentData(w);                                   \
+  Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone())); \
+  SAVEPC(PC);                                                     \
+  return Worker::RAISE;                                           \
 }
 
 #define REQUEST(x)							\
@@ -747,10 +747,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	GET_1R(codeBuffer,PC,reg);
 	word requestWord = GETREG(reg);
 	Transient *transient = Store::WordToTransient(requestWord);
-	if( transient != INVALID_POINTER) { 
-	  SAVEPC(PC);				       
+	if(transient != INVALID_POINTER) {
+	  SAVEPC(startPC); // repeat await until value is not a transient or is failed
 	  Scheduler::SetCurrentData(requestWord);
-       	  Scheduler::SetNArgs(0);					
+	  Scheduler::SetNArgs(0);
 	  return Worker::REQUEST; 
 	}
       }
