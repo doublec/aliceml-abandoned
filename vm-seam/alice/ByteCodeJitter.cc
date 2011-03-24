@@ -1147,7 +1147,7 @@ inline TagVal *ByteCodeJitter::InstrAppPrim(TagVal *pc) {
 
   // check if we can inline the primitive
   if(InlinePrimitive(cFunction,args,idDefInstrOpt)) {
-    if(isTailcall) {
+    if(idDefInstrOpt == INVALID_POINTER) {
       return INVALID_POINTER;
     } else {
       Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
