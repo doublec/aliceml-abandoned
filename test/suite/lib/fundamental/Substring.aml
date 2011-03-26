@@ -122,15 +122,6 @@ struct
 	    Gen.try 1000 Gen.substring (Test.test t)
 	end
 
-    fun testFull () =
-	let
-	    fun t s = 
-		Substring.full s =
-		Substring.substring (s, 0, String.size s)
-	in
-	    Gen.try 1000 Gen.string (Test.test t)
-	end
-
     fun testSize () =
 	let
 	    fun t s = 
@@ -153,20 +144,6 @@ struct
 	    Gen.try 1000 Gen.substring (Test.test t)
 	end
 
-    fun testGetC () =
-	let
-	    fun t' (s, i, j) = 
-		if j = 0 orelse s = "" then NONE
-		else 
-		    SOME (String.sub (s, i), 
-			  Substring.substring (s, i + 1, j - 1))
-
-	    fun t sub =
-		t' (Substring.base sub) = Substring.getc sub
-	in
-	    Gen.try 1000 Gen.substring (Test.test t)
-	end
-
     fun testFirst () =
 	let
 	    fun t' NONE            = NONE
@@ -175,85 +152,6 @@ struct
 	    fun t sub = t' (Substring.getc sub) = Substring.first sub
 	in
 	    Gen.try 1000 Gen.substring (Test.test t)
-	end
-
-    fun testTriml () = 
-	let
-	    fun t' (s, i, j, k) = 
-		if k < 0
-		then NONE
-		else if k > j
-	  	     then SOME (Substring.substring (s, i + j, 0))
-		     else SOME (Substring.substring (s, i + k, j - k))
-
-	    fun t (k, sub) =
-		let
-		    val (s, i, j) = Substring.base sub
-		    val r = t' (s, i, j, k)
-		in
-		    if Option.isNone r
-		    then (Substring.triml k sub; false)
-			   handle Subscript => true
-		    else Substring.triml k sub = (valOf r)
-		end
-	in
-	    Gen.try 1000 (Gen.pair (Gen.int, Gen.substring)) (Test.test t)
-	end
-
-    fun testTrimr () = 
-	let
-	    fun t' (s, i, j, k) = 
-		if k < 0
-		then NONE
-		else if k > j
-	  	     then SOME (Substring.substring (s, i, 0))
-		     else SOME (Substring.substring (s, i, j - k))
-
-	    fun t (k, sub) =
-		let
-		    val (s, i, j) = Substring.base sub
-		    val r = t' (s, i, j, k)
-		in
-		    if Option.isNone r
-		    then (Substring.trimr k sub; false)
-			   handle Subscript => true
-		    else Substring.trimr k sub = (valOf r)
-		end
-	in
-	    Gen.try 1000 (Gen.pair (Gen.int, Gen.substring)) (Test.test t)
-	end
-
-    fun testSlice () =
-	let
-	    fun t' (s, i, NONE) =
-		if i < 0 orelse Substring.size s < i 
-		then NONE
-		else let
-			val (st, a, b) = Substring.base s
-		    in
-			SOME (Substring.substring (st, a + i, b - i))
-		    end
-	      | t' (s, i, SOME m) = 
-		if i < 0 orelse m < 0 orelse i + m > Substring.size s
-		then NONE
-		else let
-			val (st, a, b) = Substring.base s
-		    in
-			SOME (Substring.substring (st, a + i, m))
-		    end
-
-	    fun t x = 
-		let
-		    val r = t' x
-		in
-		    if Option.isNone r 
-		    then (Substring.slice x; false)
-			    handle Subscript => true
-		    else valOf r = Substring.slice x
-		end
-	in
-	    Gen.try 1000 (Gen.triple (Gen.substring, Gen.int,
-				      Gen.option Gen.int)) (Test.test t)
 	end
 
     fun testConcat () =
@@ -379,8 +277,7 @@ struct
 	let
 	    fun f c = Char.ord c <> 10
 		      
-	    fun t s = Substring.dropl f s = 
-		      #2 (Substring.splitl f s)
+	    fun t s = Substring.equal (Substring.dropl f s, #2 (Substring.splitl f s))
 	in
 	    Gen.try 1000 Gen.substring (Test.test t)
 	end
@@ -389,8 +286,7 @@ struct
 	let
 	    fun f c = Char.ord c <> 10
 		      
-	    fun t s = Substring.dropr f s = 
-		      #1 (Substring.splitr f s)
+	    fun t s = Substring.equal (Substring.dropr f s, #1 (Substring.splitr f s))
 	in
 	    Gen.try 1000 Gen.substring (Test.test t)
 	end
@@ -399,8 +295,7 @@ struct
 	let
 	    fun f c = Char.ord c <> 10
 		      
-	    fun t s = Substring.takel f s = 
-		      #1 (Substring.splitl f s)
+	    fun t s = Substring.equal (Substring.takel f s, #1 (Substring.splitl f s))
 	in
 	    Gen.try 1000 Gen.substring (Test.test t)
 	end
@@ -409,8 +304,7 @@ struct
 	let
 	    fun f c = Char.ord c <> 10
 		      
-	    fun t s = Substring.taker f s = 
-		      #2 (Substring.splitr f s)
+	    fun t s = Substring.equal (Substring.taker f s, #2 (Substring.splitr f s))
 	in
 	    Gen.try 1000 Gen.substring (Test.test t)
 	end
@@ -466,54 +360,6 @@ struct
 				         ys := nil; t x)))
 	end
 
-    fun testPosition () = 
-	let
-	    fun t' (s, s', i, n, m) k = 
-		if k + m > i + n
-		then (Substring.substring (s', i, n),
-		      Substring.substring (s', i + n, 0))
-		else 
-		  if Substring.string (Substring.substring (s', k, m)) = s
-		  then (Substring.substring (s', i, k - i),
-			Substring.substring (s', k, n + i - k))
-		  else t' (s, s', i, n, m) (k + 1)
-
-	    fun t (s, ss) = 
-		let
-		   val m = String.size s
-		   val (s', i, n) = Substring.base ss
-		in
-		    Substring.position s ss = t' (s, s', i, n, m) i
-		end
-	in
-	    Gen.try 100 (Gen.pair (Gen.string, Gen.substring))
-	         (Test.test t)
-	end
-	
-    fun testSpan () = 
-	let
-	    fun t' (s1, s2) = 
-		let
-		    val (s, i, n) = Substring.base s1
-		    val (s', i', n') = Substring.base s2
-		in
-		    if s <> s' orelse i' + n' < i
-		    then NONE
-		    else SOME (Substring.substring (s, i, (i' + n') - i))
-		end
-
-	    fun t (s1, s2) = 
-		let
-		    val r = t' (s1, s2) 
-		in 
-		    (Substring.span (s1, s2) = valOf r)
-		       handle Span => Option.isNone r
-		end
-	in
-	    Gen.try 1000 (Gen.pair (Gen.substring, Gen.substring)) 
-		    (Test.test t)
-	end
-	
     fun testTranslate () = 
 	let
 	    fun f c = String.str (Char.chr ((1 + Char.ord c) mod 256))
@@ -621,13 +467,8 @@ struct
 			       ("base", testBase),
 			       ("size", testSize),
 			       ("string", testString),
-			       ("full", testFull),
 			       ("isEmpty", testIsEmpty),
-			       ("getc", testGetC),
 			       ("first", testFirst),
-			       ("triml", testTriml),
-			       ("trimr", testTrimr),
-			       ("slice", testSlice),
 			       ("concat", testConcat),
 			       ("concatWith", testConcatWith),
 			       ("explode", testExplode),
@@ -643,8 +484,6 @@ struct
 			       ("dropr", testDropr),
 			       ("takel", testTakel),
 			       ("taker", testTaker),
-			       ("position", testPosition),
-			       ("span", testSpan),
 			       ("translate", testTranslate),
 			       ("tokens", testTokens),
 			       ("fields", testFields),

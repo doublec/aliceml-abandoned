@@ -245,16 +245,6 @@ struct
 	    Gen.try 1000 (Gen.word8ArraySlice Gen.word8) (Test.test t)
 	end
 
-    fun testGetItem () = 
-	let
-	    fun t asl = if Word8ArraySlice.isEmpty asl then NONE
-			else SOME (Word8ArraySlice.sub (asl, 0), 
-				   Word8ArraySlice.subslice (asl, 1, NONE))
-	in
-	    Gen.try 1000 (Gen.word8ArraySlice Gen.word8) 
-		   (Test.test (fn asl => t asl = Word8ArraySlice.getItem asl))
-	end
-
     fun testApp () = 
 	let
 	    val xs = ref nil
@@ -720,46 +710,6 @@ struct
 				         ys := nil; t x)))
 	end
 
-    fun testDropl  () = 
-	let
-	    fun f x = x > Word8.fromInt 0
-
-	    fun t asl = Word8ArraySlice.dropl f asl =
-			#2(Word8ArraySlice.splitl f asl)
-	in
-	    Gen.try 1000 (Gen.word8ArraySlice Gen.word8) (Test.test t)
-	end
-
-    fun testDropr () = 
-	let
-	    fun f x = x > Word8.fromInt 0
-
-	    fun t asl = Word8ArraySlice.dropr f asl =
-			#1(Word8ArraySlice.splitr f asl)
-	in
-	    Gen.try 1000 (Gen.word8ArraySlice Gen.word8) (Test.test t)
-	end
-
-    fun testTakel () = 
-	let
-	    fun f x = x > Word8.fromInt 0
-
-	    fun t asl = Word8ArraySlice.takel f asl =
-			#1(Word8ArraySlice.splitl f asl)
-	in
-	    Gen.try 1000 (Gen.word8ArraySlice Gen.word8) (Test.test t)
-	end
-
-    fun testTaker () = 
-	let
-	    fun f x = x > Word8.fromInt 0
-
-	    fun t asl = Word8ArraySlice.taker f asl =
-			#2(Word8ArraySlice.splitr f asl)
-	in
-	    Gen.try 1000 (Gen.word8ArraySlice Gen.word8) (Test.test t)
-	end
-		       
     fun testContains () = 
 	let
 	    fun t asl = Word8ArraySlice.contains Word8.equal asl 
@@ -778,32 +728,6 @@ struct
 							   (Word8.fromInt 3))
 	in 
 	    Gen.try 100 (Gen.word8ArraySlice Gen.word8) (Test.test t)
-	end
-
-    fun testEqual' () = 
-	Gen.try 1000 (Gen.pair (Gen.word8ArraySlice Gen.word8,
-				Gen.word8ArraySlice Gen.word8))
-		(Test.test (fn (a1, a2) => a1 = a2 = false andalso
-					   a1 = a1 = true  andalso
-					   a2 = a2 = true))
-	
-    fun testEqual () = 
-	let
-	    fun equal' f (a1, a2, i) = 
-		if i = Word8ArraySlice.length a1 then true
-		else if f (Word8ArraySlice.sub (a1, i), 
-			   Word8ArraySlice.sub (a2, i)) 
-		     then equal' f (a1, a2, i + 1) else false
-
-	    fun equality f (a1, a2) = (Word8ArraySlice.length a1 = 
-				       Word8ArraySlice.length a2 andalso 
-				       equal' f (a1, a2, 0))
-
-	    fun t x = equality Word8.equal x =
-		      Word8ArraySlice.equal Word8.equal x
-	in 
-	    Gen.try 1000 (Gen.pair (Gen.word8ArraySlice Gen.word8,
-				    Gen.word8ArraySlice Gen.word8)) (Test.test t)
 	end
 
     fun testIsSorted () = 
@@ -833,8 +757,6 @@ struct
 
     val suite = ("Word8ArraySlice", [("slice", testSlice),
 				("subslice", testSubslice),
-				("=", testEqual'),
-				("equal", testEqual),
 				("full", testFull),
 				("length", testLength),
 				("sub", testSub),
@@ -845,7 +767,6 @@ struct
 				("rev", testRev),
 				("toVector", testToVector),
 				("isEmpty", testIsEmpty),
-				("getItem", testGetItem),
 				("toList", testToList),
 				("copy", testCopy),
 				("copyVec", testCopyVec),
@@ -872,10 +793,6 @@ struct
 				("splitr", testSplitr),
 				("triml", testTriml),
 				("trimr", testTrimr),
-				("dropl", testDropl),
-				("dropr", testDropr),
-				("takel", testTakel),
-				("taker", testTaker),
 				("collate", testCollate),
 				("isSorted", testIsSorted),
 				("sort", testSort)])

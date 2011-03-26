@@ -251,16 +251,6 @@ struct
 	    Gen.try 1000 (Gen.wideCharArraySlice Gen.wideChar) (Test.test t)
 	end
 
-    fun testGetItem () = 
-	let
-	    fun t asl = if WideCharArraySlice.isEmpty asl then NONE
-			else SOME (WideCharArraySlice.sub (asl, 0), 
-				   WideCharArraySlice.subslice (asl, 1, NONE))
-	in
-	    Gen.try 1000 (Gen.wideCharArraySlice Gen.wideChar) 
-		   (Test.test (fn asl => t asl = WideCharArraySlice.getItem asl))
-	end
-
     fun testApp () = 
 	let
 	    val xs = ref nil
@@ -732,46 +722,6 @@ struct
 				         ys := nil; t x)))
 	end
 
-    fun testDropl  () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = WideCharArraySlice.dropl f asl =
-			#2(WideCharArraySlice.splitl f asl)
-	in
-	    Gen.try 1000 (Gen.wideCharArraySlice Gen.wideChar) (Test.test t)
-	end
-
-    fun testDropr () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = WideCharArraySlice.dropr f asl =
-			#1(WideCharArraySlice.splitr f asl)
-	in
-	    Gen.try 1000 (Gen.wideCharArraySlice Gen.wideChar) (Test.test t)
-	end
-
-    fun testTakel () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = WideCharArraySlice.takel f asl =
-			#1(WideCharArraySlice.splitl f asl)
-	in
-	    Gen.try 1000 (Gen.wideCharArraySlice Gen.wideChar) (Test.test t)
-	end
-
-    fun testTaker () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = WideCharArraySlice.taker f asl =
-			#2(WideCharArraySlice.splitr f asl)
-	in
-	    Gen.try 1000 (Gen.wideCharArraySlice Gen.wideChar) (Test.test t)
-	end
-		       
     fun testContains () = 
 	let
 	    fun t asl = WideCharArraySlice.contains WideChar.equal asl 
@@ -790,32 +740,6 @@ struct
 							   (fromInt 3))
 	in 
 	    Gen.try 100 (Gen.wideCharArraySlice Gen.wideChar) (Test.test t)
-	end
-
-    fun testEqual' () = 
-	Gen.try 1000 (Gen.pair (Gen.wideCharArraySlice Gen.wideChar,
-				Gen.wideCharArraySlice Gen.wideChar))
-		(Test.test (fn (a1, a2) => a1 = a2 = false andalso
-					   a1 = a1 = true  andalso
-					   a2 = a2 = true))
-	
-    fun testEqual () = 
-	let
-	    fun equal' f (a1, a2, i) = 
-		if i = WideCharArraySlice.length a1 then true
-		else if f (WideCharArraySlice.sub (a1, i), 
-			   WideCharArraySlice.sub (a2, i)) 
-		     then equal' f (a1, a2, i + 1) else false
-
-	    fun equality f (a1, a2) = (WideCharArraySlice.length a1 = 
-				       WideCharArraySlice.length a2 andalso 
-				       equal' f (a1, a2, 0))
-
-	    fun t x = equality WideChar.equal x =
-		      WideCharArraySlice.equal WideChar.equal x
-	in 
-	    Gen.try 1000 (Gen.pair (Gen.wideCharArraySlice Gen.wideChar,
-				    Gen.wideCharArraySlice Gen.wideChar)) (Test.test t)
 	end
 
     fun testIsSorted () = 
@@ -845,8 +769,6 @@ struct
 
     val suite = ("WideCharArraySlice", [("slice", testSlice),
 				("subslice", testSubslice),
-				("=", testEqual'),
-				("equal", testEqual),
 				("full", testFull),
 				("length", testLength),
 				("sub", testSub),
@@ -857,7 +779,6 @@ struct
 				("rev", testRev),
 				("toVector", testToVector),
 				("isEmpty", testIsEmpty),
-				("getItem", testGetItem),
 				("toList", testToList),
 				("copy", testCopy),
 				("copyVec", testCopyVec),
@@ -884,10 +805,6 @@ struct
 				("splitr", testSplitr),
 				("triml", testTriml),
 				("trimr", testTrimr),
-				("dropl", testDropl),
-				("dropr", testDropr),
-				("takel", testTakel),
-				("taker", testTaker),
 				("collate", testCollate),
 				("isSorted", testIsSorted),
 				("sort", testSort)])

@@ -195,16 +195,6 @@ struct
 	    Gen.try 1000 (Gen.charVectorSlice Gen.char) (Test.test t)
 	end
 
-    fun testGetItem () = 
-	let
-	    fun t asl = if CharVectorSlice.isEmpty asl then NONE
-			else SOME (CharVectorSlice.sub (asl, 0), 
-				   CharVectorSlice.subslice (asl, 1, NONE))
-	in
-	    Gen.try 1000 (Gen.charVectorSlice Gen.char) 
-		   (Test.test (fn asl => t asl = CharVectorSlice.getItem asl))
-	end
-
     fun testApp () = 
 	let
 	    val xs = ref nil
@@ -627,46 +617,6 @@ struct
 				         ys := nil; t x)))
 	end
 
-    fun testDropl  () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = CharVectorSlice.dropl f asl =
-			#2(CharVectorSlice.splitl f asl)
-	in
-	    Gen.try 1000 (Gen.charVectorSlice Gen.char) (Test.test t)
-	end
-
-    fun testDropr () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = CharVectorSlice.dropr f asl =
-			#1(CharVectorSlice.splitr f asl)
-	in
-	    Gen.try 1000 (Gen.charVectorSlice Gen.char) (Test.test t)
-	end
-
-    fun testTakel () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = CharVectorSlice.takel f asl =
-			#1(CharVectorSlice.splitl f asl)
-	in
-	    Gen.try 1000 (Gen.charVectorSlice Gen.char) (Test.test t)
-	end
-
-    fun testTaker () = 
-	let
-	    fun f x = x > fromInt 0
-
-	    fun t asl = CharVectorSlice.taker f asl =
-			#2(CharVectorSlice.splitr f asl)
-	in
-	    Gen.try 1000 (Gen.charVectorSlice Gen.char) (Test.test t)
-	end
-		       
     fun testContains () = 
 	let
 	    fun t asl = CharVectorSlice.contains Char.equal asl 
@@ -685,31 +635,6 @@ struct
 							    (fromInt 3))
 	in 
 	    Gen.try 100 (Gen.charVectorSlice Gen.char) (Test.test t)
-	end
-
-    fun testEqual' () = 
-	Gen.try 1000 (Gen.pair (Gen.charVectorSlice Gen.char,
-				Gen.charVectorSlice Gen.char))
-		(Test.test (fn (a1, a2) => a1 = a1 = true andalso
-					   a2 = a2 = true))
-	
-    fun testEqual () = 
-	let
-	    fun equal' f (a1, a2, i) = 
-		if i = CharVectorSlice.length a1 then true
-		else if f (CharVectorSlice.sub (a1, i), 
-			   CharVectorSlice.sub (a2, i)) 
-		     then equal' f (a1, a2, i + 1) else false
-
-	    fun equality f (a1, a2) = (CharVectorSlice.length a1 = 
-				       CharVectorSlice.length a2 andalso 
-				       equal' f (a1, a2, 0))
-
-	    fun t x = equality Char.equal x =
-		      CharVectorSlice.equal Char.equal x
-	in 
-	    Gen.try 1000 (Gen.pair (Gen.charVectorSlice Gen.char,
-				    Gen.charVectorSlice Gen.char)) (Test.test t)
 	end
 
     fun testIsSorted () = 
@@ -741,8 +666,6 @@ struct
 
     val suite = ("CharVectorSlice", [("slice", testSlice),
 				("subslice", testSubslice),
-				("= ", testEqual'),
-				("equal", testEqual),
 				("full", testFull),
 				("length", testLength),
 				("sub", testSub),
@@ -753,7 +676,6 @@ struct
 				("rev", testRev),
 				("toVector", testToVector),
 				("isEmpty", testIsEmpty),
-				("getItem", testGetItem),
 				("toList", testToList),
 				("concat", testConcat),
 				("app", testApp),
@@ -779,10 +701,6 @@ struct
 				("splitr", testSplitr),
 				("triml", testTriml),
 				("trimr", testTrimr),
-				("dropl", testDropl),
-				("dropr", testDropr),
-				("takel", testTakel),
-				("taker", testTaker),
 				("collate", testCollate),
 				("isSorted", testIsSorted),
 				("sort", testSort)])

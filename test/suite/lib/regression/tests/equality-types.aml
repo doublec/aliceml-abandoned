@@ -51,8 +51,6 @@ fun f (x: int t) = x = x
 
 fun f (x: real t) = x = x (* 38 error *)
 
-val f: 'a -> unit = fn x => (x = x; ()) (* 40 error *)
-
 val result = !result
 
 end
