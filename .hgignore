@@ -93,3 +93,4 @@ glob:vm-seam/depcomp
 glob:vm-seam/install-sh
 glob:vm-seam/missing
 glob:vm-seam/mkinstalldirs
+glob:.kdev_include_paths
