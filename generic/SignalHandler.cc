@@ -23,6 +23,8 @@
 #include "generic/Scheduler.hh"
 #include "generic/RootSet.hh"
 #include "generic/Transients.hh"
+#include "generic/Time.hh"
+#include "generic/Double.hh"
 
 #if HAVE_SIGNAL
 #include <signal.h>
@@ -120,11 +122,16 @@ public:
 class TimerEntry: public Block {
 private:
   static const BlockLabel TIMER_ENTRY_LABEL = MIN_DATA_LABEL;
-  enum { TIME_POS, FUTURE_POS, NEXT_POS, SIZE };
+  enum {
+    TIME_POS, // in microseconds, as a Double
+    FUTURE_POS,
+    NEXT_POS,
+    SIZE
+  };
 public:
-  static TimerEntry *New(u_int time, Future *future) {
+  static TimerEntry *New(double time, Future *future) {
     Block *entry = Store::AllocMutableBlock(TIMER_ENTRY_LABEL, SIZE);
-    entry->InitArg(TIME_POS, time);
+    entry->InitArg(TIME_POS, Double::New(time)->ToWord());
     entry->InitArg(FUTURE_POS, future->ToWord());
     entry->InitArg(NEXT_POS, static_cast<s_int>(0));
     return static_cast<TimerEntry *>(entry);
@@ -134,9 +141,8 @@ public:
     Assert(b->GetLabel() == TIMER_ENTRY_LABEL && b->GetSize() == SIZE);
     return static_cast<TimerEntry *>(b);
   }
-
-  u_int GetTime() {
-    return Store::DirectWordToInt(GetArg(TIME_POS));
+  double GetTime() {
+    return Double::FromWord(GetArg(TIME_POS))->GetValue();
   }
   Future *GetFuture() {
     Transient *transient = Store::DirectWordToTransient(GetArg(FUTURE_POS));
@@ -309,7 +315,7 @@ void SignalHandler::RegisterSignal(int _signal, word closure) {
 
 Future *SignalHandler::RegisterAlarm(u_int milliseconds) {
   BlockSignals();
-  u_int time = Timer::GetTime() + (milliseconds + TIME_SLICE - 1) / TIME_SLICE;
+  double time = Time::GetElapsedMicroseconds() + (double) milliseconds * 1000.0;
   Future *future = Future::New();
   TimerEntry *newEntry = TimerEntry::New(time, future);
   if (alarmHandlers == Store::IntToWord(0)) // list was empty
@@ -338,7 +344,7 @@ static void CheckAlarms() {
   if (alarmHandlers == Store::IntToWord(0)) // no alarms
     return;
   TimerEntry *entry = TimerEntry::FromWordDirect(alarmHandlers);
-  while (entry->GetTime() <= Timer::GetTime()) { // triggered?
+  while (entry->GetTime() <= Time::GetElapsedMicroseconds()) { // triggered?
     Future *future = entry->GetFuture();
     future->ScheduleWaitingThreads();
     future->Become(REF_LABEL, Store::IntToWord(0)); // unit
