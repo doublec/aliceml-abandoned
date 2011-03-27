@@ -20,9 +20,11 @@ struct
 
     val randomize = Gen.randomize
 
-    fun impreciseEqual (a, b) = 
+    fun impreciseEqual (a, b) =
+	(Real.isNan a andalso Real.isNan b) orelse
 	Real.== (a, b) orelse a = b orelse 
-	Real.- (Real.abs a, Real.abs b) <= Real.abs (Real.max (a, b))
+	Real.abs (a - b) < Real.max (0.001, (Real.max (Real.abs a, Real.abs b) / 1000.0)) orelse
+	Real.== (a*16.0, b*16.0) (*) when one value is infinity, check if the other is nearly infinity
 
 
     fun testE () = 
@@ -189,18 +191,18 @@ struct
     fun testSin () = 
 	(Test.test (fn x => Real.isNan (Math.sin x)) Real.posInf;
 	 Test.test (fn x => impreciseEqual (Math.sin x, 0.0)) 0.0;
-	 Test.test (fn x => impreciseEqual (Math.sin x, 1.0)) (Math.pi / 2.0);
+	 Test.test (fn x => impreciseEqual (Math.sin x, 1.0)) (0.5 * Math.pi);
 	 Test.test (fn x => impreciseEqual (Math.sin x, 0.0)) Math.pi;
-	 Test.test (fn x => impreciseEqual (Math.sin x, ~1.0)) (3.0 * Math.pi / 4.0);
+	 Test.test (fn x => impreciseEqual (Math.sin x, ~1.0)) (1.5 * Math.pi);
 	 Test.test (fn x => impreciseEqual (Math.sin x, 0.0)) (2.0 * Math.pi);
 	 Test.test (fn x => Real.isNan (Math.sin x)) Real.negInf)
 
     fun testCos () = 
 	(Test.test (fn x => Real.isNan (Math.cos x)) Real.posInf;
 	 Test.test (fn x => impreciseEqual (Math.cos x, 1.0)) 0.0;
-	 Test.test (fn x => impreciseEqual (Math.cos x, 0.0)) (Math.pi / 2.0);
+	 Test.test (fn x => impreciseEqual (Math.cos x, 0.0)) (0.5 * Math.pi);
 	 Test.test (fn x => impreciseEqual (Math.cos x, ~1.0)) Math.pi;
-	 Test.test (fn x => impreciseEqual (Math.cos x, 0.0)) (3.0 * Math.pi / 4.0);
+	 Test.test (fn x => impreciseEqual (Math.cos x, 0.0)) (1.5 * Math.pi);
 	 Test.test (fn x => impreciseEqual (Math.cos x, 1.0)) (2.0 * Math.pi);
 	 Test.test (fn x => Real.isNan (Math.cos x)) Real.negInf)
 
@@ -342,23 +344,29 @@ struct
     fun testCosh () = 
 	let
 	    fun t' x = (Math.exp x + Math.exp (~x)) / 2.0
-	    fun t x = impreciseEqual (Math.cosh x ,t' x)
+	    fun t x = impreciseEqual (Math.cosh x, t' x)
 	in
 	    (Gen.try 10000 Gen.real (Test.test t);
-	     Test.test (fn x => Math.cosh x = x) 1.0;
-	     Test.test (fn x => Math.cosh x = x) ~1.0;
+	     Test.test (fn x => Math.cosh x = 1.0) 0.0;
+	     Test.test (fn x => Math.cosh x = 1.0) ~0.0;
 	     Test.test (fn x => Math.cosh x = x) Real.posInf;
-	     Test.test (fn x => Math.cosh x = x) Real.negInf)
+	     Test.test (fn x => Math.cosh x = Real.posInf) Real.negInf)
 	end
 
     fun testTanh () = 
 	let
-	    fun t' x = Math.sinh x / Math.cosh x
-	    fun t x = impreciseEqual (Math.tanh x ,t' x)
+	    fun t x =
+	        let
+	            val a = Math.tanh x
+	            val b = Math.sinh x / Math.cosh x
+	        in
+	            impreciseEqual (a, b) orelse
+	            (impreciseEqual (a, 1.0) andalso Real.isNan b)
+	        end
 	in
 	    (Gen.try 10000 Gen.real (Test.test t);
-	     Test.test (fn x => Math.tanh x = x) 1.0;
-	     Test.test (fn x => Math.tanh x = x) ~1.0;
+	     Test.test (fn x => Math.tanh x = x) 0.0;
+	     Test.test (fn x => Math.tanh x = x) ~0.0;
 	     Test.test (fn x => Math.tanh x = 1.0) Real.posInf;
 	     Test.test (fn x => Math.tanh x = ~1.0) Real.negInf)
 	end
