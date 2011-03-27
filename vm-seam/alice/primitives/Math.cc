@@ -45,8 +45,8 @@ static inline double Atanh(double x) {
 }
 
 static inline double Pow(double x, double y) {
-  // C and SML differ for the following case...
-  if (std::fabs(x) == 1.0 && std::fabs(y) == 1.0/0.0) {
+  // C and SML differ for the following cases...
+  if ((std::fabs(x) == 1.0 && std::fabs(y) == 1.0/0.0) || std::isnan(y)) {
     return 0.0/0.0; // NaN
   } else {
     return std::pow(x, y);
