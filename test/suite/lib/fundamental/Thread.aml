@@ -137,6 +137,7 @@ struct
 			                  handle Terminated => true
 		    val c = Thread.state r = Thread.RUNNABLE
 		    val d = Thread.state bl = Thread.RUNNABLE
+		    val _ = Thread.yield (Thread.current()) (*) allow time for exns to be raised in the other threads
 		    val e = !ref1 = "Alice"
 		    val f = !ref2 = "Alice"
 		    val g = !ref3 = "Alice"
@@ -152,7 +153,6 @@ struct
 	end
 
 
-    (* TODO: komisch, im interpreter funzts... ?!?!? *)
     fun testTerminate () =
 	let
 	    val time1 = Time.fromMilliseconds (IntInf.fromInt 1000)
@@ -178,10 +178,11 @@ struct
 		    val _ = Thread.terminate bl
 		    val b' = (Thread.terminate term; false) 
 			                    handle Terminated => true
-		    val c = Thread.state r = Thread.RUNNABLE
-		    val d = Thread.state bl = Thread.RUNNABLE
+		    val _ = Thread.yield (Thread.current()) (*) allow time for exns to be raised in the other threads
+		    val c = Thread.state r = Thread.TERMINATED
+		    val d = Thread.state bl = Thread.TERMINATED
 		    val d' = Thread.state term = Thread.TERMINATED
-		    val e = !ref1 = "Alice" (* das hier geht kaputt *)
+		    val e = !ref1 = "Alice"
 		    val f = !ref2 = "Alice"
 		in
 		    a andalso a' andalso b' andalso 
