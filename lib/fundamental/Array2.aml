@@ -220,8 +220,10 @@ local
 	       let 
 		   val (src, lowRow, lowCol, uppRow, uppCol) = transRegion General.Subscript src
 
-		   val _ = if dst_row + (uppRow - lowRow) > nRows dst orelse
-	        	      dst_col + (uppCol - lowCol) > nCols dst then
+		   val _ = if dst_row < 0 orelse
+		              dst_col < 0 orelse
+		              dst_row + (uppRow - lowRow) >= nRows dst orelse
+	        	      dst_col + (uppCol - lowCol) >= nCols dst then
 	        	      raise General.Subscript	       
 			   else ()
 

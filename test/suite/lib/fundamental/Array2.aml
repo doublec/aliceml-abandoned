@@ -18,7 +18,7 @@ import structure Test      from "../../src/Test"
 structure TestArray2 :> TESTSUITE =
 struct
 
-    val randomize =Gen.randomize
+    val randomize = Gen.randomize
 
     (* mkRegion (base, right) gives valid region if right = true
        else mkRegions gives wrong region *)
@@ -42,6 +42,23 @@ struct
 		       nrows = NONE, ncols = NONE}
 	end
 
+    fun isValidRegion { base, row, col, nrows, ncols } =
+	let
+	    val (h, w) = Array2.dimensions base
+	in
+	    row >= 0 andalso row <= h
+	    andalso
+	    col >= 0 andalso col <= w
+	    andalso
+	    (case nrows
+	     of NONE   => true
+	      | SOME n => n >= 0 andalso row + n <= h)
+	    andalso
+	    (case ncols
+	     of NONE   => true
+	      | SOME n => n >= 0 andalso col + n <= w)
+	end
+
     fun twin src = 
 	let
 	    val (r, c) = Array2.dimensions src
@@ -61,92 +78,54 @@ struct
 
     fun testCopy () = 
 	let
-	    fun regionToArray {base, row, col, nrows, ncols} =
+	    fun copy { src, dst, dst_row, dst_col } =
+	        let
+	            val srcValid = isValidRegion src
+	            val dstValid = isValidRegion
+	               { base = dst,
+	                 row = dst_row,
+	                 col = dst_col,
+	                 nrows = SOME (getOpt (#nrows src, Array2.nRows (#base src) - #row src)),
+	                 ncols = SOME (getOpt (#ncols src, Array2.nCols (#base src) - #col src)) }
+	            
+	            do if not srcValid orelse not dstValid then
+	                raise Subscript
+	            
+	            val srcValues =
+	                Array2.foldi
+	                Array2.RowMajor
+	                (fn (r, c, x, acc) => (r - #row src, c - #col src, x)::acc)
+	                []
+	                src
+	        in
+	            app (fn (r, c, x) => Array2.update (dst, dst_row+r, dst_col+c, x)) srcValues
+	        end	  
+
+	    fun t (srcArr, dst, rnd) = 
 		let
-		    val nRows = if Option.isNone nrows
-				    then Array2.nRows base - row
-				else valOf nrows
-		    val nCols = if Option.isNone ncols
-				    then Array2.nCols base - col
-				else valOf ncols
-		    val new_base = Array2.array (nRows, nCols, 0)
-		    fun t' (ar1, ar2) (r, c) = 
-			if r >= nRows
-			    then ar2
-			else if c = nCols
-				 then t' (ar1, ar2) (r + 1, 0)
-			     else (Array2.update (ar2, r, c, 
-						  Array2.sub (ar1, row + r, 
-					 		      col + c));
-				   t' (ar1, ar2) (r, c + 1))
+		    (*) sometimes test the case where src = dst
+		    val srcReg = mkRegion (srcArr, Gen.bool rnd)
+		    val dst = if Gen.bool rnd then srcArr else dst
+	
+	            val srcReg' = {srcReg where base = twin srcArr}
+	            val dst' = if srcArr = dst then #base srcReg' else twin dst
+
+		    val dst_col = Gen.int (Array2.nCols dst * 2)
+		    val dst_row = Gen.int (Array2.nRows dst * 2)
+		    
+		    val testResult =
+		        FST (copy {src = srcReg, dst, dst_row, dst_col}) handle e => SND e
+		    
+		    val realResult =
+		        FST (Array2.copy {src = srcReg', dst = dst', dst_row, dst_col}) handle e => SND e
 		in
-		    t' (base, new_base) (0, 0)
-		end
-
-	    fun isValid (dst, nrows, ncols, dst_row, dst_col) =
-		let
-		    val (dst_r, dst_c) = Array2.dimensions dst
-		in
-		    dst_r >= dst_row + nrows andalso
-		    dst_c >= dst_col + ncols
-		end
-
-	    val xs = ref nil
-
-	    fun t' (src : int Array2.region, dst, dst_row, dst_col) (r, c) = 
-		if isValid (dst, 
-			    if Option.isNone (#nrows src)
-			    then Array2.nRows (#base src) - (#row src)
-			    else valOf (#nrows src), 
-			    if Option.isNone (#ncols src)
-			    then Array2.nCols (#base src) - (#col src)
-			    else valOf (#ncols src), 
-			    dst_row, dst_col)
-		then 
-		    if r >= dst_row
-		    then SOME ()
-		    else if c = dst_col
-		    then t' (src, dst, dst_row, dst_col) (r + 1, 0)
-		    else (xs := (r, c, Array2.sub (#base src, 
-						   #row src + r,
-						   #col src + c)) :: !xs;
-			  t' (src, dst, dst_row, dst_col) (r, c + 1))
-		else NONE
-			  
-
-	    exception Error1
-	    exception Error2
-
-	    fun t (base, dest) = 
-		let
-		    val src = mkRegion (base, true)
-		    val src2 = {src where base = twin base}
-		    val dst = if Gen.bool 1
-				  then regionToArray src (* copy to itself *)
-			      else dest
-		    val dst2 = twin dst
-		    val dst_col = if Option.isNone (#ncols src)
-				      then Array2.nCols dst - (#col src)
-				  else valOf (#ncols src)
-		    val dst_row = if Option.isNone (#nrows src)
-				      then Array2.nRows dst - (#row src)
-				  else valOf (#nrows src)
-		in
-		    xs := nil;
-		    (if 
-		       Option.isSome (t' (src2, dst, dst_row, dst_col)  (0, 0))
-		     then (List.app (fn (r, c, a) => 
-					Array2.update (dst2, r, c, a)) (!xs);
-			   Array2.copy {src, dst, dst_row, dst_col})
-			               handle Subscript => raise Error1
-		     else (Array2.copy {src, dst, dst_row, dst_col}; 
-		           raise Error2) handle Subscript => ());
-		    Array2.equal Array2.RowMajor 
-		                 Int.equal (dst, dst2)
+		    case (testResult, realResult)
+		    of (FST (), FST ())               => Array2.equal Array2.RowMajor op= (dst, dst')
+		     | (SND Subscript, SND Subscript) => true
+		     | _                              => false
 		end
 	in
-	    Gen.try 30 (Gen.pair (Gen.array2 Gen.int, Gen.array2 Gen.int))
-                                         	    (Test.test t)
+	    Gen.try 200 (Gen.triple (Gen.array2 Gen.int, Gen.array2 Gen.int, Gen.int)) (Test.test t)
 	end
 
     fun testArray () =
