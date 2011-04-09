@@ -194,24 +194,24 @@ struct
 	    fun pow' (a, b, c) = if b = 0 then c 
 				 else pow' (a, b - 1, IntInf.* (c, a))
 
-	    fun t (i, j) = if j = 0
-			       then pow' (i, j, one)
-			   else if j < 0
-				    then if IntInf.equal (i, zero)
-					     then raise Div
-					 else if IntInf.abs i = one 
-						  then pow' (i, j, one)
-					      else zero
-				else pow' (i, j, one)
+	    fun t (i, j) = if j >= 0 then
+	                       pow' (i, j, one)
+			   else
+			       if i = zero then
+			           raise Div
+			       else
+			           if IntInf.abs i = one then
+			               pow' (i, ~j, one)
+			           else
+			               zero
 	in
 	    Gen.try 100 (Gen.pair (Gen.largeInt, Gen.int))
 	       (Test.test (fn x => let
 				     val r = SOME (t x) handle Div => NONE
 			           in 
-				     if Option.isSome r
-				     then IntInf.equal (IntInf.pow x, valOf r)
-				     else (IntInf.pow x; false) 
-					    handle Div => true
+				     case r
+				     of SOME r' => IntInf.pow x = r'
+				      | NONE    => (IntInf.pow x; false) handle Div => true
 			           end))
 	end
 

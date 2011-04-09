@@ -298,13 +298,18 @@ DEFINE2(IntInf_opmul) {
 DEFINE2(IntInf_pow) {
   TEST_INTINF(base, x0);
   DECLARE_INT(exp, x1);
-  if (exp==0)
+  if (exp == 0) {
     RETURN_INT(1);
-  if (exp<0) {
-    if (base==0)
+  }
+  if (exp < 0) {
+    if (base == 0) {
       RAISE(PrimitiveTable::General_Div);
-    if (base==1 || base==~1) {
-      RETURN_INT(base);
+    }
+    if (base == 1) {
+      RETURN_INT(1);
+    }
+    if (base == -1) {
+      RETURN_INT(-exp % 2 ? -1 : 1);
     }
     RETURN_INT(0);
   }
