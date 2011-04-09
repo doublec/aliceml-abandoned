@@ -78,8 +78,10 @@
   <P>
     <I>Note:</I> Due to the platform independence of Alice the behaviour of
     <TT>OS.Path</TT> is <EM>not</EM> dependent on the host operating system.
-    Instead, paths are always interpreted in a manner conforming to the
-    conventions of Unix-style operating systems.
+    Instead, both <TT>/</TT> and <TT>\</TT> are interpreted as arc separators,
+    and paths starting with <TT>&quot;<I>x</I>:&quot;</TT> are always considered to
+    have a volume of <TT>&quot;<I>x</I>&quot;</TT>. Paths returned by functions in
+    this structure will always use <TT>/</TT> as the arc separator.
   </P>
 
   <P>
@@ -92,7 +94,7 @@
     </DT>
     <DD>
       <P>Does not raise <TT>Path</TT> if both arguments are relative paths on
-      the same volume. Instead, resolution is performed as for absolut paths.
+      the same volume. Instead, resolution is performed as for absolute paths.
       Here are some examples:</P>
       <TT>
       <TABLE>

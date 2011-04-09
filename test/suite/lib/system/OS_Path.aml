@@ -165,10 +165,10 @@ struct
 	let
 	    fun t' (d, f) = if String.size d + String.size f > String.maxSize
 			    then NONE
-			    else if String.isSubstring "/" f
+			    else if String.isSubstring "/" f orelse String.isSubstring "\\" f
 			    then NONE
 			    else if d = "" then SOME f
-			    else SOME (d ^ "/" ^ f)
+			    else SOME (String.map (fn #"\\" => #"/" | c => c) d ^ "/" ^ f)
 
 	    fun t (dir, file) = 
 		let

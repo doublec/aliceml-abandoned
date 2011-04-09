@@ -79,7 +79,6 @@ import structure TypeCheck from "type-check"
 import structure Typespec from "typespec"
 import structure Unary2 from "unary.2"
 import structure Unary from "unary"
-import structure UnixPath from "unixpath"
 import structure Undetermined2 from "undetermined2"
 import structure Undetermined from "undetermined"
 import structure UselessString from "useless-string"
@@ -288,8 +287,6 @@ struct
        
    fun testUnary () = test' Unary.ok Unary.result
 
-   fun testUnixPath () = test' UnixPath.ok UnixPath.result
-       
    fun testUndetermined2 () = test' Undetermined2.ok Undetermined2.result
        
    fun testUndetermined () = test' Undetermined.ok Undetermined.result
@@ -401,7 +398,6 @@ struct
 			(Typespec.name, testTypespec),
 			(Unary2.name, testUnary2),
 			(Unary.name, testUnary),
-			(UnixPath.name, testUnixPath),
 			(Undetermined2.name, testUndetermined2),
 			(Undetermined.name, testUndetermined),
 			(UselessString.name, 
