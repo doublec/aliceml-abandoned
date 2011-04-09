@@ -135,7 +135,7 @@ export PATH
 .PHONY:	info
 info:
 	@echo To build distro, \`make clean all\'.
-	@echo To test, \`make rungui\'.
+	@echo To test, \`make rungui\', or to run the test suite, \`make test\`.
 	@echo Optionally, \`make update\' first.
 	@echo For initial checkout, \`make setup\'.
 	@echo For releasing, \`make setup-release\' and \`make release\'.
@@ -543,3 +543,11 @@ rungui:
 selectgui:
 	PATH="/c/Programme/GTK2-Runtime/bin:/c/Programme/GTK2-Runtime/lib:$(PATH)" && \
 	gtk2_prefs
+
+.PHONY: test
+test:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
+	ALICE_HOME=$(PREFIX)/share/alice && \
+	cd $(PWD)/alice/sources/test/suite && \
+	./run.sh
+
