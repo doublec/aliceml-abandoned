@@ -24,10 +24,7 @@ struct
     fun fromInt x = if x > 255 then Char.chr 255 else Char.chr x
 
     fun testMaxLen () =
-	Test.test (fn x => 
-		   IntInf.toInt (IntInf.- (IntInf.pow (IntInf.fromInt 2, 26), 
-					   IntInf.fromInt 72)) = x) 
-	                                                    WideCharVector.maxLen
+	Test.test (fn x => x = (0xfffff0 - 1) * 4) WideCharVector.maxLen
 
     fun testSub () =
 	let

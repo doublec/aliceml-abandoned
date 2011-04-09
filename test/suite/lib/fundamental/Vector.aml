@@ -22,10 +22,7 @@ struct
     val randomize = Gen.randomize
 
     fun testMaxLen () =
-	Test.test (fn x => 
-		   IntInf.toInt (IntInf.- (IntInf.pow (IntInf.fromInt 2, 24), 
-					   IntInf.fromInt 18)) = x) 
-	                                                    Vector.maxLen
+        Test.test (fn x => x = 0xfffff0 - 1) Vector.maxLen
 
     fun testSub () =
 	let

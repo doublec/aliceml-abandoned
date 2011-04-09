@@ -27,7 +27,7 @@ struct
     val allGenStrFreq = [(12,strGen0), (4,strGen1)]
 
     fun testMaxSize () =
-	Test.test (fn x => String.maxSize = x) 67108792
+	Test.test (fn x => x = (0xfffff0 - 1) * 4) String.maxSize
 
     fun testSize () =
 	(Test.test (fn s => String.size s = 0) "";

@@ -218,7 +218,7 @@ DEFINE2(UnsafeSocket_inputN) {
   DECLARE_FD(sock, x0);
   DECLARE_INT(count, x1);
 
-  if (count < 0 || static_cast<u_int>(count) > String::maxSize) {
+  if (count < 0 || static_cast<u_int>(count) > ALICE_STRING_MAX_SIZE) {
     RAISE(PrimitiveTable::General_Size);
   }
   String *buffer = String::New(count);

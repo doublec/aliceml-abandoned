@@ -20,6 +20,9 @@ DEFINE2(String_opconcat) {
   DECLARE_STRING(string2, x1);
   u_int length1 = string1->GetSize();
   u_int length2 = string2->GetSize();
+  if (length1 + length2 > ALICE_STRING_MAX_SIZE) {
+    RAISE(PrimitiveTable::General_Size);
+  }
   String *newString = String::New(length1 + length2);
   u_char *base = newString->GetValue();
   std::memcpy(base, string1->GetValue(), length1);

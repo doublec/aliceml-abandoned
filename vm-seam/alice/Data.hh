@@ -24,6 +24,9 @@
 
 class Transform;
 
+// Alice max string size must be constant across platforms, unlike String::maxSize
+const u_int ALICE_STRING_MAX_SIZE = (MAX_BIGBLOCKSIZE - 1) * 4;
+
 inline s_int mydiv(s_int a, s_int b) {
   // This function is only here to bypass a constant folding bug in g++.
   // If we define RETURN_WORD as
@@ -409,11 +412,12 @@ public:
 
 class AliceDll Word8Array: private Chunk {
 public:
-  static const u_int maxLen = String::maxSize;
+  static const u_int maxLen = ALICE_STRING_MAX_SIZE;
 
   using Chunk::ToWord;
 
   static Word8Array *New(u_int length) {
+    Assert(length >= 0 && length <= maxLen);
     Chunk *c = Store::AllocMutableChunk(length);
     return static_cast<Word8Array *>(c);
   }
@@ -454,12 +458,13 @@ public:
 
 class AliceDll Word8Vector: private String {
 public:
-  static const u_int maxLen = String::maxSize;
+  static const u_int maxLen = ALICE_STRING_MAX_SIZE;
 
   using String::ToWord;
   using String::GetValue;
 
   static Word8Vector *New(u_int length) {
+    Assert(length >= 0 && length <= maxLen);
     return static_cast<Word8Vector *>(String::New(length));
   }
   static Word8Vector *FromWord(word x) {
@@ -494,11 +499,12 @@ public:
 
 class AliceDll CharArray: private Chunk {
 public:
-  static const u_int maxLen = String::maxSize;
+  static const u_int maxLen = ALICE_STRING_MAX_SIZE;
 
   using Chunk::ToWord;
 
   static CharArray *New(u_int length) {
+    Assert(length >= 0 && length <= maxLen);
     Chunk *c = Store::AllocMutableChunk(length);
     return static_cast<CharArray *>(c);
   }
@@ -539,12 +545,13 @@ public:
 
 class AliceDll CharVector: private String {
 public:
-  static const u_int maxLen = String::maxSize;
+  static const u_int maxLen = ALICE_STRING_MAX_SIZE;
 
   using String::ToWord;
   using String::GetValue;
 
   static CharVector *New(u_int length) {
+    Assert(length >= 0 && length <= maxLen);
     return static_cast<CharVector *>(String::New(length));
   }
   static CharVector *FromWord(word x) {
