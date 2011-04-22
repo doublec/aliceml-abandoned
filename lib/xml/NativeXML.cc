@@ -38,18 +38,13 @@ static int xmlTypeMapping[22];
 void XMLFinalizationSet::Finalize(word value) {
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
   word docptr = cr->Get(0);
-  xmlDocPtr doc = (xmlDocPtr)Store::WordToUnmanagedPointer(docptr);
+  xmlDocPtr doc = static_cast<xmlDocPtr>(Store::WordToUnmanagedPointer(docptr));
   xmlFreeDoc(doc);
 }
 
-#define DECLARE_UNMANAGED_POINTER(pointer, x)                       \
-  void *pointer = NULL;                                             \
-  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
-  else { pointer = Store::WordToUnmanagedPointer(x); }     
-
 xmlDocPtr extract_docptr(word c) {
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(c);
-  return (xmlDocPtr)Store::WordToUnmanagedPointer(cr->Get(0));
+  return static_cast<xmlDocPtr>(Store::WordToUnmanagedPointer(cr->Get(0)));
 }
   
 static word XMLErrorConstructor;
@@ -85,7 +80,7 @@ DEFINE1(xml_parse) {
     RAISE(exn);
   }
 
-  cur = xmlDocGetRootElement((xmlDocPtr) doc);
+  cur = xmlDocGetRootElement(doc);
 
   ConcreteRepresentation *cr = ConcreteRepresentation::New(xmlRepHandler,1);
   cr->Init(0, Store::UnmanagedPointerToWord(doc));
@@ -116,7 +111,7 @@ DEFINE1(xml_parseString) {
     RAISE(exn);
   }
 
-  cur = xmlDocGetRootElement((xmlDocPtr) doc);
+  cur = xmlDocGetRootElement(doc);
 
   ConcreteRepresentation *cr = ConcreteRepresentation::New(xmlRepHandler,1);
   cr->Init(0, Store::UnmanagedPointerToWord(doc));
@@ -130,13 +125,13 @@ DEFINE1(xml_parseString) {
 DEFINE1(xml_isNull) {
   DECLARE_TUPLE(t, x0);
   xmlDocPtr doc = extract_docptr(t->Sel(0));
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   RETURN_BOOL(node==NULL || doc==NULL);
 } END
 
 DEFINE1(xml_children) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
@@ -146,7 +141,7 @@ DEFINE1(xml_children) {
 
 DEFINE1(xml_parent) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
@@ -162,7 +157,7 @@ DEFINE1(xml_parent) {
 
 DEFINE1(xml_next) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
@@ -172,7 +167,7 @@ DEFINE1(xml_next) {
 
 DEFINE1(xml_prev) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
@@ -182,7 +177,7 @@ DEFINE1(xml_prev) {
 
 DEFINE1(xml_properties) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(node);
   Tuple *c = Tuple::New(2);
   c->Init(0, t->Sel(0));
@@ -192,18 +187,18 @@ DEFINE1(xml_properties) {
 
 DEFINE1(xml_name) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(node);
 
   if (node->name) {
-    int len = strlen((const char*)node->name);
+    int len = strlen(reinterpret_cast<const char*>(node->name));
     int inlen = len;
     
     Chunk *buffer = Store::AllocChunk(len);
-    UTF8Toisolat1 ((unsigned char*) buffer->GetBase(), &len,
+    UTF8Toisolat1 (reinterpret_cast<unsigned char*>(buffer->GetBase()), &len,
 		   node->name, &inlen);
     
-    String *retName = String::New((char*) buffer->GetBase(),len);
+    String *retName = String::New(buffer->GetBase(),len);
     RETURN(retName->ToWord());
   } else {
     RETURN(String::New("")->ToWord());
@@ -213,7 +208,7 @@ DEFINE1(xml_name) {
 DEFINE2(xml_nodeListGetString) {
   DECLARE_TUPLE(t, x0);
   xmlDocPtr doc = extract_docptr(t->Sel(0));
-  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr node = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(node);
 
   DECLARE_INT(inLine, x1);
@@ -227,13 +222,13 @@ DEFINE2(xml_nodeListGetString) {
     RETURN(Store::IntToWord(0)); // NONE
   }
 
-  int len = strlen((const char*) key);
+  int len = strlen(reinterpret_cast<const char*>(key));
   int inlen = len;
   Chunk *buffer = Store::AllocChunk(len);
-  UTF8Toisolat1 ((unsigned char*) buffer->GetBase(), &len,
+  UTF8Toisolat1 (reinterpret_cast<unsigned char*>(buffer->GetBase()), &len,
 		 key, &inlen);
   xmlFree(key);
-  String *retName = String::New((char*) buffer->GetBase(),len);
+  String *retName = String::New(buffer->GetBase(),len);
   TagVal *tv = TagVal::New(1,1);
   tv->Init(0, retName->ToWord());
   RETURN(tv->ToWord()); // SOME retName
@@ -241,14 +236,14 @@ DEFINE2(xml_nodeListGetString) {
 
 DEFINE1(xml_getType) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr cur = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr cur = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(cur);
   RETURN_INT(xmlTypeMapping[cur->type]);
 } END
 
 DEFINE2(xml_getProp) {
   DECLARE_TUPLE(t, x0);
-  xmlNodePtr cur = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  xmlNodePtr cur = static_cast<xmlNodePtr>(Store::WordToUnmanagedPointer(t->Sel(1)));
   CHECK_NULL(cur);
   DECLARE_STRING(name, x1);
 
@@ -256,27 +251,26 @@ DEFINE2(xml_getProp) {
   int outlen = len2*2;
   Chunk *buffer2 = Store::AllocChunk(outlen);
   
-  isolat1ToUTF8((unsigned char*) buffer2->GetBase(), &outlen,
-		(unsigned char*) name->ExportC(), &len2);
+  isolat1ToUTF8(reinterpret_cast<unsigned char*>(buffer2->GetBase()), &outlen,
+		reinterpret_cast<unsigned char*>(name->ExportC()), &len2);
   buffer2->GetBase()[outlen] = 0;
 
   xmlChar *prop;
 
-  prop = xmlGetProp((xmlNodePtr) cur,
-		    (xmlChar *) buffer2->GetBase());
+  prop = xmlGetProp(cur, reinterpret_cast<xmlChar *>(buffer2->GetBase()));
 
   if (prop==NULL) {
     RETURN(Store::IntToWord(0)); // NONE
   }
 
-  int len = strlen((const char*) prop);
+  int len = strlen(reinterpret_cast<const char*>(prop));
   int inlen = len;
 
   Chunk *buffer = Store::AllocChunk(len);
-  UTF8Toisolat1 ((unsigned char*) buffer->GetBase(), &len,
+  UTF8Toisolat1 (reinterpret_cast<unsigned char*>(buffer->GetBase()), &len,
 		 prop, &inlen);
   xmlFree(prop);
-  String *retName = String::New((char*) buffer->GetBase(),len);
+  String *retName = String::New(buffer->GetBase(),len);
   TagVal *tv = TagVal::New(1,1);
   tv->Init(0, retName->ToWord());
   RETURN(tv->ToWord()); // SOME retName

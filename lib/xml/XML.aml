@@ -86,14 +86,20 @@ structure XML :> XML =
 	fun properties n = rev (getSiblingsList (X.properties n) nil)
 	val getType = X.getType
 	fun getProp n s = X.getProp(n, s)
-	fun getContent n f = X.nodeListGetString(X.children n,
-						 if f then 1 else 0)
+	
+	fun getContent n f =
+	    let
+	        val ch = X.children n
+	    in
+	        if X.isNull ch then
+	            NONE
+	        else
+	            X.nodeListGetString(ch, if f then 1 else 0)
+	    end
 
       fun ppExn t fm (XMLError msg as exn) =
           PPValue.ppExnWithArg fm exn msg
         | ppExn _ _ _ = NONE
-
-      fun ppExn _ _ (_:exn) = (print "bla\n"; NONE)
 
       val _ = PPValue.registerTyp ppExn
     end
