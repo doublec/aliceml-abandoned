@@ -66,7 +66,7 @@ public:
     u_int n = GetNumberOfElements();
   
     for (u_int i=0; i<n; i++) {
-      if (i == topCutoff && i <= n-bottomCutoff-bottomCutoff/4){
+      if (i == topCutoff && n >= topCutoff + bottomCutoff + bottomCutoff/4) {
         u_int ommited = n - topCutoff - bottomCutoff;
         fprintf(stderr, "    ... %"U_INTF" frames omitted ...\n", ommited);
         i += ommited-1;
