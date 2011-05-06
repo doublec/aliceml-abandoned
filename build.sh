@@ -11,18 +11,23 @@ SUPPORTDIR="$(pwd)"
 
 : ${prefix="$SUPPORTDIR/install"}
 
-case `uname -s` in
-    CYGWIN*)
+case `uname -sm` in
+    *CYGWIN*)
 	BUILD_GMP=1
 	BUILD_SQLITE=1
 	BUILD_LIBXML=1
 	CC="gcc -mno-cygwin"
+	;;
+	*x86_64*)
+	LIGHTNING=0
+	CC=gcc
 	;;
     *)
 	CC=gcc
 	;;
 esac
 
+	
 ##
 ## Build Support Libraries: Automake/SEAM
 ##
