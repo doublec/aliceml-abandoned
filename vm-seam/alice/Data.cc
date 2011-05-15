@@ -113,7 +113,7 @@ void Record::Init(const char *s, word value) {
 // BigInt
 //
 
-BigInt* BigInt::BigInt::New(void) {
+BigInt* BigInt::New(void) {
   Chunk *c = Store::AllocChunk(SIZE);
   MP_INT *big = reinterpret_cast<MP_INT*>(c->GetBase());
   mpz_init(big);
@@ -167,7 +167,7 @@ bool BigInt::operator==(long i) {
 }
 
 #define MKOP1(op, mpop) \
-  BigInt::BigInt *BigInt::op(void) { \
+  BigInt *BigInt::op(void) { \
     BigInt *n = BigInt::New(); \
     mpop(n->big(), big()); \
     return n; \
@@ -178,12 +178,12 @@ bool BigInt::operator==(long i) {
 #undef MKOP1
 
 #define MKOP2(op, mpop) \
-  BigInt::BigInt *BigInt::op(BigInt::BigInt *b) { \
+  BigInt *BigInt::op(BigInt *b) { \
     BigInt *n = BigInt::New(); \
     mpop(n->big(), big(), b->big()); \
     return n; \
   } \
-  BigInt::BigInt *BigInt::op(unsigned long i) { \
+  BigInt *BigInt::op(unsigned long i) { \
     BigInt *n = BigInt::New(); \
     mpop ## _ui(n->big(), big(), i); \
     return n; \
