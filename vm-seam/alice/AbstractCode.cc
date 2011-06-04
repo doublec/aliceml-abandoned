@@ -69,18 +69,6 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
   std::fprintf(file, " ]");				\
 }
 
-#define ARGS(w, X) {				\
-  TagVal *args = TagVal::FromWordDirect(w);	\
-  switch (AbstractCode::GetArgs(args)) {	\
-  case AbstractCode::OneArg:			\
-    X(args->Sel(0));				\
-    break;					\
-  case AbstractCode::TupArgs:			\
-    VECTOR(args->Sel(0), X);			\
-    break;					\
-  }						\
-}
-
 #define INSTR             Instr(pc->Sel(operand++));
 #define LASTINSTR         LastInstr(pc->Sel(operand++));
 #define LASTINSTROPT      OPT(pc->Sel(operand++), LastInstr);
@@ -110,6 +98,9 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
 #define NULLARYCONTESTS   VECTOR(pc->Sel(operand++), IdRefInstr);
 #define NARYCONTESTS      VECTOR(pc->Sel(operand++), IdRefIdDefsInstr);
 #define IDDEFSINSTRVEC    VECTOR(pc->Sel(operand++), IdDefsInstr);
+#define COORD             Coord(pc->Sel(operand++));
+#define ENTRYPOINT        EntryPoint(pc->Sel(operand++));
+#define EXITPOINT         ExitPoint(pc->Sel(operand++));
 
 class Disassembler {
 private:
@@ -182,12 +173,19 @@ private:
   void IdDefInstr(word w) {
     TUPLE(w, IdDef, Instr);
   }
-  void IdDefArgs(word w) {
-    ARGS(w, IdDef);
-  }
   void Label(word w) {
     std::fprintf(file, " %s",
 		 UniqueString::FromWordDirect(w)->ToString()->ExportC());
+  }
+  void Coord(word w) {
+    Tuple *coord = Tuple::FromWord(w);
+    String *fileName = String::FromWord(coord->Sel(0));
+    s_int line = Store::WordToInt(coord->Sel(1));
+    s_int col = Store::WordToInt(coord->Sel(2));
+    std::fprintf(file, " Coord(%s:%"S_INTF".%"S_INTF")", fileName->ExportC(), line, col);
+  }
+  void Type(word w) {
+    std::fprintf(file, " <type>");
   }
   void EntryPoint(word w) {
     TagVal *tagVal = TagVal::FromWord(w);
@@ -199,52 +197,101 @@ private:
       tag = AbstractCode::GetEntryPoint(tagVal);
     }
     switch (tag) {
-    case AbstractCode::ConEntry: // of idRef * idRef args
-      std::fprintf(file, " con");
-      IdRef(tagVal->Sel(0)); ARGS(tagVal->Sel(1), IdRef); break;
-    case AbstractCode::SelEntry: // of int * idRef
-      std::fprintf(file, " sel");
-      Int(tagVal->Sel(0)); IdRef(tagVal->Sel(0)); break;
-    case AbstractCode::StrictEntry: // of idRef
-      std::fprintf(file, " strict");
-      IdRef(tagVal->Sel(0)); break;
-    case AbstractCode::AppEntry: // of idRef * idRef args
-      std::fprintf(file, " app");
-      IdRef(tagVal->Sel(0)); ARGS(tagVal->Sel(1), IdRef); break;
-    case AbstractCode::CondEntry: // of idRef
-      std::fprintf(file, " cond");
-      IdRef(tagVal->Sel(0)); break;
+    case AbstractCode::ConEntry: // of Type.t * idRef * idRef vector
+      std::fprintf(file, " Con(");
+      Type(tagVal->Sel(0));
+      IdRef(tagVal->Sel(1));
+      VECTOR(tagVal->Sel(2), IdRef);
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::SelEntry: // of int * Type.t * idRef
+      std::fprintf(file, " Sel(");
+      Int(tagVal->Sel(0));
+      Type(tagVal->Sel(1));
+      IdRef(tagVal->Sel(2));
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::StrictEntry: // of Type.t * idRef
+      std::fprintf(file, " Strict(");
+      Type(tagVal->Sel(0));
+      IdRef(tagVal->Sel(1));
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::AppEntry: // of Type.t * idRef * idRef vector
+      std::fprintf(file, " App(");
+      Type(tagVal->Sel(0));
+      IdRef(tagVal->Sel(1));
+      VECTOR(tagVal->Sel(2), IdRef);
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::CondEntry: // of Type.t * idRef
+      std::fprintf(file, " Cond(");
+      Type(tagVal->Sel(0));
+      IdRef(tagVal->Sel(1));
+      std::fprintf(file, " )");
+      break;
     case AbstractCode::RaiseEntry: // of idRef
-      std::fprintf(file, " raise");
-      IdRef(tagVal->Sel(0)); break;
+      std::fprintf(file, " Raise(");
+      IdRef(tagVal->Sel(0));
+      std::fprintf(file, " )");
+      break;
     case AbstractCode::HandleEntry: // of idRef
-      std::fprintf(file, " handle");
-      IdRef(tagVal->Sel(0)); break;
+      std::fprintf(file, " Handle(");
+      IdRef(tagVal->Sel(0));
+      std::fprintf(file, " )");
+      break;
     case AbstractCode::SpawnEntry:
-      std::fprintf(file, " spawn"); break;
+      std::fprintf(file, " spawn");
+      break;
     }
   }
   void ExitPoint(word w) {
-    switch (static_cast<AbstractCode::exitPoint>(Store::DirectWordToInt(w))) {
-    case AbstractCode::ConExit:
-      std::fprintf(file, " con\n"); break;
-    case AbstractCode::SelExit:
-      std::fprintf(file, " sel\n"); break;
-    case AbstractCode::StrictExit:
-      std::fprintf(file, " strict\n"); break;
-    case AbstractCode::AppExit:
-      std::fprintf(file, " app\n"); break;
-    case AbstractCode::CondExit:
-      std::fprintf(file, " cond\n"); break;
-    case AbstractCode::RaiseExit:
-      std::fprintf(file, " raise\n"); break;
-    case AbstractCode::HandleExit:
-      std::fprintf(file, " handle\n"); break;
-    case AbstractCode::SpawnExit:
-      std::fprintf(file, " spawn\n"); break;
+    TagVal *tagVal = TagVal::FromWord(w);
+    AbstractCode::exitPoint tag;
+    if (tagVal == INVALID_POINTER) {
+      tag = static_cast<AbstractCode::exitPoint>(Store::WordToInt(w));
+    } else {
+      tag = AbstractCode::GetExitPoint(tagVal);
     }
+    switch (tag) {
+    case AbstractCode::ConExit:
+      std::fprintf(file, " Con");
+      break;
+    case AbstractCode::SelExit: // of Type.t
+      std::fprintf(file, " Sel(");
+      Type(tagVal->Sel(0));
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::StrictExit:
+      std::fprintf(file, " Strict");
+      break;
+    case AbstractCode::AppExit:
+      std::fprintf(file, " App");
+      break;
+    case AbstractCode::CondExit: // of Type.t
+      std::fprintf(file, " Cond(");
+      Type(tagVal->Sel(0));
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::RaiseExit: // of Type.t
+      std::fprintf(file, " Raise(");
+      Type(tagVal->Sel(0));
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::HandleExit: // of Type.t
+      std::fprintf(file, " Handle(");
+      Type(tagVal->Sel(0));
+      std::fprintf(file, " )");
+      break;
+    case AbstractCode::SpawnExit: // of Type.t
+      std::fprintf(file, " Spawn(");
+      Type(tagVal->Sel(0));
+      std::fprintf(file, " )");
+      break;
+    } 
   }
   void Template(word w) {
+    //TODO: print named coord
     TagVal *templ = TagVal::FromWordDirect(w);
     std::fprintf(file, " Template(");
     Value(templ->Sel(0));
@@ -346,9 +393,9 @@ void Disassembler::Start() {
     case AbstractCode::EndTry:
       LASTINSTR break;
     case AbstractCode::Entry:
-      LASTINSTR break;
+      COORD ENTRYPOINT LASTINSTR break;
     case AbstractCode::Exit:
-      LASTINSTR break;
+      COORD EXITPOINT IDREF LASTINSTR break;
     case AbstractCode::EndHandle:
       LASTINSTR break;
     case AbstractCode::IntTest:

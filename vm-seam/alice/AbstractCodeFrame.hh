@@ -26,7 +26,7 @@
 // AbstractCodeInterpreter StackFrames
 class AbstractCodeFrame: private StackFrame {
 protected:
-  enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
+  enum { PC_POS, COORD_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
 public:
   using StackFrame::Clone;
   class Environment : private Array {
@@ -54,6 +54,13 @@ public:
   void SetPC(TagVal *pc) {
     StackFrame::ReplaceArg(PC_POS, pc->ToWord());
   }
+  word GetCoord() {
+    return GetArg(COORD_POS);
+  }
+  /** coord should be either a Tuple or Store::IntToWord(0) */
+  void SetCoord(word coord) {
+    ReplaceArg(COORD_POS, coord);
+  }
   Closure *GetClosure() {
     return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
   }
@@ -69,11 +76,13 @@ public:
   // AbstractCodeFrame Constructor
   static AbstractCodeFrame *New(Interpreter *interpreter,
 				word pc,
+                word coord,
 				Closure *closure,
 				Environment *env,
 				word formalArgs) {
     NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(PC_POS, pc);
+    frame->InitArg(COORD_POS, coord);
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(LOCAL_ENV_POS, env->ToWord());
     frame->InitArg(FORMAL_ARGS_POS, formalArgs);

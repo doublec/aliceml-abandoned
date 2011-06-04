@@ -1805,10 +1805,10 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
 }
 
 // Specialize of id * idRef vector * template * instr
-// where   template = Template of coord * int * string vector *
+// where   template = Template of named_coord * int * string vector *
 //                    idDef args * outArity option * instr * liveness
 // abstractCode =
-//    Function of coord * value option vector * string vector *
+//    Function of named_coord * value option vector * string vector *
 //                idDef args * outArity option * instr * liveness
 // Design options: call NativeCodeConctructor directly or use
 // AliceLanguageLayer::concreteCodeConstructor
@@ -2903,7 +2903,7 @@ NativeCodeJitter::~NativeCodeJitter() {
   free(codeBuffer);
 }
 
-// Function of coord * value option vector * string vector *
+// Function of named_coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 word
 NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {

@@ -51,7 +51,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 CatchWorker *CatchWorker::self;
@@ -86,8 +86,8 @@ const char *CatchWorker::Identify() {
   return "CatchWorker";
 }
 
-void CatchWorker::DumpFrame(StackFrame *) {
-  // TODO: Insert useful stuff
+void CatchWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+  out << "[Exn::Catch]" << std::endl;
 }
 
 DEFINE1(Exn_name) {
@@ -129,6 +129,11 @@ DEFINE2(Exn_reraise) {
   return Worker::RAISE;
 } END
 
+DEFINE2(Exn_trace) {
+  DECLARE_BLOCKTYPE(Backtrace, backtrace, x1);
+  RETURN(backtrace->DumpToString()->ToWord());
+} END
+
 DEFINE2(Exn_dumpTrace) {
   DECLARE_BLOCKTYPE(Backtrace, backtrace, x1);
   backtrace->Dump();
@@ -138,6 +143,7 @@ DEFINE2(Exn_dumpTrace) {
 void PrimitiveTable::RegisterExn() {
   CatchWorker::Init();
   Register("Exn.catch", Exn_catch, 2);
+  Register("Exn.trace", Exn_trace, 2);
   Register("Exn.dumpTrace", Exn_dumpTrace, 2);
   Register("Exn.name", Exn_name, 1);
   Register("Exn.reraise", Exn_reraise, 2);

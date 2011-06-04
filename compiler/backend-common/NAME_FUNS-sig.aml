@@ -1,0 +1,13 @@
+
+
+import structure FlatGrammar from "FlatGrammar"
+
+
+(*
+ * Assign print-names to functions
+ *)
+signature NAME_FUNS = sig
+
+    val name : FlatGrammar.body -> FlatGrammar.body
+
+end

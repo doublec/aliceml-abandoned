@@ -33,6 +33,7 @@ struct
     fun at(reg : region)			= (#1 reg, #1 reg)
     fun span(reg1: region, reg2: region)	= (#1 reg1, #2 reg2)
     fun between(reg1: region, reg2: region)	= (#2 reg1, #1 reg2)
+    fun isEmpty (a, b)                          = (a = b)
 
     fun posToString(lin,col) =
 	Int.toString lin ^ "." ^ Int.toString col

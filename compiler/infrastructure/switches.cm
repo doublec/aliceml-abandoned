@@ -1,6 +1,7 @@
 Group is
 
 	../../bootstrap/sources.cm
+	../../lib/system/resolver.cm
 
 	SWITCHES-sig.aml
 	MkSwitches.aml

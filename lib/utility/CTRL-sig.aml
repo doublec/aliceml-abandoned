@@ -19,8 +19,8 @@ sig
     val ++ : 'a * ('a -> 'b) -> 'b
     val $ : ('a -> 'b) * 'a -> 'b
 
-    val for : int * int * (int -> unit) -> unit
-    (** [for (lower, upper, f) has the same effect as
+    val doFor : int * int * (int -> unit) -> unit
+    (** [doFor (lower, upper, f) has the same effect as
          [(f lower; f (lower + 1); ... ; f upper; ())]
       *)
 

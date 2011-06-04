@@ -105,12 +105,14 @@ pkgdatadir = @datadir@/@PACKAGE@
 
 VPATH = $(SRCTOP)
 
-ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-seam
-ALICEC1 = ALICE_HOME=build1/install ${bindir}/alicec --seam
-ALICEC2 = ALICE_HOME=build1/install ${bindir}/alicec --seam -z
+
+ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-seam --no-generate-debug-code
+ALICEC1 = ALICE_HOME=build1/install ${bindir}/alicec --seam --no-generate-debug-code
+ALICEC2 = ALICE_HOME=build1/install ${bindir}/alicec --seam -z --no-generate-debug-code #just to speed up testing
 
 ALICEC_EXTRA_OPTS =
 ALICEC_OPTS = --no-warn-conventions --check-intermediate --implicit-import-file -- $(ALICEC_EXTRA_OPTS)
+#--rewrite-source-urls "build?{_}/?{x}=x-alice:/?{x}"
 
 ALICELINK1 = ALICE_HOME=build1/install ${bindir}/alicelink
 ALICELINK2 = ALICE_HOME=build1/install ${bindir}/alicelink -z
@@ -315,7 +317,8 @@ COMPILERBACKENDCOMMONSOURCES0 = \
 	ARITY-sig.aml Arity.aml INTERMEDIATE_AUX-sig.aml IntermediateAux.aml \
 	SIMPLIFY_MATCH-sig.aml SimplifyMatch.aml SIMPLIFY_REC-sig.aml \
 	SimplifyRec.aml FLATTENING_PHASE-sig.aml MkFlatteningPhase.aml \
-	PRIM_OPS-sig.aml PrimOps.aml VALUE_PROPAGATION_PHASE-sig.aml \
+	NAME_FUNS-sig.aml NameFuns.aml PRIM_OPS-sig.aml PrimOps.aml \
+	VALUE_PROPAGATION_PHASE-sig.aml \
 	MkValuePropagationPhase.aml LIVENESS_ANALYSIS_PHASE-sig.aml \
 	MkLivenessAnalysisPhase.aml MkBackendCommon.aml
 COMPILERBACKENDCOMMONSOURCES = \
@@ -338,7 +341,8 @@ COMPILERBACKENDDOTNETSOURCES = \
 COMPILERBACKENDSEAMSOURCES0 = \
 	PRIM_PICKLE-sig.aml PrimPickle.aml VALUE-sig.aml Value.aml \
 	ABSTRACT_CODE_GRAMMAR-sig.aml MkAbstractCodeGrammar.aml \
-	AbstractCodeGrammar.aml OUTPUT_PICKLE-sig.aml OutputPickle.aml \
+	AbstractCodeGrammar.aml OUTPUT_ABSTRACT_CODE_GRAMMAR-sig.aml \
+	MkOutputAbstractCodeGrammar.aml OUTPUT_PICKLE-sig.aml OutputPickle.aml \
 	ENVIRONMENT-sig.aml MkEnvironment.aml LIVENESS-sig.aml \
 	MkLiveness.aml MkCodeGenContext.aml CODE_GEN_PHASE-sig.aml \
 	MkCodeGenPhase.aml MkBackendSeam.aml

@@ -13,6 +13,7 @@
 // instruction definition
 // be careful that they are lexicographically ordered; otherwise the ByteCode
 // Assembler won't work
+//TODO: get bytecode assembler script from CM
 
 // r -> register
 // i -> immediate

@@ -20,6 +20,7 @@
 #include "alice/Base.hh"
 #include "alice/Data.hh"
 #include "alice/ByteCodeInliner.hh"
+#include "alice/ByteCodeSourceLocations.hh"
 
 #define DO_REG_ALLOC
 //#undef DO_REG_ALLOC
@@ -121,6 +122,7 @@ public:
   }
 };
 
+
 //! byte code JIT compiler
 /*!
   This is the byte code jitter. It traverses the abstract code graph and
@@ -133,6 +135,7 @@ private:
   u_int currentOutArity;
   u_int PC;
   ByteCodeImmediateEnv imEnv;
+  ByteCodeSourceLocations sourceLocations;
   IntMap *sharedTable;
   Vector *globalSubst;
   word currentConcreteCode;
@@ -298,6 +301,8 @@ private:
     @param pc abstract code instruction that is to compile
     @return continuation; INVALID_POINTER signals a leaf node
    */
+  TagVal *InstrEntry(TagVal *pc);
+  TagVal *InstrExit(TagVal *pc);
   TagVal *InstrKill(TagVal *pc);
   TagVal *InstrPutVar(TagVal *pc);
   TagVal *InstrPutNew(TagVal *pc);

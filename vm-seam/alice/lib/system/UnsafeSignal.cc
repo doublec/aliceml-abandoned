@@ -109,7 +109,7 @@ public:
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 SignalTranslationInterpreter *SignalTranslationInterpreter::self;
@@ -168,8 +168,8 @@ const char *SignalTranslationInterpreter::Identify() {
   return "SignalTranslationInterpreter";
 }
 
-void SignalTranslationInterpreter::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Alice Signal Translation\n");
+void SignalTranslationInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+  out << "[UnsafeSignal::SignalTranslation]" << std::endl;
 }
 
 DEFINE2(UnsafeSignal_register) {

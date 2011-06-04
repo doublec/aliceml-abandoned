@@ -26,7 +26,7 @@ struct
     open PPMisc
     infixr ^^
 
-    val debug = false
+    val debug = true
 
     fun ppPath''(ps,p) =
 	if List.exists (fn p' => Path.equal(p,p')) ps then empty else

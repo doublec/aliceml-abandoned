@@ -17,5 +17,7 @@ is
 
     PRIM_OPS-sig.aml
     PrimOps.aml
+    NAME_FUNS-sig.aml
+    NameFuns.aml
     VALUE_PROPAGATION_PHASE-sig.aml
     MkValuePropagationPhase.aml

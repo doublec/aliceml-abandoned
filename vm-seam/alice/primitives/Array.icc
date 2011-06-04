@@ -43,7 +43,7 @@ public:
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 class ArrayTabulateFrame: private StackFrame {
@@ -127,11 +127,10 @@ const char *ArrayTabulateWorker::Identify() {
   return "ArrayTabulateWorker";
 }
 
-void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame) {
+void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   ArrayTabulateFrame *frame = reinterpret_cast<ArrayTabulateFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  std::fprintf(stderr, STRINGIFY(XArray)".tabulate %"U_INTF" of %"U_INTF"\n",
-	       frame->GetIndex(), frame->GetNumberOfElements());
+  out << STRINGIFY(XArray)".tabulate " << frame->GetIndex() << " of " << frame->GetNumberOfElements() << std::endl;
 }
 
 //

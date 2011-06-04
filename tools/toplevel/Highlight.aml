@@ -36,7 +36,7 @@ struct
 	  "case", "constructor",
 	  "datatype", "do",
 	  "else", "end", "eqtype", "exception", "exttype",
-	  "fct", "finally", "fn", "from", "fun", "functor",
+	  "fct", "finally", "fn", "for", "from", "fun", "functor",
 	  "handle",
 	  "if", "import", "in", "include", "infix", "infixr",
 	  "lazy", "let", "local",

@@ -24,11 +24,11 @@ struct
 
     fun f $ a = f a
 
-    fun for (lower, upper, f) =
+    fun doFor (lower, upper, f) =
         if lower > upper then ()
-        else (f lower; for (lower + 1, upper, f))
+        else (f lower; doFor (lower + 1, upper, f))
 
-    fun repeat (n, f) = for (0, n - 1, f)
+    fun repeat (n, f) = doFor (0, n - 1, f)
 
     fun ispawn (file, line) f a = 
         let

@@ -11,6 +11,7 @@
 //
 
 #include <glib.h>
+#include <dlfcn.h>
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 #include "ExtraMarshaller.hh"
@@ -737,6 +738,12 @@ static void Init() {
   int argc = 1;
   static const char *args[2] = {"alice", NULL};
   char **argv = const_cast<char**>(args);
+  
+  // FIXME: figure out (and doc) why this is needed, and ensure it works on windows...
+  if (dlopen("libgtk-x11-2.0.so", RTLD_NOW | RTLD_GLOBAL) == NULL) {
+    Error(dlerror());
+  }
+  
   gtk_init(&argc, &argv);
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))

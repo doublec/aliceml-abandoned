@@ -174,11 +174,7 @@ struct
                 argCode   = "$0",
                 inCode    = "",
                 prepareOutCode    = "GError *$t1 = 0; GError **$1 = &$t1;",
-                outCode   = "if ((*$0) != NULL) {" ^
-                               "char message[strlen((*$0)->message)];" ^ 
-                               "g_error_free(*$0);" ^
-                               "RAISE_CORE_ERROR(message);" ^
-                               "}",
+                outCode   = "CHECK_GERROR(*$0);",
                 paramKind = ERROR
             }
 

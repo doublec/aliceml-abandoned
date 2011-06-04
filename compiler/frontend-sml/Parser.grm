@@ -302,7 +302,7 @@
 	| ABSTYPE | AND | ANDALSO | AS | CASE | DO | DATATYPE | ELSE
 	| END | EXCEPTION | FN | FUN | HANDLE | IF | IN | INFIX
 	| INFIXR | LET | LOCAL | NONFIX | OF | OP | OPEN | ORELSE
-	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
+	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE | FOR
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
 
@@ -419,6 +419,7 @@
 	|    exp_SEMICOLON_list2	of Exp list
 	|    SEMICOLON_opt		of unit
 	|    localann_IN_opt		of LocalAnn option
+	|    if_opt                     of Exp option
 	| exprow			of ExpRow
 	|    exprow_opt			of ExpRow option
 	|    COMMA_exprow_opt		of ExpRow option
@@ -753,6 +754,8 @@
 	| LBRACK exp_COMMA_list0 RBRACK
 			( LISTAtExp(I(LBRACKleft,RBRACKright),
 				    exp_COMMA_list0 ))
+	| LBRACK exp FOR pat IN exp if_opt RBRACK
+	                ( LISTCOMPAtExp(I(LBRACKleft, LBRACKright), exp1, pat, exp2, if_opt) )
 	| HASHBRACK exp_COMMA_list0 RBRACK
 			( VECTORAtExp(I(HASHBRACKleft,RBRACKright),
 				    exp_COMMA_list0 ))
@@ -794,6 +797,9 @@
 	  localann IN			( SOME localann )
 	| (*empty*)			( NONE )
 
+     if_opt:
+          IF exp                        ( SOME exp )
+        | (* empty *)                   ( NONE )
 
   exprow:
 	  lab EQUALS exp COMMA_exprow_opt

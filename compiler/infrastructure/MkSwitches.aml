@@ -12,6 +12,7 @@
  *   $Revision$
  *)
 
+import structure Resolver from "../../lib/system/Resolver"
 import structure TextIO   from "../../lib/system/TextIO"
 import signature SWITCHES from "SWITCHES-sig"
 
@@ -76,6 +77,7 @@ struct
 
     structure CodeGen =
     struct
-	val debugMode				= ref false
+	val debugMode				= ref true
+	val rewriteSourceUrls                   = ref ([] : Resolver.Handler.t list)
     end
 end

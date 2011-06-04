@@ -17,6 +17,7 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeJitter.hh"
+#include "alice/ByteCodeSourceLocations.hh"
 #include "alice/HotSpotConcreteCode.hh"
 
 DEFINE1(UnsafeDebug_print) {
@@ -67,7 +68,11 @@ DEFINE1(UnsafeDebug_disassemble) {
     Transform *transform = bcc->GetAbstractRepresentation();
     TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
     PrintLiveness(abstractCode);
+    fprintf(stderr, "\n");
     bcc->Disassemble(stderr);
+    fprintf(stderr, "\n");
+    ByteCodeSourceLocations::Print(abstractCode->Sel(0), bcc->GetSourceLocations(), std::cerr);
+    fprintf(stderr, "\n");
   }
 #if HAVE_LIGHTNING
   else if (interpreter == NativeCodeInterpreter::self) {

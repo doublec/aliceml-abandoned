@@ -60,5 +60,7 @@ pkginclude_HEADERS = \
 	ByteCodeJitter.hh \
 	ByteCodeInliner.hh \
 	ByteCodeConstProp.hh \
+	ByteCodeSourceLocations.hh \
 	HotSpotConcreteCode.hh
+	
 

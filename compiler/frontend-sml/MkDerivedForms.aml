@@ -198,11 +198,16 @@ struct
     fun vid_NIL(I)		= G.VId(I, VId.fromString "nil")
     fun vid_CONS(I)		= G.VId(I, VId.fromString "::")
     fun vid_ASSERT(I)		= G.VId(I, VId.fromString "Assert")
+    fun vid_NONE(I)		= G.VId(I, VId.fromString "NONE")
+    fun vid_SOME(I)		= G.VId(I, VId.fromString "SOME")
+    
     fun longvid_FALSE(I)	= longvid(I, vid_FALSE(I))
     fun longvid_TRUE(I)		= longvid(I, vid_TRUE(I))
     fun longvid_NIL(I)		= longvid(I, vid_NIL(I))
     fun longvid_CONS(I)		= longvid(I, vid_CONS(I))
     fun longvid_ASSERT(I)	= longvid(I, vid_ASSERT(I))
+    fun longvid_NONE(I)		= longvid(I, vid_NONE(I))
+    fun longvid_SOME(I) 	= longvid(I, vid_SOME(I))
 
     fun LONGVIDAtExp(I,longvid)	= G.LONGVIDAtExp(I, G.WITHOp, longvid)
     fun LONGVIDAtPat(I,longvid)	= G.LONGVIDAtPat(I, G.WITHOp, longvid)
@@ -227,7 +232,9 @@ struct
     fun CONSPat(I)		= LONGVIDPat(I, longvid_CONS(I))
     fun NILAtExp(I)		= G.LONGVIDAtExp(I, G.WITHOp, longvid_NIL(I))
     fun NILAtPat(I)		= G.LONGVIDAtPat(I, G.WITHOp, longvid_NIL(I))
-
+    fun NONEExp(I)		= LONGVIDExp(I, longvid_NONE(I))
+    fun SOMEExp(I)		= LONGVIDExp(I, longvid_SOME(I))
+    
     fun tycon_EXN(I)		= G.TyCon(I, TyCon.fromString "exn")
     fun longtycon_EXN(I)	= longtycon(I, tycon_EXN(I))
 
@@ -469,6 +476,32 @@ struct
 	    G.PARAtExp(I, toExpList exps)
 	end
 
+    (*
+     * Translates [x*x for x in y if z] into
+     * List.mapPartial (fn x if z => SOME(x*x) | _ => NONE) y)
+     TODO: checkout if we added any shift-reduce conflicts...
+     *)
+    fun LISTCOMPAtExp(I, elExp, elPat, lsExp, ifExp) =
+        let
+            val I'        = Source.at (G.infoExp elExp) (* TODO: WHAT? *)
+            
+            val fnName'   = G.DOTLong(I', G.SHORTLong(I', G.StrId(I, StrId.fromString "List")),
+                                        G.VId(I', VId.fromString "mapPartial"))
+            val fnName    = G.ATEXPExp(I', G.LONGVIDAtExp(I', G.SANSOp, fnName'))
+            
+            val ifExp'    = Option.getOpt (ifExp, TRUEExp I')
+            val ifPat     = G.IFPat(I', elPat, G.PARAtExp(I', ifExp'))
+            val someElExp = G.APPExp(I', SOMEExp I', G.PARAtExp(I', elExp))
+            val posRule   = G.Mrule(I', ifPat, someElExp)
+            val negRule   = G.Mrule(I', G.ATPATPat(I', G.WILDCARDAtPat I'), NONEExp I')
+            val fn'       = G.FNExp(I', G.Match(I', posRule, SOME(G.Match(I', negRule, NONE))))
+            
+            val app'      = G.APPExp(I, fnName, G.PARAtExp(I, fn'))
+            val app       = G.APPExp(I, app', G.PARAtExp(I, lsExp))
+        in
+            G.PARAtExp(I, app)
+        end
+    
     fun UPDATEAtExp(I, atexp, exprow) =
         let
             val I'  = G.infoAtExp atexp

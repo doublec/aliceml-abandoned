@@ -126,7 +126,7 @@ structure Preferences =
 	     Gtk.Label.setMarkup(error_label,
 				mkLabel("error", !errorColor));
 	     Gtk.Label.setMarkup(keyword_label,
-				mkLabel("keyword", !reservedColor));
+				mkLabel("<b>keyword</b>", !reservedColor));
 	     Gtk.Label.setMarkup(string_label,
 				mkLabel("\"string\"", !stringColor));
 	     Gtk.Label.setMarkup(comment_label,

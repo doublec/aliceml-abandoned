@@ -117,6 +117,8 @@ public:
 void InlineAnalyser::Count(TagVal *instr) {
   Assert(instr != INVALID_POINTER);
   switch(AbstractCode::GetInstr(instr)) {
+  case AbstractCode::Entry:
+  case AbstractCode::Exit:
   case AbstractCode::Kill:
   case AbstractCode::EndHandle:
     break;
@@ -388,11 +390,12 @@ Tuple *InlineAnalyser::MergeLiveness() {
     u_int identifier = Store::DirectWordToInt(liveness->Sub(i));
     u_int startPoint = Store::DirectWordToInt(liveness->Sub(i+1));
     u_int endPoint = Store::DirectWordToInt(liveness->Sub(i+2));
+
     liveness2[j] = identifier;
     liveness2[j+1] = startPoint + offsetTable[startPoint];
     liveness2[j+2] = endPoint + offsetTable[endPoint];
   }
-  // merge the adjusted the liveness arrays
+  // merge the adjusted liveness arrays
   Vector *newLiveness = Vector::New(l1Length + l2Length);
   u_int i1 = 0, i2 = 0, i3 = 0;
   while( i1 < l1Length && i2 < l2Length ) {
@@ -502,7 +505,15 @@ void PPAnalyser::RunAnalysis(TagVal *instr, InlineAnalyser *analyser) {
 	TagVal *instr = stack.PopInstr();
 	analyser->Count(instr);
 	switch(AbstractCode::GetInstr(instr)) {
-	case AbstractCode::EndTry:
+    case AbstractCode::Entry:
+      stack.PushInc();
+      stack.PushInstr(instr->Sel(2));
+      break;
+    case AbstractCode::Exit:
+      stack.PushInc();
+      stack.PushInstr(instr->Sel(3));
+      break;
+    case AbstractCode::EndTry:
 	case AbstractCode::EndHandle:
 	  stack.PushInstr(instr->Sel(0));
 	  break;

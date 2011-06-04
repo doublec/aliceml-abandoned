@@ -90,7 +90,7 @@ struct
     fun close _ =
 	(
 	    Gtk.Widget.hide Gui.tip_dialog;
-	    onStartup := Gtk.ToggleButton.getActive Gui.tipstartupButton;
+	    onStartup := Gtk.ToggleButton.getActive Gui.startuptipButton;
 	    save()
 	)
 
@@ -108,7 +108,7 @@ struct
 
     fun openDialog() =
 	(
-	    Gtk.ToggleButton.setActive(Gui.tipstartupButton, !onStartup);
+	    Gtk.ToggleButton.setActive(Gui.startuptipButton, !onStartup);
 	    turn 1 ();
 	    DialogUtils.moveToMouse Gui.tip_dialog;
 	    Gtk.Widget.showAll Gui.tip_dialog

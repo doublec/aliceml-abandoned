@@ -282,8 +282,9 @@ in
     struct
 	open __pervasive
 
-	datatype bool    = false | true
-	datatype 'a list = nil | op:: of 'a * 'a list
+	datatype bool      = false | true
+	datatype 'a list   = nil | op:: of 'a * 'a list
+	datatype 'a option = NONE | SOME of 'a
 	__primitive exception Assert of string * int = "General.Assert"
     end
 end (* local *)

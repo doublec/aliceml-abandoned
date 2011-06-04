@@ -125,22 +125,23 @@ sig
 
     (* Expressions *)
 
-    val UNITAtExp:    Info                                      -> AtExp
-    val TUPLEAtExp:   Info * Exp list                           -> AtExp
-    val HASHAtExp:    Info * Lab                                -> AtExp
-    val CASEExp:      Info * Exp * Match                        -> Exp
-    val IFExp:        Info * Exp * Exp * Exp option             -> Exp
-    val ANDALSOExp:   Info * Exp * Exp                          -> Exp
-    val ORELSEExp:    Info * Exp * Exp                          -> Exp
-    val SEQAtExp:     Info * Exp list                           -> AtExp
-    val LETAtExp:     Info * Dec * Exp list                     -> AtExp
-    val WHILEExp:     Info * Exp * Exp                          -> Exp
-    val FINALLYExp:   Info * Exp * Exp                          -> Exp
-    val LISTAtExp:    Info * Exp list                           -> AtExp
-    val RECExp:       Info * Pat * Exp                          -> Exp
-    val TRANSPACKExp: Info * AtStrExp * AtSigExp                -> Exp
-    val OPAQPACKExp:  Info * AtStrExp * AtSigExp                -> Exp
-    val COMPAtExp:    Info * LocalAnn option * Spec * Dec       -> AtExp
+    val UNITAtExp:      Info                                      -> AtExp
+    val TUPLEAtExp:     Info * Exp list                           -> AtExp
+    val HASHAtExp:      Info * Lab                                -> AtExp
+    val CASEExp:        Info * Exp * Match                        -> Exp
+    val IFExp:          Info * Exp * Exp * Exp option             -> Exp
+    val ANDALSOExp:     Info * Exp * Exp                          -> Exp
+    val ORELSEExp:      Info * Exp * Exp                          -> Exp
+    val SEQAtExp:       Info * Exp list                           -> AtExp
+    val LETAtExp:       Info * Dec * Exp list                     -> AtExp
+    val WHILEExp:       Info * Exp * Exp                          -> Exp
+    val FINALLYExp:     Info * Exp * Exp                          -> Exp
+    val LISTAtExp:      Info * Exp list                           -> AtExp
+    val LISTCOMPAtExp:  Info * Exp * Pat * Exp * Exp option       -> AtExp
+    val RECExp:         Info * Pat * Exp                          -> Exp
+    val TRANSPACKExp:   Info * AtStrExp * AtSigExp                -> Exp
+    val OPAQPACKExp:    Info * AtStrExp * AtSigExp                -> Exp
+    val COMPAtExp:      Info * LocalAnn option * Spec * Dec       -> AtExp
 
     val FILEAtExp:      Info * Source.desc                          -> AtExp
     val LINEAtExp:      Info * Source.desc                          -> AtExp

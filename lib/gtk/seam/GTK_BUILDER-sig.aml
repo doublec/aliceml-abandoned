@@ -1,0 +1,69 @@
+(*
+ * Authors:
+ *   Gareth Smith <garethdanielsmith@gmail.com>
+ *)
+ 
+ 
+(*) TODO: remove glade binding?
+(*) TODO: remove old gtk binding
+(*) TODO: some sort of locking?
+(*) TODO: manual
+
+import structure Gtk from "Gtk"
+
+
+(*
+ * Provides an AliceML interface to GtkBuilder
+ * See the C library documentation for more information.
+ *)
+signature GTK_BUILDER =
+sig
+    type builder
+    
+    
+    (*
+     * Create a new builder, optionally adding initial
+     * widgets from the specified file or string.
+     *)
+    val new : unit -> builder
+    val newFromFile : string -> builder
+    val newFromString : string -> builder
+    
+    
+    (*
+     * Add widgets from the specified file or string.
+     *)
+    val addFromFile : builder * string -> unit
+    val addFromString : builder * string -> unit
+    
+    
+    (*
+     * Get the object with the specified name.
+     *)
+    val getObject : builder * string -> Gtk.object
+    
+    
+    (*
+     * Get all objects, paired with their names.
+     *)
+    val getObjects : builder -> (string * Gtk.object) list
+    
+    
+    (*
+     * Get signals defined for objects in the builder. This function
+     * corresponds to the C library function gtk_builder_connect_signals_full
+     * and like that function is destructive - once a signal has been
+     * returned from this function once it will not be returned in
+     * any future calls.
+     *
+     * The list returned is of (objectName * signalSame * handlerName * connectAfter)
+     *)
+    val getSignals : builder -> (string * string * string * bool) list
+    
+    
+    (*
+     * set/get the Translation Domain.
+     *)
+    val setTranslationDomain : builder * string option -> unit
+    val getTranslationDomain : builder -> string option
+end

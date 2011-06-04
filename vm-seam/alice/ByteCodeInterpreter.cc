@@ -16,6 +16,7 @@
 #endif
 
 #include "alice/ByteCodeInterpreter.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/LazySelInterpreter.hh"
@@ -26,6 +27,7 @@
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeFrame.hh"
 #include "alice/ByteCodeBuffer.hh"
+#include "alice/ByteCodeSourceLocations.hh"
 
 using namespace ByteCodeInstr;
 
@@ -1737,28 +1739,19 @@ ByteCodeFrame *ByteCodeInterpreter::DupFrame(ByteCodeFrame *bcFrame) {
   return reinterpret_cast<ByteCodeFrame*>(newFrame);
 }
 
-void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
-  //  fprintf(stderr,"ByteCodeInterpreter::DumpFrame not yet implemented\n");
+void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   ByteCodeFrame *codeFrame = reinterpret_cast<ByteCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  const char *frameType;
-  frameType = "function";
-  // to be done: frameType = "handler";
-  // Print closure information
+
   Closure *closure = codeFrame->GetCP();
   ByteConcreteCode *concreteCode =
     ByteConcreteCode::FromWord(closure->GetConcreteCode());
+  word sourceLocations = concreteCode->GetSourceLocations();
   Transform *transform =
     reinterpret_cast<Transform *>(concreteCode->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
-  String *name         = String::FromWord(coord->Sel(0));
-  std::fprintf(stderr, //"Alice native %s %.*s, line %d, column %d\n",
-	       "ByteCode %.*s:%"S_INTF".%"S_INTF" frame %p\n",
-	       /*frameType,*/ static_cast<int>(name->GetSize()), name->GetValue(),
-	       Store::WordToInt(coord->Sel(1)),
-	       Store::WordToInt(coord->Sel(2)),
-	       sFrame);
+  
+  ByteCodeSourceLocations::PrintFrame(abstractCode->Sel(0), sourceLocations, codeFrame->GetPC(), out);
 }
 
 #if PROFILE

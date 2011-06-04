@@ -1,0 +1,85 @@
+
+
+import structure FlatGrammar from "FlatGrammar"
+import structure Source      from "../infrastructure/Source"
+import structure Name        from "../../lib/rtt/Name"
+import structure StampMap    from "../common/StampMap"
+import signature NAME_FUNS   from "NAME_FUNS-sig"
+
+
+structure NameFuns :> NAME_FUNS = struct
+
+
+    open FlatGrammar
+    
+
+    fun nameDec id parentName exp =
+	case exp
+	of FunExp x =>
+	    let
+	        val printName = case id
+			        of IdDef(Id(i', _, Name.ExId n)) =>
+			            (* invented names are not printable *)
+			            if Source.isEmpty (#region i')
+			            then parentName
+			            else SOME n
+			         | _  => parentName
+	    in
+		nameExp printName (FunExp x)
+	    end
+	 | exp => nameExp parentName exp
+    
+    
+    and nameExp printName exp =
+	case exp
+	of FunExp(i, stp, flags, typ, args, arity, body) =>
+	    let
+		val flags = case printName
+		            of NONE   => flags
+		             | SOME n => PrintName n :: flags
+		
+		val body = nameBody printName (StampMap.map()) body
+	    in
+		FunExp(i, stp, flags, typ, args, arity, body)
+	    end
+	 | exp => exp
+    
+    
+    and nameTests p sh tests = case tests
+	of LitTests lb      => LitTests(Vector.map (fn (l, b) => (l, nameBody p sh b)) lb)
+	 | TagTests(ls, bs) => TagTests(ls, Vector.map (fn (a, i, b) => (a, i, nameBody p sh b)) bs)
+	 | ConTests bs      => ConTests(Vector.map (fn (i, a, b) => (i, a, nameBody p sh b)) bs)
+	 | VecTests bs      => VecTests(Vector.map (fn (i, b) => (i, nameBody p sh b)) bs)
+    
+    
+    and nameStmt p sh stmt = case stmt
+	of ValDec(i, id, e)            => ValDec(i, id, nameDec id p e)
+	 | RecDec(i, exps)             => RecDec(i, Vector.map (fn (id, e) => (id, nameDec id p e)) exps)
+	 | TryStm(i, b1, id1, id2, b2) => TryStm(i, nameBody p sh b1, id1, id2, nameBody p sh b2)
+	 | EndTryStm(i, b)             => EndTryStm(i, nameBody p sh b)
+	 | EndHandleStm(i, b)          => EndHandleStm(i, nameBody p sh b)
+	 | TestStm(i, id, tests, b)    => TestStm(i, id, nameTests p sh tests, nameBody p sh b)
+	 | SharedStm(i, b, s)          =>
+	    (case StampMap.lookup (sh, s)
+	     of SOME body => body
+	      | NONE      =>
+		 let
+		     val body = SharedStm(i, nameBody p sh b, s)
+		 in
+		     StampMap.insert (sh, s, body);
+		     body
+		 end)
+         | ReturnStm(i, e)             => ReturnStm(i, nameExp p e)
+	 | IndirectStm(i, ref(SOME b)) => IndirectStm(i, ref(SOME (nameBody p sh b)))
+	 | stmt                        => stmt
+
+
+    and nameBody p sh stmts =
+	map (nameStmt p sh) stmts
+
+
+    and name stmts =
+	nameBody NONE (StampMap.map()) stmts
+
+
+end

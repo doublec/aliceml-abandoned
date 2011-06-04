@@ -31,7 +31,8 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 						Chunk *code,
 						word immediateEnv,
 						word nbLocals,
-						word inlineInfo) {
+						word inlineInfo,
+                        word sourceLocations) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(ByteCodeInterpreter::self, SIZE);
   Chunk *name =
@@ -48,6 +49,7 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Init(OUT_ARITY_POS, outArity);
   concreteCode->Init(INLINE_INFO_POS, inlineInfo);
+  concreteCode->Init(SOURCE_LOCATIONS_POS, sourceLocations);
 
   return static_cast<ByteConcreteCode *>(concreteCode);
 }
@@ -57,7 +59,8 @@ void ByteConcreteCode::Convert(HotSpotCode *hsc,
 			       Chunk *code,
 			       word immediateEnv,
 			       word nbLocals,
-			       word inlineInfo) {
+			       word inlineInfo,
+                   word sourceLocations) {
   Transform *transform =
     static_cast<Transform *>(hsc->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
@@ -73,6 +76,7 @@ void ByteConcreteCode::Convert(HotSpotCode *hsc,
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Replace(OUT_ARITY_POS, outArity);
   concreteCode->Replace(INLINE_INFO_POS, inlineInfo);
+  concreteCode->Replace(SOURCE_LOCATIONS_POS, sourceLocations);
 }
 				 
 

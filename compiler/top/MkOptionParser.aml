@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Resolver      from "../../lib/system/Resolver"
 import structure Date          from "../../lib/system/Date"
 import structure Config        from "../../lib/system/Config"
 import structure TextIO        from "../../lib/system/TextIO"
@@ -97,12 +98,25 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tDump flat representation after liveness analysis.\n\
 	    \\t--dump-target\n\
 	    \\t\tDump target code representation.\n\
+	    \Code generation options:\n\
+	    \\t--generate-debug-code\n\
+	    \\t\tPut source location and type information in the generated code (default).\n\
+	    \\t--rewrite-source-urls FROM=TO,...,FROM=TO\n\
+	    \\t\tRewrite source location URLs in the output component.\n\
+	    \\t\tFROM and TO are patterns; ?{x} denotes a variable.\n\
             \Inverting options:\n\
             \\tEvery option can be prefixed with no-, e.g.\n\
             \\t--no-dump-target\n\
             \\n\
             \Report bugs using our online bug-tracking system:\n\
             \http://www.ps.uni-sb.de/alice/bugzilla/\n"
+
+        (* TODO: there may be a better/existing way of doing this - check Main-s *)
+        (*
+	fun error s =
+	    (TextIO.output (TextIO.stdErr, "alicec: " ^ s);
+	     OS.Process.exit OS.Process.failure)
+	*)
 
 	open Switches
 
@@ -143,7 +157,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    else if "--no-" ^ name = s then (switch := false; true)
 	    else checkBooleanSwitches (s, rest)
 	  | checkBooleanSwitches (_, nil) = false
-
+        
 	fun parse ("--dependency-file"::file::rest) =
 	    (Language.dependencyFiles := file::(!Language.dependencyFiles);
 	     parse rest)
@@ -162,6 +176,15 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    (case Int.fromString num of
 		  SOME n => (Language.assertionLevel := n; parse rest)
 		| NONE => all)
+	  | parse ("--rewrite-source-urls"::rules::rest) =
+	    parse rest
+	  (*
+	  (* TODO: implement Resolver.Handler.patternSeq and re-use in the linker *)
+	    (CodeGen.rewriteSources := Resolver.Handler.patternSeq rules
+	     handle Resolver.Handler.Syntax =>
+	       error "invalid pattern syntax for --rewrite-sources");
+	     parse rest)
+	   *)
 	  | parse (s::rest) =
 	    if checkBooleanSwitches (s, booleanSwitches) then parse rest
 	    else s::rest

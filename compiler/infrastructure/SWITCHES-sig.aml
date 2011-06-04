@@ -12,7 +12,8 @@
  *   $Revision$
  *)
 
-import structure TextIO from "../../lib/system/TextIO"
+import structure Resolver from "../../lib/system/Resolver"
+import structure TextIO   from "../../lib/system/TextIO"
 
 signature SWITCHES =
 sig
@@ -74,5 +75,6 @@ sig
     structure CodeGen :
     sig
 	val debugMode :				bool ref
+	val rewriteSourceUrls :                 Resolver.Handler.t list ref
     end
 end

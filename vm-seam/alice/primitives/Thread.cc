@@ -51,7 +51,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 //
@@ -79,8 +79,8 @@ const char *RaiseWorker::Identify() {
   return "RaiseWorker";
 }
 
-void RaiseWorker::DumpFrame(StackFrame *) {
-  fprintf(stderr, "Raise\n");
+void RaiseWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+  out << "[Thread::Raise]" << std::endl;
 }
 
 // Builtins

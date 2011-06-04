@@ -83,10 +83,10 @@ u_int HotSpotInterpreter::GetFrameSize(StackFrame *sFrame) {
   }
 }
 
-void HotSpotInterpreter::DumpFrame(StackFrame *sFrame) {
+void HotSpotInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   Worker *worker = sFrame->GetWorker();
   if(worker == AbstractCodeInterpreter::self) {
-    AbstractCodeInterpreter::self->DumpFrame(sFrame);
+    AbstractCodeInterpreter::self->DumpFrame(sFrame, out);
   } else {
     Error("wrong code state");
   }

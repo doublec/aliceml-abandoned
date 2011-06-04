@@ -134,6 +134,7 @@ clean-seam: clean-common
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk/seam && make distclean) || exit 1
+	(cd tools/gtkbuilder && make clean) || exit 1
 	(cd lib/tools/inspector/seam && make distclean) || exit 1
 	(cd lib/tools/explorer/seam && make distclean) || exit 1
 	(cd tools/toplevel && make distclean) || exit 1
@@ -241,6 +242,7 @@ libs-seam:
 	(cd lib/gtk/seam && make depend) || exit 1 ;\
 	(cd lib/gtk/seam && make wrappers) || exit 1 ;\
 	(cd lib/gtk/seam && make install) || exit 1 ;\
+	(cd tools/gtkbuilder && make depend && make install) || exit 1;\
 	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd tools/toplevel && make depend) || exit 1 ;\

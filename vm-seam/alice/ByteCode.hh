@@ -34,6 +34,15 @@ class AliceDll ByteCode {
 private:
   static void **instrTable;
   static word threadedTable;
+  
+  /**
+   * Chop the lowest bit off the pointer so that it
+   * can be encoded with Store::UnmanagedPointerToWord
+   * TODO: this may not be needed with the right GCC options...
+   */
+  static void* Align(void *p) {
+    return reinterpret_cast<void*>(reinterpret_cast<u_int>(p) & ~static_cast<u_int>(1));
+  }
 #endif
  
 public:
@@ -53,14 +62,14 @@ public:
     if(threadedTable == INVALID_POINTER) {
       IntMap *map = IntMap::New(2 * ByteCodeInstr::NUMBER_OF_INSTRS);
       for(u_int i=0; i<ByteCodeInstr::NUMBER_OF_INSTRS; i++) {
-	word wInstr = Store::UnmanagedPointerToWord(instrTable[i]);
+	word wInstr = Store::UnmanagedPointerToWord(Align(instrTable[i]));
 	map->Put(wInstr,Store::IntToWord(i));
       }
       threadedTable = map->ToWord();
       RootSet::Add(threadedTable); // it should survive GC
     }
     IntMap *map = IntMap::FromWordDirect(threadedTable);
-    word wInstr = Store::UnmanagedPointerToWord(instr);
+    word wInstr = Store::UnmanagedPointerToWord(Align(instr));
     if(map->IsMember(wInstr))
       return Store::DirectWordToInt(map->Get(wInstr));
     else

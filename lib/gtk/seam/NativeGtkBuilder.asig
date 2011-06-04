@@ -1,0 +1,15 @@
+    structure NativeGtkBuilder :
+    sig
+	type builder
+	
+	val new : unit -> builder
+	val addFromFile : builder * string -> unit
+	val addFromString : builder * string -> unit
+	
+	val getObject : builder * string -> 'object
+	val getObjects : builder -> (string * 'object) list
+	val getSignals : builder -> (string * string * string * bool) list
+	
+        val setTranslationDomain : builder * string option -> unit
+        val getTranslationDomain : builder -> string option
+    end

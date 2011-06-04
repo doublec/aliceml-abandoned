@@ -106,6 +106,12 @@ void ConstProp_PrePass::Run() {
       {
 	TagVal *instr = stack.PopInstr();
 	switch (AbstractCode::GetInstr(instr)) {
+    case AbstractCode::Entry:
+      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(2)));
+      break;
+    case AbstractCode::Exit:
+      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
+      break;
 	case AbstractCode::Raise:
 	case AbstractCode::Reraise:
 	case AbstractCode::Return:
@@ -565,6 +571,12 @@ void ConstProp_MainPass::Run() {
       {
 	TagVal *instr = stack.PopInstr();
 	switch (AbstractCode::GetInstr(instr)) {
+    case AbstractCode::Entry:
+      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(2)));
+      break;
+    case AbstractCode::Exit:
+      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
+      break;
 	case AbstractCode::Raise:
 	case AbstractCode::Reraise:
 	  break;

@@ -61,7 +61,7 @@ public:
   virtual ByteCodeFrame* DupFrame(ByteCodeFrame *bcFrame);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 
 #if PROFILE
   // Profiling

@@ -41,6 +41,7 @@ import structure FlatGrammar             from "FlatGrammar"
 import structure IntermediateAux         from "IntermediateAux"
 import structure OutputFlatGrammar       from "OutputFlatGrammar"
 import structure PrimOps                 from "PrimOps"
+import structure NameFuns                from "NameFuns"
 import signature VALUE_PROPAGATION_PHASE from "VALUE_PROPAGATION_PHASE-sig"
 
 structure UnsafeValue :
@@ -1962,6 +1963,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		val _ = Vector.app (fn (_, Id (_, stamp, _)) =>
 				       StampSet.insertDisjoint
 				       (exportset, stamp)) exports
+		val body = NameFuns.name body
 		val body =
 		    vpBodyShared (body, stamp,
 				  {env = env', isToplevel = true,

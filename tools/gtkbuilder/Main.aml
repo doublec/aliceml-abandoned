@@ -1,0 +1,30 @@
+(*
+ * Authors:
+ *   Gareth Smith <garethdanielsmith@gmail.com>
+ *)
+
+
+import structure CodeGenerator from "CodeGenerator"
+
+
+signature MAIN =
+sig
+    val main : string list -> OS.Process.status
+end
+
+
+structure Main :> MAIN =
+struct
+
+    fun help () =
+        TextIO.output (TextIO.stdErr, "Usage: alicegtkbuilder <gtkbuilder file>\n")
+
+
+    fun main (("-h"|"-?"|"--help"|"--usage")::_) = (help (); OS.Process.failure)
+      | main [path]                              = (CodeGenerator.generate path; OS.Process.success)
+      | main _                                   = (help (); OS.Process.failure)
+
+end
+
+
+do OS.Process.exit (Main.main (CommandLine.arguments ()))

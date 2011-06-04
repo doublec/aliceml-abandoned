@@ -46,7 +46,7 @@ public:
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 #if PROFILE
   // Profiling
   virtual word GetProfileKey(StackFrame *frame);

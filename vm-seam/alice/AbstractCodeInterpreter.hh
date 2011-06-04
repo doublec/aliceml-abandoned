@@ -21,6 +21,7 @@
 
 #include "Seam.hh"
 #include "alice/Base.hh"
+#include "alice/Data.hh"
 
 class AliceConcreteCode;
 
@@ -31,6 +32,7 @@ public:
   static AbstractCodeInterpreter *self;
 
   static void Init();
+  static void DumpAliceFrame(word funCoord, bool handler, word coord, bool inlined = false, std::ostream& out = std::cerr);
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
@@ -42,7 +44,7 @@ public:
   virtual void PushCall(Closure *closure);
   void PushCall_Internal(AliceConcreteCode *concreteCode, Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 #if PROFILE
   virtual word GetProfileKey(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);

@@ -15,8 +15,8 @@ INSTALLTO= `alice-config --alicelibdir`/tools
 
 .PHONY: clean all install
 
-GLADE_SOURCES = ExplorerGUI.glade
-GLADE_TARGETS = ExplorerGUI.aml ExplorerGUISignals.aml
+GTKBUILDER_SOURCES = ExplorerGUI.ui
+GTKBUILDER_TARGETS = ExplorerGUI.aml ExplorerGUISignals.aml
 
 SOURCES=					\
 	MkExplorer.aml				\
@@ -51,7 +51,7 @@ SOURCES=					\
 	TREE_NODE-sig.aml			\
 	TYPES-sig.aml				\
 	VISUAL_NODE-sig.aml			\
-	$(GLADE_TARGETS)
+	$(GTKBUILDER_TARGETS)
 
 TARGETS= $(SOURCES:%.aml=%.alc)
 
@@ -65,8 +65,8 @@ LinkedMkExplorer.alc: $(TARGETS)
 	alicelink -z --include ./ ./MkExplorer -o $@
 
 .PHONY: generate
-generate: $(GLADE_SOURCES)
-	aliceglade $< -o $(GLADE_SOURCES:%.glade=%)
+generate: $(GTKBUILDER_SOURCES)
+	alicegtkbuilder $<
 
 %.alc: %.aml
 	alicec -c $< -o $@
@@ -78,7 +78,7 @@ clean:
 
 distclean: clean
 
-depend: $(GLADE_TARGETS)
+depend: $(GTKBUILDER_TARGETS)
 	alicedep $(SOURCES) > Makefile.predepend
 	sed "/\/opt\//d" Makefile.predepend > Makefile.depend
 
