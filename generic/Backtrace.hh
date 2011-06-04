@@ -19,7 +19,10 @@
 #pragma interface "generic/Backtrace.hh"
 #endif
 
+#include <iostream>
+#include <sstream>
 #include "adt/Queue.hh"
+#include "generic/String.hh"
 #include "generic/Worker.hh"
 #include "generic/StackFrame.hh"
 #include "generic/Scheduler.hh"
@@ -30,14 +33,14 @@ private:
   static const u_int topCutoff = 20;
   static const u_int bottomCutoff = 20;
 
-  void DumpNth(u_int n) {
+  void DumpNth(u_int n, std::ostream& out) {
     // FIXME: Hack Alert
     word wFrame = GetNthElement(n);
     u_int size = Store::DirectWordToBlock(wFrame)->GetSize();
     StackFrame *frame = Scheduler::PushFrame(size);
     StackFrame::New(frame, size, wFrame);
-    fprintf(stderr, "- ");
-    frame->GetWorker()->DumpFrame(frame);
+    out << "- ";
+    frame->GetWorker()->DumpFrame(frame, out);
     Scheduler::PopFrame(size);
   }
 
@@ -62,19 +65,26 @@ public:
     return static_cast<Backtrace *>(Queue::FromWordDirect(x));
   }
 
-  void Dump() {
+  void Dump(std::ostream& out = std::cerr) {
     u_int n = GetNumberOfElements();
   
     for (u_int i=0; i<n; i++) {
       if (i == topCutoff && n >= topCutoff + bottomCutoff + bottomCutoff/4) {
         u_int ommited = n - topCutoff - bottomCutoff;
-        fprintf(stderr, "    ... %"U_INTF" frames omitted ...\n", ommited);
+        out << "    ... " << ommited << " frames ommited ..." << std::endl;
         i += ommited-1;
       }
       else {
-        DumpNth(i);
+        DumpNth(i, out);
       }
     }
+  }
+  
+  String *DumpToString() {
+    std::ostringstream ss;
+    Dump(ss);
+    std::string str = ss.str();
+    return String::New(str);
   }
 };
 

@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <ostream>
 #include <limits.h>
 #include "generic/ZLib.hh"
 #include "store/Map.hh"
@@ -715,7 +716,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 
@@ -1038,8 +1039,8 @@ const char *PickleWorker::Identify() {
   return "PickleWorker";
 }
 
-void PickleWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Pickle Task\n");
+void PickleWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
+  out << "[Pickle]" << std::endl;
 }
 
 // PickleSaveWorker
@@ -1064,7 +1065,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 //
@@ -1160,8 +1161,8 @@ const char *PickleSaveWorker::Identify() {
   return "PickleSaveWorker";
 }
 
-void PickleSaveWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Pickle Save\n");
+void PickleSaveWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
+  out << "[Pickle::Save]" << std::endl;
 }
 
 // PicklePackWorker
@@ -1182,7 +1183,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 //
@@ -1232,9 +1233,8 @@ Worker::Result PicklePackWorker::Run(StackFrame *sFrame) {
 const char *PicklePackWorker::Identify() {
   return "PicklePackWorker";
 }
-
-void PicklePackWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Pickle Pack\n");
+void PicklePackWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
+  out << "[Pickle::Pack]" << std::endl;
 }
 
 //

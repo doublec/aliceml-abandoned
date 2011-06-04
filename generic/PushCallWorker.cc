@@ -15,6 +15,7 @@
 #endif
 
 #include <cstdio>
+#include <ostream>
 #include "generic/Scheduler.hh"
 #include "generic/StackFrame.hh"
 #include "generic/PushCallWorker.hh"
@@ -75,6 +76,6 @@ const char *PushCallWorker::Identify() {
   return "PushCallWorker";
 }
 
-void PushCallWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Push Call\n");
+void PushCallWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
+  out << "[PushCall]" << std::endl;
 }

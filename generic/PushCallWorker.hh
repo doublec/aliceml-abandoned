@@ -19,6 +19,7 @@
 #pragma interface "generic/PushCallWorker.hh"
 #endif
 
+#include <ostream>
 #include "generic/Worker.hh"
 
 class SeamDll PushCallWorker: public Worker {
@@ -40,7 +41,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 #endif

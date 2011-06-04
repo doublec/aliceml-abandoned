@@ -10,6 +10,7 @@
 //   $Revision$
 // 
 
+#include <ostream>
 #include "Minimizer.hh"
 #include "store/Map.hh"
 #include "generic/Scheduler.hh"
@@ -168,7 +169,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 PartitionLoaderWorker *PartitionLoaderWorker::self;
@@ -253,8 +254,8 @@ const char *PartitionLoaderWorker::Identify() {
   return "PartitionLoaderWorker";
 }
 
-void PartitionLoaderWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "PartitionLoader Task\n");
+void PartitionLoaderWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+  out << "[PartitionLoader]" << std::endl;
 }
 
 // PartitionLoaderCheckWorker
@@ -275,7 +276,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 //
@@ -309,8 +310,8 @@ const char *PartitionLoaderCheckWorker::Identify() {
   return "PartitionLoaderCheckWorker";
 }
 
-void PartitionLoaderCheckWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "PartitionLoader Check\n");
+void PartitionLoaderCheckWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+  out << "[PartitionLoader::Check]" << std::endl;
 }
 
 void PartitionLoader::Init() {

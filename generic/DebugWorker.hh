@@ -18,6 +18,7 @@
 #pragma interface "generic/DebugWorker.hh"
 #endif
 
+#include <ostream>
 #include "generic/Worker.hh"
 
 class SeamDll DebugWorker: public Worker {
@@ -40,7 +41,7 @@ public:
   virtual Result Handle(word);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   // Event Accessors
   static word GetEvent(StackFrame *sFrame);
 };

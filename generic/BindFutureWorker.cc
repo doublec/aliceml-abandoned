@@ -17,6 +17,7 @@
 #endif
 
 #include <cstdio>
+#include <ostream>
 #include "generic/Backtrace.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Transients.hh"
@@ -134,6 +135,6 @@ const char *BindFutureWorker::Identify() {
   return "BindFutureWorker";
 }
 
-void BindFutureWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Bind future\n");
+void BindFutureWorker::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[BindFuture]" << std::endl;
 }

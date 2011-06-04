@@ -19,6 +19,7 @@
 #pragma interface "generic/BindFutureWorker.hh"
 #endif
 
+#include <ostream>
 #include "generic/Worker.hh"
 
 class Thread;
@@ -43,7 +44,7 @@ public:
   virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 #endif

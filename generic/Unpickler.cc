@@ -359,7 +359,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 //
@@ -385,8 +385,8 @@ const char *InputWorker::Identify() {
   return "InputWorker";
 }
 
-void InputWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Fill Unpickling Buffer\n");
+void InputWorker::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[Unpickler::Input]" << std::endl;
 }
 
 // TransformWorker
@@ -433,7 +433,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 TransformWorker *TransformWorker::self;
@@ -454,8 +454,8 @@ const char *TransformWorker::Identify() {
   return "TransformWorker";
 }
 
-void TransformWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "TransformWorker Frame\n");
+void TransformWorker::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[Unpickler::Transform]" << std::endl;
 }
 
 Worker::Result TransformWorker::Run(StackFrame *sFrame) {
@@ -534,7 +534,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 //
@@ -565,8 +565,8 @@ const char *PickleUnpackWorker::Identify() {
   return "PickleUnpackWorker";
 }
 
-void PickleUnpackWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Pickle Unpack\n");
+void PickleUnpackWorker::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[Unpickler::Unpack]" << std::endl;
 }
 
 // PickleLoadWorker
@@ -587,7 +587,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 //
@@ -621,8 +621,8 @@ const char *PickleLoadWorker::Identify() {
   return "PickleLoadWorker";
 }
 
-void PickleLoadWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Pickle Load\n");
+void PickleLoadWorker::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[Unpickler::Load]" << std::endl;
 }
 
 
@@ -710,7 +710,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 // The StoreAbstraction makes the business of transforming CONCRETE and 
@@ -1102,8 +1102,8 @@ const char *UnpickleWorker::Identify() {
   return "UnpickleWorker";
 }
 
-void UnpickleWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Unpickling\n");
+void UnpickleWorker::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[Unpickler::Unpickle]" << std::endl;
 }
 
 // PickleCheckWorker
@@ -1133,7 +1133,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 PickleCheckWorker *PickleCheckWorker::self;
@@ -1198,8 +1198,8 @@ const char *PickleCheckWorker::Identify() {
   return "PickleCheckWorker";
 }
 
-void PickleCheckWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Pickle Check\n");
+void PickleCheckWorker::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[Unpickler::Check]" << std::endl;
 }
 
 //
@@ -1220,14 +1220,14 @@ Worker::Result Unpickler::Unpack(String *s) {
 Worker::Result Unpickler::Load(String *filename) {
   char *szFileName = filename->ExportC();
   InputStream *is = InputStream::NewFromFile(szFileName);
+
   if (is->HasException()) {
     Scheduler::SetCurrentData(Pickler::IOError); // to be done
     StackFrame *frame = Scheduler::GetFrame();
     Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
     Scheduler::PopFrame();
     return Worker::RAISE;
-  }
-
+  }  
   Scheduler::PopFrame();
 
   PickleCheckWorker::PushFrame();

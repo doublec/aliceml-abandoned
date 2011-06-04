@@ -17,6 +17,7 @@
 #endif
 
 #include <cstdio>
+#include <iostream>
 #include "store/Store.hh"
 #include "store/GCHelper.hh"
 #include "generic/RootSet.hh"
@@ -76,7 +77,7 @@ public:
   virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 UncaughtExceptionWorker *UncaughtExceptionWorker::self;
@@ -148,9 +149,9 @@ const char *UncaughtExceptionWorker::Identify() {
   return "UncaughtExceptionWorker";
 }
 
-void UncaughtExceptionWorker::DumpFrame(StackFrame *) {
+void UncaughtExceptionWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
 #if defined(DEBUG)
-  fprintf(stderr, "Uncaught Exception\n");
+  out << "[UncaughtException]" << std::endl;
 #else
   return; // do nothing
 #endif
@@ -168,7 +169,7 @@ public:
   virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 u_int EmptyTaskWorker::GetFrameSize(StackFrame *sFrame) {
@@ -207,9 +208,9 @@ const char *EmptyTaskWorker::Identify() {
   return "EmptyTaskWorker";
 }
 
-void EmptyTaskWorker::DumpFrame(StackFrame *) {
+void EmptyTaskWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
 #if defined(DEBUG)
-  fprintf(stderr, "Empty Task\n");
+  out << "[EmptyTask]" << std::endl;
 #else
   return; // do nothing
 #endif
@@ -292,13 +293,13 @@ void TaskStack::Purge() {
   }
 }
 
-void TaskStack::Dump(u_int stackTop) {
+void TaskStack::Dump(u_int stackTop, std::ostream& out) {
   word *base = reinterpret_cast<word *>(GetFrame(0));
   word *top  = base + stackTop - 1;
   while (top >= base) {
     StackFrame *frame = reinterpret_cast<StackFrame *>(top);
     Worker *worker = frame->GetWorker();
     top -= worker->GetFrameSize(frame);
-    worker->DumpFrame(frame);
+    worker->DumpFrame(frame, out);
   }
 }
