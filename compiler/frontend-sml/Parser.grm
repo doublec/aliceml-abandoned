@@ -419,7 +419,6 @@
 	|    exp_SEMICOLON_list2	of Exp list
 	|    SEMICOLON_opt		of unit
 	|    localann_IN_opt		of LocalAnn option
-	|    if_opt                     of Exp option
 	| exprow			of ExpRow
 	|    exprow_opt			of ExpRow option
 	|    COMMA_exprow_opt		of ExpRow option
@@ -754,8 +753,8 @@
 	| LBRACK exp_COMMA_list0 RBRACK
 			( LISTAtExp(I(LBRACKleft,RBRACKright),
 				    exp_COMMA_list0 ))
-	| LBRACK exp FOR pat IN exp if_opt RBRACK
-	                ( LISTCOMPAtExp(I(LBRACKleft, LBRACKright), exp1, pat, exp2, if_opt) )
+	| LBRACK exp FOR pat IN exp RBRACK
+	                ( LISTCOMPAtExp(I(LBRACKleft, LBRACKright), exp1, pat, exp2) )
 	| HASHBRACK exp_COMMA_list0 RBRACK
 			( VECTORAtExp(I(HASHBRACKleft,RBRACKright),
 				    exp_COMMA_list0 ))
@@ -796,10 +795,6 @@
      localann_IN_opt:
 	  localann IN			( SOME localann )
 	| (*empty*)			( NONE )
-
-     if_opt:
-          IF exp                        ( SOME exp )
-        | (* empty *)                   ( NONE )
 
   exprow:
 	  lab EQUALS exp COMMA_exprow_opt

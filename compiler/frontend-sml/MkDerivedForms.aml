@@ -481,16 +481,15 @@ struct
      * List.mapPartial (fn x if z => SOME(x*x) | _ => NONE) y)
      TODO: checkout if we added any shift-reduce conflicts...
      *)
-    fun LISTCOMPAtExp(I, elExp, elPat, lsExp, ifExp) =
+    fun LISTCOMPAtExp(I, elExp, elPat, lsExp) =
         let
-            val I'        = Source.at (G.infoExp elExp) (* TODO: WHAT? *)
+            val I'        = Source.at I
             
             val fnName'   = G.DOTLong(I', G.SHORTLong(I', G.StrId(I, StrId.fromString "List")),
                                         G.VId(I', VId.fromString "mapPartial"))
             val fnName    = G.ATEXPExp(I', G.LONGVIDAtExp(I', G.SANSOp, fnName'))
             
-            val ifExp'    = Option.getOpt (ifExp, TRUEExp I')
-            val ifPat     = G.IFPat(I', elPat, G.PARAtExp(I', ifExp'))
+            val ifPat     = G.IFPat(I', elPat, G.PARAtExp(I', TRUEExp I'))
             val someElExp = G.APPExp(I', SOMEExp I', G.PARAtExp(I', elExp))
             val posRule   = G.Mrule(I', ifPat, someElExp)
             val negRule   = G.Mrule(I', G.ATPATPat(I', G.WILDCARDAtPat I'), NONEExp I')

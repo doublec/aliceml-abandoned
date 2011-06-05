@@ -137,7 +137,7 @@ sig
     val WHILEExp:       Info * Exp * Exp                          -> Exp
     val FINALLYExp:     Info * Exp * Exp                          -> Exp
     val LISTAtExp:      Info * Exp list                           -> AtExp
-    val LISTCOMPAtExp:  Info * Exp * Pat * Exp * Exp option       -> AtExp
+    val LISTCOMPAtExp:  Info * Exp * Pat * Exp                    -> AtExp
     val RECExp:         Info * Pat * Exp                          -> Exp
     val TRANSPACKExp:   Info * AtStrExp * AtSigExp                -> Exp
     val OPAQPACKExp:    Info * AtStrExp * AtSigExp                -> Exp
