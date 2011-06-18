@@ -13,6 +13,7 @@
 //
 
 #include <cmath>
+#include <limits>
 #include "alice/Authoring.hh"
 
 #define REAL_TO_REAL(name, op)		\
@@ -44,10 +45,33 @@ static inline double Atanh(double x) {
   }
 }
 
+static inline double Atan2(double y, double x) {
+
+  #if defined(__MINGW32__) || defined(_MSC_VER)
+  double pi     = std::atan(1.0) * 4;
+  double posInf = std::numeric_limits<double>::infinity();
+  double negInf = -posInf;
+  
+  // windows incorrectly returns NaN in these cases...
+  if (y == posInf && x == posInf) { return pi/4.0; }
+  if (y == posInf && x == negInf) { return 3 * pi/4.0; }
+  if (y == negInf && x == posInf) { return -pi/4.0; }
+  if (y == negInf && x == negInf) { return -3 * pi/4.0; }
+  #endif
+
+  return std::atan2(y, x);
+}
+
 static inline double Pow(double x, double y) {
+
+  #if defined(__MINGW32__) || defined(_MSC_VER)
+  // windows incorrectly returns NaN in this case...
+  if (y == 0.0) { return 1.0; }
+  #endif
+  
   // C and SML differ for the following cases...
-  if ((std::fabs(x) == 1.0 && std::fabs(y) == 1.0/0.0) || std::isnan(y)) {
-    return 0.0/0.0; // NaN
+  if ((std::fabs(x) == 1.0 && std::isinf(std::fabs(y))) || std::isnan(y)) {
+    return std::numeric_limits<double>::quiet_NaN();
   } else {
     return std::pow(x, y);
   }
@@ -59,7 +83,7 @@ REAL_TO_REAL(Math_asin, std::asin)
 REAL_TO_REAL(Math_asinh, Asinh)
 REAL_TO_REAL(Math_atan, std::atan)
 REAL_TO_REAL(Math_atanh, Atanh)
-REAL_REAL_TO_REAL(Math_atan2, std::atan2);
+REAL_REAL_TO_REAL(Math_atan2, Atan2);
 REAL_TO_REAL(Math_cos, std::cos)
 REAL_TO_REAL(Math_cosh, std::cosh)
 REAL_TO_REAL(Math_exp, std::exp)
