@@ -499,7 +499,7 @@ build-win-exec:
 
 .PHONY:	unbuild-win-exec
 unbuild-win-exec:
-	rm -f $(PREFIX)/bin/alice*.exe &&
+	rm -f $(PREFIX)/bin/alice*.exe && \
 	make rebuild-alice-ll
 
 ########### Distribution ############
