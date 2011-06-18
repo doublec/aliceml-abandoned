@@ -16,7 +16,7 @@ case `uname -sm` in
 	BUILD_GMP=1
 	BUILD_SQLITE=1
 	BUILD_LIBXML=1
-	CC="gcc -mno-cygwin"
+	CC="i686-pc-mingw32-gcc"
 	;;
 	*x86_64*)
 	LIGHTNING=0
@@ -49,6 +49,9 @@ if [ "x${AUTOMAKE}" != "x" ]; then
 		echo "### - applying SEAM-specific patches" >&2
 		patch -p1 < ../automake-${amversion}.seam.patch
 		patch -p1 < ../automake2automake-seam.patch
+		echo "### - applying libtool 2.4+ compatibility hacks" >&2
+		rm -f aclocal.m4 configure
+		find . -name Makefile.in | xargs rm -f
 		echo "### - reconfiguring the source" >&2
 		libtoolize --automake && aclocal && automake && autoconf &&
 		./configure --prefix="${prefix}" &&
