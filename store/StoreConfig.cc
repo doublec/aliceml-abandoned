@@ -252,6 +252,15 @@ int main(int argc, char **argv) {
   std::fprintf(f, "#define STORE_WKDICTSET_SIZE %d\n", STORE_INITIAL_WKDICT);
   std::fprintf(f, "#define STORE_WORD_WIDTH     %d\n\n", (MIN_WIDTH * 8));
 
+  /* hack around a conflict where windows.h (winsock.h) defines its own u_int ...
+     ... later includes of windows.h will have no affect, instead of failing */
+  std::fprintf(f, "#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)\n");
+  std::fprintf(f, "#ifndef NOMINMAX\n");
+  std::fprintf(f, "#define NOMINMAX\n");
+  std::fprintf(f, "#endif\n");
+  std::fprintf(f, "#include <windows.h>\n");
+  std::fprintf(f, "#endif\n");
+  
   std::fprintf(f, "typedef %s s_int;\n", int_val);
   std::fprintf(f, "#ifndef HAVE_U_INT\n");
   std::fprintf(f, "#define u_int unsigned %s\n", int_val);
