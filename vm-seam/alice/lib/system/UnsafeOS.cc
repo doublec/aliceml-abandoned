@@ -58,7 +58,7 @@ public:
       FindClose(handle);
     }
 #else
-    WrappedUnmanagedPoimaknter<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
+    WrappedUnmanagedPointer<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
     if (!ld->IsNull()) {
       closedir(ld->GetValue());
       ld->SetNull();
@@ -163,7 +163,7 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
     some->Init(0, String::New(n->d_name)->ToWord());
     RETURN(some->ToWord());
   } else if (errno) {
-    RAISE_SYS_ERROR();
+    RAISE_SYS_ERR();
   } else {
     RETURN_INT(Types::NONE);
   }
