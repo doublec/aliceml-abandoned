@@ -312,8 +312,8 @@ clean-gecode:
 configure-gecode-windows:
 	(cd $(PWD)/gecode/build && \
 	 ../sources/configure \
-		CXX='g++ -mno-cygwin' \
-		CC='gcc -mno-cygwin' \
+		CXX='i686-pc-mingw32-g++' \
+		CC='i686-pc-mingw32-gcc' \
 		--enable-static --disable-shared \
 		--disable-examples --disable-search --disable-minimodel \
 		--prefix='$(PWD)/gecode/install')
@@ -352,8 +352,8 @@ setup-seam64:
 configure-seam-windows:
 	(cd $(PWD)/seam/build && \
 	 ../sources/configure \
-		CXX='g++ -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
-		CC='gcc -mno-cygwin -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
+		CXX='i686-pc-mingw32-g++ -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
+		CC='i686-pc-mingw32-gcc -DS_IXOTH=S_IXUSR -DS_IXGRP=S_IXUSR' \
 		--prefix='$(PREFIX)' \
 		--with-warnings=yes \
 		--with-zlib='$(PWD)/seam-support/install')
