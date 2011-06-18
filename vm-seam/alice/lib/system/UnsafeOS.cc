@@ -143,10 +143,13 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
     RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
   }
   
+  errno = 0;
   if (struct dirent *n = readdir(ld->GetValue())) {
     TagVal *some = TagVal::New(Types::SOME, 1);
     some->Init(0, String::New(n->d_name)->ToWord());
     RETURN(some->ToWord());
+  } else if (errno) {
+    RAISE_SYS_ERROR();
   } else {
     RETURN_INT(Types::NONE);
   }
