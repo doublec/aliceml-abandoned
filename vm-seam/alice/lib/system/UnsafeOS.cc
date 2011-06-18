@@ -43,22 +43,31 @@
 #define DECLARE_LINUXDIR(ld, x) \
   DECLARE_WRAPPEDUNMANAGEDPOINTER(DIR, ld, x) \
 
-class LinuxDirFinalizationSet : public FinalizationSet {
+#endif
+
+class DirFinalizationSet : public FinalizationSet {
 public:
   virtual void Finalize(word w) {
-    WrappedUnmanagedPointer<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    Tuple *tuple = Tuple::FromWord(w);
+    Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+    if (Store::WordToInt(closedCell->Access()) == 0) {
+      Cell *handleCell = Cell::FromWord(tuple->Sel(2));
+      HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
+      closedCell->Assign(Store::IntToWord(1));
+      FindClose(handle);
+    }
+#else
+    WrappedUnmanagedPoimaknter<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
     if (!ld->IsNull()) {
       closedir(ld->GetValue());
       ld->SetNull();
     }
+#endif
   }
 };
 
-static LinuxDirFinalizationSet *linuxDirFinalizationSet;
-
-#endif
-
-
+static DirFinalizationSet *dirFinalizationSet;
 static word wBufferString;
 
 // Also Needed for UnsafeUnix
@@ -97,13 +106,15 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
   tuple->Init(1, dir->ToWord());
   tuple->Init(2, handleCell->ToWord());
   tuple->Init(3, entryCell->ToWord());
+  
+  dirFinalizationSet->Register(tuple->ToWord());
   RETURN(tuple->ToWord());
 #else
   DIR *d = opendir(name->ExportC());
   if (!d) RAISE_SYS_ERR();
   
   word ld = WrappedUnmanagedPointer<DIR>::New(d)->ToWord();
-  linuxDirFinalizationSet->Register(ld);
+  dirFinalizationSet->Register(ld);
   RETURN(ld);
 #endif
 } END
@@ -668,9 +679,9 @@ AliceDll word UnsafeOS() {
   wBufferString = String::New(MAX_PATH+20)->ToWord();
 #else
   wBufferString = String::New(1024)->ToWord();
-  linuxDirFinalizationSet = new LinuxDirFinalizationSet();
 #endif
   RootSet::Add(wBufferString);
+  dirFinalizationSet = new DirFinalizationSet();
 
   Record *record = Record::New(5);
   record->Init("'SysErr", SysErrConstructor);
