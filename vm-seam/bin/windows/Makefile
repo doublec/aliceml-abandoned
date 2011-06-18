@@ -4,7 +4,7 @@ BINDIR=$(PREFIX)/bin
 CXX = seamtool -v compile
 CXXFLAGS = -O2 -march=pentium3 -mcpu=pentium3
 
-LD = g++ -mno-cygwin
+LD = i686-pc-mingw32-g++
 LDFLAGS = -L$(PREFIX)/lib -lseam
 
 EXES = \
