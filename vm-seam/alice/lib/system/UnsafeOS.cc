@@ -394,16 +394,33 @@ DEFINE1(UnsafeOS_FileSys_modTime) {
   DECLARE_STRING(name, x0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
   HANDLE hFile =
-    CreateFile(name->ExportC(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
-	       FILE_ATTRIBUTE_NORMAL, NULL);
+    CreateFile(
+	  name->ExportC(),
+	  0,
+	  FILE_SHARE_READ | FILE_SHARE_WRITE,
+	  NULL,
+	  OPEN_EXISTING,
+	  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
+	  NULL
+	);
   if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
   FILETIME fileTime;
-  if (GetFileTime(hFile, NULL, NULL, &fileTime) == FALSE) RAISE_SYS_ERR();
+  BOOL success = GetFileTime(hFile, NULL, NULL, &fileTime);
   CloseHandle(hFile);
+  if (success == FALSE) RAISE_SYS_ERR();
+  
   BigInt *b = BigInt::New((unsigned int)fileTime.dwHighDateTime);
   mpz_mul_2exp(b->big(), b->big(), 32);
   mpz_add_ui(b->big(), b->big(), fileTime.dwLowDateTime);
   mpz_fdiv_q_ui(b->big(), b->big(), 10000);
+  
+  // convert microsoft timestamp into unix timestamp
+  mpz_t offset;
+  mpz_init(offset);
+  mpz_set_str(offset, "11644473600000", 10);
+  mpz_sub(b->big(), b->big(), offset);
+  mpz_clear(offset);
+  
   RETURN_INTINF(b);
 #else
   struct stat info;
