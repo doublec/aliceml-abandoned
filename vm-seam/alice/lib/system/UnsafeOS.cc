@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 
 #include "alice/NativeCodeJitter.hh"
 #include "alice/Authoring.hh"
