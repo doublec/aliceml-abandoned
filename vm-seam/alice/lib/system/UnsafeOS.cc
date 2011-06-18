@@ -123,8 +123,11 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   DECLARE_TUPLE(tuple, x0);
   Cell *closedCell = Cell::FromWord(tuple->Sel(0));
-  if (Store::WordToInt(closedCell->Access()) != 0) RAISE_SYS_ERR();
-
+  
+  if (Store::WordToInt(closedCell->Access()) != 0) {
+    RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
+  }
+  
   Cell *handleCell = Cell::FromWord(tuple->Sel(2));
   Cell *entryCell = Cell::FromWord(tuple->Sel(3));
   HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
@@ -171,8 +174,11 @@ DEFINE1(UnsafeOS_FileSys_rewindDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   DECLARE_TUPLE(tuple, x0);
   Cell *closedCell = Cell::FromWord(tuple->Sel(0));
-  if (Store::WordToInt(closedCell->Access()) != 0) RAISE_SYS_ERR();
-
+  
+  if (Store::WordToInt(closedCell->Access()) != 0) {
+    RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
+  }
+  
   String *dir = String::FromWord(tuple->Sel(1));
   Cell *handleCell = Cell::FromWord(tuple->Sel(2));
   Cell *entryCell = Cell::FromWord(tuple->Sel(3));
