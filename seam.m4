@@ -467,13 +467,13 @@ AC_DEFUN([AC_SEAM_ARG_WITH_WARNINGS],
       AC_MSG_RESULT(yes)
       AC_SEAM_CHECK_CXXFLAGS(-Wundef -Wpointer-arith -Wcast-qual \
                              -Wcast-align -Wwrite-strings -Wconversion \
-                             -Wredundant-decls -Winline \
+                             -Wredundant-decls \
                              -Woverloaded-virtual -Wsign-promo)
    elif test "${with_warnings:-yes}" = "pedantic"; then
       AC_MSG_RESULT(pedantic)
       AC_SEAM_CHECK_CXXFLAGS(-Wall -W -Wundef -Wpointer-arith -Wcast-qual \
                              -Wcast-align -Wwrite-strings -Wconversion \
-                             -Wredundant-decls -Winline \
+                             -Wredundant-decls \
                              -Woverloaded-virtual -Wsign-promo)
    else
       AC_MSG_RESULT(no)
