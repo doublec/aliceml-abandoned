@@ -368,12 +368,19 @@ DEFINE1(UnsafeOS_FileSys_fileSize) {
   //--** truncates the file size if not representable
 #if defined(__MINGW32__) || defined(_MSC_VER)
   HANDLE hFile =
-    CreateFile(name->ExportC(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
-	       FILE_ATTRIBUTE_NORMAL, NULL);
+    CreateFile(
+	  name->ExportC(),
+	  0,
+	  FILE_SHARE_READ | FILE_SHARE_WRITE,
+	  NULL,
+	  OPEN_EXISTING,
+	  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
+	  NULL
+	);
   if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
   DWORD n = GetFileSize(hFile, NULL);
-  if (n == INVALID_FILE_SIZE) RAISE_SYS_ERR();
   CloseHandle(hFile);
+  if (n == INVALID_FILE_SIZE) RAISE_SYS_ERR();
   RETURN_INT(n);
 #else
   struct stat info;
