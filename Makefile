@@ -500,7 +500,8 @@ build-win-exec:
 .PHONY:	unbuild-win-exec
 unbuild-win-exec:
 	rm -f $(PREFIX)/bin/alice*.exe && \
-	make rebuild-alice-ll
+	make rebuild-alice-ll && \
+	make build-alice-bootstrap
 
 ########### Distribution ############
 
