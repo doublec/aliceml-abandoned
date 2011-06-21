@@ -32,12 +32,6 @@ struct
     end
 
 
-    (*) FIXME: there must be a better way to do this?
-    fun fileExists path =
-        (ignore (OS.FileSys.modTime path); true)
-        handle OS.SysErr _ => false
-
-
     (*) FIXME: move this somewhere public (OS.FileSys?)
     (*
      * Ensure that the specified directory, along
@@ -45,10 +39,19 @@ struct
      *)
     fun mkDirs path =
        let
-           val {dir, file} = OS.Path.splitDirFile path
+           val {isAbs, vol, arcs} = OS.Path.fromString path
+           
+           fun mkDirs' done []      = ()
+             | mkDirs' done (d::ds) =
+               let
+                   val p = OS.Path.toString {vol, isAbs, arcs = done @ [d]}
+               in
+                   if not (OS.FileSys.isDir p handle _ => false) then
+                        OS.FileSys.mkDir p;
+                   mkDirs' (done @ [d]) ds
+               end
        in
-           if not (fileExists dir)  then mkDirs dir else ();
-           if not (fileExists path) then OS.FileSys.mkDir path else ();
+           mkDirs' [] arcs
        end
     
     
