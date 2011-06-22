@@ -32,6 +32,10 @@ public:
     b->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
     return static_cast<ConcreteRepresentation *>(b);
   }
+  static ConcreteRepresentation *New(u_int size) {
+    return ConcreteRepresentation::New(
+	  NullConcreteRepresentationHandler::GetInstance(), size);
+  }
   static ConcreteRepresentation *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == CONCRETE_LABEL);

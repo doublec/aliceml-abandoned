@@ -157,5 +157,7 @@
 #define DECLARE_IODESC(ioDesc, x) DECLARE_BLOCKTYPE(IODesc, ioDesc, x)
 #define DECLARE_WRAPPEDUNMANAGEDPOINTER(t, wup, x) \
   DECLARE_BLOCKTYPE(WrappedUnmanagedPointer<t>, wup, x)
-
+#define DECLARE_CONCRETEREPRESENTATION(cr, x) \
+  DECLARE_BLOCKTYPE(ConcreteRepresentation, cr, x)
+  
 #endif
