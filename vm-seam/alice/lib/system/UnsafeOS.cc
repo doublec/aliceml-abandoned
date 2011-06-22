@@ -49,10 +49,10 @@ class DirFinalizationSet : public FinalizationSet {
 public:
   virtual void Finalize(word w) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-    Tuple *tuple = Tuple::FromWord(w);
-    Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+    ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(w);
+    Cell *closedCell = Cell::FromWord(cr->Get(0));
     if (Store::WordToInt(closedCell->Access()) == 0) {
-      Cell *handleCell = Cell::FromWord(tuple->Sel(2));
+      Cell *handleCell = Cell::FromWord(cr->Get(2));
       HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
       closedCell->Assign(Store::IntToWord(1));
       FindClose(handle);
@@ -101,14 +101,14 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
   Cell *closedCell = Cell::New(Store::IntToWord(0));
   Cell *handleCell = Cell::New(Store::UnmanagedPointerToWord(handle));
   Cell *entryCell = Cell::New(entry);
-  Tuple *tuple = Tuple::New(4);
-  tuple->Init(0, closedCell->ToWord());
-  tuple->Init(1, dir->ToWord());
-  tuple->Init(2, handleCell->ToWord());
-  tuple->Init(3, entryCell->ToWord());
+  ConcreteRepresentation *cr = ConcreteRepresentation::New(4);
+  cr->Init(0, closedCell->ToWord());
+  cr->Init(1, dir->ToWord());
+  cr->Init(2, handleCell->ToWord());
+  cr->Init(3, entryCell->ToWord());
   
-  dirFinalizationSet->Register(tuple->ToWord());
-  RETURN(tuple->ToWord());
+  dirFinalizationSet->Register(cr->ToWord());
+  RETURN(cr->ToWord());
 #else
   DIR *d = opendir(name->ExportC());
   if (!d) RAISE_SYS_ERR();
@@ -121,15 +121,15 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
 
 DEFINE1(UnsafeOS_FileSys_readDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  DECLARE_TUPLE(tuple, x0);
-  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+  DECLARE_CONCRETEREPRESENTATION(cr, x0);
+  Cell *closedCell = Cell::FromWord(cr->Get(0));
   
   if (Store::WordToInt(closedCell->Access()) != 0) {
     RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
   }
   
-  Cell *handleCell = Cell::FromWord(tuple->Sel(2));
-  Cell *entryCell = Cell::FromWord(tuple->Sel(3));
+  Cell *handleCell = Cell::FromWord(cr->Get(2));
+  Cell *entryCell = Cell::FromWord(cr->Get(3));
   HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
   word entry = entryCell->Access();
   word newEntry;
@@ -147,7 +147,7 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
   }
   entryCell->Assign(newEntry);
 
-  TagVal *some = TagVal::New(1,1);
+  TagVal *some = TagVal::New(Types::SOME, 1);
   some->Init(0, entry);
   RETURN(some->ToWord());
 #else
@@ -172,16 +172,16 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
 
 DEFINE1(UnsafeOS_FileSys_rewindDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  DECLARE_TUPLE(tuple, x0);
-  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+  DECLARE_CONCRETEREPRESENTATION(cr, x0);
+  Cell *closedCell = Cell::FromWord(cr->Get(0));
   
   if (Store::WordToInt(closedCell->Access()) != 0) {
     RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
   }
   
-  String *dir = String::FromWord(tuple->Sel(1));
-  Cell *handleCell = Cell::FromWord(tuple->Sel(2));
-  Cell *entryCell = Cell::FromWord(tuple->Sel(3));
+  String *dir = String::FromWord(cr->Get(1));
+  Cell *handleCell = Cell::FromWord(cr->Get(2));
+  Cell *entryCell = Cell::FromWord(cr->Get(3));
   HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
 
   if (FindClose(handle) == FALSE) {
@@ -221,10 +221,10 @@ DEFINE1(UnsafeOS_FileSys_rewindDir) {
 
 DEFINE1(UnsafeOS_FileSys_closeDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  DECLARE_TUPLE(tuple, x0);
-  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+  DECLARE_CONCRETEREPRESENTATION(cr, x0);
+  Cell *closedCell = Cell::FromWord(cr->Get(0));
   if (Store::WordToInt(closedCell->Access()) == 0) {
-    Cell *handleCell = Cell::FromWord(tuple->Sel(2));
+    Cell *handleCell = Cell::FromWord(cr->Get(2));
     HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
     closedCell->Assign(Store::IntToWord(1));
     if (FindClose(handle) == FALSE) RAISE_SYS_ERR();
