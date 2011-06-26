@@ -42,6 +42,11 @@
 #include "generic/IOHandler.hh"
 
 namespace {
+
+  int max(int a, int b) {
+    return a > b ? a : b;
+  }
+  
   const BlockLabel ENTRY_LABEL = static_cast<BlockLabel>(MIN_DATA_LABEL);
 
   class Entry: private Block {
@@ -68,7 +73,7 @@ namespace {
     Future *GetFuture() {
       Transient *transient = Store::WordToTransient(GetArg(FUTURE_POS));
       Assert(transient != INVALID_POINTER &&
-	     transient->GetLabel() == FUTURE_LABEL);
+         transient->GetLabel() == FUTURE_LABEL);
       return static_cast<Future *>(transient);
     }
   };
@@ -93,44 +98,40 @@ namespace {
     void Remove(int fd) {
       u_int n = GetNumberOfElements();
       for (u_int i = 0; i < n; i++) {
-	Entry *entry = Entry::FromWordDirect(GetNthElement(i));
-	if (entry->GetFD() == fd) {
-	  Future *future = entry->GetFuture();
-	  future->ScheduleWaitingThreads();
-	  future->Become(REF_LABEL, Store::IntToWord(0));
-	  Queue::RemoveNthElement(i);
-	  return;
-	}
+        Entry *entry = Entry::FromWordDirect(GetNthElement(i));
+        if (entry->GetFD() == fd) {
+          Future *future = entry->GetFuture();
+          future->ScheduleWaitingThreads();
+          future->Become(REF_LABEL, Store::IntToWord(0));
+          Queue::RemoveNthElement(i);
+          return;
+        }
       }
     }
-    int EnterIntoFDSet(fd_set *fdSet) {
-      int max = -1;
-      FD_ZERO(fdSet);
+    void EnterIntoFDSet(fd_set *fdSet, int *maxFD) {
       for (u_int i = GetNumberOfElements(); i--; ) {
-	int fd = Entry::FromWordDirect(GetNthElement(i))->GetFD();
-	if (fd > max)
-	  max = fd;
-	FD_SET(fd, fdSet);
+        int fd = Entry::FromWordDirect(GetNthElement(i))->GetFD();
+        *maxFD = max(*maxFD, fd);
+        FD_SET(fd, fdSet);
       }
-      return max;
     }
     void Schedule(fd_set *fdSet) {
       u_int n = GetNumberOfElements();
       for (u_int i = 0; i < n; i++) {
-      again:
-	Entry *entry = Entry::FromWordDirect(GetNthElement(i));
-	if (FD_ISSET(entry->GetFD(), fdSet)) {
-	  Future *future = entry->GetFuture();
-	  future->ScheduleWaitingThreads();
-	  future->Become(REF_LABEL, Store::IntToWord(0));
-	  Queue::RemoveNthElement(i);
-	  if (i < --n) goto again;
-	}
+        again:
+        Entry *entry = Entry::FromWordDirect(GetNthElement(i));
+        if (FD_ISSET(entry->GetFD(), fdSet)) {
+          Future *future = entry->GetFuture();
+          future->ScheduleWaitingThreads();
+          future->Become(REF_LABEL, Store::IntToWord(0));
+          Queue::RemoveNthElement(i);
+          if (i < --n) goto again;
+        }
       }
     }
   };
-
-  word Readable, Writable;
+  
+  word Readable, Writable, Connected;
 };
 
 int IOHandler::SocketPair(int type, int *sv) {
@@ -194,48 +195,67 @@ void IOHandler::Init() {
   defaultFD = sv[0];
   Readable = Set::New()->ToWord();
   Writable = Set::New()->ToWord();
+  Connected = Set::New()->ToWord();
   RootSet::Add(Readable);
   RootSet::Add(Writable);
+  RootSet::Add(Connected);
 }
 
-void IOHandler::Poll() {
+void IOHandler::Select(struct timeval *timeout) {
   Set *ReadableSet = Set::FromWordDirect(Readable);
   Set *WritableSet = Set::FromWordDirect(Writable);
-  static fd_set readFDs, writeFDs;
-  int maxRead = ReadableSet->EnterIntoFDSet(&readFDs);
-  int maxWrite = WritableSet->EnterIntoFDSet(&writeFDs);
-  int max = maxRead > maxWrite? maxRead: maxWrite;
-  if (max >= 0) {
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-    int ret = select(max + 1,
-		     maxRead == -1? NULL: &readFDs,
-		     maxWrite == -1? NULL: &writeFDs,
-		     NULL, &timeout);
+  Set *ConnectedSet = Set::FromWordDirect(Connected);
+  
+  fd_set readFDs, writeFDs, exceptFDs;
+  FD_ZERO(&readFDs);
+  FD_ZERO(&writeFDs);
+  FD_ZERO(&exceptFDs);
+  int maxRead = -1, maxWrite = -1, maxExcept = -1;
+  
+  ReadableSet->EnterIntoFDSet(&readFDs, &maxRead);
+  WritableSet->EnterIntoFDSet(&writeFDs, &maxWrite);
+  ConnectedSet->EnterIntoFDSet(&writeFDs, &maxWrite);
+
+#if USE_WINSOCK
+  // winsock uses exceptFDs to notify of connection error
+  ConnectedSet->EnterIntoFDSet(&exceptFDs, &maxExcept);
+  // winsock select does not allow all wait sets to be
+  // empty - therefore always wait on stdin
+  FD_SET(defaultFD, &readFDs);
+  maxRead = max(maxRead, defaultFD);
+#endif
+
+  int maxFD = max(max(maxRead, maxWrite), maxExcept);
+  if (maxFD >= 0) {
+    int ret = select(maxFD + 1,
+                     maxRead == -1 ? NULL : &readFDs,
+                     maxWrite == -1 ? NULL : &writeFDs,
+                     maxExcept == -1 ? NULL : &exceptFDs,
+                     timeout);
     if (ret < 0) {
       if (GetLastError() == EINTR)
-	return;
-      Error("IOHandler::Poll");
+        return;
+      Error("IOHandler::Select");
     } else if (ret > 0) {
       ReadableSet->Schedule(&readFDs);
       WritableSet->Schedule(&writeFDs);
+      ConnectedSet->Schedule(&writeFDs);
+#if USE_WINSOCK
+      ConnectedSet->Schedule(&exceptFDs);
+#endif
     }
   }
 }
 
+void IOHandler::Poll() {
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
+  Select(&timeout);
+}
+
 void IOHandler::Block() {
-  Set *ReadableSet = Set::FromWordDirect(Readable);
-  Set *WritableSet = Set::FromWordDirect(Writable);
-  static fd_set readFDs, writeFDs;
-  int maxRead = ReadableSet->EnterIntoFDSet(&readFDs);
-  int maxWrite = WritableSet->EnterIntoFDSet(&writeFDs);
   struct timeval *ptimeout = NULL;
-  // select does not allow all wait sets to be empty - therefore
-  // always wait on stdin
-  FD_SET(defaultFD, &readFDs);
-  maxRead = maxRead > defaultFD? maxRead: defaultFD;
-  int max = maxRead > maxWrite? maxRead: maxWrite;
 #if USE_WINSOCK
   // signals (such as timer events) do not interrupt the select call,
   // therefore we must not block infinitely (so that signals are polled)
@@ -245,25 +265,13 @@ void IOHandler::Block() {
   timeout.tv_usec = 100; // same as TIME_SLICE in SignalHandler.cc
   ptimeout = &timeout;
 #endif
-  if (max >= 0) {
-    int ret = select(max + 1,
-		     maxRead == -1? NULL: &readFDs,
-		     maxWrite == -1? NULL: &writeFDs,
-		     NULL, ptimeout);
-    if (ret < 0) {
-      if (GetLastError() == EINTR)
-	return;
-      Error("IOHandler::Block");
-    } else if (ret > 0) {
-      ReadableSet->Schedule(&readFDs);
-      WritableSet->Schedule(&writeFDs);
-    }
-  }
+  Select(ptimeout);
 }
 
 void IOHandler::Purge() {
   Set::FromWordDirect(Readable)->Blank();
   Set::FromWordDirect(Writable)->Blank();
+  Set::FromWordDirect(Connected)->Blank();
 }
 
 bool IOHandler::IsReadable(int fd) {
@@ -346,7 +354,14 @@ Future *IOHandler::WaitWritable(int fd) {
   }
 }
 
+Future *IOHandler::WaitConnected(int fd) {
+  Entry *entry = Entry::New(fd, Future::New());
+  Set::FromWordDirect(Connected)->Add(entry);
+  return entry->GetFuture();
+}
+
 void IOHandler::Close(int fd) {
   Set::FromWordDirect(Readable)->Remove(fd);
   Set::FromWordDirect(Writable)->Remove(fd);
+  Set::FromWordDirect(Connected)->Remove(fd);
 }
