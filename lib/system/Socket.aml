@@ -46,7 +46,14 @@ structure Socket :> SOCKET =
 	    handle e => raiseIo ("server", e)
 
 	fun client (host, port) =
-	    UnsafeSocket.client (host, port)
+	    let
+		    val s = UnsafeSocket.client (host, port)
+	    in
+		    UnsafeSocket.checkError s
+			handle e =>
+			  (UnsafeSocket.close s; raise e);
+			s
+	    end
 	    handle e => raiseIo ("client", e)
 
 	fun input1 socket =

@@ -168,20 +168,33 @@ DEFINE2(UnsafeSocket_client) {
   if (ret < 0) {
     int error = WSAGetLastError();
     if (error == EWOULDBLOCK || error == EINPROGRESS) {
-      //--** also check for exceptions on sock (connection failed)
-      Future *future = IOHandler::WaitWritable(sock);
-      if (future != INVALID_POINTER) {
-	// Don't use macro REQUEST here, as we wish to drop our frame:
-	Scheduler::SetCurrentData(future->ToWord());
-	Scheduler::SetNArgs(1);
-	Scheduler::SetCurrentArg(0, Store::IntToWord(sock));
-	return Worker::REQUEST;
-      }
+      Future *future = IOHandler::WaitConnected(sock);
+      // Don't use macro REQUEST here, as we wish to drop our frame:
+      Scheduler::SetCurrentData(future->ToWord());
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, Store::IntToWord(sock));
+      return Worker::REQUEST;
     } else {
       RAISE_SOCK_ERR();
     }
   }
   RETURN_INT(sock);
+} END
+
+DEFINE1(UnsafeSocket_checkError) {
+  DECLARE_FD(sock, x0);
+  
+  int error = 0;
+  socklen_t errorLen = sizeof(error);
+  if (getsockopt(sock, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &errorLen)) {
+    Error("UnsafeSocket_checkError");
+  }
+  
+  if (error) {
+    RAISE(MakeSysErr(error, ErrorCodeToString(error)));
+  }
+  
+  RETURN_UNIT;
 } END
 
 DEFINE1(UnsafeSocket_input1) {
@@ -306,13 +319,15 @@ AliceDll word UnsafeSocket() {
   SysErrConstructor =
     UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);
-  Record *record = Record::New(8);
+  Record *record = Record::New(9);
   INIT_STRUCTURE_N(record, "UnsafeSocket", "server",
 		   UnsafeSocket_server, 1, 2);
   INIT_STRUCTURE_N(record, "UnsafeSocket", "accept",
 		 UnsafeSocket_accept, 1, 3);
   INIT_STRUCTURE(record, "UnsafeSocket", "client",
 		 UnsafeSocket_client, 2);
+  INIT_STRUCTURE(record, "UnsafeSocket", "checkError",
+		 UnsafeSocket_checkError, 1)
   INIT_STRUCTURE(record, "UnsafeSocket", "input1",
 		 UnsafeSocket_input1, 1);
   INIT_STRUCTURE(record, "UnsafeSocket", "inputN",
