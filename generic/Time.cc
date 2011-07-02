@@ -25,8 +25,8 @@ static double shift;
 static double precision;
 
 static inline double LargeIntToDouble(LARGE_INTEGER *li) {
-  double x1 = ((double)(unsigned int) li->HighPart) * shift;
-  double x2 = ((double)(unsigned int) li->LowPart);
+  double x1 = static_cast<double>(static_cast<unsigned int>(li->HighPart)) * shift;
+  double x2 = static_cast<double>(static_cast<unsigned int>(li->LowPart));
   return (x1 + x2);
 }
 
@@ -38,9 +38,9 @@ void Time::Init() {
     std::fflush(stderr);
     std::exit(0);
   }
-  shift = std::pow((double) 2.0, (double) STORE_WORD_WIDTH);
+  shift = std::pow(2.0, static_cast<double>(STORE_WORD_WIDTH));
   // We want microseconds
-  precision = LargeIntToDouble(&buf) / (double) 1000000;
+  precision = LargeIntToDouble(&buf) / 1000000.0;
 }
 
 double Time::GetElapsedMicroseconds() {

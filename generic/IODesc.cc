@@ -208,7 +208,7 @@ IODesc *IODesc::NewFromHandle(u_int dir, String *name, HANDLE handle) {
   p->InitArg(FLAGS_POS, TYPE_HANDLE|dir);
   p->InitArg(NAME_POS, name->ToWord());
   Chunk *c = Store::AllocChunk(sizeof(HANDLE));
-  ((HANDLE *) c->GetBase())[0] = handle;
+  reinterpret_cast<HANDLE *>(c->GetBase())[0] = handle;
   p->InitArg(HANDLE_POS, c->ToWord());
   p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
   return static_cast<IODesc *>(p);
@@ -239,7 +239,7 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
   p->InitArg(NAME_POS, name->ToWord());
   p->InitArg(FD_POS, fd);
   Chunk *c = Store::AllocChunk(sizeof(HANDLE));
-  ((HANDLE *) c->GetBase())[0] = handle;
+  reinterpret_cast<HANDLE *>(c->GetBase())[0] = handle;
   p->InitArg(HANDLE_POS, c->ToWord());
   p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
   return static_cast<IODesc *>(p);
@@ -313,7 +313,7 @@ u_int IODesc::GetChunkSize() {
 	((GetFlags() & DIR_MASK == DIR_WRITER) ? SO_SNDBUF : SO_RCVBUF);
       Interruptible(ret,
 		    getsockopt(socket, SOL_SOCKET, sockOptName,
-			       (char *) &sockVal, &sockValSize));
+			       reinterpret_cast<char *>(&sockVal), &sockValSize));
       return ((ret == SOCKET_ERROR) ? 1 : sockVal);
     }
   case CLOSED:

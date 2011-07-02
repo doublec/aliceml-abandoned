@@ -315,7 +315,7 @@ void SignalHandler::RegisterSignal(int _signal, word closure) {
 
 Future *SignalHandler::RegisterAlarm(u_int milliseconds) {
   BlockSignals();
-  double time = Time::GetElapsedMicroseconds() + (double) milliseconds * 1000.0;
+  double time = Time::GetElapsedMicroseconds() + static_cast<double>(milliseconds) * 1000.0;
   Future *future = Future::New();
   TimerEntry *newEntry = TimerEntry::New(time, future);
   if (alarmHandlers == Store::IntToWord(0)) // list was empty

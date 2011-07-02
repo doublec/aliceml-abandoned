@@ -145,10 +145,10 @@ int IOHandler::SocketPair(int type, int *sv) {
   sock_in.sin_family = AF_INET;
   sock_in.sin_port = 0;
   sock_in.sin_addr.s_addr = INADDR_ANY;
-  if (bind(newsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0)
+  if (bind(newsock, reinterpret_cast<struct sockaddr *>(&sock_in), sizeof(sock_in)) < 0)
     return -1;
   int len = sizeof(sock_in);
-  if (getsockname(newsock, (struct sockaddr *) &sock_in, &len) < 0) {
+  if (getsockname(newsock, reinterpret_cast<struct sockaddr *>(&sock_in), &len) < 0) {
     closesocket(newsock);
     return -1;
   }
@@ -161,12 +161,12 @@ int IOHandler::SocketPair(int type, int *sv) {
   }
   sock_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   // Do a connect and accept the connection
-  if (connect(outsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0) {
+  if (connect(outsock, reinterpret_cast<struct sockaddr *>(&sock_in), sizeof(sock_in)) < 0) {
     closesocket(newsock);
     closesocket(outsock);
     return -1;
   }
-  int insock = accept(newsock, (struct sockaddr *) &sock_in, &len);
+  int insock = accept(newsock, reinterpret_cast<struct sockaddr *>(&sock_in), &len);
   if (insock < 0) {
     closesocket(newsock);
     closesocket(outsock);

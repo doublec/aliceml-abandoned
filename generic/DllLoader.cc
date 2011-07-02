@@ -73,7 +73,7 @@ String *DllLoader::GetLastError() {
 			FORMAT_MESSAGE_FROM_SYSTEM |
 			FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, errorCode,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPTSTR) &lpMsgBuf, 0, NULL);
+			reinterpret_cast<LPTSTR>(&lpMsgBuf), 0, NULL);
   String *s;
   if (!n) {
     static char buffer[32];
