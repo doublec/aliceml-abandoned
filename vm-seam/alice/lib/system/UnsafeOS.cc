@@ -263,7 +263,7 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
   {
     char *buf = reinterpret_cast<char *>(buffer->GetValue());
 #if defined(__MINGW32__) || defined(_MSC_VER)
-    u_int n = GetCurrentDirectory(size, (CHAR *) buf);
+    u_int n = GetCurrentDirectory(size, reinterpret_cast<CHAR *>(buf));
     if (n == 0) RAISE_SYS_ERR();
     if (n > size) {
       size = n + 1;
@@ -272,7 +272,7 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
       goto retry;
     }
     // make canonical
-    buf[0] = tolower(buf[0]);
+    buf[0] = static_cast<char>(tolower(buf[0]));
     for (n--; n>0; n--)
       if (buf[n] == '\\') buf[n] = '/';
 #else
@@ -409,7 +409,7 @@ DEFINE1(UnsafeOS_FileSys_modTime) {
   CloseHandle(hFile);
   if (success == FALSE) RAISE_SYS_ERR();
   
-  BigInt *b = BigInt::New((unsigned int)fileTime.dwHighDateTime);
+  BigInt *b = BigInt::New(static_cast<unsigned int>(fileTime.dwHighDateTime));
   mpz_mul_2exp(b->big(), b->big(), 32);
   mpz_add_ui(b->big(), b->big(), fileTime.dwLowDateTime);
   mpz_fdiv_q_ui(b->big(), b->big(), 10000);
@@ -448,7 +448,7 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
   String *buffer = String::FromWordDirect(wBufferString);
   u_int size = buffer->GetSize();
  retry:
-  char *buf = (char *) buffer->GetValue();
+  char *buf = reinterpret_cast<char *>(buffer->GetValue());
   DWORD res = GetTempPath(size, buf);
   if (res == 0) RAISE_SYS_ERR();
   if (res > size) {
@@ -459,10 +459,10 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
   }
   String *name = String::New(res + 10);
   // make canonical
-  buf[0] = tolower(buf[0]);
+  buf[0] = static_cast<char>(tolower(buf[0]));
   for (res--; res>0; res--)
     if (buf[res] == '\\') buf[res] = '/';
-  char *s = (char *) name->GetValue();
+  char *s = reinterpret_cast<char *>(name->GetValue());
   static int counter = 0;
   while (true) {
     std::sprintf(s, "%salice%d", buf, counter);
@@ -488,18 +488,18 @@ DEFINE0(UnsafeOS_FileSys_getHomeDir) {
   ITEMIDLIST* pidl;
   HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_PERSONAL, &pidl );
   if (hRes==NOERROR) {
-    SHGetPathFromIDList( pidl, (CHAR *) buffer->GetValue());
+    SHGetPathFromIDList( pidl, reinterpret_cast<CHAR *>(buffer->GetValue()));
   } else {
     RAISE_SYS_ERR();
   }
 
   IMalloc* palloc; 
   hRes = SHGetMalloc(&palloc); 
-  palloc->Free( (void*)pidl ); 
+  palloc->Free(reinterpret_cast<void*>(pidl)); 
   palloc->Release();
-  char *buf = (char *) buffer->GetValue();
+  char *buf = reinterpret_cast<char *>(buffer->GetValue());
   // make canonical
-  buf[0] = tolower(buf[0]);
+  buf[0] = static_cast<char>(tolower(buf[0]));
   for (char *p = buf; *p; p++)
     if (*p == '\\') *p = '/';
   RETURN(String::New(buf)->ToWord());
@@ -529,17 +529,17 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   ITEMIDLIST* pidl;
   HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_APPDATA, &pidl );
   if (hRes==NOERROR) {
-    SHGetPathFromIDList( pidl, (CHAR *) buf);
+    SHGetPathFromIDList( pidl, reinterpret_cast<CHAR *>(buf));
   } else {
     RAISE_SYS_ERR();
   }
 
   IMalloc* palloc; 
   hRes = SHGetMalloc(&palloc); 
-  palloc->Free( (void*)pidl ); 
+  palloc->Free(reinterpret_cast<void*>(pidl)); 
   palloc->Release();
   // make canonical
-  buf[0] = tolower(buf[0]);
+  buf[0] = static_cast<char>(tolower(buf[0]));
   for (char *p = buf; *p; p++)
     if (*p == '\\') *p = '/';
   strcat(buf, "/Alice");
