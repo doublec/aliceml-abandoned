@@ -84,7 +84,6 @@ int main(int argc, char *argv[]) {
   // but who wants to know anyway...
   trace("LoadGtk");
   static const char *dll[] = {
-    "xmlparse.dll",
     "libwimp.dll",
     /* Not needed so far...
     "gdi32.dll",
