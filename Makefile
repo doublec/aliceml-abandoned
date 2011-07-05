@@ -154,10 +154,10 @@ setup:
 	@echo Include $(PWD)/seam-support/install/bin into your PATH.
 
 setup-wingtk:
-	cp $(PWD)/seam-support/windows/WinGtk2.tgz $(PWD)
-	(cd $(PWD) && tar xvfz WinGtk2.tgz)
-	(cd $(PWD)/WinGtk2 && ./patch.sh)
-	rm $(PWD)/WinGtk2.tgz
+	rm -rf $(PWD)/WinGtk2
+	mkdir $(PWD)/WinGtk2
+	unzip -q "$(PWD)/seam-support/windows/gtk/*.zip" -d $(PWD)/WinGtk2
+	cd $(PWD)/WinGtk2 && ../seam-support/windows/gtk/patch.sh
 
 setup-release:
 	cvs -d $(CVSROOT) login
