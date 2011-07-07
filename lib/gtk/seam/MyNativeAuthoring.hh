@@ -329,6 +329,19 @@ extern word GtkCoreErrorConstructor;
       RAISE(exn); \
     } while (0);
 
+#define RAISE_GERROR(gerror) \
+  { \
+    ConVal *conVal = ConVal::New(Store::DirectWordToBlock(GtkCoreErrorConstructor), 1); \
+    conVal->Init(0, String::New((gerror)->message)->ToWord()); \
+    g_error_free(gerror); \
+    RAISE(conVal->ToWord()); \
+  }
+
+#define CHECK_GERROR(gerror) \
+  if ((gerror) != NULL) { \
+    RAISE_GERROR(gerror); \
+  }
+
 /*
 GSList *alice_list_to_gslist (word l);
 word gslist_to_alice_list (GSList *l);
