@@ -11,6 +11,8 @@
  *
  *)
 
+import structure PPValue from "x-alice:/lib/system/PPValue"
+
 import structure NativeLibs from "NativeLibs" 
 import signature CORE from "CORE-sig"
 
@@ -31,6 +33,9 @@ struct
 
     type prop_initializer = object -> unit
 
+    exception Error = NativeCore.Error
+    exception TypeError = NativeCore.TypeError
+    
     (* event represents a GdkEvent *)
     datatype event =
 	EVENT_NOTHING
@@ -290,4 +295,13 @@ struct
         fun setL ob l =
             List.app (fn pi => pi ob) l
     end
+
+    fun ppExn t fm exn =
+        case exn of
+         | Error msg as exn     => PPValue.ppExnWithArg fm exn msg
+         | TypeError arg as exn => PPValue.ppExnWithArg fm exn arg
+         | _                    => NONE
+
+    do PPValue.registerTyp ppExn
+
 end

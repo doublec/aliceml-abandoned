@@ -19,6 +19,9 @@ sig
 (**)type 'a prop
 (**)type prop_initializer
 
+    exception Error of string
+    exception TypeError of { actual : string, expected : string }
+
     datatype event =
 	EVENT_NOTHING
       | EVENT_DELETE
