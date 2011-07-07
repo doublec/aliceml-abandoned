@@ -273,3 +273,24 @@
     (in-code "GDestroyNotify $1 = 0; // FIXME not possible in seam")
     (out-code ""))
 
+
+;; ugly hack due to ugly hackyness of GdkNativeWindow
+
+(type-wrapper "GdkNativeWindow" "object"
+    (in-code "
+#ifdef GDK_NATIVE_WINDOW_POINTER
+DECLARE_OBJECT($1, $0);
+#else
+DECLARE_OBJECT($t1, $0);
+guint $1 = GPOINTER_TO_UINT($t1);
+#endif
+")
+    (out-code"
+#ifdef GDK_NATIVE_WINDOW_POINTER
+word $1 = OBJECT_TO_WORD($0, TYPE_POINTER);
+#else
+word $1 = OBJECT_TO_WORD(GUINT_TO_POINTER($0), TYPE_POINTER);
+#endif
+"))
+
+
