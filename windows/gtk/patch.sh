@@ -16,5 +16,7 @@ done
 # these need to be executable, but they arent by default
 find . -name '*.exe' | xargs chmod +x
 find . -name '*.dll' | xargs chmod +x
+# the system pkg-config should be used instead of this one (its buggy)
+chmod -x 'bin/pkg-config.exe'
 
 
