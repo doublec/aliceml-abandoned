@@ -1,9 +1,0 @@
-    structure NativeGlade :
-    sig
-        val load :      { domain :   string option, 
-                          filename : string,
-                          root :     string option
-                        } -> 'object
-        val getWidget : 'object * string -> 'object
-        val connect : 'object * string -> int * 'object
-    end

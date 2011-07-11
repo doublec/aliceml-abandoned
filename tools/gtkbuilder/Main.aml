@@ -1,0 +1,44 @@
+(*
+ * Authors:
+ *   Gareth Smith <garethdanielsmith@gmail.com>
+ *)
+
+
+import structure CodeGenerator from "CodeGenerator"
+
+
+signature MAIN =
+sig
+    val main : string list -> OS.Process.status
+end
+
+
+structure Main :> MAIN =
+struct
+
+    val usage =
+	    "Usage: alicegtkbuilder <gtkbuilder file>\n\
+		 \\n\
+		 \alicegtkbuilder produces AliceML compements that wrap a GtkBuilder interface\n\
+		 \file (such as produced with Glade 3) to provide a level of compile time safety.\n\
+		 \\n\
+		 \Given a file Gui.ui, alicegtkbuilder produces two files: Gui.aml and\n\
+		 \GuiSignals.aml. Gui.aml embeds the interface XML and wraps it in an Alice\n\
+		 \structure such that evaluating the structure instantiates the widgets specified\n\
+		 \in the file and provides a value in the structure for each named widget.\n\
+		 \GuiSignals.aml contains a signature and associated functor that can be used to\n\
+		 \connect application signal handlers to the widgets in the file."
+
+
+    fun help () =
+        TextIO.output (TextIO.stdErr, usage)
+
+
+    fun main (("-h"|"-?"|"--help"|"--usage")::_) = (help (); OS.Process.failure)
+      | main [path]                              = (CodeGenerator.generate path; OS.Process.success)
+      | main _                                   = (help (); OS.Process.failure)
+
+end
+
+
+do OS.Process.exit (Main.main (CommandLine.arguments ()))

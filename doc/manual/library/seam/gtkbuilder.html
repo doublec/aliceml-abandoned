@@ -1,0 +1,133 @@
+<?php include("macros.php3"); ?>
+<?php heading("The GtkBuilder structure", "The <TT>GtkBuilder</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature GTK_BUILDER
+    structure GtkBuilder : GTK_BUILDER</PRE>
+
+ <P>
+ The <TT>GtkBuilder</TT> structure provides access to the C library
+ <TT>GtkBuilder</TT> object.  This object allows a program to load its
+ user interface from an XML description at runtime.  The XML file
+ format is that of the user interface builder Glade 3, which allows you
+ to create the user interface interactively.
+ </P>
+
+ <P>
+   See the <A href="gtk-overview.html">overview page</A> for a general
+   introduction to the GTK library binding.
+ </P>
+
+ <P>See also:
+   <A href="glib.html"><TT>GLib</TT></A>,
+   <A href="pango.html"><TT>Pango</TT></A>,
+   <A href="atk.html"><TT>Atk</TT></A>,
+   <A href="gdk.html"><TT>Gdk</TT></A>,
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+   <A href="gtk-canvas.html"><TT>Canvas</TT></A>
+ </P>
+
+ <?php section("import", "import"); ?>
+
+  <PRE>
+    import signature GTK_BUILDER from "x-alice:/lib/gtk/GTK_BUILDER-sig"
+    import structure GtkBuilder from "x-alice:/lib/gtk/GtkBuilder"
+  </PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+signature GTK_BUILDER =
+   sig
+      type builder
+      val new : unit -> builder
+      val newFromFile : string -> builder
+      val newFromString : string -> builder
+      val addFromFile : builder * string -> unit
+      val addFromString : builder * string -> unit
+      val getObject : builder * string -> object
+      val getObjects : builder -> {name : string, object : object} list
+      val getSignals :
+         builder ->
+            {connect_after : bool, handler : string, object : string,
+             signal : string} list
+      val setTranslationDomain : builder * string option -> unit
+      val getTranslationDomain : builder -> string option
+   end
+</PRE>
+
+  <?php section("description", "description"); ?>
+
+    <DL>
+        <DT>
+        <TT>type builder</TT>
+        </DT>
+        <DD>
+        <P>A builder is a kind of container for constructed widgets.</P>
+        </DD>
+		
+        <DT>
+		<TT>
+			new ()<BR>
+			newFromFile <I>interfaceXmlFilePath</I><BR>
+			newFromString <I>interfaceXml</I><BR>
+		</TT>
+        </DT>
+        <DD>
+        <P>
+			Create a new builder, optionally adding initial widgets from the
+			specified file or string.
+        </P>
+        </DD>
+
+        <DT>
+        <TT>
+			addFromFile (<I>builder</I>, <I>interfaceXmlFilePath</I>)<BR>
+			addFromString (<I>builder</I>, <I>interfaceXml</I>)<BR>
+		</TT>
+        </DT>
+        <DD>
+        <P>Add widgets from the specified file or string.<P>
+        </DD>
+		
+		<DT>
+		<TT>getObject (<I>builder</I>, <I>name</I>)</TT>
+		</DT>
+		<DD>
+		<P>Get the object with the specified name as defined in the XML.</P>
+		</DD>
+		
+		<DT>
+		<TT>getObjects <I>builder</I></TT>
+		</DT>
+		<DD>
+		<P>Get all objects, paired with their names as defined in the XML.</P>
+		</DD>
+		
+		<DT>
+		<TT>getSignals <I>builder</I></TT>
+		</DT>
+		<DD>
+		<P>
+			Get signals defined for objects in the builder. This function
+			corresponds to the C library function gtk_builder_connect_signals_full
+			and like that function it is destructive - once a signal has been
+			returned from this function it will not be returned in
+			any future calls.
+		</P>
+		</DD>
+				
+		<DT>
+		<TT>
+			setTranslationDomain (<I>builder</I>, <I>domain</I>)<BR>
+			getTranslationDomain <I>builder</I><BR>
+		</TT>
+		</DT>
+		<DD>
+		<P>Set/Get the Translation Domain.</P>
+		</DD>
+    </DL>
+
+<?php footing(); ?>

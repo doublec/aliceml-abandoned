@@ -134,6 +134,7 @@ clean-seam: clean-common
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk/seam && make distclean) || exit 1
+	(cd tools/gtkbuilder && make clean) || exit 1
 	(cd lib/tools/inspector/seam && make distclean) || exit 1
 	(cd lib/tools/explorer/seam && make distclean) || exit 1
 	(cd tools/toplevel && make distclean) || exit 1
@@ -142,7 +143,6 @@ clean-seam: clean-common
 	(cd lib/regex && make distclean) || exit 1
 	(cd lib/sqlite && make distclean) || exit 1
 	(cd lib/xml && make distclean) || exit 1
-	(cd tools/glade && make distclean) || exit 1
 	(cd lib/gecode/ && make distclean) || exit 1
 	(cd lib/gecode/search-factory && make distclean) || exit 1
 	(cd lib/gecode/distributed-search && make distclean) || exit 1
@@ -241,6 +241,7 @@ libs-seam:
 	(cd lib/gtk/seam && make depend) || exit 1 ;\
 	(cd lib/gtk/seam && make wrappers) || exit 1 ;\
 	(cd lib/gtk/seam && make install) || exit 1 ;\
+	(cd tools/gtkbuilder && make depend && make install) || exit 1;\
 	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd tools/toplevel && make depend) || exit 1 ;\
@@ -266,9 +267,7 @@ libs-seam:
 	(cd lib/postscript && make all install) || exit 1 ;\
 	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
-	(cd lib/tools/explorer/seam && make all install) || exit 1 ;\
-	(cd tools/glade && make depend) || exit 1 ;\
-	(cd tools/glade && make all install) || exit 1
+	(cd lib/tools/explorer/seam && make all install) || exit 1
 
 ##
 ## Build Seam

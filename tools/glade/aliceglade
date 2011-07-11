@@ -1,3 +1,0 @@
-#!/bin/sh
-
-exec alicerun x-alice:/tools/Glade "$@"

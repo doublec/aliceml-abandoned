@@ -95,11 +95,13 @@ fun generate () =
         in
             print f (0, "#include \"NativeUtils.hh\"");
             print f (0, "word NativeCore_CreateComponent();");
+            print f (0, "word NativeGtkBuilder_CreateComponent();");
             List.app (fn n => print f (0, "word Native" ^ n ^ "_CreateComponent();")) names;
             print f (0, "word InitComponent () {");
             print f (1, "Record *record = Record::New (" ^ 
-                            Int.toString (List.length names + 1) ^ ");");
+                            Int.toString (List.length names + 2) ^ ");");
             print f (1, "record->Init (\"NativeCore$\", NativeCore_CreateComponent());");
+            print f (1, "record->Init (\"NativeGtkBuilder$\", NativeGtkBuilder_CreateComponent());");
             List.app (fn n =>
                 print f (1, "record->Init (\"Native" ^ n ^ "$\", Native" 
                         ^ n ^ "_CreateComponent());")) names;

@@ -1,0 +1,115 @@
+<?php include("macros.php3"); ?>
+<?php heading("GUI generator", "gui\ngenerator") ?>
+
+<?php section("overview", "overview") ?>
+
+<P>The GtkBuilder tool produces AliceML compements that wrap a GtkBuilder interface
+file (such as produced with Glade 3) to provide a level of compile time safety. The
+tool provides a similar function to the original <TT>aliceglade</TT> tool, except
+that with alicegtkbuilder the widgets are constructed within the Gtk library
+rather than by generated AliceML code.</P>
+
+<?php section("synopsis", "synopsis") ?>
+
+<DL>
+  <DT><TT>alicegtkbuilder</TT> <I>&lt;file&gt;</I></DT>
+</DL>
+
+
+<?php section("description", "description") ?>
+
+<P>
+Glade 3 is a graphical user interface builder for Gtk. It can be
+downloaded from <A HREF="http://glade.gnome.org">the Glade homepage</A>,
+which also contains links to pre-packaged Windows and Linux binaries.
+</P>
+
+<P>
+Given a file <TT>Gui.ui</TT>, <TT>alicegtkbuilder</TT> produces two AliceML component
+files: <TT>Gui.aml</TT> and <TT>GuiSignals.aml</TT>. <TT>Gui.aml</TT> embeds the
+interface XML and wraps it in an Alice structure such that evaluating the structure
+instantiates the widgets specified in the file and provides a value in the structure
+for each named widget. <TT>GuiSignals.aml</TT> contains a signature and associated
+functor that can be used to connect application signal handlers to the widgets in
+the file.
+</P>
+
+<P>
+Let's take a very basic example. If you create a window called
+<TT>mainWindow</TT> with just one button called <TT>button1</TT> and
+add a signal handler for the <TT>clicked</TT> signal, the XML produced
+by Glade will look like this (<TT>HelloWorld.ui</TT>):
+</P>
+
+<PRE>
+&lt;?xml version="1.0"?&gt;
+&lt;interface&gt;
+  &lt;requires lib="gtk+" version="2.16"/&gt;
+  &lt;!-- interface-naming-policy project-wide --&gt;
+  &lt;object class="GtkWindow" id="mainWindow"&gt;
+    &lt;property name="title" translatable="yes"&gt;Hello World&lt;/property&gt;
+    &lt;child&gt;
+      &lt;object class="GtkButton" id="button1"&gt;
+        &lt;property name="label" translatable="yes"&gt;Hello&lt;/property&gt;
+        &lt;property name="visible"&gt;True&lt;/property&gt;
+        &lt;property name="can_focus"&gt;True&lt;/property&gt;
+        &lt;property name="receives_default"&gt;True&lt;/property&gt;
+        &lt;signal name="clicked" handler="on_button1_clicked"/&gt;
+      &lt;/object&gt;
+    &lt;/child&gt;
+  &lt;/object&gt;
+&lt;/interface&gt;
+</PRE>
+
+<P>
+The generated Alice code in <TT>HelloWorld.aml</TT> would be:
+</P>
+
+<PRE>
+import structure GtkBuilder from "x-alice:/lib/gtk/GtkBuilder"
+
+structure HelloWorld =
+struct
+    val $$$ = GtkBuilder.newFromString "&lt;?xml version=\"1.0\"?&gt;\n&lt;interface&gt;\n  &lt;requires lib=\"gtk+\" version=\"2.16\"/&gt;\n  &lt;!-- interface-naming-policy project-wide --&gt;\n  &lt;object class=\"GtkWindow\" id=\"mainWindow\"&gt;\n    &lt;property name=\"title\" translatable=\"yes\"&gt;Hello World&lt;/property&gt;\n    &lt;child&gt;\n      &lt;object class=\"GtkButton\" id=\"button1\"&gt;\n        &lt;property name=\"label\" translatable=\"yes\"&gt;Hello&lt;/property&gt;\n        &lt;property name=\"visible\"&gt;True&lt;/property&gt;\n        &lt;property name=\"can_focus\"&gt;True&lt;/property&gt;\n        &lt;property name=\"receives_default\"&gt;True&lt;/property&gt;\n        &lt;signal name=\"clicked\" handler=\"on_button1_clicked\"/&gt;\n      &lt;/object&gt;\n    &lt;/child&gt;\n  &lt;/object&gt;\n&lt;/interface&gt;\n"
+    val mainWindow = GtkBuilder.getObject ($$$, "mainWindow")
+    val button1 = GtkBuilder.getObject ($$$, "button1")
+end
+</PRE>
+
+<P>
+As you can see, the names you assigned to your widgets in Glade are
+reused. The XML interface file is embedded inside <TT>HelloWorld.aml</TT>
+so that it does not need to be distributed with the application. To
+actually display the window, just call
+<TT>Gtk.Widget.showAll HelloWorld.mainWindow</TT> from your application.
+</P>
+
+<P>The signal handlers are connected using the generated file
+<TT>HelloWorldSignals.aml</TT>:</P>
+
+<PRE>
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure HelloWorld from "HelloWorld"
+
+signature HELLOWORLDSIGNALS_SIG =
+sig
+    val on_button1_clicked : Gtk.callback_function
+end
+
+functor HelloWorldSignals (structure S : HELLOWORLDSIGNALS_SIG) =
+struct
+    val button1_on_button1_clicked = Gtk.signalConnect(HelloWorld.button1, "clicked", S.on_button1_clicked)
+end
+</PRE>
+
+<P>In your application, you just have to implement the
+<TT>HELLOWORLDSIGNALS_SIG</TT> signature and apply the
+<TT>HelloWorldSignals</TT> functor, which will then connect your signal
+callbacks to their widgets.
+
+<P>For a realistic example, you can take a look at the source code of
+the Alice Explorer or the GUI of the interactive toplevel - large
+parts of these applications were designed using Glade.
+</P>
+
+<?php footing() ?>

@@ -169,9 +169,9 @@ functor MkEventHandler (Space : SPACE)
               val shape = TreeNode.getShape tree
 	      val (minx, maxx, depth) = TreeNode.getBBox shape
 	      val xSize = Gtk.Adjustment.getFieldPageSize
-                              ExplorerGUI.scrolledwindow_xa
+                              (Gtk.ScrolledWindow.getHadjustment ExplorerGUI.scrolledwindow)
 	      val ySize = Gtk.Adjustment.getFieldPageSize
-                              ExplorerGUI.scrolledwindow_ya
+                              (Gtk.ScrolledWindow.getVadjustment ExplorerGUI.scrolledwindow)
 	      val xMin   = Real.round((itr minx)*(TreeNode.defScale))
 	      val xMax   = Real.round((itr maxx)*(TreeNode.defScale))
 	      val xDim   = itr (abs xMin + (abs xMax))

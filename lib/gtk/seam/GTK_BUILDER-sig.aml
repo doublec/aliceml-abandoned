@@ -1,0 +1,66 @@
+(*
+ * Authors:
+ *   Gareth Smith <garethdanielsmith@gmail.com>
+ *)
+
+
+import structure Gtk from "Gtk"
+
+
+(*
+ * Provides an AliceML interface to GtkBuilder
+ * See the C library documentation for more information.
+ *)
+signature GTK_BUILDER =
+sig
+
+
+    (* A builder is a kind of container for constructed widgets. *)
+
+    type builder
+    
+    
+    (*
+     * Create a new builder, optionally adding initial
+     * widgets from the specified file or string.
+     *)
+    val new : unit -> builder
+    val newFromFile : string -> builder
+    val newFromString : string -> builder
+    
+    
+    (*
+     * Add widgets from the specified file or string.
+     *)
+    val addFromFile : builder * string -> unit
+    val addFromString : builder * string -> unit
+    
+    
+    (*
+     * Get the object with the specified name as defined in the XML.
+     *)
+    val getObject : builder * string -> Gtk.object
+    
+    
+    (*
+     * Get all objects, paired with their names as defined in the XML.
+     *)
+    val getObjects : builder -> {name : string, object : Gtk.object} list
+    
+    
+    (*
+     * Get signals defined for objects in the builder. This function
+     * corresponds to the C library function gtk_builder_connect_signals_full
+     * and like that function it is destructive - once a signal has been
+     * returned from this function it will not be returned in
+     * any future calls.
+     *)
+    val getSignals : builder -> {object : string, signal : string, handler : string, connect_after : bool} list
+    
+    
+    (*
+     * Set/Get the Translation Domain.
+     *)
+    val setTranslationDomain : builder * string option -> unit
+    val getTranslationDomain : builder -> string option
+end

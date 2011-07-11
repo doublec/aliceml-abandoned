@@ -14,8 +14,10 @@
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 #include "ExtraMarshaller.hh"
-#ifdef CYGWIN
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
 #include <windows.h>
+#else
+#include <dlfcn.h>
 #endif
 
 static word eventStream;
@@ -733,11 +735,21 @@ static void Init() {
   HWND hWnd = CreateWindow("BUTTON", "", 0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
   ShowWindow(hWnd, SW_SHOWNORMAL);
   DestroyWindow(hWnd);
+#else
+  /*
+   * on linux, this is required for GtkBuilder to work - it uses dlsym to
+   * find widget methods, so gtk must be loaded with RTLD_GLOBAL
+   */
+  if (dlopen("libgtk-x11-2.0.so", RTLD_LAZY | RTLD_GLOBAL) == NULL) {
+    Error(dlerror());
+  }
 #endif
+
   int argc = 1;
   static const char *args[2] = {"alice", NULL};
   char **argv = const_cast<char**>(args);
   gtk_init(&argc, &argv);
+  
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))
     __die("error during init: cannot reverse stdin redirecting");
@@ -747,6 +759,7 @@ static void Init() {
    */
   dummy_handler_id = g_log_set_handler("GLib", (GLogLevelFlags)(G_LOG_LEVEL_CRITICAL | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION), dummy_log_handler, NULL);
 #endif
+
   // Init types
   G_LIST_TYPE = g_type_from_name("GList");
   G_SLIST_TYPE = g_type_from_name("GSList");
