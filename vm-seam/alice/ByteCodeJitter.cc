@@ -326,7 +326,7 @@ void ByteCodeJitter::LoadIdRefInto(u_int dst, word idRef) {
   }
 }
 
-u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
+u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool useReusableScratch = false) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
     
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
@@ -340,25 +340,13 @@ u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool keepScratch = false) {
     }
   case AbstractCode::Global:
     {
-      u_int S;
-      if(keepScratch) {
-	S = scratch;
-	delayedScratchInc = 1;
-      } else {
-	S = GetNewScratch();    
-      }
+      u_int S = GetNewScratch(useReusableScratch);
       SET_INSTR_1R1I(PC,load_global,S,Store::DirectWordToInt(tagVal->Sel(0)));
       return S;
     }
   case AbstractCode::Immediate:
     {
-      u_int S;
-      if(keepScratch) {
-	S = scratch;
-	delayedScratchInc = 1;
-      } else {
-	S = GetNewScratch();    
-      }
+      u_int S = GetNewScratch(useReusableScratch);
       word val = tagVal->Sel(0);
       if (PointerOp::IsInt(val)) {
 	s_int x = Store::DirectWordToInt(val);
@@ -2282,6 +2270,7 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
   u_int oldScratch = scratch; // save scratch registers
   while( pc != INVALID_POINTER ) {
     scratch = currentNLocals; // reset scratch registers
+    topScratchReusable = false;
     switch (AbstractCode::GetInstr(pc)) {
     case AbstractCode::Kill:
       pc = InstrKill(pc); break;
@@ -2351,8 +2340,6 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
     default:
       Error("ByteCodeJitter::CompileInstr: invalid abstractCode tag");
     }
-    scratch += delayedScratchInc;
-    delayedScratchInc = 0;
     if(nRegisters < scratch)
       nRegisters = scratch;
   }
@@ -2868,7 +2855,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   // now prepare scratch registers
   scratch = currentNLocals;
   nRegisters = scratch;
-  delayedScratchInc = 0;
+  topScratchReusable = false;
   
   // prepare immediate environment
   imEnv.Init();

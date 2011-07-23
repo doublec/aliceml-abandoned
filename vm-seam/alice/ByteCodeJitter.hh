@@ -195,9 +195,20 @@ private:
   // scratch registers
   u_int scratch;
   u_int nRegisters;
-  u_int delayedScratchInc;
+  bool topScratchReusable;
 
-  u_int GetNewScratch() { return scratch++; }
+  u_int GetNewScratch(bool useReusable = false) {
+    if (useReusable) {
+      if (!topScratchReusable) {
+        topScratchReusable = true;
+        scratch++;
+      }
+    } else {
+      topScratchReusable = false;
+      scratch++;
+    }
+    return scratch - 1;
+  }
 
   u_int IdToReg(word id) {
 #ifdef DO_REG_ALLOC
