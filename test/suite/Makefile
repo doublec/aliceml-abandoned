@@ -1,4 +1,4 @@
-FILESTOREMOVE=$(patsubst %.aml.m4, %.aml, $(shell find . -name '*.aml.m4'))
+FILESTOREMOVE=$(patsubst %.aml.m4, %.aml, $(shell find . -name '*.aml.m4')) Main.alc
 
 
 all:
@@ -10,7 +10,6 @@ clean:
 	(cd src; make clean)
 	(cd lib; make clean)
 	rm -f ${FILESTOREMOVE}
-	rm Main.alc
 
 depend:
 	(cd src; make depend)
