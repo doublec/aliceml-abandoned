@@ -147,6 +147,7 @@ structure Config =
                   createTag (buf, name, [
                     foregroundGdk ::= color
                   ])
+              val boldProp = weight ::= (Pango.Weight.toInt Pango.Weight.BOLD)
 
               val err = createTagWithColor(buf, "error", !errorColor)
               val log = createTag(buf, "log", [
@@ -156,13 +157,15 @@ structure Config =
 
               val comment = createTagWithColor (buf, "comment", !commentColor)
               val string  = createTagWithColor (buf, "string", !stringColor)
-              val reserved = createTagWithColor (buf, "reserved", !reservedColor)
+              val reserved = createTag (buf, "reserved", [
+                    foregroundGdk ::= !reservedColor,
+                    boldProp
+                ])
 
               val noedit = createTag (buf, "noedit", [
                     editable ::= false
                 ])
-              val bold =   createTag (buf, "bold",   
-                    [weight ::= (Pango.Weight.toInt Pango.Weight.BOLD)])
+              val bold = createTag (buf, "bold", [boldProp])
           in
               {err, log, plain, comment, string, reserved, bold, noedit} : tags
           end
