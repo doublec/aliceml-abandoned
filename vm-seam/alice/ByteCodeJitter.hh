@@ -155,14 +155,14 @@ private:
     static u_int jumpInstrSize;
   public:
     PatchTable();
-    ~PatchTable() { delete table; }
+    ~PatchTable() { delete[] table; }
     static void Init();
     void Add(u_int addr) {
       if(top >= size) {
 	size = size * 3 / 2;
 	u_int *newTable = new u_int[size];
 	memcpy(newTable,table,top*sizeof(u_int));
-	delete table;
+	delete[] table;
 	table = newTable;
       }
       table[top++] = addr;

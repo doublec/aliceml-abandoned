@@ -444,6 +444,7 @@ private:
 public:
   enum { VISIT, INC, ANALYSE_APPVAR,STOP };
   ControlStack(u_int s = 400) : size(s), top(-1) { stack = new u_int[size]; }
+  ~ControlStack() { delete[] stack; }
   u_int PopInt() { return Pop(); }
   u_int PopCommand() { return Pop(); }
   TagVal *PopInstr() { return reinterpret_cast<TagVal *>(Pop()); }
