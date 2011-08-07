@@ -17,6 +17,8 @@
 #pragma interface "generic/IOHandler.hh"
 #endif
 
+#include <sys/time.h>
+
 #include "Base.hh"
 
 class Future;
@@ -24,6 +26,7 @@ class Future;
 class SeamDll IOHandler {
 protected:
   static int defaultFD;
+  static void Select(struct timeval *timeout);
 public:
   static void Init();
   static void Poll();
@@ -32,9 +35,11 @@ public:
 
   static bool IsReadable(int fd);
   static bool IsWritable(int fd);
-  // These return INVALID_POINTER if the fd is already readable/writable:
+  // These return INVALID_POINTER if the fd is already readable/writable
   static Future *WaitReadable(int fd);
   static Future *WaitWritable(int fd);
+  // This never returns INVALID_POINTER
+  static Future *WaitConnected(int fd);
 
   static void Close(int fd);
 

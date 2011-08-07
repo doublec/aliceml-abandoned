@@ -109,8 +109,8 @@ public:
 #if USE_WINSOCK
   HANDLE GetHandle() {
     Assert(GetType() == TYPE_HANDLE || GetType() == TYPE_FORWARDED);
-    HANDLE *p = (HANDLE *)
-      Store::DirectWordToChunk(GetArg(HANDLE_POS))->GetBase();
+    HANDLE *p = reinterpret_cast<HANDLE *>
+      (Store::DirectWordToChunk(GetArg(HANDLE_POS))->GetBase());
     return p[0];
   }
 #endif

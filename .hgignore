@@ -12,3 +12,6 @@ glob:lightning/Makefile.am
 glob:ltmain.sh
 glob:missing
 glob:.kdev_include_paths
+syntax: glob
+lightning/*
+sh.exe.stackdump

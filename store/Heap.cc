@@ -42,14 +42,14 @@
 
 void HeapChunk::Alloc(u_int size) {
 #if HAVE_VIRTUALALLOC
-  block = (char *) VirtualAlloc(NULL, size,
+  block = reinterpret_cast<char *>(VirtualAlloc(NULL, size,
 				MEM_RESERVE | MEM_COMMIT,
 #if HAVE_LIGHTNING
 				PAGE_READWRITE
 #else
 				PAGE_EXECUTE_READWRITE
 #endif
-				);
+				));
 #else
   block = reinterpret_cast<char *>(std::malloc(size));
 #endif
