@@ -78,7 +78,7 @@ public:
 #endif // THREADED
 
   static void Disassemble(std::FILE *f, ProgramCounter pc, 
-			  Chunk *code, Tuple *imEnv); 
+			  Chunk *code, Tuple *imEnv, u_int nRegisters); 
   static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter pc, 
 				       Chunk *code, Tuple *imEnv);
 };

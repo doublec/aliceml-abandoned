@@ -99,8 +99,8 @@ void ByteConcreteCode::Disassemble(std::FILE *file) {
   Chunk *code = GetByteCode();
   Tuple *imEnv = GetImmediateArgs();
 #ifdef THREADED
-  ByteCode::Disassemble(file, reinterpret_cast<u_int *>(code->GetBase()), code, imEnv);
+  ByteCode::Disassemble(file, reinterpret_cast<u_int *>(code->GetBase()), code, imEnv, GetNLocals());
 #else
-  ByteCode::Disassemble(file,0,code,imEnv);
+  ByteCode::Disassemble(file,0,code,imEnv, GetNLocals());
 #endif
 }

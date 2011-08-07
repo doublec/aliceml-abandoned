@@ -2946,23 +2946,15 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 #endif
 			    sourceLocations.Export());
 
-//   static u_int sumNRegisters = 0;
-//   sumNRegisters += nRegisters;
-//   fprintf(stderr,"nLocals %d, nRegisters %d, sumNRegisters %d\n",
-// 	  currentNLocals,nRegisters,sumNRegisters);
-
-//   static u_int codeSize = 0;
-//   codeSize += code->GetSize();
-//   fprintf(stderr,"codeSize %d\n",codeSize);
 #ifdef DEBUG_DISASSEMBLE
 //   if(invocations>100) {
   fprintf(stderr,"-----------------\ncompiled code:\n");
 #ifdef THREADED
   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
-			Tuple::FromWordDirect(imEnv.ExportEnv()));
+			Tuple::FromWordDirect(imEnv.ExportEnv()), nRegisters);
 #else
   ByteCode::Disassemble(stderr,0,code,
-			Tuple::FromWordDirect(imEnv.ExportEnv()));
+			Tuple::FromWordDirect(imEnv.ExportEnv()), nRegisters);
 #endif
   fprintf(stderr,"-------------\n");
 #endif
