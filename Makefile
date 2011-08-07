@@ -143,7 +143,6 @@ clean-seam: clean-common
 	(cd lib/regex && make distclean) || exit 1
 	(cd lib/sqlite && make distclean) || exit 1
 	(cd lib/xml && make distclean) || exit 1
-	(cd tools/glade && make distclean) || exit 1
 	(cd lib/gecode/ && make distclean) || exit 1
 	(cd lib/gecode/search-factory && make distclean) || exit 1
 	(cd lib/gecode/distributed-search && make distclean) || exit 1
@@ -268,9 +267,7 @@ libs-seam:
 	(cd lib/postscript && make all install) || exit 1 ;\
 	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
-	(cd lib/tools/explorer/seam && make all install) || exit 1 ;\
-	(cd tools/glade && make depend) || exit 1 ;\
-	(cd tools/glade && make all install) || exit 1
+	(cd lib/tools/explorer/seam && make all install) || exit 1
 
 ##
 ## Build Seam

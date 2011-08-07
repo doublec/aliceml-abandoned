@@ -1,6 +1,5 @@
 import signature GDK from "x-alice:/lib/gtk/GDK-sig"
 import signature GTK from "x-alice:/lib/gtk/GTK-sig"
-import structure GtkEnums from "x-alice:/lib/gtk/GtkEnums"
 import signature COMPONENT_MANAGER
    from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 

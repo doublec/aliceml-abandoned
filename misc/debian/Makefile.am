@@ -7,7 +7,7 @@ EXTRA_DATADIR_DIST = \
 	alice/alicec.import \
 	applications/alice.desktop pixmaps/alice.png
 EXTRA_BINDIR_DIST = \
-	alice alicec alicedep aliceglade \
+	alice alicec alicedep alicegtkbuilder \
 	alicelink alicelex aliceyacc
 EXTRA_MANDIR_DIST = \
 	alice.1 alicec.1 alicedep.1 alicelink.1 alicerun.1

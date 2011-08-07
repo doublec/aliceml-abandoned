@@ -638,9 +638,9 @@
 
 (define-function drag_get_protocol
   (c-name "gdk_drag_get_protocol")
-  (return-type "guint32")
+  (return-type "GdkNativeWindow")
   (parameters
-    '("guint32" "xid")
+    '("GdkNativeWindow" "xid")
     '("GdkDragProtocol*" "protocol")
   )
 )
@@ -660,10 +660,10 @@
 
 (define-function drag_get_protocol_for_display
   (c-name "gdk_drag_get_protocol_for_display")
-  (return-type "guint32")
+  (return-type "GdkNativeWindow")
   (parameters
     '("GdkDisplay*" "display")
-    '("guint32" "xid")
+    '("GdkNativeWindow" "xid")
     '("GdkDragProtocol*" "protocol")
   )
 )
@@ -2744,7 +2744,7 @@
   (c-name "gdk_selection_send_notify")
   (return-type "none")
   (parameters
-    '("guint32" "requestor")
+    '("GdkNativeWindow" "requestor")
     '("GdkAtom" "selection")
     '("GdkAtom" "target")
     '("GdkAtom" "property")
@@ -2757,7 +2757,7 @@
   (return-type "none")
   (parameters
     '("GdkDisplay*" "display")
-    '("guint32" "requestor")
+    '("GdkNativeWindow" "requestor")
     '("GdkAtom" "selection")
     '("GdkAtom" "target")
     '("GdkAtom" "property")

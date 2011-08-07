@@ -17,9 +17,6 @@
   }
 
 
-// TODO: make work on windows
-
-
 word alice_cons();
 
 
@@ -85,6 +82,7 @@ DEFINE1(GtkBuilder_getObjects) {
       name = static_cast<const char*>(g_object_get_data(obj, "gtk-builder-name"));
     }
     
+    // {name : string, object : Gtk.object}
     Tuple *el = Tuple::New(2);
     el->Init(0, String::New(name)->ToWord());
     el->Init(1, OBJECT_TO_WORD(obj, TYPE_G_OBJECT));
@@ -107,12 +105,13 @@ static void GetSignalsConnectFunc(GtkBuilder *builder,
                                   gpointer user_data) {
   
   GtkBuildable *obj = GTK_BUILDABLE(object);
-      
+  
+  // {object : string, signal : string, handler : string, connect_after : bool}
   Tuple *el = Tuple::New(4);
-  el->Init(0, String::New(gtk_buildable_get_name(obj))->ToWord());
-  el->Init(1, String::New(signal_name)->ToWord());
-  el->Init(2, String::New(handler_name)->ToWord());
-  el->Init(3, Store::IntToWord(flags & G_CONNECT_AFTER ? Types::_true : Types::_false));
+  el->Init(0, Store::IntToWord(flags & G_CONNECT_AFTER ? Types::_true : Types::_false));
+  el->Init(1, String::New(handler_name)->ToWord());
+  el->Init(2, String::New(gtk_buildable_get_name(obj))->ToWord());
+  el->Init(3, String::New(signal_name)->ToWord());
   
   Cell *ls = static_cast<Cell*>(user_data);
   ls->Assign(alice_cons(el->ToWord(), ls->Access()));

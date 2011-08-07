@@ -154,12 +154,14 @@ structure Config =
                     style ::= Pango.Style.NORMAL
                 ])
               val plain = createTagWithColor(buf, "plain", !plainColor)
+
               val comment = createTagWithColor (buf, "comment", !commentColor)
               val string  = createTagWithColor (buf, "string", !stringColor)
               val reserved = createTag (buf, "reserved", [
                     foregroundGdk ::= !reservedColor,
                     boldProp
                 ])
+
               val noedit = createTag (buf, "noedit", [
                     editable ::= false
                 ])

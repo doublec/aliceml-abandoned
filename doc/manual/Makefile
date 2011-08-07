@@ -35,7 +35,7 @@ INSTALLFILES_0 = \
 	components.html distribution.html \
 	packages.html pickling.html constraints.html \
 	incompatibilities.html limitations.html \
-	tools.html interactive.html compiler.html machine.html glade.html \
+	tools.html interactive.html compiler.html machine.html gtkbuilder.html \
 	linker.html depend.html \
 	$(INTEROP) tour.html sitemap.html \
 	mozart_cartoon.jpg \

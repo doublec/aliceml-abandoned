@@ -49,7 +49,7 @@ public:
     Assert(s > 1); // otherwise resize won't work
     top = 0;
     if(s > size || codeBuf == NULL) {
-      delete(codeBuf);
+      delete[] codeBuf;
       size = s;
       codeBuf = new CodeSlot[size];
     }
@@ -68,20 +68,20 @@ public:
     if(top * 3 / 2 < size) {
       size = size * 2 / 3;
       CodeSlot *newCodeBuf = new CodeSlot[size];
-      delete(codeBuf);
+      delete[] codeBuf;
       codeBuf = newCodeBuf;
     }
     top = 0;
     return code;
   }
-  static __attribute__((always_inline)) void SetSlot(u_int index, CodeSlot slot) {
+  static void SetSlot(u_int index, CodeSlot slot) {
     if(index >= top)
       top = index+1;
     if(index+1 >= size) {
       size = size * 3 / 2; 
       CodeSlot *newCodeBuf = new CodeSlot[size];
       memcpy(newCodeBuf, codeBuf, top * CODE_SLOT_SIZE);
-      delete(codeBuf);
+      delete[] codeBuf;
       codeBuf = newCodeBuf;
     }
     codeBuf[index] = slot;

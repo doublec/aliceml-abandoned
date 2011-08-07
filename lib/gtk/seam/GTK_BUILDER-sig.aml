@@ -2,12 +2,7 @@
  * Authors:
  *   Gareth Smith <garethdanielsmith@gmail.com>
  *)
- 
- 
-(*) TODO: remove glade binding?
-(*) TODO: remove old gtk binding
-(*) TODO: some sort of locking?
-(*) TODO: manual
+
 
 import structure Gtk from "Gtk"
 
@@ -18,6 +13,10 @@ import structure Gtk from "Gtk"
  *)
 signature GTK_BUILDER =
 sig
+
+
+    (* A builder is a kind of container for constructed widgets. *)
+
     type builder
     
     
@@ -38,31 +37,29 @@ sig
     
     
     (*
-     * Get the object with the specified name.
+     * Get the object with the specified name as defined in the XML.
      *)
     val getObject : builder * string -> Gtk.object
     
     
     (*
-     * Get all objects, paired with their names.
+     * Get all objects, paired with their names as defined in the XML.
      *)
-    val getObjects : builder -> (string * Gtk.object) list
+    val getObjects : builder -> {name : string, object : Gtk.object} list
     
     
     (*
      * Get signals defined for objects in the builder. This function
      * corresponds to the C library function gtk_builder_connect_signals_full
-     * and like that function is destructive - once a signal has been
-     * returned from this function once it will not be returned in
+     * and like that function it is destructive - once a signal has been
+     * returned from this function it will not be returned in
      * any future calls.
-     *
-     * The list returned is of (objectName * signalSame * handlerName * connectAfter)
      *)
-    val getSignals : builder -> (string * string * string * bool) list
+    val getSignals : builder -> {object : string, signal : string, handler : string, connect_after : bool} list
     
     
     (*
-     * set/get the Translation Domain.
+     * Set/Get the Translation Domain.
      *)
     val setTranslationDomain : builder * string option -> unit
     val getTranslationDomain : builder -> string option

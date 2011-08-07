@@ -53,7 +53,6 @@ GENERATOR_SOURCE_TARGETS=$(GENERATOR_SOURCES:%.aml=%.alc)
 
 # non generated interface files 
 COMPILED_NON_GEN_WRAPPERS=CORE-sig.alc Core.alc Key.alc GTK_BUILDER-sig.alc GtkBuilder.alc
-#Glade.alc
 
 # generated files
 GEN_WRAPPERS_CC=$(GEN_WRAPPERS:%.aml=Native%.cc) NativeLibs.cc
@@ -65,7 +64,6 @@ COMPILED_GEN_WRAPPERS_SIGS=$(GEN_WRAPPERS_SIGS:%.aml=%.alc)
 
 # compiled c object files
 WRAPPER_OBJECT_FILES=$(GEN_WRAPPERS_CC:%.cc=%.o) NativeCore.o NativeGtkBuilder.o
-# NativeGlade.o
 
 INSTALLALICETARGETS =$(COMPILED_GEN_WRAPPERS_SIGS) $(COMPILED_GEN_WRAPPERS) $(COMPILED_NON_GEN_WRAPPERS)
 INSTALLDLLTARGETS=NativeLibs.dll
@@ -80,8 +78,7 @@ else
     CC_OPTS=
 endif
 
-#TODO: update these version numbers?
-PC_OPTS="gtk+-2.0 >= 2.6" "glib-2.0 >= 2.6" gmodule-2.0 libgnomecanvas-2.0 "pango >= 1.8"
+PC_OPTS="gtk+-2.0 >= 2.16" "glib-2.0 >= 2.6" gmodule-2.0 libgnomecanvas-2.0 "pango >= 1.8"
 
 .PHONY: clean all wrappers installdll installalice compiledll compilealice
 
@@ -178,8 +175,7 @@ GTK-sig.alc:	Gdk.alc
 Gtk.alc:	GTK-sig.alc
 CANVAS-sig.alc:	Gtk.alc 
 Canvas.alc:	CANVAS-sig.alc
-#GLADE-sig.alc:	Canvas.alc
-#Glade.alc:	GLADE-sig.alc
-#add something here for GtkBuilder?
+GTK_BUILDER-sig.alc: Gtk.alc
+GtkBuilder.alc: GTK_BUILDER-sig.alc
 
 -include Makefile.depend

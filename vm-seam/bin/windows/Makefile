@@ -4,12 +4,12 @@ BINDIR=$(PREFIX)/bin
 CXX = seamtool -v compile
 CXXFLAGS = -O2 -march=pentium3 -mcpu=pentium3
 
-LD = g++ -mno-cygwin
+LD = i686-pc-mingw32-g++
 LDFLAGS = -L$(PREFIX)/lib -lseam
 
 EXES = \
 	alicerun.exe alicewin.exe alice.exe alicec.exe \
-	alicelink.exe alicedep.exe aliceglade.exe aliceremote.exe
+	alicelink.exe alicedep.exe alicegtkbuilder.exe aliceremote.exe
 SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
 all: $(EXES)
@@ -53,9 +53,9 @@ alicedep.o: alicex.cc Makefile
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
-aliceglade.o: alicex.cc Makefile
+alicegtkbuilder.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
-		-DARGS='{"x-alice:/tools/Glade"}' \
+		-DARGS='{"x-alice:/tools/GtkBuilder"}' \
 		-DPRELOAD_GTK=1 \
 		-c $< -o $@
 

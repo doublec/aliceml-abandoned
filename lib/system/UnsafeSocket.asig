@@ -17,6 +17,7 @@ signature UNSAFE_SOCKET_COMPONENT =
 		val server: 'port -> 'socket * 'port
 		val accept: 'socket -> 'socket * 'host * 'port
 		val client: 'host * 'port -> 'socket
+		val checkError: 'socket -> unit (* SysErr *)
 
 		val input1: 'socket -> 'elem option
 		val inputN: 'socket * int -> 'vector

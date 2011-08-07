@@ -135,7 +135,7 @@ struct
 	in 
 	    (Test.test (fn s => (O.chDir s; true) handle _ => false) "..";
 	     Test.test (fn s => (O.chDir s;
-				 TextIO.openOut "tmpfile"; 
+				 TextIO.closeOut (TextIO.openOut "tmpfile"); 
 				 true) handle _ => false) "suite";
 	     Test.test (fn s => (O.chDir s; false) handle _ => true) 
 		       "/var/run/sudo";
@@ -166,7 +166,7 @@ struct
 	                                                         "notexisting")
 	
     fun testFileSize () =
-	(Test.test (fn s => (O.fileSize s = 4096) handle _ => false) "lib";
+	(Test.test (fn s => (O.fileSize s; true) handle _ => false) "lib";
 	 Test.test (fn s => (O.fileSize s = 0) handle _ => true) "lib2")
 
     fun testTmpName () =
@@ -178,7 +178,7 @@ struct
 		                   handle _ => true) "notexisting") 
 
     fun testRemove () =
-	(Test.test (fn s => (TextIO.openOut "tmpfile";
+	(Test.test (fn s => (TextIO.closeOut (TextIO.openOut "tmpfile");
 			     O.remove s; true) handle _ => false) "tmpfile";
 	 Test.test (fn s => (O.remove s; false) handle _ => true)
 		                                                 "notexisting")

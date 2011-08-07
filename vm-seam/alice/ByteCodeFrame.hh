@@ -57,8 +57,8 @@ public:
     StackFrame::ReplaceArg(CODE_POS, code->ToWord());
   }
   void SetLocal(u_int index, word w) {
-   Assert(index >= 0 && index < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
-   StackFrame::ReplaceArg(BASE_SIZE + index, w);
+    Assert(index >= 0 && index < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
+    StackFrame::ReplaceArg(BASE_SIZE + index, w);
   }
   word SaveState(u_int pc, Closure *cp, Tuple *ip) {
     StackFrame::ReplaceArg(PC_POS, Store::IntToWord(pc));

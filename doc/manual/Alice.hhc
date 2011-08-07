@@ -211,8 +211,8 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			</OBJECT>
                 <!--
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Glade">
-			<param name="Local" value="library/libglade.html">
+			<param name="Name" value="GtkBuilder">
+			<param name="Local" value="library/gtkbuilder.html">
 			</OBJECT>
                 -->
 	        <LI> <OBJECT type="text/sitemap">
@@ -557,7 +557,7 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<!--
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="GUI generator">
-			<param name="Local" value="glade.html">
+			<param name="Local" value="gtkbuilder.html">
 			</OBJECT>
 		-->
 	</UL>

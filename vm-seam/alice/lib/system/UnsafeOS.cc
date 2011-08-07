@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 
 #include "alice/NativeCodeJitter.hh"
 #include "alice/Authoring.hh"
@@ -42,22 +43,31 @@
 #define DECLARE_LINUXDIR(ld, x) \
   DECLARE_WRAPPEDUNMANAGEDPOINTER(DIR, ld, x) \
 
-class LinuxDirFinalizationSet : public FinalizationSet {
+#endif
+
+class DirFinalizationSet : public FinalizationSet {
 public:
   virtual void Finalize(word w) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(w);
+    Cell *closedCell = Cell::FromWord(cr->Get(0));
+    if (Store::WordToInt(closedCell->Access()) == 0) {
+      Cell *handleCell = Cell::FromWord(cr->Get(2));
+      HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
+      closedCell->Assign(Store::IntToWord(1));
+      FindClose(handle);
+    }
+#else
     WrappedUnmanagedPointer<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
     if (!ld->IsNull()) {
       closedir(ld->GetValue());
       ld->SetNull();
     }
+#endif
   }
 };
 
-static LinuxDirFinalizationSet *linuxDirFinalizationSet;
-
-#endif
-
-
+static DirFinalizationSet *dirFinalizationSet;
 static word wBufferString;
 
 // Also Needed for UnsafeUnix
@@ -91,30 +101,35 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
   Cell *closedCell = Cell::New(Store::IntToWord(0));
   Cell *handleCell = Cell::New(Store::UnmanagedPointerToWord(handle));
   Cell *entryCell = Cell::New(entry);
-  Tuple *tuple = Tuple::New(4);
-  tuple->Init(0, closedCell->ToWord());
-  tuple->Init(1, dir->ToWord());
-  tuple->Init(2, handleCell->ToWord());
-  tuple->Init(3, entryCell->ToWord());
-  RETURN(tuple->ToWord());
+  ConcreteRepresentation *cr = ConcreteRepresentation::New(4);
+  cr->Init(0, closedCell->ToWord());
+  cr->Init(1, dir->ToWord());
+  cr->Init(2, handleCell->ToWord());
+  cr->Init(3, entryCell->ToWord());
+  
+  dirFinalizationSet->Register(cr->ToWord());
+  RETURN(cr->ToWord());
 #else
   DIR *d = opendir(name->ExportC());
   if (!d) RAISE_SYS_ERR();
   
   word ld = WrappedUnmanagedPointer<DIR>::New(d)->ToWord();
-  linuxDirFinalizationSet->Register(ld);
+  dirFinalizationSet->Register(ld);
   RETURN(ld);
 #endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_readDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  DECLARE_TUPLE(tuple, x0);
-  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
-  if (Store::WordToInt(closedCell->Access()) != 0) RAISE_SYS_ERR();
-
-  Cell *handleCell = Cell::FromWord(tuple->Sel(2));
-  Cell *entryCell = Cell::FromWord(tuple->Sel(3));
+  DECLARE_CONCRETEREPRESENTATION(cr, x0);
+  Cell *closedCell = Cell::FromWord(cr->Get(0));
+  
+  if (Store::WordToInt(closedCell->Access()) != 0) {
+    RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
+  }
+  
+  Cell *handleCell = Cell::FromWord(cr->Get(2));
+  Cell *entryCell = Cell::FromWord(cr->Get(3));
   HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
   word entry = entryCell->Access();
   word newEntry;
@@ -132,7 +147,7 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
   }
   entryCell->Assign(newEntry);
 
-  TagVal *some = TagVal::New(1,1);
+  TagVal *some = TagVal::New(Types::SOME, 1);
   some->Init(0, entry);
   RETURN(some->ToWord());
 #else
@@ -142,10 +157,13 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
     RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
   }
   
+  errno = 0;
   if (struct dirent *n = readdir(ld->GetValue())) {
     TagVal *some = TagVal::New(Types::SOME, 1);
     some->Init(0, String::New(n->d_name)->ToWord());
     RETURN(some->ToWord());
+  } else if (errno) {
+    RAISE_SYS_ERR();
   } else {
     RETURN_INT(Types::NONE);
   }
@@ -154,13 +172,16 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
 
 DEFINE1(UnsafeOS_FileSys_rewindDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  DECLARE_TUPLE(tuple, x0);
-  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
-  if (Store::WordToInt(closedCell->Access()) != 0) RAISE_SYS_ERR();
-
-  String *dir = String::FromWord(tuple->Sel(1));
-  Cell *handleCell = Cell::FromWord(tuple->Sel(2));
-  Cell *entryCell = Cell::FromWord(tuple->Sel(3));
+  DECLARE_CONCRETEREPRESENTATION(cr, x0);
+  Cell *closedCell = Cell::FromWord(cr->Get(0));
+  
+  if (Store::WordToInt(closedCell->Access()) != 0) {
+    RAISE(MakeSysErr(DIRECTORY_STREAM_CLOSED));
+  }
+  
+  String *dir = String::FromWord(cr->Get(1));
+  Cell *handleCell = Cell::FromWord(cr->Get(2));
+  Cell *entryCell = Cell::FromWord(cr->Get(3));
   HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
 
   if (FindClose(handle) == FALSE) {
@@ -200,10 +221,10 @@ DEFINE1(UnsafeOS_FileSys_rewindDir) {
 
 DEFINE1(UnsafeOS_FileSys_closeDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  DECLARE_TUPLE(tuple, x0);
-  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+  DECLARE_CONCRETEREPRESENTATION(cr, x0);
+  Cell *closedCell = Cell::FromWord(cr->Get(0));
   if (Store::WordToInt(closedCell->Access()) == 0) {
-    Cell *handleCell = Cell::FromWord(tuple->Sel(2));
+    Cell *handleCell = Cell::FromWord(cr->Get(2));
     HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
     closedCell->Assign(Store::IntToWord(1));
     if (FindClose(handle) == FALSE) RAISE_SYS_ERR();
@@ -242,7 +263,7 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
   {
     char *buf = reinterpret_cast<char *>(buffer->GetValue());
 #if defined(__MINGW32__) || defined(_MSC_VER)
-    u_int n = GetCurrentDirectory(size, (CHAR *) buf);
+    u_int n = GetCurrentDirectory(size, reinterpret_cast<CHAR *>(buf));
     if (n == 0) RAISE_SYS_ERR();
     if (n > size) {
       size = n + 1;
@@ -251,7 +272,7 @@ DEFINE0(UnsafeOS_FileSys_getDir) {
       goto retry;
     }
     // make canonical
-    buf[0] = tolower(buf[0]);
+    buf[0] = static_cast<char>(tolower(buf[0]));
     for (n--; n>0; n--)
       if (buf[n] == '\\') buf[n] = '/';
 #else
@@ -347,12 +368,19 @@ DEFINE1(UnsafeOS_FileSys_fileSize) {
   //--** truncates the file size if not representable
 #if defined(__MINGW32__) || defined(_MSC_VER)
   HANDLE hFile =
-    CreateFile(name->ExportC(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
-	       FILE_ATTRIBUTE_NORMAL, NULL);
+    CreateFile(
+	  name->ExportC(),
+	  0,
+	  FILE_SHARE_READ | FILE_SHARE_WRITE,
+	  NULL,
+	  OPEN_EXISTING,
+	  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
+	  NULL
+	);
   if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
   DWORD n = GetFileSize(hFile, NULL);
-  if (n == INVALID_FILE_SIZE) RAISE_SYS_ERR();
   CloseHandle(hFile);
+  if (n == INVALID_FILE_SIZE) RAISE_SYS_ERR();
   RETURN_INT(n);
 #else
   struct stat info;
@@ -366,16 +394,33 @@ DEFINE1(UnsafeOS_FileSys_modTime) {
   DECLARE_STRING(name, x0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
   HANDLE hFile =
-    CreateFile(name->ExportC(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
-	       FILE_ATTRIBUTE_NORMAL, NULL);
+    CreateFile(
+	  name->ExportC(),
+	  0,
+	  FILE_SHARE_READ | FILE_SHARE_WRITE,
+	  NULL,
+	  OPEN_EXISTING,
+	  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
+	  NULL
+	);
   if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
   FILETIME fileTime;
-  if (GetFileTime(hFile, NULL, NULL, &fileTime) == FALSE) RAISE_SYS_ERR();
+  BOOL success = GetFileTime(hFile, NULL, NULL, &fileTime);
   CloseHandle(hFile);
-  BigInt *b = BigInt::New((unsigned int)fileTime.dwHighDateTime);
+  if (success == FALSE) RAISE_SYS_ERR();
+  
+  BigInt *b = BigInt::New(static_cast<unsigned int>(fileTime.dwHighDateTime));
   mpz_mul_2exp(b->big(), b->big(), 32);
   mpz_add_ui(b->big(), b->big(), fileTime.dwLowDateTime);
   mpz_fdiv_q_ui(b->big(), b->big(), 10000);
+  
+  // convert microsoft timestamp into unix timestamp
+  mpz_t offset;
+  mpz_init(offset);
+  mpz_set_str(offset, "11644473600000", 10);
+  mpz_sub(b->big(), b->big(), offset);
+  mpz_clear(offset);
+  
   RETURN_INTINF(b);
 #else
   struct stat info;
@@ -403,7 +448,7 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
   String *buffer = String::FromWordDirect(wBufferString);
   u_int size = buffer->GetSize();
  retry:
-  char *buf = (char *) buffer->GetValue();
+  char *buf = reinterpret_cast<char *>(buffer->GetValue());
   DWORD res = GetTempPath(size, buf);
   if (res == 0) RAISE_SYS_ERR();
   if (res > size) {
@@ -414,10 +459,10 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
   }
   String *name = String::New(res + 10);
   // make canonical
-  buf[0] = tolower(buf[0]);
+  buf[0] = static_cast<char>(tolower(buf[0]));
   for (res--; res>0; res--)
     if (buf[res] == '\\') buf[res] = '/';
-  char *s = (char *) name->GetValue();
+  char *s = reinterpret_cast<char *>(name->GetValue());
   static int counter = 0;
   while (true) {
     std::sprintf(s, "%salice%d", buf, counter);
@@ -443,18 +488,18 @@ DEFINE0(UnsafeOS_FileSys_getHomeDir) {
   ITEMIDLIST* pidl;
   HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_PERSONAL, &pidl );
   if (hRes==NOERROR) {
-    SHGetPathFromIDList( pidl, (CHAR *) buffer->GetValue());
+    SHGetPathFromIDList( pidl, reinterpret_cast<CHAR *>(buffer->GetValue()));
   } else {
     RAISE_SYS_ERR();
   }
 
   IMalloc* palloc; 
   hRes = SHGetMalloc(&palloc); 
-  palloc->Free( (void*)pidl ); 
+  palloc->Free(reinterpret_cast<void*>(pidl)); 
   palloc->Release();
-  char *buf = (char *) buffer->GetValue();
+  char *buf = reinterpret_cast<char *>(buffer->GetValue());
   // make canonical
-  buf[0] = tolower(buf[0]);
+  buf[0] = static_cast<char>(tolower(buf[0]));
   for (char *p = buf; *p; p++)
     if (*p == '\\') *p = '/';
   RETURN(String::New(buf)->ToWord());
@@ -484,17 +529,17 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   ITEMIDLIST* pidl;
   HRESULT hRes = SHGetSpecialFolderLocation( NULL, CSIDL_APPDATA, &pidl );
   if (hRes==NOERROR) {
-    SHGetPathFromIDList( pidl, (CHAR *) buf);
+    SHGetPathFromIDList( pidl, reinterpret_cast<CHAR *>(buf));
   } else {
     RAISE_SYS_ERR();
   }
 
   IMalloc* palloc; 
   hRes = SHGetMalloc(&palloc); 
-  palloc->Free( (void*)pidl ); 
+  palloc->Free(reinterpret_cast<void*>(pidl)); 
   palloc->Release();
   // make canonical
-  buf[0] = tolower(buf[0]);
+  buf[0] = static_cast<char>(tolower(buf[0]));
   for (char *p = buf; *p; p++)
     if (*p == '\\') *p = '/';
   strcat(buf, "/Alice");
@@ -664,9 +709,9 @@ AliceDll word UnsafeOS() {
   wBufferString = String::New(MAX_PATH+20)->ToWord();
 #else
   wBufferString = String::New(1024)->ToWord();
-  linuxDirFinalizationSet = new LinuxDirFinalizationSet();
 #endif
   RootSet::Add(wBufferString);
+  dirFinalizationSet = new DirFinalizationSet();
 
   Record *record = Record::New(5);
   record->Init("'SysErr", SysErrConstructor);

@@ -21362,7 +21362,7 @@
   (c-name "gtk_window_remove_embedded_xid")
   (return-type "none")
   (parameters
-    '("guint" "xid")
+    '("GdkNativeWindow" "xid")
   )
 )
 
@@ -21371,7 +21371,7 @@
   (c-name "gtk_window_add_embedded_xid")
   (return-type "none")
   (parameters
-    '("guint" "xid")
+    '("GdkNativeWindow" "xid")
   )
 )
 
