@@ -50,13 +50,15 @@ public:
     return Closure::FromWordDirect(StackFrame::GetArg(CP_POS));
   }
   word GetLocal(u_int index) {
+    Assert(index >= 0 && index < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
     return StackFrame::GetArg(BASE_SIZE + index);
   }
   void SetCode(Chunk *code) {
     StackFrame::ReplaceArg(CODE_POS, code->ToWord());
   }
   void SetLocal(u_int index, word w) {
-    StackFrame::ReplaceArg(BASE_SIZE + index, w);
+   Assert(index >= 0 && index < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
+   StackFrame::ReplaceArg(BASE_SIZE + index, w);
   }
   word SaveState(u_int pc, Closure *cp, Tuple *ip) {
     StackFrame::ReplaceArg(PC_POS, Store::IntToWord(pc));
