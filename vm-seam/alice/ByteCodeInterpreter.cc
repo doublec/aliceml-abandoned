@@ -15,11 +15,13 @@
 #pragma implementation "alice/ByteCodeFrame.hh"
 #endif
 
+#include <sstream>
 #include "alice/ByteCodeInterpreter.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/LazySelInterpreter.hh"
 #include "alice/AbstractCode.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/ByteCode.hh"
 #include "alice/ByteCodeAlign.hh"
@@ -99,6 +101,13 @@ using namespace ByteCodeInstr;
     BCI_DEBUG("suspension required\n");		\
     return Worker::PREEMPT;			\
   }
+
+#if PROFILE
+#define PROFILER_INC_CALLS(closure) Profiler::IncCalls(closure->GetConcreteCode());
+#else
+#define PROFILER_INC_CALLS(closure)
+#endif
+
 
 ByteCodeInterpreter *ByteCodeInterpreter::self;
 
@@ -343,6 +352,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);		        \
         if(closure == CP) {						\
+	  PROFILER_INC_CALLS(closure);                                  \
 	  PushCall(closure);						\
           frame = reinterpret_cast<ByteCodeFrame*>(Scheduler::GetFrame());		\
 	  SETPC(0);							\
@@ -387,6 +397,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);			\
 	if(closure == CP) {						\
+	  PROFILER_INC_CALLS(closure);                                  \
 	  SETPC(0);							\
 	  CHECK_PREEMPT();						\
 	  DISPATCH(PC);							\
@@ -439,6 +450,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_SELFCALL##NOA();				\
         SET_ARGS##NOA();					\
 	SAVEPC(PC);						\
+	PROFILER_INC_CALLS(CP);                            \
 	ByteCodeInterpreter::PushCall(CP);			\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;	\
 	frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());	\
@@ -540,6 +552,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	/* invariant: closure is determined */				\
 	Closure *closure =						\
 	  Closure::FromWordDirect(IP->Sel(closureAddr));		\
+	PROFILER_INC_CALLS(closure);                                    \
 	ByteCodeInterpreter::PushCall(closure);				\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
 	frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());		\
@@ -560,6 +573,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	/* invariant: closure is determined */				\
 	Closure *closure =						\
 	  Closure::FromWordDirect(IP->Sel(closureAddr));		\
+	PROFILER_INC_CALLS(closure);                                    \
 	Scheduler::PopFrame(frame->GetSize());				\
 	ByteCodeInterpreter::PushCall(closure);				\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
@@ -1738,22 +1752,15 @@ ByteCodeFrame *ByteCodeInterpreter::DupFrame(ByteCodeFrame *bcFrame) {
 }
 
 void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
-  //  fprintf(stderr,"ByteCodeInterpreter::DumpFrame not yet implemented\n");
   ByteCodeFrame *codeFrame = reinterpret_cast<ByteCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   const char *frameType;
   frameType = "function";
   // to be done: frameType = "handler";
-  // Print closure information
-  Closure *closure = codeFrame->GetCP();
-  ByteConcreteCode *concreteCode =
-    ByteConcreteCode::FromWord(closure->GetConcreteCode());
-  Transform *transform =
-    reinterpret_cast<Transform *>(concreteCode->GetAbstractRepresentation());
-  TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
-  String *name         = String::FromWord(coord->Sel(0));
-  std::fprintf(stderr, //"Alice native %s %.*s, line %d, column %d\n",
+    
+  Tuple *coord  = Tuple::FromWord(codeFrame->GetAbstractCode()->Sel(0));
+  String *name  = String::FromWord(coord->Sel(0));
+  std::fprintf(stderr,
 	       "ByteCode %.*s:%"S_INTF".%"S_INTF" frame %p\n",
 	       /*frameType,*/ static_cast<int>(name->GetSize()), name->GetValue(),
 	       Store::WordToInt(coord->Sel(1)),
@@ -1762,27 +1769,23 @@ void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
 }
 
 #if PROFILE
-  // Profiling
+
 word ByteCodeInterpreter::GetProfileKey(StackFrame *sFrame) {
-  ByteCodeFrame *frame = reinterpret_cast<ByteCodeFrame *>(sFrame);
-  fprintf(stderr,"ByteCodeInterpreter::GetProfileKey not yet implemented\n");
-  return NULL;
+  return reinterpret_cast<ByteCodeFrame *>(sFrame)->GetConcreteCode()->ToWord();
 }
 
 String *ByteCodeInterpreter::GetProfileName(StackFrame *sFrame) {
-  ByteCodeFrame *frame = reinterpret_cast<ByteCodeFrame *>(sFrame);
-  fprintf(stderr,"ByteCodeInterpreter::GetProfileName not yet implemented\n");
-  return NULL;
+  return GetProfileName(
+    reinterpret_cast<ConcreteCode*>(reinterpret_cast<ByteCodeFrame *>(sFrame)->GetConcreteCode()));
 }
 
-word ByteCodeInterpreter::GetProfileKey(ConcreteCode *concreteCode) {
-  fprintf(stderr,"ByteCodeInterpreter::GetProfileKey not yet implemented\n");
-  return NULL;
+word ByteCodeInterpreter::GetProfileKey(ConcreteCode *cc) {
+  return cc->ToWord();
 }
 
-String *ByteCodeInterpreter::GetProfileName(ConcreteCode *concreteCode) {
-  fprintf(stderr,"ByteCodeInterpreter::GetProfileName not yet implemented\n");
-  return NULL;
+String *ByteCodeInterpreter::GetProfileName(ConcreteCode *cc) {
+  return AbstractCodeInterpreter::MakeProfileName(
+    reinterpret_cast<ByteConcreteCode*>(cc)->GetAbstractCode());
 }
 
 #endif

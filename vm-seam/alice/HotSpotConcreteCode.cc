@@ -47,7 +47,7 @@ void HotSpotInterpreter::PushCall(Closure *closure) {
     AliceConcreteCode *acc = 
       AliceConcreteCode::FromWordDirect(wrapper->GetCode());
     AbstractCodeInterpreter::self->PushCall_Internal(acc, closure);
-  } else {	
+  } else {
     ByteCodeJitter jitter;
     jitter.Compile(wrapper);
     ByteCodeInterpreter::self->PushCall(closure);
@@ -107,3 +107,25 @@ u_int HotSpotInterpreter::GetOutArity(ConcreteCode *concreteCode) {
     ConcreteCode::FromWordDirect(wrapper->GetCode());
   return AbstractCodeInterpreter::self->GetOutArity(realConcreteCode);
 }
+
+
+#if PROFILE
+
+word HotSpotInterpreter::GetProfileKey(StackFrame *frame) {
+  Error("HotSpotInterpreter should transfer control to real interpreters");
+}
+
+String *HotSpotInterpreter::GetProfileName(StackFrame *frame) {
+  Error("HotSpotInterpreter should transfer control to real interpreters");
+}
+
+word HotSpotInterpreter::GetProfileKey(ConcreteCode *cc) {
+  return cc->ToWord();
+}
+
+String *HotSpotInterpreter::GetProfileName(ConcreteCode *cc) {
+  Transform *tr = reinterpret_cast<HotSpotCode*>(cc)->GetAbstractRepresentation();
+  return AbstractCodeInterpreter::MakeProfileName(TagVal::FromWord(tr->GetArgument()));
+}
+
+#endif

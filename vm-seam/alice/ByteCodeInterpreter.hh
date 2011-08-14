@@ -64,9 +64,8 @@ public:
   virtual void DumpFrame(StackFrame *sFrame);
 
 #if PROFILE
-  // Profiling
-  virtual word GetProfileKey(ByteCodeFrame *frame);
-  virtual String *GetProfileName(ByteCodeFrame *frame);
+  virtual word GetProfileKey(StackFrame *frame);
+  virtual String *GetProfileName(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);
   virtual String *GetProfileName(ConcreteCode *concreteCode);
 #endif

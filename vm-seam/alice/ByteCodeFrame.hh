@@ -49,6 +49,14 @@ public:
   Closure* GetCP() {
     return Closure::FromWordDirect(StackFrame::GetArg(CP_POS));
   }
+  ByteConcreteCode *GetConcreteCode() {
+    ConcreteCode *cc = ConcreteCode::FromWordDirect(GetCP()->GetConcreteCode());
+    Assert(cc->GetInterpreter() == ByteCodeInterpreter::self);
+    return reinterpret_cast<ByteConcreteCode*>(cc);
+  }
+  TagVal *GetAbstractCode() {
+    return GetConcreteCode()->GetAbstractCode();
+  }
   word GetLocal(u_int index) {
     Assert(index >= 0 && index < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
     return StackFrame::GetArg(BASE_SIZE + index);

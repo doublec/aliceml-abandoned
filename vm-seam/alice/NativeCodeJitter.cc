@@ -1790,11 +1790,6 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
   u_int i1 = ImmediateEnv::Register(wConcreteCode);
   ImmediateSel(JIT_R0, JIT_V2, i1);
   Closure_InitConcreteCode(JIT_V1, JIT_R0);
-#if PROFILE
-  JITStore::Prepare(1);
-  JITStore::PushArg(JIT_R0);
-  JITStore::Finish((void *) Profiler::IncClosures);
-#endif
   for (u_int i = nGlobals; i--;) {
     CheckCodeBuffer();
     u_int Reg = LoadIdRefKill(JIT_R0, idRefs->Sub(i));

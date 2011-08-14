@@ -625,9 +625,6 @@ DEFINE1(UnsafeOS_Process_system) {
 
 DEFINE1(UnsafeOS_Process_terminate) {
   DECLARE_INT(code, x0);
-#if PROFILE
-  Profiler::DumpInfo();
-#endif
 #if defined(JIT_APPLY_STATISTIC)
   extern void DumpApplyStatistics();
   DumpApplyStatistics();

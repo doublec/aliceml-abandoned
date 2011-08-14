@@ -126,6 +126,12 @@ public:
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
 
+#if PROFILE
+  virtual word GetProfileKey(StackFrame *frame);
+  virtual String *GetProfileName(StackFrame *frame);
+  virtual word GetProfileKey(ConcreteCode *concreteCode);
+  virtual String *GetProfileName(ConcreteCode *concreteCode);
+#endif
   
   void Request();
 };

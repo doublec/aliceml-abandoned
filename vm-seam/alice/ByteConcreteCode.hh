@@ -64,6 +64,9 @@ public:
   InlineInfo *GetInlineInfo() {
     return InlineInfo::FromWordDirect(Get(INLINE_INFO_POS));
   }
+  TagVal *GetAbstractCode() {
+    return TagVal::FromWordDirect(GetAbstractRepresentation()->GetArgument());
+  }
   void Disassemble(std::FILE *file);
   void UpdateCode(Chunk *chunk, word immediateEnv) {
     ConcreteCode::Init(BYTE_CODE_POS, chunk->ToWord());

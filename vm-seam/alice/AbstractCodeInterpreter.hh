@@ -43,12 +43,16 @@ public:
   void PushCall_Internal(AliceConcreteCode *concreteCode, Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
+
 #if PROFILE
+  static String *MakeProfileName(TagVal *abstractCode);
+  
   virtual word GetProfileKey(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);
   virtual String *GetProfileName(StackFrame *frame);
   virtual String *GetProfileName(ConcreteCode *concreteCode);
 #endif
+
 };
 
 #endif
