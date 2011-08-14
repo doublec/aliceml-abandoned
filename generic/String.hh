@@ -17,6 +17,7 @@
 #pragma interface "generic/String.hh"
 #endif
 
+#include <ostream>
 #include <cstring>
 #include "store/Store.hh"
 
@@ -35,8 +36,11 @@ public:
     std::memcpy(chunk->GetBase(), str, len);
     return static_cast<String *>(chunk);
   }
-  static String *New(const char *str) {
+  static String *New(const char *str = "") {
     return New(str, std::strlen(str));
+  }
+  static String *New(const std::string& str) {
+    return New(str.data(), static_cast<u_int>(str.size()));
   }
   static String *FromWord(word x) {
     Chunk *chunk = Store::WordToChunk(x);
@@ -58,6 +62,10 @@ public:
     std::memcpy(p, GetValue(), n);
     p[n] = '\0';
     return p;
+  }
+  
+  friend std::ostream& operator<<(std::ostream& os, String *str) {
+    return os.write(str->GetBase(), static_cast<std::streamsize>(str->GetSize()));
   }
 };
 
