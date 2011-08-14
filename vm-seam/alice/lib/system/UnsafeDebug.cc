@@ -52,6 +52,8 @@ DEFINE1(UnsafeDebug_disassemble) {
   if (interpreter == AbstractCodeInterpreter::self) {
     AliceConcreteCode *acc = AliceConcreteCode::FromWord(cc);
     TagVal *abstractCode = acc->GetAbstractCode();
+    
+    fprintf(stderr, "AliceConcreteCode:\n");
     PrintLiveness(abstractCode);
     acc->Disassemble(stderr);
   } 
@@ -59,6 +61,8 @@ DEFINE1(UnsafeDebug_disassemble) {
     HotSpotConcreteCode *hscc = HotSpotConcreteCode::FromWord(cc);
     Transform *transform = hscc->GetAbstractRepresentation();
     TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+    
+    fprintf(stderr, "HotSpotConcreteCode (counter = %"U_INTF"):\n", hscc->GetCounter());
     AbstractCode::Disassemble(stderr,
 			      TagVal::FromWordDirect(abstractCode->Sel(5)));
   }
@@ -66,6 +70,8 @@ DEFINE1(UnsafeDebug_disassemble) {
     ByteConcreteCode *bcc = ByteConcreteCode::FromWord(cc);
     Transform *transform = bcc->GetAbstractRepresentation();
     TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+    
+    fprintf(stderr, "ByteConcreteCode:\n");
     PrintLiveness(abstractCode);
     bcc->Disassemble(stderr);
   }
@@ -74,12 +80,14 @@ DEFINE1(UnsafeDebug_disassemble) {
     NativeConcreteCode *ncc = NativeConcreteCode::FromWord(cc);
     Transform *transform = ncc->GetAbstractRepresentation();
     TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+    
+    fprintf(stderr, "NativeConcreteCode:\n");
     PrintLiveness(abstractCode);
     ncc->Disassemble(stderr);
   }
 #endif
   else {
-    fprintf(stderr,"unkown interpreter: %s\n",interpreter->Identify());
+    fprintf(stderr,"unknown interpreter: %s\n",interpreter->Identify());
   }
 
   RETURN_UNIT;
