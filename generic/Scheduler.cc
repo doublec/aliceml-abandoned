@@ -240,6 +240,9 @@ int Scheduler::Run() {
 	  nextThread = true;
 	  break;
 	case Worker::EXIT:
+#if PROFILE
+      Profiler::DumpInfo();
+#endif
 	  return static_cast<int>(Store::DirectWordToInt(currentData));
 	}
       }

@@ -95,7 +95,6 @@ void Profiler::Init() {
   RootSet::Add(table);
   sampleEntry = Store::IntToWord(0);
   RootSet::Add(sampleEntry);
-  InitTime();
   startTime = SampleTime();
 }
 
@@ -158,6 +157,12 @@ void Profiler::AddHeap() {
   entry->IncTime(static_cast<u_int>(curTime - sampleTime));
 }
 
+void Profiler::IncCalls(word cCode) {
+  ConcreteCode *concreteCode = ConcreteCode::FromWord(cCode);
+  if (concreteCode != INVALID_POINTER)
+    GetEntry(concreteCode)->IncCalls();
+}
+
 void Profiler::IncCalls(StackFrame *frame) {
   ProfileEntry *entry = GetEntry(frame);
   entry->IncCalls();
@@ -184,23 +189,30 @@ static void PrintInfo(word /*key*/, word value) {
   char *s = name->ExportC();
   for (char *t = s; *t; t++)
     if (*t == ',') *t = ';';
-  std::fprintf(logFile, "%d, %d, %d, %d, %d, %.2f, %s\n",
+  std::fprintf(logFile, "%"U_INTF", %"U_INTF", %"U_INTF", %"U_INTF", %"U_INTF", %.2f, %s\n",
 	       runs, calls, runTime, closures, heap,
-	       runs? static_cast<float>(heap) / runs: 0.0,
+	       runs ? static_cast<float>(heap) / static_cast<float>(runs) : 0.0,
 	       s);
 }
 
 void Profiler::DumpInfo() {
-  double endTime = SampleTime();
-  Map *t = Map::FromWordDirect(table);
-  if ((logFile = std::fopen("profile_log.txt", "w")) == NULL)
-    Error("Profiler:DumpInfo: unable to open log file");
-  t->Apply((item_apply) PrintInfo);
-  std::fprintf(logFile, "0, 0, 0, 0, 0, 0.00, total %d, acc %d, gc %d\n",
-	       static_cast<u_int>(endTime - startTime),
-	       totalLogTime,
-	       static_cast<u_int>(Scheduler::gcTime));
-  std::fclose(logFile);
+  const char *apf = getenv("ALICE_PROFILE_LOG");
+  if (apf != NULL) {
+    
+    const char* file =
+      *apf == '\0' ? "alice_profile_log.csv" : apf;
+    if ((logFile = std::fopen(file, "w")) == NULL) {
+      Error("Profiler:DumpInfo: unable to open log file");
+    }
+    
+    double endTime = SampleTime();
+    Map *t = Map::FromWordDirect(table);
+    std::fprintf(logFile, "runs, calls, run time, closures, heap, heap per run, identifier\n");
+    t->Apply((item_apply) PrintInfo);
+    std::fprintf(logFile, "0, 0, 0, 0, 0, 0.00, total %"U_INTF", acc %"U_INTF", gc %"U_INTF"\n",
+      static_cast<u_int>(endTime - startTime), totalLogTime, static_cast<u_int>(Scheduler::gcTime));
+    std::fclose(logFile);
+  }
 }
 
 #endif

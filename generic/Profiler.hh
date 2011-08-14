@@ -44,6 +44,7 @@ public:
   static double SampleTime();
   static void SampleHeap(StackFrame *frame); // Scheduler::Run
   static void AddHeap(); // Scheduler::Run
+  static void IncCalls(word cCode); // PushCalls that bypass the scheduler
   static void IncCalls(StackFrame *frame); // Scheduler::PushCall
   static void IncClosures(word cCode);  // Interpreter::Close
   static void DumpInfo();

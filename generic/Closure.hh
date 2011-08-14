@@ -18,6 +18,8 @@
 #endif
 
 #include "store/Store.hh"
+#include "generic/Profiler.hh"
+
 
 class SeamDll Closure: private Block {
 protected:
@@ -27,6 +29,9 @@ public:
 
   // Closure Constructor
   static Closure *New(word concreteCode, u_int size) {
+#if PROFILE
+    Profiler::IncClosures(concreteCode);
+#endif
     Block *b = Store::AllocMutableBlock(CLOSURE_LABEL, BASE_SIZE + size);
     b->InitArg(CONCRETE_CODE_POS, concreteCode);
     return static_cast<Closure *>(b);
