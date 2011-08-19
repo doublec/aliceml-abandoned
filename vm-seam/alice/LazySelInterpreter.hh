@@ -26,6 +26,7 @@ private:
   LazySelInterpreter(): Interpreter() {}
 public:
   static LazySelInterpreter *self;
+  static word concreteCode;
 
   static void Init();
 
@@ -36,6 +37,11 @@ public:
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
+
+#if PROFILE
+  virtual word GetProfileKey(StackFrame *);
+  virtual word GetProfileKey(ConcreteCode *);
+#endif
 };
 
 class LazySelClosure: public Closure {
@@ -43,9 +49,7 @@ public:
   enum { RECORD_POS, LABEL_POS, SIZE };
 
   static LazySelClosure *New(word record, UniqueString *label) {
-    ConcreteCode *concreteCode =
-      ConcreteCode::New(LazySelInterpreter::self, 0);
-    Closure *closure = Closure::New(concreteCode->ToWord(), SIZE);
+    Closure *closure = Closure::New(LazySelInterpreter::concreteCode, SIZE);
     closure->Init(RECORD_POS, record);
     closure->Init(LABEL_POS, label->ToWord());
     return static_cast<LazySelClosure *>(closure);

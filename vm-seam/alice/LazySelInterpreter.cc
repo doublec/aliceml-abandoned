@@ -48,9 +48,12 @@ public:
 // LazySelInterpreter
 //
 LazySelInterpreter *LazySelInterpreter::self;
+word LazySelInterpreter::concreteCode;
 
 void LazySelInterpreter::Init() {
   self = new LazySelInterpreter();
+  concreteCode = ConcreteCode::New(self, 0)->ToWord();
+  RootSet::Add(concreteCode);
 }
 
 void LazySelInterpreter::PushCall(Closure *closure0) {
@@ -98,3 +101,15 @@ void LazySelInterpreter::DumpFrame(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, "Select %s\n", frame->GetLabel()->ToString()->ExportC());
 }
+
+#if PROFILE
+
+word LazySelInterpreter::GetProfileKey(StackFrame *) {
+  return concreteCode;
+}
+
+word LazySelInterpreter::GetProfileKey(ConcreteCode *) {
+  return concreteCode;
+}
+
+#endif
