@@ -65,7 +65,7 @@ void Map::Rehash() {
     while (nodes != Store::IntToWord(0)) {
       MapNode *node   = MapNode::FromWordDirect(nodes);
       word key        = node->GetKey();
-      u_int hashedKey = reinterpret_cast<u_int>(key) % size;
+      u_int hashedKey = WordKey::Hash(key, size);
       if (hashedKey != i) {
 	nodes = node->GetNext(); // Order is important
 	// Remove from old chain
