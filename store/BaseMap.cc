@@ -143,6 +143,29 @@ void BaseMap<T>::Apply(item_apply func) {
 }
 
 template <typename T>
+void BaseMap<T>::PartialMap(item_map func) {
+  for (u_int i=GetTableSize(); i--; ) {
+    
+    word cur = GetEntry(i);
+    word prev = Store::IntToWord(0);
+    
+    while (cur != Store::IntToWord(0)) {
+      MapNode *node = MapNode::FromWordDirect(cur);
+      word newValue = func(node->GetKey(), node->GetValue());
+      
+      if (newValue == INVALID_POINTER) {
+	RemoveEntry(i, prev, node);
+      } else {
+	node->SetValue(newValue);
+	prev = cur;
+      }
+      
+      cur = node->GetNext();
+    }
+  }
+}
+
+template <typename T>
 BaseMap<T> *BaseMap<T>::New(BlockLabel l, u_int size) {
   size = ((size < 2) ? 2 : size); // Enforce Invariant: size must be > 1
   Block *map    = Store::AllocMutableBlock(l, SIZE);

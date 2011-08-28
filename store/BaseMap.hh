@@ -15,6 +15,7 @@
 #include "store/Store.hh"
 
 typedef void (*item_apply)(word key, word item);
+typedef word (*item_map)(word key, word item);
 
 class MapNode;
 
@@ -80,6 +81,11 @@ public:
   }
 
   SeamMemberDll void Apply(item_apply func);
+  
+  /**
+   * In-place partial map: if func returns INVALID_POINTER then the key is removed.
+   */
+  SeamMemberDll void PartialMap(item_map func);
 
   static SeamMemberDll BaseMap<T> *New(BlockLabel l, u_int size);
 };
