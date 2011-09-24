@@ -60,6 +60,14 @@ public:
   void InitArg(u_int pos, s_int value) {
     InitArg(pos, Store::IntToWord(value));
   }
+  void InitArgs(u_int startPos, u_int n, word value) {
+    for (u_int i=startPos; i<startPos+n; i++) {
+      InitArg(i, value);
+    }
+  }
+  void InitArgs(u_int startPos, u_int n, s_int value) {
+    InitArgs(startPos, n, Store::IntToWord(value));
+  }
   void ReplaceArg(u_int pos, word value) {
     InitArg(pos, value);
   }
