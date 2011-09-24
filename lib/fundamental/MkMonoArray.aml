@@ -48,12 +48,15 @@ struct
 			      val maxLen      = maxLen
 			      val length      = length
 			      val sub         = sub
+			      val uSub        = sub
 			      val update      = update
+			      val uUpdate     = update
 			      val dlength     = length
 			      val dupdate     = update
 			      val dextract    = extract
 			      val vlength     = Vector.length
-			      val vsub        = Vector.sub)
+			      val vsub        = Vector.sub
+			      val uVsub       = Vector.sub)
     open Array
 
     val array      = array

@@ -40,6 +40,7 @@ struct
 				val maxLen      = maxLen
 				val length      = length
 				val sub         = sub
+				val uSub        = sub
 				val tabulate    = tabulate
 				val fromList    = fromList
 				val toList      = toList

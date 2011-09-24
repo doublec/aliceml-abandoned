@@ -22,12 +22,14 @@ import __primitive structure General        from "General"
 import __primitive structure List           from "List"
 import __primitive functor MkRow            from "MkRow"
 
+(** uSub is like sub but needn't do bounds checking*)
 functor MkVector(type 'a vector
 		 type 'a dst_vector
 		 type 'a elem
 		 val maxLen :   int
 		 val length :   'a vector -> int
 		 val sub :      'a vector * int -> 'a elem
+		 val uSub :     'a vector * int -> 'a elem
 		 val toList :   'a vector -> 'a elem list
 		 val tabulate : int * (int -> 'a elem) -> 'a dst_vector
 		 val fromList : 'a elem list -> 'a dst_vector
@@ -36,7 +38,8 @@ struct
     structure Row = MkRow(type row   = vector
 			  type elem  = elem
 			  val length = length
-			  val sub    = sub)
+			  val sub    = sub
+			  val uSub   = uSub)
     open Row
 
     val maxLen		= maxLen
@@ -45,12 +48,12 @@ struct
     val toList		= toList
     val concat		= concat
 
-    fun update(v,i,x)	= if i<0 orelse length v <= i
+    fun update(v,i,x)	= if i < 0 orelse length v <= i
 			  then raise General.Subscript else
-			  tabulate(length v, fn j => if j=i then x else sub(v,j))
-    fun map f v		= tabulate(length v, fn i => f(sub(v,i)))
-    fun mapi f v	= tabulate(length v, fn i => f(i,sub(v,i)))
-    fun rev v		= tabulate(length v, fn i => sub(v,length(v)-i-1))
+			  tabulate(length v, fn j => if j=i then x else uSub(v, j))
+    fun map f v		= tabulate(length v, fn i => f(uSub(v, i)))
+    fun mapi f v	= tabulate(length v, fn i => f(i, uSub(v, i)))
+    fun rev v		= tabulate(length v, fn i => uSub(v, length v - i -1))
 
     fun sort cmp	= sort'(List.sort cmp)
     and sort' lsort v	= fromList(lsort(toList v))

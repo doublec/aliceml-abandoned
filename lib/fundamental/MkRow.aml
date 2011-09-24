@@ -23,95 +23,97 @@ import __primitive
        val op = and op <> and op >=
        val op + and op -                           from "ToplevelValues"
 
+(** uSub is like sub but needn't do bounds checking*)
 functor MkRow(type 'a row
 	      type 'a elem
 	      val length : 'a row -> int
-	      val sub :    'a row * int -> 'a elem) =
+	      val sub :    'a row * int -> 'a elem
+	      val uSub :   'a row * int -> 'a elem) =
 struct
     val length			= length
     val sub			= sub
 
-    fun app  f r		= app'(f,r,0)
-    and app'(f,r,i) if (i = length r) = ()
-      | app'(f,r,i)		= (f(sub(r,i)) ; app'(f,r,i+1))
+    fun app  f r		= app'(f, r, 0, length r)
+    and app'(f, r, i, n) if (i = n) = ()
+      | app'(f, r, i, n)	= (f(uSub(r, i)); app'(f, r, i+1, n))
 
-    fun appi  f r		= appi'(f,r,0)
-    and appi'(f,r,i) if (i = length r) = ()
-      | appi'(f,r,i)		= (f(i,sub(r,i)) ; appi'(f,r,i+1))
+    fun appi  f r		= appi'(f, r, 0, length r)
+    and appi'(f, r, i, n) if (i = n) = ()
+      | appi'(f, r, i, n)	= (f(i, uSub(r, i)); appi'(f, r, i+1, n))
 
-    fun appr  f r		= appr'(f, r, length(r)-1)
-    and appr'(f,r,~1)		= ()
-      | appr'(f,r,i)		= (f(sub(r,i)) ; appr'(f,r,i-1))
+    fun appr  f r		= appr'(f, r, length r - 1)
+    and appr'(f, r, ~1)		= ()
+      | appr'(f, r, i)		= (f(uSub(r, i)); appr'(f, r, i-1))
 
-    fun appri  f r		= appri'(f, r, length(r)-1)
-    and appri'(f,r,~1)		= ()
-      | appri'(f,r,i)		= (f(i,sub(r,i)) ; appri'(f,r,i-1))
+    fun appri  f r		= appri'(f, r, length r - 1)
+    and appri'(f, r, ~1)	= ()
+      | appri'(f, r, i)		= (f(i,uSub(r, i)); appri'(f, r, i-1))
 
-    fun foldl  f x r		= foldl'(f,x,r,0)
-    and foldl'(f,x,r,i) if (i = length r) = x
-      | foldl'(f,x,r,i)		= foldl'(f, f(sub(r,i),x), r, i+1)
+    fun foldl  f x r		= foldl'(f, x, r, 0, length r)
+    and foldl'(f, x, r, i, n) if (i = n) = x
+      | foldl'(f, x, r, i, n)	= foldl'(f, f(uSub(r, i), x), r, i+1, n)
 
-    fun foldli  f x r		= foldli'(f,x,r,0)
-    and foldli'(f,x,r,i) if (i = length r) = x
-      | foldli'(f,x,r,i)	= foldli'(f, f(i,sub(r,i),x), r, i+1)
+    fun foldli  f x r		= foldli'(f, x, r, 0, length r)
+    and foldli'(f, x, r, i, n) if (i = n) = x
+      | foldli'(f, x, r, i, n)	= foldli'(f, f(i, uSub(r, i), x), r, i+1, n)
 
-    fun foldr  f x r		= foldr'(f, x, r, length(r)-1)
-    and foldr'(f,x,r,~1)	= x
-      | foldr'(f,x,r,i)		= foldr'(f, f(sub(r,i),x), r, i-1)
+    fun foldr  f x r		= foldr'(f, x, r, length r - 1)
+    and foldr'(f, x, r, ~1)	= x
+      | foldr'(f, x, r, i)	= foldr'(f, f(uSub(r, i), x), r, i-1)
 
-    fun foldri  f x r		= foldri'(f, x, r, length(r)-1)
-    and foldri'(f,x,r,~1)	= x
-      | foldri'(f,x,r,i)	= foldri'(f, f(i,sub(r,i),x), r, i-1)
+    fun foldri  f x r		= foldri'(f, x, r, length r - 1)
+    and foldri'(f, x, r, ~1)	= x
+      | foldri'(f, x, r, i)	= foldri'(f, f(i, uSub(r, i), x), r, i-1)
 
-    fun all  f r		= all'(f,r,0)
-    and all'(f,r,i) 		= i = length r orelse
-				  f(sub(r,i)) andalso all'(f,r,i+1)
+    fun all  f r		= all'(f, r, 0, length r)
+    and all'(f, r, i, n)	= i = n orelse
+				  f(uSub(r, i)) andalso all'(f, r, i+1, n)
 
-    fun alli  f r		= alli'(f,r,0)
-    and alli'(f,r,i) 		= i = length r orelse
-				  f(i,sub(r,i)) andalso alli'(f,r,i+1)
+    fun alli  f r		= alli'(f, r, 0, length r)
+    and alli'(f, r, i, n) 	= i = n orelse
+				  f(i, uSub(r, i)) andalso alli'(f, r, i+1, n)
 
-    fun exists  f r		= exists'(f,r,0)
-    and exists'(f,r,i) 		= i <> length r andalso
-				  (f(sub(r,i)) orelse exists'(f,r,i+1))
+    fun exists  f r		= exists'(f, r, 0, length r)
+    and exists'(f, r, i, n) 	= i <> n andalso
+				  (f(uSub(r, i)) orelse exists'(f, r, i+1, n))
 
-    fun existsi  f r		= existsi'(f,r,0)
-    and existsi'(f,r,i) 	= i <> length r andalso
-				  (f(i,sub(r,i)) orelse existsi'(f,r,i+1))
+    fun existsi  f r		= existsi'(f, r, 0, length r)
+    and existsi'(f, r, i, n) 	= i <> n andalso
+				  (f(i, uSub(r, i)) orelse existsi'(f, r, i+1, n))
 
-    fun find  f r					= find'(f,r,0)
-    and find'(f,r,i) if (i = length r)			= NONE
-      | find'(f,r,i) withval x = sub(r,i) end if (f x)	= SOME x
-      | find'(f,r,i)					= find'(f,r,i+1)
+    fun find  f r						= find'(f, r, 0, length r)
+    and find'(f, r, i, n) if (i = n)				= NONE
+      | find'(f, r, i, n) withval x = uSub(r, i) end if (f x)	= SOME x
+      | find'(f, r, i, n)					= find'(f, r, i+1, n)
 
-    fun findi  f r					= findi'(f,r,0)
-    and findi'(f,r,i) if (i = length r)			= NONE
-      | findi'(f,r,i) withval x = sub(r,i) end if (f(i,x)) = SOME(i,x)
-      | findi'(f,r,i)					= findi'(f,r,i+1)
+    fun findi  f r						= findi'(f, r, 0, length r)
+    and findi'(f, r, i, n) if (i = n)				= NONE
+      | findi'(f, r, i, n) withval x = uSub(r, i) end if (f(i, x)) = SOME(i, x)
+      | findi'(f, r, i, n)					= findi'(f, r, i+1, n)
 
-    fun contains  eq r x	= contains'(eq,r,x,0)
-    and contains'(eq,r,x,i)	= i <> length r andalso
-				  (eq(x,sub(r,i)) orelse contains'(eq,r,x,i+1))
-    fun notContains eq r x	= if contains'(eq,r,x,0) then false else true
+    fun contains  eq r x		= contains'(eq, r, x, 0, length r)
+    and contains'(eq, r, x, i, n)	= i <> n andalso
+    					  (eq(x, uSub(r, i)) orelse contains'(eq, r, x, i+1, n))
+    fun notContains eq r x		= if contains'(eq, r, x, 0, length r) then false else true
 
-    fun equal  eq (r1,r2)	= length r1 = length r2 andalso
-				  equal'(eq,r1,r2,0)
-    and equal'(eq,r1,r2,i)	= i = length r1 orelse
-				  eq(sub(r1,i), sub(r2,i)) andalso
-				  equal'(eq,r1,r2,i+1)
+    fun equal  eq (r1, r2)		= let val n = length r1
+    				  	      val m = length r2
+    					  in n = m andalso equal'(eq, r1, r2, 0, n) end
+    and equal'(eq, r1, r2, i, n)	= i = n orelse
+    					  eq(uSub(r1, i), uSub(r2, i)) andalso equal'(eq, r1, r2, i+1, n)
 
-    fun collate cmp (r1,r2)	= collate'(cmp,r1,r2,0)
-    and collate'(cmp,r1,r2,i)	= case (i = length r1, i = length r2)
-				    of (true,  true)  => EQUAL
-				     | (true,  false) => LESS
-				     | (false, true)  => GREATER
-				     | (false, false) =>
-				  case cmp(sub(r1,i), sub(r2,i))
-				    of EQUAL => collate'(cmp,r1,r2,i+1)
-				     | other => other
+    fun collate cmp (r1, r2)		= collate'(cmp, r1, r2, 0, length r1, length r2)
+    and collate'(cmp, r1, r2, i, n, m)	= case (i = n, i = m)
+					    of (true,  true)  => EQUAL
+					     | (true,  false) => LESS
+					     | (false, true)  => GREATER
+					     | (false, false) =>
+					  case cmp(uSub(r1, i), uSub(r2, i))
+					    of EQUAL => collate'(cmp, r1, r2, i+1, n, m)
+					     | other => other
 
-    fun isSorted  cmp r		= isSorted'(cmp,r,1)
-    and isSorted'(cmp,r,i)	= i >= length r orelse
-				  cmp(sub(r,i-1), sub(r,i)) <> GREATER
-				  andalso isSorted'(cmp,r,i+1)
+    fun isSorted  cmp r		= isSorted'(cmp, r, 1, length r)
+    and isSorted'(cmp, r, i, n)	= i >= n orelse
+				  cmp(uSub(r, i-1), uSub(r, i)) <> GREATER
+				  andalso isSorted'(cmp, r, i+1, n)
 end

@@ -59,12 +59,15 @@ struct
 			      val maxLen      = 0
 			      val length      = Slice.length
 			      val sub         = Slice.sub
+			      val uSub        = Slice.sub
 			      val update      = update
+			      val uUpdate     = update
 			      val dlength     = alength
 			      val dupdate     = aupdate
 			      val dextract    = aextract
 			      val vlength     = vsllength
-			      val vsub        = vslsub)
+			      val vsub        = vslsub
+			      val uVsub       = vslsub)
     open Array
     open Slice
 

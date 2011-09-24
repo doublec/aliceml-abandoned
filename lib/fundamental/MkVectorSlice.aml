@@ -44,6 +44,7 @@ struct
 				val maxLen      = 0
 				val length      = Slice.length
 				val sub         = Slice.sub
+				val uSub        = Slice.sub
 				val toList      = Slice.toList
 				val tabulate    = vtabulate
 				val fromList    = vfromList

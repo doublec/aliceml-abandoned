@@ -38,20 +38,17 @@ struct
 	__primitive val maxLen :   int			= "Array.maxLen"
 	__primitive val length :   'a t -> int		= "Array.length"
 	__primitive val sub :	   'a t * int -> 'a	= "Array.sub"
+	__primitive val uSub :	   'a t * int -> 'a	= "Unsafe.Array.sub"
 	__primitive val update :   'a t * int * 'a -> unit = "Array.update"
-	__primitive val dlength :   'a t -> int		= "Array.length"
+	__primitive val uUpdate :  'a t * int * 'a -> unit = "Unsafe.Array.update"
+	__primitive val dlength :  'a t -> int		= "Array.length"
 	__primitive val dupdate :  'a t * int * 'a -> unit = "Array.update"
 	__primitive val dextract : 'a t * int * int -> 'a v = "Array.extract"
 	__primitive val vlength :  'a v -> int		= "Vector.length"
 	__primitive val vsub :	   'a v * int -> 'a	= "Vector.sub"
+	__primitive val uVsub :	   'a v * int -> 'a	= "Unsafe.Vector.sub"
     )
     open Array
-
-    (* TODO: should we use these?
-	__primitive val sub :	 'a t * int -> 'a	= "Unsafe.Array.sub"
-	__primitive val update : 'a t * int * 'a -> unit = "Unsafe.Array.update"
-	__primitive val vsub :	 'a v * int -> 'a	= "Unsafe.Vector.sub"
-    *)
 
     __primitive val array :    int * 'a -> 'a t		= "Array.array"
     __primitive val tabulate : int * (int ->'a) -> 'a t	= "Array.tabulate"

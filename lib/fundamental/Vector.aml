@@ -32,16 +32,13 @@ struct
 	__primitive val maxLen :   int			= "Vector.maxLen"
 	__primitive val length :   'a t -> int		= "Vector.length"
 	__primitive val sub :	   'a t * int -> 'a	= "Vector.sub"
+	__primitive val uSub :	   'a t * int -> 'a	= "Unsafe.Vector.sub"
 	__primitive val tabulate : int * (int->'a) -> 'a t = "Vector.tabulate"
 	__primitive val fromList : 'a list -> 'a t	= "Vector.fromList"
 	__primitive val toList :  'a t -> 'a list	= "Vector.toList"
 	__primitive val concat :   'a t list -> 'a t	= "Vector.concat"
     )
     open Vector
-
-    (* TODO: should we use this? 
-	__primitive val sub : 'a t * int -> 'a	= "Unsafe.Vector.sub"
-    *)
 
     fun contains v	= Vector.contains op= v
     fun notContains v	= Vector.notContains op= v
