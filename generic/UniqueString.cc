@@ -30,8 +30,9 @@ void UniqueString::Init() {
 UniqueString *UniqueString::New(String *string) {
   ChunkMap *map = ChunkMap::FromWordDirect(uniqueStringTable);
   word key = string->ToWord();
-  if (map->IsMember(key)) {
-    return UniqueString::FromWordDirect(map->Get(key));
+  word mem = map->CondGet(key);
+  if (mem != INVALID_POINTER) {
+    return UniqueString::FromWordDirect(mem);
   } else {
     Block *b = Store::AllocBlock(UNIQUESTRING_LABEL, SIZE);
     b->InitArg(STRING_POS, key);

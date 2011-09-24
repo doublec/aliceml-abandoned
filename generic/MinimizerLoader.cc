@@ -50,10 +50,10 @@ public:
     ReplaceArg(COUNTER_POS, Store::DirectWordToInt(counter) + 1);
   }
   u_int Find(Block *v) {
-    word vw  = v->ToWord();
     Map *map = Map::FromWordDirect(GetArg(TABLE_POS));
-    if (map->IsMember(vw))
-      return Store::DirectWordToInt(map->Get(vw));
+    word mem = map->CondGet(v->ToWord());
+    if (mem != INVALID_POINTER)
+      return Store::DirectWordToInt(mem);
     else
       return NOT_FOUND;
   }

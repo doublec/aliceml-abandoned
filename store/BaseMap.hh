@@ -62,7 +62,7 @@ public:
 
   SeamMemberDll bool IsMember(word key);
   SeamMemberDll word Get(word key);
-  SeamMemberDll word CondGet(word key, word alternative); 
+  SeamMemberDll word CondGet(word key, word alternative = INVALID_POINTER); 
 
   u_int GetSize() {
     return static_cast<u_int>(Store::WordToInt(GetArg(COUNTER_POS)));

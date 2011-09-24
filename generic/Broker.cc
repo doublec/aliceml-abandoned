@@ -48,9 +48,10 @@ void Broker::Init() {
 static DllLoader::libhandle LoadLanguageLayer(String *languageId) {
   ChunkMap *languageLayerTable = ChunkMap::FromWordDirect(wLanguageLayerTable);
   word wLanguageId = languageId->ToWord();
-  if (languageLayerTable->IsMember(wLanguageId)) {
-    word w = languageLayerTable->Get(wLanguageId);
-    return reinterpret_cast<DllLoader::libhandle>(Store::DirectWordToUnmanagedPointer(w));
+  word wLanguageLayer = languageLayerTable->CondGet(wLanguageId);
+  
+  if (wLanguageLayer != INVALID_POINTER) {
+    return reinterpret_cast<DllLoader::libhandle>(Store::DirectWordToUnmanagedPointer(wLanguageLayer));
   } else {
     u_int n = languageId->GetSize();
     String *filename = String::New(n + 4);
@@ -100,7 +101,5 @@ void Broker::Register(String *name, word value) {
 
 word Broker::Lookup(String *name) {
   ChunkMap *nameValueTable = ChunkMap::FromWordDirect(wNameValueTable);
-  if (nameValueTable->IsMember(name->ToWord()))
-    return nameValueTable->Get(name->ToWord());
-  return static_cast<word>(0); //--**
+  return nameValueTable->CondGet(name->ToWord());
 }
