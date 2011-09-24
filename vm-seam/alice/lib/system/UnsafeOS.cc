@@ -45,36 +45,42 @@
 
 #endif
 
-class DirFinalizationSet : public FinalizationSet {
-public:
-  virtual void Finalize(word w) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(w);
-    Cell *closedCell = Cell::FromWord(cr->Get(0));
-    if (Store::WordToInt(closedCell->Access()) == 0) {
-      Cell *handleCell = Cell::FromWord(cr->Get(2));
-      HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
-      closedCell->Assign(Store::IntToWord(1));
-      FindClose(handle);
-    }
-#else
-    WrappedUnmanagedPointer<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
-    if (!ld->IsNull()) {
-      closedir(ld->GetValue());
-      ld->SetNull();
-    }
-#endif
-  }
-};
-
-static DirFinalizationSet *dirFinalizationSet;
-static word wBufferString;
 
 // Also Needed for UnsafeUnix
 word SysErrConstructor;
 #include "SysErr.icc"
 
-static const char *DIRECTORY_STREAM_CLOSED = "Directory stream is closed and cannot be used.";
+
+namespace {
+
+  class DirFinalizationSet : public FinalizationSet {
+  public:
+    virtual void Finalize(word w) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+      ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(w);
+      Cell *closedCell = Cell::FromWord(cr->Get(0));
+      if (Store::WordToInt(closedCell->Access()) == 0) {
+	Cell *handleCell = Cell::FromWord(cr->Get(2));
+	HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
+	closedCell->Assign(Store::IntToWord(1));
+	FindClose(handle);
+      }
+#else
+      WrappedUnmanagedPointer<DIR> *ld = WrappedUnmanagedPointer<DIR>::FromWord(w);
+      if (!ld->IsNull()) {
+	closedir(ld->GetValue());
+	ld->SetNull();
+      }
+#endif
+    }
+  };
+
+  DirFinalizationSet *dirFinalizationSet;
+  word wBufferString;
+
+  const char *DIRECTORY_STREAM_CLOSED = "Directory stream is closed and cannot be used.";
+}
+
 
 //
 // UnsafeOS.FileSys Structure

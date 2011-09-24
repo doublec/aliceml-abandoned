@@ -13,82 +13,88 @@
 
 #include "alice/Authoring.hh"
 
-//
-// CatchWorker
-//
-class CatchWorkerFrame : private StackFrame {
-protected:
-  enum { HANDLER_POS, SIZE };
-public:
-  static CatchWorkerFrame *New(Worker *worker, word wClosure) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(HANDLER_POS, wClosure);
-    return static_cast<CatchWorkerFrame *>(frame);
+
+namespace {
+
+  //
+  // CatchWorker
+  //
+  class CatchWorkerFrame : private StackFrame {
+  protected:
+    enum { HANDLER_POS, SIZE };
+  public:
+    static CatchWorkerFrame *New(Worker *worker, word wClosure) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      frame->InitArg(HANDLER_POS, wClosure);
+      return static_cast<CatchWorkerFrame *>(frame);
+    }
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    word GetHandler() {
+      return StackFrame::GetArg(HANDLER_POS);
+    }
+  };
+
+  class CatchWorker : public Worker {
+  private:
+    CatchWorker() : Worker() {}
+  public:
+    static CatchWorker *self;
+
+    static void Init() {
+      self = new CatchWorker();
+    }
+
+    static void PushFrame(word closure) {
+      CatchWorkerFrame::New(self, closure);
+    }
+
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    virtual Result Run(StackFrame *sFrame);
+    virtual Result Handle(word data);
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
+  };
+
+  CatchWorker *CatchWorker::self;
+
+  u_int CatchWorker::GetFrameSize(StackFrame *sFrame) {
+    Assert(sFrame->GetWorker() == this);
+    CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
+    return catchWorkerFrame->GetSize();
   }
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-  word GetHandler() {
-    return StackFrame::GetArg(HANDLER_POS);
-  }
-};
 
-class CatchWorker : public Worker {
-private:
-  CatchWorker() : Worker() {}
-public:
-  static CatchWorker *self;
-
-  static void Init() {
-    self = new CatchWorker();
+  Worker::Result CatchWorker::Run(StackFrame *sFrame) {
+    Assert(sFrame->GetWorker() == this);
+    CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
+    Scheduler::PopHandler();
+    Scheduler::PopFrame(catchWorkerFrame->GetSize());
+    return Worker::CONTINUE;
   }
 
-  static void PushFrame(word closure) {
-    CatchWorkerFrame::New(self, closure);
+  Worker::Result CatchWorker::Handle(word) {
+    StackFrame *sFrame = Scheduler::GetFrame();
+    Assert(sFrame->GetWorker() == this);
+    CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
+    word handler = catchWorkerFrame->GetHandler();
+    Scheduler::PopFrame(catchWorkerFrame->GetSize());
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(0, Scheduler::GetCurrentData());
+    Scheduler::SetCurrentArg(1, Scheduler::GetCurrentBacktrace()->ToWord());
+    return Scheduler::PushCall(handler);
   }
 
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  virtual Result Run(StackFrame *sFrame);
-  virtual Result Handle(word data);
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-};
+  const char *CatchWorker::Identify() {
+    return "CatchWorker";
+  }
 
-CatchWorker *CatchWorker::self;
+  void CatchWorker::DumpFrame(StackFrame *) {
+    // TODO: Insert useful stuff
+  }
 
-u_int CatchWorker::GetFrameSize(StackFrame *sFrame) {
-  Assert(sFrame->GetWorker() == this);
-  CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
-  return catchWorkerFrame->GetSize();
 }
 
-Worker::Result CatchWorker::Run(StackFrame *sFrame) {
-  Assert(sFrame->GetWorker() == this);
-  CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
-  Scheduler::PopHandler();
-  Scheduler::PopFrame(catchWorkerFrame->GetSize());
-  return Worker::CONTINUE;
-}
-
-Worker::Result CatchWorker::Handle(word) {
-  StackFrame *sFrame = Scheduler::GetFrame();
-  Assert(sFrame->GetWorker() == this);
-  CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
-  word handler = catchWorkerFrame->GetHandler();
-  Scheduler::PopFrame(catchWorkerFrame->GetSize());
-  Scheduler::SetNArgs(2);
-  Scheduler::SetCurrentArg(0, Scheduler::GetCurrentData());
-  Scheduler::SetCurrentArg(1, Scheduler::GetCurrentBacktrace()->ToWord());
-  return Scheduler::PushCall(handler);
-}
-
-const char *CatchWorker::Identify() {
-  return "CatchWorker";
-}
-
-void CatchWorker::DumpFrame(StackFrame *) {
-  // TODO: Insert useful stuff
-}
 
 DEFINE1(Exn_name) {
   DECLARE_BLOCK(conVal, x0);

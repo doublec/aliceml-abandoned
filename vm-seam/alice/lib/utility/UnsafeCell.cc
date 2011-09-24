@@ -13,503 +13,509 @@
 #include <cstdio>
 #include "alice/Authoring.hh"
 
-static const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
-static const BlockLabel CELLMAP_LABEL = TUPLE_LABEL;
 
-//
-// Abstract Data Type: CellMap
-//
+namespace {
 
-class CellMapEntry: private Block {
-private:
-  enum { KEY_POS, VALUE_POS, PREV_POS, NEXT_POS, SIZE };
-public:
-  using Block::ToWord;
+  const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
+  const BlockLabel CELLMAP_LABEL = TUPLE_LABEL;
 
-  static CellMapEntry *New(Cell *key, word value, CellMapEntry *next) {
-    Block *b = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
-    b->InitArg(KEY_POS, key->ToWord());
-    b->InitArg(VALUE_POS, value);
-    b->InitArg(PREV_POS, static_cast<s_int>(0));
-    if (next != INVALID_POINTER) {
-      b->InitArg(NEXT_POS, next->ToWord());
-      next->ReplaceArg(PREV_POS, b->ToWord());
-    } else
-      b->InitArg(NEXT_POS, static_cast<s_int>(0));
-    return static_cast<CellMapEntry *>(b);
-  }
-  static CellMapEntry *FromWordDirect(word w) {
-    Block *b = Store::DirectWordToBlock(w);
-    Assert(b->GetLabel() == ENTRY_LABEL && b->GetSize() == SIZE);
-    return static_cast<CellMapEntry *>(b);
-  }
+  //
+  // Abstract Data Type: CellMap
+  //
 
-  Cell *GetKey() {
-    return Cell::FromWordDirect(GetArg(KEY_POS));
-  }
-  word GetValue() {
-    return GetArg(VALUE_POS);
-  }
-  void SetValue(word value) {
-    ReplaceArg(VALUE_POS, value);
-  }
-  CellMapEntry *GetNext() {
-    word next = GetArg(NEXT_POS);
-    if (next == Store::IntToWord(0))
-      return INVALID_POINTER;
-    else
-      return CellMapEntry::FromWordDirect(next);
-  }
+  class CellMapEntry: private Block {
+  private:
+    enum { KEY_POS, VALUE_POS, PREV_POS, NEXT_POS, SIZE };
+  public:
+    using Block::ToWord;
 
-  word Unlink() {
-    // Returns:
-    //    Integer 1, iff unlink was completed without the need to touch head.
-    //    Integer 0, iff head needs to be set to the empty list.
-    //    New head, otherwise.
-    word prev = GetArg(PREV_POS);
-    word next = GetArg(NEXT_POS);
-    if (next != Store::IntToWord(0)) {
-      CellMapEntry *nextEntry = CellMapEntry::FromWordDirect(next);
-      nextEntry->ReplaceArg(PREV_POS, prev);
+    static CellMapEntry *New(Cell *key, word value, CellMapEntry *next) {
+      Block *b = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
+      b->InitArg(KEY_POS, key->ToWord());
+      b->InitArg(VALUE_POS, value);
+      b->InitArg(PREV_POS, static_cast<s_int>(0));
+      if (next != INVALID_POINTER) {
+	b->InitArg(NEXT_POS, next->ToWord());
+	next->ReplaceArg(PREV_POS, b->ToWord());
+      } else
+	b->InitArg(NEXT_POS, static_cast<s_int>(0));
+      return static_cast<CellMapEntry *>(b);
     }
-    if (prev != Store::IntToWord(0)) {
-      CellMapEntry *prevEntry = CellMapEntry::FromWordDirect(prev);
-      prevEntry->ReplaceArg(NEXT_POS, next);
-      return Store::IntToWord(1);
-    } else
-      return next;
-  }
-};
+    static CellMapEntry *FromWordDirect(word w) {
+      Block *b = Store::DirectWordToBlock(w);
+      Assert(b->GetLabel() == ENTRY_LABEL && b->GetSize() == SIZE);
+      return static_cast<CellMapEntry *>(b);
+    }
 
-//--** CellMaps should be picklable
-class CellMap: private Block {
-private:
-  enum { HASHTABLE_POS, HEAD_POS, SIZE };
+    Cell *GetKey() {
+      return Cell::FromWordDirect(GetArg(KEY_POS));
+    }
+    word GetValue() {
+      return GetArg(VALUE_POS);
+    }
+    void SetValue(word value) {
+      ReplaceArg(VALUE_POS, value);
+    }
+    CellMapEntry *GetNext() {
+      word next = GetArg(NEXT_POS);
+      if (next == Store::IntToWord(0))
+	return INVALID_POINTER;
+      else
+	return CellMapEntry::FromWordDirect(next);
+    }
 
-  static const u_int initialSize = 8; //--** to be determined
+    word Unlink() {
+      // Returns:
+      //    Integer 1, iff unlink was completed without the need to touch head.
+      //    Integer 0, iff head needs to be set to the empty list.
+      //    New head, otherwise.
+      word prev = GetArg(PREV_POS);
+      word next = GetArg(NEXT_POS);
+      if (next != Store::IntToWord(0)) {
+	CellMapEntry *nextEntry = CellMapEntry::FromWordDirect(next);
+	nextEntry->ReplaceArg(PREV_POS, prev);
+      }
+      if (prev != Store::IntToWord(0)) {
+	CellMapEntry *prevEntry = CellMapEntry::FromWordDirect(prev);
+	prevEntry->ReplaceArg(NEXT_POS, next);
+	return Store::IntToWord(1);
+      } else
+	return next;
+    }
+  };
 
-  Map *GetHashTable() {
-    return Map::FromWordDirect(GetArg(HASHTABLE_POS));
-  }
-public:
-  using Block::ToWord;
+  //--** CellMaps should be picklable
+  class CellMap: private Block {
+  private:
+    enum { HASHTABLE_POS, HEAD_POS, SIZE };
 
-  static CellMap *New() {
-    Block *b = Store::AllocMutableBlock(CELLMAP_LABEL, SIZE);
-    b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
-    b->InitArg(HEAD_POS, static_cast<s_int>(0));
-    return static_cast<CellMap *>(b);
-  }
-  static CellMap *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == CELLMAP_LABEL && b->GetSize() == SIZE);
-    return static_cast<CellMap *>(b);
-  }
+    static const u_int initialSize = 8; //--** to be determined
 
-  void Insert(Cell *key, word value) {
-    Map *hashTable = GetHashTable();
-    word wKey = key->ToWord();
-    Assert(!hashTable->IsMember(wKey));
-    word head = GetArg(HEAD_POS);
-    CellMapEntry *headEntry = head == Store::IntToWord(0)?
-      INVALID_POINTER: CellMapEntry::FromWordDirect(head);
-    CellMapEntry *entry = CellMapEntry::New(key, value, headEntry);
-    ReplaceArg(HEAD_POS, entry->ToWord());
-    hashTable->Put(wKey, entry->ToWord());
-  }
-  void Remove(Cell *key) {
-    word wKey = key->ToWord();
-    Map *hashTable = GetHashTable();
-    Assert(hashTable->IsMember(wKey));
-    CellMapEntry *entry =
-      CellMapEntry::FromWordDirect(hashTable->Get(wKey));
-    hashTable->Remove(wKey);
-    word result = entry->Unlink();
-    if (result != Store::IntToWord(1))
-      ReplaceArg(HEAD_POS, result);
-  }
-  void RemoveAll() {
-    GetHashTable()->Clear();
-    ReplaceArg(HEAD_POS, static_cast<s_int>(0));
-  }
-  CellMapEntry *LookupEntry(Cell *key) {
-    word wKey = key->ToWord();
-    Map *hashTable = GetHashTable();
-    Assert(hashTable->IsMember(wKey));
-    return CellMapEntry::FromWordDirect(hashTable->Get(wKey));
-  }
-  word Lookup(Cell *key) {
-    word wKey = key->ToWord();
-    Map *hashTable = GetHashTable();
-    if (hashTable->IsMember(wKey)) {
-      TagVal *some = TagVal::New(1, 1); // SOME ...
+    Map *GetHashTable() {
+      return Map::FromWordDirect(GetArg(HASHTABLE_POS));
+    }
+  public:
+    using Block::ToWord;
+
+    static CellMap *New() {
+      Block *b = Store::AllocMutableBlock(CELLMAP_LABEL, SIZE);
+      b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
+      b->InitArg(HEAD_POS, static_cast<s_int>(0));
+      return static_cast<CellMap *>(b);
+    }
+    static CellMap *FromWord(word x) {
+      Block *b = Store::WordToBlock(x);
+      Assert(b == INVALID_POINTER ||
+	    b->GetLabel() == CELLMAP_LABEL && b->GetSize() == SIZE);
+      return static_cast<CellMap *>(b);
+    }
+
+    void Insert(Cell *key, word value) {
+      Map *hashTable = GetHashTable();
+      word wKey = key->ToWord();
+      Assert(!hashTable->IsMember(wKey));
+      word head = GetArg(HEAD_POS);
+      CellMapEntry *headEntry = head == Store::IntToWord(0)?
+	INVALID_POINTER: CellMapEntry::FromWordDirect(head);
+      CellMapEntry *entry = CellMapEntry::New(key, value, headEntry);
+      ReplaceArg(HEAD_POS, entry->ToWord());
+      hashTable->Put(wKey, entry->ToWord());
+    }
+    void Remove(Cell *key) {
+      word wKey = key->ToWord();
+      Map *hashTable = GetHashTable();
+      Assert(hashTable->IsMember(wKey));
       CellMapEntry *entry =
 	CellMapEntry::FromWordDirect(hashTable->Get(wKey));
-      some->Init(0, entry->GetValue());
-      return some->ToWord();
-    } else {
-      return Store::IntToWord(0); // NONE
+      hashTable->Remove(wKey);
+      word result = entry->Unlink();
+      if (result != Store::IntToWord(1))
+	ReplaceArg(HEAD_POS, result);
     }
-  }
-  bool Member(Cell *key) {
-    return GetHashTable()->IsMember(key->ToWord());
-  }
-  bool IsEmpty() {
-    return GetHashTable()->IsEmpty();
-  }
-  u_int GetSize() {
-    return GetHashTable()->GetSize();
-  }
-  CellMapEntry *GetHead() {
-    word head = GetArg(HEAD_POS);
-    if (head == Store::IntToWord(0))
-      return INVALID_POINTER;
-    else
-      return CellMapEntry::FromWordDirect(head);
-  }
-};
+    void RemoveAll() {
+      GetHashTable()->Clear();
+      ReplaceArg(HEAD_POS, static_cast<s_int>(0));
+    }
+    CellMapEntry *LookupEntry(Cell *key) {
+      word wKey = key->ToWord();
+      Map *hashTable = GetHashTable();
+      Assert(hashTable->IsMember(wKey));
+      return CellMapEntry::FromWordDirect(hashTable->Get(wKey));
+    }
+    word Lookup(Cell *key) {
+      word wKey = key->ToWord();
+      Map *hashTable = GetHashTable();
+      if (hashTable->IsMember(wKey)) {
+	TagVal *some = TagVal::New(1, 1); // SOME ...
+	CellMapEntry *entry =
+	  CellMapEntry::FromWordDirect(hashTable->Get(wKey));
+	some->Init(0, entry->GetValue());
+	return some->ToWord();
+      } else {
+	return Store::IntToWord(0); // NONE
+      }
+    }
+    bool Member(Cell *key) {
+      return GetHashTable()->IsMember(key->ToWord());
+    }
+    bool IsEmpty() {
+      return GetHashTable()->IsEmpty();
+    }
+    u_int GetSize() {
+      return GetHashTable()->GetSize();
+    }
+    CellMapEntry *GetHead() {
+      word head = GetArg(HEAD_POS);
+      if (head == Store::IntToWord(0))
+	return INVALID_POINTER;
+      else
+	return CellMapEntry::FromWordDirect(head);
+    }
+  };
 
 #define DECLARE_CELL_MAP(cellMap, x) DECLARE_BLOCKTYPE(CellMap, cellMap, x)
 
-//
-// Worker for insertWithi
-//
+  //
+  // Worker for insertWithi
+  //
 
-class CellMapInsertWorker: public Worker {
-private:
-  static CellMapInsertWorker *self;
-  CellMapInsertWorker(): Worker() {}
-public:
-  static void Init() {
-    self = new CellMapInsertWorker();
-  }
-  // Frame Handling
-  static void PushFrame(CellMapEntry *entry);
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  // Execution
-  virtual Result Run(StackFrame *sFrame);
-  // Debugging
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-};
+  class CellMapInsertWorker: public Worker {
+  private:
+    static CellMapInsertWorker *self;
+    CellMapInsertWorker(): Worker() {}
+  public:
+    static void Init() {
+      self = new CellMapInsertWorker();
+    }
+    // Frame Handling
+    static void PushFrame(CellMapEntry *entry);
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    // Execution
+    virtual Result Run(StackFrame *sFrame);
+    // Debugging
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
+  };
 
-class CellMapInsertFrame: private StackFrame {
-private:
-  enum { ENTRY_POS, SIZE };
-public:
-  static CellMapInsertFrame *New(Worker *worker, CellMapEntry *entry) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(ENTRY_POS, entry->ToWord());
-    return static_cast<CellMapInsertFrame *>(frame);
-  }
+  class CellMapInsertFrame: private StackFrame {
+  private:
+    enum { ENTRY_POS, SIZE };
+  public:
+    static CellMapInsertFrame *New(Worker *worker, CellMapEntry *entry) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      frame->InitArg(ENTRY_POS, entry->ToWord());
+      return static_cast<CellMapInsertFrame *>(frame);
+    }
 
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-  CellMapEntry *GetEntry() {
-    return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
-  }
-};
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    CellMapEntry *GetEntry() {
+      return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
+    }
+  };
 
-CellMapInsertWorker *CellMapInsertWorker::self;
+  CellMapInsertWorker *CellMapInsertWorker::self;
 
-void CellMapInsertWorker::PushFrame(CellMapEntry *entry) {
-  CellMapInsertFrame::New(self, entry);
-}
-
-u_int CellMapInsertWorker::GetFrameSize(StackFrame *sFrame) {
-  CellMapInsertFrame *frame = reinterpret_cast<CellMapInsertFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
-}
-
-Worker::Result CellMapInsertWorker::Run(StackFrame *sFrame) {
-  CellMapInsertFrame *frame = reinterpret_cast<CellMapInsertFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  CellMapEntry *entry = frame->GetEntry();
-  Scheduler::PopFrame(frame->GetSize());
-  Construct();
-  entry->SetValue(Scheduler::GetCurrentArg(0));
-  Scheduler::SetNArgs(1);
-  Scheduler::SetCurrentArg(0, Store::IntToWord(0));
-  return Worker::CONTINUE;
-}
-
-const char *CellMapInsertWorker::Identify() {
-  return "CellMapInsertWorker";
-}
-
-void CellMapInsertWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "UnsafeCell.Map.insertWithi\n");
-}
-
-//
-// Worker for Iterating over CellMaps
-//
-
-class CellMapIteratorWorker: public Worker {
-private:
-  static CellMapIteratorWorker *self;
-  CellMapIteratorWorker(): Worker() {}
-public:
-  enum operation { app, appi, fold, foldi };
-
-  static void Init() {
-    self = new CellMapIteratorWorker();
-  }
-  // Frame Handling
-  static void PushFrame(CellMapEntry *entry, word closure, operation op);
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  // Execution
-  virtual Result Run(StackFrame *sFrame);
-  // Debugging
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-};
-
-class CellMapIteratorFrame: private StackFrame {
-private:
-  enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
-public:
-  static CellMapIteratorFrame *New(Worker *worker,
-				   CellMapEntry *entry, word closure,
-				   CellMapIteratorWorker::operation op) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(ENTRY_POS, entry->ToWord());
-    frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(OPERATION_POS, Store::IntToWord(op));
-    return static_cast<CellMapIteratorFrame *>(frame);
+  void CellMapInsertWorker::PushFrame(CellMapEntry *entry) {
+    CellMapInsertFrame::New(self, entry);
   }
 
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
+  u_int CellMapInsertWorker::GetFrameSize(StackFrame *sFrame) {
+    CellMapInsertFrame *frame = reinterpret_cast<CellMapInsertFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
   }
-  CellMapEntry *GetEntry() {
-    return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
-  }
-  void SetEntry(CellMapEntry *entry) {
-    ReplaceArg(ENTRY_POS, entry->ToWord());
-  }
-  word GetClosure() {
-    return GetArg(CLOSURE_POS);
-  }
-  CellMapIteratorWorker::operation GetOperation() {
-    return static_cast<CellMapIteratorWorker::operation>(Store::DirectWordToInt(GetArg(OPERATION_POS)));
-  }
-};
 
-CellMapIteratorWorker *CellMapIteratorWorker::self;
-
-void CellMapIteratorWorker::PushFrame(CellMapEntry *entry,
-				      word closure, operation op) {
-  CellMapIteratorFrame::New(self, entry, closure, op);
-}
-
-u_int CellMapIteratorWorker::GetFrameSize(StackFrame *sFrame) {
-  CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
-}
-
-Worker::Result CellMapIteratorWorker::Run(StackFrame *sFrame) {
-  CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  CellMapEntry *entry = frame->GetEntry();
-  word closure = frame->GetClosure();
-  operation op = frame->GetOperation();
-  CellMapEntry *nextEntry = entry->GetNext();
-  if (nextEntry != INVALID_POINTER)
-    frame->SetEntry(nextEntry);
-  else
+  Worker::Result CellMapInsertWorker::Run(StackFrame *sFrame) {
+    CellMapInsertFrame *frame = reinterpret_cast<CellMapInsertFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    CellMapEntry *entry = frame->GetEntry();
     Scheduler::PopFrame(frame->GetSize());
-  switch (op) {
-  case app:
+    Construct();
+    entry->SetValue(Scheduler::GetCurrentArg(0));
     Scheduler::SetNArgs(1);
-    Scheduler::SetCurrentArg(0, entry->GetValue());
-    break;
-  case appi:
-    Scheduler::SetNArgs(2);
-    Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
-    Scheduler::SetCurrentArg(1, entry->GetValue());
-    break;
-  case fold:
-    Construct();
-    Scheduler::SetNArgs(2);
-    Scheduler::SetCurrentArg(1, Scheduler::GetCurrentArg(0));
-    Scheduler::SetCurrentArg(0, entry->GetValue());
-    break;
-  case foldi:
-    Construct();
-    Scheduler::SetNArgs(3);
-    Scheduler::SetCurrentArg(2, Scheduler::GetCurrentArg(0));
-    Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
-    Scheduler::SetCurrentArg(1, entry->GetValue());
-    break;
-  }
-  return Scheduler::PushCall(closure);
-}
-
-const char *CellMapIteratorWorker::Identify() {
-  return "CellMapIteratorWorker";
-}
-
-void CellMapIteratorWorker::DumpFrame(StackFrame *sFrame) {
-  CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  const char *name;
-  switch (frame->GetOperation()) {
-  case app: name = "app"; break;
-  case appi: name = "appi"; break;
-  case fold: name = "fold"; break;
-  case foldi: name = "foldi"; break;
-  default:
-    Error("unknown CellMapIteratorWorker operation\n");
-  }
-  std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
-}
-
-//
-// Worker for Searching in CellMaps
-//
-
-class CellMapFindWorker: public Worker {
-private:
-  static CellMapFindWorker *self;
-  CellMapFindWorker(): Worker() {}
-public:
-  enum operation { find, findi };
-
-  static void Init() {
-    self = new CellMapFindWorker();
-  }
-  // Frame Handling
-  static void PushFrame(CellMapEntry *entry, word closure, operation op);
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  // Execution
-  virtual Result Run(StackFrame *sFrame);
-  // Debugging
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-};
-
-class CellMapFindFrame: private StackFrame {
-private:
-  enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
-public:
-  static CellMapFindFrame *New(Worker *worker,
-			       CellMapEntry *entry, word closure,
-			       CellMapFindWorker::operation op) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(ENTRY_POS, entry->ToWord());
-    frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(OPERATION_POS, Store::IntToWord(op));
-    return static_cast<CellMapFindFrame *>(frame);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
+    return Worker::CONTINUE;
   }
 
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
+  const char *CellMapInsertWorker::Identify() {
+    return "CellMapInsertWorker";
   }
-  CellMapEntry *GetEntry() {
-    return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
-  }
-  void SetEntry(CellMapEntry *entry) {
-    ReplaceArg(ENTRY_POS, entry->ToWord());
-  }
-  word GetClosure() {
-    return GetArg(CLOSURE_POS);
-  }
-  CellMapFindWorker::operation GetOperation() {
-    return static_cast<CellMapFindWorker::operation>(Store::DirectWordToInt(GetArg(OPERATION_POS)));
-  }
-};
 
-CellMapFindWorker *CellMapFindWorker::self;
+  void CellMapInsertWorker::DumpFrame(StackFrame *) {
+    std::fprintf(stderr, "UnsafeCell.Map.insertWithi\n");
+  }
 
-void CellMapFindWorker::PushFrame(CellMapEntry *entry,
-				  word closure, operation op) {
-  CellMapFindFrame::New(self, entry, closure, op);
-}
+  //
+  // Worker for Iterating over CellMaps
+  //
 
-u_int CellMapFindWorker::GetFrameSize(StackFrame *sFrame) {
-  CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
-}
+  class CellMapIteratorWorker: public Worker {
+  private:
+    static CellMapIteratorWorker *self;
+    CellMapIteratorWorker(): Worker() {}
+  public:
+    enum operation { app, appi, fold, foldi };
 
-Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
-  CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  CellMapEntry *entry = frame->GetEntry();
-  word closure = frame->GetClosure();
-  operation op = frame->GetOperation();
-  Assert(Scheduler::GetNArgs() == 1);
-  switch (Store::WordToInt(Scheduler::GetCurrentArg(0))) {
-  case 0: // false
-    entry = entry->GetNext();
-    if (entry != INVALID_POINTER) {
-      frame->SetEntry(entry);
-      switch (op) {
-      case find:
+    static void Init() {
+      self = new CellMapIteratorWorker();
+    }
+    // Frame Handling
+    static void PushFrame(CellMapEntry *entry, word closure, operation op);
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    // Execution
+    virtual Result Run(StackFrame *sFrame);
+    // Debugging
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
+  };
+
+  class CellMapIteratorFrame: private StackFrame {
+  private:
+    enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
+  public:
+    static CellMapIteratorFrame *New(Worker *worker,
+				    CellMapEntry *entry, word closure,
+				    CellMapIteratorWorker::operation op) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      frame->InitArg(ENTRY_POS, entry->ToWord());
+      frame->InitArg(CLOSURE_POS, closure);
+      frame->InitArg(OPERATION_POS, Store::IntToWord(op));
+      return static_cast<CellMapIteratorFrame *>(frame);
+    }
+
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    CellMapEntry *GetEntry() {
+      return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
+    }
+    void SetEntry(CellMapEntry *entry) {
+      ReplaceArg(ENTRY_POS, entry->ToWord());
+    }
+    word GetClosure() {
+      return GetArg(CLOSURE_POS);
+    }
+    CellMapIteratorWorker::operation GetOperation() {
+      return static_cast<CellMapIteratorWorker::operation>(Store::DirectWordToInt(GetArg(OPERATION_POS)));
+    }
+  };
+
+  CellMapIteratorWorker *CellMapIteratorWorker::self;
+
+  void CellMapIteratorWorker::PushFrame(CellMapEntry *entry,
+					word closure, operation op) {
+    CellMapIteratorFrame::New(self, entry, closure, op);
+  }
+
+  u_int CellMapIteratorWorker::GetFrameSize(StackFrame *sFrame) {
+    CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
+  }
+
+  Worker::Result CellMapIteratorWorker::Run(StackFrame *sFrame) {
+    CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    CellMapEntry *entry = frame->GetEntry();
+    word closure = frame->GetClosure();
+    operation op = frame->GetOperation();
+    CellMapEntry *nextEntry = entry->GetNext();
+    if (nextEntry != INVALID_POINTER)
+      frame->SetEntry(nextEntry);
+    else
+      Scheduler::PopFrame(frame->GetSize());
+    switch (op) {
+    case app:
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, entry->GetValue());
+      break;
+    case appi:
+      Scheduler::SetNArgs(2);
+      Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
+      Scheduler::SetCurrentArg(1, entry->GetValue());
+      break;
+    case fold:
+      Construct();
+      Scheduler::SetNArgs(2);
+      Scheduler::SetCurrentArg(1, Scheduler::GetCurrentArg(0));
+      Scheduler::SetCurrentArg(0, entry->GetValue());
+      break;
+    case foldi:
+      Construct();
+      Scheduler::SetNArgs(3);
+      Scheduler::SetCurrentArg(2, Scheduler::GetCurrentArg(0));
+      Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
+      Scheduler::SetCurrentArg(1, entry->GetValue());
+      break;
+    }
+    return Scheduler::PushCall(closure);
+  }
+
+  const char *CellMapIteratorWorker::Identify() {
+    return "CellMapIteratorWorker";
+  }
+
+  void CellMapIteratorWorker::DumpFrame(StackFrame *sFrame) {
+    CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    const char *name;
+    switch (frame->GetOperation()) {
+    case app: name = "app"; break;
+    case appi: name = "appi"; break;
+    case fold: name = "fold"; break;
+    case foldi: name = "foldi"; break;
+    default:
+      Error("unknown CellMapIteratorWorker operation\n");
+    }
+    std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
+  }
+
+  //
+  // Worker for Searching in CellMaps
+  //
+
+  class CellMapFindWorker: public Worker {
+  private:
+    static CellMapFindWorker *self;
+    CellMapFindWorker(): Worker() {}
+  public:
+    enum operation { find, findi };
+
+    static void Init() {
+      self = new CellMapFindWorker();
+    }
+    // Frame Handling
+    static void PushFrame(CellMapEntry *entry, word closure, operation op);
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    // Execution
+    virtual Result Run(StackFrame *sFrame);
+    // Debugging
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
+  };
+
+  class CellMapFindFrame: private StackFrame {
+  private:
+    enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
+  public:
+    static CellMapFindFrame *New(Worker *worker,
+				CellMapEntry *entry, word closure,
+				CellMapFindWorker::operation op) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      frame->InitArg(ENTRY_POS, entry->ToWord());
+      frame->InitArg(CLOSURE_POS, closure);
+      frame->InitArg(OPERATION_POS, Store::IntToWord(op));
+      return static_cast<CellMapFindFrame *>(frame);
+    }
+
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    CellMapEntry *GetEntry() {
+      return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
+    }
+    void SetEntry(CellMapEntry *entry) {
+      ReplaceArg(ENTRY_POS, entry->ToWord());
+    }
+    word GetClosure() {
+      return GetArg(CLOSURE_POS);
+    }
+    CellMapFindWorker::operation GetOperation() {
+      return static_cast<CellMapFindWorker::operation>(Store::DirectWordToInt(GetArg(OPERATION_POS)));
+    }
+  };
+
+  CellMapFindWorker *CellMapFindWorker::self;
+
+  void CellMapFindWorker::PushFrame(CellMapEntry *entry,
+				    word closure, operation op) {
+    CellMapFindFrame::New(self, entry, closure, op);
+  }
+
+  u_int CellMapFindWorker::GetFrameSize(StackFrame *sFrame) {
+    CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
+  }
+
+  Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
+    CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    CellMapEntry *entry = frame->GetEntry();
+    word closure = frame->GetClosure();
+    operation op = frame->GetOperation();
+    Assert(Scheduler::GetNArgs() == 1);
+    switch (Store::WordToInt(Scheduler::GetCurrentArg(0))) {
+    case 0: // false
+      entry = entry->GetNext();
+      if (entry != INVALID_POINTER) {
+	frame->SetEntry(entry);
+	switch (op) {
+	case find:
+	  Scheduler::SetNArgs(1);
+	  Scheduler::SetCurrentArg(0, entry->GetValue());
+	  break;
+	case findi:
+	  Scheduler::SetNArgs(2);
+	  Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
+	  Scheduler::SetCurrentArg(1, entry->GetValue());
+	  break;
+	}
+	return Scheduler::PushCall(closure);
+      } else {
+	Scheduler::PopFrame(frame->GetSize());
 	Scheduler::SetNArgs(1);
-	Scheduler::SetCurrentArg(0, entry->GetValue());
-	break;
-      case findi:
-	Scheduler::SetNArgs(2);
-	Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
-	Scheduler::SetCurrentArg(1, entry->GetValue());
-	break;
+	Scheduler::SetCurrentArg(0, Store::IntToWord(0)); // NONE
+	return Worker::CONTINUE;
       }
-      return Scheduler::PushCall(closure);
-    } else {
-      Scheduler::PopFrame(frame->GetSize());
-      Scheduler::SetNArgs(1);
-      Scheduler::SetCurrentArg(0, Store::IntToWord(0)); // NONE
-      return Worker::CONTINUE;
-    }
-  case 1: // true
-    {
-      Scheduler::PopFrame(frame->GetSize());
-      TagVal *some = TagVal::New(1, 1); // SOME ...
-      switch (op) {
-      case find:
-	some->Init(0, entry->GetValue());
-	break;
-      case findi:
-	Tuple *pair = Tuple::New(2);
-	pair->Init(0, entry->GetKey()->ToWord());
-	pair->Init(1, entry->GetValue());
-	some->Init(0, pair->ToWord());
-	break;
+    case 1: // true
+      {
+	Scheduler::PopFrame(frame->GetSize());
+	TagVal *some = TagVal::New(1, 1); // SOME ...
+	switch (op) {
+	case find:
+	  some->Init(0, entry->GetValue());
+	  break;
+	case findi:
+	  Tuple *pair = Tuple::New(2);
+	  pair->Init(0, entry->GetKey()->ToWord());
+	  pair->Init(1, entry->GetValue());
+	  some->Init(0, pair->ToWord());
+	  break;
+	}
+	Scheduler::SetNArgs(1);
+	Scheduler::SetCurrentArg(0, some->ToWord());
+	return Worker::CONTINUE;
       }
-      Scheduler::SetNArgs(1);
-      Scheduler::SetCurrentArg(0, some->ToWord());
-      return Worker::CONTINUE;
+    case INVALID_INT:
+      Scheduler::SetCurrentData(Scheduler::GetCurrentArg(0));
+      return Worker::REQUEST;
+    default:
+      Error("CellMapFindWorker: boolean expected");
     }
-  case INVALID_INT:
-    Scheduler::SetCurrentData(Scheduler::GetCurrentArg(0));
-    return Worker::REQUEST;
-  default:
-    Error("CellMapFindWorker: boolean expected");
   }
+
+  const char *CellMapFindWorker::Identify() {
+    return "CellMapFindWorker";
+  }
+
+  void CellMapFindWorker::DumpFrame(StackFrame *sFrame) {
+    CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    const char *name;
+    switch (frame->GetOperation()) {
+    case find: name = "find"; break;
+    case findi: name = "findi"; break;
+    default:
+      Error("unknown CellMapFindWorker operation\n");
+    }
+    std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
+  }
+
 }
 
-const char *CellMapFindWorker::Identify() {
-  return "CellMapFindWorker";
-}
-
-void CellMapFindWorker::DumpFrame(StackFrame *sFrame) {
-  CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  const char *name;
-  switch (frame->GetOperation()) {
-  case find: name = "find"; break;
-  case findi: name = "findi"; break;
-  default:
-    Error("unknown CellMapFindWorker operation\n");
-  }
-  std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
-}
 
 //
 // Primitives

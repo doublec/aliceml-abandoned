@@ -43,71 +43,75 @@
  *
  */
 
-class AliceDll GMPHandler : public ConcreteRepresentationHandler {
-public:
-  // Define the format of the external representation
-  static const size_t nails = 0; // don't ignore leading stuff
-  static const int order = 1; // most significant word first
-  static const int endian = 1; // most significant byte first
-  static const int size = 4; // words of 4 bytes
+namespace {
 
-  Transform *GetAbstractRepresentation(ConcreteRepresentation *cr) {
-    // Pickle a big integer
+  class AliceDll GMPHandler : public ConcreteRepresentationHandler {
+  public:
+    // Define the format of the external representation
+    static const size_t nails = 0; // don't ignore leading stuff
+    static const int order = 1; // most significant word first
+    static const int endian = 1; // most significant byte first
+    static const int size = 4; // words of 4 bytes
 
-    BigInt *b = BigInt::FromWordDirect(cr->Get(0));
-    MP_INT *value = b->big();    
+    Transform *GetAbstractRepresentation(ConcreteRepresentation *cr) {
+      // Pickle a big integer
 
-    int sig = mpz_sgn(value);
+      BigInt *b = BigInt::FromWordDirect(cr->Get(0));
+      MP_INT *value = b->big();    
 
-    Chunk *c;
+      int sig = mpz_sgn(value);
 
-    // External representation:
-    // Chunk, byte 0 is the sign, the rest is the byte string
-    // returned by mpz_export in the format specified above
-    if (sig==0) {
-      c = Store::AllocChunk(1);
-      c->GetBase()[0] = 0; // 0 means 0
-    } else {
-      // compute required space      
-      u_int numb = 8*size - nails;
-      u_int count = (mpz_sizeinbase(value, 2) + numb-1) / numb;
-      c = Store::AllocChunk(count*size+1);
-      char *base = c->GetBase();
-      if (sig<0)
-        base[0] = 2; // 2 means negative
-      else
-        base[0] = 1; // 1 means positive
+      Chunk *c;
 
-      base++;
+      // External representation:
+      // Chunk, byte 0 is the sign, the rest is the byte string
+      // returned by mpz_export in the format specified above
+      if (sig==0) {
+	c = Store::AllocChunk(1);
+	c->GetBase()[0] = 0; // 0 means 0
+      } else {
+	// compute required space      
+	u_int numb = 8*size - nails;
+	u_int count = (mpz_sizeinbase(value, 2) + numb-1) / numb;
+	c = Store::AllocChunk(count*size+1);
+	char *base = c->GetBase();
+	if (sig<0)
+	  base[0] = 2; // 2 means negative
+	else
+	  base[0] = 1; // 1 means positive
 
-      size_t counter;
-      mpz_export(base, &counter, order, size, endian, nails, value);
+	base++;
+
+	size_t counter;
+	mpz_export(base, &counter, order, size, endian, nails, value);
+      }
+
+      word transformName = String::New("Alice.bigInteger")->ToWord();
+
+      Transform *t = Transform::New(Store::DirectWordToChunk(transformName),
+				    c->ToWord());
+
+      return t;
     }
+  };
 
-    word transformName = String::New("Alice.bigInteger")->ToWord();
+  class AliceDll GMPFinalizationSet: public FinalizationSet {
+  public:
+    virtual void Finalize(word value);
+  };
 
-    Transform *t = Transform::New(Store::DirectWordToChunk(transformName),
-                                  c->ToWord());
-
-    return t;
+  void GMPFinalizationSet::Finalize(word value) {
+    ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
+    word ptr = cr->Get(0);
+    BigInt *b = BigInt::FromWordDirect(ptr);
+    b->destroy();
   }
-};
+
+}
 
 ConcreteRepresentationHandler *PrimitiveTable::gmpHandler;
-
-class AliceDll GMPFinalizationSet: public FinalizationSet {
-public:
-  virtual void Finalize(word value);
-};
-
 FinalizationSet *PrimitiveTable::gmpFinalizationSet;
 
-void GMPFinalizationSet::Finalize(word value) {
-  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
-  word ptr = cr->Get(0);
-  BigInt *b = BigInt::FromWordDirect(ptr);
-  b->destroy();
-}
 
 #define RETURN_INTINF2(i, j)                                    \
 {                                                               \

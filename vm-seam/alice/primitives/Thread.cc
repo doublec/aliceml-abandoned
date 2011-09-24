@@ -13,75 +13,81 @@
 #include <cstdio>
 #include "alice/Authoring.hh"
 
-class RaiseFrame: private StackFrame {
-private:
-  enum { EXN_POS, SIZE };
-public:
-  // RaiseFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-  word GetExn() {
-    return GetArg(EXN_POS);
-  }
-  // RaiseFrame Constructor
-  static RaiseFrame *New(Thread *thread, Worker *worker, word exn) {
-    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
-    frame->InitArg(EXN_POS, exn);
-    return static_cast<RaiseFrame *>(frame);
-  }
-};
 
-class RaiseWorker: public Worker {
-private:
-  static RaiseWorker *self;
-public:
-  // RaiseWorker Constructor
-  RaiseWorker(): Worker() {}
-  // RaiseWorker Static Constructor
-  static void Init() {
-    self = new RaiseWorker();
-  }
-  // Frame Handling
-  static void PushFrame(Thread *thread, word exn) {
-    RaiseFrame::New(thread, self, exn);
-  }
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  // Execution
-  virtual Result Run(StackFrame *sFrame);
-  // Debugging
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-};
+namespace {
 
-//
-// RaiseWorker Functions
-//
-RaiseWorker *RaiseWorker::self;
+  class RaiseFrame: private StackFrame {
+  private:
+    enum { EXN_POS, SIZE };
+  public:
+    // RaiseFrame Accessors
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    word GetExn() {
+      return GetArg(EXN_POS);
+    }
+    // RaiseFrame Constructor
+    static RaiseFrame *New(Thread *thread, Worker *worker, word exn) {
+      NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
+      frame->InitArg(EXN_POS, exn);
+      return static_cast<RaiseFrame *>(frame);
+    }
+  };
 
-u_int RaiseWorker::GetFrameSize(StackFrame *sFrame) {
-  RaiseFrame *frame = reinterpret_cast<RaiseFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
+  class RaiseWorker: public Worker {
+  private:
+    static RaiseWorker *self;
+  public:
+    // RaiseWorker Constructor
+    RaiseWorker(): Worker() {}
+    // RaiseWorker Static Constructor
+    static void Init() {
+      self = new RaiseWorker();
+    }
+    // Frame Handling
+    static void PushFrame(Thread *thread, word exn) {
+      RaiseFrame::New(thread, self, exn);
+    }
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    // Execution
+    virtual Result Run(StackFrame *sFrame);
+    // Debugging
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
+  };
+
+  //
+  // RaiseWorker Functions
+  //
+  RaiseWorker *RaiseWorker::self;
+
+  u_int RaiseWorker::GetFrameSize(StackFrame *sFrame) {
+    RaiseFrame *frame = reinterpret_cast<RaiseFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
+  }
+
+  Worker::Result RaiseWorker::Run(StackFrame *sFrame) {
+    RaiseFrame *frame = reinterpret_cast<RaiseFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    Scheduler::SetCurrentData(frame->GetExn());
+    word wFrame = sFrame->Clone();
+    Scheduler::PopFrame(frame->GetSize());
+    Scheduler::SetCurrentBacktrace(Backtrace::New(wFrame));
+    return Worker::RAISE;
+  }
+
+  const char *RaiseWorker::Identify() {
+    return "RaiseWorker";
+  }
+
+  void RaiseWorker::DumpFrame(StackFrame *) {
+    fprintf(stderr, "Raise\n");
+  }
+  
 }
 
-Worker::Result RaiseWorker::Run(StackFrame *sFrame) {
-  RaiseFrame *frame = reinterpret_cast<RaiseFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  Scheduler::SetCurrentData(frame->GetExn());
-  word wFrame = sFrame->Clone();
-  Scheduler::PopFrame(frame->GetSize());
-  Scheduler::SetCurrentBacktrace(Backtrace::New(wFrame));
-  return Worker::RAISE;
-}
-
-const char *RaiseWorker::Identify() {
-  return "RaiseWorker";
-}
-
-void RaiseWorker::DumpFrame(StackFrame *) {
-  fprintf(stderr, "Raise\n");
-}
 
 // Builtins
 

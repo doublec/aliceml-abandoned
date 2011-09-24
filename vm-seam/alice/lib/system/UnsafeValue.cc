@@ -14,93 +14,99 @@
 #include "alice/Authoring.hh"
 #include "generic/Debug.hh"
 
-//
-// RequestInterpreter
-//
-class RequestInterpreter: public Interpreter {
-private:
-  RequestInterpreter(): Interpreter() {}
-public:
-  static RequestInterpreter *self;
 
-  static void Init() {
-    self = new RequestInterpreter();
+namespace {
+
+  //
+  // RequestInterpreter
+  //
+  class RequestInterpreter: public Interpreter {
+  private:
+    RequestInterpreter(): Interpreter() {}
+  public:
+    static RequestInterpreter *self;
+
+    static void Init() {
+      self = new RequestInterpreter();
+    }
+
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    virtual Result Run(StackFrame *sFrame);
+    virtual u_int GetInArity(ConcreteCode *concreteCode);
+    virtual u_int GetOutArity(ConcreteCode *concreteCode);
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
+
+    virtual void PushCall(Closure *closure);
+  };
+
+  class RequestFrame: private StackFrame {
+  protected:
+    enum { FUTURE_POS, CLOSURE_POS, SIZE };
+  public:
+    static RequestFrame *New(Interpreter *interpreter, word future, word closure) {
+      NEW_STACK_FRAME(frame, interpreter, SIZE);
+      frame->InitArg(FUTURE_POS, future);
+      frame->InitArg(CLOSURE_POS, closure);
+      return static_cast<RequestFrame *>(frame);
+    }
+
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    Future *GetFuture() {
+      word wFuture = StackFrame::GetArg(FUTURE_POS);
+      return static_cast<Future *>(Store::WordToTransient(wFuture));
+    }
+    word GetClosure() {
+      return StackFrame::GetArg(CLOSURE_POS);
+    }
+  };
+
+  RequestInterpreter *RequestInterpreter::self;
+
+  u_int RequestInterpreter::GetFrameSize(StackFrame *sFrame) {
+    RequestFrame *frame = reinterpret_cast<RequestFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
   }
 
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  virtual Result Run(StackFrame *sFrame);
-  virtual u_int GetInArity(ConcreteCode *concreteCode);
-  virtual u_int GetOutArity(ConcreteCode *concreteCode);
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-
-  virtual void PushCall(Closure *closure);
-};
-
-class RequestFrame: private StackFrame {
-protected:
-  enum { FUTURE_POS, CLOSURE_POS, SIZE };
-public:
-  static RequestFrame *New(Interpreter *interpreter, word future, word closure) {
-    NEW_STACK_FRAME(frame, interpreter, SIZE);
-    frame->InitArg(FUTURE_POS, future);
-    frame->InitArg(CLOSURE_POS, closure);
-    return static_cast<RequestFrame *>(frame);
+  Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
+    RequestFrame *frame = reinterpret_cast<RequestFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    Construct(); // TODO: Is this really necessary?
+    Future *future = frame->GetFuture();
+    future->ScheduleWaitingThreads();
+    future->Become(REF_LABEL, Store::IntToWord(0));
+    Scheduler::PopFrame(frame->GetSize());
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
+    return Scheduler::PushCall(frame->GetClosure());
   }
 
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
+  u_int RequestInterpreter::GetInArity(ConcreteCode *) {
+    return 1;
   }
-  Future *GetFuture() {
-    word wFuture = StackFrame::GetArg(FUTURE_POS);
-    return static_cast<Future *>(Store::WordToTransient(wFuture));
+
+  u_int RequestInterpreter::GetOutArity(ConcreteCode *) {
+    return 1;
   }
-  word GetClosure() {
-    return StackFrame::GetArg(CLOSURE_POS);
+
+  const char *RequestInterpreter::Identify() {
+    return "RequestInterpreter";
   }
-};
 
-RequestInterpreter *RequestInterpreter::self;
+  void RequestInterpreter::DumpFrame(StackFrame *) {
+    //--** to be done: insert useful stuff
+    return;
+  }
 
-u_int RequestInterpreter::GetFrameSize(StackFrame *sFrame) {
-  RequestFrame *frame = reinterpret_cast<RequestFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
+  void RequestInterpreter::PushCall(Closure *closure) {
+    RequestFrame::New(RequestInterpreter::self, closure->Sub(0), closure->Sub(1));
+  }
+
 }
 
-Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
-  RequestFrame *frame = reinterpret_cast<RequestFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  Construct(); // TODO: Is this really necessary?
-  Future *future = frame->GetFuture();
-  future->ScheduleWaitingThreads();
-  future->Become(REF_LABEL, Store::IntToWord(0));
-  Scheduler::PopFrame(frame->GetSize());
-  Scheduler::SetNArgs(1);
-  Scheduler::SetCurrentArg(0, Store::IntToWord(0));
-  return Scheduler::PushCall(frame->GetClosure());
-}
-
-u_int RequestInterpreter::GetInArity(ConcreteCode *) {
-  return 1;
-}
-
-u_int RequestInterpreter::GetOutArity(ConcreteCode *) {
-  return 1;
-}
-
-const char *RequestInterpreter::Identify() {
-  return "RequestInterpreter";
-}
-
-void RequestInterpreter::DumpFrame(StackFrame *) {
-  //--** to be done: insert useful stuff
-  return;
-}
-
-void RequestInterpreter::PushCall(Closure *closure) {
-  RequestFrame::New(RequestInterpreter::self, closure->Sub(0), closure->Sub(1));
-}
 
 //
 // Primitives

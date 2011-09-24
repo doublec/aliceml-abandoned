@@ -21,58 +21,64 @@
   }									\
   Assert(Store::DirectWordToBlock(value) != INVALID_POINTER);
 
-//
-// UnsafeMapHandler
-//
-class UnsafeMapHandler : public ConcreteRepresentationHandler {
-public:
-  static UnsafeMapHandler *self;
+
+namespace {
+
+  //
+  // UnsafeMapHandler
+  //
+  class UnsafeMapHandler : public ConcreteRepresentationHandler {
+  public:
+    static UnsafeMapHandler *self;
+    
+    UnsafeMapHandler () : ConcreteRepresentationHandler () {}
+    virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
+    
+    static void Init() {
+      self = new UnsafeMapHandler();
+    }
+  };
+
+  UnsafeMapHandler *UnsafeMapHandler::self;
+
+  class UnsafeMap : public ConcreteRepresentation {
+  protected:
+    enum { MAP_POS, SIZE };
+
+  public:
+    static UnsafeMap *New(u_int size) {
+      ConcreteRepresentation *unsafeMap =
+	ConcreteRepresentation::New(UnsafeMapHandler::self, SIZE);
+      unsafeMap->Init(MAP_POS, Map::New(size)->ToWord());
+      return static_cast<UnsafeMap *>(unsafeMap);
+    }
+
+    // Map Accessors
+    Map *GetMap()                    { return Map::FromWordDirect(Get(MAP_POS)); }
+    void Put(word key, word value)   { GetMap()->Put(key, value); }
+    void Remove(word key)            { GetMap()->Remove(key); }
+    bool IsMember(word key)          { return GetMap()->IsMember(key); }
+    word GetNoCheck(word key)        { return GetMap()->Get(key); }
+    word CondGet(word key, word alt = INVALID_POINTER) { return GetMap()->CondGet(key, alt); }
+    u_int GetMapSize()               { return GetMap()->GetSize(); }
+    void Clear()                     { GetMap()->Clear(); }
+    void Apply(item_apply func)      { GetMap()->Apply(func); }
+
+    static UnsafeMap *FromWord(word x) {
+      ConcreteRepresentation *unsafeMap = ConcreteRepresentation::FromWord(x);
+      Assert(unsafeMap->GetHandler() == UnsafeMapHandler::self);
+      return static_cast<UnsafeMap *>(unsafeMap);
+    }
+    static UnsafeMap *FromWordDirect(word x) {
+      ConcreteRepresentation *unsafeMap =
+	ConcreteRepresentation::FromWordDirect(x);
+      Assert(unsafeMap->GetHandler() == UnsafeMapHandler::self);
+      return static_cast<UnsafeMap *>(unsafeMap);
+    }
+  };
   
-  UnsafeMapHandler () : ConcreteRepresentationHandler () {}
-  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
-  
-  static void Init() {
-    self = new UnsafeMapHandler();
-  }
-};
+}
 
-UnsafeMapHandler *UnsafeMapHandler::self;
-
-class UnsafeMap : public ConcreteRepresentation {
-protected:
-  enum { MAP_POS, SIZE };
-
-public:
-  static UnsafeMap *New(u_int size) {
-    ConcreteRepresentation *unsafeMap =
-      ConcreteRepresentation::New(UnsafeMapHandler::self, SIZE);
-    unsafeMap->Init(MAP_POS, Map::New(size)->ToWord());
-    return static_cast<UnsafeMap *>(unsafeMap);
-  }
-
-  // Map Accessors
-  Map *GetMap()                    { return Map::FromWordDirect(Get(MAP_POS)); }
-  void Put(word key, word value)   { GetMap()->Put(key, value); }
-  void Remove(word key)            { GetMap()->Remove(key); }
-  bool IsMember(word key)          { return GetMap()->IsMember(key); }
-  word GetNoCheck(word key)        { return GetMap()->Get(key); }
-  word CondGet(word key, word alt) { return GetMap()->CondGet(key, alt); }
-  u_int GetMapSize()               { return GetMap()->GetSize(); }
-  void Clear()                     { GetMap()->Clear(); }
-  void Apply(item_apply func)      { GetMap()->Apply(func); }
-
-  static UnsafeMap *FromWord(word x) {
-    ConcreteRepresentation *unsafeMap = ConcreteRepresentation::FromWord(x);
-    Assert(unsafeMap->GetHandler() == UnsafeMapHandler::self);
-    return static_cast<UnsafeMap *>(unsafeMap);
-  }
-  static UnsafeMap *FromWordDirect(word x) {
-    ConcreteRepresentation *unsafeMap =
-      ConcreteRepresentation::FromWordDirect(x);
-    Assert(unsafeMap->GetHandler() == UnsafeMapHandler::self);
-    return static_cast<UnsafeMap *>(unsafeMap);
-  }
-};
 
 #define DECLARE_UNSAFE_MAP(unsafeMap, x) \
   DECLARE_BLOCKTYPE(UnsafeMap, unsafeMap, x);
@@ -106,8 +112,9 @@ DEFINE2(UnsafeMap_isMember) {
 DEFINE2(UnsafeMap_get) {
   DECLARE_UNSAFE_MAP(map, x0);
   DECLARE_UNSAFE_MAP_KEY(key, x1);
-  if (map->IsMember(key)) {
-    RETURN(map->GetNoCheck(key));
+  word mem = map->CondGet(key);
+  if (mem != INVALID_POINTER) {
+    RETURN(mem);
   } else {
     RAISE(PrimitiveTable::UnsafeMap_IllegalKey);
   }

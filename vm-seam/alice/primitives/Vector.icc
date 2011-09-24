@@ -15,6 +15,7 @@
 #include <cstdio>
 #include "alice/Authoring.hh"
 
+
 #define STRINGIFY(x) #x
 #define XSTRINGIFY(x) STRINGIFY(x)
 #define CONCAT(x,y) x##y
@@ -25,113 +26,119 @@
 
 #define DECLARE_XVECTOR(vector, x) DECLARE_BLOCKTYPE(XVector, vector, x)
 
-//
-// VectorTabulateWorker
-//
-class VectorTabulateWorker: public Worker {
-private:
-  static VectorTabulateWorker *self;
 
-  VectorTabulateWorker(): Worker() {}
-public:
-  static void Init() {
-    self = new VectorTabulateWorker();
+namespace {
+  
+  //
+  // VectorTabulateWorker
+  //
+  class VectorTabulateWorker: public Worker {
+  private:
+    static VectorTabulateWorker *self;
+
+    VectorTabulateWorker(): Worker() {}
+  public:
+    static void Init() {
+      self = new VectorTabulateWorker();
+    }
+
+    static void PushFrame(XVector *vector, word closure, u_int i, u_int n);
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    virtual Result Run(StackFrame *sFrame);
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
+  };
+
+  class VectorTabulateFrame: private StackFrame {
+  private:
+    enum { VECTOR_POS, CLOSURE_POS, INDEX_POS, NUMBEROFELEMENTS_POS, SIZE };
+  public:
+    static VectorTabulateFrame *New(Worker *worker, XVector *vector,
+				    word closure, u_int index,
+				    u_int numberOfElements) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      frame->InitArg(VECTOR_POS, vector->ToWord());
+      frame->InitArg(CLOSURE_POS, closure);
+      frame->InitArg(INDEX_POS, index);
+      frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
+      return static_cast<VectorTabulateFrame *>(frame);
+    }
+
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    XVector *GetVector() {
+      return XVector::FromWord(GetArg(VECTOR_POS));
+    }
+    word GetClosure() {
+      return GetArg(CLOSURE_POS);
+    }
+    u_int GetIndex() {
+      return Store::WordToInt(GetArg(INDEX_POS));
+    }
+    void UpdateIndex(u_int i) {
+      ReplaceArg(INDEX_POS, i);
+    }
+    u_int GetNumberOfElements() {
+      return Store::WordToInt(GetArg(NUMBEROFELEMENTS_POS));
+    }
+  };
+
+  VectorTabulateWorker *VectorTabulateWorker::self;
+
+  void VectorTabulateWorker::PushFrame(XVector *vector,
+				      word closure, u_int i, u_int n) {
+    VectorTabulateFrame::New(self, vector, closure, i, n);
   }
 
-  static void PushFrame(XVector *vector, word closure, u_int i, u_int n);
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  virtual Result Run(StackFrame *sFrame);
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
-};
-
-class VectorTabulateFrame: private StackFrame {
-private:
-  enum { VECTOR_POS, CLOSURE_POS, INDEX_POS, NUMBEROFELEMENTS_POS, SIZE };
-public:
-  static VectorTabulateFrame *New(Worker *worker, XVector *vector,
-				  word closure, u_int index,
-				  u_int numberOfElements) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(VECTOR_POS, vector->ToWord());
-    frame->InitArg(CLOSURE_POS, closure);
-    frame->InitArg(INDEX_POS, index);
-    frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
-    return static_cast<VectorTabulateFrame *>(frame);
+  u_int VectorTabulateWorker::GetFrameSize(StackFrame *sFrame) {
+    VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
   }
 
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-  XVector *GetVector() {
-    return XVector::FromWord(GetArg(VECTOR_POS));
-  }
-  word GetClosure() {
-    return GetArg(CLOSURE_POS);
-  }
-  u_int GetIndex() {
-    return Store::WordToInt(GetArg(INDEX_POS));
-  }
-  void UpdateIndex(u_int i) {
-    ReplaceArg(INDEX_POS, i);
-  }
-  u_int GetNumberOfElements() {
-    return Store::WordToInt(GetArg(NUMBEROFELEMENTS_POS));
-  }
-};
-
-VectorTabulateWorker *VectorTabulateWorker::self;
-
-void VectorTabulateWorker::PushFrame(XVector *vector,
-				     word closure, u_int i, u_int n) {
-  VectorTabulateFrame::New(self, vector, closure, i, n);
-}
-
-u_int VectorTabulateWorker::GetFrameSize(StackFrame *sFrame) {
-  VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
-}
-
-Worker::Result VectorTabulateWorker::Run(StackFrame *sFrame) {
-  VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  XVector *vector = frame->GetVector();
-  word closure    = frame->GetClosure();
-  u_int i         = frame->GetIndex();
-  u_int n         = frame->GetNumberOfElements();
-  Construct();
-  word wValue = Scheduler::GetCurrentArg(0);
+  Worker::Result VectorTabulateWorker::Run(StackFrame *sFrame) {
+    VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    XVector *vector = frame->GetVector();
+    word closure    = frame->GetClosure();
+    u_int i         = frame->GetIndex();
+    u_int n         = frame->GetNumberOfElements();
+    Construct();
+    word wValue = Scheduler::GetCurrentArg(0);
 #if REQUEST_ELEMS_INT
-  if (Store::WordToInt(wValue) == INVALID_INT) {
-    Scheduler::SetCurrentData(wValue);
-    return Worker::REQUEST;
-  }
+    if (Store::WordToInt(wValue) == INVALID_INT) {
+      Scheduler::SetCurrentData(wValue);
+      return Worker::REQUEST;
+    }
 #endif
-  vector->LateInit(i, wValue);
-  if (++i == n) {
-    Scheduler::PopFrame(frame->GetSize());
-    Scheduler::SetNArgs(1);
-    Scheduler::SetCurrentArg(0, vector->ToWord());
-    return Worker::CONTINUE;
-  } else {
-    frame->UpdateIndex(i);
-    Scheduler::SetNArgs(1);
-    Scheduler::SetCurrentArg(0, Store::IntToWord(i));
-    return Scheduler::PushCall(closure);
+    vector->LateInit(i, wValue);
+    if (++i == n) {
+      Scheduler::PopFrame(frame->GetSize());
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, vector->ToWord());
+      return Worker::CONTINUE;
+    } else {
+      frame->UpdateIndex(i);
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, Store::IntToWord(i));
+      return Scheduler::PushCall(closure);
+    }
   }
+
+  const char *VectorTabulateWorker::Identify() {
+    return "VectorTabulateWorker";
+  }
+
+  void VectorTabulateWorker::DumpFrame(StackFrame *sFrame) {
+    VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    std::fprintf(stderr, STRINGIFY(XVector)".tabulate %"U_INTF" of %"U_INTF"\n",
+		frame->GetIndex(), frame->GetNumberOfElements());
+  }
+
 }
 
-const char *VectorTabulateWorker::Identify() {
-  return "VectorTabulateWorker";
-}
-
-void VectorTabulateWorker::DumpFrame(StackFrame *sFrame) {
-  VectorTabulateFrame *frame = reinterpret_cast<VectorTabulateFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  std::fprintf(stderr, STRINGIFY(XVector)".tabulate %"U_INTF" of %"U_INTF"\n",
-	       frame->GetIndex(), frame->GetNumberOfElements());
-}
 
 //
 // Primitives

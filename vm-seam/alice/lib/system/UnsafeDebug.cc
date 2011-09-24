@@ -28,7 +28,7 @@ DEFINE1(UnsafeDebug_unimplemented) {
   Error("UnsafeDebug: unimplemented");
 } END
 
-void PrintLiveness(TagVal *abstractCode) {
+static void PrintLiveness(TagVal *abstractCode) {
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
   u_int size = liveness->GetLength();
   fprintf(stderr,"print liveness of size %"U_INTF":\n", size/3);
