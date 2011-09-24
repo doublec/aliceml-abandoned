@@ -36,30 +36,36 @@ static word GenerateUnCaughtEvent() {
 }
 #endif
 
-// BindFutureFrame
-class BindFutureFrame: private StackFrame {
-private:
-  enum { FUTURE_POS, SIZE };
-public:
-  // BindFutureFrame Constructor
-  static BindFutureFrame *New(Thread *thread,
-			      Worker *worker, Transient *future) {
-    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
-    frame->InitArg(FUTURE_POS, future->ToWord());
-    return static_cast<BindFutureFrame *>(frame);
-  }
-  // BindFutureFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-  Future *GetFuture() {
-    Transient *transient =
-      Store::WordToTransient(StackFrame::GetArg(FUTURE_POS));
-    Assert(transient != INVALID_POINTER &&
-	   transient->GetLabel() == FUTURE_LABEL);
-    return static_cast<Future *>(transient);
-  }
-};
+
+namespace {
+
+  // BindFutureFrame
+  class BindFutureFrame: private StackFrame {
+  private:
+    enum { FUTURE_POS, SIZE };
+  public:
+    // BindFutureFrame Constructor
+    static BindFutureFrame *New(Thread *thread,
+				Worker *worker, Transient *future) {
+      NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
+      frame->InitArg(FUTURE_POS, future->ToWord());
+      return static_cast<BindFutureFrame *>(frame);
+    }
+    // BindFutureFrame Accessors
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    Future *GetFuture() {
+      Transient *transient =
+	Store::WordToTransient(StackFrame::GetArg(FUTURE_POS));
+      Assert(transient != INVALID_POINTER &&
+	    transient->GetLabel() == FUTURE_LABEL);
+      return static_cast<Future *>(transient);
+    }
+  };
+
+}
+
 
 //
 // BindFutureWorker Functions

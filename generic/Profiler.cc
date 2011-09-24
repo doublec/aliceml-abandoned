@@ -28,53 +28,59 @@
 #include "generic/Scheduler.hh"
 #include "generic/Time.hh"
 
-class ProfileEntry : private Tuple {
-protected:
-  enum {
-    NAME_POS, NB_CALLS_POS, NB_HEAP_POS, NB_CLOSURES_POS,
-    NB_RUNS_POS, TIME_POS, SIZE
+
+namespace {
+
+  class ProfileEntry : private Tuple {
+  protected:
+    enum {
+      NAME_POS, NB_CALLS_POS, NB_HEAP_POS, NB_CLOSURES_POS,
+      NB_RUNS_POS, TIME_POS, SIZE
+    };
+
+    void Modify(u_int index, u_int value) {
+      u_int v = Store::DirectWordToInt(Sel(index));
+      Init(index, Store::IntToWord(v + value));
+    }
+  public:
+    using Tuple::ToWord;
+    // ProfileEntry Accessors
+    void AddHeap(u_int value) {
+      Modify(NB_HEAP_POS, value);
+    }
+    void IncCalls() {
+      Modify(NB_CALLS_POS, 1);
+    }
+    void IncClosures() {
+      Modify(NB_CLOSURES_POS, 1);
+    }
+    void IncRuns() {
+      Modify(NB_RUNS_POS, 1);
+    }
+    void IncTime(u_int t) {
+      Modify(TIME_POS, t);
+    }
+    // ProfileEntry Concstructor
+    static ProfileEntry *New(String *name) {
+      Tuple *entry = Tuple::New(SIZE);
+      entry->Init(NAME_POS, name->ToWord());
+      entry->Init(NB_CALLS_POS, Store::IntToWord(0));
+      entry->Init(NB_HEAP_POS, Store::IntToWord(0));
+      entry->Init(NB_CLOSURES_POS, Store::IntToWord(0));
+      entry->Init(NB_RUNS_POS, Store::IntToWord(0));
+      entry->Init(TIME_POS, Store::IntToWord(0));
+      return static_cast<ProfileEntry *>(entry);
+    }
+    // ProfileEntry untagging
+    static ProfileEntry *FromWordDirect(word x) {
+      Tuple *entry = Tuple::FromWordDirect(x);
+      entry->AssertWidth(SIZE);
+      return static_cast<ProfileEntry *>(entry);
+    }
   };
 
-  void Modify(u_int index, u_int value) {
-    u_int v = Store::DirectWordToInt(Sel(index));
-    Init(index, Store::IntToWord(v + value));
-  }
-public:
-  using Tuple::ToWord;
-  // ProfileEntry Accessors
-  void AddHeap(u_int value) {
-    Modify(NB_HEAP_POS, value);
-  }
-  void IncCalls() {
-    Modify(NB_CALLS_POS, 1);
-  }
-  void IncClosures() {
-    Modify(NB_CLOSURES_POS, 1);
-  }
-  void IncRuns() {
-    Modify(NB_RUNS_POS, 1);
-  }
-  void IncTime(u_int t) {
-    Modify(TIME_POS, t);
-  }
-  // ProfileEntry Concstructor
-  static ProfileEntry *New(String *name) {
-    Tuple *entry = Tuple::New(SIZE);
-    entry->Init(NAME_POS, name->ToWord());
-    entry->Init(NB_CALLS_POS, Store::IntToWord(0));
-    entry->Init(NB_HEAP_POS, Store::IntToWord(0));
-    entry->Init(NB_CLOSURES_POS, Store::IntToWord(0));
-    entry->Init(NB_RUNS_POS, Store::IntToWord(0));
-    entry->Init(TIME_POS, Store::IntToWord(0));
-    return static_cast<ProfileEntry *>(entry);
-  }
-  // ProfileEntry untagging
-  static ProfileEntry *FromWordDirect(word x) {
-    Tuple *entry = Tuple::FromWordDirect(x);
-    entry->AssertWidth(SIZE);
-    return static_cast<ProfileEntry *>(entry);
-  }
-};
+}
+
 
 //
 // Profiler Methods

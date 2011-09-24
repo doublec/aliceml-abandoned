@@ -35,206 +35,212 @@
 #include <windows.h>
 #endif
 
+
+namespace {
+
 #if HAVE_SIG_ATOMIC_T
-typedef sig_atomic_t atomic_int;
+  typedef sig_atomic_t atomic_int;
 #else
-typedef int atomic_int;
+  typedef int atomic_int;
 #endif
 
-//--** to be done: GetTime() wraps around every 71 weeks
-//--** to be done: we use BlockSignals more often than necessary
+  //--** to be done: GetTime() wraps around every 71 weeks
+  //--** to be done: we use BlockSignals more often than necessary
 
-static const u_int TIME_SLICE = 10; // milliseconds
+  const u_int TIME_SLICE = 10; // milliseconds
 
-word alarmHandlers; // sorted by time (ascending)
+  word alarmHandlers; // sorted by time (ascending)
 
-struct SigHandler {
-  int signal;
-  volatile atomic_int pending;
-  word handlers;
-};
+  struct SigHandler {
+    int signal;
+    volatile atomic_int pending;
+    word handlers;
+  };
 
 #define SIGLAST -1
 
-static SigHandler sigHandlers[] =  {
+  SigHandler sigHandlers[] =  {
 #if HAVE_CONSOLECTRL
-  { CTRL_C_EVENT, 0, Store::IntToWord(0) },
-  { CTRL_BREAK_EVENT, 0, Store::IntToWord(0) },
-  { CTRL_CLOSE_EVENT, 0, Store::IntToWord(0) },
-  { CTRL_LOGOFF_EVENT, 0, Store::IntToWord(0) },
-  { CTRL_SHUTDOWN_EVENT, 0, Store::IntToWord(0) },
+    { CTRL_C_EVENT, 0, Store::IntToWord(0) },
+    { CTRL_BREAK_EVENT, 0, Store::IntToWord(0) },
+    { CTRL_CLOSE_EVENT, 0, Store::IntToWord(0) },
+    { CTRL_LOGOFF_EVENT, 0, Store::IntToWord(0) },
+    { CTRL_SHUTDOWN_EVENT, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGHUP)
-  { SIGHUP, 0, Store::IntToWord(0) },
+    { SIGHUP, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGINT)
-  { SIGINT, 0, Store::IntToWord(0) },
+    { SIGINT, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGPIPE)
-  { SIGPIPE, 0, Store::IntToWord(0) },
+    { SIGPIPE, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGTERM)
-  { SIGTERM, 0, Store::IntToWord(0) },
+    { SIGTERM, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGCHLD)
-  { SIGCHLD, 0, Store::IntToWord(0) },
+    { SIGCHLD, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGWINCH)
-  { SIGWINCH, 0, Store::IntToWord(0) },
+    { SIGWINCH, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGUSR1)
-  { SIGUSR1, 0, Store::IntToWord(0) },
+    { SIGUSR1, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGUSR2)
-  { SIGUSR2, 0, Store::IntToWord(0) },
+    { SIGUSR2, 0, Store::IntToWord(0) },
 #endif
 #if HAVE_SIGNAL && defined(SIGTSTP)
-  { SIGTSTP, 0, Store::IntToWord(0) },
+    { SIGTSTP, 0, Store::IntToWord(0) },
 #endif
-  { SIGLAST, 0, Store::IntToWord(0) }
-};
-
-class SignalEntry: public Block {
-private:
-  static const BlockLabel SIGNAL_ENTRY_LABEL = MIN_DATA_LABEL;
-  enum { CLOSURE_POS, NEXT_POS, SIZE };
-public:
-  static SignalEntry *New(word closure, word next) {
-    Block *entry = Store::AllocBlock(SIGNAL_ENTRY_LABEL, SIZE);
-    entry->InitArg(CLOSURE_POS, closure);
-    entry->InitArg(NEXT_POS, next);
-    return static_cast<SignalEntry *>(entry);
-  }
-  static SignalEntry *FromWordDirect(word entry) {
-    Block *b = Store::DirectWordToBlock(entry);
-    Assert(b->GetLabel() == SIGNAL_ENTRY_LABEL && b->GetSize() == SIZE);
-    return static_cast<SignalEntry *>(b);
-  }
-
-  word GetClosure() {
-    return GetArg(CLOSURE_POS);
-  }
-  word GetNext() {
-    return GetArg(NEXT_POS);
-  }
-};
-
-class TimerEntry: public Block {
-private:
-  static const BlockLabel TIMER_ENTRY_LABEL = MIN_DATA_LABEL;
-  enum {
-    TIME_POS, // in microseconds, as a Double
-    FUTURE_POS,
-    NEXT_POS,
-    SIZE
+    { SIGLAST, 0, Store::IntToWord(0) }
   };
-public:
-  static TimerEntry *New(double time, Future *future) {
-    Block *entry = Store::AllocMutableBlock(TIMER_ENTRY_LABEL, SIZE);
-    entry->InitArg(TIME_POS, Double::New(time)->ToWord());
-    entry->InitArg(FUTURE_POS, future->ToWord());
-    entry->InitArg(NEXT_POS, static_cast<s_int>(0));
-    return static_cast<TimerEntry *>(entry);
-  }
-  static TimerEntry *FromWordDirect(word entry) {
-    Block *b = Store::DirectWordToBlock(entry);
-    Assert(b->GetLabel() == TIMER_ENTRY_LABEL && b->GetSize() == SIZE);
-    return static_cast<TimerEntry *>(b);
-  }
-  double GetTime() {
-    return Double::FromWord(GetArg(TIME_POS))->GetValue();
-  }
-  Future *GetFuture() {
-    Transient *transient = Store::DirectWordToTransient(GetArg(FUTURE_POS));
-    Assert(transient->GetLabel() == FUTURE_LABEL);
-    return static_cast<Future *>(transient);
-  }
-  TimerEntry *GetNext() {
-    word next = GetArg(NEXT_POS);
-    if (next == Store::IntToWord(0))
-      return INVALID_POINTER;
-    else
-      return FromWordDirect(next);
-  }
-  void SetNext(TimerEntry *entry) {
-    ReplaceArg(NEXT_POS, entry->ToWord());
-  }
-};
+
+  class SignalEntry: public Block {
+  private:
+    static const BlockLabel SIGNAL_ENTRY_LABEL = MIN_DATA_LABEL;
+    enum { CLOSURE_POS, NEXT_POS, SIZE };
+  public:
+    static SignalEntry *New(word closure, word next) {
+      Block *entry = Store::AllocBlock(SIGNAL_ENTRY_LABEL, SIZE);
+      entry->InitArg(CLOSURE_POS, closure);
+      entry->InitArg(NEXT_POS, next);
+      return static_cast<SignalEntry *>(entry);
+    }
+    static SignalEntry *FromWordDirect(word entry) {
+      Block *b = Store::DirectWordToBlock(entry);
+      Assert(b->GetLabel() == SIGNAL_ENTRY_LABEL && b->GetSize() == SIZE);
+      return static_cast<SignalEntry *>(b);
+    }
+
+    word GetClosure() {
+      return GetArg(CLOSURE_POS);
+    }
+    word GetNext() {
+      return GetArg(NEXT_POS);
+    }
+  };
+
+  class TimerEntry: public Block {
+  private:
+    static const BlockLabel TIMER_ENTRY_LABEL = MIN_DATA_LABEL;
+    enum {
+      TIME_POS, // in microseconds, as a Double
+      FUTURE_POS,
+      NEXT_POS,
+      SIZE
+    };
+  public:
+    static TimerEntry *New(double time, Future *future) {
+      Block *entry = Store::AllocMutableBlock(TIMER_ENTRY_LABEL, SIZE);
+      entry->InitArg(TIME_POS, Double::New(time)->ToWord());
+      entry->InitArg(FUTURE_POS, future->ToWord());
+      entry->InitArg(NEXT_POS, static_cast<s_int>(0));
+      return static_cast<TimerEntry *>(entry);
+    }
+    static TimerEntry *FromWordDirect(word entry) {
+      Block *b = Store::DirectWordToBlock(entry);
+      Assert(b->GetLabel() == TIMER_ENTRY_LABEL && b->GetSize() == SIZE);
+      return static_cast<TimerEntry *>(b);
+    }
+    double GetTime() {
+      return Double::FromWord(GetArg(TIME_POS))->GetValue();
+    }
+    Future *GetFuture() {
+      Transient *transient = Store::DirectWordToTransient(GetArg(FUTURE_POS));
+      Assert(transient->GetLabel() == FUTURE_LABEL);
+      return static_cast<Future *>(transient);
+    }
+    TimerEntry *GetNext() {
+      word next = GetArg(NEXT_POS);
+      if (next == Store::IntToWord(0))
+	return INVALID_POINTER;
+      else
+	return FromWordDirect(next);
+    }
+    void SetNext(TimerEntry *entry) {
+      ReplaceArg(NEXT_POS, entry->ToWord());
+    }
+  };
 
 #if HAVE_SIGNAL
-class Timer {
-private:
-  static volatile atomic_int time;
+  class Timer {
+  private:
+    static volatile atomic_int time;
 
-  static void Update(int) {
-    time++;
-    StatusWord::SetStatus(Scheduler::PreemptStatus() |
-			  SignalHandler::SignalStatus());
-  }
-public:
-  static void Init() {
-    time = 0;
-    signal(SIGALRM, Update);
-
-    struct itimerval value;
-    int sec  = TIME_SLICE / 1000;
-    int usec = (TIME_SLICE % 1000) * 1000;
-    value.it_interval.tv_sec  = sec;
-    value.it_interval.tv_usec = usec;
-    value.it_value.tv_sec     = sec;
-    value.it_value.tv_usec    = usec;
-    if (setitimer(ITIMER_REAL, &value, NULL) < 0)
-      Error("setitimer failed");
-  }
-  static u_int GetTime() {
-    return time;
-  }
-};
-
-volatile atomic_int Timer::time;
-#else
-class Timer {
-private:
-  static u_int time;
-  static HANDLE thread;
-
-  static void Update() {
-    time++;
-    StatusWord::SetStatus(Scheduler::PreemptStatus() |
-			  SignalHandler::SignalStatus());
-  }
-  static DWORD __stdcall TimerFunction(void *) {
-    // Make sure that this thread is not mixed with others
-    if (SetThreadPriority(GetCurrentThread(),
-			  THREAD_PRIORITY_HIGHEST) == FALSE)
-      Error("SetThreadPriority failed");
-    while (true) {
-      Sleep(TIME_SLICE);
-      Update();
+    static void Update(int) {
+      time++;
+      StatusWord::SetStatus(Scheduler::PreemptStatus() |
+			    SignalHandler::SignalStatus());
     }
-  }
-public:
-  static void Init() {
-    time = 0;
-    DWORD threadId;
-    thread = CreateThread(NULL, 1024, TimerFunction, NULL, 0, &threadId);
-    if (thread == NULL)
-      Error("Unable to start timer thread");
-  }
-  static u_int GetTime() {
-    return time;
-  }
-  static void Suspend() {
-    SuspendThread(thread);
-  }
-  static void Resume() {
-    ResumeThread(thread);
-  }
-};
+  public:
+    static void Init() {
+      time = 0;
+      signal(SIGALRM, Update);
 
-u_int Timer::time;
-HANDLE Timer::thread;
+      struct itimerval value;
+      int sec  = TIME_SLICE / 1000;
+      int usec = (TIME_SLICE % 1000) * 1000;
+      value.it_interval.tv_sec  = sec;
+      value.it_interval.tv_usec = usec;
+      value.it_value.tv_sec     = sec;
+      value.it_value.tv_usec    = usec;
+      if (setitimer(ITIMER_REAL, &value, NULL) < 0)
+	Error("setitimer failed");
+    }
+    static u_int GetTime() {
+      return time;
+    }
+  };
+
+  volatile atomic_int Timer::time;
+#else
+  class Timer {
+  private:
+    static u_int time;
+    static HANDLE thread;
+
+    static void Update() {
+      time++;
+      StatusWord::SetStatus(Scheduler::PreemptStatus() |
+			    SignalHandler::SignalStatus());
+    }
+    static DWORD __stdcall TimerFunction(void *) {
+      // Make sure that this thread is not mixed with others
+      if (SetThreadPriority(GetCurrentThread(),
+			    THREAD_PRIORITY_HIGHEST) == FALSE)
+	Error("SetThreadPriority failed");
+      while (true) {
+	Sleep(TIME_SLICE);
+	Update();
+      }
+    }
+  public:
+    static void Init() {
+      time = 0;
+      DWORD threadId;
+      thread = CreateThread(NULL, 1024, TimerFunction, NULL, 0, &threadId);
+      if (thread == NULL)
+	Error("Unable to start timer thread");
+    }
+    static u_int GetTime() {
+      return time;
+    }
+    static void Suspend() {
+      SuspendThread(thread);
+    }
+    static void Resume() {
+      ResumeThread(thread);
+    }
+  };
+
+  u_int Timer::time;
+  HANDLE Timer::thread;
 #endif
+
+}
+
 
 #if HAVE_CONSOLECTRL
 static BOOL CALLBACK MyConsoleCtrlHandler(DWORD signal) {

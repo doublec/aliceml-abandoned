@@ -17,72 +17,78 @@
 #include "adt/Queue.hh"
 #include "generic/RootSet.hh"
 
-class Element: private Block {
-private:
-  enum { POINTER_POS, VALUE_POS, SIZE };
-public:
-  using Block::ToWord;
 
-  static Element *New(word *pointer) {
-    Block *b = Store::AllocMutableBlock(ROOTSETELEMENT_LABEL, SIZE);
-    b->InitArg(POINTER_POS, Store::UnmanagedPointerToWord(pointer));
-    return static_cast<Element *>(b);
-  }
-  static Element *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == ROOTSETELEMENT_LABEL);
-    return static_cast<Element *>(b);
-  }
+namespace {
 
-  word *GetPointer() {
-    return static_cast<word *>(Store::DirectWordToUnmanagedPointer(GetArg(POINTER_POS)));
-  }
-  void PreGC() {
-    ReplaceArg(VALUE_POS, *GetPointer());
-  }
-  void PostGC() {
-    *GetPointer() = GetArg(VALUE_POS);
-  }
-};
+  class Element: private Block {
+  private:
+    enum { POINTER_POS, VALUE_POS, SIZE };
+  public:
+    using Block::ToWord;
 
-//--** This should probably implement a real set instead of using Queue.
-class Set: private Queue {
-private:
-  static const u_int initialSize = 8; //--** to be checked
-public:
-  using Queue::ToWord;
+    static Element *New(word *pointer) {
+      Block *b = Store::AllocMutableBlock(ROOTSETELEMENT_LABEL, SIZE);
+      b->InitArg(POINTER_POS, Store::UnmanagedPointerToWord(pointer));
+      return static_cast<Element *>(b);
+    }
+    static Element *FromWordDirect(word x) {
+      Block *b = Store::DirectWordToBlock(x);
+      Assert(b->GetLabel() == ROOTSETELEMENT_LABEL);
+      return static_cast<Element *>(b);
+    }
 
-  static Set *New() {
-    return static_cast<Set *>(Queue::New(initialSize));
-  }
-  static Set *FromWordDirect(word x) {
-    return static_cast<Set *>(Queue::FromWordDirect(x));
-  }
+    word *GetPointer() {
+      return static_cast<word *>(Store::DirectWordToUnmanagedPointer(GetArg(POINTER_POS)));
+    }
+    void PreGC() {
+      ReplaceArg(VALUE_POS, *GetPointer());
+    }
+    void PostGC() {
+      *GetPointer() = GetArg(VALUE_POS);
+    }
+  };
 
-  void Add(word &root) {
-    Enqueue(Element::New(&root)->ToWord());
-  }
-  void Remove(word &root) {
-    for (u_int i = GetNumberOfElements(); i--; ) {
-      Element *element = Element::FromWordDirect(GetNthElement(i));
-      if (element->GetPointer() == &root) {
-	Queue::RemoveNthElement(i);
-  	break;
+  //--** This should probably implement a real set instead of using Queue.
+  class Set: private Queue {
+  private:
+    static const u_int initialSize = 8; //--** to be checked
+  public:
+    using Queue::ToWord;
+
+    static Set *New() {
+      return static_cast<Set *>(Queue::New(initialSize));
+    }
+    static Set *FromWordDirect(word x) {
+      return static_cast<Set *>(Queue::FromWordDirect(x));
+    }
+
+    void Add(word &root) {
+      Enqueue(Element::New(&root)->ToWord());
+    }
+    void Remove(word &root) {
+      for (u_int i = GetNumberOfElements(); i--; ) {
+	Element *element = Element::FromWordDirect(GetNthElement(i));
+	if (element->GetPointer() == &root) {
+	  Queue::RemoveNthElement(i);
+	  break;
+	}
       }
     }
-  }
-  void PreGC() {
-    Blank();
-    for (u_int i = GetNumberOfElements(); i--; )
-      Element::FromWordDirect(GetNthElement(i))->PreGC();
-  }
-  void PostGC() {
-    for (u_int i = GetNumberOfElements(); i--; )
-      Element::FromWordDirect(GetNthElement(i))->PostGC();
-  }
-};
+    void PreGC() {
+      Blank();
+      for (u_int i = GetNumberOfElements(); i--; )
+	Element::FromWordDirect(GetNthElement(i))->PreGC();
+    }
+    void PostGC() {
+      for (u_int i = GetNumberOfElements(); i--; )
+	Element::FromWordDirect(GetNthElement(i))->PostGC();
+    }
+  };
 
-static Set *set;
+  Set *set;
+
+}
+
 
 void RootSet::Init() {
   set = Set::New();

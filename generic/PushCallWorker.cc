@@ -19,30 +19,36 @@
 #include "generic/StackFrame.hh"
 #include "generic/PushCallWorker.hh"
 
-// PushCall Frame
-class PushCallFrame: private StackFrame {
-private:
-  enum { CLOSURE_POS, SIZE };
-public:
-  // PushCallFrame Constructor
-  static PushCallFrame *New(Worker *worker, word closure) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    frame->InitArg(CLOSURE_POS, closure);
-    return static_cast<PushCallFrame *>(frame);
-  }
-  static PushCallFrame *New(Thread *thread, Worker *worker, word closure) {
-    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
-    frame->InitArg(CLOSURE_POS, closure);
-    return static_cast<PushCallFrame *>(frame);
-  }
-  // PushCallFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-  word GetClosure() {
-    return StackFrame::GetArg(CLOSURE_POS);
-  }
-};
+
+namespace {
+
+  // PushCall Frame
+  class PushCallFrame: private StackFrame {
+  private:
+    enum { CLOSURE_POS, SIZE };
+  public:
+    // PushCallFrame Constructor
+    static PushCallFrame *New(Worker *worker, word closure) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      frame->InitArg(CLOSURE_POS, closure);
+      return static_cast<PushCallFrame *>(frame);
+    }
+    static PushCallFrame *New(Thread *thread, Worker *worker, word closure) {
+      NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
+      frame->InitArg(CLOSURE_POS, closure);
+      return static_cast<PushCallFrame *>(frame);
+    }
+    // PushCallFrame Accessors
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    word GetClosure() {
+      return StackFrame::GetArg(CLOSURE_POS);
+    }
+  };
+
+}
+
 
 //
 // PushCallWorker Functions

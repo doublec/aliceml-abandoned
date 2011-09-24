@@ -25,131 +25,137 @@
 #include "generic/Transform.hh"
 #include "generic/Primitive.hh"
 
-// Primitive Frame
-class PrimitiveFrame: private StackFrame {
-private:
-  enum { SIZE };
-public:
-  // PrimitiveFrame Constructor
-  static PrimitiveFrame *New(Worker *worker) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    return static_cast<PrimitiveFrame *>(frame);
-  }
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-};
 
-// PrimitiveInterpreter: An interpreter that runs primitives
-class PrimitiveInterpreter: public Interpreter {
-private:
-  const char *name;
-  Interpreter::function function;
-  u_int inArity;
-  u_int outArity;
-public:
-  PrimitiveInterpreter(const char *_name, Interpreter::function _function,
-		       u_int _inArity, u_int _outArity):
-    name(_name), function(_function), inArity(_inArity), outArity(_outArity) {}
+namespace {
 
-  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
+  // Primitive Frame
+  class PrimitiveFrame: private StackFrame {
+  private:
+    enum { SIZE };
+  public:
+    // PrimitiveFrame Constructor
+    static PrimitiveFrame *New(Worker *worker) {
+      NEW_STACK_FRAME(frame, worker, SIZE);
+      return static_cast<PrimitiveFrame *>(frame);
+    }
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+  };
 
-  virtual u_int GetFrameSize(StackFrame *sFrame);
-  virtual Result Run(StackFrame *sFrame);
-  virtual void PushCall(Closure *closure);
-  virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  // PrimitiveInterpreter: An interpreter that runs primitives
+  class PrimitiveInterpreter: public Interpreter {
+  private:
+    const char *name;
+    Interpreter::function function;
+    u_int inArity;
+    u_int outArity;
+  public:
+    PrimitiveInterpreter(const char *_name, Interpreter::function _function,
+			u_int _inArity, u_int _outArity):
+      name(_name), function(_function), inArity(_inArity), outArity(_outArity) {}
 
-  virtual u_int GetInArity(ConcreteCode *concreteCode);
-  virtual u_int GetOutArity(ConcreteCode *concreteCode);
-  virtual Interpreter::function GetCFunction();
+    virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
-  static Result Run(PrimitiveInterpreter *interpreter);
+    virtual u_int GetFrameSize(StackFrame *sFrame);
+    virtual Result Run(StackFrame *sFrame);
+    virtual void PushCall(Closure *closure);
+    virtual const char *Identify();
+    virtual void DumpFrame(StackFrame *sFrame);
 
-  Interpreter::function GetFunction() {
-    return function;
-  }
-};
+    virtual u_int GetInArity(ConcreteCode *concreteCode);
+    virtual u_int GetOutArity(ConcreteCode *concreteCode);
+    virtual Interpreter::function GetCFunction();
 
-//
-// PrimitiveInterpreter Functions
-//
-inline Worker::Result
-PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
-  switch (interpreter->inArity) {
-  case 0:
-    if (Scheduler::GetNArgs() == 1) {
-      Transient *t = Store::WordToTransient(Scheduler::GetCurrentArg(0));
-      if (t == INVALID_POINTER) { // is determined
-	Scheduler::SetNArgs(0);
+    static Result Run(PrimitiveInterpreter *interpreter);
+
+    Interpreter::function GetFunction() {
+      return function;
+    }
+  };
+
+  //
+  // PrimitiveInterpreter Functions
+  //
+  inline Worker::Result
+  PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
+    switch (interpreter->inArity) {
+    case 0:
+      if (Scheduler::GetNArgs() == 1) {
+	Transient *t = Store::WordToTransient(Scheduler::GetCurrentArg(0));
+	if (t == INVALID_POINTER) { // is determined
+	  Scheduler::SetNArgs(0);
+	  return interpreter->function();
+	} else { // need to request
+	  Scheduler::SetCurrentData(Scheduler::GetCurrentArg(0));
+	  return Worker::REQUEST;
+	}
+      } else {
+	Assert(Scheduler::GetNArgs() == 0);
 	return interpreter->function();
-      } else { // need to request
-	Scheduler::SetCurrentData(Scheduler::GetCurrentArg(0));
-	return Worker::REQUEST;
       }
-    } else {
-      Assert(Scheduler::GetNArgs() == 0);
+    case 1:
+      Construct();
       return interpreter->function();
-    }
-  case 1:
-    Construct();
-    return interpreter->function();
-  default:
-    if (Deconstruct()) {
-      // Deconstruct has set Scheduler::currentData as a side-effect
-      return Worker::REQUEST;
-    } else {
-      Assert(Scheduler::GetNArgs() == interpreter->inArity);
-      return interpreter->function();
+    default:
+      if (Deconstruct()) {
+	// Deconstruct has set Scheduler::currentData as a side-effect
+	return Worker::REQUEST;
+      } else {
+	Assert(Scheduler::GetNArgs() == interpreter->inArity);
+	return interpreter->function();
+      }
     }
   }
+
+  Transform *
+  PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
+    ConcreteCode *concreteCode = reinterpret_cast<ConcreteCode *>(b);
+    word wAbstract = concreteCode->Get(0);
+    if (wAbstract == Store::IntToWord(0))
+      return INVALID_POINTER;
+    else
+      return Transform::FromWordDirect(wAbstract);
+  }
+
+  void PrimitiveInterpreter::PushCall(Closure *closure) {
+    Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
+	  GetInterpreter() == this); closure = closure;
+    PrimitiveFrame::New(static_cast<Worker *>(this));
+  }
+
+  u_int PrimitiveInterpreter::GetFrameSize(StackFrame *sFrame) {
+    PrimitiveFrame *frame = reinterpret_cast<PrimitiveFrame *>(sFrame);
+    Assert(sFrame->GetWorker() == this);
+    return frame->GetSize();
+  }
+
+  Worker::Result PrimitiveInterpreter::Run(StackFrame *) {
+    return Run(this);
+  }
+
+  const char *PrimitiveInterpreter::Identify() {
+    return name;
+  }
+
+  void PrimitiveInterpreter::DumpFrame(StackFrame *) {
+    std::fprintf(stderr, "%s\n", name);
+  }
+
+  u_int PrimitiveInterpreter::GetInArity(ConcreteCode *) {
+    return inArity;
+  }
+
+  u_int PrimitiveInterpreter::GetOutArity(ConcreteCode *) {
+    return outArity;
+  }
+
+  Interpreter::function PrimitiveInterpreter::GetCFunction() {
+    return GetFunction();
+  }
+
 }
 
-Transform *
-PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  ConcreteCode *concreteCode = reinterpret_cast<ConcreteCode *>(b);
-  word wAbstract = concreteCode->Get(0);
-  if (wAbstract == Store::IntToWord(0))
-    return INVALID_POINTER;
-  else
-    return Transform::FromWordDirect(wAbstract);
-}
-
-void PrimitiveInterpreter::PushCall(Closure *closure) {
-  Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
-	 GetInterpreter() == this); closure = closure;
-  PrimitiveFrame::New(static_cast<Worker *>(this));
-}
-
-u_int PrimitiveInterpreter::GetFrameSize(StackFrame *sFrame) {
-  PrimitiveFrame *frame = reinterpret_cast<PrimitiveFrame *>(sFrame);
-  Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
-}
-
-Worker::Result PrimitiveInterpreter::Run(StackFrame *) {
-  return Run(this);
-}
-
-const char *PrimitiveInterpreter::Identify() {
-  return name;
-}
-
-void PrimitiveInterpreter::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "%s\n", name);
-}
-
-u_int PrimitiveInterpreter::GetInArity(ConcreteCode *) {
-  return inArity;
-}
-
-u_int PrimitiveInterpreter::GetOutArity(ConcreteCode *) {
-  return outArity;
-}
-
-Interpreter::function PrimitiveInterpreter::GetCFunction() {
-  return GetFunction();
-}
 
 //
 // Primitive Functions
