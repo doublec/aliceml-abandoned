@@ -77,10 +77,8 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_OPTIMIZED],
                              -fomit-frame-pointer \
                              -fforce-addr \
                              -finline-limit=2500 \
-			     -fno-implement-inlines \
-                             -fno-keep-static-consts \
-                             -fno-implicit-templates \
-                             -fno-implicit-inline-templates)
+						     -fno-implement-inlines \
+                             -fno-keep-static-consts)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-rtti)
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,-S]])
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,--stack=0x1000000]])
