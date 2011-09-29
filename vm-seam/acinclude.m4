@@ -78,15 +78,13 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_OPTIMIZED],
       AC_MSG_RESULT(yes)
       AC_SEAM_CHECK_CXXFLAGS(-O3 \
                              -fomit-frame-pointer \
-			     "--param inline-unit-growth=200" \
-			     "--param large-function-growth=300" \
-			     -finline-limit=2500 \
+			     			 "--param inline-unit-growth=200" \
+			     			 "--param large-function-growth=300" \
+			     			 -finline-limit=2500 \
                              -fforce-addr \
                              -fno-implement-inlines \
                              -fno-keep-static-consts \
-                             -fno-implicit-templates \
-                             -fno-rtti \
-                             -fno-implicit-inline-templates)
+                             -fno-rtti)
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,-S]])
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,--stack=0x1000000]])
    else
