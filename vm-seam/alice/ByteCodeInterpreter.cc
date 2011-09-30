@@ -28,6 +28,8 @@
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeFrame.hh"
 #include "alice/ByteCodeBuffer.hh"
+#include "alice/ByteCodeJitter.hh"
+#include "alice/ByteCodeSpecializer.hh"
 
 using namespace ByteCodeInstr;
 
@@ -38,35 +40,37 @@ using namespace ByteCodeInstr;
     u_int offset = reinterpret_cast<u_int>(PC) - reinterpret_cast<u_int>(codeBase);	\
     frame->SavePC(offset / sizeof(u_int));			\
 }
-#define LOADSTATE(PC,CP,IP) {			\
+#define LOADSTATE(PC, CP, IP) {			\
+    code = concreteCode->GetByteCode();		\
     codeBase = reinterpret_cast<u_int *>(code->GetBase());	\
     SETPC(frame->GetPC());			\
     CP = frame->GetCP();			\
-    IP = frame->GetIP();			\
+    IP = concreteCode->GetImmediateArgs();	\
 }
 #define Case(INSTR) INSTR##LBL: DEBUG_INSTR(); startPC = PC; SKIP_INSTR(PC);
 
 #define DISPATCH(PC)				\
   goto *(reinterpret_cast<void *>(*PC))
   
-#define INSTR(instr) && instr##LBL,
+#define INSTR(instr, args) && instr##LBL,
 
 #else // THREADED
 
 #define SETPC(x) PC = x 
 #define SAVEPC(PC) frame->SavePC(PC)
-#define LOADSTATE(PC,CP,IP) {			\
+#define LOADSTATE(PC, CP, IP) {			\
+    code = concreteCode->GetByteCode();		\
     codeBuffer = ReadBuffer::New(code);		\
     SETPC(frame->GetPC());			\
     CP = frame->GetCP();			\
-    IP = frame->GetIP();			\
+    IP = concreteCode->GetImmediateArgs();	\
 }
 
 #define Case(INSTR) case INSTR:
 
 #define DISPATCH(PC) break
 
-#define INSTR(instr) instr,
+#define INSTR(instr, args) instr,
 
 #endif // THREADED
 
@@ -102,12 +106,13 @@ using namespace ByteCodeInstr;
     return Worker::PREEMPT;			\
   }
 
-#if PROFILE
-#define PROFILER_INC_CALLS(closure) Profiler::IncCalls(closure->GetConcreteCode());
-#else
-#define PROFILER_INC_CALLS(closure)
-#endif
 
+static void RecordCall(Closure *closure) {
+#if PROFILE
+  Profiler::IncCalls(closure->GetConcreteCode());
+#endif
+  ByteCodeSpecializer::IncCalls(closure);
+}
 
 ByteCodeInterpreter *ByteCodeInterpreter::self;
 
@@ -187,7 +192,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
   ByteCodeFrame *frame = reinterpret_cast<ByteCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  Chunk *code = frame->GetCode();
+  ByteConcreteCode *concreteCode = frame->GetConcreteCode();
+  Chunk *code = concreteCode->GetByteCode();
 
   register ProgramCounter startPC; // save position before current instr
   register ProgramCounter PC;
@@ -197,11 +203,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
   register ReadBuffer *codeBuffer = ReadBuffer::New(code);
 #endif
   SETPC(frame->GetPC());
-  register Tuple *IP = frame->GetIP();  
+  register Tuple *IP = concreteCode->GetImmediateArgs();
   register Closure *CP = frame->GetCP();
 
   BCI_DEBUG("BCI::Run: start execution at PC %d\n",frame->GetPC());
-#ifdef THREADED	
+#ifdef THREADED
   DISPATCH(PC);
 
 #else
@@ -351,25 +357,18 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	SAVEPC(PC);							\
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);		        \
-        if(closure == CP) {						\
-	  PROFILER_INC_CALLS(closure);                                  \
-	  PushCall(closure);						\
-          frame = reinterpret_cast<ByteCodeFrame*>(Scheduler::GetFrame());		\
-	  SETPC(0);							\
-	  CHECK_PREEMPT();						\
-	  DISPATCH(PC);							\
-	}								\
 	if(closure != INVALID_POINTER) {				\
 	  ConcreteCode *cc =						\
 	    ConcreteCode::FromWord(closure->GetConcreteCode());		\
 	  if(cc != INVALID_POINTER) {					\
 	    Interpreter *interpreter = cc->GetInterpreter();		\
 	    if(interpreter == this) {					\
-	      PushCall(closure);					\
+	      RecordCall(closure);					\
+	      PushCall(reinterpret_cast<ByteConcreteCode*>(cc), closure);	\
 	      if(StatusWord::GetStatus()) return Worker::PREEMPT;	\
-	      frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());		\
-	      code = frame->GetCode();					\
-	      LOADSTATE(PC,CP,IP);					\
+	      frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());	\
+	      concreteCode = reinterpret_cast<ByteConcreteCode*>(cc);	\
+	      LOADSTATE(PC, CP, IP);					\
 	      DISPATCH(PC);						\
 	    }								\
 	  }								\
@@ -396,11 +395,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
         SET_ARGS##NOA();						\
 	word wClosure = GETREG(reg);					\
 	Closure *closure = Closure::FromWord(wClosure);			\
-	if(closure == CP) {						\
-	  PROFILER_INC_CALLS(closure);                                  \
-	  SETPC(0);							\
-	  CHECK_PREEMPT();						\
-	  DISPATCH(PC);							\
+	if(closure == CP) {	\
+	  RecordCall(closure);						\
+	  /* check CC *after* RecordCall, since RecordCall might mutate closure */	\
+	  if(ConcreteCode::FromWord(closure->GetConcreteCode()) == reinterpret_cast<ConcreteCode*>(concreteCode)) {	\
+	    SETPC(0);							\
+	    CHECK_PREEMPT();						\
+	    DISPATCH(PC);						\
+          }								\
 	}								\
 	Scheduler::PopFrame(frame->GetSize());				\
 	if(closure != INVALID_POINTER) {				\
@@ -409,11 +411,12 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  if(cc != INVALID_POINTER) {					\
 	    Interpreter *interpreter = cc->GetInterpreter();		\
 	    if(interpreter == this) {					\
-	      PushCall(closure);					\
+	      RecordCall(closure);					\
+	      PushCall(reinterpret_cast<ByteConcreteCode*>(cc), closure);	\
 	      if(StatusWord::GetStatus()) return Worker::PREEMPT;	\
 	      frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());		\
-	      code = frame->GetCode();					\
-	      LOADSTATE(PC,CP,IP);					\
+	      concreteCode = reinterpret_cast<ByteConcreteCode*>(cc);	\
+	      LOADSTATE(PC, CP, IP);					\
 	      DISPATCH(PC);						\
 	    }								\
 	  }								\
@@ -446,15 +449,16 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define PRELUDE_SELFCALL3() PRELUDE_SELFCALL0()
 #define PRELUDE_SELFCALL() GET_1I(codeBuffer,PC,nArgs)
 
+// this is only for non-tail self-calls - tail-calls are implemented as jumps
 #define SELF_CALL(NOA) {					\
 	PRELUDE_SELFCALL##NOA();				\
         SET_ARGS##NOA();					\
 	SAVEPC(PC);						\
-	PROFILER_INC_CALLS(CP);                            \
-	ByteCodeInterpreter::PushCall(CP);			\
+	RecordCall(CP);						\
+	ByteCodeInterpreter::PushCall(concreteCode, CP);	\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;	\
 	frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());	\
-        SETPC(0);						\
+	SETPC(0);						\
         DISPATCH(PC);						\
       }
 
@@ -549,15 +553,14 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_IMMEDIATE_CALL##N();					\
 	SET_ARGS##N();							\
 	SAVEPC(PC);							\
-	/* invariant: closure is determined */				\
-	Closure *closure =						\
-	  Closure::FromWordDirect(IP->Sel(closureAddr));		\
-	PROFILER_INC_CALLS(closure);                                    \
-	ByteCodeInterpreter::PushCall(closure);				\
+	/* invariant: closure and concrete code are determined */	\
+	Closure *closure = Closure::FromWordDirect(IP->Sel(closureAddr));	\
+	concreteCode = ByteConcreteCode::FromWordDirect(closure->GetConcreteCode());	\
+	RecordCall(closure);						\
+	PushCall(concreteCode, closure);				\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
-	frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());		\
-	code = frame->GetCode();					\
-	LOADSTATE(PC,CP,IP);						\
+	frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());	\
+	LOADSTATE(PC, CP, IP);						\
 	DISPATCH(PC);							\
       } 
   
@@ -570,16 +573,15 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define BCI_TAILCALL(N) {						\
 	PRELUDE_IMMEDIATE_CALL##N();					\
 	SET_ARGS##N();							\
-	/* invariant: closure is determined */				\
-	Closure *closure =						\
-	  Closure::FromWordDirect(IP->Sel(closureAddr));		\
-	PROFILER_INC_CALLS(closure);                                    \
+	/* invariant: closure and concrete code are determined */	\
+	Closure *closure = Closure::FromWordDirect(IP->Sel(closureAddr));	\
+	concreteCode = ByteConcreteCode::FromWordDirect(closure->GetConcreteCode());	\
+	RecordCall(closure);						\
 	Scheduler::PopFrame(frame->GetSize());				\
-	ByteCodeInterpreter::PushCall(closure);				\
+	PushCall(concreteCode, closure);				\
 	if(StatusWord::GetStatus()) return Worker::PREEMPT;		\
-	frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());		\
-	code = frame->GetCode();					\
-	LOADSTATE(PC,CP,IP);						\
+	frame = reinterpret_cast<ByteCodeFrame *>(Scheduler::GetFrame());	\
+	LOADSTATE(PC, CP, IP);						\
 	DISPATCH(PC);							\
       }
     
@@ -594,11 +596,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
      * macro definitions for primitve calls
      ***************************************/
 
-#define PRELUDE_PRIMCALL0() GET_1I(codeBuffer,PC,primAddr);
+#define PRELUDE_PRIMCALL0() GET_2I(codeBuffer, PC, interpreterAddr, cFunctionAddr);
 #define PRELUDE_PRIMCALL1() PRELUDE_PRIMCALL0()
 #define PRELUDE_PRIMCALL2() PRELUDE_PRIMCALL0()
 #define PRELUDE_PRIMCALL3() PRELUDE_PRIMCALL0()
-#define PRELUDE_PRIMCALL()  GET_2I(codeBuffer,PC,primAddr,nArgs)
+#define PRELUDE_PRIMCALL()  GET_3I(codeBuffer, PC, interpreterAddr, cFunctionAddr, nArgs);
 
     /**************************
      * normal primitive call
@@ -608,16 +610,15 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_PRIMCALL##NOA();					\
         SET_ARGS##NOA();						\
 	SAVEPC(PC);							\
-	Interpreter *interpreter = reinterpret_cast<Interpreter*>(primAddr);	\
-	NEW_STACK_FRAME(primFrame, interpreter, 0);			\
-	Worker::Result res = interpreter->GetCFunction()();		\
+	NEW_STACK_FRAME(primFrame, reinterpret_cast<Interpreter*>(interpreterAddr), 0);			\
+	Worker::Result res = reinterpret_cast<Interpreter::function>(cFunctionAddr)();		\
 	StackFrame *newFrame = Scheduler::GetFrame();			\
 	/* test if we can skip the scheduler */				\
 	if(res == CONTINUE && !StatusWord::GetStatus()			\
 	   && newFrame->GetWorker() == this) {				\
-	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);				\
-	  code = frame->GetCode();					\
-	  LOADSTATE(PC,CP,IP);						\
+	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);		\
+	  concreteCode = frame->GetConcreteCode();			\
+	  LOADSTATE(PC, CP, IP);					\
 	  DISPATCH(PC);							\
 	}								\
 	return res;							\
@@ -638,17 +639,15 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_PRIMCALL##NOA();					\
         SET_ARGS##NOA();						\
 	Scheduler::PopFrame(frame->GetSize());				\
-	Interpreter *interpreter = reinterpret_cast<Interpreter*>(primAddr);	\
-	/*Worker::Result res = Primitive::Execute(interpreter);*/	\
-	NEW_STACK_FRAME(primFrame, interpreter, 0);			\
-	Worker::Result res = interpreter->GetCFunction()();		\
+	NEW_STACK_FRAME(primFrame, reinterpret_cast<Interpreter*>(interpreterAddr), 0);	\
+	Worker::Result res = reinterpret_cast<Interpreter::function>(cFunctionAddr)();		\
 	StackFrame *newFrame = Scheduler::GetFrame();			\
 	/* test if we can skip the scheduler */				\
 	if(res == CONTINUE && !StatusWord::GetStatus()			\
 	   && newFrame->GetWorker() == this) {				\
-	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);				\
-	  code = frame->GetCode();					\
-	  LOADSTATE(PC,CP,IP);						\
+	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);		\
+	  concreteCode = frame->GetConcreteCode();			\
+	  LOADSTATE(PC, CP, IP);					\
 	  DISPATCH(PC);							\
 	}								\
 	return res;							\
@@ -678,9 +677,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	StackFrame *newFrame = Scheduler::GetFrame();	\
         /* dynamic test */ 				\
 	if(newFrame->GetWorker() == this) {		\
-	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);		\
-	  code = frame->GetCode();			\
-	  LOADSTATE(PC,CP,IP);				\
+	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);	\
+	  concreteCode = frame->GetConcreteCode();	\
+	  LOADSTATE(PC, CP, IP);			\
 	  DISPATCH(PC);					\
 	}						\
 	/* preempt check only in call instructions */	\
@@ -703,8 +702,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	/* dynamic test */
 	if(newFrame->GetWorker() == this) {
 	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);
-	  code = frame->GetCode();
-	  LOADSTATE(PC,CP,IP);
+	  concreteCode = frame->GetConcreteCode();
+	  LOADSTATE(PC, CP, IP);
 	  DISPATCH(PC);
 	}
 	/* preemption check only in call instructions */
@@ -807,8 +806,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	REQUEST_INT(dummy,testVal);
 	// this is needed due to possible pointer chains
 	testVal = Store::IntToWord(dummy); 
-	if(map->IsMember(testVal)) 
-	  PC += Store::DirectWordToInt(map->Get(testVal));
+	word jmp = map->CondGet(testVal);
+	if(jmp != INVALID_POINTER) 
+	  PC += Store::DirectWordToInt(jmp);
       }
       DISPATCH(PC);
 
@@ -1007,8 +1007,46 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	  SETREG(r0, Store::IntToWord(result));	
 #endif
       }
-      DISPATCH(PC); 
+      DISPATCH(PC);
+      
+    Case(iequal) // r0, r1, i0
+      {
+	GET_2R1I(codeBuffer, PC, dst, test, cons);
+	word wTest = PointerOp::Deref(GETREG(test));
+	if (PointerOp::IsTransient(wTest)) {
+	  REQUEST(wTest);
+	}
+	else if (PointerOp::IsInt(wTest)) {
+	  s_int iTest = Store::DirectWordToInt(wTest);
+	  SETREG(dst, Store::IntToWord(iTest == static_cast<s_int>(cons)));
+	}
+	else {
+	  SETREG(dst, Store::IntToWord(0));
+	}
+      }
+      DISPATCH(PC);
 
+#define INLINE_INT_COMPARE(op) {		\
+      GET_3R(codeBuffer, PC, dst, a, b);	\
+      word wA = GETREG(a);			\
+      s_int iA = Store::WordToInt(wA);		\
+      if (iA == INVALID_INT) {			\
+	REQUEST(wA);				\
+      }						\
+      word wB = GETREG(b);			\
+      s_int iB = Store::WordToInt(wB);		\
+      if (iB == INVALID_INT) {		\
+	REQUEST(wB);				\
+      }						\
+      SETREG(dst, Store::IntToWord(iA op iB));	\
+      DISPATCH(PC);				\
+    }
+
+    Case(iless)       INLINE_INT_COMPARE(<);
+    Case(igreater)    INLINE_INT_COMPARE(>);
+    Case(iless_eq)    INLINE_INT_COMPARE(<=);
+    Case(igreater_eq) INLINE_INT_COMPARE(>=);
+     
       /**********************************
        * real instructions
        **********************************/
@@ -1020,8 +1058,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	word testVal = GETREG(reg);
 	REQUEST_WORD(Real,dummy,testVal);
 	testVal = dummy->ToWord();
-	if(map->IsMember(testVal)) 
-	  PC += Store::DirectWordToInt(map->Get(testVal));
+	word jmp = map->CondGet(testVal);
+	if(jmp != INVALID_POINTER)
+	  PC += Store::DirectWordToInt(jmp);
       }
       DISPATCH(PC);
 
@@ -1047,8 +1086,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	word testVal = GETREG(reg);
 	REQUEST_WORD(String,dummy,testVal);
 	testVal = dummy->ToWord();
-	if(map->IsMember(testVal)) 
-	  PC += Store::DirectWordToInt(map->Get(testVal));
+	word jmp = map->CondGet(testVal);
+	if(jmp != INVALID_POINTER) 
+	  PC += Store::DirectWordToInt(jmp);
       }
       DISPATCH(PC);
 
@@ -1086,7 +1126,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(load_int) // r, int
       {
 	GET_1R1I(codeBuffer,PC,reg,number);
-	SETREG(reg, Store::IntToWord(static_cast<int>(number))); 
+	SETREG(reg, Store::IntToWord(static_cast<s_int>(number))); 
       }
       DISPATCH(PC);
 
@@ -1186,10 +1226,11 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	IntMap *map = IntMap::FromWord(IP->Sel(iaddr));
 	REQUEST_WORD(Vector,vec,GETREG(reg));
 	word size = Store::IntToWord(vec->GetLength());
-	if(map->IsMember(size)) 
-	  PC += Store::DirectWordToInt(map->Get(size));
+	word jmp = map->CondGet(size);
+	if(jmp != INVALID_POINTER)
+	  PC += Store::DirectWordToInt(jmp);
       }
-      DISPATCH(PC);      
+      DISPATCH(PC);
 
 
       /*****************************
@@ -1200,7 +1241,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 
     Case(new_tup) // r, size
       {
-	GET_1R1I(codeBuffer,PC,reg,size);
+	GET_1R1I(codeBuffer, PC, reg, size);
 	SETREG(reg, Tuple::New(size)->ToWord());	
       }
       DISPATCH(PC);
@@ -1402,8 +1443,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	else {								\
 	  tag = Store::IntToWord(tagVal->GetTag());			\
 	}								\
-	if(map->IsMember(tag))						\
-	  PC += Store::DirectWordToInt(map->Get(tag));			\
+	word jmp = map->CondGet(tag);					\
+	if(jmp != INVALID_POINTER)					\
+	  PC += Store::DirectWordToInt(jmp);				\
 	DISPATCH(PC);							\
       }
 
@@ -1687,6 +1729,55 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        }
        DISPATCH(PC);
 
+     Case(inlined_equal) // r0, r1, r2
+       {
+	 GET_3R(codeBuffer, PC, dst, a, b);
+	 int res = Alice::Compare(GETREG(a), GETREG(b));
+	 if (res < 0) { // Compare called Scheduler::SetCurrentData(..)
+	   SAVEPC(startPC);
+	   Scheduler::SetNArgs(0);
+	   return Worker::REQUEST;
+	 }
+	 SETREG(dst, Store::IntToWord(res));
+       }
+       DISPATCH(PC);
+     
+#define INLINED_ROW_SUB(type, checked) {	\
+  GET_3R(codeBuffer, PC, dst, a, b);		\
+  word wA = GETREG(a);				\
+  type *row = type::FromWord(wA);		\
+  if (row == INVALID_POINTER) {			\
+    REQUEST(wA);				\
+  }						\
+  word wB = GETREG(b);				\
+  s_int index = Store::WordToInt(wB);		\
+  if (index == INVALID_INT) {			\
+    REQUEST(wB);				\
+  }						\
+  if (checked && (index < 0 || index >= row->GetLength())) {	\
+    RAISE(PrimitiveTable::General_Subscript);	\
+  }						\
+  SETREG(dst, row->Sub(index));	\
+  DISPATCH(PC);					\
+}
+     Case(inlined_array_sub)   INLINED_ROW_SUB(Array, true);
+     Case(inlined_array_usub)  INLINED_ROW_SUB(Array, false);
+     Case(inlined_vector_sub)  INLINED_ROW_SUB(Vector, true);
+     Case(inlined_vector_usub) INLINED_ROW_SUB(Vector, false);
+
+#define INLINED_ROW_LENGTH(type) {	\
+  GET_2R(codeBuffer, PC, dst, a);	\
+  word wA = GETREG(a);			\
+  type *row = type::FromWord(wA);	\
+  if (row == INVALID_POINTER) {		\
+    REQUEST(wA);			\
+  }					\
+  SETREG(dst, Store::IntToWord(row->GetLength()));	\
+  DISPATCH(PC);				\
+}
+     Case(inlined_array_length)  INLINED_ROW_LENGTH(Array);
+     Case(inlined_vector_length) INLINED_ROW_LENGTH(Vector);
+       
       /****************************************
        * debug support
        ***************************************/
@@ -1727,18 +1818,16 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 void ByteCodeInterpreter::PushCall(Closure *closure) { 
   BCI_DEBUG("BCI::PushCall(%p) current frame=%p --> ",
 	    closure->ToWord(),Scheduler::GetFrame());
-  ByteConcreteCode *concreteCode =
-    ByteConcreteCode::FromWord(closure->GetConcreteCode());
-  Assert(concreteCode->GetInterpreter() == ByteCodeInterpreter::self);
-  u_int nLocals        = concreteCode->GetNLocals();
-  Chunk *code          = concreteCode->GetByteCode();
-  Tuple *immediateArgs = concreteCode->GetImmediateArgs();
-  ByteCodeFrame * frame =
-    ByteCodeFrame::New(ByteCodeInterpreter::self,
-		       code,
-		       0, closure, immediateArgs,
-		       nLocals);
+  Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->GetInterpreter() == this);
+  ByteCodeFrame *frame = ByteCodeFrame::New(closure);
   BCI_DEBUG(" new frame=%p\n",frame);  
+}
+
+void ByteCodeInterpreter::PushCall(ByteConcreteCode *bcc, Closure *closure) {
+  BCI_DEBUG("BCI::PushCall(%p) current frame=%p --> ",
+	    closure->ToWord(),Scheduler::GetFrame());
+  ByteCodeFrame *frame = ByteCodeFrame::New(bcc, closure);
+  BCI_DEBUG(" new frame=%p\n",frame);
 }
 
 ByteCodeFrame *ByteCodeInterpreter::DupFrame(ByteCodeFrame *bcFrame) {
@@ -1752,13 +1841,12 @@ ByteCodeFrame *ByteCodeInterpreter::DupFrame(ByteCodeFrame *bcFrame) {
 }
 
 void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
-  ByteCodeFrame *codeFrame = reinterpret_cast<ByteCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  const char *frameType;
-  frameType = "function";
-  // to be done: frameType = "handler";
-    
-  Tuple *coord  = Tuple::FromWord(codeFrame->GetAbstractCode()->Sel(0));
+  
+  ByteCodeFrame *frame = reinterpret_cast<ByteCodeFrame *>(sFrame);
+  ByteConcreteCode *bcc = frame->GetConcreteCode();
+  
+  Tuple *coord  = Tuple::FromWord(bcc->GetAbstractCode()->Sel(0));
   String *name  = String::FromWord(coord->Sel(0));
   std::fprintf(stderr,
 	       "ByteCode %.*s:%"S_INTF".%"S_INTF" frame %p\n",
@@ -1775,8 +1863,9 @@ word ByteCodeInterpreter::GetProfileKey(StackFrame *sFrame) {
 }
 
 String *ByteCodeInterpreter::GetProfileName(StackFrame *sFrame) {
+  ByteCodeFrame *frame = reinterpret_cast<ByteCodeFrame *>(sFrame);
   return GetProfileName(
-    reinterpret_cast<ConcreteCode*>(reinterpret_cast<ByteCodeFrame *>(sFrame)->GetConcreteCode()));
+    reinterpret_cast<ConcreteCode*>(frame->GetConcreteCode()));
 }
 
 word ByteCodeInterpreter::GetProfileKey(ConcreteCode *cc) {
@@ -1784,6 +1873,7 @@ word ByteCodeInterpreter::GetProfileKey(ConcreteCode *cc) {
 }
 
 String *ByteCodeInterpreter::GetProfileName(ConcreteCode *cc) {
+  Assert(cc->GetInterpreter() == this);
   return AbstractCodeInterpreter::MakeProfileName(
     reinterpret_cast<ByteConcreteCode*>(cc)->GetAbstractCode());
 }

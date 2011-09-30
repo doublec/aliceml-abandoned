@@ -20,13 +20,48 @@
 #include "alice/Authoring.hh"
 #include "alice/ByteCodeAlign.hh"
 
-#define INSTR(instr) instr,
+#define INSTR(instr, args) instr,
 
 namespace ByteCodeInstr {
+
+  enum args {
+    ARGS_NONE,
+    ARGS_1R,
+    ARGS_1R_1I,
+    ARGS_1R_1I_STATR1,
+    ARGS_1R_1I_STATR2,
+    ARGS_1R_1I_STATR3,
+    ARGS_1R_1I_STATR4,
+    ARGS_1R_1I_DYNR,
+    ARGS_1R_1I_DYNI,
+    ARGS_1R_2I,
+    ARGS_1R_DYNR,
+    ARGS_1R_DYNI,
+    ARGS_2R,
+    ARGS_2R_1I,
+    ARGS_2R_2I,
+    ARGS_3R,
+    ARGS_3R_1I,
+    ARGS_4R,
+    ARGS_DYNR,
+    ARGS_1I,
+    ARGS_1I_1R,
+    ARGS_1I_2R,
+    ARGS_1I_3R,
+    ARGS_1I_DYNR,
+    ARGS_2I,
+    ARGS_2I_1R,
+    ARGS_2I_2R,
+    ARGS_2I_3R,
+    ARGS_2I_DYNR,
+    ARGS_DYNI,
+  };
+
   enum instr {
 #include "alice/ByteCodeInstrs.hh"
     NUMBER_OF_INSTRS
   };
+
 };
 
 class AliceDll ByteCode {
@@ -77,10 +112,9 @@ public:
   }
 #endif // THREADED
 
-  static void Disassemble(std::FILE *f, ProgramCounter pc, 
-			  Chunk *code, Tuple *imEnv); 
-  static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter pc, 
-				       Chunk *code, Tuple *imEnv);
+  static void Disassemble(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv); 
+  static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter startPC,
+                                      ProgramCounter pc, Chunk *code, Tuple *imEnv);
 };
 
 #undef INSTR

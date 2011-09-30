@@ -20,7 +20,7 @@
 #endif
 
 #include "Seam.hh"
-#include "alice/Base.hh"
+#include "alice/Data.hh"
 
 class AliceConcreteCode;
 
@@ -31,6 +31,8 @@ public:
   static AbstractCodeInterpreter *self;
 
   static void Init();
+  static String *MakeProfileName(TagVal *abstractCode);
+  static word GetCloseConcreteCode(word parentConcreteCode, TagVal *closeInstr);
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
@@ -45,8 +47,6 @@ public:
   virtual void DumpFrame(StackFrame *sFrame);
 
 #if PROFILE
-  static String *MakeProfileName(TagVal *abstractCode);
-  
   virtual word GetProfileKey(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);
   virtual String *GetProfileName(StackFrame *frame);

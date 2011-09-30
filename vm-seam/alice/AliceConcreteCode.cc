@@ -14,6 +14,7 @@
 #pragma implementation "alice/AliceConcreteCode.hh"
 #endif
 
+#include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
@@ -26,6 +27,7 @@ word AliceConcreteCode::New(TagVal *abstractCode) {
     Store::DirectWordToChunk(AliceLanguageLayer::TransformNames::function);
   Transform *transform = Transform::New(name, abstractCode->ToWord());
   concreteCode->Init(ABSTRACT_CODE_POS, abstractCode->ToWord());
+  concreteCode->Init(CLOSE_CONCRETE_CODES_POS, Map::New(8)->ToWord());
   concreteCode->Init(TRANSFORM_POS, transform->ToWord());
   return concreteCode->ToWord();
 }

@@ -37,19 +37,10 @@ static void DisassembleAlice(Closure *closure) {
 }
 #endif
 
-// Environment Accessors
-void AbstractCodeFrame::Environment::Add(word id, word value) {
-  Update(Store::WordToInt(id), value);
-}
 
-#if DEBUGGER
-word AbstractCodeFrame::Environment::LookupUnchecked(word id) {
-  return Sub(Store::WordToInt(id));
-}
-#endif
-
-word AbstractCodeFrame::Environment::Lookup(word id) {
-  word value = Sub(Store::WordToInt(id));
+word AbstractCodeFrame::GetLocal(u_int id) {
+  Assert(id >= 0 && id < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
+  word value = GetArg(BASE_SIZE + id);
 #ifdef LIVENESS_DEBUG
   ::Block *p = Store::WordToBlock(value);
   if (p != INVALID_POINTER) {
@@ -70,39 +61,28 @@ word AbstractCodeFrame::Environment::Lookup(word id) {
 #endif
   return value;
 }
+
+
+void AbstractCodeFrame::KillLocal(u_int id, TagVal *pc, Closure *closure) {
+  Assert(id >= 0 && id < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
+  word value;
 #ifdef LIVENESS_DEBUG
-void AbstractCodeFrame::Environment::Kill(word id, TagVal *pc, 
-					  Closure *globalEnv) {
   ::Block *dead = Store::AllocBlock(DEAD_LABEL, 4);
-  dead->InitArg(0, id);
-  dead->InitArg(1, Sub(Store::WordToInt(id)));
+  dead->InitArg(0, Store::IntToWord(id));
+  dead->InitArg(1, GetLocal(id));
   dead->InitArg(2, pc->ToWord());
-  dead->InitArg(3, globalEnv->ToWord());
-  Update(Store::WordToInt(id), dead->ToWord());
-}
+  dead->InitArg(3, closure->ToWord());
+  value = dead->ToWord();
 #else
-void AbstractCodeFrame::Environment::Kill(word id, TagVal *, Closure *) {
 #ifdef DEBUG_CHECK
-  Update(Store::WordToInt(id), dead);
+  value = dead;
 #else
-  Update(Store::WordToInt(id), Store::IntToWord(0));
+  value = Store::IntToWord(0);
 #endif
-}
 #endif
-// Environment Constructor
-AbstractCodeFrame::Environment *
-AbstractCodeFrame::Environment::New(u_int size) {
-  Array *array = Array::New(size);
-  for(u_int index = size; index--; ) {
-    array->Init(index, AliceLanguageLayer::undefinedValue);
-  }
-  return static_cast<Environment *>(array);
+  ReplaceArg(BASE_SIZE + id, value);
 }
-// Environment Untagging
-AbstractCodeFrame::Environment *
-AbstractCodeFrame::Environment::FromWordDirect(word x) {
-  return static_cast<Environment *>(Array::FromWordDirect(x));
-}
+
 
 #ifdef DEBUG_CHECK
 void AbstractCodeFrame::Init() {

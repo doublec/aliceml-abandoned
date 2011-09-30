@@ -29,6 +29,14 @@ public:
   static word concreteCode;
 
   static void Init();
+  
+  /**
+   * Dereference the specified word (i.e. skip over reference-transients),
+   * and if there are by-needs with LazySelClosure in the way, and they
+   * are selecting from a non-transient Record, mutate the by-needs into
+   * reference-transients and allow the dereference to pass through them.
+   */
+  static word Deref(word w);
 
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Result Run(StackFrame *sFrame);

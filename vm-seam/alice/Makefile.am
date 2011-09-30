@@ -27,6 +27,7 @@ libalicebase_a_SOURCES = \
 	ByteCodeJitter.cc \
 	ByteCodeInliner.cc \
 	ByteCodeConstProp.cc \
+	ByteCodeSpecializer.cc \
 	HotSpotConcreteCode.cc
 
 pkginclude_HEADERS = \
@@ -60,5 +61,6 @@ pkginclude_HEADERS = \
 	ByteCodeJitter.hh \
 	ByteCodeInliner.hh \
 	ByteCodeConstProp.hh \
+	ByteCodeSpecializer.hh \
 	HotSpotConcreteCode.hh
 

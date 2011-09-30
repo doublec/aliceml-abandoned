@@ -32,7 +32,8 @@ protected:
     TRANSFORM_POS,
     INLINE_INFO_POS,  
     BYTE_CODE_POS, 
-    IMMEDIATE_ENV_POS, IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS, 
+    IMMEDIATE_ENV_POS, IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS,
+    CLOSE_CONCRETE_CODES_POS,
     SIZE_INTERNAL
   };
 public:
@@ -64,14 +65,13 @@ public:
   InlineInfo *GetInlineInfo() {
     return InlineInfo::FromWordDirect(Get(INLINE_INFO_POS));
   }
+  Map *GetCloseConcreteCodes() {
+    return Map::FromWordDirect(Get(CLOSE_CONCRETE_CODES_POS));
+  }
   TagVal *GetAbstractCode() {
     return TagVal::FromWordDirect(GetAbstractRepresentation()->GetArgument());
   }
   void Disassemble(std::FILE *file);
-  void UpdateCode(Chunk *chunk, word immediateEnv) {
-    ConcreteCode::Init(BYTE_CODE_POS, chunk->ToWord());
-    ConcreteCode::Init(IMMEDIATE_ENV_POS, immediateEnv);
-  }
   // ByteConcreteCode Constructor
   static word New(TagVal *abstractCode);
   static ByteConcreteCode *NewInternal(TagVal *abstractCode,
@@ -83,7 +83,8 @@ public:
 		      Chunk *code,
 		      word immediateEnv,
 		      word nbLocals,
-		      word inlineInfo);			
+		      word inlineInfo,
+		      Map *closeConcreteCodes);
   // ByteConcreteCode Untagging
   static ByteConcreteCode *FromWord(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);

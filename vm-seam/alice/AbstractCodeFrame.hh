@@ -22,63 +22,94 @@
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "AliceConcreteCode.hh"
 
-// AbstractCodeInterpreter StackFrames
 class AbstractCodeFrame: private StackFrame {
 protected:
-  enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
+  enum { PC_POS, CLOSURE_POS, FORMAL_ARGS_POS, SIZE_POS, BASE_SIZE };
+
 public:
   using StackFrame::Clone;
-  class Environment : private Array {
-  public:
-    using Array::ToWord;
-    void Add(word id, word value);
-#if DEBUGGER
-    word LookupUnchecked(word id);
-#endif
-    word Lookup(word id);
-    void Kill(word id, TagVal *pc, Closure *globalEnv);
-    static Environment *New(u_int size);
-    static Environment *FromWordDirect(word x);
-  };
-  // AbstractCodeFrame Accessors
+  
   u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
   }
+  
   bool IsHandlerFrame() {
     return false; // to be done
   }
+  
   TagVal *GetPC() {
-    return TagVal::FromWordDirect(StackFrame::GetArg(PC_POS));
+    return TagVal::FromWordDirect(GetArg(PC_POS));
   }
+  
+  void SetPC(word pc) {
+    ReplaceArg(PC_POS, pc);
+  }
+  
   void SetPC(TagVal *pc) {
-    StackFrame::ReplaceArg(PC_POS, pc->ToWord());
+    ReplaceArg(PC_POS, pc->ToWord());
   }
+  
   Closure *GetClosure() {
-    return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
+    return Closure::FromWordDirect(GetArg(CLOSURE_POS));
   }
-  Environment *GetLocalEnv() {
-    return Environment::FromWordDirect(StackFrame::GetArg(LOCAL_ENV_POS));
+  
+  /**
+   * formalArgs may be a single IdDef or an IdDef Vector
+   */
+  
+  void SetFormalArgs(Vector *ids) {
+    SetFormalArgs(ids->ToWord());
   }
-  Vector *GetFormalArgs() {
-    return Vector::FromWord(StackFrame::GetArg(FORMAL_ARGS_POS));
-  }
+  
   void SetFormalArgs(word formalArgs) {
-    StackFrame::ReplaceArg(FORMAL_ARGS_POS, formalArgs);
+    ReplaceArg(FORMAL_ARGS_POS, formalArgs);
   }
-  // AbstractCodeFrame Constructor
-  static AbstractCodeFrame *New(Interpreter *interpreter,
-				word pc,
-				Closure *closure,
-				Environment *env,
-				word formalArgs) {
-    NEW_STACK_FRAME(frame, interpreter, SIZE);
-    frame->InitArg(PC_POS, pc);
+  
+  word GetFormalArgs() {
+    return GetArg(FORMAL_ARGS_POS);
+  }
+  
+  word GetLocal(word id) {
+    return GetLocal(Store::WordToInt(id));
+  }
+  
+  word GetLocal(u_int id);
+  
+  void SetLocal(word id, word value) {
+    SetLocal(Store::WordToInt(id), value);
+  }
+  
+  void SetLocal(u_int id, word value) {
+    Assert(id >= 0 && id < GetSize() - BASE_SIZE - StackFrame::GetBaseSize());
+    ReplaceArg(BASE_SIZE + id, value);
+  }
+  
+  void KillLocal(word id, TagVal *pc, Closure *closure) {
+    KillLocal(Store::WordToInt(id), pc, closure);
+  }
+  
+  void KillLocal(u_int id, TagVal *pc, Closure *closure);
+  
+  static AbstractCodeFrame *New(AliceConcreteCode *acc, Closure *closure) {
+    TagVal *abstractCode = acc->GetAbstractCode();
+    
+    u_int nbLocals = acc->GetNLocals();
+    u_int frSize = BASE_SIZE + nbLocals;
+    NEW_STACK_FRAME(frame, AbstractCodeInterpreter::self, frSize);
+    frame->InitArg(PC_POS, abstractCode->Sel(5));
     frame->InitArg(CLOSURE_POS, closure->ToWord());
-    frame->InitArg(LOCAL_ENV_POS, env->ToWord());
-    frame->InitArg(FORMAL_ARGS_POS, formalArgs);
+    frame->InitArg(FORMAL_ARGS_POS, abstractCode->Sel(3));
+    frame->InitArg(SIZE_POS, StackFrame::GetBaseSize() + frSize);
+    frame->InitArgs(BASE_SIZE, nbLocals, AliceLanguageLayer::undefinedValue);
     return static_cast<AbstractCodeFrame *>(frame);
   }
+  
+  static AbstractCodeFrame *New(Closure *closure) {
+    AbstractCodeFrame::New(AliceConcreteCode::FromWord(closure->GetConcreteCode()), closure);
+  }
+  
 #ifdef DEBUG_CHECK
   static void Init();
 #endif

@@ -19,7 +19,9 @@
 
 #include "alice/Base.hh"
 #include "alice/Data.hh"
+#include "alice/ByteCode.hh"
 #include "alice/ByteCodeInliner.hh"
+#include "alice/ByteCodeConstProp.hh"
 
 #define DO_REG_ALLOC
 //#undef DO_REG_ALLOC
@@ -27,19 +29,19 @@
 #define DO_INLINING
 //#undef DO_INLINING
 
-// #ifdef DO_INLINING
-// #define DO_CONSTANT_PROPAGATION
-// #else
-// #undef DO_CONSTANT_PROPAGATION
-// #endif
+#ifdef DO_INLINING
+#define DO_CONSTANT_PROPAGATION
+#else
 #undef DO_CONSTANT_PROPAGATION
+#endif
+//#undef DO_CONSTANT_PROPAGATION
 
 // We can try to omit a range check if we fill the missing slots in the
 // jump table with the PC of the "else" part. This optimization is used if
 // actualNumberOfTests * OPTIMIZE_TAGTEST_LEVEL > maxTag
 #define OPTIMIZE_TAGTEST_LEVEL 10
 
-//class LazyByteCompileClosure;
+
 class HotSpotCode;
 
 //! class for construction of immediate environment
@@ -135,6 +137,7 @@ private:
   ByteCodeImmediateEnv imEnv;
   IntMap *sharedTable;
   Vector *globalSubst;
+  Closure *inlineClosure;                /** closure that is currently being inlined, or INVALID_POINTER when inlineDepth == 0 */
   word currentConcreteCode;
   u_int skipCCCPC;
   Vector *currentFormalInArgs;
@@ -145,8 +148,9 @@ private:
 
   // result of constant propagation
 #ifdef DO_CONSTANT_PROPAGATION
-  Map *tagtestInfo;
+  ConstPropInfo *constPropInfo;
 #endif
+
   // patch forward jumps in CompileInlineFunctions
   class PatchTable {
   private:
@@ -185,11 +189,15 @@ private:
 #endif
   
   // inlining of primitives
-  enum { INT_PLUS, INT_MINUS, 
+  enum { INT_PLUS, INT_MINUS,
+         INT_LESS, INT_GREATER, INT_LESS_EQ, INT_GREATER_EQ,
 	 REF_ASSIGN, 
 	 FUTURE_AWAIT, FUTURE_BYNEED,
 	 HOLE_HOLE, HOLE_FILL,
-	 INLINE_TABLE_SIZE }; 
+	 EQUAL,
+	 ARRAY_SUB, UNSAFE_ARRAY_SUB, ARRAY_LENGTH,
+	 VECTOR_SUB, UNSAFE_VECTOR_SUB, VECTOR_LENGTH,
+	 INLINE_TABLE_SIZE };
   static void* inlineTable[INLINE_TABLE_SIZE]; 
   
   // scratch registers
@@ -219,6 +227,7 @@ private:
   }
 
   word ExtractImmediate(word idRef);
+  bool AllIImmediate(Vector *idRefs);
 
   TagVal *LookupSubst(u_int index) {
     return TagVal::FromWordDirect(globalSubst->Sub(index));
@@ -257,6 +266,10 @@ private:
     @param reg Register in which the return value is stored.
    */
   void InlinePrimitiveReturn(u_int reg);
+  
+  void InlineUnaryPrimitive(ByteCodeInstr::instr op, Vector *args, TagVal *idDefInstrOpt);
+  void InlineBinaryPrimitive(ByteCodeInstr::instr op, Vector *args, TagVal *idDefInstrOpt);
+
 
   //@{
   //! various methods to inline specific primitives
@@ -275,6 +288,7 @@ private:
   void Inline_FutureByneed(Vector *args, TagVal *idDefInstrOpt);
   void Inline_HoleHole(Vector *args, TagVal *idDefInstrOpt);
   void Inline_HoleFill(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_Equal(Vector *args, TagVal *idDefInstrOpt);
   //@}
   //@}
 
@@ -302,6 +316,9 @@ private:
    */
   void LoadTagVal(u_int testVal, Vector *idDefs, bool isBig);
 
+  //! Determine if the specified TagTest's target branch is known statically.
+  TagVal *StaticTagTestBranch(TagVal *pc, u_int testVal, bool isBigTag);
+  
   //@{
   //! Compilation of one abstract code instruction
   /*!
@@ -351,7 +368,9 @@ private:
  
  // inlining
   void CompileInlineCCC(Vector *formalArgs, Vector *args, bool isReturn);
-  TagVal *CompileInlineFunction(TagVal *abstractCode, 
+  TagVal *CompileInlineFunction(TagVal *appVar,
+				TagVal *abstractCode, 
+				Closure *closure,
 				InlineInfo *info,
 				Vector *subst,		   
 				u_int offset,

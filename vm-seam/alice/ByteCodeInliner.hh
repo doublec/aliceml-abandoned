@@ -20,11 +20,10 @@
 #include "alice/Authoring.hh"
 #include "alice/AbstractCode.hh"
 
-class LazyCompileClosure;
-class InlineAnalyser;
 
-//#define INLINE_LIMIT 5 moved to ByteCodeInliner.cc
-
+/**
+ * Inlining information for a function.
+ */
 class InlineInfo : private Tuple {
 private:
   enum { 
@@ -44,18 +43,24 @@ public:
     tup->Init(NNODES_POS,Store::IntToWord(nNodes));
     return reinterpret_cast<InlineInfo *>(tup);
   }
-  Map *GetInlineMap() { 
+  
+  // maps AppVar instr to (TagVal *abstractCode, Vector *subst, int nLocals, InlineInfo*, Closure*)
+  Map *GetInlineMap() {
     return Map::FromWordDirect(Tuple::Sel(INLINE_MAP_POS)); 
   }
+  
   Vector *GetLiveness() { 
     return Vector::FromWordDirect(Tuple::Sel(LIVENESS_POS)); 
   }
+  
   Array *GetAliases() {
     return Array::FromWordDirect(Tuple::Sel(ALIASES_POS));
   }
+  
   u_int GetNLocals() { 
     return Store::DirectWordToInt(Tuple::Sel(NLOCALS_POS)); 
   }
+  
   u_int GetNNodes() { 
     return Store::DirectWordToInt(Tuple::Sel(NNODES_POS)); 
   }
@@ -63,17 +68,14 @@ public:
   static InlineInfo *FromWord(word info) {
     return static_cast<InlineInfo *>(Tuple::FromWord(info));
   }
+  
   static InlineInfo *FromWordDirect(word info) {
     return static_cast<InlineInfo *>(Tuple::FromWordDirect(info));
   }
 };
 
+
 class ByteCodeInliner {
-private:
-  // The driver implements a depth-first search from the root and applies 
-  // the analysers to every node exactly ones
-  static void Driver(TagVal *root, InlineAnalyser *analyser); 
-  static Map *inlineCandidates;
 public:
 
   // Checks if a function is inlinable
@@ -82,12 +84,7 @@ public:
   // We impose a very ad-hoc size level, which is based on the number
   // of nodes inside an abstract code function. More profiling should
   // make this size barrier less ad-hoc.
-  static InlineInfo *AnalyseInlining(TagVal *abstractCode);
-
-  // This function must be called in the ByteCodeJitter to indicate the start
-  // of the analysis. A new map is created which records the processed 
-  // functions.
-  static void ResetRoot() { inlineCandidates = Map::New(20); }
+  static InlineInfo *Analyse(TagVal *abstractCode);
 };
 
 #endif // __ALICE_BYTECODE_INLINER_HH__

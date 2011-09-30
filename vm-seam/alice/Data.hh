@@ -48,6 +48,12 @@ public:
   static const BlockLabel MIN_TAG = static_cast<BlockLabel>(MIN_DATA_LABEL + 7);
   static const BlockLabel MAX_TAG = MAX_DATA_LABEL;
 
+  /**
+   * @return 1 if x0 = x1, 0 if not, or -1 if data needs to be requested -
+   *         in which case Scheduler::SetCurrentData will have been called.
+   */
+  static int Compare(word x0, word x1);
+  
   static bool IsTag(BlockLabel l) {
     return l >= MIN_TAG && l <= MAX_TAG;
   }
@@ -77,11 +83,21 @@ public:
     b->InitArg(LENGTH_POS, length);
     return static_cast<Array *>(b);
   }
+  
+  static Array *New(u_int length, word initVal) {
+    Array *arr = New(length);
+    for (u_int i=0; i<length; i++) {
+      arr->Init(i, initVal);
+    }
+    return arr;
+  }
+  
   static Array *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Array);
     return static_cast<Array *>(b);
   }
+  
   static Array *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::Array);
@@ -91,14 +107,17 @@ public:
   u_int GetLength() {
     return Store::DirectWordToInt(GetArg(LENGTH_POS));
   }
+  
   void Init(u_int index, word value) {
     Assert(index <= Store::DirectWordToInt(GetArg(LENGTH_POS)));
     InitArg(BASE_SIZE + index, value);
   }
+  
   void Update(u_int index, word value) {
     Assert(index <= Store::DirectWordToInt(GetArg(LENGTH_POS)));
     ReplaceArg(BASE_SIZE + index, value);
   }
+  
   word Sub(u_int index) {
     Assert(index <= Store::DirectWordToInt(GetArg(LENGTH_POS)));
     return GetArg(BASE_SIZE + index);
@@ -286,11 +305,19 @@ public:
   static TagVal *New(u_int tag, u_int n) {
     return static_cast<TagVal *>(Store::AllocBlock(Alice::TagToLabel(tag), n));
   }
+  
+  static TagVal *New1(u_int tag, word value) {
+    TagVal *tv = New(tag, 1);
+    tv->Init(0, value);
+    return tv;
+  }
+  
   static TagVal *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER || Alice::IsTag(p->GetLabel()));
     return static_cast<TagVal *>(p);
   }
+  
   static TagVal *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
     Assert(Alice::IsTag(p->GetLabel()));
@@ -300,15 +327,19 @@ public:
   u_int GetTag() {
     return Alice::LabelToTag(GetLabel());
   }
+  
   void AssertWidth(u_int n) {
     Assert(Store::SizeToBlockSize(n) == GetSize()); n = n;
   }
+  
   void Init(u_int index, word value) {
     InitArg(index, value);
   }
+  
   word Sel(u_int index) {
     return GetArg(index);
   }
+  
   static u_int GetOffset() {
     return 0;
   }
@@ -373,22 +404,30 @@ public:
 class AliceDll Vector: private Block {
 protected:
   enum { LENGTH_POS, BASE_SIZE };
+  static word empty;
 public:
   static const u_int maxLen = MAX_BIGBLOCKSIZE - BASE_SIZE;
 
   using Block::ToWord;
 
+  static void Init();
+  
   static Vector *New(u_int length) {
+    if (length == 0) {
+      return FromWordDirect(empty);
+    }
     Block *b =
       Store::AllocBlock(Alice::Vector, BASE_SIZE + length);
     b->InitArg(LENGTH_POS, length);
     return static_cast<Vector *>(b);
   }
+  
   static Vector *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == Alice::Vector);
     return static_cast<Vector *>(b);
   }
+  
   static Vector *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::Vector);
@@ -398,13 +437,16 @@ public:
   u_int GetLength() {
     return Store::DirectWordToInt(GetArg(LENGTH_POS));
   }
+  
   void Init(u_int index, word value) {
     InitArg(BASE_SIZE + index, value);
   }
+  
   void LateInit(u_int index, word value) {
     // This is only meant to be called by Vector.tabulate
     ReplaceArgUnchecked(BASE_SIZE + index, value);
   }
+  
   word Sub(u_int index) {
     return GetArg(BASE_SIZE + index);
   }
@@ -587,10 +629,16 @@ public:
 class AliceDll Record: private Block {
 protected:
   enum { WIDTH_POS, BASE_SIZE };
+  static word empty;
 public:
   using Block::ToWord;
 
+  static void Init();
+  
   static Record *New(u_int n) {
+    if (n == 0) {
+      return FromWordDirect(empty);
+    }
     Block *b = Store::AllocBlock(Alice::Record, BASE_SIZE + n * 2);
     b->InitArg(WIDTH_POS, n);
     for (u_int i = n; i--; ) {
@@ -600,6 +648,9 @@ public:
   }
   static Record *New(Vector *labels) {
     u_int n = labels->GetLength();
+    if (n == 0) {
+      return FromWordDirect(empty);
+    }
     Block *b = Store::AllocBlock(Alice::Record, BASE_SIZE + n * 2);
     b->InitArg(WIDTH_POS, n);
     for (u_int i = n; i--; ) {

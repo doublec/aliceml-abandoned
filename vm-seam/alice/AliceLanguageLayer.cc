@@ -28,6 +28,7 @@
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCodeInterpreter.hh"
 #include "alice/ByteCodeJitter.hh"
+#include "alice/ByteCodeSpecializer.hh"
 #include "alice/HotSpotConcreteCode.hh"
 #if DEBUGGER
 #include "alice/DebugEnvironment.hh"
@@ -130,13 +131,16 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   remoteCallback = Store::IntToWord(0); //--** needs to be preregistered
   RootSet::Add(remoteCallback);
 
+  Vector::Init();
   Constructor::Init();
+  Record::Init();
   Guid::Init();
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
   PrimitiveTable::Init();
   ByteCodeInterpreter::Init();
   ByteCodeJitter::Init();
+  ByteCodeSpecializer::Init();
   HotSpotInterpreter::Init();
 
   const char *jitMode = std::getenv("ALICE_JIT_MODE");

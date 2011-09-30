@@ -20,29 +20,35 @@
 #include "alice/Data.hh"
 #include "alice/LazySelInterpreter.hh"
 
-// LazySel Frame
-class LazySelFrame: private StackFrame {
-private:
-  enum { RECORD_POS, LABEL_POS, SIZE };
-public:
-  static LazySelFrame *New(Interpreter *interpreter, word record,
-			   UniqueString *label) {
-    NEW_STACK_FRAME(frame, interpreter, SIZE);
-    frame->InitArg(RECORD_POS, record);
-    frame->InitArg(LABEL_POS, label->ToWord());
-    return static_cast<LazySelFrame *>(frame);
-  }
 
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-  word GetRecord() {
-    return GetArg(RECORD_POS);
-  }
-  UniqueString *GetLabel() {
-    return UniqueString::FromWordDirect(GetArg(LABEL_POS));
-  }
-};
+namespace {
+
+  // LazySel Frame
+  class LazySelFrame: private StackFrame {
+  private:
+    enum { RECORD_POS, LABEL_POS, SIZE };
+  public:
+    static LazySelFrame *New(Interpreter *interpreter, word record,
+			    UniqueString *label) {
+      NEW_STACK_FRAME(frame, interpreter, SIZE);
+      frame->InitArg(RECORD_POS, record);
+      frame->InitArg(LABEL_POS, label->ToWord());
+      return static_cast<LazySelFrame *>(frame);
+    }
+
+    u_int GetSize() {
+      return StackFrame::GetSize() + SIZE;
+    }
+    word GetRecord() {
+      return GetArg(RECORD_POS);
+    }
+    UniqueString *GetLabel() {
+      return UniqueString::FromWordDirect(GetArg(LABEL_POS));
+    }
+  };
+
+}
+
 
 //
 // LazySelInterpreter
@@ -54,6 +60,34 @@ void LazySelInterpreter::Init() {
   self = new LazySelInterpreter();
   concreteCode = ConcreteCode::New(self, 0)->ToWord();
   RootSet::Add(concreteCode);
+}
+
+word LazySelInterpreter::Deref(word w) {
+  while (true) {
+    w = PointerOp::Deref(w);
+    Transient *tr = Store::WordToTransient(w);
+    
+    if (tr != INVALID_POINTER && tr->GetLabel() == BYNEED_LABEL) {
+      Byneed *byNeed = static_cast<Byneed*>(tr);
+      Closure *closure = byNeed->GetClosure();
+      
+      // no need to deref concrete code since it will never be transient in a LazySelClosure
+      if (closure->GetConcreteCode() == concreteCode) {
+	
+	// Deref to get rec since it might be a value lazily selected from another Record...
+	Record *rec = Record::FromWord(Deref(closure->Sub(0)));
+	
+	if (rec != INVALID_POINTER) {
+	  UniqueString *label = UniqueString::FromWordDirect(closure->Sub(1));
+	  w = rec->PolySel(label);
+	  byNeed->Become(REF_LABEL, w);
+	  continue;
+	}
+      }
+    }
+    
+    return w;
+  }
 }
 
 void LazySelInterpreter::PushCall(Closure *closure0) {

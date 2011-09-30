@@ -14,7 +14,9 @@
 #pragma implementation "alice/AbstractCode.hh"
 #endif
 
+#include <stack>
 #include "alice/AbstractCode.hh"
+
 
 static const char *opcodeNames[AbstractCode::nInstrs] = {
   "AppPrim", "AppVar", "Close", "CompactIntTest", "CompactTagTest", "ConTest",
@@ -25,13 +27,246 @@ static const char *opcodeNames[AbstractCode::nInstrs] = {
   "Try", "VecTest"
 };
 
+
 const char *AbstractCode::GetOpcodeName(instr opcode) {
   return opcodeNames[opcode];
 }
 
+
 const char *AbstractCode::GetOpcodeName(TagVal *pc) {
   return GetOpcodeName(AbstractCode::GetInstr(pc));
 }
+
+
+s_int AbstractCode::GetContinuationPos(instr instr) {
+  switch (instr) {
+    case EndTry:
+    case EndHandle:
+      return 0;
+    case Kill:
+    case Shared:
+      return 1;
+    case Entry:
+    case PutVar:
+    case PutNew:
+    case PutRef:
+    case PutTup:
+    case PutVec:
+    case GetRef:
+    case GetTup:
+      return 2;
+    case Exit:
+    case PutCon:
+    case PutPolyRec:
+    case Close:
+    case Specialize:
+    case Sel:
+    case LazyPolySel:
+      return 3;
+    case PutTag:
+      return 4;
+    case Raise:
+    case Reraise:
+    case Try:
+    case IntTest:
+    case CompactIntTest:
+    case RealTest:
+    case StringTest:
+    case Return:
+    case AppPrim:
+    case AppVar:
+    case TagTest:
+    case CompactTagTest:
+    case VecTest:
+      return -1;
+    default:
+      Assert(false);
+  }
+}
+
+
+s_int AbstractCode::GetNumProgramPoints(instr instr) {
+  switch (instr) {
+    case Kill:
+    case EndTry:
+    case EndHandle:
+    case Shared:
+      return 0;
+    case Entry:
+    case Exit:
+    case PutNew:
+    case GetTup:
+    case Raise:
+    case Reraise:
+    case Try:
+    case IntTest:
+    case CompactIntTest:
+    case RealTest:
+    case StringTest:
+    case Return:
+      return 1;
+    case PutVar:
+    case PutTag:
+    case PutCon:
+    case PutRef:
+    case PutTup:
+    case PutPolyRec:
+    case PutVec:
+    case Close:
+    case Specialize:
+    case GetRef:
+    case Sel:
+    case LazyPolySel:
+      return 2;
+    case AppPrim:
+    case AppVar:
+    case TagTest:
+    case CompactTagTest:
+    case VecTest:
+      return -1;
+    default:
+      Assert(false);
+  }
+}
+
+IntMap *AbstractCode::SharedInArity(TagVal *abstractCode) {
+  
+  IntMap *sharedInArity = IntMap::New(16);
+  std::stack<word> toVisit;
+  
+  toVisit.push(abstractCode->Sel(5));
+  while (!toVisit.empty()) {
+    TagVal *instr = TagVal::FromWordDirect(toVisit.top());
+    toVisit.pop();
+    AbstractCode::instr instrOp = GetInstr(instr);
+    switch (instrOp) {
+      case Raise:
+      case Reraise:
+      case Return:
+	break;
+      case EndHandle:
+      case EndTry:
+      case Kill:
+      case GetRef:
+      case GetTup:
+      case PutNew:
+      case PutRef:
+      case PutTup:
+      case PutVar:
+      case PutVec:
+      case Close:
+      case LazyPolySel:
+      case PutCon:
+      case PutPolyRec:
+      case Sel: 
+      case Specialize:
+      case PutTag: {
+	u_int cp = GetContinuationPos(instrOp);
+	toVisit.push(instr->Sel(cp)); 
+	break;
+      }
+      case AppPrim: {
+	TagVal *contOpt = TagVal::FromWord(instr->Sel(2));
+	if(contOpt != INVALID_POINTER) {
+	  Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));
+	  toVisit.push(cont->Sel(1));
+	}
+	break;
+      }
+      case AppVar: {
+	TagVal *contOpt = TagVal::FromWord(instr->Sel(3));
+	if(contOpt != INVALID_POINTER) {
+	  Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));
+	  toVisit.push(cont->Sel(1));
+	}
+	break;
+      }
+      case Try: {
+	toVisit.push(instr->Sel(3));
+	toVisit.push(instr->Sel(0));
+	break;
+      }
+      case IntTest:
+      case RealTest:
+      case StringTest:
+      case VecTest: {
+	Vector *tests = Vector::FromWordDirect(instr->Sel(1));
+	for (u_int i = tests->GetLength(); i--; ) {
+	  Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
+	  toVisit.push(test->Sel(1));
+	}
+	toVisit.push(instr->Sel(2));
+	break;
+      }
+      case CompactIntTest: {
+	toVisit.push(instr->Sel(3));
+	Vector *tests = Vector::FromWordDirect(instr->Sel(2));
+	for (u_int i = tests->GetLength(); i--; ) {
+	  toVisit.push(tests->Sub(i));
+	}
+	break;
+      }
+      case ConTest: {
+	Vector *tests0 = Vector::FromWordDirect(instr->Sel(1));
+	for(u_int i = tests0->GetLength(); i--; ) {
+	  Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));	  
+	  toVisit.push(test->Sel(1));
+	}
+	Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
+	for(u_int i = testsN->GetLength(); i--; ) {
+	  Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
+	  toVisit.push(test->Sel(2));
+	}
+	toVisit.push(instr->Sel(3));
+	break;
+      }
+      case TagTest: {
+	Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
+	for(u_int i = tests0->GetLength(); i--; ) {
+	  Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));	  
+	  toVisit.push(test->Sel(1));
+	}
+	Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
+	for(u_int i = testsN->GetLength(); i--; ) {
+	  Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
+	  toVisit.push(test->Sel(2));
+	}
+	toVisit.push(instr->Sel(4));
+	break;
+      }
+      case CompactTagTest: {
+	TagVal *elseInstrOpt = TagVal::FromWord(instr->Sel(3));
+	if(elseInstrOpt != INVALID_POINTER)
+	  toVisit.push(elseInstrOpt->Sel(0));
+	Vector *tests = Vector::FromWordDirect(instr->Sel(2));
+	for(u_int i = tests->GetLength(); i--; ) {
+	  Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+	  toVisit.push(pair->Sel(1));
+	}
+	break;
+      }
+      case Shared: {
+	word stamp = instr->Sel(0);
+	word arity = sharedInArity->CondGet(stamp);
+	
+	if(arity == INVALID_POINTER) {
+	  toVisit.push(instr->Sel(1));
+	  sharedInArity->Put(stamp, Store::IntToWord(1)); 
+	} else {
+	  u_int inArity = Store::DirectWordToInt(arity);
+	  sharedInArity->Put(stamp, Store::IntToWord(inArity + 1));
+	}
+	break;
+      }
+      default: {
+	Assert(false);
+      }
+    }
+  }
+  
+  return sharedInArity;
+}
+  
 
 #define OPT(w, X) {				\
   TagVal *opt = TagVal::FromWord(w);		\

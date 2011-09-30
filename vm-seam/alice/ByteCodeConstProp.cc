@@ -15,1050 +15,682 @@
 #endif
 
 #include "alice/AbstractCode.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 #include "alice/ByteCodeConstProp.hh"
 #include "alice/Types.hh"
+#include "alice/LazySelInterpreter.hh"
 
-class ControlStack {
-private:
-  u_int *stack;
-  u_int size;
-  s_int top;
-  void Push(u_int item) {
-    if( ++top >= size ) {	
-      u_int oldSize = size;
-      size = size * 3 / 2;
-      u_int *newStack = new u_int[size];
-      memcpy(newStack,stack,oldSize * sizeof(u_int));
+
+namespace {
+
+  class ControlStack {
+  private:
+    u_int *stack;
+    u_int size;
+    s_int top;
+    
+    void Push(u_int item) {
+      if (++top >= size) {
+	u_int oldSize = size;
+	size = size * 3 / 2;
+	u_int *newStack = new u_int[size];
+	memcpy(newStack, stack, oldSize * sizeof(u_int));
+	delete[] stack;
+	stack = newStack;
+      }
+      stack[top] = item;
+    }
+    
+    u_int Pop() {
+      return stack[top--];
+    }
+    
+  public:
+    
+    enum { VISIT, INLINE_EXIT, STOP };
+    
+    ControlStack(u_int s = 200) {
+      size = s;
+      top = -1;
+      stack = new u_int[size];
+    }
+    
+    ~ControlStack() {
       delete[] stack;
-      stack = newStack;
     }
-    stack[top] = item;
-  }
-  u_int Pop() { return stack[top--]; }
-public:
-  enum { VISIT, SET_CONSTTABLE, INLINE_EXIT, STOP };
-  ControlStack(u_int s = 400) : size(s), top(-1) { stack = new u_int[size]; }
-  u_int PopCommand() { return Pop(); }
-  TagVal *PopInstr() { return reinterpret_cast<TagVal *>(Pop()); }
-  Tuple *PopInlineExit() { return reinterpret_cast<Tuple *>(Pop()); }
-  Array *PopConstTable() { return reinterpret_cast<Array *>(Pop()); }
-  void PushInstr(TagVal *instr) {
-    Push(reinterpret_cast<u_int>(instr));
-    Push(VISIT);
-  }
-  void PushInlineExit(Tuple *tup) {
-    Push(reinterpret_cast<u_int>(tup));
-    Push(INLINE_EXIT);
-  }
-  void PushStop() { Push(STOP); }
-  void PushConstTable(Array *constants) {
-    Push(reinterpret_cast<u_int>(constants));
-    Push(SET_CONSTTABLE);
-  }
-  bool Empty() { return top == -1; }
-  u_int GetSize() { return top; }
-};
-
-// collect information about the in artiy of shared nodes
-// This is needed for constant propagation. On shared nodes we have to
-// merge the collected constants from every branch. So we first have to 
-// visit every branch. 
-
-class ConstProp_PrePass {
-private:
-  InlineInfo *inlineInfo;
-  Map *sharedInArity;
-  TagVal *root;
-public:
-  ConstProp_PrePass(TagVal *abstractCode, InlineInfo *info) : inlineInfo(info) {
-    sharedInArity = Map::New(128);
-    root = TagVal::FromWordDirect(abstractCode->Sel(5));
-//     fprintf(stderr,"pre pass over:\n");
-//     AbstractCode::Disassemble(stderr,root);
-  }
-  void Run();
-  Map *GetSharedInArity() { return sharedInArity; }
-};
-
-void ConstProp_PrePass::Run() {
-  ControlStack stack;
-  // use sharedInArity for book-keeping of shared nodes
-  stack.PushStop();
-  stack.PushInstr(root);
-  for(;;) {
-    switch(stack.PopCommand()) {
-    case ControlStack::STOP:
-      return;
-    case ControlStack::SET_CONSTTABLE:
-      {
-	Error("SET_CONSTTABLE invalid for pre pass\n");
-      }
-      break;
-    case ControlStack::INLINE_EXIT:
-      {
-	// this is a dummy as we do not have anything interesting to do
-	// in pre pass
-	Tuple *state = stack.PopInlineExit();
-	inlineInfo = InlineInfo::FromWordDirect(state->Sel(0));
-      }
-      break;
-    case ControlStack::VISIT:
-      {
-	TagVal *instr = stack.PopInstr();
-	switch (AbstractCode::GetInstr(instr)) {
-	case AbstractCode::Raise:
-	case AbstractCode::Reraise:
-	case AbstractCode::Return:
-	  break;
-	case AbstractCode::EndHandle:
-	case AbstractCode::EndTry:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(0))); 
-	  break;
-	case AbstractCode::Kill:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(1)));
-	  break;
-	case AbstractCode::GetRef:
-	case AbstractCode::GetTup:
-	case AbstractCode::PutNew:
-	case AbstractCode::PutRef:
-	case AbstractCode::PutTup:
-	case AbstractCode::PutVar:
-	case AbstractCode::PutVec:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(2))); 
-	  break;
-	case AbstractCode::Close:
-	case AbstractCode::LazyPolySel:
-	case AbstractCode::PutCon:
-	case AbstractCode::PutPolyRec:
-	case AbstractCode::Sel: 
-	case AbstractCode::Specialize:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3))); 
-	  break;
-	case AbstractCode::PutTag:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4))); 
-	  break;
-	case AbstractCode::AppPrim:
-	  {
-	    TagVal *contOpt = TagVal::FromWord(instr->Sel(2));
-	    if(contOpt != INVALID_POINTER) {
-	      Tuple *tup = Tuple::FromWordDirect(contOpt->Sel(0));
-	      stack.PushInstr(TagVal::FromWordDirect(tup->Sel(1)));
-	    }
-	  }
-	  break;
-	case AbstractCode::AppVar:
-	  {
-	    TagVal *contOpt = TagVal::FromWord(instr->Sel(3));
-	    if(contOpt != INVALID_POINTER) {
-	      Tuple *tup = Tuple::FromWordDirect(contOpt->Sel(0));
-	      stack.PushInstr(TagVal::FromWordDirect(tup->Sel(1)));
-	    }
-	    // check if the function can be inlined
-	    // app var nodes become shared nodes if the function
-	    // can be inlined.
-	    Map *inlineMap = inlineInfo->GetInlineMap();
-	    if(inlineMap->IsMember(instr->ToWord())) {
-	      // enter the inlined function
-	      Tuple *state = Tuple::New(1);
-	      state->Init(0, inlineInfo->ToWord());
-	      stack.PushInlineExit(state);
-	      Tuple *tup = 
-		Tuple::FromWordDirect(inlineMap->Get(instr->ToWord()));
-	      TagVal *abstractCode = TagVal::FromWordDirect(tup->Sel(0));
-	      inlineInfo = InlineInfo::FromWordDirect(tup->Sel(3));
-// 	      fprintf(stderr,"inline function %p:\n",abstractCode);
-// 	      AbstractCode::Disassemble(stderr,
-// 				 TagVal::FromWordDirect(abstractCode->Sel(5)));
-	      stack.PushInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
-	    }
-	  }
-	  break;
-	case AbstractCode::Try:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(0)));
-	  break;
-	case AbstractCode::IntTest:
-	case AbstractCode::RealTest:
-	case AbstractCode::StringTest:
-	case AbstractCode::VecTest:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(2)));
-	    Vector *tests = Vector::FromWordDirect(instr->Sel(1));
-	    for (u_int i = tests->GetLength(); i--; ) {
-	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	      stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-	    }
-	  }
-	  break;
-	case AbstractCode::CompactIntTest:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
-	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	    for (u_int i = tests->GetLength(); i--; ) {
-	      stack.PushInstr(TagVal::FromWordDirect(tests->Sub(i)));
-	    }	
-	  }
-	  break;
-	case AbstractCode::ConTest:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
-	    Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
-	    for(u_int i = testsN->GetLength(); i--; ) {
-	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	      stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
-	    }
-	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(1));
-	    for(u_int i = tests0->GetLength(); i--; ) {
-	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-	      stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-	    }
-	  }
-	  break;
-	case AbstractCode::TagTest:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4)));
-	    Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
-	    for(u_int i = testsN->GetLength(); i--; ) {
-	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	      stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
-	    }
-	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
-	    for(u_int i = tests0->GetLength(); i--; ) {
-	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-	      stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-	    }
-	  }
-	  break;
-	case AbstractCode::CompactTagTest:
-	  {
-	    TagVal *elseInstrOpt = TagVal::FromWord(instr->Sel(3));
-	    if(elseInstrOpt != INVALID_POINTER)
-	      stack.PushInstr(TagVal::FromWordDirect(elseInstrOpt->Sel(0)));
-	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	    for(u_int i = tests->GetLength(); i--; ) {
-	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	      stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-	    }	
-	  }
-	  break;
-	case AbstractCode::Shared:
-	  {
-	    word key = instr->ToWord(); // instr->Sel(0);
-	    if(!sharedInArity->IsMember(key)) {
-	      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(1)));
-	      sharedInArity->Put(key,Store::IntToWord(1)); 
-	    } else {
-	      u_int inArity = Store::DirectWordToInt(sharedInArity->Get(key));
-	      sharedInArity->Put(key,Store::IntToWord(++inArity));
-	    }
-	  }
-	  break;
-	default:
-	  fprintf(stderr,"PrePass: invalid abstractCode tag %"U_INTF"\n",
-		  static_cast<u_int>(AbstractCode::GetInstr(instr)));
-	  return;
-	}
-      }
-      break;
-    default:
-      {
-	Error("internal consistancy error in control stack\n");
-      }
+    
+    u_int PopCommand() {
+      return Pop();
     }
-  }
-}
-
-
-//
-class ConstProp_MainPass {
-private:
-  enum const_kind { 
-    INT,
-    TAGVAL,            // stores the tag     
-    UNKNOWN       
+    
+    TagVal *PopInstr() {
+      return reinterpret_cast<TagVal *>(Pop());
+    }
+      
+    void PopInlineExit(u_int *localOffset, Vector **subst, Vector **inlineReturnIdDefs, IntMap **sharedInArity, InlineInfo **inlineInfo, ConstPropInfo **constPropInfo) {
+      *constPropInfo = reinterpret_cast<ConstPropInfo*>(Pop());
+      *inlineInfo = reinterpret_cast<InlineInfo*>(Pop());
+      *sharedInArity = reinterpret_cast<IntMap*>(Pop());
+      *inlineReturnIdDefs = reinterpret_cast<Vector*>(Pop());
+      *subst = reinterpret_cast<Vector*>(Pop());
+      *localOffset = Pop();
+    }
+    
+    void PushInstr(TagVal *instr) {
+      Push(reinterpret_cast<u_int>(instr));
+      Push(VISIT);
+    }
+    
+    void PushInstr(word instr) {
+      PushInstr(TagVal::FromWordDirect(instr));
+    }
+    
+    void PushInlineExit(u_int localOffset, Vector *subst, Vector *inlineReturnIdDefs, IntMap *sharedInArity, InlineInfo *inlineInfo, ConstPropInfo *constPropInfo) {
+      Push(localOffset);
+      Push(reinterpret_cast<u_int>(subst));
+      Push(reinterpret_cast<u_int>(inlineReturnIdDefs));
+      Push(reinterpret_cast<u_int>(sharedInArity));
+      Push(reinterpret_cast<u_int>(inlineInfo));
+      Push(reinterpret_cast<u_int>(constPropInfo));
+      Push(INLINE_EXIT);
+    }
+    
+    void PushStop() {
+      Push(STOP);
+    }
+    
+    bool Empty() {
+      return top == -1;
+    }
+    
+    u_int GetSize() {
+      return top;
+    }
   };
 
-  u_int nLocals;
-  Vector *subst;
-  Array *constants;
-  word wUnkownVal;
-  Map *sharedInArity;
-  TagVal *root;
-  u_int localOffset;
-  u_int inlineDepth;
-  Vector *noFormalArgs;
-  Vector *formalArgs;
-  Array *oldConstants;
-  InlineInfo *inlineInfo;
 
-  Map *tagtestInfo;
+  class ConstPropAnalyser {
+  private:
+    
+    enum const_kind {
+      KindNotYetAssigned, /** variable has not yet been assigned in the analysis */
+      KindInt,            /** so far the variable appears to hold a constant int */
+      KindTagVal,         /** so far the variable appears to hold a TagVal with constant tag */
+      KindUnknown         /** the variable has been assigned but we dont know more than that */
+    };
+    
+    /**
+    * Holds information about local variable values. each entry is
+    * either ConstNotYetAssigned(), ConstUnknown(), or a TagVal with a tag which is
+    * either KindInt or KindTagVal plus a value which is the constant
+    * int or tag.
+    */
+    Array *constants;
+    
+    Vector *subst;
+    TagVal *abstractCode;
+    u_int localOffset;
+    u_int inlineDepth;
+    
+    /**
+    * IdDef Vector to bind with the result when the current inlined
+    * function returns, or INVALID_POINTER
+    */
+    Vector *inlineReturnIdDefs;
+    
+    InlineInfo *inlineInfo;
+    ConstPropInfo *constPropInfo;
 
-  // some helpers
-  u_int IdToId(word id) {
-    return Store::DirectWordToInt(id) + localOffset;
-  }
-  TagVal *LookupSubst(word idRef) {
-    TagVal *tagVal = TagVal::FromWordDirect(idRef);
-    if(AbstractCode::GetIdRef(tagVal) == AbstractCode::Global) {
-      u_int addr = Store::DirectWordToInt(tagVal->Sel(0));
-      TagVal *valueOpt = TagVal::FromWord(subst->Sub(addr));
-      if(valueOpt != INVALID_POINTER) {
-	TagVal *immediate = TagVal::New(AbstractCode::Immediate,1);
-	immediate->Init(0,valueOpt->Sel(0));
-	return immediate;
+    
+    u_int IdToId(word id) {
+      return Store::DirectWordToInt(id) + localOffset;
+    }
+    
+    
+    word ConstNotYetAssigned(){
+      return Store::IntToWord(KindNotYetAssigned);
+    }
+    
+    
+    word ConstUnknown() {
+      return Store::IntToWord(KindUnknown);
+    }
+    
+    
+    word IntToConst(s_int i) {
+      TagVal *c = TagVal::New(KindInt, 1);
+      c->Init(0, Store::IntToWord(i));
+      return c->ToWord();
+    }
+    
+    
+    word TagToConst(u_int tag) {
+      TagVal *c = TagVal::New(KindTagVal, 1);
+      c->Init(0, Store::IntToWord(tag));
+      return c->ToWord();
+    }
+    
+    
+    word ValueToConst(word value) {
+      value = LazySelInterpreter::Deref(value);
+      
+      if (PointerOp::IsInt(value)) {
+	return IntToConst(Store::WordToInt(value));
       }
-    }
-    return tagVal;
-  }
-  void RegisterValue(Array *constsTable,
-		     word wIdDef, word val, const_kind kind) {
-    TagVal *idDef = TagVal::FromWord(wIdDef);
-    if(idDef != INVALID_POINTER) {
-      u_int index = Store::DirectWordToInt(idDef->Sel(0));
-      TagVal *newVal = TagVal::New(kind,1);
-      newVal->Init(0,val);
-      constsTable->Update(index, newVal->ToWord());
-    }
-  }
-  void RegisterValue(word wIdDef, word val, const_kind kind) {
-    RegisterValue(constants,wIdDef,val,kind);
-  }
-  void ResetLocation(word wIdDef) {
-    TagVal *idDef = TagVal::FromWord(wIdDef);
-    if(idDef != INVALID_POINTER) {
-      u_int index = Store::DirectWordToInt(idDef->Sel(0));
-      constants->Update(index, wUnkownVal);
-    }
-  }
-  const_kind ExtractKind(Array *table, u_int index) {
-    TagVal *valKind = TagVal::FromWordDirect(table->Sub(index));
-    return static_cast<const_kind>(valKind->GetTag());
-  }
-  const_kind ExtractKind(u_int index) {
-    TagVal *valKind = TagVal::FromWordDirect(constants->Sub(index));
-    return static_cast<const_kind>(valKind->GetTag());
-  }
-  word ExtractValue(u_int index) {
-    Assert(ExtractKind(index) != UNKNOWN);
-    TagVal *info = TagVal::FromWordDirect(constants->Sub(index));
-    return info->Sel(0);
-  }
-  const_kind ExtractKind(word idDef) {
-    TagVal *tagVal = TagVal::FromWord(idDef);
-    if(tagVal != INVALID_POINTER) {
-      u_int index = Store::DirectWordToInt(tagVal->Sel(0));
-      TagVal *valKind = TagVal::FromWordDirect(constants->Sub(index));
-      return static_cast<const_kind>(valKind->GetTag());
-    }
-    return UNKNOWN;
-  }
-  void CreateConstFromIdRef(word wIdDef, word wIdRef, const_kind kind) {
-    TagVal *idRef = TagVal::FromWordDirect(wIdRef);
-    switch(AbstractCode::GetIdRef(idRef)) {
-    case AbstractCode::LastUseLocal:
-    case AbstractCode::Local:
-      {
-	u_int index = IdToId(idRef->Sel(0));
-	if(ExtractKind(index) != UNKNOWN) {
-	  RegisterValue(wIdDef, ExtractValue(index), kind);
+      
+      Block *b = Store::WordToBlock(value);
+      if (b != INVALID_POINTER) {
+	
+	if (Alice::IsTag(b->GetLabel())) {
+	  TagVal *tv = reinterpret_cast<TagVal*>(b);
+	  return TagToConst(tv->GetTag());
+	}
+      
+	if (b->GetLabel() == Alice::BIG_TAG) {
+	  BigTagVal *btv = reinterpret_cast<BigTagVal*>(b);
+	  return TagToConst(btv->GetTag());
 	}
       }
-    case AbstractCode::Immediate:
-      {
-	RegisterValue(wIdDef, idRef->Sel(0), kind);
-      }
-      break;
-    case AbstractCode::Global:
-      {
-	u_int addr = Store::DirectWordToInt(idRef->Sel(0));
-	TagVal *valueOpt = TagVal::FromWord(subst->Sub(addr));
-	if(valueOpt != INVALID_POINTER) {
-	  RegisterValue(wIdDef, valueOpt->Sel(0), kind);
-	}
-      }
-      break;
-    default:
-      ;
+      
+      return ConstUnknown();
     }
-  }
+    
+    
+    word IdRefToConst(word wIdRef) {
+      TagVal *idRef = TagVal::FromWordDirect(wIdRef);
 
-  // merge the main constant table with another one
-  void MergeConstantTable(Array *constants2) {
-    Assert(constants->GetLength() == constants2->GetLength());
-    // this currently only works for tag values
-    for(u_int i = constants->GetLength(); i--; ) {
-      u_int kind1 = ExtractKind(i);
-      u_int kind2 = ExtractKind(constants2,i);
-      if(kind1 == TAGVAL && kind2 == TAGVAL) {	
-	TagVal *info1 = TagVal::FromWordDirect(constants->Sub(i));
-	TagVal *info2 = TagVal::FromWordDirect(constants2->Sub(i));
-	u_int tag1 = Store::DirectWordToInt(info1->Sel(0));
-	u_int tag2 = Store::DirectWordToInt(info2->Sel(0));	
-	if(tag1 == tag2) // keep the information
-	  continue;
-      } else if (kind1 == INT && kind2 == INT) {
-	TagVal *info1 = TagVal::FromWordDirect(constants->Sub(i));
-	TagVal *info2 = TagVal::FromWordDirect(constants2->Sub(i));
-	if(Store::DirectWordToInt(info1->Sel(0)) == 
-	   Store::DirectWordToInt(info2->Sel(0))) {
-	  continue; // keep this information
-	}
-      }
-      constants->Update(i, wUnkownVal); // reset
-    }
-  }
-
-  Array *CloneConstants() {
-    Assert(constants->GetLength() == nLocals);
-    Array *constantsCopy = Array::New(nLocals);
-    for(u_int i = nLocals; i--; ) {
-      constantsCopy->Init(i, constants->Sub(i));
-    }
-    return constantsCopy;
-  }
-
-  static inline Vector *ShiftIdDefs(Vector *srcs, s_int offset) {
-    u_int size = srcs->GetLength();
-    Vector *dsts = Vector::New(size);
-    for(u_int i = size; i--; ) {
-      TagVal *argOpt = TagVal::FromWord(srcs->Sub(i));
-      if(argOpt != INVALID_POINTER) {
-	u_int id = Store::DirectWordToInt(argOpt->Sel(0)) + offset;
-	TagVal *newOpt = TagVal::New(Types::SOME,1);
-	newOpt->Init(0,Store::IntToWord(id));
-	dsts->Init(i,newOpt->ToWord());
-      } else {
-	dsts->Init(i,srcs->Sub(i));
-      }
-    }
-    return dsts;
-  }
-  
-  void InlineCCC(Vector *args, Vector *formalArgs);
-  
-public:
-  ConstProp_MainPass(TagVal *abstractCode, 
-		     Map *inArityMap,
-		     InlineInfo *info) 
-    : sharedInArity(inArityMap), inlineInfo(info) {
-    // start with local offset and inline depth equal to zero
-    localOffset = 0;
-    inlineDepth = 0;
-    // set number of locals
-    nLocals = inlineInfo->GetNLocals(); 
-    // extract substitution
-    subst = Vector::FromWordDirect(abstractCode->Sel(1));
-    // prepare local information
-    wUnkownVal = TagVal::New(UNKNOWN,0)->ToWord();
-    constants = Array::New(nLocals);
-    for(u_int i = nLocals; i--; ) {
-      constants->Init(i,wUnkownVal);
-    }
-    oldConstants = constants;
-    // set root node    
-    root = TagVal::FromWordDirect(abstractCode->Sel(5));
-    // set outgoing formal args
-    noFormalArgs = Vector::New(0);
-    formalArgs = INVALID_POINTER;
-    // prepare tag test information map
-    tagtestInfo = Map::New(20);
-  }
-  void Run();
-  Map *GetTagTestInfo() { return tagtestInfo; }
-};
-
-// the following implements a depth first pass through the abstract code graph
-
-void ConstProp_MainPass::InlineCCC(Vector *args, Vector *formalArgs) {
-  if(formalArgs == noFormalArgs)
-    return;
-  u_int nArgs = args->GetLength();
-  u_int nFormalArgs = formalArgs->GetLength();
-  if(nArgs == nFormalArgs) {
-    for(u_int i = nArgs; i--; ) {
-      TagVal *idDef = TagVal::FromWord(formalArgs->Sub(i));
-      if(idDef != INVALID_POINTER) {	
-	u_int id = IdToId(idDef->Sel(0));
-	TagVal *idRef = TagVal::FromWordDirect(args->Sub(i));
-	switch(AbstractCode::GetIdRef(idRef)) {
+      switch(AbstractCode::GetIdRef(idRef)) {
 	case AbstractCode::LastUseLocal:
-	case AbstractCode::Local:
-	  {
-	    u_int index = IdToId(idRef->Sel(0));
-	    constants->Update(id, constants->Sub(index));
+	case AbstractCode::Local: {
+	  return constants->Sub(IdToId(idRef->Sel(0)));
+	}
+	case AbstractCode::Global: {
+	  u_int index = Store::DirectWordToInt(idRef->Sel(0));
+	  TagVal *valOpt = TagVal::FromWord(subst->Sub(index));
+	  if(valOpt != INVALID_POINTER) {
+	    return ValueToConst(valOpt->Sel(0));
 	  }
-	  break;
-	case AbstractCode::Global:
-	  {
-	    u_int index = Store::DirectWordToInt(idRef->Sel(0));
-	    TagVal *valOpt = TagVal::FromWord(subst->Sub(index));
-	    if(valOpt == INVALID_POINTER)
-	      break;
-	    idRef = valOpt;
-	    // fall through
+	  else {
+	    return ConstUnknown();
 	  }
-	case AbstractCode::Immediate:
-	  {
-	    word val = idRef->Sel(0);
-	    if (PointerOp::IsInt(val)) {
-	      // an integer can also be a nullary constructor
-	      TagVal *info = TagVal::New(INT, 1);
-	      info->Init(0, val);
-	      constants->Update(id, info->ToWord());
-	    }
-	  }
-	  break;
-	default:
-	  Error("unknown idRef tag\n");
+	}
+	case AbstractCode::Immediate: {
+	  return ValueToConst(idRef->Sel(0));
 	}
       }
     }
-  } else {
-//     switch(nFormalArgs) {
-//     case 0:
-//       break;
-//     case 1:
-//       {
-// 	if(nArgs == 0) { // this should mainly an assertion
-// 	  // in this case argument 0 is set to unit
-// 	  TagVal *info = TagVal::New(INT,1);
-// 	  info->Init(0, Store::IntToWord(0));
-// 	  u_int index = IdToId(0);
-// 	  constants->Update(index, info->ToWord());
-// 	}
-//       }
-//       break;
-//     default:
-//       // We could pass some information about the constructed or 
-//       // deconstructed tuple.
-//       ;
-//     }
-  }
-}
+    
+    
+    void AssignConst(word cons, u_int dest) {
+      word cur = constants->Sub(dest);
+      
+      if (cur == ConstUnknown() || cons == ConstNotYetAssigned()) {
+	return;
+      }
+      if (cur == ConstNotYetAssigned()) {
+	constants->Update(dest, cons);
+	return;
+      }
+      if (cons == ConstUnknown()) {
+	constants->Update(dest, ConstUnknown());
+	return;
+      }
+      
+      TagVal *tvCur  = TagVal::FromWordDirect(cur);
+      TagVal *tvCons = TagVal::FromWordDirect(cons);
+      
+      if (tvCons->GetTag() != tvCur->GetTag() || tvCons->Sel(0) != tvCur->Sel(0)) {
+	constants->Update(dest, ConstUnknown());
+      }
+    }
+    
+    
+    void AssignValue(word value, u_int dest) {
+      AssignConst(ValueToConst(value), dest);
+    }
+    
+    
+    void AssignFromLocal(u_int src, u_int dest) {
+      AssignConst(constants->Sub(src), dest);
+    }
+    
+    
+    void AssignFromIdRef(word idRef, u_int dest) {
+      AssignConst(IdRefToConst(idRef), dest);
+    }
+    
+    
+    void AssignIdDefUnknown(word wIdDef) {
+      TagVal *idDef = TagVal::FromWord(wIdDef);
+      if (idDef != INVALID_POINTER) {
+	AssignConst(ConstUnknown(), IdToId(idDef->Sel(0)));
+      }
+    }
+    
+	
+    void AssignIdDefsUnknown(Vector *idDefs) {
+      for (u_int i=idDefs->GetLength(); i--; ) {
+	AssignIdDefUnknown(idDefs->Sub(i));
+      }
+    }
+    
+    
+    void AssignIdsUnknown(Vector *ids) {
+      for (u_int i=ids->GetLength(); i--; ) {
+	AssignConst(ConstUnknown(), IdToId(ids->Sub(i)));
+      }
+    }
 
-void ConstProp_MainPass::Run() {
-  Map *sharedInfo = Map::New(200);
-  ControlStack stack;
-  stack.PushStop();
-  stack.PushInstr(root);
-  for(;;) {
-    switch(stack.PopCommand()) {
-    case ControlStack::STOP:
+
+    Vector *ShiftIdDefs(Vector *srcs, s_int offset) {
+      u_int size = srcs->GetLength();
+      Vector *dsts = Vector::New(size);
+      for(u_int i = size; i--; ) {
+	TagVal *argOpt = TagVal::FromWord(srcs->Sub(i));
+	if(argOpt != INVALID_POINTER) {
+	  u_int id = Store::DirectWordToInt(argOpt->Sel(0)) + offset;
+	  TagVal *newOpt = TagVal::New(Types::SOME, 1);
+	  newOpt->Init(0, Store::IntToWord(id));
+	  dsts->Init(i, newOpt->ToWord());
+	} else {
+	  dsts->Init(i, srcs->Sub(i));
+	}
+      }
+      return dsts;
+    }
+    
+    
+    void NewTagTestInfo(TagVal *instr, word continuation, Vector *idDefs) {
+      Tuple *info = Tuple::New(2);
+      info->Init(0, (idDefs == INVALID_POINTER ? Vector::New(0) : idDefs)->ToWord());
+      info->Init(1, continuation);
+      constPropInfo->GetTagTestInfo()->Put(instr->ToWord(), info->ToWord());
+    }
+    
+    
+    void InlineCCC(Vector *srcIdRefs, Vector *destIdDefs);
+    
+  public:
+    ConstPropAnalyser(TagVal *abstractCode, InlineInfo *inlineInfo) {
+      this->abstractCode = abstractCode;
+      this->inlineInfo = inlineInfo;
+      localOffset = 0;
+      inlineDepth = 0;
+      subst = Vector::FromWordDirect(abstractCode->Sel(1));
+      constants = Array::New(inlineInfo->GetNLocals(), ConstNotYetAssigned());
+      inlineReturnIdDefs = INVALID_POINTER;
+      constPropInfo = ConstPropInfo::New();
+    }
+    void Run();
+    ConstPropInfo *GetConstPropInfo() { return constPropInfo; }
+  };
+
+
+  void ConstPropAnalyser::InlineCCC(Vector *srcIdRefs, Vector *destIdDefs) {
+    if(destIdDefs == INVALID_POINTER)
       return;
-    case ControlStack::SET_CONSTTABLE:
-      {
-	constants = stack.PopConstTable();
+    
+    u_int nSrc = srcIdRefs->GetLength();
+    u_int nDest = destIdDefs->GetLength();
+    
+    if(nSrc == nDest) {
+      for(u_int i = nSrc; i--; ) {
+	TagVal *idDef = TagVal::FromWord(destIdDefs->Sub(i));
+	if(idDef != INVALID_POINTER) {
+	  u_int dest = IdToId(idDef->Sel(0));
+	  AssignFromIdRef(srcIdRefs->Sub(i), dest);
+	}
       }
-      break;
-    case ControlStack::INLINE_EXIT:
-      {
-	Tuple *state = stack.PopInlineExit();
-	localOffset = Store::DirectWordToInt(state->Sel(0));
-	subst = Vector::FromWordDirect(state->Sel(1));
-	formalArgs = Vector::FromWordDirect(state->Sel(2));
-	oldConstants = Array::FromWordDirect(state->Sel(3));
-	inlineInfo = InlineInfo::FromWordDirect(state->Sel(4));
+    }
+    else {
+      AssignIdDefsUnknown(destIdDefs);
+    }
+  }
+
+
+  void ConstPropAnalyser::Run() {
+    
+    IntMap *sharedInArity = AbstractCode::SharedInArity(abstractCode);
+    ControlStack stack;
+    
+    stack.PushStop();
+    AssignIdDefsUnknown(Vector::FromWordDirect(abstractCode->Sel(3)));
+    stack.PushInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
+    while (true) {
+      switch(stack.PopCommand()) {
+      case ControlStack::STOP: {
+	return;
+      }
+      case ControlStack::INLINE_EXIT: {
+	stack.PopInlineExit(&localOffset, &subst, &inlineReturnIdDefs, &sharedInArity, &inlineInfo, &constPropInfo);
 	inlineDepth--;
+	break;
       }
-      break;
-    case ControlStack::VISIT:
-      {
+      case ControlStack::VISIT: {
 	TagVal *instr = stack.PopInstr();
-	switch (AbstractCode::GetInstr(instr)) {
-	case AbstractCode::Raise:
-	case AbstractCode::Reraise:
-	  break;
-	case AbstractCode::Return:
-	  {
+	AbstractCode::instr instrOp = AbstractCode::GetInstr(instr);
+	switch (instrOp) {
+	  case AbstractCode::Raise:
+	  case AbstractCode::Reraise:
+	    break;
+	  case AbstractCode::Return: {
 	    // exit from an inlined callee
 	    if(inlineDepth > 0) {
-	      Vector *args = Vector::FromWordDirect(instr->Sel(0));
-	      InlineCCC(args,formalArgs);
-	      // merge constant tables
-	      if(constants != oldConstants) {
-		MergeConstantTable(oldConstants);
-	      }
-	      oldConstants = constants;
+	      Vector *returnIdRefs = Vector::FromWordDirect(instr->Sel(0));
+	      InlineCCC(returnIdRefs, inlineReturnIdDefs);
 	    }
+	    break;
 	  }
-	  break;
-	case AbstractCode::EndHandle:
-	case AbstractCode::EndTry:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(0))); 
-	  break;
-	case AbstractCode::Kill:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(1)));
-	  break;
-	case AbstractCode::GetRef:
-	case AbstractCode::GetTup:
-	case AbstractCode::PutNew:
-	case AbstractCode::PutRef:
-	case AbstractCode::PutTup:
-	case AbstractCode::PutVar:
-	  {
-	    // check if we can propagate information
-	    TagVal *tagVal = TagVal::FromWordDirect(instr->Sel(1));
-	    switch(AbstractCode::GetIdRef(tagVal)) {
-	    case AbstractCode::LastUseLocal:
-	    case AbstractCode::Local:
-	      {
-		// propagate information
-		u_int src = IdToId(tagVal->Sel(0));
-		TagVal *idDef = TagVal::FromWord(instr->Sel(0));
-		if(idDef != INVALID_POINTER) {
-		  u_int dst = Store::DirectWordToInt(idDef->Sel(0));
-		  constants->Update(dst, constants->Sub(src));
-		}
-	      }
-	      break;
-	    default:
-	      // we cannot do anything because we need to know the type
-	      // of the value
-	      ;
-	    }	
-	    // push continuation
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(2))); 
+	  case AbstractCode::Entry:
+	  case AbstractCode::Exit:
+	  case AbstractCode::EndHandle:
+	  case AbstractCode::EndTry:
+	  case AbstractCode::Kill: {
+	    u_int cp = AbstractCode::GetContinuationPos(instrOp);
+	    stack.PushInstr(instr->Sel(cp)); 
+	    break;
 	  }
-	  break;
-	case AbstractCode::PutVec:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(2))); 
-	  break;
-	case AbstractCode::Close:
-	case AbstractCode::LazyPolySel:
-	case AbstractCode::PutCon:
-	case AbstractCode::PutPolyRec:
-	case AbstractCode::Sel: 
-	case AbstractCode::Specialize:
-	  stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3))); 
-	  break;
-	case AbstractCode::PutTag:
-	  {
-	    // create information about the tag
+	  case AbstractCode::GetRef:
+	  case AbstractCode::PutNew:
+	  case AbstractCode::PutRef:
+	  case AbstractCode::PutTup:
+	  case AbstractCode::PutVec:
+	  case AbstractCode::Close:
+	  case AbstractCode::Specialize:
+	  case AbstractCode::PutCon:
+	  case AbstractCode::PutPolyRec:
+	  case AbstractCode::Sel: {
+	    AssignConst(ConstUnknown(), IdToId(instr->Sel(0)));
+	    u_int cp = AbstractCode::GetContinuationPos(instrOp);
+	    stack.PushInstr(instr->Sel(cp));
+	    break;
+	  }
+	  case AbstractCode::GetTup: {
+	    AssignIdDefsUnknown(Vector::FromWordDirect(instr->Sel(0)));
+	    stack.PushInstr(instr->Sel(2));
+	    break;
+	  }
+	  case AbstractCode::LazyPolySel: {
+	    AssignIdsUnknown(Vector::FromWordDirect(instr->Sel(0)));
+	    stack.PushInstr(instr->Sel(3));
+	    break;
+	  }
+	  case AbstractCode::PutVar: {
+	    AssignFromIdRef(instr->Sel(1), IdToId(instr->Sel(0)));
+	    stack.PushInstr(instr->Sel(2));
+	    break;
+	  }
+	  case AbstractCode::PutTag: {
 	    u_int tag = Store::DirectWordToInt(instr->Sel(2));
-	    RegisterValue(instr->Sel(0), Store::IntToWord(tag), TAGVAL);
-	    // push continuation
+	    AssignConst(TagToConst(tag), IdToId(instr->Sel(0)));
 	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4))); 
+	    break;
 	  }
-	  break;
-	case AbstractCode::AppPrim:
-	  {
+	  case AbstractCode::AppPrim: {
 	    TagVal *contOpt = TagVal::FromWord(instr->Sel(2));
 	    if(contOpt != INVALID_POINTER) {
-	      Tuple *tup = Tuple::FromWordDirect(contOpt->Sel(0));
-	      stack.PushInstr(TagVal::FromWordDirect(tup->Sel(1)));
+	      Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));
+	      AssignIdDefUnknown(cont->Sel(0));
+	      stack.PushInstr(cont->Sel(1));
 	    }
+	    else if (inlineReturnIdDefs != INVALID_POINTER) {
+	      AssignIdDefsUnknown(inlineReturnIdDefs);
+	    }
+	    break;
 	  }
-	  break;
-	case AbstractCode::AppVar:
-	  {	    
-	    TagVal *contOpt = TagVal::FromWord(instr->Sel(3));
-	    if(contOpt != INVALID_POINTER) {
-	      Tuple *tup = Tuple::FromWordDirect(contOpt->Sel(0));
-	      stack.PushInstr(TagVal::FromWordDirect(tup->Sel(1)));
-	    }
-	    // check if the function can be inlined
-	    Map *inlineMap = inlineInfo->GetInlineMap();
-	    if(inlineMap->IsMember(instr->ToWord())) {
-	      Tuple *tup = 
-		Tuple::FromWordDirect(inlineMap->Get(instr->ToWord()));
-	      TagVal *abstractCode = TagVal::FromWordDirect(tup->Sel(0));
-// 	      fprintf(stderr,"inline for %p at depth %d\n",instr,inlineDepth);
-// 	      AbstractCode::Disassemble(stderr,
-// 					TagVal::FromWordDirect(abstractCode->Sel(5)));
-	      // enter the inlined function
-	      Tuple *state = Tuple::New(5);
-	      state->Init(0, Store::IntToWord(localOffset));
-	      state->Init(1, subst->ToWord());
-	      state->Init(2, formalArgs->ToWord());
-	      state->Init(3, oldConstants->ToWord());
-	      state->Init(4, inlineInfo->ToWord());
-	      stack.PushInlineExit(state);
-	      stack.PushInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
-	      u_int offset = Store::DirectWordToInt(tup->Sel(2));
-	      inlineInfo = InlineInfo::FromWordDirect(tup->Sel(3));
-	      // update the constant table
-	      Vector *args = Vector::FromWordDirect(instr->Sel(1));
-	      Vector *formalInArgs = 
-		ShiftIdDefs(Vector::FromWordDirect(abstractCode->Sel(3)),
-			    offset);
-	      InlineCCC(args,formalInArgs);
-	      localOffset += offset;
-	      subst = Vector::FromWordDirect(tup->Sel(1));
-	      inlineDepth++;
+	  case AbstractCode::AppVar: {
+	    word inlineItem = inlineInfo->GetInlineMap()->CondGet(instr->ToWord());
+	    if (inlineItem != INVALID_POINTER) {
+	      // function is being inlined
+	      
+	      Tuple *funInfo = Tuple::FromWordDirect(inlineItem);
+	      TagVal *abstractCode = TagVal::FromWordDirect(funInfo->Sel(0));
+	      
+	      TagVal *contOpt = TagVal::FromWord(instr->Sel(3));
 	      if(contOpt != INVALID_POINTER) {
-		Tuple *tup = Tuple::FromWordDirect(contOpt->Sel(0));
-		formalArgs = 
-		  ShiftIdDefs(Vector::FromWordDirect(tup->Sel(0)),-offset);
-	      } else if(inlineDepth == 1) {
-		formalArgs = noFormalArgs;
-	      } else {
-		// If we have a tailcall at depth > 1, we just keep
-		// the formal arguments of the caller.
+		Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));
+		stack.PushInstr(cont->Sel(1));
 	      }
-	      oldConstants = constants;
+	      
+	    // String *name = AbstractCodeInterpreter::MakeProfileName(abstractCode);
+//	      fprintf(stderr,"inline at depth %d: ???\n", inlineDepth);
+  // 	    AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
+	      
+	      stack.PushInlineExit(localOffset, subst, inlineReturnIdDefs, sharedInArity, inlineInfo, constPropInfo);
+	      stack.PushInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
+	      u_int offset = Store::DirectWordToInt(funInfo->Sel(2));
+	      
+	      Vector *argsIdRefs = Vector::FromWordDirect(instr->Sel(1));
+	      Vector *argsIdDefs = ShiftIdDefs(Vector::FromWordDirect(abstractCode->Sel(3)), offset);
+	      InlineCCC(argsIdRefs, argsIdDefs);
+	      localOffset += offset;
+	      subst = Vector::FromWordDirect(funInfo->Sel(1)); // TODO: use the closure for the subst? (does it sometimes have more specific data)?
+	      inlineDepth++;
+	      inlineInfo = InlineInfo::FromWordDirect(funInfo->Sel(3));
+	      Map *inlineMap = constPropInfo->GetInlineMap();
+	      constPropInfo = ConstPropInfo::New();
+	      inlineMap->Put(instr->ToWord(), constPropInfo->ToWord()); //TODO: could minimization make this kind of map unsound?
+	      sharedInArity = AbstractCode::SharedInArity(abstractCode); // TODO: cache shared-in-arities (on the CC?) and clone as needed (possibly move function to AbstractCode class?)
+	      
+	      if (contOpt != INVALID_POINTER) {
+		Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));
+		inlineReturnIdDefs = ShiftIdDefs(Vector::FromWordDirect(cont->Sel(0)), -offset);
+	      }
+	      else if (inlineReturnIdDefs != INVALID_POINTER) {
+		inlineReturnIdDefs = ShiftIdDefs(inlineReturnIdDefs, -offset);
+	      }
 	    }
+	    else {
+	      // function is not being inlined
+	      TagVal *contOpt = TagVal::FromWord(instr->Sel(3));
+	      if(contOpt != INVALID_POINTER) {
+		Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));
+		AssignIdDefsUnknown(Vector::FromWordDirect(cont->Sel(0)));
+		stack.PushInstr(cont->Sel(1));
+	      }
+	      else if (inlineReturnIdDefs != INVALID_POINTER) {
+		AssignIdDefsUnknown(inlineReturnIdDefs);
+	      }
+	    }
+	    break;
 	  }
-	  break;
-	case AbstractCode::Try:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
-	    stack.PushConstTable(CloneConstants());
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(0)));
+	  case AbstractCode::Try: {
+	    stack.PushInstr(instr->Sel(0));
+	    AssignIdDefUnknown(instr->Sel(1));
+	    AssignIdDefUnknown(instr->Sel(2));
+	    stack.PushInstr(instr->Sel(3));
+	    break;
 	  }
-	  break;
-	case AbstractCode::IntTest:
-	case AbstractCode::RealTest:
-	case AbstractCode::StringTest:
-	case AbstractCode::VecTest:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(2)));
-	    stack.PushConstTable(CloneConstants());
+	  case AbstractCode::IntTest:
+	  case AbstractCode::RealTest:
+	  case AbstractCode::StringTest: {
 	    Vector *tests = Vector::FromWordDirect(instr->Sel(1));
-	    for (u_int i = tests->GetLength(); i--; ) {
-	      Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-	      stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-	      stack.PushConstTable(CloneConstants());
+	    for (u_int i=tests->GetLength(); i--; ) {
+	      Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
+	      stack.PushInstr(test->Sel(1));
 	    }
+	    stack.PushInstr(instr->Sel(2));
+	    break;
 	  }
-	  break;
-	case AbstractCode::CompactIntTest:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
-	    stack.PushConstTable(CloneConstants());
+	  case AbstractCode::VecTest: {
+	    Vector *tests = Vector::FromWordDirect(instr->Sel(1));
+	    for (u_int i=tests->GetLength(); i--; ) {
+	      Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
+	      AssignIdDefsUnknown(Vector::FromWordDirect(test->Sel(0)));
+	      stack.PushInstr(test->Sel(1));
+	    }
+	    stack.PushInstr(instr->Sel(2));
+	    break;
+	  }
+	  case AbstractCode::CompactIntTest: {
 	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	    for (u_int i = tests->GetLength(); i--; ) {
-	      stack.PushInstr(TagVal::FromWordDirect(tests->Sub(i)));
-	      stack.PushConstTable(CloneConstants());
-	    }	
-	  }
-	  break;
-	case AbstractCode::ConTest:
-	  {
-	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(3)));
-	    stack.PushConstTable(CloneConstants());
-	    Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
-	    for(u_int i = testsN->GetLength(); i--; ) {
-	      Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-	      stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
-	      stack.PushConstTable(CloneConstants());
+	    for (u_int i=tests->GetLength(); i--; ) {
+	      stack.PushInstr(tests->Sub(i));
 	    }
+	    stack.PushInstr(instr->Sel(3));
+	    break;
+	  }
+	  case AbstractCode::ConTest: {
 	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(1));
-	    for(u_int i = tests0->GetLength(); i--; ) {
-	      Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-	      stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-	      stack.PushConstTable(CloneConstants());
+	    for(u_int i=tests0->GetLength(); i--; ) {
+	      Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));
+	      stack.PushInstr(test->Sel(1));
 	    }
+	    Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
+	    for(u_int i=testsN->GetLength(); i--; ) {
+	      Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
+	      AssignIdDefsUnknown(Vector::FromWordDirect(test->Sel(1)));
+	      stack.PushInstr(test->Sel(2));
+	    }
+	    stack.PushInstr(instr->Sel(3));
+	    break;
 	  }
-	  break;
-	case AbstractCode::TagTest:
-	  {
-	    TagVal *idRef = TagVal::FromWordDirect(instr->Sel(0));
-	    u_int tag;
-	    bool isValue = false;
-	    u_int localIndex;
-	    bool isLocal = false;
-	    switch(AbstractCode::GetIdRef(idRef)) {
-	    case AbstractCode::LastUseLocal:
-	    case AbstractCode::Local:
-	      {
-		u_int index = IdToId(idRef->Sel(0));
-		switch(ExtractKind(index)) {
-		case INT:
-		case TAGVAL:
-		  {	
-		    tag = Store::DirectWordToInt(ExtractValue(index));
-		    isValue = true;
-		  }
-		  break;
-		default:
-		  ;
-		}
-		isLocal = true;
-		localIndex = index;
+	  case AbstractCode::TagTest: {
+	    word cons = IdRefToConst(instr->Sel(0));
+	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
+	    Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
+	    word els = instr->Sel(4);
+	    
+	    if (cons == ConstUnknown() || cons == ConstNotYetAssigned()) {
+	      
+	      for (u_int i=tests0->GetLength(); i--; ) {
+		Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));
+		stack.PushInstr(test->Sel(1));
+		// TODO: if tested value is a local, record its tagval inside this branch
 	      }
-	      break;
-	    case AbstractCode::Global:
-	      {
-		u_int addr = Store::DirectWordToInt(idRef->Sel(0));
-		TagVal *valueOpt = TagVal::FromWord(subst->Sub(addr));
-		if(valueOpt == INVALID_POINTER)
-		  break;
-		idRef = valueOpt;
-		// fall through
+	      for (u_int i=testsN->GetLength(); i--; ) {
+		Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
+		AssignIdDefsUnknown(Vector::FromWordDirect(test->Sel(1)));
+		stack.PushInstr(test->Sel(2));
+		// TODO: if tested value is a local, record its tagval inside this branch
 	      }
-	    case AbstractCode::Immediate:
-	      {
-		word immediate = idRef->Sel(0);
-		if(PointerOp::IsInt(immediate)) {
-		  tag = Store::DirectWordToInt(immediate);
-		} else {
-		  Block *block = Store::WordToBlock(immediate);
-		  if (block->GetLabel() == Alice::BIG_TAG) {
-		    BigTagVal *bigTagVal = 
-		      BigTagVal::FromWordDirect(immediate);
-		    tag = bigTagVal->GetTag();
-		  } else {
-		    TagVal *tagVal = TagVal::FromWordDirect(immediate);
-		    tag = tagVal->GetTag();
+	      stack.PushInstr(els);
+	      
+	    }
+	    else {
+	      
+	      TagVal *consTv = TagVal::FromWordDirect(cons);
+	      const_kind kind = static_cast<const_kind>(consTv->GetTag());
+	      word tag = consTv->Sel(0);
+	      word cont = INVALID_POINTER;
+	      Vector *idDefs = INVALID_POINTER;
+	      
+	      if (kind == KindInt) {
+		for (u_int i=tests0->GetLength(); i--; ) {
+		  Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));
+		  if (test->Sel(0) == tag) {
+		    cont = test->Sel(1);
+		    break;
 		  }
 		}
-		isValue = true;
 	      }
-	      break;
-	    default:
-	      ;
-	    }
-	    if(isValue) {
-	      static u_int counter = 0;
-	      Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	      bool tagFound = false;
-	      Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
-	      for(u_int i = testsN->GetLength(); i--; ) {
-		Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-		if(Store::DirectWordToInt(triple->Sel(0)) == tag) {
-		  fprintf(stderr,"%"U_INTF". could eliminate tag test %p:",
-			  ++counter,instr);
-		  fprintf(stderr," value has tag %"U_INTF"\n",tag);		  
-		  tagFound = true;
-		  break;
-		}
-	      }
-	      Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
-	      for(u_int i = tests0->GetLength(); i--; ) {
-		Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-		if(Store::DirectWordToInt(pair->Sel(0)) == tag) {
-		  fprintf(stderr,"%"U_INTF". could eliminate tag test %p:",
-			  ++counter,instr);
-		  fprintf(stderr," value has tag %"U_INTF"\n",tag);		  
-		  tagFound = true;
-		  break;
-		}
-	      }
-	      if(!tagFound) {
-		// choose else branch
-		fprintf(stderr,"%"U_INTF". could eliminate tag test %p:",
-			++counter,instr);		  
-		fprintf(stderr," value has tag %"U_INTF"\n",tag);
-	      }
-	    } else if (isLocal) {
-	      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4)));
-	      stack.PushConstTable(CloneConstants());
-	      Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
-	      for(u_int i = testsN->GetLength(); i--; ) {
-		Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-		Array *constantsCopy = CloneConstants();
-		TagVal *info = TagVal::New(TAGVAL,1);
-		info->Init(0, triple->Sel(0));
-		constantsCopy->Update(localIndex, info->ToWord());
-		stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
-		stack.PushConstTable(constantsCopy);
-	      }
-	      Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
-	      for(u_int i = tests0->GetLength(); i--; ) {
-		Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-		Array *constantsCopy = CloneConstants();
-		TagVal *info = TagVal::New(TAGVAL,1);
-		info->Init(0, pair->Sel(0));
-		constantsCopy->Update(localIndex, info->ToWord());
-		stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-		stack.PushConstTable(constantsCopy);
-	      }
-	    } else {
-	      stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4)));
-	      stack.PushConstTable(CloneConstants());
-	      Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
-	      for(u_int i = testsN->GetLength(); i--; ) {
-		Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
-		stack.PushInstr(TagVal::FromWordDirect(triple->Sel(2)));
-		stack.PushConstTable(CloneConstants());
-	      }
-	      Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
-	      for(u_int i = tests0->GetLength(); i--; ) {
-		Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));	  
-		stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-		stack.PushConstTable(CloneConstants());
-	      }
-	    }
-	  }
-	  break;
-	case AbstractCode::CompactTagTest:
-	  {
-	    TagVal *idRef = TagVal::FromWordDirect(instr->Sel(0));
-	    u_int tag;
-	    bool isValue = false;
-	    u_int localIndex;
-	    bool isLocal = false;
-	    switch(AbstractCode::GetIdRef(idRef)) {
-	    case AbstractCode::LastUseLocal:
-	    case AbstractCode::Local:
-	      {
-		u_int index = IdToId(idRef->Sel(0));
-		switch(ExtractKind(index)) {
-		case INT:
-		case TAGVAL:
-		  {	
-		    tag = Store::DirectWordToInt(ExtractValue(index));
-		    isValue = true;
-		  }
-		  break;
-		default:
-		  ;
-		}
-		isLocal = true;
-		localIndex = index;
-	      }
-	      break;
-	    case AbstractCode::Global:
-	      {
-		u_int addr = Store::DirectWordToInt(idRef->Sel(0));
-		TagVal *valueOpt = TagVal::FromWord(subst->Sub(addr));
-		if(valueOpt == INVALID_POINTER)
-		  break;
-		idRef = valueOpt;
-		// fall through
-	      }
-	    case AbstractCode::Immediate:
-	      {
-		word immediate = idRef->Sel(0);
-		if(PointerOp::IsInt(immediate)) {
-		  tag = Store::DirectWordToInt(immediate);
-		} else {
-		  Block *block = Store::WordToBlock(immediate);
-		  if (block->GetLabel() == Alice::BIG_TAG) {
-		    BigTagVal *bigTagVal = 
-		      BigTagVal::FromWordDirect(immediate);
-		    tag = bigTagVal->GetTag();
-		  } else {
-		    TagVal *tagVal = TagVal::FromWordDirect(immediate);
-		    tag = tagVal->GetTag();
+	      else { // kind == KindTagVal
+		for (u_int i=testsN->GetLength(); i--; ) {
+		  Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
+		  if (test->Sel(0) == tag) {
+		    idDefs = Vector::FromWordDirect(test->Sel(1));
+		    AssignIdDefsUnknown(idDefs);
+		    cont = test->Sel(2);
+		    break;
 		  }
 		}
-		isValue = true;
 	      }
-	      break;
-	    default:
-	      ;
+	      if(cont == INVALID_POINTER) {
+		cont = els;
+	      }
+	      stack.PushInstr(cont);
+	      
+	      NewTagTestInfo(instr, cont, idDefs);
 	    }
-	    TagVal *elseInstrOpt = TagVal::FromWord(instr->Sel(3));
-	    if(isValue) {
-	      static u_int counter = 0;
-	      Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	      bool tagFound = false;
-	      for(u_int i = tests->GetLength(); i--; ) {
-		Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-		if(i == tag) {
-		  fprintf(stderr,"%"U_INTF". eliminate compact tag %p test:",
-			  ++counter,instr);
-		  fprintf(stderr," value has tag %"U_INTF"\n",tag);		  
-		  // save information
-		  tagtestInfo->Put(instr->ToWord(),pair->ToWord());
-		  tagFound = true;
-		  break;
-		}
-	      }
-	      if(!tagFound) {
-		if(elseInstrOpt != INVALID_POINTER) {
-		  fprintf(stderr,"%"U_INTF". eliminate compact tag %p test:",
-			  ++counter,instr);		  
-		  fprintf(stderr," value has tag %"U_INTF"\n",tag);
-		  Tuple *pair = Tuple::New(2);
-		  pair->Init(0, Store::IntToWord(0));
-		  pair->Init(1, elseInstrOpt->Sel(0));
-		  tagtestInfo->Put(instr->ToWord(),pair->ToWord());
-		} else {
-		  fprintf(stderr,"ERROR: tag %"U_INTF"\n",tag);
-		  AbstractCode::Disassemble(stderr,instr);
-		  Error("internal consistancy error\n");
-		}
-	      }
-	    } else if (isLocal) {
-	      // push continuations and propagate information
-	      // into the branches
-	      if(elseInstrOpt != INVALID_POINTER) {		
-		stack.PushInstr(TagVal::FromWordDirect(elseInstrOpt->Sel(0)));
-		stack.PushConstTable(constants);
-	      }
-	      Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	      for(u_int i = tests->GetLength(); i--; ) {
-		Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-		Array *constantsCopy = CloneConstants();
-		TagVal *info = TagVal::New(TAGVAL,1);
-		info->Init(0, Store::IntToWord(i));
-		constantsCopy->Update(localIndex, info->ToWord());
-		stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-		stack.PushConstTable(constantsCopy);
-	      }
-	    } else {
-	      if(elseInstrOpt != INVALID_POINTER) {
-		stack.PushInstr(TagVal::FromWordDirect(elseInstrOpt->Sel(0)));
-		stack.PushConstTable(constants);
-	      }
-	      Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	      for(u_int i = tests->GetLength(); i--; ) {
-		Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
-		stack.PushInstr(TagVal::FromWordDirect(pair->Sel(1)));
-		stack.PushConstTable(CloneConstants());
-	      }	      
-	    }
+	    break;
 	  }
-	  break;
-	case AbstractCode::Shared:
-	  {
-	    word key = instr->ToWord(); // instr->Sel(0);
-	    if(sharedInArity->IsMember(key)) {
-	      u_int inArity = Store::DirectWordToInt(sharedInArity->Get(key));
-	      sharedInArity->Put(key,Store::IntToWord(--inArity));
-	      if(inArity == 0) {
-		stack.PushInstr(TagVal::FromWordDirect(instr->Sel(1)));
-	      } 
-	    } else {
-	      Error("Internal consistancy error: unkown shared node!\n");
+	  case AbstractCode::CompactTagTest: {
+	    word cons = IdRefToConst(instr->Sel(0));
+	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
+	    TagVal *elseOpt = TagVal::FromWord(instr->Sel(3));
+	    
+	    if (cons == ConstUnknown() || cons == ConstNotYetAssigned()) {
+	      
+	      for (u_int i=tests->GetLength(); i--; ) {
+		Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
+		TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
+		if (idDefsOpt != INVALID_POINTER) {
+		  AssignIdDefsUnknown(Vector::FromWordDirect(idDefsOpt->Sel(0)));
+		}
+		// TODO: if tested value is a local, record its tagval inside this branch
+		stack.PushInstr(test->Sel(1));
+	      }
+	      if (elseOpt != INVALID_POINTER) {
+		stack.PushInstr(elseOpt->Sel(0));
+	      }
+	    
 	    }
-	    // merge information of the branches
-	    if(sharedInfo->IsMember(key)) {
-	      Array *constants2 = 
-		Array::FromWordDirect(sharedInfo->Get(key));
-	      MergeConstantTable(constants2);
+	    else {
+	      
+	      TagVal *consTv = TagVal::FromWordDirect(cons);
+	      u_int tag = Store::DirectWordToInt(consTv->Sel(0));
+	      word cont = INVALID_POINTER;
+	      Vector *idDefs = INVALID_POINTER;
+	      
+	      if (tag < tests->GetLength()) {
+		Tuple *test = Tuple::FromWordDirect(tests->Sub(tag));
+		TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
+		if (idDefsOpt != INVALID_POINTER) {
+		  Assert(consTv->GetTag() == KindTagVal);
+		  idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
+		  AssignIdDefsUnknown(idDefs);
+		}
+		else{
+		  Assert(consTv->GetTag() == KindInt);
+		}
+		cont = test->Sel(1);
+	      }
+	      else {
+		cont = elseOpt->Sel(0);
+	      }
+	      stack.PushInstr(cont);
+	      
+	      NewTagTestInfo(instr, cont, idDefs);
 	    }
-	    sharedInfo->Put(key, constants->ToWord());
+	    break;
 	  }
-	  break;
-	default:
-	  fprintf(stderr,"main pass: invalid abstractCode tag %"U_INTF"\n",
-		  static_cast<u_int>(AbstractCode::GetInstr(instr)));
-	  return;
+	  case AbstractCode::Shared: {
+	    word stamp = instr->Sel(0);
+	    u_int inArity = Store::DirectWordToInt(sharedInArity->Get(stamp));
+	    sharedInArity->Put(stamp, Store::IntToWord(--inArity));
+	    if (inArity == 0) {
+	      stack.PushInstr(instr->Sel(1));
+	    }
+	    break;
+	  }
+	  default: {
+	    Assert(false);
+	  }
 	}
+	break;
       }
-      break;
-    default:
-      {
-	Error("internal consistancy error in control stack\n");
+      default: {
+	Assert(false);
+      }
       }
     }
   }
+
 }
 
-Map *ByteCodeConstProp::RunAnalysis(TagVal *abstractCode, 
-				    InlineInfo *inlineInfo) {
-//   static u_int c = 0;
-//   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-//   std::fprintf(stderr, "%d. do constant propagation for %p %s:%d.%d\n",
-// 	       ++c,
-// 	       abstractCode,
-// 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
-// 	       Store::DirectWordToInt(coord->Sel(1)),
-// 	       Store::DirectWordToInt(coord->Sel(2))); 
-//   AbstractCode::Disassemble(stderr,
-//  			    TagVal::FromWordDirect(abstractCode->Sel(5)));
-  TagVal *root = TagVal::FromWordDirect(abstractCode->Sel(5));
-  ConstProp_PrePass prePass(abstractCode, inlineInfo);
-//   fprintf(stderr,"run pre pass\n");
-  prePass.Run();
-  ConstProp_MainPass mainPass(abstractCode,
-			      prePass.GetSharedInArity(),
-			      inlineInfo);
-//   fprintf(stderr,"run main pass\n");
+ConstPropInfo *ByteCodeConstProp::Analyse(TagVal *abstractCode, InlineInfo *inlineInfo) {
+   static u_int c = 0;
+   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
+   /*
+   std::fprintf(stderr, "%"U_INTF". do constant propagation for %p %s:%"S_INTF".%"S_INTF"\n",
+ 	       ++c,
+ 	       abstractCode,
+ 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
+ 	       Store::DirectWordToInt(coord->Sel(1)),
+ 	       Store::DirectWordToInt(coord->Sel(2))); 
+   */
+//  AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
+  ConstPropAnalyser mainPass(abstractCode, inlineInfo);
   mainPass.Run();
-  return mainPass.GetTagTestInfo();
+  return mainPass.GetConstPropInfo();
 }
-

@@ -166,7 +166,11 @@ class ByteCode; // forward declaration
 #define SET_INSTR_2I(index,instr,i1,i2) {	\
   SET_INSTR(index,instr);			\
   ENCODE_2I(index,i1,i2); }
-							
+
+#define SET_INSTR_3I(index,instr,i1,i2,i3) {	\
+  SET_INSTR(index,instr);			\
+  ENCODE_3I(index,i1,i2,i3); }
+
 #define SET_INSTR_1R(index,instr,r) {		\
   SET_INSTR(index,instr);			\
   ENCODE_1R(index,r);				\
@@ -227,6 +231,21 @@ class ByteCode; // forward declaration
 #define GET_3I(buffer,index,i1,i2,i3)		\
   u_int i1, i2, i3;				\
   DECODE_3I(buffer,index,i1,i2, i3)   
+
+#define GET_1I1R(buffer, index, i, r)		\
+  GET_1I(buffer, index, i);			\
+  GET_1R(buffer, index, r);
+
+#define GET_1I2R(buffer, index, i, r1, r2)	\
+  GET_1I(buffer, index, i);			\
+  GET_1R(buffer, index, r1);			\
+  GET_1R(buffer, index, r2);
+
+#define GET_1I3R(buffer, index, i, r1, r2, r3)	\
+  GET_1I(buffer, index, i);			\
+  GET_1R(buffer, index, r1);			\
+  GET_1R(buffer, index, r2);			\
+  GET_1R(buffer, index, r3);
 
 #define GET_1R(buffer,index,r)			\
   u_int r;					\

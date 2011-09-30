@@ -48,6 +48,7 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Init(OUT_ARITY_POS, outArity);
   concreteCode->Init(INLINE_INFO_POS, inlineInfo);
+  concreteCode->Init(CLOSE_CONCRETE_CODES_POS, Map::New(8)->ToWord());
 
   return static_cast<ByteConcreteCode *>(concreteCode);
 }
@@ -57,7 +58,8 @@ void ByteConcreteCode::Convert(HotSpotCode *hsc,
 			       Chunk *code,
 			       word immediateEnv,
 			       word nbLocals,
-			       word inlineInfo) {
+			       word inlineInfo,
+			       Map *closeConcreteCodes) {
   Transform *transform =
     static_cast<Transform *>(hsc->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
@@ -73,6 +75,7 @@ void ByteConcreteCode::Convert(HotSpotCode *hsc,
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Replace(OUT_ARITY_POS, outArity);
   concreteCode->Replace(INLINE_INFO_POS, inlineInfo);
+  concreteCode->Replace(CLOSE_CONCRETE_CODES_POS, closeConcreteCodes->ToWord());
 }
 				 
 

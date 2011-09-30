@@ -99,6 +99,40 @@ public:
     return static_cast<annotation>(tagVal->GetTag());
   }
 
+  static u_int GetNumberOfLocals(TagVal *abstractCode) {
+    TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
+    switch (AbstractCode::GetAnnotation(annotation)) {
+      case AbstractCode::Simple:
+	return Store::DirectWordToInt(annotation->Sel(0));
+      case AbstractCode::Debug:
+	return Vector::FromWordDirect(annotation->Sel(0))->GetLength();
+    }
+  }
+  
+  /**
+   * If instr has a single continuation instr, return its index
+   * in the TagVal, otherwise return -1.
+   */
+  static s_int GetContinuationPos(instr instr);
+  
+  /**
+   * Return how many program points (i.e. points where different
+   * sets of local variables can be alive) the specified kind of
+   * instr has, or -1 if the count is dependent on the
+   * instruction operands.
+   * 
+   * See /compiler/backend-seam/MkLiveness.aml for related info.
+   */
+  static s_int GetNumProgramPoints(instr instr);
+  
+  /**
+  * Collect information about the in-arity of shared nodes by depth
+  * first iteration. This is needed for (for e.g.) constant propagation.
+  * 
+  * @return A map from shared node stamp to number of edges leading to it.
+  */
+  static IntMap *SharedInArity(TagVal *abstractCode);
+  
   static void Disassemble(std::FILE *f, TagVal *pc);
 };
 

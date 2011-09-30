@@ -35,6 +35,7 @@
 //   if (invocations > INVOC_LIMIT) ByteCode::DisassembleOne(stderr,debugPC,code,IP); \
 // }
 
+class ByteConcreteCode;
 class ByteCodeFrame;
 class ReadBuffer;
 
@@ -63,6 +64,8 @@ public:
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
 
+  void PushCall(ByteConcreteCode *bcc, Closure *closure);
+  
 #if PROFILE
   virtual word GetProfileKey(StackFrame *frame);
   virtual String *GetProfileName(StackFrame *frame);

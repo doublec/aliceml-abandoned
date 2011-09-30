@@ -49,6 +49,10 @@ public:
     return Transform::FromWordDirect(Get(TRANSFORM));    
   }
 
+  TagVal *GetAbstractCode(){
+    return TagVal::FromWordDirect(GetAbstractRepresentation()->GetArgument());
+  }
+  
   u_int GetCounter() { return Store::DirectWordToInt(Get(COUNTER)); }
   word GetCode() { return Get(CODE); }
   TagVal *GetInlineInfoOpt() { return TagVal::FromWord(Get(INLINE_INFO));}

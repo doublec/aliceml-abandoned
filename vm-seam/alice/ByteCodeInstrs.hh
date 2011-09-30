@@ -11,173 +11,179 @@
 //
 
 // instruction definition
+
 // be careful that they are lexicographically ordered; otherwise the ByteCode
 // Assembler won't work
 
-// r -> register
-// i -> immediate
-// l(i|r) -> list
-// <arglist> ::= [("r,")* ("i,"*) ("i,li"|"i,lr"|"li<digit>"|"lr<digit>"|"")]
-//
-// So in front of a variable length list lr|li there is an immediate 
-// specifying the length of the list. Static lists have the size information
-// included. 
+// the second argument to INSTR describes the instruction arguments
 
-INSTR(await)			// [r]
-INSTR(bci_call) 		// [i,i,lr]
-INSTR(bci_call0) 		// [i]
-INSTR(bci_call1)		// [i,r]
-INSTR(bci_call2)		// [i,r,r]
-INSTR(bci_call3)		// [i,r,r,r]
-INSTR(bci_tailcall)		// [i,i,lr]
-INSTR(bci_tailcall0)		// [i]
-INSTR(bci_tailcall1)		// [i,r]
-INSTR(bci_tailcall2)		// [i,r,r]
-INSTR(bci_tailcall3)		// [i,r,r,r]
-INSTR(bigtagtest)		// [r,i]
-INSTR(bigtagtest1)		// [r,i,i]
-INSTR(cbigtagtest)		// [r,i,li]
-INSTR(cbigtagtest_direct)       // [r,i,li]
-INSTR(ccc1)			// []
-INSTR(cccn)			// [i]   
-INSTR(check_preempt_jump)	// [i]
-INSTR(citest)			// [r,i,i,li]
-INSTR(contest)			// [r,r,i]
-INSTR(ctagtest)		        // [r,i,li]	
-INSTR(ctagtest_direct)	   	// [r,i,li]
-INSTR(debug_msg)		// [i]
-INSTR(dummy_raiseoverflow)      // []
-INSTR(get_arg0)		        // [r]	
-INSTR(get_arg0_direct)	   	// []
-INSTR(get_args)		        // [i]	
-INSTR(get_args_direct)	   	// []
-INSTR(get_tup2)		        // [r,r,r]	
-INSTR(get_tup3)		        // [r,r,r,r]
-INSTR(iadd)			// [r,r,r]
-INSTR(idec)			// [r,r]
-INSTR(iinc)			// [r,r]
-INSTR(ijump_eq)		        // [r,i,i]	
-INSTR(immediate_call)	   	// [i,i,lr]	
-INSTR(immediate_call0)		// [i]
-INSTR(immediate_call1)		// [r,i]
-INSTR(immediate_call2)		// [r,r,i]
-INSTR(immediate_call3)		// [r,r,r,i]
-INSTR(immediate_tailcall)	// [i,i,lr]
-INSTR(immediate_tailcall0)	// [i]
-INSTR(immediate_tailcall1)	// [r,i]
-INSTR(immediate_tailcall2)	// [r,r,i]	
-INSTR(immediate_tailcall3)	// [r,r,r,i]
-INSTR(init_bigtagval)		// [r,r,i]
-INSTR(init_closure)		// [r,r,i]
-INSTR(init_con)			// [r,r,i]
-INSTR(init_polyrec)		// [r,r,i]
-INSTR(init_tagval)		// [r,r,i]
-INSTR(init_tup)		        // [r,r,i]	
-INSTR(init_vec)		        // [r,r,i]
-INSTR(inlined_future_byneed)	// [r,r]
-INSTR(inlined_hole_fill)	// [r,r]
-INSTR(inlined_hole_hole)	// [r]
-INSTR(install_handler)		// [i]
-INSTR(isub)			// [r,r,r]
-INSTR(itest)			// [r,i]
-INSTR(jump)			// [i]
-INSTR(lazyselect_polyrec)	// [r,r,i]
-INSTR(lazyselect_polyrec_n)	// [r,i,i]
-INSTR(load_bigtagval)		// [r,r,i]
-INSTR(load_bigtagval1)	        // [r,r]
-INSTR(load_bigtagval2)	        // [r,r,r]
-INSTR(load_bigtagval3)	        // [r,r,r,r]
-INSTR(load_cell)		// [r,r]
-INSTR(load_con)			// [r,r,i]
-INSTR(load_global)		// [r,i]
-INSTR(load_immediate)		// [r,i]
-INSTR(load_int)			// [r,i]
-INSTR(load_reg)			// [r,r]
-INSTR(load_tagval)		// [r,r,i]
-INSTR(load_tagval1)		// [r,r]
-INSTR(load_tagval2)		// [r,r,r]
-INSTR(load_tagval3)		// [r,r,r,r]
-INSTR(load_vec)		        // [r,r,i]
-INSTR(load_zero)		// [r]
-INSTR(mk_closure)		// [r,i,i]
-INSTR(new_bigtagval)		// [r,i,i]
-INSTR(new_bigtagval_init)	// [r,i,i,lr]]
-INSTR(new_bigtagval_init1)	// [r,i,lr1]
-INSTR(new_bigtagval_init2)	// [r,i,lr2]
-INSTR(new_bigtagval_init3)	// [r,i,lr3]
-INSTR(new_bigtagval_init4)	// [r,i,lr4]
-INSTR(new_cell)			// [r,r] 
-INSTR(new_con)			// [r,i]
-INSTR(new_pair)			// [r,r,r]
-INSTR(new_polyrec)		// [r,i]
-INSTR(new_tagval)		// [r,i,i]
-INSTR(new_tagval_init)		// [r,i,i,lr]]
-INSTR(new_tagval_init1)	        // [r,i,lr1]
-INSTR(new_tagval_init2)	        // [r,i,lr2]
-INSTR(new_tagval_init3)	        // [r,i,lr3]
-INSTR(new_tagval_init4)	        // [r,i,lr4]
-INSTR(new_triple)		// [r,r,r,r]
-INSTR(new_tup)			// [r,i]
-INSTR(new_vec)			// [r,i]
-INSTR(prepare_con)		// [r,r,i]
-INSTR(raise_direct)		// [r]
-INSTR(raise_normal)		// [r]
-INSTR(remove_handler)		// []
-INSTR(rewrite_call)		// [i,i,lr]
-INSTR(rewrite_call0)		// [i]
-INSTR(rewrite_call1)		// [i,r]
-INSTR(rewrite_call2)		// [i,r,r]
-INSTR(rewrite_call3)		// [i,r,r,r]
-INSTR(rewrite_tailcall)	        // [i,i,lr]
-INSTR(rewrite_tailcall0)	// [i]
-INSTR(rewrite_tailcall1)	// [i,r]
-INSTR(rewrite_tailcall2)	// [i,r,r]
-INSTR(rewrite_tailcall3)	// [i,r,r,r]
-INSTR(rjump_eq)		        // [r,i,i]
-INSTR(rtest)			// [r,i]
-INSTR(seam_call)		// [r,i,lr]
-INSTR(seam_call0)		// [r]
-INSTR(seam_call1)		// [r,r]
-INSTR(seam_call2)		// [r,r,r]
-INSTR(seam_call3)		// [r,r,r,r]
-INSTR(seam_ccc1)		// [r]
-INSTR(seam_cccn)		// [i]
-INSTR(seam_prim_call)		// [i,i,lr]
-INSTR(seam_prim_call0)		// [i]
-INSTR(seam_prim_call1)		// [i,r]
-INSTR(seam_prim_call2)		// [i,r,r]
-INSTR(seam_prim_call3)		// [i,r,r,r]
-INSTR(seam_prim_tailcall)	// [i,i,lr]
-INSTR(seam_prim_tailcall0)	// [i]
-INSTR(seam_prim_tailcall1)	// [i,r]
-INSTR(seam_prim_tailcall2)	// [i,r,r]
-INSTR(seam_prim_tailcall3)	// [i,r,r,r]
-INSTR(seam_return)		// [i,lr]
-INSTR(seam_return0)		// []
-INSTR(seam_return1)		// [r]
-INSTR(seam_return2)		// [r,r]
-INSTR(seam_return3)		// [r,r,r]
-INSTR(seam_return_zero)         // []
-INSTR(seam_tailcall)		// [r,i,lr]
-INSTR(seam_tailcall0)		// [r]
-INSTR(seam_tailcall1)		// [r,r]
-INSTR(seam_tailcall2)		// [r,r,r]
-INSTR(seam_tailcall3)		// [r,r,r,r]
-INSTR(select_tup)		// [r,r,i]
-INSTR(select_tup0)		// [r,r]
-INSTR(select_tup1)		// [r,r]
-INSTR(select_tup2)		// [r,r]
-INSTR(self_call)		// [i,lr]
-INSTR(self_call0)		// []
-INSTR(self_call1)		// [r]
-INSTR(self_call2)		// [r,r]
-INSTR(self_call3)		// [r,r,r]
-INSTR(set_cell)			// [r,r]
-INSTR(set_global)		// [r,i]
-INSTR(sjump_eq)		        // [r,i,i]
-INSTR(spec_closure)		// [r,r,i,i]
-INSTR(stest)			// [r,i]
-INSTR(swap_regs)		// [r,r]
-INSTR(tagtest)			// [r,i]
-INSTR(tagtest1)		        // [r,i,i]
-INSTR(vectest)			// [r,i]
+INSTR(await,			ARGS_1R)
+INSTR(bci_call,			ARGS_1I_DYNR)
+INSTR(bci_call0,		ARGS_1I)
+INSTR(bci_call1,		ARGS_1I_1R)
+INSTR(bci_call2,		ARGS_1I_2R)
+INSTR(bci_call3,		ARGS_1I_3R)
+INSTR(bci_tailcall,		ARGS_1I_DYNR)
+INSTR(bci_tailcall0,		ARGS_1I)
+INSTR(bci_tailcall1,		ARGS_1I_1R)
+INSTR(bci_tailcall2,		ARGS_1I_2R)
+INSTR(bci_tailcall3,		ARGS_1I_3R)
+INSTR(bigtagtest,		ARGS_1R_1I)
+INSTR(bigtagtest1,		ARGS_1R_2I)
+INSTR(cbigtagtest,		ARGS_1R_DYNI)
+INSTR(cbigtagtest_direct,       ARGS_1R_DYNI)
+INSTR(ccc1,			ARGS_NONE)
+INSTR(cccn,			ARGS_1I)
+INSTR(check_preempt_jump,	ARGS_1I)
+INSTR(citest,			ARGS_1R_1I_DYNI)
+INSTR(contest,			ARGS_2R_1I)
+INSTR(ctagtest,			ARGS_1R_DYNI)
+INSTR(ctagtest_direct,		ARGS_1R_DYNI)
+INSTR(debug_msg,		ARGS_1I)
+INSTR(dummy_raiseoverflow,	ARGS_NONE)
+INSTR(get_arg0,			ARGS_1R)
+INSTR(get_arg0_direct,		ARGS_NONE)
+INSTR(get_args,			ARGS_1I)
+INSTR(get_args_direct,		ARGS_NONE)
+INSTR(get_tup2,			ARGS_3R)
+INSTR(get_tup3,			ARGS_4R)
+INSTR(iadd,			ARGS_3R)
+INSTR(idec,			ARGS_2R)
+INSTR(iequal,			ARGS_2R_1I)
+INSTR(igreater,			ARGS_3R)
+INSTR(igreater_eq,		ARGS_3R)
+INSTR(iinc,			ARGS_2R)
+INSTR(ijump_eq,			ARGS_1R_2I)
+INSTR(iless,			ARGS_3R)
+INSTR(iless_eq,			ARGS_3R)
+INSTR(immediate_call,		ARGS_1I_DYNR)
+INSTR(immediate_call0,		ARGS_1I)
+INSTR(immediate_call1,		ARGS_1R_1I)
+INSTR(immediate_call2,		ARGS_2R_1I)
+INSTR(immediate_call3,		ARGS_3R_1I)
+INSTR(immediate_tailcall,	ARGS_1I_DYNR)
+INSTR(immediate_tailcall0,	ARGS_1I)
+INSTR(immediate_tailcall1,	ARGS_1R_1I)
+INSTR(immediate_tailcall2,	ARGS_2R_1I)
+INSTR(immediate_tailcall3,	ARGS_3R_1I)
+INSTR(init_bigtagval,		ARGS_2R_1I)
+INSTR(init_closure,		ARGS_2R_1I)
+INSTR(init_con,			ARGS_2R_1I)
+INSTR(init_polyrec,		ARGS_2R_1I)
+INSTR(init_tagval,		ARGS_2R_1I)
+INSTR(init_tup,			ARGS_2R_1I)
+INSTR(init_vec,			ARGS_2R_1I)
+INSTR(inlined_array_length,	ARGS_2R)
+INSTR(inlined_array_sub,	ARGS_3R)
+INSTR(inlined_array_usub,	ARGS_3R)
+INSTR(inlined_future_byneed,	ARGS_2R)
+INSTR(inlined_hole_fill,	ARGS_2R)
+INSTR(inlined_hole_hole,	ARGS_1R)
+INSTR(inlined_equal,		ARGS_3R)
+INSTR(inlined_vector_length,	ARGS_2R)
+INSTR(inlined_vector_sub,	ARGS_3R)
+INSTR(inlined_vector_usub,	ARGS_3R)
+INSTR(install_handler,		ARGS_1I)
+INSTR(isub,			ARGS_3R)
+INSTR(itest,			ARGS_1R_1I)
+INSTR(jump,			ARGS_1I)
+INSTR(lazyselect_polyrec,	ARGS_2R_1I)
+INSTR(lazyselect_polyrec_n,	ARGS_1R_2I)
+INSTR(load_bigtagval,		ARGS_2R_1I)
+INSTR(load_bigtagval1,		ARGS_2R)
+INSTR(load_bigtagval2,		ARGS_3R)
+INSTR(load_bigtagval3,		ARGS_4R)
+INSTR(load_cell,		ARGS_2R)
+INSTR(load_con,			ARGS_2R_1I)
+INSTR(load_global,		ARGS_1R_1I)
+INSTR(load_immediate,		ARGS_1R_1I)
+INSTR(load_int,			ARGS_1R_1I)
+INSTR(load_reg,			ARGS_2R)
+INSTR(load_tagval,		ARGS_2R_1I)
+INSTR(load_tagval1,		ARGS_2R)
+INSTR(load_tagval2,		ARGS_3R)
+INSTR(load_tagval3,		ARGS_4R)
+INSTR(load_vec,			ARGS_2R_1I)
+INSTR(load_zero,		ARGS_1R)
+INSTR(mk_closure,		ARGS_1R_2I)
+INSTR(new_bigtagval,		ARGS_1R_2I)
+INSTR(new_bigtagval_init,	ARGS_1R_1I_DYNR)
+INSTR(new_bigtagval_init1,	ARGS_1R_1I_STATR1)
+INSTR(new_bigtagval_init2,	ARGS_1R_1I_STATR2)
+INSTR(new_bigtagval_init3,	ARGS_1R_1I_STATR3)
+INSTR(new_bigtagval_init4,	ARGS_1R_1I_STATR4)
+INSTR(new_cell,			ARGS_2R)
+INSTR(new_con,			ARGS_1R_1I)
+INSTR(new_pair,			ARGS_3R)
+INSTR(new_polyrec,		ARGS_1R_1I)
+INSTR(new_tagval,		ARGS_1R_2I)
+INSTR(new_tagval_init,		ARGS_1R_1I_DYNR)
+INSTR(new_tagval_init1,		ARGS_1R_1I_STATR1)
+INSTR(new_tagval_init2,		ARGS_1R_1I_STATR2)
+INSTR(new_tagval_init3,		ARGS_1R_1I_STATR3)
+INSTR(new_tagval_init4,		ARGS_1R_1I_STATR4)
+INSTR(new_triple,		ARGS_4R)
+INSTR(new_tup,			ARGS_1R_1I)
+INSTR(new_vec,			ARGS_1R_1I)
+INSTR(prepare_con,		ARGS_2R_1I)
+INSTR(raise_direct,		ARGS_1R)
+INSTR(raise_normal,		ARGS_1R)
+INSTR(remove_handler,		ARGS_NONE)
+INSTR(rewrite_call,		ARGS_1I_DYNR)
+INSTR(rewrite_call0,		ARGS_1I)
+INSTR(rewrite_call1,		ARGS_1I_1R)
+INSTR(rewrite_call2,		ARGS_1I_2R)
+INSTR(rewrite_call3,		ARGS_1I_3R)
+INSTR(rewrite_tailcall,		ARGS_1I_DYNR)
+INSTR(rewrite_tailcall0,	ARGS_1I)
+INSTR(rewrite_tailcall1,	ARGS_1I_1R)
+INSTR(rewrite_tailcall2,	ARGS_1I_2R)
+INSTR(rewrite_tailcall3,	ARGS_1I_3R)
+INSTR(rjump_eq,			ARGS_1R_2I)
+INSTR(rtest,			ARGS_1R_1I)
+INSTR(seam_call,		ARGS_1R_DYNR)
+INSTR(seam_call0,		ARGS_1R)
+INSTR(seam_call1,		ARGS_2R)
+INSTR(seam_call2,		ARGS_3R)
+INSTR(seam_call3,		ARGS_4R)
+INSTR(seam_ccc1,		ARGS_1R)
+INSTR(seam_cccn,		ARGS_1I)
+INSTR(seam_prim_call,		ARGS_2I_DYNR)
+INSTR(seam_prim_call0,		ARGS_2I)
+INSTR(seam_prim_call1,		ARGS_2I_1R)
+INSTR(seam_prim_call2,		ARGS_2I_2R)
+INSTR(seam_prim_call3,		ARGS_2I_3R)
+INSTR(seam_prim_tailcall,	ARGS_2I_DYNR)
+INSTR(seam_prim_tailcall0,	ARGS_2I)
+INSTR(seam_prim_tailcall1,	ARGS_2I_1R)
+INSTR(seam_prim_tailcall2,	ARGS_2I_2R)
+INSTR(seam_prim_tailcall3,	ARGS_2I_3R)
+INSTR(seam_return,		ARGS_DYNR)
+INSTR(seam_return0,		ARGS_NONE)
+INSTR(seam_return1,		ARGS_1R)
+INSTR(seam_return2,		ARGS_2R)
+INSTR(seam_return3,		ARGS_3R)
+INSTR(seam_return_zero,		ARGS_NONE)
+INSTR(seam_tailcall,		ARGS_1R_DYNR)
+INSTR(seam_tailcall0,		ARGS_1R)
+INSTR(seam_tailcall1,		ARGS_2R)
+INSTR(seam_tailcall2,		ARGS_3R)
+INSTR(seam_tailcall3,		ARGS_4R)
+INSTR(select_tup,		ARGS_2R_1I)
+INSTR(select_tup0,		ARGS_2R)
+INSTR(select_tup1,		ARGS_2R)
+INSTR(select_tup2,		ARGS_2R)
+INSTR(self_call,		ARGS_DYNR)
+INSTR(self_call0,		ARGS_NONE)
+INSTR(self_call1,		ARGS_1R)
+INSTR(self_call2,		ARGS_2R)
+INSTR(self_call3,		ARGS_3R)
+INSTR(set_cell,			ARGS_2R)
+INSTR(set_global,		ARGS_1R_1I)
+INSTR(sjump_eq,			ARGS_1R_2I)
+INSTR(spec_closure,		ARGS_2R_2I)
+INSTR(stest,			ARGS_1R_1I)
+INSTR(swap_regs,		ARGS_2R)
+INSTR(tagtest,			ARGS_1R_1I)
+INSTR(tagtest1,			ARGS_1R_2I)
+INSTR(vectest,			ARGS_1R_1I)

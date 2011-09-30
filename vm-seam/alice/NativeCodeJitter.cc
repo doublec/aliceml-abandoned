@@ -47,16 +47,6 @@ static inline u_int GetInArity(Vector *args) {
   return nArgs;
 }
 
-static inline u_int GetNumberOfArguments(TagVal *abstractCode) {
-  TagVal *annotation = TagVal::FromWordDirect(abstractCode->Sel(2));
-  switch (AbstractCode::GetAnnotation(annotation)) {
-  case AbstractCode::Simple:
-      return Store::DirectWordToInt(annotation->Sel(0));
-  case AbstractCode::Debug:
-      return Vector::FromWordDirect(annotation->Sel(0))->GetLength();
-  }
-}
-
 namespace Outline {
   namespace Backtrace {
     static ::Backtrace *New(::StackFrame *frame) {
@@ -364,7 +354,7 @@ public:
   static void Run(s_int *resNLocals,
 		  Tuple **resAssignment,
 		  TagVal *abstractCode) {
-    u_int nLocals     = GetNumberOfArguments(abstractCode);
+    u_int nLocals     = AbstractCode::GetNumberOfArguments(abstractCode);
     Vector *liveness  = Vector::FromWordDirect(abstractCode->Sel(6));
     Tuple *assignment = Tuple::New(nLocals);
     u_int size        = liveness->GetLength();
