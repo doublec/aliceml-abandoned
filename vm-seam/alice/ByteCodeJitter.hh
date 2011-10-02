@@ -233,7 +233,7 @@ private:
   }
 
   void LoadIdRefInto(u_int dst, word idRef);
-  u_int LoadIdRefKill(word idRef, bool doIncScratch);
+  u_int LoadIdRefKill(word idRef, bool useReusableScratch);
 
   /*! @name Inlining of Primitives
     The methods in this group are used for inlining of primitives.
