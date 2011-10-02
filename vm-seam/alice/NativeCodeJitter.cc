@@ -354,7 +354,7 @@ public:
   static void Run(s_int *resNLocals,
 		  Tuple **resAssignment,
 		  TagVal *abstractCode) {
-    u_int nLocals     = AbstractCode::GetNumberOfArguments(abstractCode);
+    u_int nLocals     = AbstractCode::GetNumberOfLocals(abstractCode);
     Vector *liveness  = Vector::FromWordDirect(abstractCode->Sel(6));
     Tuple *assignment = Tuple::New(nLocals);
     u_int size        = liveness->GetLength();
