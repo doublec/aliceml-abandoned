@@ -165,30 +165,30 @@ namespace {
     
     if(interpreter == ByteCodeInterpreter::self) {
       ByteConcreteCode *bcc = ByteConcreteCode::FromWordDirect(cc->ToWord());
-      TagVal *acc = bcc->GetAbstractCode();
-      if(CheckCycle(acc)) return; // break inline cycle
+      TagVal *ac = bcc->GetAbstractCode();
+      if(CheckCycle(ac)) return; // break inline cycle
       InlineInfo *inlineInfo = bcc->GetInlineInfo();
       u_int nNodes = inlineInfo->GetNNodes();
       if(nNodes <= INLINE_LIMIT) {
-	Append(key, instr, appVarPP, acc, closure, inlineInfo);
+	Append(key, instr, appVarPP, ac, closure, inlineInfo);
 	counter += nNodes - 1; // adjust counter: substract 1 for AppVar instr
       }
     } else if(interpreter == HotSpotInterpreter::self) {
       HotSpotConcreteCode *hscc = 
 	HotSpotConcreteCode::FromWordDirect(cc->ToWord());
-      TagVal *acc = hscc->GetAbstractCode();
-      if(CheckCycle(acc)) return; // break inline cycle
+      TagVal *ac = hscc->GetAbstractCode();
+      if(CheckCycle(ac)) return; // break inline cycle
       TagVal *inlineInfoOpt = hscc->GetInlineInfoOpt();
       InlineInfo *inlineInfo;
       if(inlineInfoOpt == INVALID_POINTER) {
-	inlineInfo = AnalyseRecursively(acc, parentRootInstrs);
+	inlineInfo = AnalyseRecursively(ac, parentRootInstrs);
 	hscc->SetInlineInfo(inlineInfo);
       } else {
 	inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
       }
       u_int nNodes = inlineInfo->GetNNodes();
       if(nNodes <= INLINE_LIMIT) {
-	Append(key, instr, appVarPP, acc, closure, inlineInfo);
+	Append(key, instr, appVarPP, ac, closure, inlineInfo);
 	counter += nNodes - 1; // adjust counter
       }
     }
@@ -196,7 +196,7 @@ namespace {
 
   void InlineAnalyser::Append(word key, TagVal *instr,
 			      u_int appVarPP,
-			      TagVal *acc, Closure *closure,
+			      TagVal *ac, Closure *closure,
 			      InlineInfo *inlineInfo) {
     // there can be a strange situation
     // there can be an implicit merge point in the abstract code introduced
@@ -210,7 +210,7 @@ namespace {
     tup->Init(1, inlineInfo->GetAliases()->ToWord());
     tup->Init(2, Store::IntToWord(nLocals));
     tup->Init(3, Store::IntToWord(appVarPP));
-    tup->Init(4, acc->Sel(3)); // formal arguments
+    tup->Init(4, ac->Sel(3)); // formal arguments
     tup->Init(5, instr->Sel(1)); // actual arguments
     livenessInfo.Append(tup->ToWord(),calleeLiveness->GetLength());
     
@@ -222,14 +222,8 @@ namespace {
       newSubst->Init(i,idRef->ToWord());
     }
     
-    // register inline candidate
-    Tuple *info = Tuple::New(5);
-    info->Init(0, acc->ToWord());
-    info->Init(1, newSubst->ToWord());
-    info->Init(2, Store::IntToWord(nLocals));
-    info->Init(3, inlineInfo->ToWord());
-    info->Init(4, closure->ToWord());
-    inlineMap->Put(instr->ToWord(),info->ToWord());
+    AppVarInfo *avi = AppVarInfo::New(ac, newSubst, nLocals, inlineInfo, closure);
+    inlineMap->Put(instr->ToWord(), avi->ToWord());
     // add number of locals
     nLocals += inlineInfo->GetNLocals();
   }

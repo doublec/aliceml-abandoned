@@ -90,16 +90,6 @@ word ByteCodeJitter::ExtractImmediate(word idRef) {
 }
 
 
-bool ByteCodeJitter::AllIImmediate(Vector *idRefs) {
-  for (u_int i=idRefs->GetLength(); i--; ) {
-    if (ExtractImmediate(idRefs->Sub(i)) == INVALID_POINTER) {
-      return false;
-    }
-  }
-  return true;
-}
-
-
 ByteCodeJitter::PatchTable::PatchTable() : size(20), top(0) { 
   table = new u_int[size]; 
 }
@@ -866,6 +856,20 @@ TagVal *ByteCodeJitter::InstrPutCon(TagVal *pc) {
 
 // PutTag of id * int * int * idRef vector * instr 
 TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
+  TagVal *cont = TagVal::FromWordDirect(pc->Sel(4));
+  u_int dst = IdToReg(pc->Sel(0));
+  
+#ifdef DO_CONSTANT_PROPAGATION
+  word constant = constPropInfo->GetPutConstants()->CondGet(pc->ToWord());
+  if (constant != INVALID_POINTER) {
+    //static int count = 0;
+    //fprintf(stderr, "found constant PutTag #%d\n", ++count);
+    u_int addr = imEnv.Register(constant);
+    SET_INSTR_1R1I(PC, load_immediate, dst, addr);
+    return cont;
+  }
+#endif
+
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   u_int tag  = Store::DirectWordToInt(pc->Sel(2));  
 
@@ -874,8 +878,6 @@ TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
 
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(3));
   u_int nargs = idRefs->GetLength();
-  u_int dst = IdToReg(pc->Sel(0));
-
   // load arguments
   u_int regs[nargs];
   for (u_int i = 0; i<nargs; i++) {
@@ -906,32 +908,7 @@ TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
     SET_1R(PC,reg);
   }
   
-  return TagVal::FromWordDirect(pc->Sel(4));
-
-//   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
-//   u_int tag  = Store::DirectWordToInt(pc->Sel(2));  
-//   u_int newtagInstr;
-//   u_int inittagInstr;
-
-//   if (Alice::IsBigTagVal(maxTag)) {
-//     newtagInstr  = new_bigtagval;
-//     inittagInstr = init_bigtagval;
-//   } else {
-//     newtagInstr  = new_tagval;
-//     inittagInstr = init_tagval;
-//   }
-
-//   Vector *idRefs = Vector::FromWordDirect(pc->Sel(3));
-//   u_int nargs = idRefs->GetLength();
-//   u_int dst = IdToReg(pc->Sel(0));
-
-//   SET_INSTR_1R2I(PC,newtagInstr,dst,nargs,tag);    
-//   for (u_int i = nargs; i--; ) {
-//     u_int reg = LoadIdRefKill(idRefs->Sub(i),true);
-//     SET_INSTR_2R1I(PC,inittagInstr,dst,reg,i);
-//   }
-  
-//   return TagVal::FromWordDirect(pc->Sel(4));
+  return cont;
 }
 
 // PutRef of id * idRef * instr
@@ -1014,32 +991,34 @@ TagVal *ByteCodeJitter::InstrPutVec(TagVal *pc) {
 // Close of id * idRef vector * template * instr
 TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
   u_int dst = IdToReg(pc->Sel(0));
+  TagVal *cont = TagVal::FromWordDirect(pc->Sel(3));
+
+#ifdef DO_CONSTANT_PROPAGATION
+  word constantCls = constPropInfo->GetPutConstants()->CondGet(pc->ToWord());
+  if (constantCls != INVALID_POINTER) {
+    //static int count = 0;
+    //fprintf(stderr, "found constant Closure #%d\n", ++count);
+    u_int addr = imEnv.Register(constantCls);
+    SET_INSTR_1R1I(PC, load_immediate, dst, addr);
+    return cont;
+  }
+#endif
+
   Vector *globalRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nGlobals = globalRefs->GetLength();
-
+  
   // dont generate new code for inline functions - it causes too many compiler calls
-  word parentCC = (inlineDepth == 0) ? currentConcreteCode : inlineClosure->GetConcreteCode();
+  word parentCC = (inlineDepth == 0) ? currentConcreteCode : inlineAppVar->GetClosure()->GetConcreteCode();
   word wConcreteCode = AbstractCodeInterpreter::GetCloseConcreteCode(parentCC, pc);
-
-  // optimize case where closure is a compile-time constant
-  if (AllIImmediate(globalRefs)) {
-    Closure *cls = Closure::New(wConcreteCode, nGlobals);
-    for (u_int i=0; i<nGlobals; i++) {
-      cls->Init(i, ExtractImmediate(globalRefs->Sub(i)));
-    }
-    u_int clsAddr = imEnv.Register(cls->ToWord());
-    SET_INSTR_1R1I(PC, load_immediate, dst, clsAddr);
-  }
-  else {
-    u_int ccAddr = imEnv.Register(wConcreteCode);
-    SET_INSTR_1R2I(PC,mk_closure,dst,ccAddr,nGlobals);
-    for (u_int i = nGlobals; i--; ) {
-      u_int reg = LoadIdRefKill(globalRefs->Sub(i),true);
-      SET_INSTR_2R1I(PC,init_closure,dst,reg,i);
-    }
+  
+  u_int ccAddr = imEnv.Register(wConcreteCode);
+  SET_INSTR_1R2I(PC,mk_closure,dst,ccAddr,nGlobals);
+  for (u_int i = nGlobals; i--; ) {
+    u_int reg = LoadIdRefKill(globalRefs->Sub(i),true);
+    SET_INSTR_2R1I(PC,init_closure,dst,reg,i);
   }
 
-  return TagVal::FromWordDirect(pc->Sel(3));
+  return cont;
 }
 
 // Specialize of id * idRef vector * template * instr  
@@ -1319,15 +1298,8 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
       // check if the call can be inlined
       Map *inlineMap = inlineInfo->GetInlineMap();
       if(inlineMap->IsMember(pc->ToWord())) {
-	Tuple *tup = Tuple::FromWordDirect(inlineMap->Get(pc->ToWord()));
-	TagVal *abstractCode = TagVal::FromWordDirect(tup->Sel(0));
-	Vector *subst = Vector::FromWordDirect(tup->Sel(1));
-	u_int offset = Store::DirectWordToInt(tup->Sel(2));
-	InlineInfo *info = InlineInfo::FromWordDirect(tup->Sel(3));
-	Closure *cls = Closure::FromWordDirect(tup->Sel(4));
-	TagVal *continuation = 
-	  CompileInlineFunction(pc, abstractCode, cls, info, subst,
-				offset, args, idDefsInstrOpt);
+	AppVarInfo *avi = AppVarInfo::FromWordDirect(inlineMap->Get(pc->ToWord()));
+	TagVal *continuation = CompileInlineFunction(pc, avi, args, idDefsInstrOpt);
 	if(inlineDepth > 0 && idDefsInstrOpt == INVALID_POINTER) {
 	  patchTable->Add(PC);    
 	  SET_INSTR_1I(PC,jump,0);
@@ -1940,9 +1912,10 @@ TagVal *ByteCodeJitter::StaticTagTestBranch(TagVal *pc, u_int testVal, bool isBi
     // compile binding
     Vector *idDefs = Vector::FromWordDirect(info->Sel(0));
     LoadTagVal(testVal, idDefs, isBigTag);
-//    static int count = 0;
-//    count++;
-//    fprintf(stderr, "compiling statically determined branch #%d\n", count, testVal);
+    
+    //static int count = 0;
+    //fprintf(stderr, "compiling statically determined branch #%d\n", ++count, testVal);
+    
     return TagVal::FromWordDirect(info->Sel(1));
   }
 #endif
@@ -2758,14 +2731,7 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 
 // Function of coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
-TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar,
-					      TagVal *abstractCode, 
-					      Closure *closure,
-					      InlineInfo *info,
-					      Vector *subst,		   
-					      u_int offset,
-					      Vector *args,
-					      TagVal *idDefsInstrOpt) {
+TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, Vector *args, TagVal *idDefsInstrOpt) {
   INSERT_DEBUG_MSG("inline entry")
 #ifdef DEBUG_DISASSEMBLE
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
@@ -2777,11 +2743,14 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar,
   AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
 #endif
 
+  TagVal *abstractCode = avi->GetAbstractCode();
+  u_int offset = avi->GetLocalOffset();
+  
   inlineDepth++;
   Vector *oldFormalArgs = currentFormalArgs;
   Vector *oldFormalInArgs = currentFormalInArgs;
   InlineInfo *oldInlineInfo = inlineInfo;
-  inlineInfo = info;
+  inlineInfo = avi->GetInlineInfo();
 #ifdef DO_CONSTANT_PROPAGATION
   ConstPropInfo *oldConstPropInfo = constPropInfo;
   constPropInfo =
@@ -2828,10 +2797,10 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar,
   // save jitter state
   Vector *oldGlobalSubst = globalSubst;
   IntMap *oldSharedTable = sharedTable;
-  Closure *oldInlineClosure = inlineClosure;
+  AppVarInfo *oldInlineAppVar = inlineAppVar;
 
-  globalSubst = subst;
-  inlineClosure = closure;
+  inlineAppVar = avi;
+  globalSubst = avi->GetSubst();
   localOffset += offset;
   sharedTable = IntMap::New(inlineInfo->GetNNodes());
 
@@ -2859,7 +2828,7 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar,
   // restore state
   localOffset -= offset;//oldLocalOffset;
   globalSubst = oldGlobalSubst;;
-  inlineClosure = oldInlineClosure;
+  inlineAppVar = oldInlineAppVar;
   currentFormalArgs = oldFormalArgs;
   currentFormalInArgs = oldFormalInArgs;
 #ifdef DO_CONSTANT_PROPAGATION
@@ -2904,7 +2873,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   currentFormalArgs = INVALID_POINTER;
   localOffset = 0;
   inlineDepth = 0;
-  inlineClosure = INVALID_POINTER;
+  inlineAppVar = INVALID_POINTER;
 #ifdef DO_INLINING
   TagVal *inlineInfoOpt = hsc->GetInlineInfoOpt();
   if(inlineInfoOpt == INVALID_POINTER) {
@@ -2913,7 +2882,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
     inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
   // run constant propagation
 #ifdef DO_CONSTANT_PROPAGATION
-  constPropInfo = ByteCodeConstProp::Analyse(abstractCode, inlineInfo);
+  constPropInfo = ByteCodeConstProp::Analyse(abstractCode, currentConcreteCode, inlineInfo);
 #endif
 #endif
 

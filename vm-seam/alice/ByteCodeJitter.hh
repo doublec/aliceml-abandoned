@@ -137,7 +137,7 @@ private:
   ByteCodeImmediateEnv imEnv;
   IntMap *sharedTable;
   Vector *globalSubst;
-  Closure *inlineClosure;                /** closure that is currently being inlined, or INVALID_POINTER when inlineDepth == 0 */
+  AppVarInfo *inlineAppVar;                /** AppVarInfo for AppVar instr that is currently being inlined, or INVALID_POINTER when inlineDepth == 0 */
   word currentConcreteCode;
   u_int skipCCCPC;
   Vector *currentFormalInArgs;
@@ -227,7 +227,6 @@ private:
   }
 
   word ExtractImmediate(word idRef);
-  bool AllIImmediate(Vector *idRefs);
 
   TagVal *LookupSubst(u_int index) {
     return TagVal::FromWordDirect(globalSubst->Sub(index));
@@ -368,14 +367,7 @@ private:
  
  // inlining
   void CompileInlineCCC(Vector *formalArgs, Vector *args, bool isReturn);
-  TagVal *CompileInlineFunction(TagVal *appVar,
-				TagVal *abstractCode, 
-				Closure *closure,
-				InlineInfo *info,
-				Vector *subst,		   
-				u_int offset,
-				Vector *args,
-				TagVal *idDefsInstrOpt);
+  TagVal *CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, Vector *args, TagVal *idDefsInstrOpt);
 
 public:
   //! constructor

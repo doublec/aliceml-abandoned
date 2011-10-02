@@ -26,7 +26,7 @@
  */
 class ConstPropInfo : private Tuple {
 private:
-  enum { TAG_TEST_INFO_POS, INLINE_MAP_POS, SIZE };
+  enum { PUT_CONSTANTS_POS, TAG_TEST_INFO_POS, INLINE_MAP_POS, SIZE };
 public:
   using Tuple::ToWord;
   
@@ -42,7 +42,16 @@ public:
     Tuple *t = Tuple::New(SIZE);
     t->Init(TAG_TEST_INFO_POS, Map::New(8)->ToWord());
     t->Init(INLINE_MAP_POS, Map::New(8)->ToWord());
+    t->Init(PUT_CONSTANTS_POS, Map::New(8)->ToWord());
     return reinterpret_cast<ConstPropInfo*>(t);
+  }
+  
+  /**
+   * @return A map from PutTag/Close instruction to immediate value, for all
+   *         such instructions whose result can be determined statically.
+   */
+  Map *GetPutConstants(){
+    return Map::FromWordDirect(Sel(PUT_CONSTANTS_POS));
   }
   
   /**
@@ -66,7 +75,7 @@ public:
 
 class ByteCodeConstProp {
 public:
-  static ConstPropInfo *Analyse(TagVal* abstractCode, InlineInfo *inlineInfo);
+  static ConstPropInfo *Analyse(TagVal* abstractCode, word concreteCode, InlineInfo *inlineInfo);
 };
 
 #endif

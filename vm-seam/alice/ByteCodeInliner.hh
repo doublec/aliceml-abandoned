@@ -41,10 +41,12 @@ public:
     tup->Init(ALIASES_POS,aliases->ToWord());
     tup->Init(NLOCALS_POS,Store::IntToWord(nLocals));
     tup->Init(NNODES_POS,Store::IntToWord(nNodes));
-    return reinterpret_cast<InlineInfo *>(tup);
+    return static_cast<InlineInfo *>(tup);
   }
   
-  // maps AppVar instr to (TagVal *abstractCode, Vector *subst, int nLocals, InlineInfo*, Closure*)
+  /**
+   * maps AppVar instr to AppVarInfo
+   */
   Map *GetInlineMap() {
     return Map::FromWordDirect(Tuple::Sel(INLINE_MAP_POS)); 
   }
@@ -71,6 +73,55 @@ public:
   
   static InlineInfo *FromWordDirect(word info) {
     return static_cast<InlineInfo *>(Tuple::FromWordDirect(info));
+  }
+};
+
+
+/**
+ * Information about an inlined AppVar instruction.
+ */
+class AppVarInfo : private Tuple {
+private:
+  enum { ABSTRACT_CODE_POS, SUBST_POS, LOCAL_OFFSET_POS, INLINE_INFO_POS, CLOSURE_POS, SIZE };
+public:
+  using Tuple::ToWord;
+  
+  static AppVarInfo *New(TagVal *abstractCode, Vector *subst, u_int localOffset, InlineInfo* inlineInfo, Closure* closure) {
+    Tuple *tup = Tuple::New(SIZE);
+    tup->Init(ABSTRACT_CODE_POS, abstractCode->ToWord());
+    tup->Init(SUBST_POS, subst->ToWord());
+    tup->Init(LOCAL_OFFSET_POS, Store::IntToWord(localOffset));
+    tup->Init(INLINE_INFO_POS, inlineInfo->ToWord());
+    tup->Init(CLOSURE_POS, closure->ToWord());
+    return static_cast<AppVarInfo*>(tup);
+  }
+  
+  TagVal *GetAbstractCode(){
+    return TagVal::FromWordDirect(Sel(ABSTRACT_CODE_POS));
+  }
+  
+  Vector *GetSubst(){
+    return Vector::FromWordDirect(Sel(SUBST_POS));
+  }
+  
+  u_int GetLocalOffset(){
+    return Store::DirectWordToInt(Sel(LOCAL_OFFSET_POS));
+  }
+  
+  InlineInfo *GetInlineInfo() {
+    return InlineInfo::FromWordDirect(Sel(INLINE_INFO_POS));
+  }
+  
+  Closure *GetClosure(){
+    return Closure::FromWordDirect(Sel(CLOSURE_POS));
+  }
+
+  static AppVarInfo *FromWord(word info) {
+    return static_cast<AppVarInfo *>(Tuple::FromWord(info));
+  }
+  
+  static AppVarInfo *FromWordDirect(word info) {
+    return static_cast<AppVarInfo *>(Tuple::FromWordDirect(info));
   }
 };
 
