@@ -316,7 +316,7 @@ private:
   void LoadTagVal(u_int testVal, Vector *idDefs, bool isBig);
 
   //! Determine if the specified TagTest's target branch is known statically.
-  TagVal *StaticTagTestBranch(TagVal *pc, u_int testVal, bool isBigTag);
+  TagVal *StaticTagTestBranch(TagVal *pc, word idRef, bool isBigTag);
   
   //@{
   //! Compilation of one abstract code instruction

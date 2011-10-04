@@ -14,6 +14,7 @@
 #pragma implementation "alice/ByteCodeInliner.hh"
 #endif
 
+#include <stack>
 #include "alice/ByteCodeJitter.hh"
 #include "alice/ByteCodeInliner.hh"
 #include "alice/AliceConcreteCode.hh"
@@ -383,25 +384,20 @@ namespace {
 
   class ControlStack {
   private:
-    u_int *stack;
-    u_int size;
-    s_int top;
+    std::stack<u_int> stack;
+    
     void Push(u_int item) {
-      if( ++top >= size ) {	
-	u_int oldSize = size;
-	size = size * 3 / 2;
-	u_int *newStack = new u_int[size];
-	memcpy(newStack,stack,oldSize * sizeof(u_int));
-	delete[] stack;
-	stack = newStack;
-      }
-      stack[top] = item;
+      stack.push(item);
     }
-    u_int Pop() { return stack[top--]; }
+    
+    u_int Pop() {
+      u_int top = stack.top();
+      stack.pop();
+      return top;
+    }
+    
   public:
     enum { VISIT, INC, ANALYSE_APPVAR,STOP };
-    ControlStack(u_int s = 400) : size(s), top(-1) { stack = new u_int[size]; }
-    ~ControlStack() { delete[] stack; }
     u_int PopInt() { return Pop(); }
     u_int PopCommand() { return Pop(); }
     TagVal *PopInstr() { return reinterpret_cast<TagVal *>(Pop()); }
@@ -418,9 +414,7 @@ namespace {
       Push(ANALYSE_APPVAR);
     }
     void PushStop() { Push(STOP); }
-    bool Empty() { return top == -1; }
-    s_int GetTopIndex() { return top; }
-    void SetTopIndex(s_int index) { top = index; }
+    bool Empty() { return stack.empty(); }
   };
 
 

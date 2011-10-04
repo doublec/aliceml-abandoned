@@ -14,6 +14,7 @@
 #pragma implementation "alice/ByteCodeConstProp.hh"
 #endif
 
+#include <stack>
 #include "alice/AbstractCode.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 #include "alice/ByteCodeConstProp.hh"
@@ -25,39 +26,21 @@ namespace {
 
   class ControlStack {
   private:
-    u_int *stack;
-    u_int size;
-    s_int top;
+    std::stack<u_int> stack;
     
-    void Push(u_int item) {
-      if (++top >= size) {
-	u_int oldSize = size;
-	size = size * 3 / 2;
-	u_int *newStack = new u_int[size];
-	memcpy(newStack, stack, oldSize * sizeof(u_int));
-	delete[] stack;
-	stack = newStack;
-      }
-      stack[top] = item;
+    u_int Pop(){
+      u_int top = stack.top();
+      stack.pop();
+      return top;
     }
     
-    u_int Pop() {
-      return stack[top--];
+    void Push(u_int item){
+      stack.push(item);
     }
     
   public:
     
     enum { VISIT, INLINE_EXIT, STOP };
-    
-    ControlStack(u_int s = 200) {
-      size = s;
-      top = -1;
-      stack = new u_int[size];
-    }
-    
-    ~ControlStack() {
-      delete[] stack;
-    }
     
     u_int PopCommand() {
       return Pop();
@@ -102,11 +85,11 @@ namespace {
     }
     
     bool Empty() {
-      return top == -1;
+      return stack.empty();
     }
     
     u_int GetSize() {
-      return top;
+      return stack.size();
     }
   };
 
@@ -321,17 +304,28 @@ namespace {
     }
     
     
-    void AssignIdDefUnknown(word wIdDef) {
+    void AssignIdDef(word cons, word wIdDef) {
       TagVal *idDef = TagVal::FromWord(wIdDef);
       if (idDef != INVALID_POINTER) {
-	AssignConst(ConstUnknown(), IdToId(idDef->Sel(0)));
+	AssignConst(cons, IdToId(idDef->Sel(0)));
       }
+    }
+    
+    void AssignIdDefUnknown(word wIdDef) {
+      AssignIdDef(ConstUnknown(), wIdDef);
     }
     
 	
     void AssignIdDefsUnknown(Vector *idDefs) {
       for (u_int i=idDefs->GetLength(); i--; ) {
 	AssignIdDefUnknown(idDefs->Sub(i));
+      }
+    }
+    
+    
+    void AssignIdDefsFromTagVal(TagVal *values, Vector *idDefs) {
+      for (u_int i=idDefs->GetLength(); i--; ) {
+	AssignIdDef(ImmediateToConst(values->Sel(i)), idDefs->Sub(i));
       }
     }
     
@@ -503,12 +497,12 @@ namespace {
 	  }
 	  case AbstractCode::PutTag: {
             u_int dest = IdToId(instr->Sel(0));
-	    u_int nTags = Store::DirectWordToInt(instr->Sel(1));
+	    u_int maxTag = Store::DirectWordToInt(instr->Sel(1));
 	    u_int tag = Store::DirectWordToInt(instr->Sel(2));
 	    Vector *idRefs = Vector::FromWordDirect(instr->Sel(3));
 	    
 	    // TODO: track contents of Tags where only certain parts are constant
-	    if (!Alice::IsBigTagVal(nTags) && AllIdRefsImmediate(idRefs)) {
+	    if (!Alice::IsBigTagVal(maxTag) && AllIdRefsImmediate(idRefs)) {
 	      TagVal *tv = TagVal::New(tag, idRefs->GetLength());
 	      for(u_int i=idRefs->GetLength(); i--; ) {
 		tv->Init(i, IdRefToImmediate(idRefs->Sub(i)));
@@ -644,6 +638,8 @@ namespace {
 	    break;
 	  }
 	  case AbstractCode::TagTest: {
+	    s_int tag = IdRefToTag(instr->Sel(0));
+	    word value = IdRefToImmediate(instr->Sel(0));
 	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
 	    Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
 	    word els = instr->Sel(4);
@@ -651,19 +647,24 @@ namespace {
 	    for (u_int i=tests0->GetLength(); i--; ) {
 	      Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));
 	      stack.PushInstr(test->Sel(1));
-	      // TODO: if tested value is a local, record its tagval inside this branch
 	    }
 	    for (u_int i=testsN->GetLength(); i--; ) {
 	      Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
-	      // TODO: assign from value if known
-	      AssignIdDefsUnknown(Vector::FromWordDirect(test->Sel(1)));
+	      u_int testTag = Store::DirectWordToInt(test->Sel(0));
+	      Vector *idDefs = Vector::FromWordDirect(test->Sel(1));
+	      
+	      if (tag == testTag && value != INVALID_POINTER) {
+		AssignIdDefsFromTagVal(TagVal::FromWordDirect(value), idDefs);
+	      }
+	      else {
+		AssignIdDefsUnknown(idDefs);
+	      }
+	      
 	      stack.PushInstr(test->Sel(2));
-	      // TODO: if tested value is a local, record its tagval inside this branch
 	    }
 	    stack.PushInstr(els);
 
 	    // record statically determined branch
-	    s_int tag = IdRefToTag(instr->Sel(0));
 	    if (tag != INVALID_INT) {
 	      word cont = INVALID_POINTER;
 	      Vector *idDefs = INVALID_POINTER;
@@ -691,17 +692,25 @@ namespace {
 	    break;
 	  }
 	  case AbstractCode::CompactTagTest: {
+	    s_int tag = IdRefToTag(instr->Sel(0));
+	    word value = IdRefToImmediate(instr->Sel(0));
 	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
 	    TagVal *elseOpt = TagVal::FromWord(instr->Sel(3));
 	    
 	    for (u_int i=tests->GetLength(); i--; ) {
 	      Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
 	      TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
+	      
 	      if (idDefsOpt != INVALID_POINTER) {
-		//TODO: assign from value if known
-	        AssignIdDefsUnknown(Vector::FromWordDirect(idDefsOpt->Sel(0)));
+	        Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
+		if (tag == i && value != INVALID_POINTER) {
+		  AssignIdDefsFromTagVal(TagVal::FromWordDirect(value), idDefs);
+		}
+		else {
+	          AssignIdDefsUnknown(idDefs);
+		}
               }
-	      // TODO: if tested value is a local, record its tagval inside this branch
+              
               stack.PushInstr(test->Sel(1));
 	    }
 	    if (elseOpt != INVALID_POINTER) {
@@ -709,7 +718,6 @@ namespace {
 	    }
 	    
 	    // record statically determined branch
-	    s_int tag = IdRefToTag(instr->Sel(0));
 	    if (tag != INVALID_INT) {
 	      if (tag < tests->GetLength()) {
 		Tuple *test = Tuple::FromWordDirect(tests->Sub(tag));
