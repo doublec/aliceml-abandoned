@@ -644,97 +644,85 @@ namespace {
 	    break;
 	  }
 	  case AbstractCode::TagTest: {
-	    s_int tag = IdRefToTag(instr->Sel(0));
 	    Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
 	    Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
 	    word els = instr->Sel(4);
 	    
-	    if (tag == INVALID_INT) {
-	      
-	      for (u_int i=tests0->GetLength(); i--; ) {
-		Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));
-		stack.PushInstr(test->Sel(1));
-		// TODO: if tested value is a local, record its tagval inside this branch
-	      }
-	      for (u_int i=testsN->GetLength(); i--; ) {
-		Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
-		AssignIdDefsUnknown(Vector::FromWordDirect(test->Sel(1)));
-		stack.PushInstr(test->Sel(2));
-		// TODO: if tested value is a local, record its tagval inside this branch
-	      }
-	      stack.PushInstr(els);
+	    for (u_int i=tests0->GetLength(); i--; ) {
+	      Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));
+	      stack.PushInstr(test->Sel(1));
+	      // TODO: if tested value is a local, record its tagval inside this branch
 	    }
-	    else {
+	    for (u_int i=testsN->GetLength(); i--; ) {
+	      Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
+	      // TODO: assign from value if known
+	      AssignIdDefsUnknown(Vector::FromWordDirect(test->Sel(1)));
+	      stack.PushInstr(test->Sel(2));
+	      // TODO: if tested value is a local, record its tagval inside this branch
+	    }
+	    stack.PushInstr(els);
+
+	    // record statically determined branch
+	    s_int tag = IdRefToTag(instr->Sel(0));
+	    if (tag != INVALID_INT) {
 	      word cont = INVALID_POINTER;
 	      Vector *idDefs = INVALID_POINTER;
 	      
-	      for (u_int i=tests0->GetLength(); i--; ) {
+	      for (u_int i=tests0->GetLength(); !cont && i--; ) {
 		Tuple *test = Tuple::FromWordDirect(tests0->Sub(i));
 		if (Store::DirectWordToInt(test->Sel(0)) == tag) {
 		  cont = test->Sel(1);
-		  break;
 		}
 	      }
-	      if (cont == INVALID_POINTER) {
-	        for (u_int i=testsN->GetLength(); i--; ) {
-		  Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
-		  if (Store::DirectWordToInt(test->Sel(0)) == tag) {
-		    idDefs = Vector::FromWordDirect(test->Sel(1));
-		    AssignIdDefsUnknown(idDefs);
-		    cont = test->Sel(2);
-		    break;
-		  }
+	      for (u_int i=testsN->GetLength(); !cont && i--; ) {
+		Tuple *test = Tuple::FromWordDirect(testsN->Sub(i));
+		if (Store::DirectWordToInt(test->Sel(0)) == tag) {
+		  idDefs = Vector::FromWordDirect(test->Sel(1));
+		  cont = test->Sel(2);
 		}
 	      }
-	      if(cont == INVALID_POINTER) {
+	      if(!cont) {
 		cont = els;
 	      }
-	      stack.PushInstr(cont);
 	      
 	      NewTagTestInfo(instr, cont, idDefs);
 	    }
+	    
 	    break;
 	  }
 	  case AbstractCode::CompactTagTest: {
-	    s_int tag = IdRefToTag(instr->Sel(0));
 	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
 	    TagVal *elseOpt = TagVal::FromWord(instr->Sel(3));
 	    
-	    if (tag == INVALID_INT) {
-	      
-	      for (u_int i=tests->GetLength(); i--; ) {
-		Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
-		TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
-		if (idDefsOpt != INVALID_POINTER) {
-		  AssignIdDefsUnknown(Vector::FromWordDirect(idDefsOpt->Sel(0)));
-		}
-		// TODO: if tested value is a local, record its tagval inside this branch
-		stack.PushInstr(test->Sel(1));
-	      }
-	      if (elseOpt != INVALID_POINTER) {
-		stack.PushInstr(elseOpt->Sel(0));
-	      }
+	    for (u_int i=tests->GetLength(); i--; ) {
+	      Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
+	      TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
+	      if (idDefsOpt != INVALID_POINTER) {
+		//TODO: assign from value if known
+	        AssignIdDefsUnknown(Vector::FromWordDirect(idDefsOpt->Sel(0)));
+              }
+	      // TODO: if tested value is a local, record its tagval inside this branch
+              stack.PushInstr(test->Sel(1));
 	    }
-	    else {
-	      word cont = INVALID_POINTER;
-	      Vector *idDefs = INVALID_POINTER;
-	      
+	    if (elseOpt != INVALID_POINTER) {
+	      stack.PushInstr(elseOpt->Sel(0));
+	    }
+	    
+	    // record statically determined branch
+	    s_int tag = IdRefToTag(instr->Sel(0));
+	    if (tag != INVALID_INT) {
 	      if (tag < tests->GetLength()) {
 		Tuple *test = Tuple::FromWordDirect(tests->Sub(tag));
 		TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
-		if (idDefsOpt != INVALID_POINTER) {
-		  idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
-		  AssignIdDefsUnknown(idDefs);
-		}
-		cont = test->Sel(1);
+		Vector *idDefs = (idDefsOpt != INVALID_POINTER) ?
+		  Vector::FromWordDirect(idDefsOpt->Sel(0)) : INVALID_POINTER;
+		NewTagTestInfo(instr, test->Sel(1), idDefs);
 	      }
 	      else {
-		cont = elseOpt->Sel(0);
+		NewTagTestInfo(instr, elseOpt->Sel(0), INVALID_POINTER);
 	      }
-	      stack.PushInstr(cont);
-	      
-	      NewTagTestInfo(instr, cont, idDefs);
 	    }
+	    
 	    break;
 	  }
 	  case AbstractCode::Shared: {
