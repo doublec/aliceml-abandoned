@@ -44,7 +44,7 @@ public:
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 
 #if PROFILE
   virtual word GetProfileKey(StackFrame *);

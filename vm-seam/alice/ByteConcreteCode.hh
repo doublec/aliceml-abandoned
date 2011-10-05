@@ -33,6 +33,7 @@ protected:
     INLINE_INFO_POS,  
     BYTE_CODE_POS, 
     IMMEDIATE_ENV_POS, IN_ARITY_POS, OUT_ARITY_POS, NLOCALS_POS,
+    SOURCE_LOCATIONS_POS,
     CLOSE_CONCRETE_CODES_POS,
     SIZE_INTERNAL
   };
@@ -53,6 +54,9 @@ public:
   u_int GetNLocals() {
     return static_cast<u_int>(Store::DirectWordToInt(Get(NLOCALS_POS)));
   } 
+  word GetSourceLocations() {
+    return Get(SOURCE_LOCATIONS_POS);
+  }
   Transform *GetAbstractRepresentation() {
     return Transform::FromWordDirect(Get(TRANSFORM_POS));
   }
@@ -78,12 +82,14 @@ public:
 				       Chunk *code,
 				       word immediateEnv,
 				       word nbLocals,
-				       word inlineInfo);
+				       word inlineInfo,
+				       word sourceLocations);
   static void Convert(HotSpotCode *hsc,
 		      Chunk *code,
 		      word immediateEnv,
 		      word nbLocals,
 		      word inlineInfo,
+		      word sourceLocations,
 		      Map *closeConcreteCodes);
   // ByteConcreteCode Untagging
   static ByteConcreteCode *FromWord(word code) {

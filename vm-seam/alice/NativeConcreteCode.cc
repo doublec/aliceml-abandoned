@@ -86,8 +86,8 @@ const char *LazyCompileInterpreter::Identify() {
   return "LazyCompileInterpreter";
 }
 
-void LazyCompileInterpreter::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "LazyCompile");
+void LazyCompileInterpreter::DumpFrame(StackFrame *, std::ostream& out) {
+  out << "[NativeConcreteCode::LazyCompile]" << std::endl;
 }
 
 //

@@ -18,6 +18,7 @@
 #include "alice/ByteCodeAlign.hh"
 #include "alice/ByteCodeFrame.hh"
 #include "alice/ByteCodeJitter.hh"
+#include "alice/ByteCodeSourceLocations.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/NativeConcreteCode.hh"
@@ -784,6 +785,7 @@ namespace {
     coord->Init(0,String::New("\"manually assembled code\"")->ToWord());
     coord->Init(1,Store::IntToWord(0));
     coord->Init(2,Store::IntToWord(0));
+    coord->Init(3, String::New()->ToWord());
     abstractCode->Init(0,coord->ToWord());
     abstractCode->Init(3,args->ToWord());
     abstractCode->Init(4,Store::IntToWord(0)); // outArityOpt == NONE
@@ -800,7 +802,8 @@ namespace {
 				    codeChunk,
 				    imEnv->ToWord(),
 				    nbLocals,
-				    inlineInfo->ToWord());
+				    inlineInfo->ToWord(),
+				    ByteCodeSourceLocations::Empty());
     return bcc->ToWord();
   }
 

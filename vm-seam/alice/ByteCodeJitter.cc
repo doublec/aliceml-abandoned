@@ -816,9 +816,21 @@ bool ByteCodeJitter::InlinePrimitive(void *cFunction,
 // compilation of AbstractCode instructions
 //
 
+// Entry of coord * entry_point * instr
+TagVal *ByteCodeJitter::InstrEntry(TagVal *pc) {
+  sourceLocations.RecordCoord(PC, pc->Sel(0));
+  return TagVal::FromWordDirect(pc->Sel(2));
+}
+
+// Exit of coord * exit_point * idRef * instr
+TagVal *ByteCodeJitter::InstrExit(TagVal *pc) {
+  sourceLocations.RecordCoord(PC, pc->Sel(0));
+  return TagVal::FromWordDirect(pc->Sel(3));
+}
+
 // Kill of id vector * instr
 TagVal *ByteCodeJitter::InstrKill(TagVal *pc) {
-  // use this information in later versions of the compiler
+  // TODO: use this information in later versions of the compiler
   return TagVal::FromWordDirect(pc->Sel(1));
 }
  
@@ -2278,6 +2290,10 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
     scratch = currentNLocals; // reset scratch registers
     topScratchReusable = false;
     switch (AbstractCode::GetInstr(pc)) {
+    case AbstractCode::Entry:
+      pc = InstrEntry(pc); break;
+    case AbstractCode::Exit:
+      pc = InstrExit(pc); break;
     case AbstractCode::Kill:
       pc = InstrKill(pc); break;
     case AbstractCode::PutVar:
@@ -2682,7 +2698,7 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
   }
 }
 
-// Function of coord * value option vector * string vector *
+// Function of named_coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, Vector *args, TagVal *idDefsInstrOpt) {
   INSERT_DEBUG_MSG("inline entry")
@@ -2698,6 +2714,7 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, V
 
   TagVal *abstractCode = avi->GetAbstractCode();
   u_int offset = avi->GetLocalOffset();
+  sourceLocations.BeginInlineFunction(abstractCode);
   
   inlineDepth++;
   Vector *oldFormalArgs = currentFormalArgs;
@@ -2793,13 +2810,14 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, V
   patchTable = oldPatchTable;
   inlineDepth--;
 
+  sourceLocations.EndInlineFunction();
   return continuation;
 }
 
 
 u_int invocations = 0;
 
-// Function of coord * value option vector * string vector *
+// Function of named_coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 //    timeval startTime;
@@ -2932,6 +2950,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 #else
 			    Store::IntToWord(0),
 #endif
+			    sourceLocations.Export(),
 			    closeConcreteCodes);
 
 //   static u_int sumNRegisters = 0;
@@ -2947,10 +2966,10 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   fprintf(stderr,"-----------------\ncompiled code:\n");
 #ifdef THREADED
   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
-			Tuple::FromWordDirect(imEnv.ExportEnv()));
+			Tuple::FromWordDirect(imEnv.ExportEnv()), nRegisters);
 #else
   ByteCode::Disassemble(stderr,0,code,
-			Tuple::FromWordDirect(imEnv.ExportEnv()));
+			Tuple::FromWordDirect(imEnv.ExportEnv()), nRegisters);
 #endif
   fprintf(stderr,"-------------\n");
 #endif

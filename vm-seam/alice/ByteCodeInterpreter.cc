@@ -30,6 +30,7 @@
 #include "alice/ByteCodeBuffer.hh"
 #include "alice/ByteCodeJitter.hh"
 #include "alice/ByteCodeSpecializer.hh"
+#include "alice/ByteCodeSourceLocations.hh"
 
 using namespace ByteCodeInstr;
 
@@ -1840,20 +1841,11 @@ ByteCodeFrame *ByteCodeInterpreter::DupFrame(ByteCodeFrame *bcFrame) {
   return reinterpret_cast<ByteCodeFrame*>(newFrame);
 }
 
-void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
+void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   Assert(sFrame->GetWorker() == this);
-  
   ByteCodeFrame *frame = reinterpret_cast<ByteCodeFrame *>(sFrame);
-  ByteConcreteCode *bcc = frame->GetConcreteCode();
-  
-  Tuple *coord  = Tuple::FromWord(bcc->GetAbstractCode()->Sel(0));
-  String *name  = String::FromWord(coord->Sel(0));
-  std::fprintf(stderr,
-	       "ByteCode %.*s:%"S_INTF".%"S_INTF" frame %p\n",
-	       /*frameType,*/ static_cast<int>(name->GetSize()), name->GetValue(),
-	       Store::WordToInt(coord->Sel(1)),
-	       Store::WordToInt(coord->Sel(2)),
-	       sFrame);
+  ByteConcreteCode *cc = frame->GetConcreteCode();
+  ByteCodeSourceLocations::PrintFrame(cc->GetAbstractCode()->Sel(0), cc->GetSourceLocations(), frame->GetPC(), out);
 }
 
 #if PROFILE

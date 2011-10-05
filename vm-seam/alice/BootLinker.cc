@@ -102,7 +102,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class EnterWorker: public Worker {
@@ -122,7 +122,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class LinkWorker: public Worker {
@@ -142,7 +142,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class LoadWorker: public Worker {
@@ -163,7 +163,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class StartWorker: public Worker {
@@ -184,7 +184,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   //
@@ -401,11 +401,10 @@ namespace {
     return "ApplyWorker";
   }
 
-  void ApplyWorker::DumpFrame(StackFrame *sFrame) {
+  void ApplyWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     ApplyFrame *frame = reinterpret_cast<ApplyFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
-    String *key = frame->GetKey();
-    std::fprintf(stderr, "Apply %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
+    out << "[BootLinker::Apply] " << frame->GetKey() << std::endl;
   }
 
   // EnterWorker
@@ -437,11 +436,10 @@ namespace {
     return "EnterWorker";
   }
 
-  void EnterWorker::DumpFrame(StackFrame *sFrame) {
+  void EnterWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     EnterFrame *frame = reinterpret_cast<EnterFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
-    String *key = frame->GetKey();
-    std::fprintf(stderr, "Enter %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
+    out << "[BootLinker::Enter] " << frame->GetKey() << std::endl;
   }
 
   // LinkWorker
@@ -510,11 +508,10 @@ namespace {
     return "LinkWorker";
   }
 
-  void LinkWorker::DumpFrame(StackFrame *sFrame) {
+  void LinkWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     LinkFrame *frame = reinterpret_cast<LinkFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
-    String *key = frame->GetKey();
-    std::fprintf(stderr, "Link %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
+    out << "[BootLinker::Link] " << frame->GetKey() << std::endl;
   }
 
   // LoadWorker
@@ -555,11 +552,10 @@ namespace {
     return "LoadWorker";
   }
 
-  void LoadWorker::DumpFrame(StackFrame *sFrame) {
+  void LoadWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     LoadFrame *frame = reinterpret_cast<LoadFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
-    String *key = frame->GetKey();
-    std::fprintf(stderr, "Load %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
+    out << "[BootLinker::Load] " << frame->GetKey() << std::endl;
   }
 
   // StartWorker
@@ -662,11 +658,10 @@ namespace {
     return "StartWorker";
   }
 
-  void StartWorker::DumpFrame(StackFrame *sFrame) {
+  void StartWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     StartFrame *frame = reinterpret_cast<StartFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
-    String *key = frame->GetKey();
-    std::fprintf(stderr, "Start %.*s\n", static_cast<int>(key->GetSize()), key->GetValue());
+    out << "[BootLinker::Start] " << frame->GetKey() << std::endl;
   }
   
 }

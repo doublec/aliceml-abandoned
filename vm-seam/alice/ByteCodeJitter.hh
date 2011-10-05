@@ -22,6 +22,7 @@
 #include "alice/ByteCode.hh"
 #include "alice/ByteCodeInliner.hh"
 #include "alice/ByteCodeConstProp.hh"
+#include "alice/ByteCodeSourceLocations.hh"
 
 #define DO_REG_ALLOC
 //#undef DO_REG_ALLOC
@@ -135,6 +136,7 @@ private:
   u_int currentOutArity;
   u_int PC;
   ByteCodeImmediateEnv imEnv;
+  ByteCodeSourceLocations sourceLocations;
   IntMap *sharedTable;
   Vector *globalSubst;
   AppVarInfo *inlineAppVar;                /** AppVarInfo for AppVar instr that is currently being inlined, or INVALID_POINTER when inlineDepth == 0 */
@@ -325,6 +327,8 @@ private:
     @param pc abstract code instruction that is to compile
     @return continuation; INVALID_POINTER signals a leaf node
    */
+  TagVal *InstrEntry(TagVal *pc);
+  TagVal *InstrExit(TagVal *pc);
   TagVal *InstrKill(TagVal *pc);
   TagVal *InstrPutVar(TagVal *pc);
   TagVal *InstrPutNew(TagVal *pc);

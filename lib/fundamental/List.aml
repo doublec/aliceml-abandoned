@@ -16,10 +16,11 @@
 
 import structure __pervasive                       from "Pervasive"
 import __primitive
-       datatype bool and order and option and list from "ToplevelTypes"
+       datatype bool and order and option and list
+       and int                                     from "ToplevelTypes"
 import __primitive
-       infix 4 = <> < infixr 5 :: @ infix 6 + -
-       val op = and op <> and op <
+       infix 4 = <> < > infixr 5 :: @ infix 6 + -
+       val op = and op <> and op < and op >
        val op + and op -                           from "ToplevelValues"
 import __primitive structure General               from "General"
 import __primitive structure Bool                  from "Bool"

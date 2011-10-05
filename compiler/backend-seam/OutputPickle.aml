@@ -203,6 +203,13 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputString (context, string);
 	     outputTuple (context, 3))
 
+	fun outputNamedCoord (context, (string, line, column, name)) =
+	    (outputString (context, name);
+	     outputInt (context, column);
+	     outputInt (context, line);
+	     outputString (context, string);
+	     outputTuple (context, 4))
+	
 	fun outputLiveness (context, is) =
 	    outputVector (fn (context, i) => outputInt (context, i))
 			 (context, is)
@@ -521,7 +528,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
   	  | outputIdRef (context, Global i) =
  	    (outputId (context, i);
  	     outputBlock (context, Label.global, 1))
-  	and outputTemplate (context, Template (coord, ntoplevels, 
+  	and outputTemplate (context, Template (namedCoord, ntoplevels, 
 					       localNamesTypOpt,
  					       args, outArityOpt, body,
  					       liveness)) =
@@ -531,9 +538,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputVector outputIdDef (context, args);
 	     outputAnnotation(context, localNamesTypOpt);
  	     outputInt (context, FixedInt.fromInt ntoplevels);
-  	     outputCoord (context, coord);
- 	     outputBlock (context, Label.template, 7))	     
- 	and outputAbstractCode (context, Function (coord, globals, 
+  	     outputNamedCoord (context, namedCoord);
+ 	     outputBlock (context, Label.template, 7))
+ 	and outputAbstractCode (context, Function (namedCoord, globals, 
 						   localNamesTypOpt,
  						   args, outArityOpt, body,
  						   liveness)) =
@@ -543,7 +550,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputVector outputIdDef (context, args);
 	     outputAnnotation(context, localNamesTypOpt);
  	     outputVector (outputOption outputValue) (context, globals);
- 	     outputCoord (context, coord);
+ 	     outputNamedCoord (context, namedCoord);
  	     outputBlock (context, Label.function, 7))
   
 	and outputEntryPoint (context, ConEntry (typ, idRef, args)) =

@@ -159,7 +159,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   SizeWorker *SizeWorker::self;
@@ -246,8 +246,8 @@ namespace {
     return "SizeWorker";
   }
 
-  void SizeWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "SizeWorker Task\n");
+  void SizeWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+    out << "[UnsafeStore::Size]" << std::endl;
   }
 
 
@@ -268,7 +268,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   ReturnSizeWorker *ReturnSizeWorker::self;
@@ -299,8 +299,8 @@ namespace {
     return "ReturnSizeWorker";
   }
 
-  void ReturnSizeWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "ReturnSizeWorker Task\n");
+  void ReturnSizeWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+    out << "[UnsafeStore::ReturnSize]" << std::endl;
   }
 
   class StoreSize {

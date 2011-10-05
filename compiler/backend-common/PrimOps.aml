@@ -78,6 +78,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("CharVector.tabulate", SOME (Tuple 2));
 		ins ("CharVector.toList", SOME Unary);
 		ins ("Exn.catch", SOME (Tuple 2));
+		ins ("Exn.trace", SOME (Tuple 2));
 		ins ("Exn.dumpTrace", SOME (Tuple 2));
 		ins ("Exn.name", SOME Unary);
 		ins ("Exn.reraise", SOME (Tuple 2));

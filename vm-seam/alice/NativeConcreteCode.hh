@@ -66,7 +66,7 @@ public:
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
 class AliceDll NativeConcreteCode : private ConcreteCode {

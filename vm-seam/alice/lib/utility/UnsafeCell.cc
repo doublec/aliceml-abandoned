@@ -194,7 +194,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class CellMapInsertFrame: private StackFrame {
@@ -243,8 +243,8 @@ namespace {
     return "CellMapInsertWorker";
   }
 
-  void CellMapInsertWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "UnsafeCell.Map.insertWithi\n");
+  void CellMapInsertWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+    out << "UnsafeCell.Map.insertWithi" << std::endl;
   }
 
   //
@@ -268,7 +268,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class CellMapIteratorFrame: private StackFrame {
@@ -357,7 +357,7 @@ namespace {
     return "CellMapIteratorWorker";
   }
 
-  void CellMapIteratorWorker::DumpFrame(StackFrame *sFrame) {
+  void CellMapIteratorWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     CellMapIteratorFrame *frame = reinterpret_cast<CellMapIteratorFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
     const char *name;
@@ -369,7 +369,7 @@ namespace {
     default:
       Error("unknown CellMapIteratorWorker operation\n");
     }
-    std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
+    out << "UnsafeCell.Map." << name << std::endl;
   }
 
   //
@@ -393,7 +393,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class CellMapFindFrame: private StackFrame {
@@ -501,7 +501,7 @@ namespace {
     return "CellMapFindWorker";
   }
 
-  void CellMapFindWorker::DumpFrame(StackFrame *sFrame) {
+  void CellMapFindWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     CellMapFindFrame *frame = reinterpret_cast<CellMapFindFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
     const char *name;
@@ -511,7 +511,7 @@ namespace {
     default:
       Error("unknown CellMapFindWorker operation\n");
     }
-    std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
+    out << "UnsafeCell.Map." << name << std::endl;
   }
 
 }

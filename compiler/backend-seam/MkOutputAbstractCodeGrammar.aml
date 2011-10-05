@@ -1,0 +1,344 @@
+(*
+ * Author:
+ *   Gareth Smith <garethdanielsmith@gmail.com>
+ *)
+
+import signature ABSTRACT_CODE_GRAMMAR        from "ABSTRACT_CODE_GRAMMAR-sig"
+import signature OUTPUT_ABSTRACT_CODE_GRAMMAR from "OUTPUT_ABSTRACT_CODE_GRAMMAR-sig"
+import structure Url                          from "../../lib/system/Url"
+import structure Stamp                        from "../common/Stamp"
+import structure Label                        from "../../lib/rtt/Label"
+import structure Atom                         from "../../lib/data/Atom"
+import structure StampSet                     from "../common/StampSet"
+
+
+functor MkOutputAbstractCodeGrammar (AbstractCodeGrammar : ABSTRACT_CODE_GRAMMAR) : OUTPUT_ABSTRACT_CODE_GRAMMAR =
+struct
+
+    structure AbstractCodeGrammar = AbstractCodeGrammar
+    
+    open AbstractCodeGrammar
+
+
+    fun indent s =
+        let
+            fun splitLines s = String.tokens (fn c => c = #"\n") s
+            fun joinLines s  = String.concatWith "" s
+            fun indentLine s = "    " ^ s ^ "\n"
+        in
+            (joinLines o (map indentLine) o splitLines) s
+        end
+    
+
+    fun vector f xs =
+	"#[" ^ String.concatWith ", " (Vector.toList (Vector.map f xs)) ^ "]"
+    
+    
+    fun bool x = Bool.toString x
+    
+    
+    fun int x = Int.toString x
+    
+    
+    fun ints xs = vector int xs
+    
+    
+    fun string s =
+	"\"" ^ String.toString s ^ "\""
+ 
+    
+    fun import' (i, url) =
+	"import " ^ int i ^ " from " ^ string (Url.toString url) ^ "\n"
+    
+    
+    fun func kind funCoord globalAnnots annotation args outArity body =
+    let
+    
+        val shared = StampSet.set ()
+
+
+        fun localAnnot i = case annotation of
+            Simple _      => NONE
+          | Debug (is, _) => Vector.sub (is, i)
+
+
+        fun localName i = case localAnnot i of
+            NONE         => ""
+          | SOME ("", _) => ""
+          | SOME (s, _)  => "[" ^ s ^ "]"
+
+
+        fun globalAnnot i =
+            Vector.sub (globalAnnots, i)
+
+
+        fun globalName i = case globalAnnot i of
+            NONE         => ""
+          | SOME ("", _) => ""
+          | SOME (s, _)  => "[" ^ s ^ "]"
+
+
+        fun idRefAnnot ir = case ir of
+            Immediate _    => NONE
+          | Local i        => localAnnot i
+          | LastUseLocal i => localAnnot i
+          | Global       i => globalAnnot i
+       
+       
+        fun local' i =
+            int i ^ localName i
+
+
+        fun locals is =
+            vector local' is
+
+
+        fun tests desc cont t =
+            let
+                fun branch b =
+                    "  " ^ desc b ^ " =>\n" ^
+                    indent (cont b)
+            in
+                String.concatWith "\n" (Vector.toList (Vector.map branch t))
+            end
+
+        
+        fun instr ins = case ins of
+            Entry (c, ep, ins')     => "Entry " ^ coord c ^ " " ^ entryPoint ep ^ "\n" ^ instr ins'
+          | Exit  (c, ep, id, ins') => "Exit " ^ coord c ^ " (" ^ idRef id ^ ") <- " ^ exitPoint ep ^ "\n" ^ instr ins'
+          | Kill (ids, ins')        => "Kill " ^ locals ids ^ "\n" ^ instr ins'
+          | PutVar (id, ir, ins')   => "PutVar " ^ local' id ^ " <- " ^ idRef ir ^ "\n" ^ instr ins'
+          | PutNew (id, s, ins')    => "PutNew " ^ local' id ^ " <- " ^ string s ^ "\n" ^ instr ins'
+          | PutTag (id, nLabs, lab, args, ins')
+                                    => "PutTag " ^ local' id ^ " <- " ^ int lab ^ "/" ^ int nLabs ^ " " ^ idRefs args ^ "\n" ^ instr ins'
+          | PutCon (id, con, args, ins')
+                                    => "PutCon " ^ local' id ^ " <- (" ^ idRef con ^ ") " ^ idRefs args ^ "\n" ^ instr ins'
+          | PutRef (id, x, ins')    => "PutRef " ^ local' id ^ " <- " ^ idRef x ^ "\n" ^ instr ins'
+          | PutTup (id, args, ins') => "PutTup " ^ local' id ^ " <- " ^ idRefs args ^ "\n" ^ instr ins'
+          | PutPolyRec (id, labs, vals, ins')
+                                    => "PutPolyRec " ^ local' id ^ " <- " ^ polyRec labs vals ^ "\n" ^ instr ins'
+          | PutVec (id, args, ins') => "PutVec " ^ local' id ^ " <- " ^ idRefs args ^ "\n" ^ instr ins'
+          | Close (id, args, tpl, ins')
+                                    => let val globalAnnots' = Vector.map idRefAnnot args
+                                       in "Close " ^ local' id ^ " <- " ^ idRefs args ^ "\n  " ^ template globalAnnots' tpl ^ instr ins' end
+          | Specialize (id, args, tpl, ins')
+                                    => let val globalAnnots' = Vector.map idRefAnnot args
+                                       in "Specialize " ^ local' id ^ " <- " ^ idRefs args ^ "\n  " ^ template globalAnnots' tpl ^ instr ins' end
+          | AppPrim (f, args, cont) => "AppPrim " ^
+                                       (case cont
+                                        of NONE => value f ^ " " ^ idRefs args ^ " (tail call)\n"
+                                         | SOME (id, ins') => idDef id ^ " <- " ^ value f ^ " " ^ idRefs args ^ "\n" ^ instr ins')
+          | AppVar (f, args, b, cont)
+                                    => "AppVar " ^
+                                       (case cont
+                                        of NONE => "(" ^ idRef f ^ ") " ^ idRefs args ^ " (tail call)\n"
+                                        | SOME (ids, ins') => idDefs ids ^ " <- (" ^ idRef f ^ ") " ^ idRefs args ^ " " ^ bool b ^ "\n" ^ instr ins')
+          | GetRef (dst, src, ins') => "GetRef " ^ local' dst ^ " <- " ^ idRef src ^ "\n" ^ instr ins'
+          | GetTup (dst, src, ins') => "GetTup " ^ idDefs dst ^ " <- " ^ idRef src ^ "\n" ^ instr ins'
+          | Sel (dst, src, x, ins') => "Sel " ^ int dst ^ " <- #" ^ int (x + 1) ^ " (" ^ idRef src ^ ")\n" ^ instr ins'
+          | LazyPolySel (dst, src, labs, ins')
+                                    => "LazyPolySel " ^ locals dst ^ " <- (" ^ idRef src ^ ") " ^ labels labs ^ "\n" ^ instr ins'
+          | Raise id                => "Raise " ^ idRef id ^ "\n"
+          | Reraise id              => "Reraise " ^ idRef id ^ "\n"
+          | Try (ins', pkg, exn, handler)
+                                    => "Try\n" ^ instr ins' ^
+                                       "(* handler (" ^ idDef pkg ^ ", " ^ idDef exn ^ ") <- (pkg, exn) *)\n" ^ instr handler
+          | EndTry ins'             => "EndTry\n" ^ instr ins'
+          | EndHandle ins'          => "EndHandle\n" ^ instr ins'
+          | IntTest (x, test, ins') => "IntTest " ^ idRef x ^ "\n" ^
+                                       intTests test ^
+                                       else' ins'
+          | CompactIntTest (x, start, branches, ins')
+                                    => "CompactIntTest " ^ idRef x ^ "\n" ^
+                                       intTests (Vector.tabulate (Vector.length branches, fn i => (start + i, Vector.sub (branches, i)))) ^
+                                       else' ins'
+          | RealTest (x, branches, ins')
+                                    => "RealTest " ^ idRef x ^ "\n" ^
+                                       realTests branches ^
+                                       else' ins'
+          | StringTest (x, branches, ins')
+                                    => "StringTest " ^ idRef x ^ "\n" ^
+                                       stringTests branches ^
+                                       else' ins'
+          | TagTest (x, nLabs, nullaryTests, binderTests, ins')
+                                    => "TagTest " ^ idRef x ^ " (" ^ int nLabs ^ " labels)\n" ^
+                                       nullaryTagTests nullaryTests ^
+                                       binderTagTests binderTests ^
+                                       else' ins'
+          | CompactTagTest (x, nLabs, tests, ins')
+                                    => "CompactTagTest " ^ idRef x ^ " (" ^ int nLabs ^ " labels)\n" ^
+                                       compactTagTests tests ^
+                                       (case ins'
+                                        of NONE => ""
+                                        | SOME ins'' => else' ins'')
+          | ConTest (x, nullaryTests, binderTests, ins')
+                                    => "ConTest " ^ idRef x ^ "\n" ^
+                                       nullaryConTests nullaryTests ^
+                                       binderConTests binderTests ^
+                                       else' ins'
+          | VecTest (x, tests, ins')
+                                    => "VecTest " ^ idRef x ^ "\n" ^
+                                       vectorTests tests ^
+                                       else' ins'
+          | Shared (stamp, ins')    => if StampSet.member (shared, stamp) then
+                                           "Shared " ^ Stamp.toString stamp ^ " (go to previous occurence)\n"
+                                       else
+                                          (StampSet.insert (shared, stamp);
+                                           "Shared " ^ Stamp.toString stamp ^ "\n" ^ instr ins')
+          | Return xs               => "Return " ^ idRefs xs ^ "\n"
+      
+    
+        and vectorTests t =
+            tests (idDefs o Pair.fst) (instr o Pair.snd) t
+    
+    
+        and nullaryConTests t =
+            tests (idRef o Pair.fst) (instr o Pair.snd) t
+        
+        
+        and binderConTests t =
+            let
+                fun branch (x, binders, _) =
+                    idRef x ^ " " ^ idDefs binders
+            in
+                tests branch (instr o #3) t
+            end
+    
+    
+        and nullaryTagTests t =
+            tests (int o Pair.fst) (instr o Pair.snd) t
+        
+    
+        and binderTagTests t =
+            let
+                fun branch (x, binders, _) =
+                    int x ^ " " ^ idDefs binders
+            in
+                tests branch (instr o #3) t
+            end
+    
+    
+        and compactTagTests t =
+            let
+                val t =
+                    Vector.mapi
+                    (fn (i, (NONE, ins))   => (int i, ins)
+                      | (i, (SOME b, ins)) => (int i ^ " " ^ idDefs b, ins))
+                    t
+            in
+                tests Pair.fst (instr o Pair.snd) t
+            end
+        
+        
+        and intTests t =
+            tests (FixedInt.toString o Pair.fst) (instr o Pair.snd) t
+        
+    
+        and realTests t =
+            tests (LargeReal.toString o Pair.fst) (instr o Pair.snd) t
+        
+        
+        and stringTests t =
+            tests (string o Pair.fst) (instr o Pair.snd) t
+        
+        
+        and else' ins =
+            "  else\n" ^ indent (instr ins)
+    
+    
+        and idDef id = case id of
+            IdDef i  => int i ^ localName i
+          | WildCard => "_"
+       
+       
+        and idDefs ids = vector idDef ids
+        
+        
+        and idRef ir = case ir of
+            Immediate v     => "Immediate " ^ value v
+          | Local id        => "Local " ^ int id ^ localName id
+          | LastUseLocal id => "LastUseLocal " ^ int id ^ localName id
+          | Global id       => "Global " ^ int id ^ globalName id
+    
+    
+        and idRefs ids = vector idRef ids
+    
+    
+        and polyRec labs vals =
+            let
+                fun field i =
+                    label (Vector.sub (labs, i)) ^ " = " ^ idRef (Vector.sub (vals, i))
+            in
+                "{" ^ String.concatWith ", " (List.tabulate (Vector.length labs, field)) ^ "}"
+            end
+        
+    
+        and label s = Atom.toString s
+       
+        
+        and labels ss = vector label ss
+        
+        
+        and typ _ = "<type>"
+    
+    
+        and coord _ = "<coord>"
+        
+    
+        and value _ = "<val>"    
+        
+        
+        and entryPoint ep = case ep of
+            ConEntry (t, id, ids) => "Con(" ^ typ t ^ ", " ^ idRef id ^ ", " ^ idRefs ids ^ ")"
+          | SelEntry (x, t, id)   => "Sel(" ^ int x ^ ", " ^ typ t ^ ", " ^ idRef id ^ ")"
+          | StrictEntry (t, id)   => "Strict(" ^ typ t ^ ", " ^ idRef id ^ ")"
+          | AppEntry (t, id, ids) => "App(" ^ typ t ^ ", " ^ idRef id ^ ", " ^ idRefs ids ^ ")"
+          | CondEntry (t, id)     => "Cond(" ^ typ t ^ ", " ^ idRef id ^ ")"
+          | RaiseEntry id         => "Raise(" ^ idRef id ^ ")"
+          | HandleEntry id        => "Handle(" ^ idRef id ^ ")"
+          | SpawnEntry            => "Spawn"
+    
+    
+        and exitPoint ep = case ep of
+           ConExit      => "Con"
+          | SelExit t    => "Sel " ^ typ t
+          | StrictExit   => "Strict"
+          | AppExit      => "App"
+          | CondExit t   => "Cond " ^ typ t
+          | RaiseExit t  => "Raise " ^ typ t
+          | HandleExit t => "Handle " ^ typ t
+          | SpawnExit t  => "Spawn " ^ typ t
+    
+    
+        val outArity' = case outArity
+			of NONE => ""
+			 | SOME n => " : " ^ int n
+	
+
+        val (_, _, _, srcName) = funCoord
+        val srcName' = if srcName = "" then "" else " " ^ srcName
+
+
+        val nLocals = case annotation
+		      of Debug (vs, _) => Vector.length vs
+		       | Simple n      => n
+    in
+	kind ^ srcName' ^ " " ^ idDefs args ^ outArity' ^ " => (* " ^ int nLocals ^ " locals *)\n" ^
+	indent (instr body)
+    end
+
+
+    and template globalAnnots (Template (coord, _, annotation, args, outArity, ins, _)) =
+       func "Template" coord globalAnnots annotation args outArity ins
+
+
+    and abstractCode globalAnnots (Function (coord, _, annotation, args, outArity, ins, _)) =
+       func "Function" coord globalAnnots annotation args outArity ins
+
+
+    fun componentToString (imports, body) =
+        "(* Alice Abstract Code *)\n" ^
+        String.concatWith "" (List.mapi import' (Vector.toList imports)) ^
+        abstractCode #[] body
+
+end

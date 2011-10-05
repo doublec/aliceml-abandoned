@@ -114,6 +114,8 @@ namespace {
   void InlineAnalyser::Count(TagVal *instr) {
     Assert(instr != INVALID_POINTER);
     switch(AbstractCode::GetInstr(instr)) {
+    case AbstractCode::Entry:
+    case AbstractCode::Exit:
     case AbstractCode::Kill:
     case AbstractCode::EndHandle:
       break;
@@ -350,7 +352,7 @@ namespace {
       liveness2[j+1] = startPoint + offsetTable[startPoint];
       liveness2[j+2] = endPoint + offsetTable[endPoint];
     }
-    // merge the adjusted the liveness arrays
+    // merge the adjusted liveness arrays
     Vector *newLiveness = Vector::New(l1Length + l2Length);
     u_int i1 = 0, i2 = 0, i3 = 0;
     while( i1 < l1Length && i2 < l2Length ) {
@@ -455,6 +457,8 @@ namespace {
 	  AbstractCode::instr instrOp = AbstractCode::GetInstr(instr);
 	  analyser->Count(instr);
 	  switch(instrOp) {
+          case AbstractCode::Entry:
+          case AbstractCode::Exit:
 	  case AbstractCode::EndTry:
 	  case AbstractCode::EndHandle:
 	  case AbstractCode::Kill:

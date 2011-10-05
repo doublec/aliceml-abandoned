@@ -35,7 +35,7 @@ namespace {
     virtual u_int GetInArity(ConcreteCode *concreteCode);
     virtual u_int GetOutArity(ConcreteCode *concreteCode);
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 
     virtual void PushCall(Closure *closure);
   };
@@ -96,9 +96,8 @@ namespace {
     return "RequestInterpreter";
   }
 
-  void RequestInterpreter::DumpFrame(StackFrame *) {
-    //--** to be done: insert useful stuff
-    return;
+  void RequestInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+    out << "[UnsafeValue::Request]" << std::endl;
   }
 
   void RequestInterpreter::PushCall(Closure *closure) {

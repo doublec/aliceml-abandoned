@@ -302,7 +302,7 @@
 	| ABSTYPE | AND | ANDALSO | AS | CASE | DO | DATATYPE | ELSE
 	| END | EXCEPTION | FN | FUN | HANDLE | IF | IN | INFIX
 	| INFIXR | LET | LOCAL | NONFIX | OF | OP | OPEN | ORELSE
-	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
+	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE | FOR
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
 
@@ -753,6 +753,8 @@
 	| LBRACK exp_COMMA_list0 RBRACK
 			( LISTAtExp(I(LBRACKleft,RBRACKright),
 				    exp_COMMA_list0 ))
+	| LBRACK exp FOR pat IN exp RBRACK
+	                ( LISTCOMPAtExp(I(LBRACKleft, LBRACKright), exp1, pat, exp2) )
 	| HASHBRACK exp_COMMA_list0 RBRACK
 			( VECTORAtExp(I(HASHBRACKleft,RBRACKright),
 				    exp_COMMA_list0 ))
@@ -793,7 +795,6 @@
      localann_IN_opt:
 	  localann IN			( SOME localann )
 	| (*empty*)			( NONE )
-
 
   exprow:
 	  lab EQUALS exp COMMA_exprow_opt

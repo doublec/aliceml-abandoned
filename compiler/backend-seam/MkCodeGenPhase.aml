@@ -14,6 +14,7 @@ import structure Atom                  from "../../lib/data/Atom"
 import structure MkHashImpSet          from "../../lib/data/MkHashImpSet"
 import structure Url                   from "../../lib/system/Url"
 import structure OS                    from "../../lib/system/OS"
+import structure TextIO                from "../../lib/system/TextIO"
 import structure Name                  from "../../lib/rtt/Name"
 import structure Label                 from "../../lib/rtt/Label"
 import structure Type                  from "../../lib/rtt/Type"
@@ -28,6 +29,7 @@ import structure Arity                 from "../backend-common/Arity"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
 import structure IntermediateAux       from "../backend-common/IntermediateAux"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+import structure MkOutputAbstractCodeGrammar from "MkOutputAbstractCodeGrammar"
 import structure MkCodeGenContext      from "MkCodeGenContext"
 import structure MkEnvironment         from "MkEnvironment"
 import structure MkLiveness            from "MkLiveness"
@@ -44,6 +46,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 
 	structure Environment = MkEnvironment(AbstractCodeGrammar)
 	structure Liveness = MkLiveness(AbstractCodeGrammar)
+	structure OutputAbstractCodeGrammar = MkOutputAbstractCodeGrammar(AbstractCodeGrammar)
 
 	structure IdSet = MkHashImpSet(Int)
 
@@ -673,7 +676,8 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 			  | idRef => idRef)
 			(translateIdRefs (Vector.map IdRef globalIds, env))
 		val ((i, j), _) = region
-		val coord = (filename env, i, j)
+		val name = foldl (fn (PrintName n, _) => n | (_, s) => s) "" flags
+		val namedCoord = (filename env, i, j, name)
 		val instr =
 		    case Vector.fromList (IdSet.fold op:: nil kills) of
 			#[] => instr
@@ -686,7 +690,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		      | SOME (Arity.Product labels) =>
 			    SOME (Vector.length labels)
 		val template =
-		    O.Template (coord, Vector.length globalIdRefs,
+		    O.Template (namedCoord, Vector.length globalIdRefs,
 				if (!Switches.CodeGen.debugMode)
 				    then O.Debug(localNames, typ)
 				else O.Simple(Vector.length localNames), 
@@ -882,7 +886,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val typ_arg = Type.apply (PervasiveType.typ_vec, typ_mod)
 		val typ = Type.arrow (typ_arg, typ_mod)
 		val abstractCode =
-		    O.Function ((filename, 0, 0), #[], 
+		    O.Function ((filename, 0, 0, ""), #[], 
 				if (!Switches.CodeGen.debugMode) 
 				    then O.Debug(localNames, typ)
 				else O.Simple (Vector.length localNames),
@@ -891,6 +895,9 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		    Vector.map (fn (label, Id (_, stamp, _)) => (stamp, label))
 			       exports
 	    in
+	        (* TODO: should this be elsewhere? *)
+	        if not (!Switches.Debug.dumpTarget) then () else
+		     TextIO.print (OutputAbstractCodeGrammar.componentToString (Vector.map #3 imports, abstractCode));
  		(context',
  		 (* This is an instance of the component type
  		  * defined in lib/system/Component.aml:

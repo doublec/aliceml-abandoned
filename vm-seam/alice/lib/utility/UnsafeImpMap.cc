@@ -204,7 +204,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class ImpMapInsertFrame: private StackFrame {
@@ -253,8 +253,8 @@ namespace {
     return "ImpMapInsertWorker";
   }
 
-  void ImpMapInsertWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "UnsafeImpMap.insertWithi\n");
+  void ImpMapInsertWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+    out << "UnsafeImpMap.insertWithi" << std::endl;
   }
 
   //
@@ -278,7 +278,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class ImpMapIteratorFrame: private StackFrame {
@@ -367,7 +367,7 @@ namespace {
     return "ImpMapIteratorWorker";
   }
 
-  void ImpMapIteratorWorker::DumpFrame(StackFrame *sFrame) {
+  void ImpMapIteratorWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     ImpMapIteratorFrame *frame = reinterpret_cast<ImpMapIteratorFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
     const char *name;
@@ -379,7 +379,7 @@ namespace {
     default:
       Error("unknown ImpMapIteratorWorker operation\n");
     }
-    std::fprintf(stderr, "UnsafeImpMap.%s\n", name);
+    out << "UnsafeImpMap." << name << std::endl;
   }
 
   //
@@ -403,7 +403,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   class ImpMapFindFrame: private StackFrame {
@@ -511,7 +511,7 @@ namespace {
     return "ImpMapFindWorker";
   }
 
-  void ImpMapFindWorker::DumpFrame(StackFrame *sFrame) {
+  void ImpMapFindWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     ImpMapFindFrame *frame = reinterpret_cast<ImpMapFindFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
     const char *name;
@@ -521,7 +521,7 @@ namespace {
     default:
       Error("unknown ImpMapFindWorker operation\n");
     }
-    std::fprintf(stderr, "UnsafeImpMap.%s\n", name);
+    out << "UnsafeImpMap." << name << std::endl;
   }
 
 }

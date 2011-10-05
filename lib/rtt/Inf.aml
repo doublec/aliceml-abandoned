@@ -441,7 +441,7 @@ struct
 	    r := SOME tab;
 	    tab
 	end
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 
     fun missing(FIX',l) = MissingFix l
       | missing(VAL',l) = MissingVal l
@@ -595,7 +595,7 @@ struct
 							      narrowMod(m,j3));
 				       realiseKind(rea,j4)
 				   end
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 
     and asDepKind k =
 	case content k
@@ -815,7 +815,7 @@ struct
 		val rea = match(#2 m,j1)
 		val _   = PathMap.insertDisjoint(#mod_rea rea,
 						 p, narrowMod(m,j1))
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 		val j2' = realiseInst(rea,j2)
 	    in
 		case jo of NONE     => j2'
@@ -1529,7 +1529,7 @@ TextIO.print "\n";
 	    then buildOld(c, j)
 	    else buildNew(c, j, toInf(p',j1',j2'))
 	end
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 
     and buildPair(c, j, toInf, j1,j2) =
 	let
@@ -1593,7 +1593,7 @@ TextIO.print "\n";
       | buildItem(c, change, item as VAL(l,t)) =
 	let
 	    val t' = Type.realiseCont(#typ c, #typ_rea(#rea c), t)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 (*DEBUG
 val _ = if l = Label.fromString "new" then (
 TextIO.print "Inf.buildItem: \"new\"\n";
@@ -1623,7 +1623,7 @@ else ()
 	let
 	    val p' = buildPath(c,p)
 	    val k' = Type.realiseKindCont(#typ c, #typ_rea(#rea c), k)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 	in
 	    if Type.sameKind(k,k') andalso Path.equal(p,p') then item else
 	    (
@@ -1637,7 +1637,7 @@ PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
 *)
 ())
-(*DEBUG*)handle e => raise e;
+(*DEBUG handle e => raise e*);
 		change := true; TYP(p',k')
 	    )
 	end
@@ -1658,7 +1658,7 @@ PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
 *)
 ())
-(*DEBUG*)handle e => raise e;
+(*DEBUG handle e => raise e*);
 		change := true; MOD(p',j')
 	    )
 	end
@@ -1679,7 +1679,7 @@ PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
 *)
 ())
-(*DEBUG*)handle e => raise e;
+(*DEBUGhandle e => raise e*);
 		change := true; INF(p',k')
 	    )
 	end
@@ -2144,7 +2144,7 @@ TextIO.print "Inf.match done.\n")
 		    handle Mismatch m => raise Mismatch(MismatchDom m);
 		    PathMap.insertDisjoint(#mod_rea rea', p1,
 					   mod(p2, narrow(j21,j11)))
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 		    match'(mt,rea',j12,j22)
 		    handle Mismatch m => raise Mismatch(MismatchRan m)
@@ -2158,7 +2158,7 @@ TextIO.print "Inf.match done.\n")
 		    handle Mismatch m => raise Mismatch(MismatchParam m);
 		    PathMap.insertDisjoint(#mod_rea rea', p1,
 					   mod(p2, narrow(j21,j11)))
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 		    equal'(mt',rea',j12,j22)
 		    handle Mismatch m => raise Mismatch(MismatchBody m)
@@ -2218,7 +2218,7 @@ PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(Type.asSingKind k1), 80);
 TextIO.print "\n"
 )
 *)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 		)
 	      | (MOD(p1,j1), MOD(p2,j2)) =>
 		(match'(mt,rea,j1,j2)
@@ -2234,7 +2234,7 @@ TextIO.print(inf j1);
 TextIO.print "\n"
 )
 *)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 		)
 	      | (INF(p1,k1), INF(p2,k2)) =>
 		(matchKind'(mt,rea,k1,k2)
@@ -2250,7 +2250,7 @@ TextIO.print(inf(asSingKind k1));
 TextIO.print "\n"
 )
 *)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 		)
 	      | _ => assert false
 	end
@@ -2273,7 +2273,7 @@ TextIO.print "\n"
 		handle Mismatch m => raise KindMismatch(MismatchKindDom m);
 		PathMap.insertDisjoint(#mod_rea rea', p1,
 				       mod(p2, narrow(j2,j1)))
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 		matchKind'(mt',rea',k11,k21)
 		handle KindMismatch m => raise KindMismatch(MismatchKindRan m)
@@ -2332,7 +2332,7 @@ infimum'({inf  = Map.map(),
 before
 TextIO.print "Inf.infimum done.\n")
 *)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 
     and infimum'(c,j1,j2) =
 	if Cell.equal(j1,j2) then j1 else
@@ -2367,31 +2367,31 @@ TextIO.print "Inf.infimum done.\n")
 	  | (THAT m1, THAT m2) =>
 	    let
 		val m = infimumMod(c,m1,m2)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 	    in
 		sing' m
 	    end
 	  | (THAT(p1,j1'), _) =>
 	    (case PathMap.lookup(#mod_rea(#rea c), p1)
 	     of SOME m => (infimum'(c, sing' m, j2)
-(*DEBUG*)handle e => raise e)
+(*DEBUG handle e => raise e *))
 	      | NONE   =>
 	    let
 		val j' = infimum'(instContext(c, NoInst LeftSingleton), j1', j2)
 		val m  = mod(p1,j')
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 	    in
 		sing' m
 	    end)
 	  | (_, THAT(p2,j2')) =>
 	    (case PathMap.lookup(#mod_rea(#rea c), p2)
 	     of SOME m => (infimum'(c, j1, sing' m)
-(*DEBUG*)handle e => raise e)
+(*DEBUG handle e => raise e*))
 	      | NONE   =>
 	    let
 		val j' = infimum'(instContext(c, NoInst LeftSingleton), j2', j1)
 		val m  = mod(p2,j')
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 	    in
 		sing' m
 	    end)
@@ -2399,7 +2399,7 @@ TextIO.print "Inf.infimum done.\n")
 	    (* s1 /\ s2 = ... *)
 	    let
 		val s = infimumSig(c,s1,s2)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 	    in
 		sign' s
 	    end
@@ -2461,17 +2461,17 @@ TextIO.print "Inf.infimum done.\n")
     and infimumMod(c, m1 as (p1,j1), m2 as (p2,j2)) =
 	case PathMap.lookup(#mod_rea(#rea c), p1)
 	 of SOME m3 => (infimumMod(c,m3,m2)
-(*DEBUG*)handle e => raise e)
+(*DEBUG handle e => raise e*))
 	  | NONE =>
 	case PathMap.lookup(#mod_rea(#rea c), p2)
 	 of SOME m3 => (infimumMod(c,m1,m3)
-(*DEBUG*)handle e => raise e)
+(*DEBUG handle e => raise e*))
 	  | NONE =>
 	if not(Path.equal(p1,p2))
 	then raise Mismatch(IncompatibleMod(p1,p2)) else
 	let
 	    val j = infimum'(instContext(c, NoInst BothSingleton), j1,j2)
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 	in
 	    mod(p1,j)
 	end
@@ -2577,7 +2577,7 @@ TextIO.print " -> ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
 *)())
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 	    if Type.isSingKind k2 then ()
 	    else (PathMap.insertDisjoint(#typ_rea(#rea c), p2, t');
@@ -2588,7 +2588,7 @@ TextIO.print " -> ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
 *)())
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 	    TYP(p',k')
 	end
@@ -2609,7 +2609,7 @@ TextIO.print " -> ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
 *)())
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 	    if isSing j2 then () else
 	    (PathMap.insertDisjoint(#mod_rea(#rea c), p2, m');
@@ -2620,7 +2620,7 @@ TextIO.print " -> ";
 PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p', 80);
 TextIO.print "\n";
 *)())
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 	    MOD(p',j')
 	end
@@ -2633,11 +2633,11 @@ TextIO.print "\n";
 	in
 	    if isSingKind k1 then ()
 	    else PathMap.insertDisjoint(#inf_rea(#rea c), p1, j')
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 	    if isSingKind k2 then ()
 	    else PathMap.insertDisjoint(#inf_rea(#rea c), p2, j')
-(*DEBUG*)handle e => raise e
+(*DEBUG handle e => raise e *)
 ;
 	    INF(p',k')
 	end

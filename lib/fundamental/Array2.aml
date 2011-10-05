@@ -157,7 +157,7 @@ local
 			c := !c + 1)
 	       end
 
-	   fun for (low, upp, f) = let val c = ref low 
+	   fun doFor (low, upp, f) = let val c = ref low 
 				   in
 				       while !c <= upp do
 					   (f (!c);
@@ -173,12 +173,12 @@ local
 		       val res = { values = v, rows = rows, cols = cols }
 		   in
 		       case trv of 
-			   RowMajor => (for (1, cols - 1, fn c => update (res, 0, c,
+			   RowMajor => (doFor (1, cols - 1, fn c => update (res, 0, c,
 									 f (0, c)));
 					trav (RowMajor, 1, 0, rows - 1, cols - 1,
 					      fn (r, c) => update (res, r, c, 
 								   f (r, c))))
-			 | ColMajor => (for (1, rows - 1, fn r => update (res, r, 0,
+			 | ColMajor => (doFor (1, rows - 1, fn r => update (res, r, 0,
 									  f (r, 0)));
 					trav (ColMajor, 0, 1, rows - 1, cols - 1,
 					      fn (r, c) => update (res, r, c,

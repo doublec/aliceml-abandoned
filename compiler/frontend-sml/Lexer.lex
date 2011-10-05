@@ -342,6 +342,7 @@
   <INITIAL>"fct"       	=> ( token(FCT,       yypos, yytext) );
   <INITIAL>"finally"	=> ( token(FINALLY,   yypos, yytext) );
   <INITIAL>"fn"		=> ( token(FN,        yypos, yytext) );
+  <INITIAL>"for"        => ( token(FOR,       yypos, yytext) );
   <INITIAL>"from"	=> ( token(FROM,      yypos, yytext) );
   <INITIAL>"fun"	=> ( token(FUN,       yypos, yytext) );
   <INITIAL>"functor"	=> ( token(FUNCTOR,   yypos, yytext) );

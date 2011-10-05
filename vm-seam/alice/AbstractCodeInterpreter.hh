@@ -32,7 +32,8 @@ public:
 
   static void Init();
   static String *MakeProfileName(TagVal *abstractCode);
-  static word GetCloseConcreteCode(word parentConcreteCode, TagVal *closeInstr);
+  static void DumpAliceFrame(word funCoord, bool handler, word coord, bool inlined = false, std::ostream& out = std::cerr);
+  static word GetCloseConcreteCode(word parentConcreteCode, TagVal *closeInstr);;
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
@@ -44,7 +45,7 @@ public:
   virtual void PushCall(Closure *closure);
   void PushCall_Internal(AliceConcreteCode *concreteCode, Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(StackFrame *sFrame);
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 
 #if PROFILE
   virtual word GetProfileKey(StackFrame *frame);

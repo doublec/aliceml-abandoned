@@ -17,6 +17,7 @@
 #include <cstdio>
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 #include "alice/NativeConcreteCode.hh"
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/NativeCodeJitter.hh"
@@ -160,7 +161,7 @@ const char *NativeCodeInterpreter::Identify() {
   return "NativeCodeInterpreter";
 }
 
-void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame) {
+void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   NativeCodeFrame *codeFrame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   const char *frameType;
@@ -173,13 +174,8 @@ void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame) {
   Transform *transform =
     static_cast<Transform *>(concreteCode->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
-  String *name         = String::FromWord(coord->Sel(0));
-  std::fprintf(stderr, //"Alice native %s %.*s, line %d, column %d\n",
-	       "%.*s:%d.%d\n",
-	       /*frameType,*/ static_cast<int>(name->GetSize()), name->GetValue(),
-	       Store::WordToInt(coord->Sel(1)),
-	       Store::WordToInt(coord->Sel(2)));
+  
+  AbstractCodeInterpreter::DumpAliceFrame(abstractCode->Sel(0), false, Store::IntToWord(0), out);
 }
 
 #if PROFILE

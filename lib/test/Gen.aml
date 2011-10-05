@@ -23,11 +23,11 @@ struct
     val randomize = Random.randomize
     
     fun try n gen test =
-	    let fun for i =
-		    if i < n then (test (gen i); for (i + 1))
+	    let fun doFor i =
+		    if i < n then (test (gen i); doFor (i + 1))
 		    else ()
 	    in
-		for 0 handle Exhausted => ()
+		doFor 0 handle Exhausted => ()
 	    end
 
     (* Generators / Combinators *)

@@ -112,7 +112,7 @@ namespace {
     virtual u_int GetInArity(ConcreteCode *concreteCode);
     virtual u_int GetOutArity(ConcreteCode *concreteCode);
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   SignalTranslationInterpreter *SignalTranslationInterpreter::self;
@@ -171,8 +171,8 @@ namespace {
     return "SignalTranslationInterpreter";
   }
 
-  void SignalTranslationInterpreter::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "Alice Signal Translation\n");
+  void SignalTranslationInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
+    out << "[UnsafeSignal::SignalTranslation]" << std::endl;
   }
   
 }

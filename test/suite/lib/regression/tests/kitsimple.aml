@@ -182,7 +182,7 @@ functor Simple(val grid_max: int val step_count: int) (* : BMARK *) =
     fun sum_list [] = raise SumList
       | sum_list (l:real list) = fold (op +) l 0.0
 
-fun for {fro=start:int,step=delta:int, to=endd:int} body =
+fun doFor {fro=start:int,step=delta:int, to=endd:int} body =
     if delta>0 andalso endd>=start then 
 	let fun f x = if x > endd then () else (body x; f(x+delta))
 	in f start
@@ -203,9 +203,9 @@ fun sub2((A,((lb1:int,ub1:int),(lb2:int,ub2:int))),(k,l)) =
 fun update2((A,((lb1,_),(lb2,_))),(k,l), v) = update22(A,(k-lb1,l-lb2),v)
 fun bounds2(_,b) = b
 fun printarray2 (A as (M:real array2,((l1,u1),(l2,u2)))) =
-    for {fro=l1,step=1,to=u1} (fn i =>
+    doFor {fro=l1,step=1,to=u1} (fn i =>
         (concatResult "[";
-	 for {fro=l2,step=1,to=u2-1} (fn j => 
+	 doFor {fro=l2,step=1,to=u2-1} (fn j => 
 	      concatResult ( (* makestring(sub2(A,(i,j))) ^ *) ", "));
 	 concatResult ( (* makestring (sub2(A,(i,u2))) ^ *) "]\n")))
 fun array1((l,u),v) = (array(u-l+1,v),(l,u))
@@ -250,23 +250,23 @@ val  zone_corner_southwest = west
 val ((kmin,kmax),(lmin,lmax)) 	= grid_size
 val dimension_all_nodes   	= ((kmin-1,kmax+1),(lmin-1,lmax+1))
 fun for_all_nodes f =
-    for {fro=kmin-1, step=1, to=kmax+1} (fn k =>
-       for {fro=lmin-1, step=1, to=lmax+1} (fn l => f k l))
+    doFor {fro=kmin-1, step=1, to=kmax+1} (fn k =>
+       doFor {fro=lmin-1, step=1, to=lmax+1} (fn l => f k l))
 
 val dimension_interior_nodes  	= ((kmin,kmax),(lmin,lmax))
 fun for_interior_nodes f =
-    for {fro=kmin, step=1, to=kmax} (fn k =>
-       for {fro=lmin, step=1, to=lmax} (fn l => f k l))
+    doFor {fro=kmin, step=1, to=kmax} (fn k =>
+       doFor {fro=lmin, step=1, to=lmax} (fn l => f k l))
 
 val dimension_all_zones  	= ((kmin,kmax+1),(lmin,lmax+1))
 fun for_all_zones f =
-    for {fro=kmin, step=1, to=kmax+1} (fn k =>
-       for {fro=lmin, step=1, to=lmax+1} (fn l => f (k,l)))
+    doFor {fro=kmin, step=1, to=kmax+1} (fn k =>
+       doFor {fro=lmin, step=1, to=lmax+1} (fn l => f (k,l)))
 
 val dimension_interior_zones  	= ((kmin+1,kmax),(lmin+1,lmax))
 fun for_interior_zones f =
-    for {fro=kmin+1, step=1, to=kmax} (fn k =>
-       for {fro=lmin+1, step=1, to=lmax} (fn l => f (k,l)))
+    doFor {fro=kmin+1, step=1, to=kmax} (fn k =>
+       doFor {fro=lmin+1, step=1, to=lmax} (fn l => f (k,l)))
 
 fun map_interior_nodes f =
     flatten(map (fn k => (map (fn l => f (k,l)) 
@@ -278,17 +278,17 @@ fun map_interior_zones f =
 	         (fr(kmin+1,kmax)))
 
 fun for_north_ward_interior_zones f =
-    for {fro=kmax, step= ~1, to=kmin+1} (fn k =>
-       for {fro=lmin+1, step=1, to=lmax} (fn l => f (k,l)))
+    doFor {fro=kmax, step= ~1, to=kmin+1} (fn k =>
+       doFor {fro=lmin+1, step=1, to=lmax} (fn l => f (k,l)))
 fun for_west_ward_interior_zones f = 
-    for {fro=kmin+1, step=1, to=kmax} (fn k =>
-       for {fro=lmax, step= ~1, to=lmin+1} (fn l => f (k,l)))
+    doFor {fro=kmin+1, step=1, to=kmax} (fn k =>
+       doFor {fro=lmax, step= ~1, to=lmin+1} (fn l => f (k,l)))
 
 
-fun for_north_zones f = for {fro=lmin, step=1, to=lmax+1} (fn l => f (kmin,l))
-fun for_south_zones f = for {fro=lmin+1, step=1, to=lmax} (fn l => f (kmax+1,l))
-fun for_east_zones f = for {fro=kmin+1, step=1, to=kmax+1}(fn k => f (k,lmax+1))
-fun for_west_zones f = for {fro=kmin+1, step=1, to=kmax+1}(fn k => f (k,lmin))
+fun for_north_zones f = doFor {fro=lmin, step=1, to=lmax+1} (fn l => f (kmin,l))
+fun for_south_zones f = doFor {fro=lmin+1, step=1, to=lmax} (fn l => f (kmax+1,l))
+fun for_east_zones f = doFor {fro=kmin+1, step=1, to=kmax+1}(fn k => f (k,lmax+1))
+fun for_west_zones f = doFor {fro=kmin+1, step=1, to=kmax+1}(fn k => f (k,lmin))
 
 type 'a reflect_dir = int * int -> {size: int * int, value: 'a ref list}
         * ((int * int) * (int * int)) -> 'a
@@ -300,13 +300,13 @@ val reflect_east  : real reflect_dir = reflect east
 val reflect_west  : real reflect_dir = reflect west
 
 fun for_north_nodes f =
-    for {fro=lmin, step=1, to=lmax-1} (fn l => f (kmin-1,l))
+    doFor {fro=lmin, step=1, to=lmax-1} (fn l => f (kmin-1,l))
 fun for_south_nodes f =
-    for {fro=lmin, step=1, to=lmax-1} (fn l => f (kmax+1,l))
+    doFor {fro=lmin, step=1, to=lmax-1} (fn l => f (kmax+1,l))
 fun for_east_nodes f  = 
-    for {fro=kmin, step=1, to=kmax-1} (fn k => f (k,lmax+1))
+    doFor {fro=kmin, step=1, to=kmax-1} (fn k => f (k,lmax+1))
 fun for_west_nodes f =
-    for {fro=kmin, step=1, to=kmax-1} (fn k => f (k,lmin-1))
+    doFor {fro=kmin, step=1, to=kmax-1} (fn k => f (k,lmin-1))
 
 val north_east_corner = (kmin-1,lmax+1)
 val north_west_corner = (kmin-1,lmin-1)
@@ -352,7 +352,7 @@ val extract_energy_tables_from_constants  = (e_poly,2,rho_table,theta_table)
 val extract_pressure_tables_from_constants = (p_poly,2,rho_table,theta_table)
 
 val nbc = let val M = array2(dimension_all_zones, 1)
-	  in for {fro=lmin+1,step=1,to=lmax} (fn j => update2(M,(kmax+1, j),2));
+	  in doFor {fro=lmin+1,step=1,to=lmax} (fn j => update2(M,(kmax+1, j),2));
 	      update2(M,(kmin,lmin),4);
 	      update2(M,(kmin,lmax+1),4);
 	      update2(M,(kmax+1,lmin),4);

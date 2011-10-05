@@ -143,7 +143,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    else if "--no-" ^ name = s then (switch := false; true)
 	    else checkBooleanSwitches (s, rest)
 	  | checkBooleanSwitches (_, nil) = false
-
+        
 	fun parse ("--dependency-file"::file::rest) =
 	    (Language.dependencyFiles := file::(!Language.dependencyFiles);
 	     parse rest)

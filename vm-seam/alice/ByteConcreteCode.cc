@@ -31,7 +31,8 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 						Chunk *code,
 						word immediateEnv,
 						word nbLocals,
-						word inlineInfo) {
+						word inlineInfo,
+						word sourceLocations) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(ByteCodeInterpreter::self, SIZE);
   Chunk *name =
@@ -48,6 +49,7 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Init(OUT_ARITY_POS, outArity);
   concreteCode->Init(INLINE_INFO_POS, inlineInfo);
+  concreteCode->Init(SOURCE_LOCATIONS_POS, sourceLocations);
   concreteCode->Init(CLOSE_CONCRETE_CODES_POS, Map::New(8)->ToWord());
 
   return static_cast<ByteConcreteCode *>(concreteCode);
@@ -59,6 +61,7 @@ void ByteConcreteCode::Convert(HotSpotCode *hsc,
 			       word immediateEnv,
 			       word nbLocals,
 			       word inlineInfo,
+			       word sourceLocations,
 			       Map *closeConcreteCodes) {
   Transform *transform =
     static_cast<Transform *>(hsc->GetAbstractRepresentation());
@@ -75,6 +78,7 @@ void ByteConcreteCode::Convert(HotSpotCode *hsc,
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Replace(OUT_ARITY_POS, outArity);
   concreteCode->Replace(INLINE_INFO_POS, inlineInfo);
+  concreteCode->Replace(SOURCE_LOCATIONS_POS, sourceLocations);
   concreteCode->Replace(CLOSE_CONCRETE_CODES_POS, closeConcreteCodes->ToWord());
 }
 				 
@@ -98,8 +102,8 @@ void ByteConcreteCode::Disassemble(std::FILE *file) {
   Chunk *code = GetByteCode();
   Tuple *imEnv = GetImmediateArgs();
 #ifdef THREADED
-  ByteCode::Disassemble(file, reinterpret_cast<u_int *>(code->GetBase()), code, imEnv);
+  ByteCode::Disassemble(file, reinterpret_cast<u_int *>(code->GetBase()), code, imEnv, GetNLocals());
 #else
-  ByteCode::Disassemble(file,0,code,imEnv);
+  ByteCode::Disassemble(file,0,code,imEnv, GetNLocals());
 #endif
 }

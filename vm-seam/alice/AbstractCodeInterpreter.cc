@@ -128,6 +128,7 @@ word AbstractCodeInterpreter::GetCloseConcreteCode(word parentConcreteCode, TagV
 #if DEBUGGER
 #define SUSPEND() {                                     \
   frame->SetPC(pc);					\
+  frame->SetCoord(coord);				\
   frame->SetFormalArgs(Vector::New(0));			\
   Scheduler::SetNArgs(0);                               \
   return Worker::SUSPEND;                               \
@@ -313,6 +314,42 @@ void AbstractCodeInterpreter::Init() {
   self = new AbstractCodeInterpreter();
 }
 
+
+void AbstractCodeInterpreter::DumpAliceFrame(word funCoordW, bool handler, word coord, bool inlined, std::ostream& out) {
+
+  Tuple *funCoord = Tuple::FromWord(funCoordW);
+  String *name = String::FromWord(funCoord->Sel(3));
+  String *file = String::FromWord(funCoord->Sel(0));
+ 
+  if (handler) {
+    out << "<handler> ";
+  }
+  if (name->GetSize() > 0) {
+    out << name;
+    out << " (";
+  }
+  out << file;
+  
+  //indicate if the line number shown is only as accurate as the function start
+  if (coord == Store::IntToWord(0)) {
+    s_int line = Store::WordToInt(funCoord->Sel(1));
+    out << ", function starting at line " << line;
+  }
+  else {
+    Tuple *posCoord = Tuple::FromWord(coord);
+    out << ", line " << Store::WordToInt(posCoord->Sel(1));
+  }
+  
+  if (name->GetSize() > 0) {
+    out << ")";
+  }
+  if (inlined) {
+    out << " (call was inlined)";
+  }
+  out << std::endl;
+}
+
+
 Transform *
 AbstractCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   return reinterpret_cast<AliceConcreteCode *>(b)->GetAbstractRepresentation();
@@ -331,6 +368,7 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 #define REQUEST(w) {				\
   Assert(Store::WordToTransient(w) != INVALID_POINTER); \
   frame->SetPC(pc);				\
+  frame->SetCoord(coord);			\
   frame->SetFormalArgs(Vector::New(0));		\
   Scheduler::SetCurrentData(w);			\
   Scheduler::SetNArgs(0);			\
@@ -356,6 +394,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   
   TagVal *pc = frame->GetPC();
+  word coord = frame->GetCoord();
   Closure *globalEnv = frame->GetClosure();
   word formalArgs = frame->GetFormalArgs();
   
@@ -403,6 +442,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
     switch (AbstractCode::GetInstr(pc)) {
     case AbstractCode::Entry: // of coord * entry_point * instr
       {
+      coord = pc->Sel(0);
 #if DEBUGGER
 	// DebugFrame Generation
 	word event =
@@ -411,7 +451,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
  	Scheduler::PopFrame(frame->GetSize());
 	DebugWorker::PushFrame(event);
 	pc = TagVal::FromWordDirect(pc->Sel(2));
-  	PushState(pc, globalEnv, localEnv, formalArgs);
+  	PushState(pc, coord, globalEnv, localEnv, formalArgs);
 	frame = static_cast<AbstractCodeFrame *>(Scheduler::GetFrame());
 	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
 	  Debugger::SendEvent(event);
@@ -424,6 +464,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       break;
     case AbstractCode::Exit: // of coord * exit_point * idRef * instr
       {
+      coord = pc->Sel(0);
 #if DEBUGGER
 	// Pop current Frame
 	Worker *w = frame->GetWorker();
@@ -438,7 +479,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	word stepPoint = pc->Sel(1);
 	word idRef = pc->Sel(2);
 	pc = TagVal::FromWordDirect(pc->Sel(3));
-  	PushState(pc, globalEnv, localEnv, formalArgs);
+  	PushState(pc, coord, globalEnv, localEnv, formalArgs);
 	frame = static_cast<AbstractCodeFrame *>(Scheduler::GetFrame());
 	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
 	  word idRefRes = GetIdRef(idRef, globalEnv, localEnv);
@@ -650,6 +691,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  // Save our state for return
 	  Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
 	  frame->SetPC(idDefInstr->Sel(1));
+          frame->SetCoord(coord);
 	  frame->SetFormalArgs(idDefInstr->Sel(0));
 	}
 	else {
@@ -677,6 +719,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  // Save our state for return
 	  Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
 	  frame->SetPC(idDefsInstr->Sel(1));
+          frame->SetCoord(coord);
 	  frame->SetFormalArgs(idDefsInstr->Sel(0));
 	}
 	else {
@@ -1119,8 +1162,7 @@ const char *AbstractCodeInterpreter::Identify() {
   return "AbstractCodeInterpreter";
 }
 
-void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame) {
-  Assert(sFrame->GetWorker() == this);
+void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   
   AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
   Closure *closure = frame->GetClosure();
@@ -1131,12 +1173,7 @@ void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame) {
     reinterpret_cast<ConcreteRepresentation*>(cc));
   TagVal *abstractCode = TagVal::FromWord(tr->GetArgument());
   
-  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  String *name = String::FromWordDirect(coord->Sel(0));
-  std::fprintf(stderr, "Alice %s %.*s, line %"S_INTF"\n",
-	       frame->IsHandlerFrame() ? "handler" : "function",
-	       static_cast<int>(name->GetSize()), name->GetValue(),
-	       Store::DirectWordToInt(coord->Sel(1)));
+  AbstractCodeInterpreter::DumpAliceFrame(abstractCode->Sel(0), frame->IsHandlerFrame(), frame->GetCoord(), false, out);
 }
 
 String *AbstractCodeInterpreter::MakeProfileName(TagVal *abstractCode) {

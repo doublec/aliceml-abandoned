@@ -36,6 +36,8 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 
 	type coord = string * int * int
 
+	type named_coord = string * int * int * string
+	
 	type liveness = int vector
 
 	type label = Atom.t
@@ -87,11 +89,11 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | LastUseLocal of id
 	  | Global of int
 	and template =
-	    Template of coord * int * 
+	    Template of named_coord * int * 
                         annotation *
 			idDef vector * outArity option * instr * liveness
 	and abstractCode =
-	    Function of coord * value option vector *
+	    Function of named_coord * value option vector *
 			annotation *
 			idDef vector * outArity option * instr * liveness
 	and entry_point =

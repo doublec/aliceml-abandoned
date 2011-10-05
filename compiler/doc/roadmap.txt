@@ -65,7 +65,7 @@ FlatGrammar
  |	- Constant hoisting
  |	- Inlining (TBD)
  |	- Specialization (TBD)
- |	- Function (TBD) and constructor print name computation
+ |	- Function and constructor print name computation
  V
 FlatGrammar'
  |

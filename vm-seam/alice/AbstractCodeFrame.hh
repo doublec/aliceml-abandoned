@@ -26,7 +26,7 @@
 
 class AbstractCodeFrame: private StackFrame {
 protected:
-  enum { PC_POS, CLOSURE_POS, FORMAL_ARGS_POS, SIZE_POS, BASE_SIZE };
+  enum { PC_POS, COORD_POS, CLOSURE_POS, FORMAL_ARGS_POS, SIZE_POS, BASE_SIZE };
 
 public:
   using StackFrame::Clone;
@@ -51,6 +51,17 @@ public:
     ReplaceArg(PC_POS, pc->ToWord());
   }
   
+  word GetCoord() {
+    return GetArg(COORD_POS);
+  }
+
+  /**
+   * coord should be either a Tuple or Store::IntToWord(0)
+   */
+  void SetCoord(word coord) {
+    ReplaceArg(COORD_POS, coord);
+  }
+
   Closure *GetClosure() {
     return Closure::FromWordDirect(GetArg(CLOSURE_POS));
   }
@@ -99,6 +110,7 @@ public:
     u_int frSize = BASE_SIZE + nbLocals;
     NEW_STACK_FRAME(frame, AbstractCodeInterpreter::self, frSize);
     frame->InitArg(PC_POS, abstractCode->Sel(5));
+    frame->InitArg(COORD_POS, Store::IntToWord(0));
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(FORMAL_ARGS_POS, abstractCode->Sel(3));
     frame->InitArg(SIZE_POS, StackFrame::GetBaseSize() + frSize);

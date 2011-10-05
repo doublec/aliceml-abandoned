@@ -13,6 +13,7 @@
 import structure __pervasive            from "Pervasive"
 import __primitive type unit and string from "ToplevelTypes"
 
+(* TODO: update docs - include trace function *)
 signature EXN =
 sig
     exttype exn
@@ -24,6 +25,7 @@ sig
 
     val catch :      (packet -> 'a) -> (unit -> 'a) -> 'a
     val reraise :    packet -> 'a
+    val trace :      packet -> string
     val dumpTrace :  packet -> unit
 
     val fromPacket : packet -> exn

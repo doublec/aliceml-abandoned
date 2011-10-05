@@ -260,7 +260,8 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter startPC, Pr
 
 
 void ByteCode::Disassemble(std::FILE *f, ProgramCounter pc, 
-			   Chunk *code, Tuple *imEnv) {
+			   Chunk *code, Tuple *imEnv, u_int nRegisters) {
+  fprintf(f, "(* registers: %"U_INTF", code size: %"U_INTF" bytes *)\n", nRegisters, code->GetSize());
 #ifdef THREADED
   ProgramCounter start = reinterpret_cast<ProgramCounter>(code->GetBase());
   ProgramCounter end = reinterpret_cast<ProgramCounter>(code->GetBase() + code->GetSize());

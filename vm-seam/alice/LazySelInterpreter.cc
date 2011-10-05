@@ -130,10 +130,10 @@ const char *LazySelInterpreter::Identify() {
   return "LazySelInterpreter";
 }
 
-void LazySelInterpreter::DumpFrame(StackFrame *sFrame) {
+void LazySelInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   LazySelFrame *frame = reinterpret_cast<LazySelFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  std::fprintf(stderr, "Select %s\n", frame->GetLabel()->ToString()->ExportC());
+  out << "[LazySel] " << frame->GetLabel()->ToString() << std::endl;
 }
 
 #if PROFILE
