@@ -19,6 +19,7 @@
 #pragma interface "generic/TaskStack.hh"
 #endif
 
+#include <iostream>
 #include <csetjmp>
 
 
@@ -68,7 +69,7 @@ public:
 
   TaskStack *Enlarge();
   void Purge();
-  void Dump(u_int top);
+  void Dump(u_int top, std::ostream& = std::cerr);
 };
 
 #endif

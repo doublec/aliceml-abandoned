@@ -19,6 +19,7 @@
 #pragma interface "generic/Worker.hh"
 #endif
 
+#include <ostream>
 #include "store/Store.hh"
 
 class StackFrame;
@@ -47,7 +48,8 @@ public:
   virtual SeamMemberDll Result Handle(word data);
   // Debugging
   virtual const char *Identify() = 0;
-  virtual void DumpFrame(StackFrame *sFrame) = 0;
+  // TODO: update seam docs
+  virtual void DumpFrame(StackFrame *sFrame, std::ostream& out) = 0;
 #if PROFILE
   // Profiling
   virtual SeamMemberDll word GetProfileKey(StackFrame *sFrame);

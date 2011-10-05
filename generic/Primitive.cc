@@ -17,6 +17,7 @@
 #endif
 
 #include <cstdio>
+#include <ostream>
 #include "generic/Closure.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Scheduler.hh"
@@ -61,7 +62,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     virtual void PushCall(Closure *closure);
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 
     virtual u_int GetInArity(ConcreteCode *concreteCode);
     virtual u_int GetOutArity(ConcreteCode *concreteCode);
@@ -138,8 +139,8 @@ namespace {
     return name;
   }
 
-  void PrimitiveInterpreter::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "%s\n", name);
+  void PrimitiveInterpreter::DumpFrame(StackFrame* sFrame, std::ostream& out) {
+    out << name << std::endl;
   }
 
   u_int PrimitiveInterpreter::GetInArity(ConcreteCode *) {

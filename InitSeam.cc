@@ -45,10 +45,10 @@ static u_int mb(u_int n) {
 extern "C" SeamDll void InitSeam() {
   // Set up the store:
   u_int memLimits[STORE_GENERATION_NUM];
-  memLimits[0] = mb(16);
-  memLimits[1] = mb(15);
-  memLimits[2] = mb(35);
-  Store::InitStore(memLimits, 67, 20);
+  memLimits[0] = mb(32);
+  memLimits[1] = mb(30);
+  memLimits[2] = mb(70);
+  Store::InitStore(memLimits, 120, 20);
   // Set up datastructures:
   RootSet::Init();
   UniqueString::Init();

@@ -304,7 +304,7 @@ public:
 
   TaskStack *Enlarge();
   void Purge();
-  void Dump(u_int top);
+  void Dump(u_int top, std::ostream& = std::cerr);
 
   using DynamicBlock::ToWord;
   static TaskStack *FromWordDirect(word x);
@@ -346,7 +346,7 @@ public:
   <DD><P>Purges the task stack, that is, for every stack frame the <TT>Purge</TT>
          method of the associated worker is invoked.</P>.
   </DD>
-  <DT><TT>Dump(top)</TT>
+  <DT><TT>Dump(top, std::ostream& = std::cerr)</TT>
   </DT>
   <DD><P>Dumps the content of the stack frame starting
          from stack top <TT>top</TT>.</P>

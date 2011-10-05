@@ -72,7 +72,7 @@ AC_SEAM_CHECK_LDFLAG([-Wl,--export-dynamic])
 AC_SEAM_CHECK_CXXFLAG(-fno-coalesce-templates)
 AC_SEAM_CHECK_CXXFLAG(-fPIC)
 AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fPIC)
-AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-falign-functions)
+AC_SEAM_CHECK_CXXFLAG_SEAMTOOL([-falign-functions -falign-jumps -falign-loops -falign-labels])
 AC_SEAM_CHECK_LDFLAG(-fPIC)
 AC_SEAM_CHECK_LDFLAG_SEAMTOOL(-fPIC)
 

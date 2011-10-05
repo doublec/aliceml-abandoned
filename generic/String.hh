@@ -18,6 +18,7 @@
 #endif
 
 #include <ostream>
+#include <string>
 #include <cstring>
 #include "store/Store.hh"
 

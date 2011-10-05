@@ -362,7 +362,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   //
@@ -388,8 +388,8 @@ namespace {
     return "InputWorker";
   }
 
-  void InputWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "Fill Unpickling Buffer\n");
+  void InputWorker::DumpFrame(StackFrame *, std::ostream& out) {
+    out << "[Unpickler::Input]" << std::endl;
   }
 
   // TransformWorker
@@ -436,7 +436,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   TransformWorker *TransformWorker::self;
@@ -457,8 +457,8 @@ namespace {
     return "TransformWorker";
   }
 
-  void TransformWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "TransformWorker Frame\n");
+  void TransformWorker::DumpFrame(StackFrame *, std::ostream& out) {
+    out << "[Unpickler::Transform]" << std::endl;
   }
 
   Worker::Result TransformWorker::Run(StackFrame *sFrame) {
@@ -536,7 +536,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   //
@@ -567,8 +567,8 @@ namespace {
     return "PickleUnpackWorker";
   }
 
-  void PickleUnpackWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "Pickle Unpack\n");
+  void PickleUnpackWorker::DumpFrame(StackFrame *, std::ostream& out) {
+    out << "[Unpickler::Unpack]" << std::endl;
   }
 
   // PickleLoadWorker
@@ -589,7 +589,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   //
@@ -623,8 +623,8 @@ namespace {
     return "PickleLoadWorker";
   }
 
-  void PickleLoadWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "Pickle Load\n");
+  void PickleLoadWorker::DumpFrame(StackFrame *, std::ostream& out) {
+    out << "[Unpickler::Load]" << std::endl;
   }
 
 
@@ -710,7 +710,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   // The StoreAbstraction makes the business of transforming CONCRETE and 
@@ -1102,8 +1102,8 @@ namespace {
     return "UnpickleWorker";
   }
 
-  void UnpickleWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "Unpickling\n");
+  void UnpickleWorker::DumpFrame(StackFrame *, std::ostream& out) {
+    out << "[Unpickler::Unpickle]" << std::endl;
   }
 
   // PickleCheckWorker
@@ -1133,7 +1133,7 @@ namespace {
     virtual Result Run(StackFrame *sFrame);
     // Debugging
     virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame);
+    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
   PickleCheckWorker *PickleCheckWorker::self;
@@ -1198,8 +1198,8 @@ namespace {
     return "PickleCheckWorker";
   }
 
-  void PickleCheckWorker::DumpFrame(StackFrame *) {
-    std::fprintf(stderr, "Pickle Check\n");
+  void PickleCheckWorker::DumpFrame(StackFrame *, std::ostream& out) {
+    out << "[Unpickler::Check]" << std::endl;
   }
 
 }

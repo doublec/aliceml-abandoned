@@ -16,6 +16,7 @@
 #endif
 
 #include <cstdio>
+#include <ostream>
 #include "generic/Backtrace.hh"
 #include "generic/Scheduler.hh"
 #include "generic/RootSet.hh"
@@ -51,8 +52,8 @@ const char *DebugWorker::Identify() {
   return "DebugWorker";
 }
 
-void DebugWorker::DumpFrame(StackFrame *) {
-  std::fprintf(stderr, "Debuggger\n");
+void DumpFrame(StackFrame *sFrame, std::ostream& out) {
+  out << "[Debugger]" << std::endl;
 }
 
 word DebugWorker::GetEvent(StackFrame *sFrame) {
