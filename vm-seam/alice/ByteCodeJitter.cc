@@ -209,6 +209,22 @@ namespace {
 
   class PeepHoleOptimizer {
   public:
+    
+    static TagVal *SkipDebugInstrs(TagVal *instr) {
+      AbstractCode::instr op = AbstractCode::GetInstr(instr);
+      switch(op){
+	case AbstractCode::Coord:
+	case AbstractCode::Entry:
+	case AbstractCode::Exit: {
+	  word cont = instr->Sel(AbstractCode::GetContinuationPos(op));
+	  return SkipDebugInstrs(TagVal::FromWordDirect(cont));
+	}
+	default: {
+	  return instr;
+	}
+      }
+    }
+    
     // This function optimizes a common case that occurs in procedure
     // inlining:
     // - The callee expects unit as argument, but only uses
@@ -220,6 +236,7 @@ namespace {
     static TagVal *optimizeInlineInCCC(Vector *formalArgs, Vector *args,
 				      TagVal *instr) {
       if(formalArgs->GetLength() == 1 && args->GetLength() == 0) {
+	instr = SkipDebugInstrs(instr);
 	if(AbstractCode::GetInstr(instr) == AbstractCode::GetTup) {
 	  Vector *regs = Vector::FromWordDirect(instr->Sel(0));
 	  if(regs->GetLength() == 0) {
@@ -234,7 +251,7 @@ namespace {
 	    case AbstractCode::Local:
 	      {
 		word local = idRef->Sel(0);
-		instr = TagVal::FromWordDirect(instr->Sel(2));
+		instr = SkipDebugInstrs(TagVal::FromWordDirect(instr->Sel(2)));
 		if(AbstractCode::GetInstr(instr) == AbstractCode::Kill) {
 		  Vector *regs = Vector::FromWordDirect(instr->Sel(0));
 		  for(u_int i = regs->GetLength(); i--; ) {
