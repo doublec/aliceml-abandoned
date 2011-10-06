@@ -75,7 +75,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
  		 * instruction to first instruction.
  		 *)
  
- 		fun lInstr (Kill (_, instr), i) =
+ 		fun lInstr ((Kill (_, instr) | Coord (_, instr)), i) =
  		    (* no program points *)
  		    lInstr (instr, i)
 		  | lInstr (Entry (_, entryPoint, instr), i) =

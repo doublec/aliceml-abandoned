@@ -816,6 +816,12 @@ bool ByteCodeJitter::InlinePrimitive(void *cFunction,
 // compilation of AbstractCode instructions
 //
 
+// Coord of coord * instr
+TagVal *ByteCodeJitter::InstrCoord(TagVal *pc) {
+  sourceLocations.RecordCoord(PC, pc->Sel(0));
+  return TagVal::FromWordDirect(pc->Sel(1));
+}
+
 // Entry of coord * entry_point * instr
 TagVal *ByteCodeJitter::InstrEntry(TagVal *pc) {
   sourceLocations.RecordCoord(PC, pc->Sel(0));
@@ -2290,6 +2296,8 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
     scratch = currentNLocals; // reset scratch registers
     topScratchReusable = false;
     switch (AbstractCode::GetInstr(pc)) {
+    case AbstractCode::Coord:
+      pc = InstrCoord(pc); break;
     case AbstractCode::Entry:
       pc = InstrEntry(pc); break;
     case AbstractCode::Exit:

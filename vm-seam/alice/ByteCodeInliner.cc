@@ -114,6 +114,7 @@ namespace {
   void InlineAnalyser::Count(TagVal *instr) {
     Assert(instr != INVALID_POINTER);
     switch(AbstractCode::GetInstr(instr)) {
+    case AbstractCode::Coord:
     case AbstractCode::Entry:
     case AbstractCode::Exit:
     case AbstractCode::Kill:
@@ -457,6 +458,7 @@ namespace {
 	  AbstractCode::instr instrOp = AbstractCode::GetInstr(instr);
 	  analyser->Count(instr);
 	  switch(instrOp) {
+	  case AbstractCode::Coord:
           case AbstractCode::Entry:
           case AbstractCode::Exit:
 	  case AbstractCode::EndTry:

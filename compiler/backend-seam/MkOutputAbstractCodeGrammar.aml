@@ -7,7 +7,6 @@ import signature ABSTRACT_CODE_GRAMMAR        from "ABSTRACT_CODE_GRAMMAR-sig"
 import signature OUTPUT_ABSTRACT_CODE_GRAMMAR from "OUTPUT_ABSTRACT_CODE_GRAMMAR-sig"
 import structure Url                          from "../../lib/system/Url"
 import structure Stamp                        from "../common/Stamp"
-import structure Label                        from "../../lib/rtt/Label"
 import structure Atom                         from "../../lib/data/Atom"
 import structure StampSet                     from "../common/StampSet"
 
@@ -104,7 +103,8 @@ struct
 
         
         fun instr ins = case ins of
-            Entry (c, ep, ins')     => "Entry " ^ coord c ^ " " ^ entryPoint ep ^ "\n" ^ instr ins'
+            Coord (c, ins')         => "Coord " ^ coord c ^ "\n" ^ instr ins'
+          | Entry (c, ep, ins')     => "Entry " ^ coord c ^ " " ^ entryPoint ep ^ "\n" ^ instr ins'
           | Exit  (c, ep, id, ins') => "Exit " ^ coord c ^ " (" ^ idRef id ^ ") <- " ^ exitPoint ep ^ "\n" ^ instr ins'
           | Kill (ids, ins')        => "Kill " ^ locals ids ^ "\n" ^ instr ins'
           | PutVar (id, ir, ins')   => "PutVar " ^ local' id ^ " <- " ^ idRef ir ^ "\n" ^ instr ins'
@@ -282,7 +282,8 @@ struct
         and typ _ = "<type>"
     
     
-        and coord _ = "<coord>"
+        and coord (filename, line, col) =
+            "(" ^ filename ^ ":" ^ Int.toString line ^ "." ^ Int.toString col ^ ")"
         
     
         and value _ = "<val>"    

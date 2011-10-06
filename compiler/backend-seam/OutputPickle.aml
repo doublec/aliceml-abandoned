@@ -64,34 +64,35 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val compactIntTest = TAG 3
 		val compactTagTest = TAG 4
 		val conTest        = TAG 5
-		val endHandle      = TAG 6
-		val endTry         = TAG 7
-		val entry          = TAG 8
-		val exit           = TAG 9 
-		val getRef         = TAG 10
-		val getTup         = TAG 11
-		val intTest        = TAG 12
-		val kill           = TAG 13
-		val lazyPolySel    = TAG 14
-		val putCon         = TAG 15
-		val putNew         = TAG 16
-		val putPolyRec     = TAG 17
-		val putRef         = TAG 18
-		val putTag         = TAG 19
-		val putTup         = TAG 20
-		val putVar         = TAG 21
-		val putVec         = TAG 22
-		val raise_         = TAG 23
-		val realTest       = TAG 24
-		val reraise        = TAG 25
-		val return         = TAG 26
-		val sel            = TAG 27
-		val shared         = TAG 28
-		val specialize     = TAG 29
-		val stringTest     = TAG 30
-		val tagTest        = TAG 31
-		val try            = TAG 32
-		val vecTest        = TAG 33
+		val coord          = TAG 6
+		val endHandle      = TAG 7
+		val endTry         = TAG 8
+		val entry          = TAG 9
+		val exit           = TAG 10 
+		val getRef         = TAG 11
+		val getTup         = TAG 12
+		val intTest        = TAG 13
+		val kill           = TAG 14
+		val lazyPolySel    = TAG 15
+		val putCon         = TAG 16
+		val putNew         = TAG 17
+		val putPolyRec     = TAG 18
+		val putRef         = TAG 19
+		val putTag         = TAG 20
+		val putTup         = TAG 21
+		val putVar         = TAG 22
+		val putVec         = TAG 23
+		val raise_         = TAG 24
+		val realTest       = TAG 25
+		val reraise        = TAG 26
+		val return         = TAG 27
+		val sel            = TAG 28
+		val shared         = TAG 29
+		val specialize     = TAG 30
+		val stringTest     = TAG 31
+		val tagTest        = TAG 32
+		val try            = TAG 33
+		val vecTest        = TAG 34
 
 		val global       = TAG 0
 		val immediate    = TAG 1
@@ -287,7 +288,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
   	    outputInt (context, 0) (*--** i.e., `NONE' *)
 
 
-	and outputInstr (context, Entry (coord, entryPoint, instr)) =
+	and outputInstr (context, Coord (coord, instr)) =
+        (outputInstr (context, instr);
+         outputCoord (context, coord);
+         outputBlock (context, Label.coord, 2))
+      | outputInstr (context, Entry (coord, entryPoint, instr)) =
 	    (outputInstr (context, instr);
 	     outputEntryPoint (context, entryPoint);
 	     outputCoord (context, coord);

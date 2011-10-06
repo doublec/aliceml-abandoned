@@ -327,6 +327,7 @@ private:
     @param pc abstract code instruction that is to compile
     @return continuation; INVALID_POINTER signals a leaf node
    */
+  TagVal *InstrCoord(TagVal *pc);
   TagVal *InstrEntry(TagVal *pc);
   TagVal *InstrExit(TagVal *pc);
   TagVal *InstrKill(TagVal *pc);

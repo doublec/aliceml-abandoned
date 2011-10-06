@@ -436,6 +436,7 @@ namespace {
 	    }
 	    break;
 	  }
+	  case AbstractCode::Coord:
 	  case AbstractCode::Entry:
 	  case AbstractCode::Exit:
 	  case AbstractCode::EndHandle:

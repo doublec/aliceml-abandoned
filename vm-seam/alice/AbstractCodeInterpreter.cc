@@ -440,6 +440,11 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
   while (true) {
   loop:
     switch (AbstractCode::GetInstr(pc)) {
+    case AbstractCode::Coord: { // of coord * instr
+      coord = pc->Sel(0);
+      pc = TagVal::FromWordDirect(pc->Sel(1));
+      break;
+    }
     case AbstractCode::Entry: // of coord * entry_point * instr
       {
       coord = pc->Sel(0);

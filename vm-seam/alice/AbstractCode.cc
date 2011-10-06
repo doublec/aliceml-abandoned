@@ -20,11 +20,10 @@
 
 static const char *opcodeNames[AbstractCode::nInstrs] = {
   "AppPrim", "AppVar", "Close", "CompactIntTest", "CompactTagTest", "ConTest",
-  "EndHandle", "EndTry", "Entry", "Exit", "GetRef", "GetTup", "IntTest", "Kill",
-  "LazyPolySel", "PutCon", "PutNew", "PutPolyRec", "PutRef", "PutTag", "PutTup",
-  "PutVar", "PutVec", "Raise", "RealTest", "Reraise",
-  "Return", "Sel", "Shared", "Specialize", "StringTest", "TagTest",
-  "Try", "VecTest"
+  "Coord", "EndHandle", "EndTry", "Entry", "Exit", "GetRef", "GetTup", "IntTest",
+  "Kill", "LazyPolySel", "PutCon", "PutNew", "PutPolyRec", "PutRef", "PutTag",
+  "PutTup", "PutVar", "PutVec", "Raise", "RealTest", "Reraise", "Return", "Sel",
+  "Shared", "Specialize", "StringTest", "TagTest", "Try", "VecTest"
 };
 
 
@@ -43,6 +42,7 @@ s_int AbstractCode::GetContinuationPos(instr instr) {
     case EndTry:
     case EndHandle:
       return 0;
+    case Coord:
     case Kill:
     case Shared:
       return 1;
@@ -87,6 +87,7 @@ s_int AbstractCode::GetContinuationPos(instr instr) {
 
 s_int AbstractCode::GetNumProgramPoints(instr instr) {
   switch (instr) {
+    case Coord:
     case Kill:
     case EndTry:
     case EndHandle:
@@ -144,6 +145,7 @@ IntMap *AbstractCode::SharedInArity(TagVal *abstractCode) {
       case Reraise:
       case Return:
 	break;
+      case Coord:
       case Entry:
       case Exit:
       case EndHandle:
@@ -419,7 +421,7 @@ private:
     String *fileName = String::FromWord(coord->Sel(0));
     s_int line = Store::WordToInt(coord->Sel(1));
     s_int col = Store::WordToInt(coord->Sel(2));
-    std::fprintf(file, " Coord(%s:%"S_INTF".%"S_INTF")", fileName->ExportC(), line, col);
+    std::fprintf(file, " (%s:%"S_INTF".%"S_INTF")", fileName->ExportC(), line, col);
   }
   void Type(word w) {
     std::fprintf(file, " <type>");
@@ -629,6 +631,8 @@ void Disassembler::Start() {
       INSTR IDDEF IDDEF INSTR break;
     case AbstractCode::EndTry:
       LASTINSTR break;
+    case AbstractCode::Coord:
+      COORD LASTINSTR break;
     case AbstractCode::Entry:
       COORD ENTRYPOINT LASTINSTR break;
     case AbstractCode::Exit:
