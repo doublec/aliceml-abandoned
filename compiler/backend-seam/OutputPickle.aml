@@ -198,17 +198,16 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputIdDef (context, Wildcard) =
 	    outputInt (context, Label.wildcard)
 
-	fun outputCoord (context, (string, line, column)) =
+	fun outputCoord (context, (line, column)) =
 	    (outputInt (context, column);
 	     outputInt (context, line);
-	     outputString (context, string);
-	     outputTuple (context, 3))
+	     outputTuple (context, 2))
 
-	fun outputNamedCoord (context, (string, line, column, name)) =
-	    (outputString (context, name);
-	     outputInt (context, column);
+	fun outputFunctionCoord (context, (filename, name, line, column)) =
+	    (outputInt (context, column);
 	     outputInt (context, line);
-	     outputString (context, string);
+	     outputString (context, name);
+	     outputString (context, filename);
 	     outputTuple (context, 4))
 	
 	fun outputLiveness (context, is) =
@@ -543,7 +542,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputVector outputIdDef (context, args);
 	     outputAnnotation(context, localNamesTypOpt);
  	     outputInt (context, FixedInt.fromInt ntoplevels);
-  	     outputNamedCoord (context, namedCoord);
+  	     outputFunctionCoord (context, namedCoord);
  	     outputBlock (context, Label.template, 7))
  	and outputAbstractCode (context, Function (namedCoord, globals, 
 						   localNamesTypOpt,
@@ -555,7 +554,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputVector outputIdDef (context, args);
 	     outputAnnotation(context, localNamesTypOpt);
  	     outputVector (outputOption outputValue) (context, globals);
- 	     outputNamedCoord (context, namedCoord);
+ 	     outputFunctionCoord (context, namedCoord);
  	     outputBlock (context, Label.function, 7))
   
 	and outputEntryPoint (context, ConEntry (typ, idRef, args)) =

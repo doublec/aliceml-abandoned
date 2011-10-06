@@ -650,12 +650,13 @@ namespace {
 InlineInfo *ByteCodeInliner::Analyse(TagVal *abstractCode) {
 //   static u_int c = 0;
 //   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-//   std::fprintf(stderr, "%d. analyse inlining for %p %s:%d.%d, nLocals %d\n",
+//   std::fprintf(stderr, "%d. analyse inlining for %s (%p) %s:%d.%d, nLocals %d\n",
 // 	       ++c,
+// 	       String::FromWordDirect(coord->Sel(1))->ExportC(),
 // 	       abstractCode,
 // 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
-// 	       Store::DirectWordToInt(coord->Sel(1)),
 // 	       Store::DirectWordToInt(coord->Sel(2)),
+// 	       Store::DirectWordToInt(coord->Sel(3)),
 // 	       GetNumberOfLocals(abstractCode)); 
 //   AbstractCode::Disassemble(stderr,
 // 			    TagVal::FromWordDirect(abstractCode->Sel(5)));

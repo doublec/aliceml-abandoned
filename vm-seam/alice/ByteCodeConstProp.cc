@@ -761,14 +761,15 @@ namespace {
 ConstPropInfo *ByteCodeConstProp::Analyse(TagVal *abstractCode, word concreteCode, InlineInfo *inlineInfo) {
   /*
    static u_int count = 0;
-   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-   std::fprintf(stderr, "%"U_INTF". do constant propagation for %p %s:%"S_INTF".%"S_INTF"\n",
+   Tuple *funCoord = Tuple::FromWordDirect(abstractCode->Sel(0));
+   std::fprintf(stderr, "%"U_INTF". do constant propagation for %s (%p) at %s:%"S_INTF".%"S_INTF"\n",
  	       ++count,
+ 	       String::FromWordDirect(funCoord->Sel(1))->ExportC(),
  	       abstractCode,
- 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
- 	       Store::DirectWordToInt(coord->Sel(1)),
- 	       Store::DirectWordToInt(coord->Sel(2))); 
-  // AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
+ 	       String::FromWordDirect(funCoord->Sel(0))->ExportC(),
+ 	       Store::DirectWordToInt(funCoord->Sel(2)),
+ 	       Store::DirectWordToInt(funCoord->Sel(3))); 
+  AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
   */
   ConstPropAnalyser mainPass(abstractCode, concreteCode,  inlineInfo);
   mainPass.Run();

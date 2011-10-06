@@ -416,12 +416,19 @@ private:
     std::fprintf(file, " %s",
 		 UniqueString::FromWordDirect(w)->ToString()->ExportC());
   }
+  void FunCoord(word w) {
+    Tuple *funCoord = Tuple::FromWord(w);
+    String *path = String::FromWordDirect(funCoord->Sel(0));
+    String *name = String::FromWordDirect(funCoord->Sel(1));
+    s_int line   = Store::WordToInt(funCoord->Sel(2));
+    s_int col    = Store::WordToInt(funCoord->Sel(3));
+    std::fprintf(file, " (%s at %s:%"S_INTF".%"S_INTF"", name->ExportC(), path->ExportC(), line, col);
+  }
   void Coord(word w) {
     Tuple *coord = Tuple::FromWord(w);
-    String *fileName = String::FromWord(coord->Sel(0));
-    s_int line = Store::WordToInt(coord->Sel(1));
-    s_int col = Store::WordToInt(coord->Sel(2));
-    std::fprintf(file, " (%s:%"S_INTF".%"S_INTF")", fileName->ExportC(), line, col);
+    s_int line = Store::WordToInt(coord->Sel(0));
+    s_int col  = Store::WordToInt(coord->Sel(1));
+    std::fprintf(file, " (%"S_INTF".%"S_INTF")", line, col);
   }
   void Type(word w) {
     std::fprintf(file, " <type>");
@@ -530,10 +537,9 @@ private:
     } 
   }
   void Template(word w) {
-    //TODO: print named coord
     TagVal *templ = TagVal::FromWordDirect(w);
     std::fprintf(file, " Template(");
-    Value(templ->Sel(0));
+    FunCoord(templ->Sel(0));
     Int(templ->Sel(1));
     std::fprintf(file, " Debug Annotation\n");
     VECTOR(templ->Sel(3), IdDef);

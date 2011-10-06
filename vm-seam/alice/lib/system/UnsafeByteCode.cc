@@ -781,15 +781,15 @@ namespace {
     Vector *liveness = Vector::New(0);
     TagVal *abstractCode =
       TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
-    Tuple *coord = Tuple::New(3);
-    coord->Init(0,String::New("\"manually assembled code\"")->ToWord());
-    coord->Init(1,Store::IntToWord(0));
-    coord->Init(2,Store::IntToWord(0));
-    coord->Init(3, String::New()->ToWord());
-    abstractCode->Init(0,coord->ToWord());
-    abstractCode->Init(3,args->ToWord());
-    abstractCode->Init(4,Store::IntToWord(0)); // outArityOpt == NONE
-    abstractCode->Init(6,liveness->ToWord());
+    Tuple *funCoord = Tuple::New(4);
+    funCoord->Init(0, String::New("\"manually assembled code\"")->ToWord());
+    funCoord->Init(1, String::New()->ToWord());
+    funCoord->Init(2, Store::IntToWord(0));
+    funCoord->Init(3, Store::IntToWord(0));
+    abstractCode->Init(0, funCoord->ToWord());
+    abstractCode->Init(3, args->ToWord());
+    abstractCode->Init(4, Store::IntToWord(0)); // outArityOpt == NONE
+    abstractCode->Init(6, liveness->ToWord());
 
     // fake inline info, prevent assembled function from beeing inlined
     InlineInfo *inlineInfo = 

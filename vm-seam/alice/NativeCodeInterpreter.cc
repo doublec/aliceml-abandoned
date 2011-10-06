@@ -195,14 +195,7 @@ MakeProfileName(NativeConcreteCode *concreteCode, const char *type) {
   Transform *transform =
     static_cast<Transform *>(concreteCode->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
-  String *name         = String::FromWord(coord->Sel(0));
-  char buf[1024]; // to be done
-  std::sprintf(buf, "Alice native %s %.*s, line %d, column %d",
-	       type, (int) name->GetSize(), name->GetValue(),
-	       Store::WordToInt(coord->Sel(1)),
-	       Store::WordToInt(coord->Sel(2)));
-  return String::New(buf);
+  return AbstractCodeInterpreter::MakeProfileName(abstractCode);
 }
 
 String *NativeCodeInterpreter::GetProfileName(StackFrame *sFrame) {

@@ -317,7 +317,7 @@ protected:
   }
 public:
 #if defined(JIT_STORE_DEBUG)
-  static void Dump(word wCoord, u_int nLocals, Tuple *assignment) {
+  static void Dump(word wFunCoord, u_int nLocals, Tuple *assignment) {
     u_int mem   = 0;
     u_int reg   = 0;
     u_int slots = ALICE_REGISTER_NB;
@@ -344,11 +344,11 @@ public:
 	      MemoryNode::GetNbSlots(), slots);
     }
     Assert(MemoryNode::GetNbSlots() == slots);
-    Tuple *coord = Tuple::FromWord(wCoord);
-    String *name = String::FromWord(coord->Sel(0));
-    u_int line   = Store::WordToInt(coord->Sel(1));
+    Tuple *funCoord = Tuple::FromWord(wFunCoord);
+    String *file = String::FromWord(funCoord->Sel(0));
+    u_int line   = Store::WordToInt(funCoord->Sel(2));
     fprintf(stderr, "%d %d %d %d %s:%d:\n",
-    nLocals, reg, mem, MemoryNode::GetNbSlots(), name->ExportC(), line);
+    nLocals, reg, mem, MemoryNode::GetNbSlots(), file->ExportC(), line);
   }
 #endif
   static void Run(s_int *resNLocals,
@@ -1790,10 +1790,10 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
 }
 
 // Specialize of id * idRef vector * template * instr
-// where   template = Template of named_coord * int * string vector *
+// where   template = Template of function_coord * int * string vector *
 //                    idDef args * outArity option * instr * liveness
 // abstractCode =
-//    Function of named_coord * value option vector * string vector *
+//    Function of function_coord * value option vector * string vector *
 //                idDef args * outArity option * instr * liveness
 // Design options: call NativeCodeConctructor directly or use
 // AliceLanguageLayer::concreteCodeConstructor
@@ -2888,7 +2888,7 @@ NativeCodeJitter::~NativeCodeJitter() {
   free(codeBuffer);
 }
 
-// Function of named_coord * value option vector * string vector *
+// Function of function_coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 word
 NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
@@ -2896,15 +2896,15 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   word concreteCode    = lazyCompileClosure->GetByneed();
 #if 1
   // Diassemble AbstractCode
-  Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
-  char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
+  Tuple *funCoord = Tuple::FromWordDirect(abstractCode->Sel(0));
+  char *filename = String::FromWordDirect(funCoord->Sel(0))->ExportC();
   if ((!strcmp(filename, "file:/local/rossberg/alice3/bug.aml")) && 
 1){
-//((Store::DirectWordToInt(coord1->Sel(1)) == 11) || //(Store::DirectWordToInt(coord1->Sel(1)) == 21))) {
-    fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
-  	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
-  	    Store::DirectWordToInt(coord1->Sel(1)),
-	    Store::DirectWordToInt(coord1->Sel(2)));
+    fprintf(stderr, "Disassembling function %s at %s:%d.%d\n\n",
+  	    String::FromWordDirect(funCoord->Sel(1))->ExportC(),
+  	    String::FromWordDirect(funCoord->Sel(0))->ExportC(),
+  	    Store::DirectWordToInt(funCoord->Sel(2)),
+	    Store::DirectWordToInt(funCoord->Sel(3)));
     fflush(stderr);
     TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(5));
     AbstractCode::Disassemble(stderr, pc);
@@ -2915,11 +2915,11 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   sharedTable = IntMap::New(SHARED_TABLE_SIZE);
   // Start function compilation with prolog
 #if defined(JIT_STORE_DEBUG)
-  Tuple *coord2 = Tuple::FromWord(abstractCode->Sel(0));
-  String *name  = String::FromWord(coord2->Sel(0));
-  u_int line    = Store::WordToInt(coord2->Sel(1));
+  Tuple *funCoord2 = Tuple::FromWord(abstractCode->Sel(0));
+  String *file  = String::FromWord(funCoord2->Sel(0));
+  u_int line    = Store::WordToInt(funCoord2->Sel(2));
   char info[1024];
-  sprintf(info, "%s:%d\n", name->ExportC(), line);
+  sprintf(info, "%s:%d\n", file->ExportC(), line);
   codeStart = CompileProlog(strdup(info));
 #else
   codeStart = CompileProlog("Dummy info\n");

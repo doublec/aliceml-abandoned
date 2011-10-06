@@ -95,10 +95,11 @@ void ByteConcreteCode::Disassemble(std::FILE *file) {
   Transform *transform = Transform::FromWordDirect(Get(TRANSFORM_POS));
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  fprintf(file, "Disassembling byte code function at %s:%"S_INTF".%"S_INTF"\n\n",
+  fprintf(file, "Disassembling byte code function %s at %s:%"S_INTF".%"S_INTF"\n\n",
+	  String::FromWordDirect(coord->Sel(1))->ExportC(),
 	  String::FromWordDirect(coord->Sel(0))->ExportC(),
-	  Store::DirectWordToInt(coord->Sel(1)),
-	  Store::DirectWordToInt(coord->Sel(2)));
+	  Store::DirectWordToInt(coord->Sel(2)),
+	  Store::DirectWordToInt(coord->Sel(3)));
   Chunk *code = GetByteCode();
   Tuple *imEnv = GetImmediateArgs();
 #ifdef THREADED

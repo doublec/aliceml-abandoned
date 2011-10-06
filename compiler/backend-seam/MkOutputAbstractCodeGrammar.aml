@@ -282,8 +282,8 @@ struct
         and typ _ = "<type>"
     
     
-        and coord (filename, line, col) =
-            "(" ^ filename ^ ":" ^ Int.toString line ^ "." ^ Int.toString col ^ ")"
+        and coord (line, col) =
+            "(" ^ Int.toString line ^ "." ^ Int.toString col ^ ")"
         
     
         and value _ = "<val>"    
@@ -316,7 +316,7 @@ struct
 			 | SOME n => " : " ^ int n
 	
 
-        val (_, _, _, srcName) = funCoord
+        val (_, srcName,  _, _) = funCoord
         val srcName' = if srcName = "" then "" else " " ^ srcName
 
 

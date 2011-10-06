@@ -135,11 +135,12 @@ word NativeConcreteCode::New(TagVal *abstractCode) {
 void NativeConcreteCode::Disassemble(std::FILE *file) {
   Transform *transform = Transform::FromWordDirect(Get(TRANSFORM_POS));
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  fprintf(file, "Disassembling function at %s:%d.%d\n\n",
-	  String::FromWordDirect(coord->Sel(0))->ExportC(),
-	  Store::DirectWordToInt(coord->Sel(1)),
-	  Store::DirectWordToInt(coord->Sel(2)));
+  Tuple *funCoord = Tuple::FromWordDirect(abstractCode->Sel(0));
+  fprintf(file, "Disassembling function %s at %s:%d.%d\n\n",
+	  String::FromWordDirect(funCoord->Sel(1))->ExportC(),
+	  String::FromWordDirect(funCoord->Sel(0))->ExportC(),
+	  Store::DirectWordToInt(funCoord->Sel(2)),
+	  Store::DirectWordToInt(funCoord->Sel(3)));
   TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(5));
   AbstractCode::Disassemble(file, pc);
 }

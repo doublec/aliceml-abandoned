@@ -318,8 +318,8 @@ void AbstractCodeInterpreter::Init() {
 void AbstractCodeInterpreter::DumpAliceFrame(word funCoordW, bool handler, word coord, bool inlined, std::ostream& out) {
 
   Tuple *funCoord = Tuple::FromWord(funCoordW);
-  String *name = String::FromWord(funCoord->Sel(3));
   String *file = String::FromWord(funCoord->Sel(0));
+  String *name = String::FromWord(funCoord->Sel(1));
  
   if (handler) {
     out << "<handler> ";
@@ -332,12 +332,12 @@ void AbstractCodeInterpreter::DumpAliceFrame(word funCoordW, bool handler, word 
   
   //indicate if the line number shown is only as accurate as the function start
   if (coord == Store::IntToWord(0)) {
-    s_int line = Store::WordToInt(funCoord->Sel(1));
+    s_int line = Store::WordToInt(funCoord->Sel(2));
     out << ", function starting at line " << line;
   }
   else {
     Tuple *posCoord = Tuple::FromWord(coord);
-    out << ", line " << Store::WordToInt(posCoord->Sel(1));
+    out << ", line " << Store::WordToInt(posCoord->Sel(0));
   }
   
   if (name->GetSize() > 0) {
@@ -1183,10 +1183,11 @@ void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
 
 String *AbstractCodeInterpreter::MakeProfileName(TagVal *abstractCode) {
   
-  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  String *name = String::FromWordDirect(coord->Sel(0));
-  s_int line   = Store::DirectWordToInt(coord->Sel(1));
-  s_int column = Store::DirectWordToInt(coord->Sel(2));
+  Tuple *funCoord = Tuple::FromWordDirect(abstractCode->Sel(0));
+  String *file = String::FromWordDirect(funCoord->Sel(0));
+  String *name = String::FromWordDirect(funCoord->Sel(1));
+  s_int line   = Store::DirectWordToInt(funCoord->Sel(2));
+  s_int column = Store::DirectWordToInt(funCoord->Sel(3));
   
   Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
   u_int nSubst = 0;
@@ -1197,7 +1198,10 @@ String *AbstractCodeInterpreter::MakeProfileName(TagVal *abstractCode) {
   }
   
   std::stringstream ss;
-  ss << name << ", line " << line << ", column " << column <<
+  if (name->GetSize() > 0) {
+    ss << name << " at ";
+  }
+  ss << file << ", line " << line << ", column " << column <<
     " (" << subst->GetLength() << " globals, " << nSubst << " specialised)";
   return String::New(ss.str());
 }

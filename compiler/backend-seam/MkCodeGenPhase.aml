@@ -386,25 +386,25 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
            | ExportStm (i, _)) => i
 
 
-    fun attachCoord (stm, env, instr) =
+    fun attachCoord (stm, instr) =
         let
             val (pos, _) = stmInfo stm
         in
             (* dont attach Coord in debug mode, since Entry/Exit instrs will exist *)
             if !Switches.CodeGen.debugMode
             then instr
-            else O.Coord ((filename env, #1 pos, #2 pos), instr)
+            else O.Coord (pos, instr)
         end
 
 
-	fun translateBody ([stm], env) = attachCoord (stm, env, translateStm (stm, env))
+	fun translateBody ([stm], env) = attachCoord (stm, translateStm (stm, env))
 	  | translateBody ((stm as ValDec (_, IdDef id, exp))::
 			   (stms as [RaiseStm (_, LastIdRef id')]), env) =
 	    if idEq (id, id') then
 		case exp of
 		  ( VarExp (_, idRef)
 		  | ConExp (_, idRef, TupArgs #[])) =>
-			attachCoord (stm, env, O.Raise (translateIdRef (idRef, env)))
+			attachCoord (stm, O.Raise (translateIdRef (idRef, env)))
 		  | _ => translateBody' (stm, stms, env)
 	    else translateBody' (stm, stms, env)
 	  | translateBody (stm::stms, env) = translateBody' (stm, stms, env)
@@ -414,7 +414,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 
 	and translateBody' (stm, stms, env) =
 	    (doDec (stm, env);
-	     attachCoord (stm, env, translateDec (stm, translateBody (stms, env), env)))
+	     attachCoord (stm, translateDec (stm, translateBody (stms, env), env)))
 
 
 	and doDec (Entry (_, _), _) = ()
@@ -442,11 +442,10 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    raise Crash.Crash "CodeGenPhase.doDec"
 
 
-	and translateDec (Entry (((i, j), _), entryPoint), instr, env) =
-	    O.Entry ((filename env, i, j),
-		     translateEntryPoint (entryPoint, env), instr)
-	  | translateDec (Exit ((_, (i, j)), exitPoint, idRef), instr, env) =
-	    O.Exit ((filename env, i, j), translateExitPoint exitPoint,
+	and translateDec (Entry ((pos, _), entryPoint), instr, env) =
+	    O.Entry (pos, translateEntryPoint (entryPoint, env), instr)
+	  | translateDec (Exit ((_, pos), exitPoint, idRef), instr, env) =
+	    O.Exit (pos, translateExitPoint exitPoint,
 		    translateIdRef (idRef, env), instr)
 	  | translateDec (LastUse (_, ids), instr, env) =
 	    (*--** sort them? represent as ranges? *)
@@ -751,7 +750,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 			(translateIdRefs (Vector.map IdRef globalIds, env))
 		val ((i, j), _) = region
 		val name = foldl (fn (PrintName n, _) => n | (_, s) => s) "" flags
-		val namedCoord = (filename env, i, j, name)
+		val funCoord = (filename env, name, i, j)
 		val instr =
 		    case Vector.fromList (IdSet.fold op:: nil kills) of
 			#[] => instr
@@ -764,7 +763,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		      | SOME (Arity.Product labels) =>
 			    SOME (Vector.length labels)
 		val template =
-		    O.Template (namedCoord, Vector.length globalIdRefs,
+		    O.Template (funCoord, Vector.length globalIdRefs,
 				if (!Switches.CodeGen.debugMode)
 				    then O.Debug(localNames, typ)
 				else O.Simple(Vector.length localNames), 
@@ -970,7 +969,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val typ_arg = Type.apply (PervasiveType.typ_vec, typ_mod)
 		val typ = Type.arrow (typ_arg, typ_mod)
 		val abstractCode =
-		    O.Function ((filename, 0, 0, ""), #[], 
+		    O.Function ((filename, "", 0, 0), #[], 
 				if (!Switches.CodeGen.debugMode) 
 				    then O.Debug(localNames, typ)
 				else O.Simple (Vector.length localNames),

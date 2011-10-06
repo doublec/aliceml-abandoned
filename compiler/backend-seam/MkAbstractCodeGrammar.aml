@@ -34,9 +34,9 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	    Debug of (string * Type.t) option vector * Type.t
 	  | Simple of int
 
-	type coord = string * int * int
+	type coord = int * int
 
-	type named_coord = string * int * int * string
+	type function_coord = string * string * int * int
 	
 	type liveness = int vector
 
@@ -90,11 +90,11 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | LastUseLocal of id
 	  | Global of int
 	and template =
-	    Template of named_coord * int * 
+	    Template of function_coord * int * 
                         annotation *
 			idDef vector * outArity option * instr * liveness
 	and abstractCode =
-	    Function of named_coord * value option vector *
+	    Function of function_coord * value option vector *
 			annotation *
 			idDef vector * outArity option * instr * liveness
 	and entry_point =

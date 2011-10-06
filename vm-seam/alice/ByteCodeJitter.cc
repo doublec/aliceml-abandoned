@@ -2706,23 +2706,25 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
   }
 }
 
-// Function of named_coord * value option vector * string vector *
+// Function of function_coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, Vector *args, TagVal *idDefsInstrOpt) {
   INSERT_DEBUG_MSG("inline entry")
-#ifdef DEBUG_DISASSEMBLE
-  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  std::fprintf(stderr, "  inline function at %s:%"S_INTF".%"S_INTF" depth %"U_INTF"\n",
-	       String::FromWordDirect(coord->Sel(0))->ExportC(),
-	       Store::DirectWordToInt(coord->Sel(1)),
-	       Store::DirectWordToInt(coord->Sel(2)),
-	       inlineDepth); 
-  AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
-#endif
-
+  
   TagVal *abstractCode = avi->GetAbstractCode();
   u_int offset = avi->GetLocalOffset();
   sourceLocations.BeginInlineFunction(abstractCode);
+  
+#ifdef DEBUG_DISASSEMBLE
+  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
+  std::fprintf(stderr, "  inline function %s at %s:%"S_INTF".%"S_INTF" depth %"U_INTF"\n",
+	       String::FromWordDirect(coord->Sel(1))->ExportC(),
+	       String::FromWordDirect(coord->Sel(0))->ExportC(),
+	       Store::DirectWordToInt(coord->Sel(2)),
+	       Store::DirectWordToInt(coord->Sel(3)),
+	       inlineDepth); 
+  AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
+#endif
   
   inlineDepth++;
   Vector *oldFormalArgs = currentFormalArgs;
@@ -2825,7 +2827,7 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, V
 
 u_int invocations = 0;
 
-// Function of named_coord * value option vector * string vector *
+// Function of function_coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 //    timeval startTime;
@@ -2837,11 +2839,13 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
 #ifdef DEBUG_DISASSEMBLE 
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  std::fprintf(stderr, "\n%"U_INTF". compile function (%p) at %s:%"S_INTF".%"S_INTF" nArgs=%"S_INTF"\n",
-	       ++invocations, abstractCode->ToWord(),
+  std::fprintf(stderr, "\n%"U_INTF". compile function %s (%p) at %s:%"S_INTF".%"S_INTF" nArgs=%"S_INTF"\n",
+	       ++invocations,
+	       String::FromWordDirect(coord->Sel(1))->ExportC(),
+	       abstractCode->ToWord(),
 	       String::FromWordDirect(coord->Sel(0))->ExportC(),
-	       Store::DirectWordToInt(coord->Sel(1)),
 	       Store::DirectWordToInt(coord->Sel(2)),
+	       Store::DirectWordToInt(coord->Sel(3)),
 	       Vector::FromWordDirect(abstractCode->Sel(3))->GetLength()
 	       ); 
   AbstractCode::Disassemble(stderr, TagVal::FromWordDirect(abstractCode->Sel(5)));
