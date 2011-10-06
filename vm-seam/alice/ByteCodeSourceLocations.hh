@@ -67,7 +67,14 @@ private:
     }
   }
 
-  
+
+  static void PrintN(std::ostream& out, u_int n, const char* str) {
+    for (u_int i=0; i<n; i++) {
+      out << str;
+    }
+  }
+
+
 public:
   
   enum {
@@ -107,11 +114,11 @@ public:
           s_int line   = Store::WordToInt(coord->Sel(0));
           s_int col    = Store::WordToInt(coord->Sel(1));
           
-          out << std::setw(5) << pc << ": ";
-          for (u_int i=0; i<offset; i++) {
-            out << "    ";
-          }
-          out << line << ":" << col << std::endl;
+	  // show PC offset in bytes to match bytecode disassembler
+          out << "0x" << std::hex << std::setfill('0') << std::setw(4)
+	    << (pc * sizeof(word)) << std::dec << ": ";
+	  PrintN(out, offset, "----");
+          out << (offset == 0 ? "" : " ") << line << ":" << col << std::endl;
           
           src = TagVal::FromWord(src->Sel(2));
           break;
@@ -124,16 +131,21 @@ public:
           s_int line   = Store::WordToInt(fc->Sel(2));
           s_int col    = Store::WordToInt(fc->Sel(3));
           
-          out << " ---- start inlined function: " << name << " - "
-            << file << " " <<  line << "." << col << std::endl;
+          PrintN(out, 8, " ");
+	  PrintN(out, offset, "----");
+	  out << (offset == 0 ? "": " ") << "start inlined function: "
+	    << name << " - " << file << " " <<  line << "." << col << std::endl;
           offset++;
           src = TagVal::FromWord(src->Sel(1));
           break;
         }
         
         case End_Inline_Function: {
-          out << " ---- end inlined function" << std::endl;
           offset--;
+	  
+	  PrintN(out, 8, " ");
+	  PrintN(out, offset, "----");
+	  out << (offset == 0 ? "": " ") << "end" << std::endl;
           src = TagVal::FromWord(src->Sel(0));
           break;
         }
