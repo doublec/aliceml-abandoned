@@ -159,9 +159,14 @@ int Scheduler::Run() {
 	case Worker::RAISE:
 	  {
 	  raise:
-	    u_int handler;
+	    Tuple *package = Tuple::New(2);
+	    package->Init(0, currentData);
+	    package->Init(1, currentBacktrace->ToWord());
+	    
+  	    u_int handler;
 	    word data;
-	    currentThread->GetHandler(handler, data);
+	    currentThread->ActivateNextHandler(handler, data, package);
+	    
 	    Assert(GetCurrentStackTop() >= handler);
 	    StackFrame *handlerFrame = currentTaskStack->GetFrame(handler);
 	    // Unroll stack down to the handler frame
@@ -178,7 +183,7 @@ int Scheduler::Run() {
 	    // to be done: at this position, the backtrace will not be counted
 	    Profiler::SampleHeap(frame);
 #endif
-	    result = worker->Handle(data);
+	    result = worker->Handle(data, package);
 #if PROFILE
 	    Profiler::AddHeap();
 #endif

@@ -84,7 +84,7 @@ void Worker::PurgeFrame(StackFrame *) {
   return; // default: nothing to do
 }
 
-Worker::Result Worker::Handle(word) {
+Worker::Result Worker::Handle(word, Tuple*) {
   // default: pass the exception up the stack
   return RAISE;
 }

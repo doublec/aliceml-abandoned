@@ -21,6 +21,7 @@
 
 #include <ostream>
 #include "generic/Worker.hh"
+#include "generic/Tuple.hh"
 
 class Thread;
 class Transient;
@@ -41,7 +42,7 @@ public:
   virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame);
-  virtual Result Handle(word data);
+  virtual Result Handle(word data, Tuple *package);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);

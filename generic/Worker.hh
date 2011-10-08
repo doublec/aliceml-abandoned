@@ -21,8 +21,10 @@
 
 #include <ostream>
 #include "store/Store.hh"
+#include "generic/Tuple.hh"
 
 class StackFrame;
+class Tuple;
 #if PROFILE
 class String;
 #endif
@@ -45,7 +47,7 @@ public:
   virtual SeamMemberDll void PurgeFrame(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame) = 0;
-  virtual SeamMemberDll Result Handle(word data);
+  virtual SeamMemberDll Result Handle(word data, Tuple *package);
   // Debugging
   virtual const char *Identify() = 0;
   // TODO: update seam docs

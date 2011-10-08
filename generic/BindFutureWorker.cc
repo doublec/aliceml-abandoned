@@ -114,7 +114,7 @@ Worker::Result BindFutureWorker::Run(StackFrame *sFrame) {
   }
 }
 
-Worker::Result BindFutureWorker::Handle(word) {
+Worker::Result BindFutureWorker::Handle(word data, Tuple* package) {
 #if DEBUGGER
   // Uncaught Event Generation
   if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
@@ -128,9 +128,6 @@ Worker::Result BindFutureWorker::Handle(word) {
   Future *future = frame->GetFuture();
   Scheduler::PopFrame(frame->GetSize());
   future->ScheduleWaitingThreads();
-  Tuple *package = Tuple::New(2);
-  package->Init(0, Scheduler::GetCurrentData());
-  package->Init(1, Scheduler::GetCurrentBacktrace()->ToWord());
   future->Become(CANCELLED_LABEL, package->ToWord());
   Scheduler::SetNArgs(1);
   Scheduler::SetCurrentArg(0, future->ToWord());

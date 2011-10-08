@@ -77,7 +77,7 @@ namespace {
     virtual u_int GetFrameSize(StackFrame *sFrame);
     // Execution
     virtual Result Run(StackFrame *sFrame);
-    virtual Result Handle(word data);
+    virtual Result Handle(word data, Tuple *package);
     // Debugging
     virtual const char *Identify();
     virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
@@ -128,7 +128,7 @@ namespace {
     }
   }
 
-  Worker::Result UncaughtExceptionWorker::Handle(word) {
+  Worker::Result UncaughtExceptionWorker::Handle(word, Tuple *package) {
     StackFrame *sFrame = Scheduler::GetFrame();
     UncaughtExceptionFrame *frame = reinterpret_cast<UncaughtExceptionFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
@@ -169,7 +169,7 @@ namespace {
     virtual u_int GetFrameSize(StackFrame *sFrame);
     // Execution
     virtual Result Run(StackFrame *sFrame);
-    virtual Result Handle(word data);
+    virtual Result Handle(word data, Tuple *package);
     // Debugging
     virtual const char *Identify();
     virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
@@ -187,7 +187,7 @@ namespace {
     return Worker::TERMINATE;
   }
 
-  Worker::Result EmptyTaskWorker::Handle(word) {
+  Worker::Result EmptyTaskWorker::Handle(word, Tuple*) {
     if (TaskStack::uncaughtExceptionClosures == Store::IntToWord(0)) {
       std::fprintf(stderr, "uncaught exception:\n");
       Debug::Dump(Scheduler::GetCurrentData());
