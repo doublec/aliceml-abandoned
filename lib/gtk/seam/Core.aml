@@ -164,27 +164,25 @@ struct
     in
 	fun listener nil                         = ()
 	  | listener ((connid,obj,args)::stream) =
-	    ( Exn.catch
-	      (fn packet =>
-		  ( TextIO.output (TextIO.stdErr,
-				   "*** Gtk signal handler raised exception " ^
-				   Exn.name (Exn.fromPacket packet) ^
-				   " ***\n*** Backtrace:\n") ;
-		    Exn.dumpTrace packet ))
-	      (fn _ => 
-                let (* val _ = TextIO.output (TextIO.stdErr, "*** looking up signal handler ***") *)
-                    val f = NativeCore.signalMapCondGet(connid, dummyHandler) 
-                in
-                    (*
-                    TextIO.output (TextIO.stdErr,
-                      "*** calling signal handler ***");
-                    *)
-                    f (obj, args)
-                    (* ;
-                    TextIO.output (TextIO.stdErr,
-                        "*** signal handler has returned") *)
-                end) ;
-	      listener stream )
+                (let (* val _ = TextIO.output (TextIO.stdErr, "*** looking up signal handler ***") *)
+                     val f = NativeCore.signalMapCondGet(connid, dummyHandler) 
+                 in
+                     (*
+                     TextIO.output (TextIO.stdErr,
+                       "*** calling signal handler ***");
+                     *)
+                     f (obj, args)
+                     (* ;
+                     TextIO.output (TextIO.stdErr,
+                         "*** signal handler has returned") *)
+                 end
+                 handle e =>
+		    (TextIO.output (TextIO.stdErr,
+		 		   "*** Gtk signal handler raised exception " ^
+		 		   Exn.name e ^
+		 		   " ***\n*** Backtrace:\n");
+		     Exn.dumpTrace(Exn.currentPacket()));
+	        listener stream)
     end
 
     (* finalization handling *)

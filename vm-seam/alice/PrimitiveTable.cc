@@ -24,6 +24,7 @@
 word PrimitiveTable::valueTable;
 word PrimitiveTable::functionTable;
 
+word PrimitiveTable::Exn_NoCurrentPacket;
 word PrimitiveTable::Future_Cyclic;
 word PrimitiveTable::General_Chr;
 word PrimitiveTable::General_Div;
@@ -45,6 +46,7 @@ void PrimitiveTable::Init() {
   functionTable = ChunkMap::New(373)->ToWord();
   RootSet::Add(valueTable);
   RootSet::Add(functionTable);
+  RootSet::Add(PrimitiveTable::Exn_NoCurrentPacket);
   RootSet::Add(PrimitiveTable::Future_Cyclic);
   RootSet::Add(PrimitiveTable::General_Chr);
   RootSet::Add(PrimitiveTable::General_Div);

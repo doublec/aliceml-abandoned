@@ -130,16 +130,10 @@ struct
 				      else Future.byneed
 		       in
 			   if cd then OS.FileSys.chDir dir' else ();
-			   Exn.catch
-			   (fn packet =>
-			    case Exn.fromPacket packet
-			     of Component.Failure _ => Exn.reraise packet
-			      | exn => Exn.reraise (Exn.update (packet,
-						    Component.Failure
-						    (Url.fromString "/",
-						     Component.Eval exn)))
-			   )
-			   (fn _ => act (#1 o Reflect.reflectPackage o eval))
+                           act (#1 o Reflect.reflectPackage o eval)
+                           handle Component.Failure _ => Exn.reraise(Exn.currentPacket())
+			        | exn => Exn.reraise (Exn.update (Exn.currentPacket(),
+                                                      Component.Failure (Url.fromString "/", Component.Eval exn)))
 			   finally
 			       (* Hack: this fails when the code cd'ed to
 				* its file's own directory... *)

@@ -153,15 +153,12 @@ const char *ByteCodeInterpreter::Identify() {
   return "ByteCodeInterpreter";
 }
 
-Worker::Result ByteCodeInterpreter::Handle(word data) {
+Worker::Result ByteCodeInterpreter::Handle(word data, Tuple *package) {
   BCI_DEBUG("ByteCodeInterpreter::Handle started\n");
   StackFrame *sFrame = Scheduler::GetFrame();
   ByteCodeFrame *frame = reinterpret_cast<ByteCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  word exn = Scheduler::GetCurrentData();
-  Tuple *package = Tuple::New(2);
-  package->Init(0, exn);
-  package->Init(1, Scheduler::GetCurrentBacktrace()->ToWord());
+  
   u_int ipIndex = Store::DirectWordToInt(data);
   word handler = frame->GetIP()->Sel(ipIndex);
   Tuple *handlerData = Tuple::FromWordDirect(handler);
@@ -169,7 +166,7 @@ Worker::Result ByteCodeInterpreter::Handle(word data) {
   u_int r1 = Store::DirectWordToInt(handlerData->Sel(1));
   u_int handlerPC = Store::DirectWordToInt(handlerData->Sel(2));
   SETREG(r0, package->ToWord());
-  SETREG(r1, exn);
+  SETREG(r1, package->Sel(0));
   frame->SavePC(handlerPC);  
   return Worker::CONTINUE;
 }
@@ -1670,8 +1667,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        {
 	Scheduler::PopHandler();
        }
-       DISPATCH(PC);      
-      
+       DISPATCH(PC);
+    
     Case(raise_normal) // reg
        {
 	GET_1R(codeBuffer,PC,reg);

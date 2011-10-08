@@ -73,15 +73,12 @@ functor MkExplorer (Space : SPACE)
 	  val tail   = Promise.promise ()
 	  val stream = Ref.ref tail
 		       
-	  fun process s = (case s of
+	  fun process s = case s of
 			       nil   => ()
-			     | p::pr => ((Exn.catch (fn packet => 
-						     (print ("Uncaught exception "^
-							     Exn.name (Exn.fromPacket packet)^"\n");
-						      print ("Message: "^
-							     Exn.message (Exn.fromPacket packet)^"\n");
-						      Exn.dumpTrace packet)) p);
-					 process pr))
+			     | p::pr => process pr
+                                        handle e => (print ("Uncaught exception "^Exn.name e^"\n");
+					             print ("Message: "^Exn.message e^"\n");
+						     Exn.dumpTrace(Exn.currentPacket()))
 	  fun send p =
 	      let
 		  val newtail = Promise.promise ()

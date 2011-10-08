@@ -33,15 +33,18 @@
 	type t = exn
 	type packet
 
-	val name :       exn -> string
-	val message :    exn -> string
+	exception NoCurrentPacket
 
-	val fromPacket : packet -> exn
-	val update :     packet * exn -> packet
+	val name :          exn -> string
+	val message :       exn -> string
 
-	val catch :      (packet -> 'a) -> (unit -> 'a) -> 'a
-	val reraise :    packet -> 'a
-	val dumpTrace :  packet -> unit
+	val currentPacket : unit -> packet
+	val fromPacket :    packet -> exn
+	val update :        packet * exn -> packet
+	val reraise :       packet -> 'a
+
+	val trace :         packet -> string
+	val dumpTrace :     packet -> unit
     end
   </PRE>
 
@@ -84,6 +87,16 @@
     </DD>
 
     <DT>
+      <TT>currentPacket ()</TT>
+    </DT>
+    <DD>
+      <P>Retrieves the packet for the innermost (i.e. the first to be
+      encountered when walking down the stack) handle expression that is
+      being evaluated by the current thread. If no handle expression is
+      currently being evaluated, raise <TT>NoCurrentPacket</TT>.</P>
+    </DD>
+
+    <DT>
       <TT>fromPacket <I>p</I></TT>
     </DT>
     <DD>
@@ -99,17 +112,6 @@
     </DD>
 
     <DT>
-      <TT>catch <I>handler</I> <I>f</I></TT>
-    </DT>
-    <DD>
-      <P>Applies <TT><I>f</I>()</TT> and returns its result. If an exception
-      is raised, <TT><I>handler</I></TT> is invoked with the respective packet
-      and its result is returned. The following equivalence holds:</P>
-      <PRE>
-        catch ((fn <I>match</I>) o fromPacket) (fn () => <I>exp</I>)  =  <I>exp</I> handle <I>match</I></PRE>
-    </DD>
-
-    <DT>
       <TT>reraise <I>p</I></TT>
     </DT>
     <DD>
@@ -120,10 +122,18 @@
     </DD>
 
     <DT>
+      <TT>trace <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Retrieves the backtrace of packet <TT><I>p</I></TT> in some
+      implementation-dependent format.</P>
+    </DD>
+
+    <DT>
       <TT>dumpTrace <I>p</I></TT>
     </DT>
     <DD>
-      <P>Writes the backtrace of packet <TT><I>p</I></TT> to some
+      <P>Writes the output of <TT>trace <I>p</I></TT> to some
       implementation-dependent output (e.g. <TT>stderr</TT>). This function
       is provided solely for debugging convenience, the format and
       the destination of the dump is left unspecified.</P>

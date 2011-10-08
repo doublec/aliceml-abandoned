@@ -849,6 +849,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       break;
     case AbstractCode::EndHandle: // of instr
       {
+	Scheduler::PopHandler();
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
       break;
@@ -1126,17 +1127,14 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
   }
 }
 
-Worker::Result AbstractCodeInterpreter::Handle(word data) {
+Worker::Result AbstractCodeInterpreter::Handle(word data, Tuple *package) {
   StackFrame *sFrame = Scheduler::GetFrame();
   Assert(sFrame->GetWorker() == this);
   AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
-  Tuple *package = Tuple::New(2);
-  word exn = Scheduler::GetCurrentData();
-  package->Init(0, exn);
-  package->Init(1, Scheduler::GetCurrentBacktrace()->ToWord());
+  
   Scheduler::SetNArgs(2);
   Scheduler::SetCurrentArg(0, package->ToWord());
-  Scheduler::SetCurrentArg(1, exn);
+  Scheduler::SetCurrentArg(1, package->Sel(0));
   Tuple *exnData = Tuple::FromWordDirect(data);
   frame->SetPC(TagVal::FromWordDirect(exnData->Sel(0)));
   frame->SetFormalArgs(exnData->Sel(1));

@@ -55,7 +55,7 @@ public:
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
   virtual u_int GetFrameSize(StackFrame *sFrame);
-  virtual Result Handle(word data);
+  virtual Result Handle(word data, Tuple *package);
   virtual Result Run(StackFrame *sFrame);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual u_int GetOutArity(ConcreteCode *concreteCode);

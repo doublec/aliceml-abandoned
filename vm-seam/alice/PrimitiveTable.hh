@@ -64,6 +64,7 @@ private:
   static void RegisterWord32();
   static word Lookup(word table, Chunk *name);
 public:
+  static word Exn_NoCurrentPacket;
   static word Future_Cyclic;
   static word General_Chr;
   static word General_Div;

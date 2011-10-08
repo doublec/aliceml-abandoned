@@ -69,7 +69,6 @@ struct
     end
 
   fun processInstruction instr =
-    Exn.catch (fn packet => (print "Inspector.exception: "; Print.printVal (Exn.fromPacket packet); print "\n"; Exn.dumpTrace packet)) (fn () =>
     (case instr of
        NewFont             => (Selection.reselect () ;
                                Driver.initFonts () ;
@@ -95,14 +94,11 @@ struct
          (MainWindow.setStatus "" ;
           (* If the selection is empty, we try to select at the current pos. *)
           if Selection.isEmpty () then Board.clic (x,y,m) else () ;
-          if Selection.isEmpty () then () else MainWindow.popup (b, t))))
-    
-    (*
-       handle Assert (f, n) => print ("Inspector.ASSERT FALSE : " ^ f ^
-                                      " Line " ^ (Int.toString n) ^ "\n")
-	    | Fail s => print ("Inspector.FAILURE == " ^ s ^ "\n")
-            | e => print ("Inspector.exception: " ^ (exnName e) ^ "\n")
-    *)
+          if Selection.isEmpty () then () else MainWindow.popup (b, t)))
+    handle e =>
+       (print "Inspector.exception: "; Print.printVal e; print "\n";
+        Exn.dumpTrace(Exn.currentPacket()))
+
 
   fun applyPreferences (newPrefs:Prefs.prefs) =
     let

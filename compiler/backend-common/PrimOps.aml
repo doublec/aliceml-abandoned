@@ -77,11 +77,12 @@ structure PrimOps :> PRIM_OPS =
 		ins ("CharVector.sub", SOME (Tuple 2));
 		ins ("CharVector.tabulate", SOME (Tuple 2));
 		ins ("CharVector.toList", SOME Unary);
-		ins ("Exn.catch", SOME (Tuple 2));
+		ins ("Exn.currentPacket", NONE);
 		ins ("Exn.trace", SOME (Tuple 2));
 		ins ("Exn.dumpTrace", SOME (Tuple 2));
 		ins ("Exn.name", SOME Unary);
 		ins ("Exn.reraise", SOME (Tuple 2));
+	        ins ("Exn.NoCurrentPacket", NONE);
 		ins ("Future.Cyclic", NONE);
 		ins ("Future.alarm'", SOME Unary);
 		ins ("Future.await", SOME Unary);

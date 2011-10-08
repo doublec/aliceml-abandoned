@@ -39,7 +39,7 @@ public:
 
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Result Run(StackFrame *sFrame);
-  virtual Result Handle(word data);
+  virtual Result Handle(word data, Tuple *package);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);

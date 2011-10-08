@@ -108,7 +108,7 @@ namespace {
     virtual void PushCall(Closure *closure);
     virtual u_int GetFrameSize(StackFrame *sFrame);
     virtual Result Run(StackFrame *sFrame);
-    virtual Result Handle(word data);
+    virtual Result Handle(word data, Tuple *package);
     virtual u_int GetInArity(ConcreteCode *concreteCode);
     virtual u_int GetOutArity(ConcreteCode *concreteCode);
     virtual const char *Identify();
@@ -148,7 +148,7 @@ namespace {
   }
 
   // Alice thread semantic: Silently ignore exceptions raised by the signal handler
-  Worker::Result SignalTranslationInterpreter::Handle(word) {
+  Worker::Result SignalTranslationInterpreter::Handle(word, Tuple*) {
     StackFrame *sFrame = Scheduler::GetFrame();
     SignalTranslationFrame *frame =
 	  reinterpret_cast<SignalTranslationFrame *>(sFrame);

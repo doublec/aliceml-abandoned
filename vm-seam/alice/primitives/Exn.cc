@@ -14,88 +14,6 @@
 #include "alice/Authoring.hh"
 
 
-namespace {
-
-  //
-  // CatchWorker
-  //
-  class CatchWorkerFrame : private StackFrame {
-  protected:
-    enum { HANDLER_POS, SIZE };
-  public:
-    static CatchWorkerFrame *New(Worker *worker, word wClosure) {
-      NEW_STACK_FRAME(frame, worker, SIZE);
-      frame->InitArg(HANDLER_POS, wClosure);
-      return static_cast<CatchWorkerFrame *>(frame);
-    }
-    u_int GetSize() {
-      return StackFrame::GetSize() + SIZE;
-    }
-    word GetHandler() {
-      return StackFrame::GetArg(HANDLER_POS);
-    }
-  };
-
-  class CatchWorker : public Worker {
-  private:
-    CatchWorker() : Worker() {}
-  public:
-    static CatchWorker *self;
-
-    static void Init() {
-      self = new CatchWorker();
-    }
-
-    static void PushFrame(word closure) {
-      CatchWorkerFrame::New(self, closure);
-    }
-
-    virtual u_int GetFrameSize(StackFrame *sFrame);
-    virtual Result Run(StackFrame *sFrame);
-    virtual Result Handle(word data);
-    virtual const char *Identify();
-    virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
-  };
-
-  CatchWorker *CatchWorker::self;
-
-  u_int CatchWorker::GetFrameSize(StackFrame *sFrame) {
-    Assert(sFrame->GetWorker() == this);
-    CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
-    return catchWorkerFrame->GetSize();
-  }
-
-  Worker::Result CatchWorker::Run(StackFrame *sFrame) {
-    Assert(sFrame->GetWorker() == this);
-    CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
-    Scheduler::PopHandler();
-    Scheduler::PopFrame(catchWorkerFrame->GetSize());
-    return Worker::CONTINUE;
-  }
-
-  Worker::Result CatchWorker::Handle(word) {
-    StackFrame *sFrame = Scheduler::GetFrame();
-    Assert(sFrame->GetWorker() == this);
-    CatchWorkerFrame *catchWorkerFrame = reinterpret_cast<CatchWorkerFrame *>(sFrame);
-    word handler = catchWorkerFrame->GetHandler();
-    Scheduler::PopFrame(catchWorkerFrame->GetSize());
-    Scheduler::SetNArgs(2);
-    Scheduler::SetCurrentArg(0, Scheduler::GetCurrentData());
-    Scheduler::SetCurrentArg(1, Scheduler::GetCurrentBacktrace()->ToWord());
-    return Scheduler::PushCall(handler);
-  }
-
-  const char *CatchWorker::Identify() {
-    return "CatchWorker";
-  }
-
-  void CatchWorker::DumpFrame(StackFrame *sFrame, std::ostream& out) {
-    out << "[Exn::Catch]" << std::endl;
-  }
-
-}
-
-
 DEFINE1(Exn_name) {
   DECLARE_BLOCK(conVal, x0);
   String *name;
@@ -115,16 +33,18 @@ DEFINE1(Exn_name) {
   RETURN(name->ToWord());
 } END
 
-DEFINE2(Exn_catch) {
-  word handler = x0;
-  word closure = x1;
-  CatchWorker::PushFrame(handler);
-  word data = Store::IntToWord(0); // Unused
-  Scheduler::PushHandler(data);
-  Scheduler::SetNArgs(1);
-  Scheduler::SetCurrentArg(0, Store::IntToWord(0)); // Unit
-  return Scheduler::PushCall(closure);
+
+DEFINE0(Exn_currentPacket) {
+  Tuple *p = Scheduler::GetCurrentThread()->GetCurrentPackage();
+  
+  if (p == INVALID_POINTER) {
+    RAISE(PrimitiveTable::Exn_NoCurrentPacket);
+  }
+  else {
+    RETURN(p->ToWord());
+  }
 } END
+
 
 DEFINE2(Exn_reraise) {
   word exn = x0;
@@ -135,10 +55,12 @@ DEFINE2(Exn_reraise) {
   return Worker::RAISE;
 } END
 
+
 DEFINE2(Exn_trace) {
   DECLARE_BLOCKTYPE(Backtrace, backtrace, x1);
   RETURN(backtrace->DumpToString()->ToWord());
 } END
+
 
 DEFINE2(Exn_dumpTrace) {
   DECLARE_BLOCKTYPE(Backtrace, backtrace, x1);
@@ -146,9 +68,12 @@ DEFINE2(Exn_dumpTrace) {
   RETURN_UNIT;
 } END
 
+
 void PrimitiveTable::RegisterExn() {
-  CatchWorker::Init();
-  Register("Exn.catch", Exn_catch, 2);
+  PrimitiveTable::Exn_NoCurrentPacket =
+    UniqueConstructor::New("NoCurrentPacket", "Exn.NoCurrentPacket")->ToWord();
+  Register("Exn.NoCurrentPacket", PrimitiveTable::Exn_NoCurrentPacket);
+  Register("Exn.currentPacket", Exn_currentPacket, 0);
   Register("Exn.trace", Exn_trace, 2);
   Register("Exn.dumpTrace", Exn_dumpTrace, 2);
   Register("Exn.name", Exn_name, 1);

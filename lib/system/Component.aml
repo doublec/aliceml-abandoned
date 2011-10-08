@@ -262,7 +262,8 @@ struct
 	fun infToString NONE = "(none)"
 	  | infToString (SOME inf) = PrettyPrint.toString (PPInf.ppInf inf, 80)
 
-	fun reraiseAs (packet, exn) = Exn.reraise (Exn.update (packet, exn))
+	fun reraiseAs exn =
+            Exn.reraise (Exn.update (Exn.currentPacket(), exn))
 
 	fun typeCheck (inf, rea, importInf, mod, url, baseUrlOpt) : mod =
 	    let
@@ -273,10 +274,8 @@ struct
 					| NONE => " linked explicitly")
 	    in
 		trace (!logger, id, "type-checking " ^ message);
-		Exn.catch
-		  (fn packet =>
-		   case Exn.fromPacket packet of
-		     Inf.Mismatch m =>
+                matchWith (rea, inf, importInf)
+                handle Inf.Mismatch m =>
 		     (trace (!logger, id, "type-checking failed");
 		      trace (!logger, id, "signature expected" ^
 					  (case baseUrlOpt' of
@@ -294,7 +293,7 @@ struct
 					      infToString (SOME inf)^ "\n" ^ s)
 					   "" (#inf_rea rea)) (#typ_rea rea));
 		      reraiseAs
-		      (packet, Failure (url, Mismatch {component = url,
+		      (Failure (url, Mismatch {component = url,
 						       request = baseUrlOpt,
 						       cause = m})))
 		   | Failure (url', e) =>
@@ -302,21 +301,18 @@ struct
 					  " propagated from " ^
 					      Url.toStringRaw url' ^
 					      " during type-checking");
-		      reraiseAs (packet, Failure (url, e)))
+		      reraiseAs (Failure (url, e)))
 		   | e =>
 		     (trace (!logger, id, "internal exception " ^ exnName e ^
 					      " during type-checking");
-		      reraiseAs (packet, Failure (url, Internal e))))
-		  (fn _ => matchWith (rea, inf, importInf));
+		      reraiseAs (Failure (url, Internal e)));
 		trace (!logger, id, "type-checked  " ^ message);
 		mod
 	    end
 
 	fun load'' (url, delegate) =
-	    Exn.catch (fn packet =>
-			reraiseAs (packet, Failure(url, Exn.fromPacket packet)))
-		      (fn _ => 	load' (!logger, id, Config.resolver, delegate)
-				      url)
+            load' (!logger, id, Config.resolver, delegate) url
+            handle e => reraiseAs (Failure(url, e))
 
 	fun load url = load'' (url, loadDelegate)
 
@@ -374,16 +370,10 @@ trace (!logger, id, "extended realisation after considering import " ^ Url.toStr
 					      importInf, SOME baseUrl))
 			       imports
 		do trace (!logger, id, "evaluating " ^ Url.toStringRaw baseUrl)
-		val mod = Exn.catch
-			  (fn packet =>
-			   case Exn.fromPacket packet of
-			      Failure _ => Exn.reraise packet
-			    | e =>
-			      (trace (!logger, id,
-				      "evaluation failed in " ^
-				      Url.toStringRaw baseUrl);
-			       reraiseAs (packet, Failure (baseUrl, Eval e))))
-			  (fn _ => body imports')
+		val mod = body imports'
+                          handle Failure _ => Exn.reraise(Exn.currentPacket())
+                              |  e => (trace (!logger, id, "evaluation failed in " ^ Url.toStringRaw baseUrl);
+			               reraiseAs (Failure (baseUrl, Eval e)))
 		do trace (!logger, id, "evaluated  " ^ Url.toStringRaw baseUrl)
 		val dynInf =
 		    case inf of

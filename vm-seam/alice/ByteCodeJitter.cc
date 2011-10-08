@@ -1747,12 +1747,13 @@ TagVal *ByteCodeJitter::InstrTry(TagVal *pc) {
 
 // EndTry of instr
 TagVal *ByteCodeJitter::InstrEndTry(TagVal *pc) {
-  SET_INSTR(PC,remove_handler);
+  SET_INSTR(PC, remove_handler);
   return TagVal::FromWordDirect(pc->Sel(0));
 }
 
 // EndHandle of instr
 TagVal *ByteCodeJitter::InstrEndHandle(TagVal *pc) {
+  SET_INSTR(PC, remove_handler);
   return TagVal::FromWordDirect(pc->Sel(0));
 }
 

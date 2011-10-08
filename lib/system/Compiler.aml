@@ -88,17 +88,9 @@ struct
 		 raise Error)
 
     fun handleEvalError f x =
-	Exn.catch
-	(fn p =>
-	    case Exn.fromPacket p
-	     of Component.Failure (url, Component.Eval exn) =>
-		if List.last (Url.getPath url) = ""
-		then Exn.reraise (Exn.update (p, exn))
-		else Exn.reraise p
-	      | _ => Exn.reraise p
-	)
-	(fn _ => f x)
-
+	f x
+        handle Component.Failure (url, Component.Eval exn) if (List.last(Url.getPath url) = "") =>
+            Exn.reraise (Exn.update(Exn.currentPacket(), exn))
 
     (* Compiler switches *)
 

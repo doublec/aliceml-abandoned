@@ -13,21 +13,23 @@
 import structure __pervasive            from "Pervasive"
 import __primitive type unit and string from "ToplevelTypes"
 
-(* TODO: update docs - include trace function *)
+
 signature EXN =
 sig
     exttype exn
     type t = exn
     type packet
 
-    val name :       exn -> string
-    val message :    exn -> string
+    exception NoCurrentPacket
 
-    val catch :      (packet -> 'a) -> (unit -> 'a) -> 'a
-    val reraise :    packet -> 'a
-    val trace :      packet -> string
-    val dumpTrace :  packet -> unit
+    val name :          exn -> string
+    val message :       exn -> string
 
-    val fromPacket : packet -> exn
-    val update :     packet * exn -> packet
+    val currentPacket : unit -> packet (* NoCurrentPacket *)
+    val fromPacket :    packet -> exn
+    val update :        packet * exn -> packet
+    val reraise :       packet -> 'a
+
+    val trace :         packet -> string
+    val dumpTrace :     packet -> unit
 end

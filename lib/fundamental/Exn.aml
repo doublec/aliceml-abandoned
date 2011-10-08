@@ -28,13 +28,15 @@ struct
     __primitive val seal :   packet' -> packet = "Unsafe.cast"
     __primitive val unseal : packet -> packet' = "Unsafe.cast"
 
+    __primitive exception NoCurrentPacket = "Exn.NoCurrentPacket"
+
     fun fromPacket p = #1 (unseal p)
     fun update (p, e) = seal (e, #2 (unseal p))
 
-    __primitive val catch' :   (packet -> 'a) * (unit -> 'a) -> 'a = "Exn.catch"
-    __primitive val trace :     packet -> string = "Exn.trace"
-    __primitive val dumpTrace : packet -> unit = "Exn.dumpTrace"
-    __primitive val reraise :   packet -> 'a   = "Exn.reraise"
+    __primitive val currentPacket : unit -> packet   = "Exn.currentPacket"
+    __primitive val trace :         packet -> string = "Exn.trace"
+    __primitive val dumpTrace :     packet -> unit   = "Exn.dumpTrace"
+    __primitive val reraise :       packet -> 'a     = "Exn.reraise"
 
-    fun catch f g = catch' (f,g)
+
 end

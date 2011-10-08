@@ -16,10 +16,10 @@ val _ = Inspector.inspect [r1, r2, r2, r2, r1]
 val _ = Inspector.inspect [r1, r2, r2, r2, r1]
 val _ = Inspector.inspect [r1, r2, r2, r2, r1]
 val _ = waitLine ()
-val _ = Exn.catch Exn.dumpTrace (fn () =>  Inspector.inspect [r1, r2, r2, r2, r1])
+val _ = Inspector.inspect [r1, r2, r2, r2, r1] handle _ => Exn.dumpTrace(Exn.currentPacket())
 val _ = waitLine ()
 
-val _ = Exn.catch Exn.dumpTrace (fn () => Inspector.inspect ())
+val _ = Inspector.inspect () handle _ => Exn.dumpTrace(Exn.currentPacket())
 val _ = waitLine ()
 
 datatype tree =
