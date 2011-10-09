@@ -104,9 +104,11 @@ ProfileEntry *Profiler::GetEntry(StackFrame *frame) {
   Worker *worker = frame->GetWorker();
   word key = worker->GetProfileKey(frame);
   Map *t = Map::FromWordDirect(table);
-  if (t->IsMember(key))
-    return ProfileEntry::FromWordDirect(t->Get(key));
-  else {
+  word entry = t->CondGet(key);
+  
+  if (entry != INVALID_POINTER) {
+    return ProfileEntry::FromWordDirect(entry);
+  } else {
     String *name = worker->GetProfileName(frame);
     ProfileEntry *entry = ProfileEntry::New(name);
     t->Put(key, entry->ToWord());
@@ -118,9 +120,11 @@ ProfileEntry *Profiler::GetEntry(ConcreteCode *concreteCode) {
   Interpreter *interpreter = concreteCode->GetInterpreter();
   word key = interpreter->GetProfileKey(concreteCode);
   Map *t = Map::FromWordDirect(table);
-  if (t->IsMember(key))
-    return ProfileEntry::FromWordDirect(t->Get(key));
-  else {
+  word entry = t->CondGet(key);
+  
+  if (entry != INVALID_POINTER) {
+    return ProfileEntry::FromWordDirect(entry);
+  } else {
     String *name = interpreter->GetProfileName(concreteCode);
     ProfileEntry *entry = ProfileEntry::New(name);
     t->Put(key, entry->ToWord());
@@ -140,9 +144,9 @@ void Profiler::SampleHeap(StackFrame *frame) {
   Worker *worker = frame->GetWorker();
   word key       = worker->GetProfileKey(frame);
   Map *t         = Map::FromWordDirect(table);
-  if (t->IsMember(key))
-    sampleEntry = t->Get(key);
-  else {
+  
+  sampleEntry = t->CondGet(key);
+  if (sampleEntry == INVALID_POINTER) {
     ProfileEntry *entry = ProfileEntry::New(worker->GetProfileName(frame));
     t->Put(key, entry->ToWord());
     sampleEntry = entry->ToWord();
