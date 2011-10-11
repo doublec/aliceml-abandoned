@@ -101,7 +101,7 @@ public:
     s_int col    = Store::WordToInt(fc->Sel(3));
     
     out << "Byte Code Source Locations: " << name << " - "
-      << file << " " << line << ":" << col << std::endl;
+      << file << " " << line << "." << col << std::endl;
     
     u_int offset = 0;
     TagVal *src = TagVal::FromWord(sourceLocations);

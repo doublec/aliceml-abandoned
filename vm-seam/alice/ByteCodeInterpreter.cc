@@ -1801,7 +1801,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #ifndef THREADED
     default:
       {
-	fprintf(stderr, "BCI: instr number %d unkown\n",instr);
+	fprintf(stderr, "BCI: instr number %"U_INTF" unknown\n", instr);
 	return Worker::CONTINUE;
       }
     }

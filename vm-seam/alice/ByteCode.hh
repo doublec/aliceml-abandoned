@@ -34,12 +34,16 @@ namespace ByteCodeInstr {
     ARGS_1R_1I_STATR4,
     ARGS_1R_1I_DYNR,
     ARGS_1R_1I_DYNI,
+    ARGS_1R_1I_JUMP,
+    ARGS_1R_1I_DYNJUMP,
     ARGS_1R_2I,
     ARGS_1R_DYNR,
     ARGS_1R_DYNI,
+    ARGS_1R_DYNJUMP,
     ARGS_2R,
     ARGS_2R_1I,
     ARGS_2R_2I,
+    ARGS_2R_JUMP,
     ARGS_3R,
     ARGS_3R_1I,
     ARGS_4R,
@@ -55,6 +59,7 @@ namespace ByteCodeInstr {
     ARGS_2I_3R,
     ARGS_2I_DYNR,
     ARGS_DYNI,
+    ARGS_JUMP,
   };
 
   enum instr {
@@ -113,8 +118,7 @@ public:
 #endif // THREADED
 
   static void Disassemble(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv, u_int nRegisters); 
-  static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter startPC,
-                                      ProgramCounter pc, Chunk *code, Tuple *imEnv);
+  static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv);
 };
 
 #undef INSTR
