@@ -813,6 +813,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Transient *transient = Store::WordToTransient(requestWord);
 	if (transient != INVALID_POINTER) REQUEST(transient->ToWord());
 	KillIdRef(pc->Sel(0), frame, pc, globalEnv);
+	frame->SetCoord(coord);
 	Scheduler::SetCurrentData(requestWord);
 	Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
 	return Worker::RAISE;
@@ -823,9 +824,9 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Tuple *package =
 	  Tuple::FromWordDirect(GetIdRefKill(pc->Sel(0), frame, pc, globalEnv));
 	package->AssertWidth(2);
+	frame->SetCoord(coord);
 	Scheduler::SetCurrentData(package->Sel(0));
-	Scheduler::SetCurrentBacktrace
-	  (Backtrace::FromWordDirect(package->Sel(1)));
+	Scheduler::SetCurrentBacktrace(Backtrace::FromWordDirect(package->Sel(1)));
 	return Worker::RAISE;
       }
     case AbstractCode::Try: // of instr * idDef * idDef * instr
