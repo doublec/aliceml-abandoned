@@ -83,7 +83,7 @@ word ByteCodeJitter::ExtractImmediate(word idRef) {
 
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
-    return tagVal->Sel(0);
+    return LazySelInterpreter::Deref(tagVal->Sel(0));
   default:
     return INVALID_POINTER;		       
   }
@@ -1315,175 +1315,159 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
 }
 
 // AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
-/*inline*/ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
+TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
   Vector *args = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs = args->GetLength();
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
   s_int outArity = INVALID_INT;
 
 #ifdef DO_INLINING
+  // check if the call can be inlined
+  Map *inlineMap = inlineInfo->GetInlineMap();
+  if(inlineMap->IsMember(pc->ToWord())) {
+    AppVarInfo *avi = AppVarInfo::FromWordDirect(inlineMap->Get(pc->ToWord()));
+    TagVal *continuation = CompileInlineFunction(pc, avi, args, idDefsInstrOpt);
+    if (idDefsInstrOpt == INVALID_POINTER && currentFormalArgs != INVALID_POINTER) {
+      patchTable->Add(PC);
+      SET_INSTR_1I(PC, jump, 0);
+    }
+    return continuation;
+  }
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER
-		     && !(inlineDepth > 0 && 
-			  currentFormalArgs != INVALID_POINTER));
+    && !(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER));
 #else
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER);
 #endif
+  
+  word wClosure = ExtractImmediate(pc->Sel(0));
+  if (wClosure != INVALID_POINTER) {
+    BCJIT_DEBUG("AppVar: entered immediate\n");
+    Closure *closure = Closure::FromWord(wClosure);
+    if(closure != INVALID_POINTER) {
+      word wConcreteCode = closure->GetConcreteCode();
 
-#ifdef DO_INLINING
-      // check if the call can be inlined
-      Map *inlineMap = inlineInfo->GetInlineMap();
-      if(inlineMap->IsMember(pc->ToWord())) {
-	AppVarInfo *avi = AppVarInfo::FromWordDirect(inlineMap->Get(pc->ToWord()));
-	TagVal *continuation = CompileInlineFunction(pc, avi, args, idDefsInstrOpt);
-	if(inlineDepth > 0 && idDefsInstrOpt == INVALID_POINTER) {
-	  patchTable->Add(PC);    
-	  SET_INSTR_1I(PC,jump,0);
-	}
-	return continuation;
+      // turn self-calls into jumps
+      if(wConcreteCode == currentConcreteCode) {
+	CompileSelfCall(pc, isTailcall);
+	outArity = currentOutArity;
+	if(isTailcall)
+	  return INVALID_POINTER;
+	else
+	  goto compile_continuation;
       }
-#endif
-
-  TagVal *tagVal = TagVal::FromWordDirect(pc->Sel(0));
-  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
-    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));  
-
-  switch (AbstractCode::GetIdRef(tagVal)) {
-  case AbstractCode::Immediate:
-    {
-      BCJIT_DEBUG("AppVar: entered immediate\n");
-      word wClosure = tagVal->Sel(0);
-      // extract the closure
-      Closure *closure = Closure::FromWord(LazySelInterpreter::Deref(wClosure));
-      // check which kind of immediate closure we got
-      if(closure != INVALID_POINTER) {
-	word wConcreteCode = closure->GetConcreteCode();
-	if(wConcreteCode == currentConcreteCode) {
-	  // this is a self recursive call
-	  CompileSelfCall(pc,isTailcall);
-	  outArity = currentOutArity;
-	  if(isTailcall)
-	    return INVALID_POINTER;
-	  else
-	    goto compile_continuation;
-	}
-	ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
-	if(concreteCode != INVALID_POINTER) {
-	  Interpreter *interpreter = concreteCode->GetInterpreter();
-	  outArity = interpreter->GetOutArity(concreteCode);
-	  void *cFunction = reinterpret_cast<void*>(interpreter->GetCFunction());
-	  // check if this is a primitive
-	  if(cFunction != NULL) {
-	    // try to inline some other common primitives
-	    // prepare args for InlinePrimitive
-	    TagVal *continuation;
-	    TagVal *idDefInstrOpt;
-	    if(idDefsInstrOpt == INVALID_POINTER) {
+     
+      ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
+      if(concreteCode != INVALID_POINTER) {
+	Interpreter *interpreter = concreteCode->GetInterpreter();
+	outArity = interpreter->GetOutArity(concreteCode);
+	void *cFunction = reinterpret_cast<void*>(interpreter->GetCFunction());
+	// check if this is a primitive
+	if(cFunction != NULL) {
+	  // try to inline some other common primitives
+	  // prepare args for InlinePrimitive
+	  TagVal *continuation;
+	  TagVal *idDefInstrOpt;
+	  if(idDefsInstrOpt == INVALID_POINTER) {
+	    idDefInstrOpt = INVALID_POINTER;
+	  } else {		
+	    Tuple *idDefsInstr = 
+	      Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+	    Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
+	    if(rets->GetLength() != 1) {
+	      // We cannot inline this anyway, as we only know how to inline
+	      // primitives that return one value
 	      idDefInstrOpt = INVALID_POINTER;
-	    } else {		
-	      Tuple *idDefsInstr = 
-		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
-	      Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
-	      if(rets->GetLength() != 1) {
-		// We cannot inline this anyway, as we only know how to inline
-		// primitives that return one value
-		idDefInstrOpt = INVALID_POINTER;
-	      } else {
-		idDefInstrOpt = TagVal::New(idDefsInstrOpt->GetTag(),2);
-		Tuple *tuple = Tuple::New(2);
-		tuple->Init(0,rets->Sub(0));
-		tuple->Init(1,idDefsInstr->Sel(1));
-		idDefInstrOpt->Init(0,tuple->ToWord());
-	      }
-	    }
-	    if(InlinePrimitive(cFunction,args,idDefInstrOpt)) {
-	      if(idDefInstrOpt == INVALID_POINTER) {
-		return INVALID_POINTER;
-	      } else {		
-		Tuple *idDefInstr = 
-		  Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
-		return TagVal::FromWordDirect(idDefInstr->Sel(1));
-	      }
-	    }
-	    // else: couldn't inline primitve; try somthing else
-	    // we directly call the primitive function
-	    CompileApplyPrimitive(closure,args,isTailcall);
-#ifdef DO_INLINING
-	    //	    if(isTailcall) {
-	    if(idDefInstrOpt == INVALID_POINTER
-	       && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
-	      CompileCCC(currentFormalArgs,outArity);
-	      patchTable->Add(PC);    
-	      SET_INSTR_1I(PC,jump,0);
-	      continuation = INVALID_POINTER;
-	    }
-#endif
-	    if(idDefsInstrOpt == INVALID_POINTER) {
-// 	    if(isTailcall) {
-	      continuation = INVALID_POINTER;
 	    } else {
-	      Tuple *idDefsInstr = 
-		Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
-	      Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
-	      CompileCCC(rets,outArity); 
-	      continuation = TagVal::FromWordDirect(idDefsInstr->Sel(1));
-	    } 
-	    return continuation;
-	  } else {
-	    // ok, it wasn't a primitive
-	    // but we are sure that is an immediate calls
-	    // so we can use specialized call instructions
-
-	    bool overflow = nArgs > Scheduler::maxArgs;
-	    u_int nActualArgs = overflow ? 1 : nArgs;
-	    u_int argRegs[nActualArgs];
-	    
-	    // load arguments into registers
-	    
-	    if(overflow) { // construct tuple
-	      u_int S = GetNewScratch();
-	      NewTup(S, args);
-	      argRegs[0] = S;
-	    } else {
-	      for(u_int i = nArgs; i--; )
-		argRegs[i] = LoadIdRefKill(args->Sub(i));
+	      idDefInstrOpt = TagVal::New(idDefsInstrOpt->GetTag(),2);
+	      Tuple *tuple = Tuple::New(2);
+	      tuple->Init(0,rets->Sub(0));
+	      tuple->Init(1,idDefsInstr->Sel(1));
+	      idDefInstrOpt->Init(0,tuple->ToWord());
 	    }
-
-	    // generate call instruction
-	    u_int callInstr;	    
-	    if (interpreter == ByteCodeInterpreter::self) {
-	      // byte code call	    	      
-	      CHOOSE_CALL_INSTR(callInstr,bci);
-	    } 
-	    else if (interpreter == HotSpotInterpreter::self) {
-	      // immediate call that might change into a byte code call
-	      CHOOSE_CALL_INSTR(callInstr,rewrite);
-	    } else {
-	      // none byte code call that is immediate
-	      CHOOSE_CALL_INSTR(callInstr,immediate);
-	    }
-	    // ATTENTION: It is essential to transform the dereferenced closure
-	    // back to word. The idea is that the jitter dereferences once and
-	    // interpreter can thus access the closure argument with
-	    // Closure::FromWordDirect
-	    u_int closureAddr = imEnv.Register(closure->ToWord());	      
-	    if(nActualArgs < 4) {
-	      SET_INSTR_1I(PC,callInstr,closureAddr);
-	    } else {
-	      SET_INSTR_2I(PC,callInstr,closureAddr,nActualArgs);
-	    }
-	    for(u_int i = nActualArgs; i--; ) {
-	      u_int r = argRegs[i];
-	      SET_1R(PC,r);
-	    }
-
-	    goto compile_continuation;
 	  }
+	  if(InlinePrimitive(cFunction,args,idDefInstrOpt)) {
+	    if(idDefInstrOpt == INVALID_POINTER) {
+	      return INVALID_POINTER;
+	    } else {		
+	      Tuple *idDefInstr = 
+		Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
+	      return TagVal::FromWordDirect(idDefInstr->Sel(1));
+	    }
+	  }
+	  // else: couldn't inline primitve; try somthing else
+	  // we directly call the primitive function
+	  CompileApplyPrimitive(closure,args,isTailcall);
+#ifdef DO_INLINING
+	  if(idDefInstrOpt == INVALID_POINTER
+	      && inlineDepth > 0 && currentFormalArgs != INVALID_POINTER) {
+	    CompileCCC(currentFormalArgs,outArity);
+	    patchTable->Add(PC);    
+	    SET_INSTR_1I(PC,jump,0);
+	    continuation = INVALID_POINTER;
+	  }
+#endif
+	  if(idDefsInstrOpt == INVALID_POINTER) {
+	    continuation = INVALID_POINTER;
+	  } else {
+	    Tuple *idDefsInstr = 
+	      Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+	    Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
+	    CompileCCC(rets,outArity); 
+	    continuation = TagVal::FromWordDirect(idDefsInstr->Sel(1));
+	  }
+	  return continuation;
+	} else {
+	  // ok, it wasn't a primitive
+	  // but we are sure that is an immediate calls
+	  // so we can use specialized call instructions
+
+	  bool overflow = nArgs > Scheduler::maxArgs;
+	  u_int nActualArgs = overflow ? 1 : nArgs;
+	  u_int argRegs[nActualArgs];
+	  
+	  // load arguments into registers
+	  
+	  if(overflow) { // construct tuple
+	    u_int S = GetNewScratch();
+	    NewTup(S, args);
+	    argRegs[0] = S;
+	  } else {
+	    for(u_int i = nArgs; i--; )
+	      argRegs[i] = LoadIdRefKill(args->Sub(i));
+	  }
+
+	  // generate call instruction
+	  u_int callInstr;	    
+	  if (interpreter == ByteCodeInterpreter::self) {
+	    // byte code call	    	      
+	    CHOOSE_CALL_INSTR(callInstr,bci);
+	  } 
+	  else if (interpreter == HotSpotInterpreter::self) {
+	    // immediate call that might change into a byte code call
+	    CHOOSE_CALL_INSTR(callInstr,rewrite);
+	  } else {
+	    // none byte code call that is immediate
+	    CHOOSE_CALL_INSTR(callInstr,immediate);
+	  }
+	  // ATTENTION: It is essential to transform the dereferenced closure
+	  // back to word. The idea is that the jitter dereferences once and
+	  // interpreter can thus access the closure argument with
+	  // Closure::FromWordDirect
+	  u_int closureAddr = imEnv.Register(closure->ToWord());	      
+	  if(nActualArgs < 4) {
+	    SET_INSTR_1I(PC,callInstr,closureAddr);
+	  } else {
+	    SET_INSTR_2I(PC,callInstr,closureAddr,nActualArgs);
+	  }
+	  for(u_int i = nActualArgs; i--; ) {
+	    u_int r = argRegs[i];
+	    SET_1R(PC,r);
+	  }
+
+	  goto compile_continuation;
 	}
       }
     }
-    break;
-  default:
-    ;
   }
 
   // standard call instruction with dynamic tests
@@ -2342,7 +2326,6 @@ void ByteCodeJitter::CompileInstr(TagVal *pc) {
       pc = InstrClose(pc); break;
     case AbstractCode::Specialize:
       pc = InstrSpecialize(pc); break;
-      // pc = InstrClose(pc); break;
     case AbstractCode::AppPrim:
       pc = InstrAppPrim(pc); break;
     case AbstractCode::AppVar:
@@ -2490,6 +2473,10 @@ namespace {
  
 }
 
+/**
+ * Emit bytecode to load the values from the idRefs in args to
+ * the idDefs in formalArgs.
+ */
 void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs, 
 				      Vector *args, bool isReturn=false) {
   u_int nFormalArgs = formalArgs->GetLength();
@@ -2961,7 +2948,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   CompileCCC(args,INVALID_INT);
   skipCCCPC = PC;
   currentFormalInArgs = args;
-
+  
   // compile function body
   CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
 
