@@ -897,7 +897,10 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 				   (tag, translateConArgs (args, env),
 				    translateBody (body, env)))
 			       (Vector.fromList naryTests)
+
 		val map = IntMap.map ()
+		fun lookup i = IntMap.lookupExistent (map, i)
+
 		val (i, _, _) = Vector.sub (tagTests, 0)
 		val (min, max) =
 		    Vector.foldl (fn ((i, instr), (min, max)) =>
@@ -912,22 +915,25 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 				      (Int.min (i, min),
 				       Int.max (i, max))))
 				 (min, max) naryTests
+
 		val elseInstr = translateBody (elseBody, env)
 		val nLabels = Vector.length labels
 	    in
-		if min = 0 andalso max + 1 = Vector.length tagTests then
-		    let
-			fun lookup i = IntMap.lookupExistent (map, i)
-		    in
-			O.CompactTagTest (idRef,
-					  nLabels,
-					  Vector.tabulate (max + 1, lookup),
-					  if nLabels = max + 1
-					  then NONE
-					  else SOME elseInstr)
-		    end
-		else O.TagTest (idRef, nLabels, nullaryTests, naryTests,
-				elseInstr)
+                (* optimize special case when all tags are nullary (e.g. true | false) *)
+                if Vector.length nullaryTests = nLabels andalso nLabels >= 2 then
+                   O.CompactIntTest (idRef,
+                                     0,
+                                     Vector.tabulate(max, #2 o lookup),
+                                     #2 (lookup max))
+                else if min = 0 andalso max + 1 = Vector.length tagTests then
+		    O.CompactTagTest (idRef,
+				      nLabels,
+				      Vector.tabulate (max + 1, lookup),
+				      if nLabels = max + 1
+				      then NONE
+				      else SOME elseInstr)
+		else
+                    O.TagTest (idRef, nLabels, nullaryTests, naryTests, elseInstr)
 	    end
 
 

@@ -1762,6 +1762,12 @@ TagVal *ByteCodeJitter::InstrIntTest(TagVal *pc) {
 
 // CompactIntTest of idRef * int * instrs * instr 
 TagVal *ByteCodeJitter::InstrCompactIntTest(TagVal *pc) {
+  
+  TagVal *sb = StaticTestBranch(pc, pc->Sel(0));
+  if (sb != INVALID_POINTER) {
+    return sb;
+  }
+  
   u_int testVal = LoadIdRefKill(pc->Sel(0));
   u_int offset  = Store::DirectWordToInt(pc->Sel(1));
   Vector *jumpTable = Vector::FromWordDirect(pc->Sel(2));
@@ -1932,10 +1938,10 @@ static bool AllIdDefsWildcards(Vector *idDefs) {
 }
 
 
-TagVal *ByteCodeJitter::StaticTagTestBranch(TagVal *pc, word idRef, bool isBigTag) {
+TagVal *ByteCodeJitter::StaticTestBranch(TagVal *pc, word idRef, bool isBigTag) {
 #ifdef DO_CONSTANT_PROPAGATION
-  Map *tagTestInfo = constPropInfo->GetTagTestInfo();
-  word wInfo = tagTestInfo->CondGet(pc->ToWord());
+  Map *testInfo = constPropInfo->GetTestInfo();
+  word wInfo = testInfo->CondGet(pc->ToWord());
   
   if (wInfo != INVALID_POINTER) {
     Tuple *info = Tuple::FromWordDirect(wInfo);
@@ -1960,7 +1966,7 @@ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   bool isBigTag = Alice::IsBigTagVal(maxTag);
 
-  TagVal *sb = StaticTagTestBranch(pc, pc->Sel(0), isBigTag);
+  TagVal *sb = StaticTestBranch(pc, pc->Sel(0), isBigTag);
   if (sb != INVALID_POINTER) {
     return sb;
   }
@@ -2068,7 +2074,7 @@ TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
   bool isBigTag = Alice::IsBigTagVal(maxTag);
 
-  TagVal *sb = StaticTagTestBranch(pc, pc->Sel(0), isBigTag);
+  TagVal *sb = StaticTestBranch(pc, pc->Sel(0), isBigTag);
   if (sb != INVALID_POINTER) {
     return sb;
   }

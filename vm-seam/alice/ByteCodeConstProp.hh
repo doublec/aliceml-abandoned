@@ -26,7 +26,7 @@
  */
 class ConstPropInfo : private Tuple {
 private:
-  enum { PUT_CONSTANTS_POS, TAG_TEST_INFO_POS, INLINE_MAP_POS, SIZE };
+  enum { PUT_CONSTANTS_POS, TEST_INFO_POS, INLINE_MAP_POS, SIZE };
 public:
   using Tuple::ToWord;
   
@@ -40,7 +40,7 @@ public:
   
   static ConstPropInfo *New() {
     Tuple *t = Tuple::New(SIZE);
-    t->Init(TAG_TEST_INFO_POS, Map::New(8)->ToWord());
+    t->Init(TEST_INFO_POS, Map::New(8)->ToWord());
     t->Init(INLINE_MAP_POS, Map::New(8)->ToWord());
     t->Init(PUT_CONSTANTS_POS, Map::New(8)->ToWord());
     return reinterpret_cast<ConstPropInfo*>(t);
@@ -55,12 +55,12 @@ public:
   }
   
   /**
-   * @return A map from (Compact)TagTest instr to (idDef vector * instr)
-   *         continuation for each (Compact)TagTest whose branch can be
-   *         determined statically.
+   * @return A map from (Compact)TagTest/CompactIntTest instr to
+   *         (idDef vector * instr) continuation for each such instr
+   *         whose branch can be determined statically.
    */
-  Map *GetTagTestInfo() {
-    return Map::FromWordDirect(Sel(TAG_TEST_INFO_POS));
+  Map *GetTestInfo() {
+    return Map::FromWordDirect(Sel(TEST_INFO_POS));
   }
   
   /**
@@ -68,7 +68,7 @@ public:
    *         for the inlined function
    */
   Map *GetInlineMap() {
-    return Map::FromWordDirect(Sel(TAG_TEST_INFO_POS));
+    return Map::FromWordDirect(Sel(INLINE_MAP_POS));
   }
 };
 

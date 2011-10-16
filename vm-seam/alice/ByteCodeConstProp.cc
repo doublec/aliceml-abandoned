@@ -236,6 +236,12 @@ namespace {
     }
     
     
+    s_int ConstToInt(word cons) {
+      word imm = ConstToImmediate(cons);
+      return imm == INVALID_POINTER ? INVALID_INT : Store::WordToInt(imm);
+    }
+    
+    
     s_int IdRefToTag(word idRef) {
       return ConstToTag(IdRefToConst(idRef));
     }
@@ -243,6 +249,11 @@ namespace {
     
     word IdRefToImmediate(word idRef) {
       return ConstToImmediate(IdRefToConst(idRef));
+    }
+    
+    
+    s_int IdRefToInt(word idRef) {
+      return ConstToInt(IdRefToConst(idRef));
     }
     
     
@@ -355,11 +366,11 @@ namespace {
     }
     
     
-    void NewTagTestInfo(TagVal *instr, word continuation, Vector *idDefs) {
+    void NewTestInfo(TagVal *instr, word continuation, Vector *idDefs = INVALID_POINTER) {
       Tuple *info = Tuple::New(2);
       info->Init(0, (idDefs == INVALID_POINTER ? Vector::New(0) : idDefs)->ToWord());
       info->Init(1, continuation);
-      constPropInfo->GetTagTestInfo()->Put(instr->ToWord(), info->ToWord());
+      constPropInfo->GetTestInfo()->Put(instr->ToWord(), info->ToWord());
     }
     
     
@@ -616,11 +627,22 @@ namespace {
 	    break;
 	  }
 	  case AbstractCode::CompactIntTest: {
+	    s_int offset = Store::DirectWordToInt(instr->Sel(1));
 	    Vector *tests = Vector::FromWordDirect(instr->Sel(2));
-	    for (u_int i=tests->GetLength(); i--; ) {
+	    u_int nTests = tests->GetLength();
+	    word els = instr->Sel(3);
+	    
+	    for (u_int i=nTests; i--; ) {
 	      stack.PushInstr(tests->Sub(i));
 	    }
-	    stack.PushInstr(instr->Sel(3));
+	    stack.PushInstr(els);
+	    
+	    s_int i = IdRefToInt(instr->Sel(0));
+	    if (i != INVALID_INT) {
+	      i -= offset;
+	      NewTestInfo(instr, i >= 0 && i < nTests ? tests->Sub(i) : els);
+	    }
+	    
 	    break;
 	  }
 	  case AbstractCode::ConTest: {
@@ -687,7 +709,7 @@ namespace {
 		cont = els;
 	      }
 	      
-	      NewTagTestInfo(instr, cont, idDefs);
+	      NewTestInfo(instr, cont, idDefs);
 	    }
 	    
 	    break;
@@ -725,10 +747,10 @@ namespace {
 		TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
 		Vector *idDefs = (idDefsOpt != INVALID_POINTER) ?
 		  Vector::FromWordDirect(idDefsOpt->Sel(0)) : INVALID_POINTER;
-		NewTagTestInfo(instr, test->Sel(1), idDefs);
+		NewTestInfo(instr, test->Sel(1), idDefs);
 	      }
 	      else {
-		NewTagTestInfo(instr, elseOpt->Sel(0), INVALID_POINTER);
+		NewTestInfo(instr, elseOpt->Sel(0));
 	      }
 	    }
 	    
