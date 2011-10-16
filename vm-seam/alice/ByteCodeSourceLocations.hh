@@ -118,7 +118,7 @@ public:
           out << "0x" << std::hex << std::setfill('0') << std::setw(4)
 	    << (pc * sizeof(word)) << std::dec << ": ";
 	  PrintN(out, offset, "----");
-          out << (offset == 0 ? "" : " ") << line << ":" << col << std::endl;
+          out << (offset == 0 ? "" : " ") << line << "." << col << std::endl;
           
           src = TagVal::FromWord(src->Sel(2));
           break;
@@ -133,7 +133,7 @@ public:
           
           PrintN(out, 8, " ");
 	  PrintN(out, offset, "----");
-	  out << (offset == 0 ? "": " ") << "start inlined function: "
+	  out << (offset == 0 ? "" : " ") << "start inlined function: "
 	    << name << " - " << file << " " <<  line << "." << col << std::endl;
           offset++;
           src = TagVal::FromWord(src->Sel(1));
@@ -145,7 +145,7 @@ public:
 	  
 	  PrintN(out, 8, " ");
 	  PrintN(out, offset, "----");
-	  out << (offset == 0 ? "": " ") << "end" << std::endl;
+	  out << (offset == 0 ? "" : " ") << "end" << std::endl;
           src = TagVal::FromWord(src->Sel(0));
           break;
         }
