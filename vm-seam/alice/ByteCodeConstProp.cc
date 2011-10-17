@@ -97,21 +97,94 @@ namespace {
   class ConstPropAnalyser {
   private:
     
-    enum const_kind {
-      KindNotYetAssigned, /** variable has not yet been assigned in the analysis */
-      KindImmediate,      /** so far the variable appears to hold a constant (but possibly transient) value */
-      KindTagVal,         /** so far the variable appears to hold a TagVal with constant tag, but we dont know any more than that. */
-      KindUnknown         /** the variable has been assigned but we dont know more than that */
+    class Const {
+    public:
+      
+      enum kind_t {
+	KindNotYetAssigned, /** variable has not yet been assigned in the analysis */
+	KindImmediate,      /** so far the variable appears to hold a constant (but possibly transient) value */
+	KindTagVal,         /** so far the variable appears to hold a TagVal with constant tag, but we dont know any more than that. */
+	KindUnknown         /** the variable has been assigned but we dont know more than that */
+      };
+      
+      
+      kind_t kind;
+      word value;           /** immediate value or Store::IntToWord(tag) */
+      
+      
+      Const(kind_t kind = KindNotYetAssigned, word value = INVALID_POINTER) : kind(kind), value(value) {}
+      
+      
+      s_int ToTag() {
+	
+	if (kind == KindNotYetAssigned || kind == KindUnknown) {
+	  return INVALID_INT;
+	}
+	
+	if (kind == KindTagVal) {
+	  return Store::DirectWordToInt(value);
+	}
+	
+	Assert(kind == KindImmediate);
+	
+	if (PointerOp::IsInt(value)) {
+	  return Store::DirectWordToInt(value);
+	}
+	
+	Block *b = Store::WordToBlock(value);
+	if (b != INVALID_POINTER) {
+	  if (Alice::IsTag(b->GetLabel())) {
+	    return reinterpret_cast<TagVal*>(b)->GetTag();
+	  }
+	  if (b->GetLabel() == Alice::BIG_TAG) {
+	    return reinterpret_cast<BigTagVal*>(b)->GetTag();
+	  }
+	}
+	
+	return INVALID_INT;
+      }
+      
+      
+      word ToImmediate() {
+	return kind == KindImmediate ? value : INVALID_POINTER;
+      }
+      
+      
+      s_int ToInt() {
+	word imm = ToImmediate();
+	return imm == INVALID_POINTER ? INVALID_INT : Store::WordToInt(imm);
+      }
+      
+      
+      static Const NotYetAssigned() {
+	return Const(KindNotYetAssigned);
+      }
+      
+      
+      static Const Unknown() {
+	return Const(KindUnknown);
+      }
+      
+      
+      static Const FromImmediate(word value) {
+	value = LazySelInterpreter::Deref(value);
+	return Const(KindImmediate, value);
+      }
+      
+      
+      static Const FromInt(s_int i) {
+	return FromImmediate(Store::IntToWord(i));
+      }
+    
+    
+      static Const FromTag(u_int tag) {
+	return Const(KindTagVal, Store::IntToWord(tag));
+      }
+    
     };
     
-    /**
-    * Holds information about local variable values. each entry is
-    * either ConstNotYetAssigned(), ConstUnknown(), or a TagVal with a tag which
-    * is either KindImmediate or KindTagVal plus a value which is the immediate
-    * value or tag.
-    */
-    Array *constants;
     
+    Const *constants;
     Vector *subst;
     word concreteCode;
     TagVal *abstractCode;
@@ -138,122 +211,43 @@ namespace {
     }
     
     
-    word ConstNotYetAssigned(){
-      return Store::IntToWord(KindNotYetAssigned);
-    }
-    
-    
-    word ConstUnknown() {
-      return Store::IntToWord(KindUnknown);
-    }
-    
-    
-    word ImmediateToConst(word value) {
-      value = LazySelInterpreter::Deref(value);
-      return TagVal::New1(KindImmediate, value)->ToWord();
-    }
-    
-    
-    word IntToConst(s_int i) {
-      return ImmediateToConst(Store::IntToWord(i));
-    }
-    
-    
-    word TagToConst(u_int tag) {
-      return TagVal::New1(KindTagVal, Store::IntToWord(tag))->ToWord();
-    }
-    
-    
-    word IdRefToConst(word wIdRef) {
+    Const IdRefToConst(word wIdRef) {
       TagVal *idRef = TagVal::FromWordDirect(wIdRef);
 
       switch(AbstractCode::GetIdRef(idRef)) {
 	case AbstractCode::LastUseLocal:
 	case AbstractCode::Local: {
-	  return constants->Sub(IdToId(idRef->Sel(0)));
+	  return constants[IdToId(idRef->Sel(0))];
 	}
 	case AbstractCode::Global: {
 	  u_int index = Store::DirectWordToInt(idRef->Sel(0));
 	  TagVal *valOpt = TagVal::FromWord(subst->Sub(index));
 	  if(valOpt != INVALID_POINTER) {
-	    return ImmediateToConst(valOpt->Sel(0));
+	    return Const::FromImmediate(valOpt->Sel(0));
 	  }
 	  else {
-	    return ConstUnknown();
+	    return Const::Unknown();
 	  }
 	}
 	case AbstractCode::Immediate: {
-	  return ImmediateToConst(idRef->Sel(0));
+	  return Const::FromImmediate(idRef->Sel(0));
 	}
       }
-    }
-    
-    
-    s_int ConstToTag(word cons) {
-      
-      if (cons == ConstNotYetAssigned() || cons == ConstUnknown()) {
-	return INVALID_INT;
-      }
-      
-      TagVal *tvCons = TagVal::FromWordDirect(cons);
-      if (tvCons->GetTag() == KindTagVal) {
-	return Store::DirectWordToInt(tvCons->Sel(0));
-      }
-      
-      Assert(tvCons->GetTag() == KindImmediate);
-      word value = tvCons->Sel(0);
-      
-      if (PointerOp::IsInt(value)) {
-	return Store::DirectWordToInt(value);
-      }
-      
-      Block *b = Store::WordToBlock(value);
-      if (b != INVALID_POINTER) {
-	if (Alice::IsTag(b->GetLabel())) {
-	  return reinterpret_cast<TagVal*>(b)->GetTag();
-	}
-	if (b->GetLabel() == Alice::BIG_TAG) {
-	  return reinterpret_cast<BigTagVal*>(b)->GetTag();
-	}
-      }
-      
-      return INVALID_INT;
-    }
-    
-    
-    word ConstToImmediate(word cons) {
-      
-      if (cons == ConstNotYetAssigned() || cons == ConstUnknown()){
-	return INVALID_POINTER;
-      }
-      
-      TagVal *tvCons = TagVal::FromWordDirect(cons);
-      if (tvCons->GetTag() == KindImmediate) {
-	return tvCons->Sel(0);
-      }
-      
-      return INVALID_POINTER;
-    }
-    
-    
-    s_int ConstToInt(word cons) {
-      word imm = ConstToImmediate(cons);
-      return imm == INVALID_POINTER ? INVALID_INT : Store::WordToInt(imm);
     }
     
     
     s_int IdRefToTag(word idRef) {
-      return ConstToTag(IdRefToConst(idRef));
+      return IdRefToConst(idRef).ToTag();
     }
     
     
     word IdRefToImmediate(word idRef) {
-      return ConstToImmediate(IdRefToConst(idRef));
+      return IdRefToConst(idRef).ToImmediate();
     }
     
     
     s_int IdRefToInt(word idRef) {
-      return ConstToInt(IdRefToConst(idRef));
+      return IdRefToConst(idRef).ToInt();
     }
     
     
@@ -267,46 +261,41 @@ namespace {
     }
     
     
-    void AssignConst(word cons, u_int dest) {
-      word cur = constants->Sub(dest);
+    void AssignConst(Const cons, u_int dest) {
+      Const cur = constants[dest];
       
-      if (cur == ConstUnknown() || cons == ConstNotYetAssigned()) {
+      if (cur.kind == Const::KindUnknown || cons.kind == Const::KindNotYetAssigned) {
 	return;
       }
-      if (cur == ConstNotYetAssigned()) {
-	constants->Update(dest, cons);
+      if (cur.kind == Const::KindNotYetAssigned) {
+	constants[dest] = cons;
 	return;
       }
-      if (cons == ConstUnknown()) {
-	constants->Update(dest, ConstUnknown());
+      if (cons.kind == Const::KindUnknown) {
+	constants[dest] = Const::Unknown();
 	return;
       }
       
-      TagVal *tvCur  = TagVal::FromWordDirect(cur);
-      TagVal *tvCons = TagVal::FromWordDirect(cons);
-      
-      word newCur;
       // one is KimdImmediate, one is KindTag
-      if (tvCur->GetTag() != tvCons->GetTag()) {
-	s_int tagCur = ConstToTag(cur);
-	s_int tagCon = ConstToTag(cons);
-	newCur = (tagCur != INVALID_INT && tagCur == tagCon) ? TagToConst(tagCur) : ConstUnknown();
+      if (cur.kind != cons.kind) {
+	s_int tagCur = cur.ToTag();
+	s_int tagCon = cons.ToTag();
+	constants[dest] = (tagCur != INVALID_INT && tagCur == tagCon) ? Const::FromTag(tagCur) : Const::Unknown();
       }
       // they are both the same kind
       else {
-	newCur = (tvCur->Sel(0) == tvCons->Sel(0)) ? tvCur->ToWord() : ConstUnknown(); // TODO: use logical equality
+	constants[dest] = (cur.value == cons.value) ? cur : Const::Unknown(); // TODO: use logical equality
       }
-      constants->Update(dest, newCur);
     }
     
     
     void AssignValue(word value, u_int dest) {
-      AssignConst(ImmediateToConst(value), dest);
+      AssignConst(Const::FromImmediate(value), dest);
     }
     
     
     void AssignFromLocal(u_int src, u_int dest) {
-      AssignConst(constants->Sub(src), dest);
+      AssignConst(constants[src], dest);
     }
     
     
@@ -315,7 +304,7 @@ namespace {
     }
     
     
-    void AssignIdDef(word cons, word wIdDef) {
+    void AssignIdDef(Const cons, word wIdDef) {
       TagVal *idDef = TagVal::FromWord(wIdDef);
       if (idDef != INVALID_POINTER) {
 	AssignConst(cons, IdToId(idDef->Sel(0)));
@@ -323,7 +312,7 @@ namespace {
     }
     
     void AssignIdDefUnknown(word wIdDef) {
-      AssignIdDef(ConstUnknown(), wIdDef);
+      AssignIdDef(Const::Unknown(), wIdDef);
     }
     
 	
@@ -336,14 +325,14 @@ namespace {
     
     void AssignIdDefsFromTagVal(TagVal *values, Vector *idDefs) {
       for (u_int i=idDefs->GetLength(); i--; ) {
-	AssignIdDef(ImmediateToConst(values->Sel(i)), idDefs->Sub(i));
+	AssignIdDef(Const::FromImmediate(values->Sel(i)), idDefs->Sub(i));
       }
     }
     
     
     void AssignIdsUnknown(Vector *ids) {
       for (u_int i=ids->GetLength(); i--; ) {
-	AssignConst(ConstUnknown(), IdToId(ids->Sub(i)));
+	AssignConst(Const::Unknown(), IdToId(ids->Sub(i)));
       }
     }
 
@@ -405,9 +394,12 @@ namespace {
       inlineDepth = 0;
       inlineAppVar = INVALID_POINTER;
       subst = Vector::FromWordDirect(abstractCode->Sel(1));
-      constants = Array::New(inlineInfo->GetNLocals(), ConstNotYetAssigned());
+      constants = new Const[inlineInfo->GetNLocals()];
       inlineReturnIdDefs = INVALID_POINTER;
       constPropInfo = ConstPropInfo::New();
+    }
+    ~ConstPropAnalyser() {
+      delete[] constants;
     }
     void Run();
     ConstPropInfo *GetConstPropInfo() { return constPropInfo; }
@@ -466,7 +458,7 @@ namespace {
 	  case AbstractCode::PutPolyRec:
 	  case AbstractCode::PutTup:
 	  case AbstractCode::Sel: {
-	    AssignConst(ConstUnknown(), IdToId(instr->Sel(0)));
+	    AssignConst(Const::Unknown(), IdToId(instr->Sel(0)));
 	    u_int cp = AbstractCode::GetContinuationPos(instrOp);
 	    stack.PushInstr(instr->Sel(cp));
 	    break;
@@ -486,7 +478,7 @@ namespace {
 	      AssignValue(cls->ToWord(), dest);
 	    }
 	    else {
-	      AssignConst(ConstUnknown(), dest);
+	      AssignConst(Const::Unknown(), dest);
 	    }
 	    
 	    stack.PushInstr(instr->Sel(3));
@@ -523,7 +515,7 @@ namespace {
 	      AssignValue(tv->ToWord(), dest);
 	    }
 	    else {
-	      AssignConst(TagToConst(tag), dest);
+	      AssignConst(Const::FromTag(tag), dest);
 	    }
 	    
 	    stack.PushInstr(TagVal::FromWordDirect(instr->Sel(4))); 

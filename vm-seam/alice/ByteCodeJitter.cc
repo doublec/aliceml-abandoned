@@ -1031,8 +1031,8 @@ TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
 #ifdef DO_CONSTANT_PROPAGATION
   word constantCls = constPropInfo->GetPutConstants()->CondGet(pc->ToWord());
   if (constantCls != INVALID_POINTER) {
-    //static int count = 0;
-    //fprintf(stderr, "found constant Closure #%d\n", ++count);
+//    static int count = 0;
+//    fprintf(stderr, "found constant Closure #%d\n", ++count);
     u_int addr = imEnv.Register(constantCls);
     SET_INSTR_1R1I(PC, load_immediate, dst, addr);
     return cont;
@@ -2872,9 +2872,9 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   TagVal *inlineInfoOpt = hsc->GetInlineInfoOpt();
   if(inlineInfoOpt == INVALID_POINTER) {
     inlineInfo = ByteCodeInliner::Analyse(abstractCode);
-  } else
+  } else {
     inlineInfo = InlineInfo::FromWordDirect(inlineInfoOpt->Sel(0));
-  // run constant propagation
+  }
 #ifdef DO_CONSTANT_PROPAGATION
   constPropInfo = ByteCodeConstProp::Analyse(abstractCode, currentConcreteCode, inlineInfo);
 #endif
