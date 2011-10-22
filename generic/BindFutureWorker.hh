@@ -45,6 +45,7 @@ public:
   virtual Result Handle(word data, Tuple *package);
   // Debugging
   virtual const char *Identify();
+  virtual bool Traceable();
   virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 

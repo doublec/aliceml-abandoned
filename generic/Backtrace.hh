@@ -53,18 +53,15 @@ public:
   static Backtrace *New() {
     return static_cast<Backtrace *>(Queue::New(initialBacktraceSize));
   }
-  static Backtrace *New(word frame) {
-    Backtrace *backtrace = New();
-    backtrace->Enqueue(frame);
-    return backtrace;
-  }
+  
   static Backtrace *FromWord(word x) {
     return static_cast<Backtrace *>(Queue::FromWord(x));
   }
+  
   static Backtrace *FromWordDirect(word x) {
     return static_cast<Backtrace *>(Queue::FromWordDirect(x));
   }
-
+  
   void Dump(std::ostream& out = std::cerr) {
     u_int n = GetNumberOfElements();
   
@@ -85,6 +82,10 @@ public:
     Dump(ss);
     std::string str = ss.str();
     return String::New(str);
+  }
+  
+  Backtrace *Clone() {
+    return static_cast<Backtrace*>(Queue::Clone());
   }
 };
 

@@ -40,7 +40,8 @@ private:
 
   static void SwitchToThread();
   static void FlushThread();
-
+  static void DoRaise(StackFrame *&frame, Worker *&worker, Worker::Result &result, bool reraise);
+  
   static u_int nArgs;                 // Number of arguments
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or exception

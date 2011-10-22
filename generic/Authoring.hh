@@ -106,13 +106,11 @@
 
 #define SUSPEND return Worker::SUSPEND;
 
-#define RAISE(w) {						\
-  Scheduler::SetCurrentData(w);					\
-  PUSH_PRIM_SELF()						\
-  word prim_wFrame = self_frame->Clone();			\
-  Scheduler::PopFrame();					\
-  Scheduler::SetCurrentBacktrace(Backtrace::New(prim_wFrame));	\
-  return Worker::RAISE;						\
+#define RAISE(w) {					\
+  PUSH_PRIM_SELF()					\
+  Scheduler::SetCurrentData(w);				\
+  Scheduler::SetCurrentBacktrace(Backtrace::New());	\
+  return Worker::RAISE;					\
 }
 
 #define REQUEST(w) {				\

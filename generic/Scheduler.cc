@@ -107,6 +107,42 @@ inline void Scheduler::FlushThread() {
   }
 }
 
+inline void Scheduler::DoRaise(StackFrame *&frame, Worker *&worker, Worker::Result& result, bool reraise) {
+  Tuple *package = Tuple::New(2);
+  package->Init(0, currentData);
+  package->Init(1, currentBacktrace->ToWord());
+  
+  u_int handler;
+  word data;
+  currentThread->ActivateNextHandler(handler, data, package);
+  Assert(GetCurrentStackTop() >= handler);
+
+  StackFrame *handlerFrame = currentTaskStack->GetFrame(handler);
+  // Unroll stack down to the handler frame
+  StackFrame *top = frame = GetFrame();
+  while (frame > handlerFrame) {
+    worker = frame->GetWorker();
+    if (!(frame == top && reraise) && worker->Traceable()) {
+      currentBacktrace->Enqueue(frame->Clone());
+    }
+    PopFrame();
+    frame = GetFrame();
+  }
+  worker = frame->GetWorker();
+  if (!(frame == top && reraise) && worker->Traceable()) {
+    currentBacktrace->Enqueue(frame->Clone());
+  }
+  
+#if PROFILE
+  // to be done: at this position, the backtrace will not be counted
+  Profiler::SampleHeap(frame);
+#endif
+  result = worker->Handle(data, package);
+#if PROFILE
+  Profiler::AddHeap();
+#endif
+}
+
 int Scheduler::Run() {
   bool nextThread;
   StackFrame *frame;
@@ -118,7 +154,7 @@ int Scheduler::Run() {
   } else {
     // Stack Overflow occured
     SetCurrentData(StackError);
-    SetCurrentBacktrace(Backtrace::New(GetFrame()->Clone()));
+    SetCurrentBacktrace(Backtrace::New());
     nextThread = false;
     goto raise;
   }
@@ -156,39 +192,15 @@ int Scheduler::Run() {
 	  currentThread->Suspend();
 	  nextThread = true;
 	  break;
-	case Worker::RAISE:
-	  {
-	  raise:
-	    Tuple *package = Tuple::New(2);
-	    package->Init(0, currentData);
-	    package->Init(1, currentBacktrace->ToWord());
-	    
-  	    u_int handler;
-	    word data;
-	    currentThread->ActivateNextHandler(handler, data, package);
-	    
-	    Assert(GetCurrentStackTop() >= handler);
-	    StackFrame *handlerFrame = currentTaskStack->GetFrame(handler);
-	    // Unroll stack down to the handler frame
-	    // to be done: make configurable whether to have backtrace or not
-	    frame = GetFrame();
-	    while (frame > handlerFrame) {
-	      word wFrame = frame->Clone();
-	      currentBacktrace->Enqueue(wFrame);
-	      PopFrame();
-	      frame = GetFrame();
-	    }
-	    worker = frame->GetWorker();
-#if PROFILE
-	    // to be done: at this position, the backtrace will not be counted
-	    Profiler::SampleHeap(frame);
-#endif
-	    result = worker->Handle(data, package);
-#if PROFILE
-	    Profiler::AddHeap();
-#endif
-	    goto interpretResult;
-	  }
+	case Worker::RERAISE: {
+	  DoRaise(frame, worker, result, true);
+	  goto interpretResult;
+	} 
+	case Worker::RAISE: {
+	raise:
+	  DoRaise(frame, worker, result, false);
+	  goto interpretResult;
+	}
 	case Worker::REQUEST:
 	  {
 	    Transient *transient = Store::WordToTransient(currentData);
@@ -214,7 +226,7 @@ int Scheduler::Run() {
 	      {
 		Tuple *package = Tuple::FromWord(transient->GetArg());
 		currentData = package->Sel(0);
-		currentBacktrace = Backtrace::FromWord(package->Sel(1));
+		currentBacktrace = Backtrace::FromWord(package->Sel(1))->Clone();
 		goto raise;
 	      }
 	    case BYNEED_LABEL:

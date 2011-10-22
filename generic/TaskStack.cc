@@ -80,6 +80,7 @@ namespace {
     virtual Result Handle(word data, Tuple *package);
     // Debugging
     virtual const char *Identify();
+    virtual bool Traceable();
     virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
@@ -152,12 +153,12 @@ namespace {
     return "UncaughtExceptionWorker";
   }
 
+  bool UncaughtExceptionWorker::Traceable() {
+    return false;
+  }
+  
   void UncaughtExceptionWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
-#if defined(DEBUG)
     out << "[UncaughtException]" << std::endl;
-#else
-    return; // do nothing
-#endif
   }
 
   // Empty Task Worker
@@ -172,6 +173,7 @@ namespace {
     virtual Result Handle(word data, Tuple *package);
     // Debugging
     virtual const char *Identify();
+    virtual bool Traceable();
     virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
   };
 
@@ -211,12 +213,12 @@ namespace {
     return "EmptyTaskWorker";
   }
 
+  bool EmptyTaskWorker::Traceable() {
+    return false;
+  }
+
   void EmptyTaskWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
-#if defined(DEBUG)
     out << "[EmptyTask]" << std::endl;
-#else
-    return; // do nothing
-#endif
   }
   
 }
@@ -257,7 +259,7 @@ TaskStack *TaskStack::New(u_int size) {
   Assert(size >= 4); // required for Enlarge to work correctly
   DynamicBlock *b = Store::AllocDynamicBlock(size, 1);
   // Create Empty Task
-  b->InitArg(0, emptyTask);
+    b->InitArg(0, emptyTask);
   Store::AddToIntgenSet(reinterpret_cast<Block *>(b));
   return static_cast<TaskStack *>(b);
 }

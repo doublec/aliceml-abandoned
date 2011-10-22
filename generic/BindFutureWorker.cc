@@ -138,6 +138,10 @@ const char *BindFutureWorker::Identify() {
   return "BindFutureWorker";
 }
 
+bool BindFutureWorker::Traceable() {
+  return false;
+}
+
 void BindFutureWorker::DumpFrame(StackFrame *, std::ostream& out) {
   out << "[BindFuture]" << std::endl;
 }

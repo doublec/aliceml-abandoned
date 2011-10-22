@@ -89,6 +89,10 @@ Worker::Result Worker::Handle(word, Tuple*) {
   return RAISE;
 }
 
+bool Worker::Traceable() {
+  return true;
+}
+
 #if PROFILE
 word Worker::GetProfileKey(StackFrame *) {
   return Store::UnmanagedPointerToWord(this);

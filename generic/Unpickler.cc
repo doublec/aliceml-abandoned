@@ -278,15 +278,11 @@ namespace {
 	  int nread = gzread(file, bytes, static_cast<unsigned int>(size));
 	  if (nread < 0) {
 	    Scheduler::SetCurrentData(Pickler::IOError);
-	    StackFrame *frame = Scheduler::GetFrame();
-	    Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
-	    Scheduler::PopFrame();
+	    Scheduler::SetCurrentBacktrace(Backtrace::New());
 	    return Worker::RAISE;
 	  } else if (nread == 0) { // at end of file: raise Corrupt exception
 	    Scheduler::SetCurrentData(Unpickler::Corrupt);
-	    StackFrame *frame = Scheduler::GetFrame();
-	    Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
-	    Scheduler::PopFrame();
+	    Scheduler::SetCurrentBacktrace(Backtrace::New());
 	    return Worker::RAISE;
 	  } else {
 	    tl += nread;
@@ -299,9 +295,7 @@ namespace {
 	{
 	  // there is no more data: raise Corrupt exception
 	  Scheduler::SetCurrentData(Unpickler::Corrupt);
-	  StackFrame *frame = Scheduler::GetFrame();
-	  Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
-	  Scheduler::PopFrame();
+	  Scheduler::SetCurrentBacktrace(Backtrace::New());
 	  return Worker::RAISE;
 	}
       default:
@@ -477,9 +471,7 @@ namespace {
       f->Become(REF_LABEL, handler(argument));
     } else {
       Scheduler::SetCurrentData(Unpickler::Corrupt);
-      Scheduler::SetCurrentBacktrace(
-	Backtrace::New(reinterpret_cast<StackFrame *>(frame)->Clone()));
-      Scheduler::PopFrame();
+      Scheduler::SetCurrentBacktrace(Backtrace::New());
       return Worker::RAISE;
     }
 
@@ -839,12 +831,10 @@ namespace {
     return Worker::CONTINUE;			\
 }
 
-#define NCORRUPT() {							\
-  Scheduler::SetCurrentData(Unpickler::Corrupt);			\
-  StackFrame *frame = Scheduler::GetFrame();				\
-  Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));	\
-  Scheduler::PopFrame();						\
-  return Worker::RAISE;							\
+#define NCORRUPT() {					\
+  Scheduler::SetCurrentData(Unpickler::Corrupt);	\
+  Scheduler::SetCurrentBacktrace(Backtrace::New());	\
+  return Worker::RAISE;					\
 }
 
 
@@ -1225,9 +1215,7 @@ Worker::Result Unpickler::Load(String *filename) {
   InputStream *is = InputStream::NewFromFile(szFileName);
   if (is->HasException()) {
     Scheduler::SetCurrentData(Pickler::IOError); // to be done
-    StackFrame *frame = Scheduler::GetFrame();
-    Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
-    Scheduler::PopFrame();
+    Scheduler::SetCurrentBacktrace(Backtrace::New());
     return Worker::RAISE;
   }
 

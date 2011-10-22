@@ -961,7 +961,7 @@ namespace {
 	// sited value by something we can pickle,
 	// we shouldn't reject that!
 	Scheduler::SetCurrentData(Pickler::Sited);
-	Scheduler::SetCurrentBacktrace(Backtrace::New(sFrame->Clone()));
+	Scheduler::SetCurrentBacktrace(Backtrace::New());
 	return Worker::RAISE;
       case CHUNK_LABEL:
 	{
@@ -1004,7 +1004,7 @@ namespace {
 	  Block *ablock = Store::DirectWordToBlock(abstract->ToWord());
 	  if (abstract == INVALID_POINTER) {
 	    Scheduler::SetCurrentData(Pickler::Sited);
-	    Scheduler::SetCurrentBacktrace(Backtrace::New(sFrame->Clone()));
+	    Scheduler::SetCurrentBacktrace(Backtrace::New());
 	    return Worker::RAISE;
 	  } else {
 	    seen->Add(ablock, Seen::NOT_WRITTEN);
@@ -1019,7 +1019,7 @@ namespace {
 	{
 	  // must not occur anywhere but under a CONCRETE which is handled above
 	  Scheduler::SetCurrentData(Pickler::Sited);
-	  Scheduler::SetCurrentBacktrace(Backtrace::New(sFrame->Clone()));
+	  Scheduler::SetCurrentBacktrace(Backtrace::New());
 	  return Worker::RAISE;
 	
 	}
@@ -1264,9 +1264,7 @@ Worker::Result Pickler::Save(String *filename, word x) {
   FileOutputStream *os = FileOutputStream::New(szFileName);
   if (os->GetFile() == NULL) {
     Scheduler::SetCurrentData(Pickler::IOError);
-    StackFrame *frame = Scheduler::GetFrame();
-    Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
-    Scheduler::PopFrame();
+    Scheduler::SetCurrentBacktrace(Backtrace::New());
     return Worker::RAISE;
   } else {
     Scheduler::PopFrame();

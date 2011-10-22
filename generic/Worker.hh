@@ -32,7 +32,7 @@ class String;
 class SeamDll Worker {
 public:
   enum Result {
-    CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE, EXIT
+    CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, RERAISE, TERMINATE, EXIT
   };
   // Worker Constructor
   Worker() SeamMemberDll;
@@ -51,6 +51,7 @@ public:
   // Debugging
   virtual const char *Identify() = 0;
   // TODO: update seam docs
+  virtual bool Traceable();
   virtual void DumpFrame(StackFrame *sFrame, std::ostream& out) = 0;
 #if PROFILE
   // Profiling

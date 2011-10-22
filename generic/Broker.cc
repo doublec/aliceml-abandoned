@@ -37,12 +37,10 @@ void Broker::Init() {
   DllLoader::Init();
 }
 
-#define RAISE(w) {						\
-  Scheduler::SetCurrentData(w);					\
-  word wFrame = Scheduler::GetFrame()->Clone();			\
-  Scheduler::PopFrame();					\
-  Scheduler::SetCurrentBacktrace(Backtrace::New(wFrame));	\
-  return Worker::RAISE;						\
+#define RAISE(w) {					\
+  Scheduler::SetCurrentData(w);				\
+  Scheduler::SetCurrentBacktrace(Backtrace::New());	\
+  return Worker::RAISE;					\
 }
 
 static DllLoader::libhandle LoadLanguageLayer(String *languageId) {

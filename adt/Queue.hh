@@ -221,6 +221,20 @@ public:
 	array->ReplaceArg(i, static_cast<s_int>(0));
     }
   }
+  
+  Queue *Clone() {
+    
+    Block *array = GetArray();
+    Queue *clone = New(array->GetSize());
+    clone->SetReadIndex(GetReadIndex());
+    clone->SetWriteIndex(GetWriteIndex());
+    
+    void *base = reinterpret_cast<void*>(array->GetBase());
+    void *cloneBase = reinterpret_cast<void*>(clone->GetArray()->GetBase());
+    memcpy(cloneBase, base, array->GetSize() * sizeof(word));
+    
+    return clone;
+  }
 };
 
 #endif

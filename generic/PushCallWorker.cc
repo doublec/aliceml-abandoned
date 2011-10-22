@@ -82,6 +82,10 @@ const char *PushCallWorker::Identify() {
   return "PushCallWorker";
 }
 
+bool PushCallWorker::Traceable() {
+  return false;
+}
+
 void PushCallWorker::DumpFrame(StackFrame* sFrame, std::ostream& out) {
   out << "[PushCall]" << std::endl;
 }

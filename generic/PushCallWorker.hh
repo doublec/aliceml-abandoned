@@ -41,6 +41,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
+  virtual bool Traceable();
   virtual void DumpFrame(StackFrame *sFrame, std::ostream& out);
 };
 
