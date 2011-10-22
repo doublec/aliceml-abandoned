@@ -328,16 +328,18 @@ void AbstractCodeInterpreter::DumpAliceFrame(word funCoordW, bool handler, word 
     out << name;
     out << " (";
   }
-  out << file;
+  if (file->GetSize() > 0) {
+    out << file << ", ";
+  }
   
   //indicate if the line number shown is only as accurate as the function start
   if (coord == Store::IntToWord(0)) {
     s_int line = Store::WordToInt(funCoord->Sel(2));
-    out << ", function starting at line " << line;
+    out << "function starting at line " << line;
   }
   else {
     Tuple *posCoord = Tuple::FromWord(coord);
-    out << ", line " << Store::WordToInt(posCoord->Sel(0));
+    out << "line " << Store::WordToInt(posCoord->Sel(0));
   }
   
   if (name->GetSize() > 0) {
