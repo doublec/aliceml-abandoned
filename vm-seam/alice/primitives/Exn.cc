@@ -52,7 +52,7 @@ DEFINE2(Exn_reraise) {
   Scheduler::SetNArgs(0);
   Scheduler::SetCurrentData(exn);
   Scheduler::SetCurrentBacktrace(Backtrace::FromWord(backtrace));
-  return Worker::RAISE;
+  return Worker::RERAISE;
 } END
 
 

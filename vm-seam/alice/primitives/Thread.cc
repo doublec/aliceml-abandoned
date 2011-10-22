@@ -72,9 +72,7 @@ namespace {
     RaiseFrame *frame = reinterpret_cast<RaiseFrame *>(sFrame);
     Assert(sFrame->GetWorker() == this);
     Scheduler::SetCurrentData(frame->GetExn());
-    word wFrame = sFrame->Clone();
-    Scheduler::PopFrame(frame->GetSize());
-    Scheduler::SetCurrentBacktrace(Backtrace::New(wFrame));
+    Scheduler::SetCurrentBacktrace(Backtrace::New());
     return Worker::RAISE;
   }
 

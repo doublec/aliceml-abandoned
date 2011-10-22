@@ -78,11 +78,11 @@ using namespace ByteCodeInstr;
 #undef REQUEST							
 #undef RAISE
 
-#define RAISE(w) {                                                \
-  Scheduler::SetCurrentData(w);                                   \
-  Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone())); \
-  SAVEPC(PC);                                                     \
-  return Worker::RAISE;                                           \
+#define RAISE(w) {                                  \
+  Scheduler::SetCurrentData(w);                     \
+  Scheduler::SetCurrentBacktrace(Backtrace::New()); \
+  SAVEPC(PC);                                       \
+  return Worker::RAISE;                             \
 }
 
 #define REQUEST(x)							\
@@ -1669,20 +1669,20 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        }
        DISPATCH(PC);
     
-    Case(raise_normal) // reg
+    Case(raise) // reg
        {
 	GET_1R(codeBuffer,PC,reg);
 	word val = GETREG(reg);
 	if(Store::WordToTransient(val) != INVALID_POINTER)
 	  REQUEST(val);
 	Scheduler::SetCurrentData(val);
-	Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
+	Scheduler::SetCurrentBacktrace(Backtrace::New());
 	SAVEPC(PC);
 	return Worker::RAISE;
        }
        DISPATCH(PC);      
       
-     Case(raise_direct) // reg
+     Case(reraise) // reg
        {
 	GET_1R(codeBuffer,PC,reg);
 	Tuple *package = Tuple::FromWordDirect(GETREG(reg));
@@ -1690,7 +1690,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	Scheduler::SetCurrentBacktrace
 	  (Backtrace::FromWordDirect(package->Sel(1)));
 	SAVEPC(PC);
-	return Worker::RAISE;
+	return Worker::RERAISE;
        }
        DISPATCH(PC);      
 

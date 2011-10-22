@@ -817,7 +817,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	KillIdRef(pc->Sel(0), frame, pc, globalEnv);
 	frame->SetCoord(coord);
 	Scheduler::SetCurrentData(requestWord);
-	Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
+	Scheduler::SetCurrentBacktrace(Backtrace::New());
 	return Worker::RAISE;
       }
       break;
@@ -829,7 +829,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	frame->SetCoord(coord);
 	Scheduler::SetCurrentData(package->Sel(0));
 	Scheduler::SetCurrentBacktrace(Backtrace::FromWordDirect(package->Sel(1)));
-	return Worker::RAISE;
+	return Worker::RERAISE;
       }
     case AbstractCode::Try: // of instr * idDef * idDef * instr
       {

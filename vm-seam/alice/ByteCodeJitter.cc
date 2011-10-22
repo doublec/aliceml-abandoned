@@ -1700,14 +1700,14 @@ TagVal *ByteCodeJitter::InstrLazyPolySel(TagVal *pc) {
 // Raise of idRef
 TagVal *ByteCodeJitter::InstrRaise(TagVal *pc) {
   u_int exn = LoadIdRefKill(pc->Sel(0));
-  SET_INSTR_1R(PC,raise_normal,exn);
+  SET_INSTR_1R(PC, ByteCodeInstr::raise, exn);
   return INVALID_POINTER;
 }
 
 // Reraise of idRef
 TagVal *ByteCodeJitter::InstrReraise(TagVal *pc) {
   u_int pkg = LoadIdRefKill(pc->Sel(0));
-  SET_INSTR_1R(PC,raise_direct,pkg); 
+  SET_INSTR_1R(PC, reraise, pkg); 
   return INVALID_POINTER;
 }
 

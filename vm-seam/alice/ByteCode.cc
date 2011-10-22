@@ -327,7 +327,7 @@ namespace {
       
       switch(instr) {
 #define INSTR(name, args)			\
-        case name: {				\
+	case ByteCodeInstr::name: {		\
           std::fprintf(file, #name);		\
           PrintArgs(args);			\
           std::fprintf(file, "\n");		\

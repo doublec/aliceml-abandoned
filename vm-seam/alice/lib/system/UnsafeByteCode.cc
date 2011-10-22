@@ -522,8 +522,8 @@ namespace {
 	break;
       case ByteCodeInstr::await:
       case ByteCodeInstr::seam_return1:
-      case ByteCodeInstr::raise_normal:
-      case ByteCodeInstr::raise_direct: 
+      case ByteCodeInstr::raise:
+      case ByteCodeInstr::reraise:
       case ByteCodeInstr::load_zero:
       case ByteCodeInstr::self_call1:
       case ByteCodeInstr::seam_call0:
