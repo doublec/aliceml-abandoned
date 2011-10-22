@@ -42,7 +42,7 @@ private:
   }
   
   
-  u_int ContinuationPos(TagVal *src) {
+  static u_int ContinuationPos(TagVal *src) {
     switch(src->GetTag()) {
       case Coord: return 2;
       case Begin_Inline_Function: return 1;
@@ -50,6 +50,16 @@ private:
       default:
         Error("invalid source_location tag");
     }
+  }
+  
+  
+  static TagVal *NextCoord(TagVal *src) {
+    while ((src = TagVal::FromWord(src->Sel(ContinuationPos(src)))) != INVALID_POINTER) {
+      if (src->GetTag() == Coord) {
+        return src;
+      }
+    }
+    return INVALID_POINTER;
   }
   
   
@@ -166,37 +176,43 @@ public:
     
     // stack of pairs of (function_coord, coord-within-fun OR Store::IntToWord(0))
     Stack *funs = Stack::New(8);
-    u_int prevPc = -1;
-    word prevCoord = Store::IntToWord(0);
+    word coord = Store::IntToWord(0);
     
     TagVal *src = TagVal::FromWord(sourceLocations);
     while (src != INVALID_POINTER) {
       switch (src->GetTag()) {
         
         case Coord: {
-          if (prevPc >= 0) {
-            u_int curPc = Store::WordToInt(src->Sel(0));
-            if (pc >= prevPc && pc <= curPc) { // prevCoord is what we are looking for
-              src = INVALID_POINTER;
-              break;
-            }
-          }
-          prevPc = Store::WordToInt(src->Sel(0));
-          prevCoord = src->Sel(1);
-          src = TagVal::FromWord(src->Sel(2));
+	  coord = src->Sel(1);
+	  u_int curPc = Store::WordToInt(src->Sel(0));
+	  TagVal *next = NextCoord(src);
+	  
+	  if (next == INVALID_POINTER) {
+	    src = INVALID_POINTER;
+	  }
+	  else {
+	    u_int nextPc = Store::WordToInt(next->Sel(0));
+	    if (pc >= curPc && pc <= nextPc) {
+	      src = INVALID_POINTER;
+	    }
+	    else {
+	      src = TagVal::FromWord(src->Sel(2));
+	    }
+	  }
           break;
         }
         
         case Begin_Inline_Function: {
           funs->Push(funCoord);
-          funs->Push(prevCoord);
+          funs->Push(coord);
           funCoord = src->Sel(0);
+	  coord = Store::IntToWord(0);
           src = TagVal::FromWord(src->Sel(1));
           break;
         }
         
         case End_Inline_Function: {
-          funs->Pop();
+          coord = funs->Pop();
           funCoord = funs->Pop();
           src = TagVal::FromWord(src->Sel(0));
           break;
@@ -209,7 +225,7 @@ public:
     }
     
     funs->Push(funCoord);
-    funs->Push(prevCoord);
+    funs->Push(coord);
     PrintFrameInternal(funs, out);
   }
 
