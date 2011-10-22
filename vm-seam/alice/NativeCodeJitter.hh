@@ -225,6 +225,7 @@ protected:
   void NullaryBranches(u_int Tag, Vector *tests);
   void NonNullaryBranches(u_int Tag, u_int tagSel, Vector *tests);
   // AbstractCode Instructions
+  TagVal *InstrCoord(TagVal *pc);
   TagVal *InstrKill(TagVal *pc);
   TagVal *InstrPutVar(TagVal *pc);
   TagVal *InstrPutNew(TagVal *pc);

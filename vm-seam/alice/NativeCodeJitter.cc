@@ -50,8 +50,7 @@ static inline u_int GetInArity(Vector *args) {
 namespace Outline {
   namespace Backtrace {
     static ::Backtrace *New(::StackFrame *frame) {
-      word wFrame = frame->Clone();
-      return ::Backtrace::New(wFrame);
+      return ::Backtrace::New();
     }
   };
   namespace Constructor {
@@ -1587,6 +1586,12 @@ void NativeCodeJitter::NonNullaryBranches(u_int Tag,
 //
 // Instructions
 //
+
+// Coord of coord * instr
+TagVal *NativeCodeJitter::InstrCoord(TagVal *pc) {
+  return TagVal::FromWordDirect(pc->Sel(1));
+}
+
 // Kill of id vector * instr
 TagVal *NativeCodeJitter::InstrKill(TagVal *pc) {
   Vector *kills = Vector::FromWordDirect(pc->Sel(0));
@@ -2103,7 +2108,7 @@ TagVal *NativeCodeJitter::InstrReraise(TagVal *pc) {
   Tuple_Sel(JIT_R0, Reg, 1);
   Scheduler_SetCurrentBacktrace(JIT_R0);
   SaveRegister();
-  jit_movi_ui(JIT_R0, Worker::RAISE);
+  jit_movi_ui(JIT_R0, Worker::RERAISE);
   RETURN();
   return INVALID_POINTER;
 }
@@ -2731,6 +2736,8 @@ void NativeCodeJitter::CompileInstr(TagVal *pc) {
     jit_sti_ui(&dynamicCounts[opcode], JIT_R0);
 #endif
     switch (opcode) {
+	case AbstractCode::Coord:
+	  pc = InstrCoord(pc); break;
     case AbstractCode::Kill:
       pc = InstrKill(pc); break;
     case AbstractCode::PutVar:

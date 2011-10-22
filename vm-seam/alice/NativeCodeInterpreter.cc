@@ -124,18 +124,14 @@ Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {
   return execute();
 }
 
-Worker::Result NativeCodeInterpreter::Handle(word data) {
+Worker::Result NativeCodeInterpreter::Handle(word data, Tuple *package) {
   StackFrame *sFrame = Scheduler::GetFrame();
   NativeCodeFrame *frame = reinterpret_cast<NativeCodeFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
   frame->SetPC(Store::DirectWordToInt(data));
-  Tuple *package = Tuple::New(2);
-  word exn = Scheduler::GetCurrentData();
-  package->Init(0, exn);
-  package->Init(1, Scheduler::GetCurrentBacktrace()->ToWord());
   Scheduler::SetNArgs(2);
   Scheduler::SetCurrentArg(0, package->ToWord());
-  Scheduler::SetCurrentArg(1, exn);
+  Scheduler::SetCurrentArg(1, Scheduler::GetCurrentData());
   return Worker::CONTINUE;
 }
 
@@ -175,7 +171,7 @@ void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
     static_cast<Transform *>(concreteCode->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   
-  AbstractCodeInterpreter::DumpAliceFrame(abstractCode->Sel(0), false, Store::IntToWord(0), out);
+  AbstractCodeInterpreter::DumpAliceFrame(abstractCode->Sel(0), false, Store::IntToWord(0), false, out);
 }
 
 #if PROFILE
