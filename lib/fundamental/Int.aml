@@ -66,8 +66,8 @@ struct
     __primitive val rem :  int * int -> int = "Int.rem"
 
     __primitive val compare : int * int -> order = "Int.compare"
+    __primitive val equal   : int * int -> bool  = "Int.equal"
 
-    val equal		= op =
     val abs		= abs
 
     fun hash i		= abs i handle General.Overflow => 0

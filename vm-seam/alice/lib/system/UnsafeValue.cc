@@ -346,6 +346,12 @@ DEFINE1(UnsafeValue_prim) {
   RETURN(PrimitiveTable::LookupValue(nameChunk));
 } END
 
+DEFINE2(UnsafeValue_sameCode) {
+  Closure *c0 = Closure::FromWord(x0);
+  Closure *c1 = Closure::FromWord(x1);
+  RETURN_BOOL(c0 != INVALID_POINTER && c1 != INVALID_POINTER && c0->GetConcreteCode() == c1->GetConcreteCode());
+} END
+                
 DEFINE1(UnsafeValue_conName) {
   DECLARE_BLOCK(constructor, x0);
   String *name;
@@ -382,11 +388,13 @@ DEFINE1(UnsafeValue_outArity) {
 
 AliceDll word UnsafeValue() {
   RequestInterpreter::Init();
-  Record *record = Record::New(23);
+  Record *record = Record::New(24);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
 		 UnsafeValue_same, 2);
+  INIT_STRUCTURE(record, "UnsafeValue", "sameCode",
+		 UnsafeValue_sameCode, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "awaitRequest",
 		 UnsafeValue_awaitRequest, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "realToVector",

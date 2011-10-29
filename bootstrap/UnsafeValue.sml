@@ -6,6 +6,7 @@ structure UnsafeValue =
 
 	val cast = Unsafe.cast
 	fun same (x, y) = false
+	val sameCode = same
 	fun awaitRequest x = x
 
 	fun realToVector r =

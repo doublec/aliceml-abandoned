@@ -22,6 +22,7 @@ signature UNSAFE_VALUE_COMPONENT =
 
 		val cast: 'a_value -> 'a
 		val same: 'a * 'b -> bool
+		val sameCode: ('a -> 'b) * ('c -> 'd) -> bool
 		val awaitRequest : 'a -> unit
 
 		val realToVector: real -> Word8Vector.vector

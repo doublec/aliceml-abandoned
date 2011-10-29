@@ -34,8 +34,8 @@ struct
     type string = string
     type t	= char						(**)
 
-    __primitive val ord : char -> int = "Char.ord"
-    __primitive val chr : int -> char = "Char.chr"
+    __primitive val ord : char -> int           = "Char.ord"
+    __primitive val chr : int -> char           = "Char.chr"
 
     val maxOrd  = 255
     val minChar = chr 0
@@ -52,7 +52,6 @@ struct
     __primitive val string_str :  char -> string         = "String.str"
     __primitive val string_implode : char list -> string = "CharVector.fromList"
 
-    val equal            = op =
     val hash             = ord
 
     fun compare(c1,c2)   = int_compare(ord c1, ord c2)
@@ -266,4 +265,5 @@ struct
     __primitive val op > :	char * char -> bool = "Char.>"
     __primitive val op <= :	char * char -> bool = "Char.<="
     __primitive val op >= :	char * char -> bool = "Char.>="
+    __primitive val equal :     char * char -> bool = "Char.equal"
 end

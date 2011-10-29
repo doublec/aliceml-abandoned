@@ -419,6 +419,9 @@ void ByteCodeJitter::Init() {
   INIT_INLINE_TABLE("Hole.hole", HOLE_HOLE);
   INIT_INLINE_TABLE("Hole.fill", HOLE_FILL);
   INIT_INLINE_TABLE("op=", EQUAL);
+  INIT_INLINE_TABLE("Int.equal", INT_EQUAL);
+  INIT_INLINE_TABLE("Char.equal", CHAR_EQUAL);
+  INIT_INLINE_TABLE("Ref.equal", REF_EQUAL);
   INIT_INLINE_TABLE("Array.sub", ARRAY_SUB);
   INIT_INLINE_TABLE("Vector.sub", VECTOR_SUB);
   INIT_INLINE_TABLE("Array.length", ARRAY_LENGTH);
@@ -705,7 +708,7 @@ void ByteCodeJitter::Inline_RefAssign(Vector *args, TagVal *idDefInstrOpt) {
 }
 
 
-void ByteCodeJitter::Inline_Equal(Vector *args, TagVal *idDefInstrOpt) {
+void ByteCodeJitter::Inline_Equal(ByteCodeInstr::instr instr, Vector *args, TagVal *idDefInstrOpt) {
   // TODO: we might need a CCC
 
   word idRefA = args->Sub(0);
@@ -742,7 +745,7 @@ void ByteCodeJitter::Inline_Equal(Vector *args, TagVal *idDefInstrOpt) {
   else {
     u_int a = LoadIdRefKill(idRefA);
     u_int b = LoadIdRefKill(idRefB);
-    SET_INSTR_3R(PC, inlined_equal, dst, a, b);
+    SET_INSTR_3R(PC, instr, dst, a, b);
   }
   
   if (idDefInstrOpt == INVALID_POINTER) {
@@ -799,7 +802,11 @@ bool ByteCodeJitter::InlinePrimitive(void *cFunction,
     return true;
   }
   if(cFunction == inlineTable[EQUAL]) {
-    Inline_Equal(args, idDefInstrOpt);
+    Inline_Equal(inlined_equal, args, idDefInstrOpt);
+    return true;
+  }
+  if(cFunction == inlineTable[INT_EQUAL] || cFunction == inlineTable[CHAR_EQUAL] || cFunction == inlineTable[REF_EQUAL]) {
+    Inline_Equal(inlined_equal_identity, args, idDefInstrOpt);
     return true;
   }
   if(cFunction == inlineTable[ARRAY_SUB]) {

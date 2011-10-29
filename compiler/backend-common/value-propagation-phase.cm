@@ -14,6 +14,7 @@ is
     arity.cm
     intermediate-aux.cm
     output-flat-grammar.cm
+    specialize.cm
 
     PRIM_OPS-sig.aml
     PrimOps.aml

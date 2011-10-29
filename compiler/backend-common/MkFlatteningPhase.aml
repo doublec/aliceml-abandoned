@@ -367,7 +367,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | unfoldTerm (exp, cont) =
 	    let
 		val info = infoExp exp
-		val id' = O.freshId (#region info)
+		val id' = O.freshTypedId (#region info, #typ info)
 		fun declare exp' = O.ValDec (#region info, O.IdDef id', exp')
 		val stms = translateExp (exp, declare, cont)
 	    in
@@ -379,8 +379,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		    Vector.foldr (fn (exp, (stms, idRefs)) =>
 				  let
 				      val (stms', idRef) =
-					  unfoldTerm (exp, Goto stms)
-				  in
+			 		  unfoldTerm (exp, Goto stms)
+		 		  in
 				      (stms', idRef::idRefs)
 				  end) (rest, nil) exps
 	    in

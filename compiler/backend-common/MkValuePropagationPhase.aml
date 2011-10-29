@@ -41,8 +41,10 @@ import structure FlatGrammar             from "FlatGrammar"
 import structure IntermediateAux         from "IntermediateAux"
 import structure OutputFlatGrammar       from "OutputFlatGrammar"
 import structure PrimOps                 from "PrimOps"
+import structure Specialize              from "Specialize"
 import structure NameFuns                from "NameFuns"
 import signature VALUE_PROPAGATION_PHASE from "VALUE_PROPAGATION_PHASE-sig"
+
 
 structure UnsafeValue :
     sig
@@ -904,7 +906,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	       | (_, _) => PrimAppExp (info, "Future.concur", idRefs))
 	  | vpPrimApp (info, name, idRefs, _) =
 	    (*--** assertion about arity; evaluate application partially? *)
-	    PrimAppExp (info, name, idRefs)
+	    PrimAppExp (info, Specialize.specPrim (name, idRefs), idRefs)
 
 	(* Environment Handling *)
 
@@ -1788,13 +1790,14 @@ functor MkValuePropagationPhase(val isCross: bool
 			      patchBody (body, lazySels, StampMap.map ())))
 	    end
 	  | vpExp (PrimAppExp (info, name, idRefs), env, _, _, _) =
-	    (nil, vpPrimApp (info, name,
-			     Vector.map (fn idRef => deref (idRef, env))
-					idRefs, env))
+	    (nil, vpPrimApp (info,
+                             name,
+			     Vector.map (fn idRef => deref (idRef, env)) idRefs,
+                             env))
 	  | vpExp (VarAppExp (info, idRef, args), env, _, _, _) =
 	    let
-		val idRef = deref (idRef, env)
 		val args = derefArgs (args, env)
+		val idRef = Specialize.specIdRef (deref (idRef, env), args)
 	    in
 		case lookupEnv (env, idRef) of
 		    (PrimVal name, _) =>
@@ -1810,18 +1813,18 @@ functor MkValuePropagationPhase(val isCross: bool
 							  stamp, args))
 		  | (ReflectVal (rvalue, eager), _) =>
 			(case getInArity (rvalue, eager) of
-			     SOME arity =>
-				 adaptArity' (info, arity, args, env,
+			      SOME arity =>
+			 	 adaptArity' (info, arity, args, env,
 					      fn args =>
 						 DirectAppExp
 						     (info, idRef, args))
-			   | NONE => (nil, VarAppExp (info, idRef, args)))
+			    | NONE => (nil, VarAppExp (info, idRef, args)))
 		  | (_, _) => (nil, VarAppExp (info, idRef, args))
 	    end
 	  | vpExp (DirectAppExp (info, idRef, args), env, _, _, _) =
 	    let
-		val idRef = deref (idRef, env)
 		val args = derefArgs (args, env)
+		val idRef = Specialize.specIdRef (deref (idRef, env), args)
 	    in
 		(nil, DirectAppExp (info, idRef, args))
 	    end

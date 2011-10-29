@@ -16,7 +16,8 @@
  *)
 
 import structure __pervasive               from "Pervasive"
-import __primitive type unit datatype ref  from "ToplevelTypes"
+import __primitive type unit and bool
+       datatype ref                        from "ToplevelTypes"
 import __primitive infix 3 :=
        val ! and op = and op := and op :=: from "ToplevelValues"
 import __primitive signature REF           from "REF-sig"
@@ -29,9 +30,10 @@ structure Ref : REF =							(**)
     val !				= !
     val op :=				= op :=
     val op :=:				= op :=:
-    val equal				= op =
 
+    __primitive val equal :	'a ref * 'a ref -> bool	= "Ref.equal"
     __primitive val exchange :	'a ref * 'a -> 'a	= "Ref.exchange"
+
     __primitive val hole :	unit -> 'a		= "Hole.hole"
     __primitive val future :	'a -> 'a		= "Hole.future"
     __primitive val fill :	'a * 'a  -> unit	= "Hole.fill"

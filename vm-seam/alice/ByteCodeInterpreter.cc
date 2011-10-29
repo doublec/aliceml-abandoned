@@ -1740,6 +1740,21 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        }
        DISPATCH(PC);
      
+     Case(inlined_equal_identity) // r0, r1, r2
+       {
+	 GET_3R(codeBuffer, PC, dst, a, b);
+	 word wa = PointerOp::Deref(GETREG(a));
+	 if (PointerOp::IsTransient(wa)) {
+	   REQUEST(wa);
+	 }
+	 word wb = PointerOp::Deref(GETREG(b));
+	 if (PointerOp::IsTransient(wb)) {
+	   REQUEST(wb);
+	 }
+	 SETREG(dst, Store::IntToWord(wa == wb ? Types::_true : Types::_false));
+       }
+       DISPATCH(PC);
+
 #define INLINED_ROW_SUB(type, checked) {	\
   GET_3R(codeBuffer, PC, dst, a, b);		\
   word wA = GETREG(a);				\

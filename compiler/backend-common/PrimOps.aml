@@ -44,6 +44,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Char.>", SOME (Tuple 2));
 		ins ("Char.<=", SOME (Tuple 2));
 		ins ("Char.>=", SOME (Tuple 2));
+                ins ("Char.equal", SOME (Tuple 2));
 		ins ("Char.ord", SOME Unary);
 		ins ("Char.chr", SOME Unary);
 		ins ("Char.isAlpha", SOME Unary);
@@ -125,6 +126,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Int.>", SOME (Tuple 2));
 		ins ("Int.<=", SOME (Tuple 2));
 		ins ("Int.>=", SOME (Tuple 2));
+		ins ("Int.equal", SOME (Tuple 2));
 		ins ("Int.abs", SOME Unary);
 		ins ("Int.compare", SOME (Tuple 2));
 		ins ("Int.div", SOME (Tuple 2));
@@ -215,6 +217,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Real.trunc", SOME Unary);
 		ins ("Real.largeTrunc", SOME Unary);
 		ins ("Ref.:=", SOME (Tuple 2));
+		ins ("Ref.equal", SOME (Tuple 2));
 		ins ("Ref.exchange", SOME (Tuple 2));
 		ins ("Remote.dynamicCall", SOME (Tuple 2));
 		ins ("String.^", SOME (Tuple 2));
@@ -222,6 +225,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("String.>", SOME (Tuple 2));
 		ins ("String.<=", SOME (Tuple 2));
 		ins ("String.>=", SOME (Tuple 2));
+		ins ("String.equal", SOME (Tuple 2));
 		ins ("String.compare", SOME (Tuple 2));
 		ins ("String.hash", SOME Unary);
 		ins ("String.str", SOME Unary);

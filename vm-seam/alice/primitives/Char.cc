@@ -37,6 +37,7 @@ INT_INT_TO_BOOL_OP(Char_opless, <)
 INT_INT_TO_BOOL_OP(Char_opgreater, >)
 INT_INT_TO_BOOL_OP(Char_oplessEq, <=)
 INT_INT_TO_BOOL_OP(Char_opgreaterEq, >=)
+INT_INT_TO_BOOL_OP(Char_equal, ==)
 
 DEFINE1(Char_chr) {
   DECLARE_INT(c, x0);
@@ -76,6 +77,7 @@ void PrimitiveTable::RegisterChar() {
   Register("Char.>", Char_opgreater, 2);
   Register("Char.<=", Char_oplessEq, 2);
   Register("Char.>=", Char_opgreaterEq, 2);
+  Register("Char.equal", Char_equal, 2);
   Register("Char.ord", Char_ord, 1);
   Register("Char.chr", Char_chr, 1);
   Register("Char.isAlpha", Char_isAlpha, 1);

@@ -317,7 +317,7 @@ COMPILERBACKENDCOMMONSOURCES0 = \
 	SIMPLIFY_MATCH-sig.aml SimplifyMatch.aml SIMPLIFY_REC-sig.aml \
 	SimplifyRec.aml FLATTENING_PHASE-sig.aml MkFlatteningPhase.aml \
 	NAME_FUNS-sig.aml NameFuns.aml PRIM_OPS-sig.aml PrimOps.aml \
-	VALUE_PROPAGATION_PHASE-sig.aml \
+	SPECIALIZE-sig.aml Specialize.aml VALUE_PROPAGATION_PHASE-sig.aml \
 	MkValuePropagationPhase.aml LIVENESS_ANALYSIS_PHASE-sig.aml \
 	MkLivenessAnalysisPhase.aml MkBackendCommon.aml
 COMPILERBACKENDCOMMONSOURCES = \

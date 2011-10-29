@@ -156,6 +156,10 @@ signature FLAT_GRAMMAR =
 	type t = component
 
 	val freshId: Source.region -> id
+	val freshTypedId : Source.region * Type.t -> id
+	val idType : id -> Type.t
+
 	val infoStm: stm -> stm_info
 	val litEq: lit * lit -> bool
+	val litType : lit -> Type.t
     end

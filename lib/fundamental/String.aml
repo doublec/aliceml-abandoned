@@ -75,10 +75,10 @@ struct
     __primitive val op > :	string * string -> bool  = "String.>"
     __primitive val op <= :	string * string -> bool  = "String.<="
     __primitive val op >= :	string * string -> bool  = "String.>="
+    __primitive val equal :	string * string -> bool  = "String.equal"
     __primitive val compare :	string * string -> order = "String.compare"
     __primitive val hash :	string -> int            = "String.hash"
 
-    val equal			= op =
     val collate			= CharVector.collate
 
     fun translate  f s		= translate'(f,s,0,nil)

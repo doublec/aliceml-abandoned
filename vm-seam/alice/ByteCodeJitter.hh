@@ -196,7 +196,7 @@ private:
 	 REF_ASSIGN, 
 	 FUTURE_AWAIT, FUTURE_BYNEED,
 	 HOLE_HOLE, HOLE_FILL,
-	 EQUAL,
+	 EQUAL, INT_EQUAL, CHAR_EQUAL, REF_EQUAL,
 	 ARRAY_SUB, UNSAFE_ARRAY_SUB, ARRAY_LENGTH,
 	 VECTOR_SUB, UNSAFE_VECTOR_SUB, VECTOR_LENGTH,
 	 INLINE_TABLE_SIZE };
@@ -289,7 +289,7 @@ private:
   void Inline_FutureByneed(Vector *args, TagVal *idDefInstrOpt);
   void Inline_HoleHole(Vector *args, TagVal *idDefInstrOpt);
   void Inline_HoleFill(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_Equal(Vector *args, TagVal *idDefInstrOpt);
+  void Inline_Equal(ByteCodeInstr::instr instr, Vector *args, TagVal *idDefInstrOpt);
   //@}
   //@}
 

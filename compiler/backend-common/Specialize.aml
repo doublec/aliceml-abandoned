@@ -1,0 +1,83 @@
+
+
+import structure Type                    from "../../lib/rtt/Type"
+import structure Path                    from "../../lib/rtt/Path"
+import structure PervasiveType           from "../../lib/rtt/PervasiveType"
+import structure UnsafeValue             from "../../lib/system/UnsafeValue"
+import structure Reflect                 from "../../lib/system/Reflect"
+import structure FlatGrammar             from "FlatGrammar"
+import signature SPECIALIZE              from "SPECIALIZE-sig"
+
+
+structure Specialize :> SPECIALIZE = struct
+
+
+    structure UnsafeValue : sig
+        val cast : 'a -> 'b
+        val sameCode : ('a -> 'b) * ('c -> 'd) -> bool
+        val prim : string -> Reflect.value
+    end = UnsafeValue
+
+
+    open FlatGrammar
+
+
+    fun isRef t =
+        Path.equal(Type.asCon(#1 (Type.asApply t)), PervasiveType.path_ref)
+        handle Type.Type => false
+
+
+    fun idRefsType idRefs =
+        case idRefs
+          of []                           => NONE
+           | (IdRef id | LastIdRef id)::_ => SOME (idType id)
+           | Lit v::_                     => SOME (litType v)
+           | (Prim _ | Value _)::is       => idRefsType is
+
+
+    fun specEq t =
+        let
+            val paths = [
+                (PervasiveType.path_int,    "Int.equal"),
+                (PervasiveType.path_char,   "Char.equal"),
+                (PervasiveType.path_string, "String.equal")
+           ]
+
+           fun specPath p =
+               case List.find (fn (p', _) => Path.equal (p', p)) paths
+                 of SOME (p, prim) => prim
+                  | NONE           => "op="
+        in
+            specPath(Type.asCon t)
+            handle Type.Type =>
+                if isRef t then "Ref.equal" else "op="
+        end
+
+
+    fun specEq' idRefs =
+        case idRefsType (Vector.toList idRefs)
+          of NONE   => "op="
+           | SOME t => specEq t
+
+
+    fun specValue (rvalue, args) =
+        let
+            val isEq = UnsafeValue.sameCode
+              (UnsafeValue.cast rvalue, UnsafeValue.cast(UnsafeValue.prim "op="))
+        in
+            if isEq then UnsafeValue.prim (specEq' args) else rvalue
+        end
+
+
+    fun specPrim (name, args) =
+         if name = "op=" then specEq' args else name
+
+
+    fun specIdRef (idRef, args) =
+        case (idRef, args)
+          of (Prim name,     TupArgs a) => Prim (specPrim (name, a))
+           | (Value (rv, e), TupArgs a) => Value (specValue (rv, a), e)
+           | _                          => idRef
+
+end
+

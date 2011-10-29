@@ -76,6 +76,7 @@ INT_INT_TO_BOOL_OP(Int_opless, <)
 INT_INT_TO_BOOL_OP(Int_opgreater, >)
 INT_INT_TO_BOOL_OP(Int_oplessEq, <=)
 INT_INT_TO_BOOL_OP(Int_opgreaterEq, >=)
+INT_INT_TO_BOOL_OP(Int_equal, ==)
 
 DEFINE1(Int_abs) {
   DECLARE_INT(i, x0);
@@ -172,6 +173,7 @@ void PrimitiveTable::RegisterInt() {
   Register("Int.>", Int_opgreater, 2);
   Register("Int.<=", Int_oplessEq, 2);
   Register("Int.>=", Int_opgreaterEq, 2);
+  Register("Int.equal", Int_equal, 2);
   Register("Int.abs", Int_abs, 1);
   Register("Int.compare", Int_compare, 2);
   Register("Int.div", Int_div, 2);

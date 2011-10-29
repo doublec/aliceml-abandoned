@@ -57,6 +57,7 @@ COMPARISON(String_opless, <)
 COMPARISON(String_opgreater, >)
 COMPARISON(String_oplessEq, <=)
 COMPARISON(String_opgreaterEq, >=)
+COMPARISON(String_equal, ==);
 
 DEFINE2(String_compare) {
   DECLARE_STRING(string1, x0);
@@ -88,6 +89,7 @@ void PrimitiveTable::RegisterString() {
   Register("String.>", String_opgreater, 2);
   Register("String.<=", String_oplessEq, 2);
   Register("String.>=", String_opgreaterEq, 2);
+  Register("String.equal", String_equal, 2);
   Register("String.compare", String_compare, 2);
   Register("String.hash", String_hash, 1);
   Register("String.str", String_str, 1);

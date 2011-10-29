@@ -15,6 +15,7 @@ import structure Url                 from "../../lib/system/Url"
 import structure Name                from "../../lib/rtt/Name"
 import structure Label               from "../../lib/rtt/Label"
 import structure Type                from "../../lib/rtt/Type"
+import structure PervasiveType       from "../../lib/rtt/PervasiveType"
 import structure Crash               from "../infrastructure/Crash"
 import structure Source              from "../infrastructure/Source"
 import structure Stamp               from "../common/Stamp"
@@ -157,10 +158,15 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	      sign: sign}
 	type t = component
 
+	fun freshTypedId (region, typ) =
+	    Id ({region=region, typ=typ}, Stamp.stamp (), Name.InId)
+
 	val unknownTyp = Type.unknown (Type.starKind ())
 
- 	fun freshId region = 
-	    Id ({region=region, typ = unknownTyp}, Stamp.stamp (), Name.InId)
+ 	fun freshId region =
+	    freshTypedId (region, unknownTyp)
+
+        fun idType (Id ({typ = t, ...}, _, _)) = t
 
 	fun infoStm (Entry (info, _)) = info
 	  | infoStm (Exit (info, _, _)) = info
@@ -187,4 +193,13 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | litEq (StringLit (_, s1), StringLit (_, s2)) = s1 = s2
 	  | litEq (RealLit (_, r1), RealLit (_, r2)) = Real.== (r1, r2)
 	  | litEq (_, _) = raise Crash.Crash "IntermediateAux.litEq"
+
+        fun litType t =
+            case t
+              of IntLit _    => PervasiveType.typ_int
+               | WordLit _   => PervasiveType.typ_word
+               | CharLit _   => PervasiveType.typ_char
+               | StringLit _ => PervasiveType.typ_string
+               | RealLit _   => PervasiveType.typ_real
+
     end
