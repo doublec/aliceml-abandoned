@@ -364,31 +364,9 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	fun idEq (Id (_, stamp, _), Id (_, stamp', _)) = stamp = stamp'
 
 
-    fun stmInfo stm =
-        case stm of
-           ( Entry (i, _)
-           | Exit (i, _, _)
-           | LastUse (i, _)
-           | ValDec (i, _, _)
-           | RecDec (i, _)
-           | RefDec (i, _, _)
-           | TupDec (i, _, _)
-           | ProdDec (i, _, _)
-           | RaiseStm (i, _)
-           | ReraiseStm (i, _)
-           | TryStm (i, _, _, _, _)
-           | EndTryStm (i, _)
-           | EndHandleStm (i, _)
-           | TestStm (i, _, _, _)
-           | SharedStm (i, _, _)
-           | ReturnStm (i, _)
-           | IndirectStm (i, _)
-           | ExportStm (i, _)) => i
-
-
     fun attachCoord (stm, instr) =
         let
-            val (pos, _) = stmInfo stm
+            val (pos, _) = infoStm stm
         in
             (* dont attach Coord in debug mode, since Entry/Exit instrs will exist *)
             if !Switches.CodeGen.debugMode
