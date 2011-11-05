@@ -416,10 +416,17 @@ public:
     if (length == 0) {
       return FromWordDirect(empty);
     }
-    Block *b =
-      Store::AllocBlock(Alice::Vector, BASE_SIZE + length);
+    Block *b = Store::AllocBlock(Alice::Vector, BASE_SIZE + length);
     b->InitArg(LENGTH_POS, length);
     return static_cast<Vector *>(b);
+  }
+  
+  static Vector *New(u_int length, word initVal) {
+    Vector *vec = New(length);
+    for (u_int i=0; i<length; i++) {
+      vec->Init(i, initVal);
+    }
+    return vec;
   }
   
   static Vector *FromWord(word x) {
