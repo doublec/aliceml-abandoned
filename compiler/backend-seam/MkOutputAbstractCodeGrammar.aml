@@ -50,7 +50,7 @@ struct
 	"import " ^ int i ^ " from " ^ string (Url.toString url) ^ "\n"
     
     
-    fun func kind funCoord globalAnnots annotation args outArity body =
+    fun func kind funCoord globalAnnots annotation args outArity body lives =
     let
     
         val shared = StampSet.set ()
@@ -301,7 +301,7 @@ struct
     
     
         and exitPoint ep = case ep of
-           ConExit      => "Con"
+            ConExit      => "Con"
           | SelExit t    => "Sel " ^ typ t
           | StrictExit   => "Strict"
           | AppExit      => "App"
@@ -311,6 +311,19 @@ struct
           | SpawnExit t  => "Spawn " ^ typ t
     
     
+        fun liveness lv =
+            "(*\n * local variable liveness:\n" ^
+            liveness' (lv, 0) ^
+            " *)\n"
+        and liveness' (lv, i) =
+            if i = Vector.length lv then ""
+            else " *   " ^
+                     Int.toString (Vector.sub (lv, i)) ^ " : [" ^
+                     Int.toString (Vector.sub (lv, i+1)) ^ " .. " ^
+                     Int.toString (Vector.sub (lv, i+2)) ^ "]\n" ^
+                 liveness' (lv, i+3)
+
+
         val outArity' = case outArity
 			of NONE => ""
 			 | SOME n => " : " ^ int n
@@ -325,16 +338,16 @@ struct
 		       | Simple n      => n
     in
 	kind ^ srcName' ^ " " ^ idDefs args ^ outArity' ^ " => (* " ^ int nLocals ^ " locals *)\n" ^
-	indent (instr body)
+       	indent (liveness lives ^ instr body)
     end
 
 
-    and template globalAnnots (Template (coord, _, annotation, args, outArity, ins, _)) =
-       func "Template" coord globalAnnots annotation args outArity ins
+    and template globalAnnots (Template (coord, _, annotation, args, outArity, ins, liveness)) =
+       func "Template" coord globalAnnots annotation args outArity ins liveness
 
 
-    and abstractCode globalAnnots (Function (coord, _, annotation, args, outArity, ins, _)) =
-       func "Function" coord globalAnnots annotation args outArity ins
+    and abstractCode globalAnnots (Function (coord, _, annotation, args, outArity, ins, liveness)) =
+       func "Function" coord globalAnnots annotation args outArity ins liveness
 
 
     fun componentToString (imports, body) =
