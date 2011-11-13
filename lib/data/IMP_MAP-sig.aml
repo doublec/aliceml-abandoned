@@ -21,6 +21,8 @@ sig
 
     val map :		unit -> 'a map
     val clone :		'a map -> 'a map
+    val cloneWith :	('a -> 'b) -> 'a map -> 'b map
+    val cloneWithi :	(key * 'a -> 'b) -> 'a map -> 'b map
     val fromList :	(key * 'a) list -> 'a map	(* Collision *)
     val fromVector :	(key * 'a) vector -> 'a map	(* Collision *)
     val toList :	'a map -> (key * 'a) list

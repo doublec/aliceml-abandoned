@@ -70,6 +70,15 @@ struct
 				      (ref t', ref n)
 				  end
 
+    fun cloneWithi f (ref t, ref n)
+                                = let val t' =
+                                      Array.tabulate (Array.length t, fn i =>
+                                        List.map (fn (k, v) => (k, f (k, v))) (Array.sub (t, i)))
+                                  in
+                                      (ref t', ref n)
+                                  end
+
+    fun cloneWith f             = cloneWithi (fn (_, v) => f v)
 
     fun hash(t,k)		= Key.hash k mod Array.length t
     fun isEntryFor k (k',_)	= Key.equal(k,k')

@@ -31,6 +31,8 @@ struct
     fun fromVector xys		= ref (Map.fromVector xys)
     fun toList m		= Map.toList (!m)
     fun toVector m		= Map.toVector (!m)
+    fun cloneWithi f            = fromList o List.map (fn (k, v) => (k, f (k, v))) o toList
+    fun cloneWith f             = cloneWithi (fn (_, v) => f v)
 
     fun update (m,f)		= let val p  = Promise.promise ()
 				      val m' = Ref.exchange (m,Promise.future p)

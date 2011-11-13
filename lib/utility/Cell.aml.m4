@@ -62,6 +62,9 @@ struct
 	    in
 		List.app (fn(r,x) => insertDisjoint(m,r,x)) l; m
 	    end
+
+	fun cloneWithi f = fromList o List.map (fn (k, v) => (k, f (k, v))) o toList
+	fun cloneWith f  = cloneWithi (fn (_, v) => f v)
     end
 end
 
@@ -183,6 +186,8 @@ struct
 					    removeExistent(m,k)) (toList m)
 	fun filteri f m		= List.app (fn(k,a) => if f(k,a) then () else
 					    removeExistent(m,k)) (toList m)
+	fun cloneWithi f        = fromList o List.map (fn (k, v) => (k, f (k, v))) o toList
+	fun cloneWith f         = cloneWithi (fn (_, v) => f v)
     end
 end
 

@@ -10,7 +10,7 @@
   </PRE>
 
   <P>
-    The <TT>MAP</TT> signature provides an imperative interface to finite maps.
+    The <TT>IMP_MAP</TT> signature provides an imperative interface to finite maps.
     The <TT>MkHashImpMap</TT> functor provides an implementation of this
     interface based on hash tables, while the <TT>MkRedBlackImpMap</TT> functor
     provides an implementation based on red-black trees.
@@ -52,6 +52,8 @@
 
 	val map :            unit -> 'a map
 	val clone :          'a map -> 'a map
+	val cloneWith :      ('a -> 'b) -> 'a map -> 'b map
+	val cloneWithi :     (key * 'a -> 'b) -> 'a map -> 'b map
 	val fromList :       (key * 'a) list -> 'a map
 	val fromVector :     (key * 'a) vector -> 'a map
 	val toList :         'a map -> (key * 'a) list
@@ -154,10 +156,15 @@
     </DD>
 
     <DT>
-      <TT>clone <I>m</I></TT>
+      <TT>clone <I>m</I></TT><BR>
+      <TT>cloneWith <I>f</I> <I>m</I></TT><BR>
+      <TT>cloneWithi <I>f</I> <I>m</I></TT>
     </DT>
     <DD>
-      <P>Creates a copy of the map <TT><I>m</I></TT>.</P>
+      <P>Creates a copy of the map <TT><I>m</I></TT>. In the second form the values in
+         the cloned map will have been transformed by <TT><I>f</I></TT>. The third
+         form is like the second except that <TT><I>f</I></TT> receives the key for
+         each entry in addition to the value.</P>
     </DD>
 
     <DT>
@@ -165,7 +172,7 @@
     </DT>
     <DD>
       <P>Constructs a map from a list of key/value pairs.
-      Raises <TT>Collision</TT> <TT><I>k</I></TT> is a key in
+      Raises <TT>Collision</TT> <TT><I>k</I></TT> if a key is in
       the list that is followed by at least one other key equal to
       <TT><I>k</I></TT>.</P>
     </DD>
@@ -175,7 +182,7 @@
     </DT>
     <DD>
       <P>Constructs a map from a vector of key/value pairs.
-      Raises <TT>Collision</TT> <TT><I>k</I></TT> if <TT><I>k</I></TT> is a key
+      Raises <TT>Collision</TT> <TT><I>k</I></TT> if <TT><I>k</I></TT> if a key is
       in the vector that is followed by at least one other entry with a key equal to
       <TT><I>k</I></TT>. Equivalent to
       <TT>fromList(Vector.toList <I>v</I>)</TT>.</P>
