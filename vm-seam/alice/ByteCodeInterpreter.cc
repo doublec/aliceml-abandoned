@@ -86,7 +86,8 @@ using namespace ByteCodeInstr;
 }
 
 #define REQUEST(x)							\
-  { SAVEPC(startPC); /* repeat current instr after request */		\
+  { Assert(Store::WordToTransient(x) != INVALID_POINTER);		\
+    SAVEPC(startPC); /* repeat current instr after request */		\
     Scheduler::SetCurrentData(x);					\
     Scheduler::SetNArgs(0);						\
     BCI_DEBUG("request for %p needed, saved PC to %d\n",x,startPC);	\
@@ -223,6 +224,20 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
        *********************/
 
       // with conversion
+      
+    Case(ccc0)
+      {
+	if (Scheduler::GetNArgs() > 0) {
+	  Assert(Scheduler::GetNArgs() == 1);
+          word unit = Scheduler::GetCurrentArg(0);
+	  if (Store::WordToInt(unit) == INVALID_INT) {
+	    SAVEPC(startPC);
+	    Scheduler::SetCurrentData(unit);
+	    return Worker::REQUEST;
+	  }
+	}
+      }
+      DISPATCH(PC);
 
     Case(ccc1)
       {
@@ -242,8 +257,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(cccn) // nArgs
       {
 	GET_1I(codeBuffer,PC,nArgs);
-	if(ByteCodeInterpreter::Deconstruct())
-	  return Worker::REQUEST;	
+	if(ByteCodeInterpreter::Deconstruct()) {
+	  SAVEPC(startPC);
+	  return Worker::REQUEST;
+	}
 	Assert(Scheduler::GetNArgs() == nArgs);
 	// invariant: 0 .. n-1 are the target registers
 	for(u_int i = nArgs; i--;) {
@@ -255,8 +272,10 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(seam_cccn) // args
       {
 	GET_1I(codeBuffer,PC,argsAddr);
-	if(ByteCodeInterpreter::Deconstruct())
+	if(ByteCodeInterpreter::Deconstruct()) {
+	  SAVEPC(startPC);
 	  return Worker::REQUEST;
+	}
 
 	Vector *args = Vector::FromWordDirect(IP->Sel(argsAddr));
 	for(u_int i = args->GetLength(); i--; ) {
@@ -608,8 +627,8 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	PRELUDE_PRIMCALL##NOA();					\
         SET_ARGS##NOA();						\
 	SAVEPC(PC);							\
-	NEW_STACK_FRAME(primFrame, reinterpret_cast<Interpreter*>(interpreterAddr), 0);			\
-	Worker::Result res = reinterpret_cast<Interpreter::function>(cFunctionAddr)();		\
+	NEW_STACK_FRAME(primFrame, reinterpret_cast<Interpreter*>(interpreterAddr), 0);	\
+	Worker::Result res = reinterpret_cast<Interpreter::function>(cFunctionAddr)();	\
 	StackFrame *newFrame = Scheduler::GetFrame();			\
 	/* test if we can skip the scheduler */				\
 	if(res == CONTINUE && !StatusWord::GetStatus()			\

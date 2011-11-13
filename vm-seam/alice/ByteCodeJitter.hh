@@ -217,6 +217,9 @@ private:
       topScratchReusable = false;
       scratch++;
     }
+    if (scratch > nRegisters) {
+      nRegisters = scratch;
+    }
     return scratch - 1;
   }
 
@@ -234,8 +237,10 @@ private:
     return TagVal::FromWordDirect(globalSubst->Sub(index));
   }
 
+  void LoadImmediateInto(u_int dst, word val);
+  u_int LoadImmediate(word val, bool useReusableScratch = false);
   void LoadIdRefInto(u_int dst, word idRef);
-  u_int LoadIdRefKill(word idRef, bool useReusableScratch);
+  u_int LoadIdRefKill(word idRef, bool useReusableScratch = false);
 
   /*! @name Inlining of Primitives
     The methods in this group are used for inlining of primitives.
@@ -248,48 +253,39 @@ private:
     @param cFunction The function pointer points to the primitive. The 
     method reflects on this pointer to find primitives that can be inlined.
 
-    @param args Actual arguments of the primitive \a cFunction.
+    @param idRefs Actual arguments of the primitive \a cFunction.
 
-    @param idDefInstrOpt Pair of formal argument for the return value
-    and the continuation.
+    @param idDefsInstrOpt Pair of idDef vector for return values and the continuation.
 
-    @return The boolean indicates whether the primitive could be inlined or 
-    not.
+    @return The boolean indicates whether the primitive could be inlined or not.
   */
-  bool InlinePrimitive(void *cFunction, Vector *args, TagVal *idDefInstrOpt);
+  bool InlinePrimitive(void *cFunction, Vector *idRefs, TagVal *idDefsInstrOpt);
 
-  //! compile return from an inlined primitive
-  /*!
-    The return from an inlined primitive call is normally trivial. If, however,
-    procedure integration is enabled, things get more complex. In this case
-    the return is simulated as a jump instruction to the caller.
-
-    @param reg Register in which the return value is stored.
-   */
-  void InlinePrimitiveReturn(u_int reg);
+  //! These help compile returns from inlined primitives
+  u_int DefineInlinePrimitiveReturnReg(TagVal *idDefsInstrOpt);
+  void InlinePrimitiveReturn(u_int reg, TagVal *idDefsInstrOpt);
   
-  void InlineUnaryPrimitive(ByteCodeInstr::instr op, Vector *args, TagVal *idDefInstrOpt);
-  void InlineBinaryPrimitive(ByteCodeInstr::instr op, Vector *args, TagVal *idDefInstrOpt);
+  u_int InlineUnaryPrimitiveCCC(Vector *idRefs);
+  void InlineBinaryPrimitiveCCC(Vector *idRefs, u_int& x, u_int& y);
 
+  //! These help emitting specialized instructions with particular arity
+  void InlineNullaryToUnaryPrimitive(ByteCodeInstr::instr op, Vector *idRefs, TagVal *idDefsInstrOpt);
+  void InlineUnaryToUnaryPrimitive(ByteCodeInstr::instr op, Vector *idRefs, TagVal *idDefsInstrOpt);
+  void InlineBinaryToUnaryPrimitive(ByteCodeInstr::instr op, Vector *idRefs, TagVal *idDefsInstrOpt);
+  void InlineBinaryToNullaryPrimitive(ByteCodeInstr::instr op, Vector *idRefs, TagVal *idDefsInstrOpt);
 
   //@{
   //! various methods to inline specific primitives
   /*!
     Each method is used to inline a specific primitive.
 
-    @param args Actual arguments of the primitive.
+    @param idRefs Actual arguments of the primitive.
 
-    @param idDefInstrOpt Pair of formal argument for the return value and
-    of the contination.
+    @param idDefsInstrOpt Pair of idDef vector for return values and the continuation.
   */
-  void Inline_IntPlus(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_IntMinus(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_RefAssign(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_FutureAwait(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_FutureByneed(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_HoleHole(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_HoleFill(Vector *args, TagVal *idDefInstrOpt);
-  void Inline_Equal(ByteCodeInstr::instr instr, Vector *args, TagVal *idDefInstrOpt);
+  void Inline_FutureAwait(Vector *idRefs, TagVal *idDefsInstrOpt);
+  void Inline_AddOrSub(bool addSub, Vector *idRefs, TagVal *idDefsInstrOpt);
+  void Inline_Equal(ByteCodeInstr::instr op, Vector *idRefs, TagVal *idDefsInstrOpt);
   //@}
   //@}
 
@@ -316,6 +312,7 @@ private:
     @param isBig Indicates if \a testVal is a big tagged value or not.
    */
   void LoadTagVal(u_int testVal, Vector *idDefs, bool isBig);
+  void LoadTuple(u_int src, Vector *idDefs);
 
   //! Determine if the specified test instr's target branch is known statically.
   TagVal *StaticTestBranch(TagVal *pc, word idRef, bool isBigTag = false);

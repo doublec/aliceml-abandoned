@@ -409,6 +409,14 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       u_int nArgs = idDefs->GetLength();
       switch (nArgs) {
 	case 0:
+	  if (Scheduler::GetNArgs() > 0) {
+	    Assert(Scheduler::GetNArgs() == 1);
+            word unit = Scheduler::GetCurrentArg(0);
+	    if (Store::WordToInt(unit) == INVALID_INT) {
+	      Scheduler::SetCurrentData(unit);
+	      return Worker::REQUEST;
+	    }
+	  }
 	  break;
 	case 1: {
 	  Construct();

@@ -89,6 +89,7 @@ import structure VectorLoop from "vector-loop"
 import structure WhereAnd from "where-and"
 import structure Word from "word"
 import structure Word8Vector from "word8vector"
+import structure ByteCodeBugs from "ByteCodeBugs"
 
 (*
 val xs = [("Word8Vector", "word8vector")]
@@ -307,6 +308,8 @@ struct
        
    fun testWord8Vector () = test' Word8Vector.ok Word8Vector.result
 
+   fun testByteCodeBugs () = test' ByteCodeBugs.ok ByteCodeBugs.result
+
 (* it's just santa's little helper not getting crazy by typing these
    many things ;-) 
 
@@ -408,7 +411,8 @@ struct
 			(VectorLoop.name, testVectorLoop),
 			(WhereAnd.name, testWhereAnd),
 			(Word.name, testWord),
-			(Word8Vector.name, testWord8Vector)])
+			(Word8Vector.name, testWord8Vector),
+			(ByteCodeBugs.name, testByteCodeBugs)])
 
 end
 
