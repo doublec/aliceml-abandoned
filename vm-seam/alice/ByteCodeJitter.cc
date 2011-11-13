@@ -1942,7 +1942,6 @@ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
   return INVALID_POINTER;
 } 
 
-// TODO: check for optimizations
 // CompactTagTest of idRef * int * tagTests * instr option  
 TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   u_int maxTag = Store::DirectWordToInt(pc->Sel(1));
@@ -1960,15 +1959,24 @@ TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   bool isSomeElseInstr = (elseInstrOpt != INVALID_POINTER);
   bool isFastTest = (size*OPTIMIZE_TAGTEST_LEVEL > maxTag);
 
+  // special case: test for a datatype with a single constructor
+  if (size == 1 && !isSomeElseInstr) {
+    SET_INSTR_1R(PC, await, testVal);
+    Tuple *test = Tuple::FromWordDirect(tests->Sub(0));
+    TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
+    if (idDefsOpt != INVALID_POINTER) {
+      Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
+      LoadTagVal(testVal, idDefs, isBigTag);
+    }
+    return TagVal::FromWordDirect(test->Sel(1));
+  }
+  
   // specify instructions
   u_int testInstr;
-  u_int loadInstr;
   if(isBigTag) {
-    loadInstr = load_bigtagval;
     testInstr = isFastTest ? cbigtagtest_direct : cbigtagtest;
   }
   else {
-    loadInstr = load_tagval;
     testInstr = isFastTest ? ctagtest_direct : ctagtest;
   }
 
@@ -1987,15 +1995,15 @@ TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
 
   // compile tests
   for(u_int i=0; i<size; i++) {
-    Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+    Tuple *test = Tuple::FromWordDirect(tests->Sub(i));
     SET_1I(jumpTablePC,PC - jmpPC);    
     // compile binding
-    TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
+    TagVal *idDefsOpt = TagVal::FromWord(test->Sel(0));
     if(idDefsOpt != INVALID_POINTER) {
       Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
       LoadTagVal(testVal, idDefs, isBigTag);
     }
-    CompileInstr(TagVal::FromWordDirect(pair->Sel(1))); // compile branch
+    CompileInstr(TagVal::FromWordDirect(test->Sel(1))); // compile branch
   }
   // fill the rest with the else PC
   for(u_int i=size; i<newTestsSize; i++) {
