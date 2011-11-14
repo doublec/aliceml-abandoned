@@ -452,13 +452,29 @@ void ByteCodeJitter::InlinePrimitiveReturn(u_int reg, TagVal *idDefsInstrOpt) {
       SET_INSTR_1R(PC, seam_return1, reg);
       return;
     }
-    LoadTuple(reg, currentFormalArgs);
+    InlinePrimitiveReturnCCC(reg, currentFormalArgs);
     patchTable->Add(PC);
     SET_INSTR_1I(PC, jump, 0);
   }
   else {
     Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
     Vector *idDefs = Vector::FromWord(idDefsInstr->Sel(0));
+    InlinePrimitiveReturnCCC(reg, idDefs);
+  }
+}
+
+void ByteCodeJitter::InlinePrimitiveReturnCCC(u_int reg, Vector *idDefs) {
+  // LoadTuple would try and extract the value from a 1-tuple in reg
+  if (idDefs->GetLength() == 1) {
+    TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
+    if (idDef != INVALID_POINTER) {
+      u_int dst = IdToReg(idDef->Sel(0));
+      if (reg != dst) {
+        SET_INSTR_2R(PC, load_reg, dst, reg);
+      }
+    }
+  }
+  else {
     LoadTuple(reg, idDefs);
   }
 }
@@ -560,11 +576,11 @@ void ByteCodeJitter::Inline_FutureAwait(Vector *idRefs, TagVal *idDefsInstrOpt) 
       SET_INSTR_1R(PC, seam_return1, src);
       return;
     }
-    // if length <> 1 then LoadTuple will do the await
+    // if length <> 1 then InlinePrimitiveReturnCCC will do the await
     if (currentFormalArgs->GetLength() == 1) {
       SET_INSTR_1R(PC, await, src);
     }
-    LoadTuple(src, currentFormalArgs);
+    InlinePrimitiveReturnCCC(src, currentFormalArgs);
     patchTable->Add(PC);
     SET_INSTR_1I(PC, jump, 0);
     return;
@@ -572,11 +588,11 @@ void ByteCodeJitter::Inline_FutureAwait(Vector *idRefs, TagVal *idDefsInstrOpt) 
   
   Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
   Vector *idDefs = Vector::FromWordDirect(idDefsInstr->Sel(0));
-  // if length <> 1 then LoadTuple will do the await
+  // if length <> 1 then InlinePrimitiveReturnCCC will do the await
   if (idDefs->GetLength() == 1) {
     SET_INSTR_1R(PC, await, src);
   }
-  LoadTuple(src, idDefs);
+  InlinePrimitiveReturnCCC(src, idDefs);
 }
 
 void ByteCodeJitter::Inline_AddOrSub(bool addSub, Vector *idRefs, TagVal *idDefsInstrOpt) {
@@ -1651,8 +1667,8 @@ TagVal *ByteCodeJitter::InstrStringTest(TagVal *pc) {
 void ByteCodeJitter::LoadTuple(u_int src, Vector *idDefs) {
 
   // special case: either unit is being requested, or nothing is actually
-  // selected from the tuple; either way it still needs to be requested
-  if (idDefs->GetLength() != 1 && AllIdDefsWildcards(idDefs)) {
+  // selected from the tuple; either way it just needs to be requested
+  if (AllIdDefsWildcards(idDefs)) {
     SET_INSTR_1R(PC, await, src);
     return;
   }
@@ -1660,16 +1676,6 @@ void ByteCodeJitter::LoadTuple(u_int src, Vector *idDefs) {
   // try to use special case super-instructions
   u_int size = idDefs->GetLength();
   switch(size) {
-    case 1: { // idDefs does not really represent a Tuple (TODO: what if it is a 1-Tuple?)
-      TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
-      if (idDef != INVALID_POINTER) {
-	u_int dst = IdToReg(idDef->Sel(0));
-	if (src != dst) {
-	  SET_INSTR_2R(PC, load_reg, dst, src);
-	}
-      }
-      return;
-    }
     case 2: {
       TagVal *idDef1 = TagVal::FromWord(idDefs->Sub(0));
       TagVal *idDef2 = TagVal::FromWord(idDefs->Sub(1));

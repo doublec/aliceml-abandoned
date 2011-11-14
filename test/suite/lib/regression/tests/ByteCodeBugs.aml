@@ -12,6 +12,10 @@ struct
     val result = ""
 
 
+    exception TooLazy
+    val lx = lazy raise TooLazy
+
+
     val units = #[(), (), ()]
     val a  = Vector.sub (units, 2)
     val () = Vector.sub (units, 1)
@@ -50,14 +54,29 @@ struct
     val (a, b) = await (lazy (1, 2))
     do assert (a, b) = (1, 2)
 
-    exception TooLazy
-    val lx = lazy raise TooLazy
     do ignore lx (*) this should not request lx, since ignore does not request its argument ...
     fun reqUnit () = true
     do assert reqUnit lx             raise TooLazy (*) ... but these should ...
     do assert await lx               raise TooLazy
     do assert Hole.hole lx           raise TooLazy
     do assert OS.FileSys.tmpName lx  raise TooLazy
-    
+   
+
+   (* single element records translate to single element tuples! *)
+ 
+   fun foo x = {x}
+   fun bar {x} = x
+   fun sel (y:{x:int}) = #x y
+
+   do assert bar (foo 5) = 5
+   do assert sel (foo 4) = 4
+   do assert bar {x={x=5}} = {x=2+3}
+   do assert #x (#y {y = {x = 1+1}}) = 2
+
+   val a = {x = lx : int}
+   val _ = #x a     (*) should not request (#x a) ...
+   val _ = await a  (*) ... nor should this
+   do assert (#x a = 1) raise TooLazy
+
 end
 

@@ -264,7 +264,8 @@ private:
   //! These help compile returns from inlined primitives
   u_int DefineInlinePrimitiveReturnReg(TagVal *idDefsInstrOpt);
   void InlinePrimitiveReturn(u_int reg, TagVal *idDefsInstrOpt);
-  
+  void InlinePrimitiveReturnCCC(u_int reg, Vector *idDefs);
+
   u_int InlineUnaryPrimitiveCCC(Vector *idRefs);
   void InlineBinaryPrimitiveCCC(Vector *idRefs, u_int& x, u_int& y);
 

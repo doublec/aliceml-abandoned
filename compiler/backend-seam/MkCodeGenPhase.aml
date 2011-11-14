@@ -259,7 +259,10 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | detup (O.AppVar (_, _, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetRef (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetTup (idDefs, idRef, instr), id) =
-	    if isLastUseLocal (idRef, id) then
+	    (* can't hoist selection from 1-tuple! *)
+	    if Vector.length idDefs = 1 andalso isId (idRef, id) then
+	        USED
+	    else if isLastUseLocal (idRef, id) then
                 DECONSTRUCTED (idDefs, instr)
             else if isLocal (idRef, id) then
 		case detup (instr, id) of
