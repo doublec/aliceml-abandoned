@@ -143,7 +143,6 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   ByteCodeSpecializer::Init();
   HotSpotInterpreter::Init();
 
-  const char *jitMode = std::getenv("ALICE_JIT_MODE");
 #if HAVE_LIGHTNING
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
@@ -153,45 +152,29 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   u_int codeSizeInChunks = 50; // was 40
 #endif
   NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
-  if (jitMode != NULL)
+#endif
+
+  concreteCodeConstructor = HotSpotConcreteCode::New; // default
+  const char *jitMode = std::getenv("ALICE_JIT_MODE");
+  if (jitMode != NULL) {
     switch(atoi(jitMode)) {
     case 0:
       concreteCodeConstructor = AliceConcreteCode::New;
       break;
-    case 2:
-      concreteCodeConstructor = ByteConcreteCode::New;
-      break;
-    case 3:
-      concreteCodeConstructor = HotSpotConcreteCode::New;
-      break;
+#if HAVE_LIGHTNING
     case 1:
       concreteCodeConstructor = NativeConcreteCode::New;    
       break;
-    default:
-      concreteCodeConstructor = ByteConcreteCode::New;
-    }
-  else
-    concreteCodeConstructor = ByteConcreteCode::New;
-
-#else
-  if (jitMode != NULL)
-    switch(atoi(jitMode)) {
+#endif
     case 2:
       concreteCodeConstructor = ByteConcreteCode::New;
       break;
     case 3:
       concreteCodeConstructor = HotSpotConcreteCode::New;
       break;
-    case 0:
-      concreteCodeConstructor = AliceConcreteCode::New;
-      break;
-    default:
-      concreteCodeConstructor = ByteConcreteCode::New;
     }
-  else
-    concreteCodeConstructor = ByteConcreteCode::New;
+  }
 
-#endif
 #if DEBUG_CHECK
   AbstractCodeFrame::Init();
 #endif
