@@ -52,10 +52,14 @@ bool ByteCodeSpecializer::Specialize(Closure *c) {
     fprintf(stderr, "ByteCodeSpecializer - specializing: %s\n", name->ExportC());
   }
   
-  Vector *subst = Vector::New(c->GetSize());
-  for (u_int i=c->GetSize(); i--; ) {
-    TagVal *some = TagVal::New1(Types::SOME, c->Sub(i));
-    subst->Init(i, some->ToWord());
+  Vector *oldSubst = Vector::FromWordDirect(abstractCode->Sel(1));
+  Vector *subst = Vector::New(oldSubst->GetLength());
+  for (u_int i=0, j=0; i<oldSubst->GetLength(); i++) {
+    TagVal *valOpt = TagVal::FromWord(oldSubst->Sub(i));
+    if (valOpt == INVALID_POINTER) {
+      valOpt = TagVal::New1(Types::SOME, c->Sub(j++));
+    }
+    subst->Init(i, valOpt->ToWord());
   }
 
   TagVal *newAbstractCode = TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);

@@ -61,7 +61,6 @@ namespace {
   private:
     u_int counter;
     u_int nLocals;
-    Vector *subst;
     Vector *endPoints;
     TagVal *abstractCode;
     Vector *liveness;
@@ -82,7 +81,6 @@ namespace {
   public:
     InlineAnalyser(TagVal *ac, Map* map)
       : abstractCode(ac), counter(0), parentRootInstrs(map) {
-      subst = Vector::FromWordDirect(abstractCode->Sel(1));
       liveness = Vector::FromWordDirect(abstractCode->Sel(6));
       inlineMap = Map::New(20); 
       nLocals = AbstractCode::GetNumberOfLocals(abstractCode);
@@ -140,18 +138,20 @@ namespace {
     Assert(AbstractCode::GetInstr(instr) == AbstractCode::AppVar);
     
     TagVal *idRef = TagVal::FromWordDirect(instr->Sel(0));
-    word wClosure;
+    word wClosure = INVALID_POINTER;
     // check whether function to be called is an immediate
     if(AbstractCode::GetIdRef(idRef) == AbstractCode::Global) {
+      Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
       u_int index = Store::DirectWordToInt(idRef->Sel(0));
       TagVal *valueOpt = TagVal::FromWord(subst->Sub(index));
-      if (valueOpt != INVALID_POINTER)
+      if (valueOpt != INVALID_POINTER) {
 	wClosure = valueOpt->Sel(0);
-      else 
-	return;
-    } else if (AbstractCode::GetIdRef(idRef) == AbstractCode::Immediate) {
+      }
+    }
+    else if (AbstractCode::GetIdRef(idRef) == AbstractCode::Immediate) {
       wClosure = idRef->Sel(0);
-    } else {
+    }
+    if (wClosure == INVALID_POINTER) {
       return;
     }
 
@@ -219,11 +219,13 @@ namespace {
     livenessInfo.Append(tup->ToWord(),calleeLiveness->GetLength());
     
     // add closure to substitution, i.e. do specialize
-    u_int nGlobals = closure->GetSize();
-    Vector *newSubst = Vector::New(nGlobals);
-    for(u_int i=nGlobals; i--; ) {
-      TagVal *idRef = TagVal::New1(AbstractCode::Immediate, closure->Sub(i));
-      newSubst->Init(i,idRef->ToWord());
+    Vector *oldSubst = Vector::FromWordDirect(ac->Sel(1));
+    Vector *newSubst = Vector::New(oldSubst->GetLength());
+    for(u_int i=0, j=0; i<oldSubst->GetLength(); i++) {
+      TagVal *valOpt = TagVal::FromWord(oldSubst->Sub(i));
+      word val = (valOpt == INVALID_POINTER) ? closure->Sub(j++) : valOpt->Sel(0);
+      TagVal *idRef = TagVal::New1(AbstractCode::Immediate, val);
+      newSubst->Init(i, idRef->ToWord());
     }
     
     AppVarInfo *avi = AppVarInfo::New(ac, newSubst, nLocals, inlineInfo, closure);

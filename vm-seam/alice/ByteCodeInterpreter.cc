@@ -748,9 +748,9 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
       }
       DISPATCH(PC);
 
-    Case(spec_closure) // r0, r1, template, size
+    Case(spec_closure) // r0, r1, template
       {
-	GET_2R2I(codeBuffer,PC,r0,r1,tempAddr,size);
+	GET_2R1I(codeBuffer, PC, r0, r1, tempAddr);
 	TagVal *templ = TagVal::FromWordDirect(IP->Sel(tempAddr));
 	TagVal *abstractCode =
 	  TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);    
@@ -763,7 +763,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	abstractCode->Init(6, templ->Sel(6));
 	word wConcreteCode =
 	  AliceLanguageLayer::concreteCodeConstructor(abstractCode);
-	Closure *closure = Closure::New(wConcreteCode,size);
+	Closure *closure = Closure::New(wConcreteCode, 0);
 	SETREG(r0, closure->ToWord());
       }
       DISPATCH(PC);

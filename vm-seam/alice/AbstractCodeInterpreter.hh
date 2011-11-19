@@ -33,7 +33,8 @@ public:
   static void Init();
   static String *MakeProfileName(TagVal *abstractCode);
   static void DumpAliceFrame(word funCoord, bool handler, word coord, bool inlined = false, std::ostream& out = std::cerr);
-  static word GetCloseConcreteCode(word parentConcreteCode, TagVal *closeInstr);;
+  static word GetCloseConcreteCode(word parentConcreteCode, TagVal *closeInstr);
+  static TagVal *ConcreteToAbstractCode(word wConcreteCode);
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 

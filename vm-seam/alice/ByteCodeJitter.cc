@@ -960,12 +960,23 @@ TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
   // dont generate new code for inline functions - it causes too many compiler calls
   word parentCC = (inlineDepth == 0) ? currentConcreteCode : inlineAppVar->GetClosure()->GetConcreteCode();
   word wConcreteCode = AbstractCodeInterpreter::GetCloseConcreteCode(parentCC, pc);
+  TagVal *abstractCode = AbstractCodeInterpreter::ConcreteToAbstractCode(wConcreteCode);
+  Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
+  u_int closureSize = 0;
+  for (u_int i=nGlobals; i--; ) {
+    if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
+      closureSize++;
+    }
+  }
   
   u_int ccAddr = imEnv.Register(wConcreteCode);
-  SET_INSTR_1R2I(PC,mk_closure,dst,ccAddr,nGlobals);
-  for (u_int i = nGlobals; i--; ) {
-    u_int reg = LoadIdRefKill(globalRefs->Sub(i),true);
-    SET_INSTR_2R1I(PC,init_closure,dst,reg,i);
+  SET_INSTR_1R2I(PC, mk_closure, dst, ccAddr, closureSize);
+  for (u_int i=0, j=0; i<nGlobals; i++) {
+    if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
+      u_int reg = LoadIdRefKill(globalRefs->Sub(i), true);
+      SET_INSTR_2R1I(PC, init_closure, dst, reg, j);
+      j++;
+    }
   }
 
   return cont;
@@ -984,20 +995,16 @@ TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
   // substitiution is stored in scratch register S0
   u_int S0 = GetNewScratch();
   u_int S1 = GetNewScratch();
-  SET_INSTR_1R1I(PC,new_vec,S0,nGlobals);
+  SET_INSTR_1R1I(PC, new_vec, S0, nGlobals);
   for(u_int i=nGlobals; i--; ) {
     u_int src = LoadIdRefKill(globalRefs->Sub(i), true);
-    SET_INSTR_1R2I(PC, new_tagval, S1, 1, Types::SOME);
-    SET_INSTR_2R1I(PC, init_tagval,S1, src, 0);
+    SET_INSTR_1R1I(PC, new_tagval_init1, S1, Types::SOME);
+    SET_1R(PC, src);
     SET_INSTR_2R1I(PC, init_vec, S0, S1, i);
   }
 
   u_int templateAddr = imEnv.Register(pc->Sel(2));
-  SET_INSTR_2R2I(PC, spec_closure, dst, S0, templateAddr, nGlobals);
-  for (u_int i = nGlobals; i--; ) {
-    u_int src = LoadIdRefKill(globalRefs->Sub(i),true);
-    SET_INSTR_2R1I(PC,init_closure,dst,src,i);
-  }
+  SET_INSTR_2R1I(PC, spec_closure, dst, S0, templateAddr);
 
   return TagVal::FromWordDirect(pc->Sel(3));
 }
@@ -2820,16 +2827,14 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   Vector *substInfo = Vector::FromWordDirect(abstractCode->Sel(1));
   u_int nSubst      = substInfo->GetLength();
   globalSubst       = Vector::New(nSubst);
-  for (u_int i = nSubst; i--;) {
+  for (u_int i=0, j=0; i<nSubst; i++) {
     TagVal *valueOpt = TagVal::FromWord(substInfo->Sub(i));
     TagVal *subst;
     if (valueOpt != INVALID_POINTER) {
-      subst = TagVal::New(AbstractCode::Immediate, 1);
-      subst->Init(0, valueOpt->Sel(0));
+      subst = TagVal::New1(AbstractCode::Immediate, valueOpt->Sel(0));
     }
     else {
-      subst = TagVal::New(AbstractCode::Global, 1);
-      subst->Init(0, Store::IntToWord(i));
+      subst = TagVal::New1(AbstractCode::Global, Store::IntToWord(j++));
     }
     globalSubst->Init(i, subst->ToWord());
   }

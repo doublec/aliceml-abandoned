@@ -41,8 +41,25 @@ static word GetIdRef(word idRef, AbstractCodeFrame *frame, Closure *globalEnv) {
   case AbstractCode::Local:
   case AbstractCode::LastUseLocal:
     return frame->GetLocal(tagVal->Sel(0));
-  case AbstractCode::Global:
-    return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
+  case AbstractCode::Global: {
+    // WARNING: this is safe if the code in globalEnv is specialized, only if the
+    // replacement code is fully subst - because closure indices will change
+    TagVal *aac = AbstractCodeInterpreter::ConcreteToAbstractCode(globalEnv->GetConcreteCode());
+    Vector *subst = Vector::FromWordDirect(aac->Sel(1));
+    s_int i = Store::WordToInt(tagVal->Sel(0));
+    
+    TagVal *substVal = TagVal::FromWord(subst->Sub(i));
+    if (substVal != INVALID_POINTER) {
+      return substVal->Sel(0);
+    }
+    
+    for (s_int j=i-1; j>=0; j--) {
+      if (TagVal::FromWord(subst->Sub(j)) != INVALID_POINTER) {
+	i--;
+      }
+    }
+    return globalEnv->Sub(i);
+  }
   default:
     Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
   }
@@ -55,7 +72,7 @@ static void KillIdRef(word idRef, AbstractCodeFrame *frame, TagVal *pc, Closure 
     frame->KillLocal(tagVal->Sel(0), pc, globalEnv);
 }
 
-
+  
 word AbstractCodeInterpreter::GetCloseConcreteCode(word parentConcreteCode, TagVal *closeInstr) {
   ConcreteCode *cc = ConcreteCode::FromWordDirect(parentConcreteCode);
   Interpreter *interpreter = cc->GetInterpreter();
@@ -122,6 +139,18 @@ word AbstractCodeInterpreter::GetCloseConcreteCode(word parentConcreteCode, TagV
     closeConcreteCodes->Put(wCloseInstr, wConcreteCode);
     return wConcreteCode;
   }
+}
+
+
+TagVal *AbstractCodeInterpreter::ConcreteToAbstractCode(word wConcreteCode) {
+  ConcreteCode *cc = ConcreteCode::FromWord(wConcreteCode);
+  Assert(cc->GetInterpreter() == AbstractCodeInterpreter::self
+      || cc->GetInterpreter() == HotSpotInterpreter::self
+      || cc->GetInterpreter() == ByteCodeInterpreter::self);
+  
+  Transform *tr = cc->GetInterpreter()->GetAbstractRepresentation(
+    reinterpret_cast<ConcreteRepresentation*>(cc));
+  return TagVal::FromWord(tr->GetArgument());
 }
 
 
@@ -618,6 +647,15 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	u_int nGlobals = idRefs->GetLength();
 	
 	word wConcreteCode = GetCloseConcreteCode(globalEnv->GetConcreteCode(), pc);
+	TagVal *abstractCode = ConcreteToAbstractCode(wConcreteCode);
+	Vector *subst = Vector::FromWord(abstractCode->Sel(1));
+	u_int closureSize = 0;
+	for (u_int i=0; i<nGlobals; i++){
+	  if(TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
+	    closureSize++;
+	  }
+	}
+	
 #if DEBUGGER
 	Closure *closure;
 	// check wether abstractCode has debug annotation
@@ -631,10 +669,14 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  closure = Closure::New(wConcreteCode, nGlobals);
 	} 
 #else
-	Closure *closure = Closure::New(wConcreteCode, nGlobals);
+	Closure *closure = Closure::New(wConcreteCode, closureSize);
 #endif
-	for (u_int i = nGlobals; i--; )
-	  closure->Init(i, GetIdRefKill(idRefs->Sub(i), frame, pc, globalEnv));
+	for (u_int i=0, j=0; i<nGlobals; i++) {
+	  word val = GetIdRefKill(idRefs->Sub(i), frame, pc, globalEnv);
+	  if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
+	    closure->Init(j++, val);
+	  }
+	}
 	frame->SetLocal(pc->Sel(0), closure->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
@@ -681,11 +723,8 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  closure = Closure::New(wConcreteCode, nGlobals);
 	} 
 #else
-	Closure *closure = Closure::New(wConcreteCode, nGlobals);
+	Closure *closure = Closure::New(wConcreteCode, 0);
 #endif
-	for (u_int i = nGlobals; i--; ) {
-	  closure->Init(i, TagVal::FromWordDirect(subst->Sub(i))->Sel(0));
-	}
 	frame->SetLocal(pc->Sel(0), closure->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
@@ -1180,12 +1219,7 @@ void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame, std::ostream& out) {
   
   AbstractCodeFrame *frame = reinterpret_cast<AbstractCodeFrame *>(sFrame);
   Closure *closure = frame->GetClosure();
-  // might be {Alice,HotSpot,Byte}ConcreteCode
-  ConcreteCode *cc = ConcreteCode::FromWord(closure->GetConcreteCode());
-  
-  Transform *tr = cc->GetInterpreter()->GetAbstractRepresentation(
-    reinterpret_cast<ConcreteRepresentation*>(cc));
-  TagVal *abstractCode = TagVal::FromWord(tr->GetArgument());
+  TagVal *abstractCode = ConcreteToAbstractCode(closure->GetConcreteCode());
   
   AbstractCodeInterpreter::DumpAliceFrame(abstractCode->Sel(0), frame->IsHandlerFrame(), frame->GetCoord(), false, out);
 }

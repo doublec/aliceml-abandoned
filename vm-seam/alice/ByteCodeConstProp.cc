@@ -470,9 +470,21 @@ namespace {
 	    if (AllIdRefsImmediate(idRefs)) {
 	      word parentCC = (inlineDepth == 0) ? concreteCode : inlineAppVar->GetClosure()->GetConcreteCode();
 	      word wConcreteCode = AbstractCodeInterpreter::GetCloseConcreteCode(parentCC, instr);
-	      Closure *cls = Closure::New(wConcreteCode, idRefs->GetLength());
-	      for (u_int i=idRefs->GetLength(); i--; ) {
-		cls->Init(i, IdRefToImmediate(idRefs->Sub(i)));
+	      TagVal *abstractCode = AbstractCodeInterpreter::ConcreteToAbstractCode(wConcreteCode);
+	      Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
+	      u_int closureSize = 0;
+	      for (u_int i=0; i<subst->GetLength(); i++) {
+		if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
+		  closureSize++;
+		}
+	      }
+	      
+	      Closure *cls = Closure::New(wConcreteCode, closureSize);
+	      for (u_int i=0, j=0; i<idRefs->GetLength(); i++) {
+		TagVal *valOpt = TagVal::FromWord(subst->Sub(i));
+		if (valOpt == INVALID_POINTER) {
+		  cls->Init(j++, IdRefToImmediate(idRefs->Sub(i)));
+		}
 	      }
 	      constPropInfo->GetPutConstants()->Put(instr->ToWord(), cls->ToWord());
 	      AssignValue(cls->ToWord(), dest);
@@ -566,7 +578,7 @@ namespace {
 	      Map *inlineMap = constPropInfo->GetInlineMap();
 	      constPropInfo = ConstPropInfo::New();
 	      inlineMap->Put(instr->ToWord(), constPropInfo->ToWord()); //TODO: could minimization make this kind of map unsound?
-	      sharedInArity = AbstractCode::SharedInArity(abstractCode); // TODO: cache shared-in-arities (on the CC?) and clone as needed
+	      sharedInArity = AbstractCode::SharedInArity(abstractCode);
 	      
 	      if (contOpt != INVALID_POINTER) {
 		Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));
