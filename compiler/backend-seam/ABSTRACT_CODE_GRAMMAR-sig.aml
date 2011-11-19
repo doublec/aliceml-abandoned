@@ -14,6 +14,7 @@ import structure Type        from "../../lib/rtt/Type"
 import structure Label       from "../../lib/rtt/Label"
 import structure Atom        from "../../lib/data/Atom"
 import structure Stamp       from "../common/Stamp"
+import structure StampMap    from "../common/StampMap"
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 import signature VALUE       from "VALUE-sig"
 
@@ -119,4 +120,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 	withtype value = abstractCode Value.t
 
 	type t = value * (Stamp.t * Label.t) vector
+
+        (* maps Shared node stamp to (number-of-incoming-edges, continuation) *)
+	val sharedInArity : instr -> (int * instr) StampMap.t
     end

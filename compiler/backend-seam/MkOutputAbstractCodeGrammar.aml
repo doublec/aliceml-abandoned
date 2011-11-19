@@ -8,7 +8,7 @@ import signature OUTPUT_ABSTRACT_CODE_GRAMMAR from "OUTPUT_ABSTRACT_CODE_GRAMMAR
 import structure Url                          from "../../lib/system/Url"
 import structure Stamp                        from "../common/Stamp"
 import structure Atom                         from "../../lib/data/Atom"
-import structure StampSet                     from "../common/StampSet"
+import structure StampMap                     from "../common/StampMap"
 
 
 functor MkOutputAbstractCodeGrammar (AbstractCodeGrammar : ABSTRACT_CODE_GRAMMAR) : OUTPUT_ABSTRACT_CODE_GRAMMAR =
@@ -19,15 +19,19 @@ struct
     open AbstractCodeGrammar
 
 
-    fun indent s =
+    fun indent prefix s =
         let
             fun splitLines s = String.tokens (fn c => c = #"\n") s
             fun joinLines s  = String.concatWith "" s
-            fun indentLine s = "    " ^ s ^ "\n"
+            fun indentLine s = prefix ^ s ^ "\n"
         in
             (joinLines o (map indentLine) o splitLines) s
         end
-    
+
+
+    val indent2 = indent "  "
+    val indent4 = indent "    "
+ 
 
     fun vector f xs =
 	"#[" ^ String.concatWith ", " (Vector.toList (Vector.map f xs)) ^ "]"
@@ -53,7 +57,8 @@ struct
     fun func kind funCoord globalAnnots annotation args outArity body lives =
     let
     
-        val shared = StampSet.set ()
+        val shared = StampMap.cloneWith
+                       (fn (n, ins) => (0, n, ins)) (sharedInArity body)
 
 
         fun localAnnot i = case annotation of
@@ -96,96 +101,189 @@ struct
             let
                 fun branch b =
                     "  " ^ desc b ^ " =>\n" ^
-                    indent (cont b)
+                    indent4 (cont b)
             in
                 String.concatWith "\n" (Vector.toList (Vector.map branch t))
             end
 
-        
-        fun instr ins = case ins of
-            Coord (c, ins')         => "Coord " ^ coord c ^ "\n" ^ instr ins'
-          | Entry (c, ep, ins')     => "Entry " ^ coord c ^ " " ^ entryPoint ep ^ "\n" ^ instr ins'
-          | Exit  (c, ep, id, ins') => "Exit " ^ coord c ^ " (" ^ idRef id ^ ") <- " ^ exitPoint ep ^ "\n" ^ instr ins'
-          | Kill (ids, ins')        => "Kill " ^ locals ids ^ "\n" ^ instr ins'
-          | PutVar (id, ir, ins')   => "PutVar " ^ local' id ^ " <- " ^ idRef ir ^ "\n" ^ instr ins'
-          | PutNew (id, s, ins')    => "PutNew " ^ local' id ^ " <- " ^ string s ^ "\n" ^ instr ins'
+
+        (*
+         * Shared node continuation instrs get output after all of the Shared nodes
+         * that reference them (assume all Shared nodes are preceded by a branch).
+         *)
+        fun branchInstr body =
+            let
+                val startShared = StampMap.clone shared
+
+                fun doneInBranch (stamp, (n, m, ins)) =
+                   n = m andalso
+                   #1 (StampMap.lookupExistent (startShared, stamp)) = 0
+
+                fun nextShared () =
+                    case StampMap.findi doneInBranch shared
+                      of SOME (stamp, (n, m, ins)) =>
+                          (StampMap.remove (shared, stamp);
+                           SOME (stamp, ins))
+                       | NONE => NONE
+
+                fun loop s =
+                    case nextShared()
+                      of NONE => s
+                       | SOME (stamp, ins) =>
+                         loop (s ^
+                               "Shared " ^ Stamp.toString stamp ^ ":\n" ^
+                               indent2 (instr ins))
+            in
+                loop (body())
+            end
+
+
+        and instr ins = case ins of
+            Coord (c, ins')
+            => "Coord " ^ coord c ^ "\n" ^ instr ins'
+
+          | Entry (c, ep, ins')
+            => "Entry " ^ coord c ^ " " ^ entryPoint ep ^ "\n" ^ instr ins'
+
+          | Exit  (c, ep, id, ins')
+            => "Exit " ^ coord c ^ " (" ^ idRef id ^ ") <- " ^ exitPoint ep ^ "\n" ^ instr ins'
+
+          | Kill (ids, ins')
+            => "Kill " ^ locals ids ^ "\n" ^ instr ins'
+
+          | PutVar (id, ir, ins')
+            => "PutVar " ^ local' id ^ " <- " ^ idRef ir ^ "\n" ^ instr ins'
+
+          | PutNew (id, s, ins')
+            => "PutNew " ^ local' id ^ " <- " ^ string s ^ "\n" ^ instr ins'
+
           | PutTag (id, nLabs, lab, args, ins')
-                                    => "PutTag " ^ local' id ^ " <- " ^ int lab ^ "/" ^ int nLabs ^ " " ^ idRefs args ^ "\n" ^ instr ins'
+            => "PutTag " ^ local' id ^ " <- " ^ int lab ^ "/" ^ int nLabs ^ " " ^ idRefs args ^ "\n" ^ instr ins'
+
           | PutCon (id, con, args, ins')
-                                    => "PutCon " ^ local' id ^ " <- (" ^ idRef con ^ ") " ^ idRefs args ^ "\n" ^ instr ins'
-          | PutRef (id, x, ins')    => "PutRef " ^ local' id ^ " <- " ^ idRef x ^ "\n" ^ instr ins'
-          | PutTup (id, args, ins') => "PutTup " ^ local' id ^ " <- " ^ idRefs args ^ "\n" ^ instr ins'
+            => "PutCon " ^ local' id ^ " <- (" ^ idRef con ^ ") " ^ idRefs args ^ "\n" ^ instr ins'
+
+          | PutRef (id, x, ins')
+            => "PutRef " ^ local' id ^ " <- " ^ idRef x ^ "\n" ^ instr ins'
+
+          | PutTup (id, args, ins')
+            => "PutTup " ^ local' id ^ " <- " ^ idRefs args ^ "\n" ^ instr ins'
+
           | PutPolyRec (id, labs, vals, ins')
-                                    => "PutPolyRec " ^ local' id ^ " <- " ^ polyRec labs vals ^ "\n" ^ instr ins'
-          | PutVec (id, args, ins') => "PutVec " ^ local' id ^ " <- " ^ idRefs args ^ "\n" ^ instr ins'
+            => "PutPolyRec " ^ local' id ^ " <- " ^ polyRec labs vals ^ "\n" ^ instr ins'
+
+          | PutVec (id, args, ins')
+            => "PutVec " ^ local' id ^ " <- " ^ idRefs args ^ "\n" ^ instr ins'
+
           | Close (id, args, tpl, ins')
-                                    => let val globalAnnots' = Vector.map idRefAnnot args
-                                       in "Close " ^ local' id ^ " <- " ^ idRefs args ^ "\n  " ^ template globalAnnots' tpl ^ instr ins' end
+            => let val globalAnnots' = Vector.map idRefAnnot args
+               in "Close " ^ local' id ^ " <- " ^ idRefs args ^ "\n  " ^ template globalAnnots' tpl ^ instr ins' end
+
           | Specialize (id, args, tpl, ins')
-                                    => let val globalAnnots' = Vector.map idRefAnnot args
-                                       in "Specialize " ^ local' id ^ " <- " ^ idRefs args ^ "\n  " ^ template globalAnnots' tpl ^ instr ins' end
-          | AppPrim (f, args, cont) => "AppPrim " ^
-                                       (case cont
-                                        of NONE => value f ^ " " ^ idRefs args ^ " (tail call)\n"
-                                         | SOME (id, ins') => idDef id ^ " <- " ^ value f ^ " " ^ idRefs args ^ "\n" ^ instr ins')
+            => let val globalAnnots' = Vector.map idRefAnnot args
+               in "Specialize " ^ local' id ^ " <- " ^ idRefs args ^ "\n  " ^ template globalAnnots' tpl ^ instr ins' end
+
+          | AppPrim (f, args, cont)
+            => (case cont
+                  of NONE => "AppPrim" ^ value f ^ " " ^ idRefs args ^ " (tail call)\n"
+                   | SOME (id, ins') => "AppPrim " ^ idDef id ^ " <- " ^ value f ^ " " ^ idRefs args ^ "\n" ^ instr ins')
+
           | AppVar (f, args, b, cont)
-                                    => "AppVar " ^
-                                       (case cont
-                                        of NONE => "(" ^ idRef f ^ ") " ^ idRefs args ^ " (tail call)\n"
-                                        | SOME (ids, ins') => idDefs ids ^ " <- (" ^ idRef f ^ ") " ^ idRefs args ^ " " ^ bool b ^ "\n" ^ instr ins')
-          | GetRef (dst, src, ins') => "GetRef " ^ local' dst ^ " <- " ^ idRef src ^ "\n" ^ instr ins'
-          | GetTup (dst, src, ins') => "GetTup " ^ idDefs dst ^ " <- " ^ idRef src ^ "\n" ^ instr ins'
-          | Sel (dst, src, x, ins') => "Sel " ^ int dst ^ " <- #" ^ int (x + 1) ^ " (" ^ idRef src ^ ")\n" ^ instr ins'
+            => (case cont
+                  of NONE => "AppVar (" ^ idRef f ^ ") " ^ idRefs args ^ " (tail call)\n"
+                   | SOME (ids, ins') => "AppVar "^ idDefs ids ^ " <- (" ^ idRef f ^ ") " ^ idRefs args ^ " " ^ bool b ^ "\n" ^ instr ins')
+
+          | GetRef (dst, src, ins')
+            => "GetRef " ^ local' dst ^ " <- " ^ idRef src ^ "\n" ^ instr ins'
+
+          | GetTup (dst, src, ins')
+            => "GetTup " ^ idDefs dst ^ " <- " ^ idRef src ^ "\n" ^ instr ins'
+
+          | Sel (dst, src, x, ins')
+            => "Sel " ^ int dst ^ " <- #" ^ int (x + 1) ^ " (" ^ idRef src ^ ")\n" ^ instr ins'
+
           | LazyPolySel (dst, src, labs, ins')
-                                    => "LazyPolySel " ^ locals dst ^ " <- (" ^ idRef src ^ ") " ^ labels labs ^ "\n" ^ instr ins'
-          | Raise id                => "Raise " ^ idRef id ^ "\n"
-          | Reraise id              => "Reraise " ^ idRef id ^ "\n"
+            => "LazyPolySel " ^ locals dst ^ " <- (" ^ idRef src ^ ") " ^ labels labs ^ "\n" ^ instr ins'
+
+          | Raise id
+            => "Raise " ^ idRef id ^ "\n"
+
+          | Reraise id
+            => "Reraise " ^ idRef id ^ "\n"
+
           | Try (ins', pkg, exn, handler)
-                                    => "Try\n" ^ instr ins' ^
-                                       "(* handler (" ^ idDef pkg ^ ", " ^ idDef exn ^ ") <- (pkg, exn) *)\n" ^ instr handler
-          | EndTry ins'             => "EndTry\n" ^ instr ins'
-          | EndHandle ins'          => "EndHandle\n" ^ instr ins'
-          | IntTest (x, test, ins') => "IntTest " ^ idRef x ^ "\n" ^
-                                       intTests test ^
-                                       else' ins'
+            => branchInstr (fn () =>
+                 "Try\n" ^ instr ins' ^
+                 "(* handler (" ^ idDef pkg ^ ", " ^ idDef exn ^ ") <- (pkg, exn) *)\n" ^ instr handler)
+
+          | EndTry ins'
+            => "EndTry\n" ^ instr ins'
+
+          | EndHandle ins'
+            => "EndHandle\n" ^ instr ins'
+
+          | IntTest (x, test, ins')
+            => branchInstr (fn () =>
+                 "IntTest " ^ idRef x ^ "\n" ^
+                 intTests test ^
+                 else' ins')
+
           | CompactIntTest (x, start, branches, ins')
-                                    => "CompactIntTest " ^ idRef x ^ "\n" ^
-                                       intTests (Vector.tabulate (Vector.length branches, fn i => (start + i, Vector.sub (branches, i)))) ^
-                                       else' ins'
+            => branchInstr (fn () =>
+                 "CompactIntTest " ^ idRef x ^ "\n" ^
+                 intTests (Vector.tabulate (Vector.length branches, fn i => (start + i, Vector.sub (branches, i)))) ^
+                 else' ins')
+
           | RealTest (x, branches, ins')
-                                    => "RealTest " ^ idRef x ^ "\n" ^
-                                       realTests branches ^
-                                       else' ins'
+            => branchInstr (fn () =>
+                 "RealTest " ^ idRef x ^ "\n" ^
+                 realTests branches ^
+                 else' ins')
+
           | StringTest (x, branches, ins')
-                                    => "StringTest " ^ idRef x ^ "\n" ^
-                                       stringTests branches ^
-                                       else' ins'
+            => branchInstr (fn () =>
+                 "StringTest " ^ idRef x ^ "\n" ^
+                 stringTests branches ^ 
+                 else' ins')
+
           | TagTest (x, nLabs, nullaryTests, binderTests, ins')
-                                    => "TagTest " ^ idRef x ^ " (" ^ int nLabs ^ " labels)\n" ^
-                                       nullaryTagTests nullaryTests ^
-                                       binderTagTests binderTests ^
-                                       else' ins'
+            => branchInstr (fn () =>
+                 "TagTest " ^ idRef x ^ " (" ^ int nLabs ^ " labels)\n" ^
+                 nullaryTagTests nullaryTests ^
+                 binderTagTests binderTests ^
+                 else' ins')
+
           | CompactTagTest (x, nLabs, tests, ins')
-                                    => "CompactTagTest " ^ idRef x ^ " (" ^ int nLabs ^ " labels)\n" ^
-                                       compactTagTests tests ^
-                                       (case ins'
-                                        of NONE => ""
-                                        | SOME ins'' => else' ins'')
+            => branchInstr (fn () =>
+                 "CompactTagTest " ^ idRef x ^ " (" ^ int nLabs ^ " labels)\n" ^
+                 compactTagTests tests ^
+                 (case ins'
+                    of NONE => ""
+                     | SOME ins'' => else' ins''))
+
           | ConTest (x, nullaryTests, binderTests, ins')
-                                    => "ConTest " ^ idRef x ^ "\n" ^
-                                       nullaryConTests nullaryTests ^
-                                       binderConTests binderTests ^
-                                       else' ins'
+            => branchInstr (fn () =>
+                 "ConTest " ^ idRef x ^ "\n" ^
+                 nullaryConTests nullaryTests ^
+                 binderConTests binderTests ^
+                 else' ins')
+
           | VecTest (x, tests, ins')
-                                    => "VecTest " ^ idRef x ^ "\n" ^
-                                       vectorTests tests ^
-                                       else' ins'
-          | Shared (stamp, ins')    => if StampSet.member (shared, stamp) then
-                                           "Shared " ^ Stamp.toString stamp ^ " (go to previous occurence)\n"
-                                       else
-                                          (StampSet.insert (shared, stamp);
-                                           "Shared " ^ Stamp.toString stamp ^ "\n" ^ instr ins')
-          | Return xs               => "Return " ^ idRefs xs ^ "\n"
+            => branchInstr (fn () =>
+                 "VecTest " ^ idRef x ^ "\n" ^
+                 vectorTests tests ^
+                 else' ins')
+
+          | Shared (stamp, ins)
+            => let
+                   val (n, m, _) = StampMap.lookupExistent (shared, stamp)
+               in
+                   StampMap.insert (shared, stamp, (n+1, m, ins));
+                   "Shared " ^ Stamp.toString stamp ^ " (jump)\n"
+               end
+
+          | Return xs
+            => "Return " ^ idRefs xs ^ "\n"
       
     
         and vectorTests t =
@@ -199,7 +297,7 @@ struct
         and binderConTests t =
             let
                 fun branch (x, binders, _) =
-                    idRef x ^ " " ^ idDefs binders
+                    "(" ^ idRef x ^ ") " ^ idDefs binders
             in
                 tests branch (instr o #3) t
             end
@@ -243,7 +341,7 @@ struct
         
         
         and else' ins =
-            "  else\n" ^ indent (instr ins)
+            "  else\n" ^ indent4 (instr ins)
     
     
         and idDef id = case id of
@@ -338,7 +436,7 @@ struct
 		       | Simple n      => n
     in
 	kind ^ srcName' ^ " " ^ idDefs args ^ outArity' ^ " => (* " ^ int nLocals ^ " locals *)\n" ^
-       	indent (liveness lives ^ instr body)
+       	indent4 (liveness lives ^ instr body)
     end
 
 

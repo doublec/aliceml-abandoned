@@ -14,6 +14,7 @@ import structure Atom                  from "../../lib/data/Atom"
 import structure Type                  from "../../lib/rtt/Type"
 import structure Label                 from "../../lib/rtt/Label"
 import structure Stamp                 from "../common/Stamp"
+import structure StampMap              from "../common/StampMap"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
 import signature VALUE                 from "VALUE-sig"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
@@ -118,4 +119,88 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	withtype value = abstractCode Value.t
 
 	type t = value * (Stamp.t * Label.t) vector
+
+	fun sharedInArity body =
+	let
+	    val shared = StampMap.map ()
+
+            fun lmap f xs =
+                map f (Vector.toList xs)
+
+	    fun walk ins = case ins
+             of ( Raise _
+                | Reraise _
+                | Return _
+                | AppPrim (_, _, NONE)
+                | AppVar (_, _, _, NONE) )
+                => ()
+
+              | ( Coord (_, ins)
+                | Entry (_, _, ins)
+                | Exit (_, _, _, ins)
+                | Kill (_, ins)
+                | PutVar (_, _, ins)
+                | PutNew (_, _, ins)
+                | PutTag (_, _, _, _, ins)
+                | PutCon (_, _, _, ins)
+                | PutRef (_, _, ins)
+                | PutTup (_, _, ins)
+                | PutPolyRec (_, _, _, ins)
+                | PutVec (_, _, ins)
+                | Close (_, _, _, ins)
+                | Specialize (_, _, _, ins)
+                | AppPrim (_, _, SOME (_, ins))
+                | AppVar (_, _, _, SOME (_, ins))
+                | GetRef (_, _, ins)
+                | GetTup (_, _, ins)
+                | Sel (_, _, _, ins)
+                | LazyPolySel (_, _, _, ins)
+                | EndTry ins
+                | EndHandle ins )
+                => walk ins
+
+              | Try (body, _, _, hand)
+                => branch [body, hand]
+
+              | IntTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | CompactIntTest (_, _, tests, els)
+                => branch (els::Vector.toList tests)
+
+              | RealTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | StringTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | TagTest (_, _, tests0, testsN, els)
+                => branch (els::(lmap #2 tests0 @ lmap #3 testsN))
+
+              | CompactTagTest (_, _, tests, SOME els)
+                => branch (els::lmap #2 tests)
+
+              | CompactTagTest (_, _, tests, NONE)
+                => branch (lmap #2 tests)
+
+              | ConTest (_, tests0, testsN, els)
+                => branch (els::(lmap #2 tests0 @ lmap #3 testsN))
+
+              | VecTest (_, tests, els)
+                => branch (els::lmap #2 tests)
+
+              | Shared (stamp, ins)
+                => case StampMap.lookup (shared, stamp)
+                     of SOME (n, _) => StampMap.insert (shared, stamp, (n+1, ins))
+                      | NONE => (StampMap.insert (shared, stamp, (1, ins)); walk ins)
+
+	    and branch ins =
+                app walk ins
+
+	in
+	    walk body;
+	    shared
+	end
+
     end
+
