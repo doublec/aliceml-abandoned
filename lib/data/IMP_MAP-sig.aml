@@ -55,6 +55,7 @@ sig
     val member :	'a map * key -> bool
     val lookup :	'a map * key -> 'a option
     val lookupExistent:	'a map * key -> 'a		(* Unknown *)
+    val lookupOrInsert: (key -> 'a) -> 'a map * key -> 'a
     val choose :	'a map -> 'a option
     val choosei :	'a map -> (key * 'a) option
 

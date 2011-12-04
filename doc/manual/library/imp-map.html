@@ -50,64 +50,65 @@
 	exception Unknown of key
 	exception Collision of key
 
-	val map :            unit -> 'a map
-	val clone :          'a map -> 'a map
-	val cloneWith :      ('a -> 'b) -> 'a map -> 'b map
-	val cloneWithi :     (key * 'a -> 'b) -> 'a map -> 'b map
-	val fromList :       (key * 'a) list -> 'a map
-	val fromVector :     (key * 'a) vector -> 'a map
-	val toList :         'a map -> (key * 'a) list
-	val toVector :       'a map -> (key * 'a) vector
+	val map :             unit -> 'a map
+	val clone :           'a map -> 'a map
+	val cloneWith :       ('a -> 'b) -> 'a map -> 'b map
+	val cloneWithi :      (key * 'a -> 'b) -> 'a map -> 'b map
+	val fromList :        (key * 'a) list -> 'a map
+	val fromVector :      (key * 'a) vector -> 'a map
+	val toList :          'a map -> (key * 'a) list
+	val toVector :        'a map -> (key * 'a) vector
 
-	val insert :         'a map * key * 'a -> unit
-	val insertDisjoint : 'a map * key * 'a -> unit
-	val insertWith :     ('a * 'a -> 'a) -> 'a map * key * 'a -> unit
-	val insertWithi :    (key * 'a * 'a -> 'a) -> 'a map * key * 'a -> unit
+	val insert :          'a map * key * 'a -> unit
+	val insertDisjoint :  'a map * key * 'a -> unit
+	val insertWith :      ('a * 'a -> 'a) -> 'a map * key * 'a -> unit
+	val insertWithi :     (key * 'a * 'a -> 'a) -> 'a map * key * 'a -> unit
 
-	val remove :         'a map * key -> unit
-	val removeExistent : 'a map * key -> unit
-	val removeWith :     (key -> unit) -> 'a map * key -> unit
-	val removeAll :      'a map -> unit
+	val remove :          'a map * key -> unit
+	val removeExistent :  'a map * key -> unit
+	val removeWith :      (key -> unit) -> 'a map * key -> unit
+	val removeAll :       'a map -> unit
 
 	val union :          'a map * 'a map -> unit
-	val unionDisjoint :  'a map * 'a map -> unit
-	val unionWith :      ('a * 'a -> 'a) -> 'a map * 'a map -> unit
-	val unionWithi :     (key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
+	val unionDisjoint :   'a map * 'a map -> unit
+	val unionWith :       ('a * 'a -> 'a) -> 'a map * 'a map -> unit
+	val unionWithi :      (key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
-	val intersect :      'a map * 'a map -> unit
-	val intersectWith :  ('a * 'a -> 'a) -> 'a map * 'a map -> unit
-	val intersectWithi : (key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
+	val intersect :       'a map * 'a map -> unit
+	val intersectWith :   ('a * 'a -> 'a) -> 'a map * 'a map -> unit
+	val intersectWithi :  (key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
-	val difference :     'a map * 'a map -> unit
+	val difference :      'a map * 'a map -> unit
 
-	val size :           'a map -> int
-	val isEmpty :        'a map -> bool
+	val size :            'a map -> int
+	val isEmpty :         'a map -> bool
 
-	val member :         'a map * key -> bool
-	val lookup :         'a map * key -> 'a option
-	val lookupExistent : 'a map * key -> 'a
-	val choose :         'a map -> 'a option
-	val choosei :        'a map -> (key * 'a) option
+	val member :          'a map * key -> bool
+	val lookup :          'a map * key -> 'a option
+	val lookupExistent :  'a map * key -> 'a
+	val lookupOrInsert :  (key -> 'a) -> 'a map * key -> 'a
+	val choose :          'a map -> 'a option
+	val choosei :         'a map -> (key * 'a) option
 
-	val equal :          ('a * 'a -> bool) -> 'a map * 'a map -> bool
-	val submap :         ('a * 'a -> bool) -> 'a map * 'a map -> bool
-	val disjoint :       'a map * 'a map -> bool
+	val equal :           ('a * 'a -> bool) -> 'a map * 'a map -> bool
+	val submap :          ('a * 'a -> bool) -> 'a map * 'a map -> bool
+	val disjoint :        'a map * 'a map -> bool
 
-	val app :            ('a -> unit) -> 'a map -> unit
-	val modify :         ('a -> 'a) -> 'a map -> unit
-	val fold :           ('a * 'b -> 'b) -> 'b -> 'a map -> 'b
-	val all :            ('a -> bool) -> 'a map -> bool
-	val exists :         ('a -> bool) -> 'a map -> bool
-	val find :           ('a -> bool) -> 'a map -> 'a option
-	val filter :         ('a -> bool) -> 'a map -> unit
+	val app :             ('a -> unit) -> 'a map -> unit
+	val modify :          ('a -> 'a) -> 'a map -> unit
+	val fold :            ('a * 'b -> 'b) -> 'b -> 'a map -> 'b
+	val all :             ('a -> bool) -> 'a map -> bool
+	val exists :          ('a -> bool) -> 'a map -> bool
+	val find :            ('a -> bool) -> 'a map -> 'a option
+	val filter :          ('a -> bool) -> 'a map -> unit
 
-	val appi :           (key * 'a -> unit) -> 'a map -> unit
-	val modifyi :        (key * 'a -> 'a) -> 'a map -> unit
-	val foldi :          (key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
-	val alli :           (key * 'a -> bool) -> 'a map -> bool
-	val existsi :        (key * 'a -> bool) -> 'a map -> bool
-	val findi :          (key * 'a -> bool) -> 'a map -> (key * 'a) option
-	val filteri :        (key * 'a -> bool) -> 'a map -> unit
+	val appi :            (key * 'a -> unit) -> 'a map -> unit
+	val modifyi :         (key * 'a -> 'a) -> 'a map -> unit
+	val foldi :           (key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+	val alli :            (key * 'a -> bool) -> 'a map -> bool
+	val existsi :         (key * 'a -> bool) -> 'a map -> bool
+	val findi :           (key * 'a -> bool) -> 'a map -> (key * 'a) option
+	val filteri :         (key * 'a -> bool) -> 'a map -> unit
     end
   </PRE>
 
@@ -336,7 +337,8 @@
 
     <DT>
       <TT>lookup (<I>m</I>, <I>k</I>)</TT> <BR>
-      <TT>lookupExistent (<I>m</I>, <I>k</I>)</TT>
+      <TT>lookupExistent (<I>m</I>, <I>k</I>)</TT><BR>
+      <TT>lookupOrInsert <I>f</I> (<I>m</I>, <I>k</I>)</TT>
     </DT>
     <DD>
       <P>In the first form, returns <TT>SOME</TT> <TT><I>x</I></TT> if the
@@ -344,7 +346,9 @@
       contains an entry <TT><I>k'</I></TT>-><TT><I>x</I></TT>, where key
       <TT><I>k'</I></TT> is equal to <TT><I>k</I></TT>, <TT>NONE</TT>
       otherwise. In the second form, returns <TT><I>x</I></TT> unwrapped,
-      or raises <TT>Unknown</TT> <TT><I>k</I></TT> if no such entry exists.</P>
+      or raises <TT>Unknown</TT> <TT><I>k</I></TT> if no such entry exists.
+      In the third form, if no entry exists then it is computed using <TT><I>f</I></TT>
+      and inserted into the map, and the computed value is returned.</P>
     </DD>
 
     <DT>

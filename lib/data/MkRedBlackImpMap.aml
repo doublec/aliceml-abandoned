@@ -92,4 +92,8 @@ struct
     fun equal f (m1,m2)		= Map.equal f (!m1,!m2)
     fun submap f (m1,m2)	= Map.submap f (!m1,!m2)
     fun disjoint (m1,m2)	= Map.disjoint (!m1,!m2)
+
+    fun lookupOrInsert f (m, k) = lookupExistent (m, k)
+                                  handle Unknown _ => let val v = f k
+                                                      in (insert (m, k, v); v) end
 end

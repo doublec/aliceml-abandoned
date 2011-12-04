@@ -65,6 +65,11 @@ struct
 
 	fun cloneWithi f = fromList o List.map (fn (k, v) => (k, f (k, v))) o toList
 	fun cloneWith f  = cloneWithi (fn (_, v) => f v)
+
+	fun lookupOrInsert f (m, k)
+	                            = lookupExistent (m, k)
+	                              handle Unknown _ => let val v = f k
+	                                                  in (insert (m, k, v); v) end
     end
 end
 
@@ -188,6 +193,11 @@ struct
 					    removeExistent(m,k)) (toList m)
 	fun cloneWithi f        = fromList o List.map (fn (k, v) => (k, f (k, v))) o toList
 	fun cloneWith f         = cloneWithi (fn (_, v) => f v)
+
+	fun lookupOrInsert f (m, k)
+	                        = lookupExistent (m, k)
+	                          handle Unknown _ => let val v = f k
+	                                              in (insert (m, k, v); v) end
     end
 end
 
@@ -522,6 +532,11 @@ struct
 	fun intersect x		= intersect' insert x
 	fun intersectWith f	= intersect'(insertWith f)
 	fun intersectWithi f	= intersect'(insertWithi f)
+
+	fun lookupOrInsert f (m, k)
+	                        = lookupExistent (m, k)
+	                          handle Unknown _ => let val v = f k
+	                                              in (insert (m, k, v); v) end
     end
 end
 *)

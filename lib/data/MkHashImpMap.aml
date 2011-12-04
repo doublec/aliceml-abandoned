@@ -151,6 +151,10 @@ struct
     fun insert x		= insertWithi #3 x
     fun insertDisjoint x	= insertWithi(fn(k,_,_) => raise Collision k) x
 
+    fun lookupOrInsert f (m, k)
+                                = lookupExistent (m, k)
+                                  handle Unknown _ => let val v = f k
+                                                      in (insert (m, k, v); v) end
 
     fun union' insert (m1,m2)	= appi (fn(k,a) => insert(m1,k,a)) m2
     fun union x			= union' insert x
