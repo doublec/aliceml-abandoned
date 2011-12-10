@@ -40,7 +40,7 @@
 namespace {
 #include "store/Set.hh"
 
-  Set *intgenSet;
+  Set *intgenSet; // blocks that contain pointers to blocks in younger generations (inter-generational)
   Set *wkDictSet;
   Set *finSet;
 };
