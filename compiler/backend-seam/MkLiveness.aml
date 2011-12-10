@@ -12,6 +12,7 @@
 
 import structure IntMap                from "../infrastructure/IntMap"
 import structure StampSet              from "../common/StampSet"
+import structure Crash                 from "../infrastructure/Crash"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
 import signature LIVENESS              from "LIVENESS-sig"
 
@@ -20,11 +21,6 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 	structure AbstractCodeGrammar = AbstractCodeGrammar
 
 	open AbstractCodeGrammar
-
-	fun compareInterval ((id, min, max), (id', min', max')) =
-	    case Int.compare (min, min') of
-		EQUAL => Int.compare (id, id')
-	      | order => order
 
 	fun analyze (idDefs, instr) =
 	    let
@@ -259,21 +255,19 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		val n = lIdDefs (idDefs, lInstr (instr, 0))
 
 		val intervals =
-		    List.sort compareInterval
+                    List.sort (fn (a, b) => Int.compare (#1 a, #1 b))
 			      (IntMap.foldi
 				   (fn (id, (min, max), rest) =>
 				       (id, n - max, n - min)::rest)
-				   nil ranges)
+				   [] ranges)
 	    in
-(*
-		List.app (fn (id, min, max) =>
-			     (TextIO.print ("id " ^ Int.toString id ^ " -> [" ^
-					    Int.toString min ^ ", " ^
-					    Int.toString max ^ "]\n")))
-			 intervals;
-*)
-		Vector.fromList (List.foldr (fn ((id, min, max), rest) =>
-						id::min::max::rest)
-					    nil intervals)
+		Vector.fromList (List.foldri (fn (i, (id, min, max), rest) =>
+                                                if id = i then
+                                                    min::max::rest
+                                                else
+                                                    raise Crash.Crash
+                                                        ("non-contiguous local variable id: " ^ 
+                                                         Int.toString id ^ " should be " ^ Int.toString i))
+					      [] intervals)
 	    end
     end

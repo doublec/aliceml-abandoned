@@ -123,4 +123,10 @@ signature ABSTRACT_CODE_GRAMMAR =
 
         (* maps Shared node stamp to (number-of-incoming-edges, continuation) *)
 	val sharedInArity : instr -> (int * instr) StampMap.t
+
+	val isId           : idRef * id -> bool
+	val isLocal        : idRef * id -> bool
+	val isLastUseLocal : idRef * id -> bool
+	val getLocal       : idRef -> id option
+	val mergeIdRefs    : idRef * idRef -> idRef option
     end

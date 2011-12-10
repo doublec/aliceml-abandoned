@@ -14,19 +14,22 @@
 #pragma implementation "alice/ByteCodeJitter.hh"
 #endif
 
+#include <vector>
+#include <set>
+#include <algorithm>
+#include <sys/time.h>
+
 #include "alice/PrimitiveTable.hh"
 #include "alice/ByteCodeJitter.hh"
 #include "alice/ByteConcreteCode.hh"
 #include "alice/HotSpotConcreteCode.hh"
 #include "alice/AbstractCode.hh"
+#include "alice/AliceConcreteCode.hh"
 #include "alice/ByteCodeAlign.hh"
 #include "alice/ByteCodeBuffer.hh"
 #include "alice/ByteCode.hh"
 #include "alice/ByteCodeConstProp.hh"
 #include "alice/LazySelInterpreter.hh"
-
-#include <sys/time.h>
-#include "AliceConcreteCode.hh"
 
 // switch debug messages on/off
 
@@ -50,12 +53,12 @@ using namespace ByteCodeInstr;
 
 static void Jitter_PrintLiveness(Vector *liveness) {
   u_int size = liveness->GetLength();
-  fprintf(stderr, "size = %"U_INTF"\n", size/3);
-  for(u_int i = 0, j = 1; i<size; i+=3, j++) {
-    u_int index = Store::DirectWordToInt(liveness->Sub(i));
-    u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
-    u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
-    fprintf(stderr, "%"U_INTF". %"U_INTF" -> [%"U_INTF", %"U_INTF"]\n", j, index, start, end);
+  fprintf(stderr, "size = %"U_INTF"\n", size/2);
+  for(u_int i=0; i<size; i+=2) {
+    u_int index = i/2;
+    u_int start = Store::DirectWordToInt(liveness->Sub(i));
+    u_int end   = Store::DirectWordToInt(liveness->Sub(i+1));
+    fprintf(stderr, "%"U_INTF" : [%"U_INTF" .. %"U_INTF"]\n", index, start, end);
   }
 }
 
@@ -126,92 +129,83 @@ namespace {
 #ifdef DO_REG_ALLOC
   class RegisterAllocator {
   private:
-    class Info {
-    public:
-      u_int reg;
-      u_int start;
-      u_int end;
-      Info(u_int r,u_int s, u_int e) : reg(r), start(s), end(e) {}
-      u_int GetKey() { return end; }
-    };
 
-    class MinHeap {
-    private:
-      Info **heap;
-      u_int top;
-      u_int size;
-    public:
-      MinHeap(u_int s) : top(0), size(s+1) {
-	heap = new Info*[size];
-      }
-      ~MinHeap() {
-	for(u_int i=1; i<=top; i++)
-	  delete heap[i];
-	delete[] heap;
-      }
-    Info* GetMin() {
-	return heap[1];
-      }
-      void DeleteMin() {
-	heap[1] = heap[top--];
-	Info *tmp;
-	u_int i = 1, left, right;
-	u_int smallest = 0;
-	for(;;) {
-	  left = i << 1;
-	  right = left | 1;
-	  // choose max(i,left,right)
-	  if(left <= top && heap[left]->GetKey() < heap[i]->GetKey()) 
-	    smallest = left;
-	  else
-	    smallest = i;
-	  if(right <= top && heap[right]->GetKey() < heap[smallest]->GetKey()) 
-	    smallest = right;
-	  if(smallest == i) return;
-	  // push the smallest element upwards
-	  tmp = heap[smallest];
-	  heap[smallest] = heap[i];
-	  heap[i] = tmp;
-	  i = smallest;
-	}
-      }
-      void Insert(Info *item) {
-	heap[++top] = item;
-	Info *tmp;
-	u_int i = top;
-	u_int parent = i >> 1;
-	while(i > 1 && heap[parent]->GetKey() > heap[i]->GetKey()) {
-	  tmp = heap[parent];
-	  heap[parent] = heap[i];
-	  heap[i] = tmp;
-	  i = parent;
-	  parent >>= 1;
-	}
-      }
+    enum EventType {
+      START_LIFE, END_LIFE
     };
-
+    
+    struct Event {
+      u_int programPoint;
+      EventType type;
+      u_int id;
+    };
+    
+    static bool CmpEvents(Event a, Event b) {
+      if (a.programPoint < b.programPoint) {
+	return true;
+      }
+      else if (a.programPoint == b.programPoint) {
+	return a.type == START_LIFE && b.type == END_LIFE;
+      }
+      else {
+	return false;
+      }
+    }
+    
   public:
-    static void Run(Vector *liveness, u_int mapping[], 
-		    u_int *nLocals, u_int offset = 0) {
-      MinHeap heap(*nLocals);
-      u_int regs = offset;
-      u_int size = liveness->GetLength();
-      for(u_int i=0; i<size; i+=3) {
-	u_int index = Store::DirectWordToInt(liveness->Sub(i));
-	u_int start = Store::DirectWordToInt(liveness->Sub(i+1));
-	u_int end   = Store::DirectWordToInt(liveness->Sub(i+2));
-	Info *info = new Info(regs,start,end);
-	heap.Insert(info);
-	Info *min = heap.GetMin();
-	if(min->end < start) {
-	  mapping[index] = min->reg;
-	  info->reg = min->reg;
-	  heap.DeleteMin();
-	} else {
-	  mapping[index] = regs++;
+    static void Run(Vector *liveness, Vector *aliases, u_int mapping[], u_int *nLocals) {
+      
+      std::vector<Event> events;
+      for (u_int i=0; i<liveness->GetLength(); i+=2) {
+	u_int id = i/2;
+	// skip allocation for locals which are aliases
+	if (id >= aliases->GetLength() || aliases->Sub(id) == Store::IntToWord(id)) {
+	  u_int start = Store::DirectWordToInt(liveness->Sub(i));
+	  u_int end   = Store::DirectWordToInt(liveness->Sub(i+1));
+	  Event startEvent = { start, START_LIFE, id };
+	  Event endEvent   = { end,   END_LIFE, id };
+	  events.push_back(startEvent);
+	  events.push_back(endEvent);
 	}
       }
-      *nLocals = regs;
+      std::sort(events.begin(), events.end(), CmpEvents);
+      
+      std::set<u_int> used, freed;
+      for (u_int i=0; i<events.size(); i++) {
+	Event e = events[i];
+	
+	if (e.type == START_LIFE) {
+	  if (!freed.empty()) {
+	    u_int reg = *(freed.begin());
+	    freed.erase(reg);
+	    used.insert(reg);
+	    mapping[e.id] = reg;
+	  }
+	  else { // need to allocate a new bytecode register
+	    u_int reg = used.size();
+	    used.insert(reg);
+	    mapping[e.id] = reg;
+	  }
+	}
+	else {
+	  Assert(e.type == END_LIFE);
+	  u_int reg = mapping[e.id];
+	  used.erase(reg);
+	  freed.insert(reg);
+	}
+      }
+      Assert(used.empty());
+      
+      // populate alias mappings
+      if (aliases != INVALID_POINTER) {
+	// loop direction is important!
+	for (u_int id=0; id<aliases->GetLength(); id++) {
+	  u_int src = Store::DirectWordToInt(aliases->Sub(id));
+	  mapping[id] = mapping[src];
+	}
+      }
+      
+      *nLocals = freed.size();
     }
   };
 #endif // DO_REG_ALLOC
@@ -2788,24 +2782,18 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 #else
   currentNLocals = AbstractCode::GetNumberOfLocals(abstractCode);
 #endif
-
+  
 #ifdef DO_REG_ALLOC
 #ifdef DO_INLINING
   Vector *liveness = inlineInfo->GetLiveness();
+  Vector *aliases = inlineInfo->GetAliases();
 #else
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(6));
+  Vector *aliases = Vector::New(0);
 #endif
   u_int local_mapping[currentNLocals];
   mapping = local_mapping;
-  RegisterAllocator::Run(liveness, mapping, &currentNLocals);
-#ifdef DO_INLINING
-  // add the alias analysis
-  Array *aliases = inlineInfo->GetAliases();
-  u_int nAliases = aliases->GetLength();
-  // the loop direction is important !
-  for(u_int i = 0; i<nAliases; i++)
-    mapping[i] = mapping[Store::DirectWordToInt(aliases->Sub(i))];
-#endif
+  RegisterAllocator::Run(liveness, aliases, mapping, &currentNLocals);
 #endif
 
   // now prepare scratch registers

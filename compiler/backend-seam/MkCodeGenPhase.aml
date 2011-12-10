@@ -32,6 +32,7 @@ import structure MkOutputAbstractCodeGrammar from "MkOutputAbstractCodeGrammar"
 import structure MkCodeGenContext      from "MkCodeGenContext"
 import structure MkEnvironment         from "MkEnvironment"
 import structure MkLiveness            from "MkLiveness"
+import structure MkMinimize            from "MkMinimize"
 import signature CODE_GEN_PHASE        from "CODE_GEN_PHASE-sig"
 import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
 
@@ -44,6 +45,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	structure O = AbstractCodeGrammar
 
 	structure Environment = MkEnvironment(AbstractCodeGrammar)
+	structure Minimize = MkMinimize(AbstractCodeGrammar)
 	structure Liveness = MkLiveness(AbstractCodeGrammar)
 	structure OutputAbstractCodeGrammar = MkOutputAbstractCodeGrammar(AbstractCodeGrammar)
 
@@ -148,36 +150,12 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    (argsToVector args)
 
 
-	fun isId (O.Immediate _, _) = false
-	  | isId (O.Local id', id) = id' = id
-	  | isId (O.LastUseLocal id', id) = id' = id
-	  | isId (O.Global _, _) = false
-
-
-	fun isLastUseLocal (O.LastUseLocal id', id) = id' = id
-          | isLastUseLocal _                        = false
-
-
-	fun isLocal (O.Local id', id) = id' = id
-          | isLocal _                 = false
-
-
 	fun isIdInVec (idRefs, id) =
-	    Vector.exists (fn idRef => isId (idRef, id)) idRefs
+	    Vector.exists (fn idRef => O.isId (idRef, id)) idRefs
 
 
 	fun removeId (ids, id) =
 	   Vector.fromList (List.filter (fn x => x <> id) (Vector.toList ids))
-
-
-	fun getLocal (O.Immediate _) = NONE
-	  | getLocal (O.Local id) = SOME id
-	  | getLocal (O.LastUseLocal id) = SOME id
-	  | getLocal (O.Global _) = NONE
-
-
-	fun mergeCoords (O.Coord (_, next as O.Coord _)) = mergeCoords next
-          | mergeCoords instr                            = instr
 
 
 	(*
@@ -203,8 +181,8 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | DECONSTRUCTED of O.idDef vector * O.instr    (* the id was GetTup'd into these idDefs, and here is the instr stream with the GetTup removed *)
 
 
-	fun detup' (DECONSTRUCTED (idDefs, instr), f) = DECONSTRUCTED (idDefs, mergeCoords (f instr))
-	  | detup' (KILLED instr, f)  = KILLED (mergeCoords (f instr))
+	fun detup' (DECONSTRUCTED (idDefs, instr), f) = DECONSTRUCTED (idDefs, f instr)
+	  | detup' (KILLED instr, f)  = KILLED (f instr)
 	  | detup' (result, _) = result
 
 
@@ -220,7 +198,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    else detup' (detup (instr, id),
                          fn instr => O.Kill (ids, instr))
 	  | detup (O.PutVar (id, idRef, instr), id') =
-	    if isId (idRef, id') then USED
+	    if O.isId (idRef, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.PutVar (id, idRef, instr))
 	  | detup (O.PutNew (id, s, instr), id') =
@@ -231,7 +209,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 			 fn instr => O.PutTag (id, nLabels, tag, idRefs, instr))
 	  | detup (O.PutCon (_, _, _, _), _) = SIDE_EFFECTING
 	  | detup (O.PutRef (id, idRef, instr), id') =
-	    if isId (idRef, id') then USED
+	    if O.isId (idRef, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.PutRef (id, idRef, instr))
 	  | detup (O.PutTup (id, idRefs, instr), id') =
@@ -260,11 +238,11 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | detup (O.GetRef (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetTup (idDefs, idRef, instr), id) =
 	    (* can't hoist selection from 1-tuple! *)
-	    if Vector.length idDefs = 1 andalso isId (idRef, id) then
+	    if Vector.length idDefs = 1 andalso O.isId (idRef, id) then
 	        USED
-	    else if isLastUseLocal (idRef, id) then
+	    else if O.isLastUseLocal (idRef, id) then
                 DECONSTRUCTED (idDefs, instr)
-            else if isLocal (idRef, id) then
+            else if O.isLocal (idRef, id) then
 		case detup (instr, id) of
 		    DECONSTRUCTED _ => USED
 		  | KILLED instr => DECONSTRUCTED (idDefs, instr)
@@ -272,16 +250,16 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    else SIDE_EFFECTING
 	  | detup (O.Sel (id, idRef, i, instr), id') =
 	    (*--** unless we annotate the width, we can only return USED *)
-	    if isId (idRef, id') then USED
+	    if O.isId (idRef, id') then USED
 	    else SIDE_EFFECTING
 	  | detup (O.LazyPolySel (ids, idRef, labels, instr), id') =
-	    if isId (idRef, id') then USED
+	    if O.isId (idRef, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.LazyPolySel (ids, idRef, labels, instr))
 	  | detup (ins as O.Raise idRef, id) =
-	    if isId (idRef, id) then USED else KILLED ins
+	    if O.isId (idRef, id) then USED else KILLED ins
 	  | detup (ins as O.Reraise idRef, id) =
-	    if isId (idRef, id) then USED else KILLED ins
+	    if O.isId (idRef, id) then USED else KILLED ins
 	  | detup (O.Try (_, _, _, _), _) = UNKNOWN
 	  | detup (O.EndTry _, _) = UNKNOWN
 	  | detup (O.EndHandle _, _) = UNKNOWN
@@ -322,34 +300,6 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		 Vector.tabulate
 		     (n, fn i => #2 (Option.valOf (Array.sub (layout, i)))))
 	    end
-
-
-	fun mergeIdRefs (idRef as O.Local id, O.Local id') =
-	    if id = id' then SOME idRef else NONE
-	  | mergeIdRefs (idRef as O.LastUseLocal id,
-			 (O.Local id' | O.LastUseLocal id')) =
-	    if id = id' then SOME idRef else NONE
-	  | mergeIdRefs (O.Local id, idRef as O.LastUseLocal id') =
-	    if id = id' then SOME idRef else NONE
-	  | mergeIdRefs (idRef as O.Global id, O.Global id') =
-	    if id = id' then SOME idRef else NONE
-	  | mergeIdRefs (_, _) = NONE
-
-
-	fun vecCons (x, xs) =
-	    Vector.tabulate (Vector.length xs + 1,
-			     fn 0 => x | i => Vector.sub (xs, i - 1))
-
-
-	fun lazyPolySel (id, idRef, label, instr as
-			 O.LazyPolySel (ids, idRef', labels, instr')) =
-	    (case mergeIdRefs (idRef, idRef') of
-		 SOME idRef =>
-		     O.LazyPolySel (vecCons (id, ids), idRef,
-				    vecCons (label, labels), instr')
-	       | NONE => O.LazyPolySel (#[id], idRef, #[label], instr))
-	  | lazyPolySel (id, idRef, label, instr) =
-	    O.LazyPolySel (#[id], idRef, #[label], instr)
 
 
 	structure IdSet' = IntermediateAux.IdSet
@@ -394,7 +344,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
             (* dont attach Coord in debug mode, since Entry/Exit instrs will exist *)
             if !Switches.CodeGen.debugMode
             then instr
-            else mergeCoords (O.Coord (pos, instr))
+            else O.Coord (pos, instr)
         end
 
 
@@ -707,24 +657,12 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 				  outArityOpt, body),
 			  id, instr, env) =
 	    let
-		val isSpecialize =
-		    List.exists (fn IsToplevel => true | _ => false) flags
 		val _ = startFn env
-			
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
-
-		val (args', bodyInstr) =
-		    case args'
-                      of #[O.IdDef id] =>
-		          (case detup (bodyInstr, id)
-		             of DECONSTRUCTED res => res
-		              | (USED | SIDE_EFFECTING | UNKNOWN) => (args', bodyInstr)
-		              | KILLED instr => (#[O.Wildcard], instr))
-		       | _  => (args', bodyInstr)
-
-		val liveness = Liveness.analyze (args', bodyInstr)
 		val (globalIds, localNames) = endFn env
+
+
 		val kills = IdSet.set ()
 		val instr =
 		    case instr of
@@ -741,13 +679,27 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 			    else idRef
 			  | idRef => idRef)
 			(translateIdRefs (Vector.map IdRef globalIds, env))
-		val ((i, j), _) = region
-		val name = foldl (fn (PrintName n, _) => n | (_, s) => s) "" flags
-		val funCoord = (filename env, name, i, j)
 		val instr =
 		    case Vector.fromList (IdSet.fold op:: nil kills) of
 			#[] => instr
 		      | ids => O.Kill (ids, instr)
+
+		val (args', bodyInstr) =
+		    case args'
+                      of #[O.IdDef id] =>
+		          (case detup (bodyInstr, id)
+		             of DECONSTRUCTED res => res
+		              | (USED | SIDE_EFFECTING | UNKNOWN) => (args', bodyInstr)
+		              | KILLED instr => (#[O.Wildcard], instr))
+		       | _  => (args', bodyInstr)
+		val (args', bodyInstr, localNames) = Minimize.minimize (args', bodyInstr, localNames)
+		val liveness = Liveness.analyze (args', bodyInstr)
+
+		val isSpecialize =
+		    List.exists (fn IsToplevel => true | _ => false) flags
+		val ((i, j), _) = region
+		val name = foldl (fn (PrintName n, _) => n | (_, s) => s) "" flags
+		val funCoord = (filename env, name, i, j)
 		val outArityOpt' =
 		    case outArityOpt of
 			NONE => NONE
@@ -779,8 +731,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | translateExp (SelExp (_, _, _, i, idRef), id, instr, env) =
 	    O.Sel (id, translateIdRef (idRef, env), i, instr)
 	  | translateExp (LazyPolySelExp (_, label, idRef), id, instr, env) =
-	    lazyPolySel (id, translateIdRef (idRef, env),
-			 translateLabel label, instr)
+	    O.LazyPolySel (#[id], translateIdRef (idRef, env), #[translateLabel label], instr)
 	  | translateExp (FunAppExp (info, idRef, _, args), id, instr, env) =
 	    translateVarAppExp (idRef, args, true, id, instr, env)
 	  | translateExp (FailExp info, id, instr, env) = (*--** implement *)
@@ -791,12 +742,17 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    let
 		val (returnArgs, instr) =
 		    case detup (instr, id) of
+                      (* it is important to unDeclare id because otherwise
+                         if we are inside a Try then the handle body will
+                         start with a Kill that references it *)
 			DECONSTRUCTED (idDefs, instr) =>
-			     (assert (Vector.length idDefs <> 1);
-			      (idDefs, instr))
+			    (unDeclare (env, id);
+			     (idDefs, instr))
 		      | (USED | SIDE_EFFECTING | UNKNOWN) =>
-			    (#[(O.IdDef id)], instr)
-		      | KILLED instr => (#[O.Wildcard], instr)
+			    (#[O.IdDef id], instr)
+		      | KILLED instr =>
+                            (unDeclare (env, id);
+                             (#[O.Wildcard], instr))
 	    in
 		O.AppVar (translateIdRef (idRef, env),
 			  translateArgs translateIdRef (args, env),
@@ -958,10 +914,11 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val localNames = endTop env
 		val elseInstr =
 		    O.Raise (O.Immediate (V.prim "General.Match"))
-		val args = #[(O.IdDef formalId)]
+		val args = #[O.IdDef formalId]
 		val bodyInstr =
 		    O.VecTest (O.LastUseLocal formalId,
 			       #[(idDefs, instr)], elseInstr)
+		val (args, bodyInstr, localNames) = Minimize.minimize (args, bodyInstr, localNames)
 		val liveness = Liveness.analyze (args, bodyInstr)
  		val outArityOpt = SOME 1
 		val typ_mod = Type.unknown (Type.starKind ()) (*--** wrong *)

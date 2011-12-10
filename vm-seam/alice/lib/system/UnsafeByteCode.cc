@@ -778,7 +778,7 @@ namespace {
     // you probably have to add several other information if some
     // function tries to access an undefined field
 
-    Vector *liveness = Vector::New(0);
+    Vector *liveness = Vector::New(Store::DirectWordToInt(nbLocals) * 2, Store::IntToWord(0));
     TagVal *abstractCode =
       TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
     Tuple *funCoord = Tuple::New(4);
@@ -793,9 +793,7 @@ namespace {
 
     // fake inline info, prevent assembled function from beeing inlined
     InlineInfo *inlineInfo = 
-      InlineInfo::New(Map::New(0),liveness,Array::New(0),
-		      Store::DirectWordToInt(nbLocals),
-		      100000);
+      InlineInfo::New(Map::New(0), liveness, Vector::New(0), 100000);
 
     ByteConcreteCode *bcc = 
       ByteConcreteCode::NewInternal(abstractCode,

@@ -409,17 +409,18 @@ struct
           | SpawnExit t  => "Spawn " ^ typ t
     
     
-        fun liveness lv =
+        fun liveness #[] = ""
+          | liveness  lv =
             "(*\n * local variable liveness:\n" ^
             liveness' (lv, 0) ^
             " *)\n"
         and liveness' (lv, i) =
             if i = Vector.length lv then ""
             else " *   " ^
-                     Int.toString (Vector.sub (lv, i)) ^ " : [" ^
-                     Int.toString (Vector.sub (lv, i+1)) ^ " .. " ^
-                     Int.toString (Vector.sub (lv, i+2)) ^ "]\n" ^
-                 liveness' (lv, i+3)
+                     Int.toString (i div 2) ^ " : [" ^
+                     Int.toString (Vector.sub (lv, i)) ^ " .. " ^
+                     Int.toString (Vector.sub (lv, i+1)) ^ "]\n" ^
+                 liveness' (lv, i+2)
 
 
         val outArity' = case outArity

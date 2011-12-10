@@ -118,7 +118,9 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | SpawnExit of Type.t
 	withtype value = abstractCode Value.t
 
+
 	type t = value * (Stamp.t * Label.t) vector
+
 
 	fun sharedInArity body =
 	let
@@ -201,6 +203,38 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	    walk body;
 	    shared
 	end
+
+
+	fun isId (Immediate _, _)       = false
+	  | isId (Local        id', id) = id' = id
+	  | isId (LastUseLocal id', id) = id' = id
+	  | isId (Global _, _)          = false
+
+
+	fun isLocal (Local id', id) = id' = id
+          | isLocal _               = false
+
+
+	fun isLastUseLocal (LastUseLocal id', id) = id' = id
+          | isLastUseLocal _                      = false
+
+
+	fun getLocal (Immediate _)     = NONE
+	  | getLocal (Local        id) = SOME id
+	  | getLocal (LastUseLocal id) = SOME id
+	  | getLocal (Global _)        = NONE
+
+
+	fun mergeIdRefs (idRef as Local id, Local id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (idRef as LastUseLocal id,
+			 (Local id' | LastUseLocal id')) =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (Local id, idRef as LastUseLocal id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (idRef as Global id, Global id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (_, _) = NONE
 
     end
 

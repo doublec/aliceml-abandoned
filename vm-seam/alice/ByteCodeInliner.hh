@@ -26,21 +26,16 @@
  */
 class InlineInfo : private Tuple {
 private:
-  enum { 
-    INLINE_MAP_POS, LIVENESS_POS, ALIASES_POS, NLOCALS_POS, NNODES_POS, 
-    SIZE 
-  };
+  enum { INLINE_MAP_POS, LIVENESS_POS, ALIASES_POS, NNODES_POS, SIZE };
 public:
   using Tuple::ToWord;
 
-  static InlineInfo *New(Map *inlineMap, Vector *liveness, Array *aliases,
-			 u_int nLocals, u_int nNodes) {
+  static InlineInfo *New(Map *inlineMap, Vector *liveness, Vector *aliases, u_int nNodes) {
     Tuple *tup = Tuple::New(SIZE); 
-    tup->Init(INLINE_MAP_POS,inlineMap->ToWord());
-    tup->Init(LIVENESS_POS,liveness->ToWord());
-    tup->Init(ALIASES_POS,aliases->ToWord());
-    tup->Init(NLOCALS_POS,Store::IntToWord(nLocals));
-    tup->Init(NNODES_POS,Store::IntToWord(nNodes));
+    tup->Init(INLINE_MAP_POS, inlineMap->ToWord());
+    tup->Init(LIVENESS_POS, liveness->ToWord());
+    tup->Init(ALIASES_POS, aliases->ToWord());
+    tup->Init(NNODES_POS, Store::IntToWord(nNodes));
     return static_cast<InlineInfo *>(tup);
   }
   
@@ -51,16 +46,16 @@ public:
     return Map::FromWordDirect(Tuple::Sel(INLINE_MAP_POS)); 
   }
   
-  Vector *GetLiveness() { 
+  Vector *GetLiveness() {
     return Vector::FromWordDirect(Tuple::Sel(LIVENESS_POS)); 
   }
   
-  Array *GetAliases() {
-    return Array::FromWordDirect(Tuple::Sel(ALIASES_POS));
+  Vector *GetAliases() {
+    return Vector::FromWordDirect(Tuple::Sel(ALIASES_POS));
   }
   
   u_int GetNLocals() { 
-    return Store::DirectWordToInt(Tuple::Sel(NLOCALS_POS)); 
+    return GetLiveness()->GetLength()/2;
   }
   
   u_int GetNNodes() { 

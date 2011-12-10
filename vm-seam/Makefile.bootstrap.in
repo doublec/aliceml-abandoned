@@ -343,8 +343,8 @@ COMPILERBACKENDSEAMSOURCES0 = \
 	AbstractCodeGrammar.aml OUTPUT_ABSTRACT_CODE_GRAMMAR-sig.aml \
 	MkOutputAbstractCodeGrammar.aml OUTPUT_PICKLE-sig.aml OutputPickle.aml \
 	ENVIRONMENT-sig.aml MkEnvironment.aml LIVENESS-sig.aml \
-	MkLiveness.aml MkCodeGenContext.aml CODE_GEN_PHASE-sig.aml \
-	MkCodeGenPhase.aml MkBackendSeam.aml
+	MkLiveness.aml MINIMIZE-sig.aml MkMinimize.aml MkCodeGenContext.aml \
+	CODE_GEN_PHASE-sig.aml MkCodeGenPhase.aml MkBackendSeam.aml
 COMPILERBACKENDSEAMSOURCES = \
 	$(COMPILERBACKENDSEAMSOURCES0:%=compiler/backend-seam/%)
 

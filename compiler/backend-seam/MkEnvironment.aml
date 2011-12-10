@@ -128,6 +128,11 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			id
 		    end
 
+	fun unDeclare ({scope, ...}:t, id) =
+	    StampMap.filter
+	      (fn idRef => not (AbstractCodeGrammar.isId (idRef, id)))
+	      (!scope)
+
 	fun fresh ({localIndex, localNames, ...}: t) =
 	    let
 		val id = !localIndex
