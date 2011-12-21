@@ -860,6 +860,11 @@ public:
          of the language layer.
          In case of failure, the exception <TT>BrokerError</TT> is raised.</P>
   </DD>
+  <DT><TT>Destroy()</TT>
+  </DT>
+  <DD><P>This method calls the <TT>Destroy</TT> method on each active language
+         layer. This is normally called just before SEAM exits.</P>
+  </DD> 
   <DT><TT>Register(name, value)</TT>
   </DT>
   <DD><P>Enters the value denoted by <TT>value</TT> into the shared values

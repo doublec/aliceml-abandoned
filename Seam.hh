@@ -79,9 +79,11 @@ extern "C" SeamDll void InitSeam();
 #if HAVE_DLLS
 extern "C" __declspec(dllexport) void Start(int argc, const char *argv[]);
 extern "C" __declspec(dllexport) Worker::Result Load(String *name);
+extern "C" __declspec(dllexport) void Destroy();
 #else
 extern "C" void Start(int argc, const char *argv[]);
 extern "C" Worker::Result Load(String *name);
+extern "C" void Destroy();
 #endif
 
 #endif

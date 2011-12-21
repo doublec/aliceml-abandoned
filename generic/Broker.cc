@@ -92,6 +92,21 @@ Worker::Result Broker::Load(String *languageId, String *key) {
   return Load(key);
 }
 
+static void DestroySingle(word wLanguageId, word wLanguageLayer){
+  DllLoader::libhandle handle =
+    reinterpret_cast<DllLoader::libhandle>(Store::DirectWordToUnmanagedPointer(wLanguageLayer));
+  
+  void (*destroy)(void) = reinterpret_cast<void (*)(void)>
+    (DllLoader::GetSymbol(handle, String::New("Destroy")));
+  Assert(destroy != NULL);
+  
+  destroy();
+}
+
+void Broker::Destroy() {
+  ChunkMap::FromWordDirect(wLanguageLayerTable)->Apply(DestroySingle);
+}
+
 void Broker::Register(String *name, word value) {
   ChunkMap *nameValueTable = ChunkMap::FromWordDirect(wNameValueTable);
   nameValueTable->Put(name->ToWord(), value);

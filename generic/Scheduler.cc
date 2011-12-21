@@ -28,6 +28,7 @@
 #include "generic/IOHandler.hh"
 #include "generic/Backtrace.hh"
 #include "generic/UniqueString.hh"
+#include "generic/Broker.hh"
 #include <csetjmp>
 
 #if PROFILE
@@ -258,8 +259,9 @@ int Scheduler::Run() {
 	  break;
 	case Worker::EXIT:
 #if PROFILE
-      Profiler::DumpInfo();
+          Profiler::DumpInfo();
 #endif
+	  Broker::Destroy();
 	  return static_cast<int>(Store::DirectWordToInt(currentData));
 	}
       }

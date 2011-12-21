@@ -30,6 +30,7 @@ public:
 
   static void Start(String *languageId, int argc, char *argv[]);
   static Worker::Result Load(String *languageId, String *key = NULL);
+  static void Destroy();
 
   static void Register(String *name, word value);
   static word Lookup(String *name);
