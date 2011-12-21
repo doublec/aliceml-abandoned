@@ -186,3 +186,6 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   undefinedValue = Store::IntToWord(42);
   RootSet::Add(undefinedValue);
 }
+
+void AliceLanguageLayer::Destroy() {
+}

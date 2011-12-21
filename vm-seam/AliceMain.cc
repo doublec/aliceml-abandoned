@@ -100,3 +100,7 @@ Worker::Result Load(String *name) {
     BootLinker::Link(name);
   return Worker::CONTINUE;
 }
+
+void Destroy() {
+  AliceLanguageLayer::Destroy();
+}

@@ -45,6 +45,7 @@ public:
   static concrete_constructor concreteCodeConstructor;
 
   static void Init(const char *home, int argc, const char *argv[]);
+  static void Destroy();
 };
 
 #endif
