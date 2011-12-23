@@ -145,11 +145,14 @@ namespace {
 	return true;
       }
       else if (a.programPoint == b.programPoint) {
-	return a.type == START_LIFE && b.type == END_LIFE;
+	if (a.type == START_LIFE && b.type == END_LIFE) {
+	  return true;
+	}
+	else if (a.type == b.type) {
+	  return a.id < b.id; 
+	}
       }
-      else {
-	return false;
-      }
+      return false;
     }
     
   public:
