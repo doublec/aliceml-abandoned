@@ -25,6 +25,7 @@
 #include "alice/HotSpotConcreteCode.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/AliceConcreteCode.hh"
+#include "alice/AliceProfiler.hh"
 #include "alice/ByteCodeAlign.hh"
 #include "alice/ByteCodeBuffer.hh"
 #include "alice/ByteCode.hh"
@@ -219,22 +220,7 @@ namespace {
 
   class PeepHoleOptimizer {
   public:
-    
-    static TagVal *SkipDebugInstrs(TagVal *instr) {
-      AbstractCode::instr op = AbstractCode::GetInstr(instr);
-      switch(op){
-	case AbstractCode::Coord:
-	case AbstractCode::Entry:
-	case AbstractCode::Exit: {
-	  word cont = instr->Sel(AbstractCode::GetContinuationPos(op));
-	  return SkipDebugInstrs(TagVal::FromWordDirect(cont));
-	}
-	default: {
-	  return instr;
-	}
-      }
-    }
-    
+        
     // This function optimizes a common case that occurs in procedure
     // inlining:
     // - The callee expects unit as argument, but only uses
@@ -246,7 +232,7 @@ namespace {
     static TagVal *optimizeInlineInCCC(Vector *formalArgs, Vector *args,
 				      TagVal *instr) {
       if(formalArgs->GetLength() == 1 && args->GetLength() == 0) {
-	instr = SkipDebugInstrs(instr);
+	instr = AbstractCode::SkipDebugInstrs(instr);
 	if(AbstractCode::GetInstr(instr) == AbstractCode::GetTup) {
 	  Vector *regs = Vector::FromWordDirect(instr->Sel(0));
 	  if(regs->GetLength() == 0) {
@@ -261,7 +247,7 @@ namespace {
 	    case AbstractCode::Local:
 	      {
 		word local = idRef->Sel(0);
-		instr = SkipDebugInstrs(TagVal::FromWordDirect(instr->Sel(2)));
+		instr = AbstractCode::SkipDebugInstrs(TagVal::FromWordDirect(instr->Sel(2)));
 		if(AbstractCode::GetInstr(instr) == AbstractCode::Kill) {
 		  Vector *regs = Vector::FromWordDirect(instr->Sel(0));
 		  for(u_int i = regs->GetLength(); i--; ) {
@@ -1043,7 +1029,7 @@ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure,
   u_int argRegs[inArity];
   bool overflow = nArgs > Scheduler::maxArgs;
 
-  u_int callInstr;
+  ByteCodeInstr::instr callInstr;
   u_int nActualArgs;
 
   if(!overflow) {
@@ -1223,7 +1209,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   }
     
   // generate call instruction
-  u_int callInstr;
+  ByteCodeInstr::instr callInstr;
   switch(nActualArgs) {
   case 0:  callInstr = self_call0; break;
   case 1:  callInstr = self_call1; break;
@@ -1344,7 +1330,7 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
 	  }
 
 	  // generate call instruction
-	  u_int callInstr;	    
+	  ByteCodeInstr::instr callInstr;	    
 	  if (interpreter == ByteCodeInterpreter::self) {
 	    // byte code call	    	      
 	    CHOOSE_CALL_INSTR(callInstr,bci);
@@ -1396,7 +1382,7 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
     u_int closure = LoadIdRefKill(pc->Sel(0));
     
     // generate call instruction
-    u_int callInstr;
+    ByteCodeInstr::instr callInstr;
     CHOOSE_CALL_INSTR(callInstr,seam);
     if(nActualArgs < 4) {
       SET_INSTR_1R(PC,callInstr,closure);
@@ -1761,7 +1747,7 @@ void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
   switch(idDefsLength) {
   case 1: 
     {
-      u_int loadInstr = isBig ? load_bigtagval1 : load_tagval1;
+      ByteCodeInstr::instr loadInstr = isBig ? load_bigtagval1 : load_tagval1;
       TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
       if(idDef != INVALID_POINTER) { // no wildcard
 	u_int dst = IdToReg(idDef->Sel(0));
@@ -1771,7 +1757,7 @@ void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
     }
   case 2:
     {
-      u_int loadInstr = isBig ? load_bigtagval2 : load_tagval2;
+      ByteCodeInstr::instr loadInstr = isBig ? load_bigtagval2 : load_tagval2;
       TagVal *idDef1 = TagVal::FromWord(idDefs->Sub(0));
       TagVal *idDef2 = TagVal::FromWord(idDefs->Sub(1));
       if(idDef1 != INVALID_POINTER && idDef2 != INVALID_POINTER) {
@@ -1784,7 +1770,7 @@ void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
     break; // goto default translation
   case 3:
     {
-      u_int loadInstr = isBig ? load_bigtagval3 : load_tagval3;
+      ByteCodeInstr::instr loadInstr = isBig ? load_bigtagval3 : load_tagval3;
       TagVal *idDef1 = TagVal::FromWord(idDefs->Sub(0));
       TagVal *idDef2 = TagVal::FromWord(idDefs->Sub(1));
       TagVal *idDef3 = TagVal::FromWord(idDefs->Sub(2));
@@ -1803,7 +1789,7 @@ void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
     ;
   }
   // default translation
-  u_int loadInstr = isBig ? load_bigtagval : load_tagval;
+  ByteCodeInstr::instr loadInstr = isBig ? load_bigtagval : load_tagval;
   for(u_int i = idDefsLength; i--; ) {
     TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
     if(idDef != INVALID_POINTER) { // no wildcard
@@ -1864,8 +1850,7 @@ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
 
   // check if we can use an if
   if(size == 1) {
-    u_int testInstr = isBigTag ? bigtagtest1 : tagtest1;
-    u_int loadInstr = isBigTag ? load_bigtagval : load_tagval;
+    ByteCodeInstr::instr testInstr = isBigTag ? bigtagtest1 : tagtest1;
     u_int patchInstrPC = PC;
     SET_INSTR_1R2I(PC,testInstr,0,0,0); // dummy instr
     u_int jmpPC = PC;
@@ -1890,8 +1875,7 @@ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
 
   // create needed datastructures
   if(!isFastTest) {
-    u_int testInstr = isBigTag ? bigtagtest : tagtest;
-    u_int loadInstr = isBigTag ? load_bigtagval : load_tagval;
+    ByteCodeInstr::instr testInstr = isBigTag ? bigtagtest : tagtest;
     IntMap *map = IntMap::New(2 * (nullarySize + narySize));
     u_int mapAddr = imEnv.Register(map->ToWord());
     SET_INSTR_1R1I(PC,testInstr,testVal,mapAddr);
@@ -1915,8 +1899,7 @@ TagVal *ByteCodeJitter::InstrTagTest(TagVal *pc) {
       CompileInstr(TagVal::FromWordDirect(triple->Sel(2))); // compile branch
     }
   } else { // fast test
-    u_int testInstr = isBigTag ? cbigtagtest_direct : ctagtest_direct;
-    u_int loadInstr = isBigTag ? load_bigtagval : load_tagval;
+    ByteCodeInstr::instr testInstr = isBigTag ? cbigtagtest_direct : ctagtest_direct;
 
     SET_INSTR_1R1I(PC,testInstr,testVal,maxTag);
     u_int jumpTablePC = PC;
@@ -1982,7 +1965,7 @@ TagVal *ByteCodeJitter::InstrCompactTagTest(TagVal *pc) {
   }
   
   // specify instructions
-  u_int testInstr;
+  ByteCodeInstr::instr testInstr;
   if(isBigTag) {
     testInstr = isFastTest ? cbigtagtest_direct : cbigtagtest;
   }
@@ -2172,7 +2155,7 @@ TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
   }
     
   // generate instruction
-  u_int instr;
+  ByteCodeInstr::instr instr;
   switch(nActualArgs) {
   case 0:  instr = seam_return0; break;
   case 1:  instr = seam_return1; break;
@@ -2296,7 +2279,7 @@ void ByteCodeJitter::CompileCCC(Vector *idDefs, s_int outArity) {
 	if (dst == 0) {
 	  SET_INSTR(PC, match ? get_arg0_direct : ccc1);
 	} else {
-	  u_int instr = match ? get_arg0 : seam_ccc1;
+	  ByteCodeInstr::instr instr = match ? get_arg0 : seam_ccc1;
 	  SET_INSTR_1R(PC, instr, dst);
 	}
       }
@@ -2312,13 +2295,13 @@ void ByteCodeJitter::CompileCCC(Vector *idDefs, s_int outArity) {
 	}
       }
       if(isFastCCCN) {
-	u_int instr = match ? get_args_direct : cccn;
+	ByteCodeInstr::instr instr = match ? get_args_direct : cccn;
 	SET_INSTR_1I(PC, instr, inArity);
       }
       else {
 	Vector *args = Vector::New(inArity);
 	u_int argsAddr = imEnv.Register(args->ToWord());
-	u_int instr = match ? get_args : seam_cccn;
+	ByteCodeInstr::instr instr = match ? get_args : seam_cccn;
 	SET_INSTR_1I(PC, instr, argsAddr);
 	for(u_int i=0; i<inArity; i++) {
 	  TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
@@ -2863,6 +2846,10 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 #endif
 			    sourceLocations.Export(),
 			    closeConcreteCodes);
+
+#ifdef PROFILE
+  AliceProfiler::ByteCodeCompiled(reinterpret_cast<ByteConcreteCode*>(hsc));
+#endif
 
 //   static u_int sumNRegisters = 0;
 //   sumNRegisters += nRegisters;

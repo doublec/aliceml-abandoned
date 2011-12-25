@@ -18,6 +18,8 @@
 #endif
 
 #include "alice/Data.hh"
+#include "alice/Types.hh"
+
 
 // Opcodes
 class AliceDll AbstractCode {
@@ -109,6 +111,19 @@ public:
     }
   }
   
+  static u_int GetNonSubstClosureSize(TagVal *abstractCode) {
+    Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
+    u_int n = 0;
+    for (u_int i=subst->GetLength(); i--; ) {
+      if (subst->Sub(i) == Store::IntToWord(Types::NONE)) {
+	n++;
+      }
+    }
+    return n;
+  }
+  
+  static TagVal *SkipDebugInstrs(TagVal *instr);
+  
   /**
    * If instr has a single continuation instr, return its index
    * in the TagVal, otherwise return -1.
@@ -124,6 +139,14 @@ public:
    * See /compiler/backend-seam/MkLiveness.aml for related info.
    */
   static s_int GetNumProgramPoints(instr instr);
+  
+  /**
+   * How long is the chain of: Close into x, Return x.
+   * 
+   * In other words how many times the specified abstractCode/template, or
+   * the result of its application, can be applied without side-effects.
+   */
+  static u_int GetCloseReturnLength(TagVal *abstractCode);
   
   /**
   * Collect information about the in-arity of shared nodes by depth

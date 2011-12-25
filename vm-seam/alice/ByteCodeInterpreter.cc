@@ -23,6 +23,7 @@
 #include "alice/AbstractCode.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/AliceProfiler.hh"
 #include "alice/ByteCode.hh"
 #include "alice/ByteCodeAlign.hh"
 #include "alice/ByteConcreteCode.hh"
@@ -50,8 +51,15 @@ using namespace ByteCodeInstr;
 }
 #define Case(INSTR) INSTR##LBL: DEBUG_INSTR(); startPC = PC; SKIP_INSTR(PC);
 
+#if PROFILE
+#define DISPATCH(PC) {				\
+  AliceProfiler::ByteCodeExecuted(ByteCode::ThreadedToNumber(reinterpret_cast<void*>(*PC)));	\
+  goto *(reinterpret_cast<void *>(*PC));	\
+}
+#else
 #define DISPATCH(PC)				\
   goto *(reinterpret_cast<void *>(*PC))
+#endif
   
 #define INSTR(instr, args) && instr##LBL,
 
@@ -208,14 +216,16 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
   BCI_DEBUG("BCI::Run: start execution at PC %d\n",frame->GetPC());
 #ifdef THREADED
   DISPATCH(PC);
-
 #else
   u_int instr;
 
   while(true) {
     DEBUG_INSTR();
     startPC = PC; // remember start position for requests
-    GET_INSTR(codeBuffer,PC,instr);
+    GET_INSTR(codeBuffer, PC, instr);
+#if PROFILE
+    AliceProfiler::ByteCodeExecuted(static_cast<ByteCodeInstr::instr>(instr));
+#endif
     switch(instr) {
 #endif
    

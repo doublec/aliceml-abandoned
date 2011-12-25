@@ -26,7 +26,7 @@
 
 #define INLINE_LIMIT 10
 
-
+ 
 namespace {
 
   InlineInfo *AnalyseRecursively(TagVal *abstractCode, Map* parentRootInstrs);
@@ -588,6 +588,17 @@ namespace {
     return analyser.ComputeInlineInfo();
   }
 
+}
+
+
+static u_int CountAppVar(word appVar, word wAppVarInfo, u_int count) {
+  AppVarInfo *avi = AppVarInfo::FromWord(wAppVarInfo);
+  return avi->GetInlineInfo()->GetInlineMap()->Fold(CountAppVar, count+1);
+}
+
+
+u_int InlineInfo::NumInlinedAppVars() {
+  return GetInlineMap()->Fold(CountAppVar, static_cast<u_int>(0));
 }
 
 

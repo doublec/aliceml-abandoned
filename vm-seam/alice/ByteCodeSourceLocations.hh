@@ -238,6 +238,20 @@ public:
   }
   
   
+  /**
+   * @return The number of nodes in the specified sourceLocations
+   */
+  static u_int Size(word sourceLocations){
+    u_int size = 1;
+    TagVal *tv = TagVal::FromWord(sourceLocations);
+    while(tv != INVALID_POINTER) {
+      size++;
+      tv = TagVal::FromWord(tv->Sel(ContinuationPos(tv)));
+    }
+    return size;
+  }
+  
+  
   ByteCodeSourceLocations() {
     Reset();
   }

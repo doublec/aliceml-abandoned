@@ -30,6 +30,14 @@ private:
 public:
   using Tuple::ToWord;
 
+  static InlineInfo *FromWord(word info) {
+    return static_cast<InlineInfo *>(Tuple::FromWord(info));
+  }
+  
+  static InlineInfo *FromWordDirect(word info) {
+    return static_cast<InlineInfo *>(Tuple::FromWordDirect(info));
+  }
+  
   static InlineInfo *New(Map *inlineMap, Vector *liveness, Vector *aliases, u_int nNodes) {
     Tuple *tup = Tuple::New(SIZE); 
     tup->Init(INLINE_MAP_POS, inlineMap->ToWord());
@@ -62,13 +70,12 @@ public:
     return Store::DirectWordToInt(Tuple::Sel(NNODES_POS)); 
   }
 
-  static InlineInfo *FromWord(word info) {
-    return static_cast<InlineInfo *>(Tuple::FromWord(info));
-  }
+  /**
+   * Recursively count how many inlined AppVars there are
+   * inside this function
+   */
+  u_int NumInlinedAppVars();
   
-  static InlineInfo *FromWordDirect(word info) {
-    return static_cast<InlineInfo *>(Tuple::FromWordDirect(info));
-  }
 };
 
 
@@ -80,6 +87,14 @@ private:
   enum { ABSTRACT_CODE_POS, SUBST_POS, LOCAL_OFFSET_POS, INLINE_INFO_POS, CLOSURE_POS, SIZE };
 public:
   using Tuple::ToWord;
+
+  static AppVarInfo *FromWord(word info) {
+    return static_cast<AppVarInfo *>(Tuple::FromWord(info));
+  }
+  
+  static AppVarInfo *FromWordDirect(word info) {
+    return static_cast<AppVarInfo *>(Tuple::FromWordDirect(info));
+  }
   
   static AppVarInfo *New(TagVal *abstractCode, Vector *subst, u_int localOffset, InlineInfo* inlineInfo, Closure* closure) {
     Tuple *tup = Tuple::New(SIZE);
@@ -109,14 +124,6 @@ public:
   
   Closure *GetClosure(){
     return Closure::FromWordDirect(Sel(CLOSURE_POS));
-  }
-
-  static AppVarInfo *FromWord(word info) {
-    return static_cast<AppVarInfo *>(Tuple::FromWord(info));
-  }
-  
-  static AppVarInfo *FromWordDirect(word info) {
-    return static_cast<AppVarInfo *>(Tuple::FromWordDirect(info));
   }
 };
 

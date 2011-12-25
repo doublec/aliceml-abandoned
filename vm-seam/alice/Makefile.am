@@ -16,6 +16,7 @@ libalicebase_a_SOURCES = \
 	AliceConcreteCode.cc \
 	AliceDebuggerEvent.cc \
 	AliceLanguageLayer.cc \
+	AliceProfiler.cc \
 	BootLinker.cc \
 	NativeConcreteCode.cc \
 	NativeCodeInterpreter.cc \
@@ -37,6 +38,7 @@ pkginclude_HEADERS = \
 	AliceConcreteCode.hh \
 	AliceDebuggerEvent.hh \
 	AliceLanguageLayer.hh \
+	AliceProfiler.hh \
 	Authoring.hh \
 	Base.hh \
 	BootLinker.hh \

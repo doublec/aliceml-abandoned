@@ -86,11 +86,11 @@ namespace {
   };
   class JumpEqLabel : public Label {
   private:
-    u_int instr;
+    ByteCodeInstr::instr instr;
     u_int reg;
     u_int im;
   public:
-    JumpEqLabel(u_int pc, u_int pos, u_int ins, u_int r, u_int i)
+    JumpEqLabel(u_int pc, u_int pos, ByteCodeInstr::instr ins, u_int r, u_int i)
       : Label(pc,pos), instr(ins), reg(r), im(i) {
     }
     void patch(u_int PC, Tuple *imEnv) {
@@ -214,7 +214,8 @@ namespace {
       patchTable.patchForwardJumps(IC,PC,imEnv);
 
       DECLARE_VEC(insVec, code->Sub(IC));
-      u_int instr = Store::DirectWordToInt(insVec->Sub(0)); 
+      ByteCodeInstr::instr instr =
+        static_cast<ByteCodeInstr::instr>(Store::DirectWordToInt(insVec->Sub(0))); 
       DEBUG_PRINT(("assemble instr no %d\n",instr));
       switch(instr) {
       case ByteCodeInstr::citest:
@@ -758,8 +759,7 @@ namespace {
 	}
 	break;
       default:
-	fprintf(stderr,"UnsafeByteCode::assemble: unkown instruction tag %"U_INTF"\n",
-		instr);
+	fprintf(stderr, "UnsafeByteCode::assemble: unknown instruction tag %d\n", instr);
       }
     }
 

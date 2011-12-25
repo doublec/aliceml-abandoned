@@ -19,6 +19,8 @@
 
 #include "alice/Authoring.hh"
 #include "alice/ByteCodeAlign.hh"
+#include "alice/ByteConcreteCode.hh"
+
 
 #define INSTR(instr, args) instr,
 
@@ -86,16 +88,16 @@ private:
 #endif
  
 public:
-
+  
 #ifdef THREADED
   static void RegisterInstrTable(void **table) {
     instrTable = table;
   }
-  static void* LookupInstr(u_int ins) {
+  static void* LookupInstr(ByteCodeInstr::instr ins) {
     // instrTable must be registered first
     return instrTable[ins];
   }
-  static u_int ThreadedToNumber(void *instr) {
+  static ByteCodeInstr::instr ThreadedToNumber(void *instr) {
     // Initialize threaded table if it is unkown.
     // Do not create it statically, because Disassemble is seldomly used
     // in real applications. 
@@ -103,20 +105,19 @@ public:
       IntMap *map = IntMap::New(2 * ByteCodeInstr::NUMBER_OF_INSTRS);
       for(u_int i=0; i<ByteCodeInstr::NUMBER_OF_INSTRS; i++) {
 	word wInstr = Store::UnmanagedPointerToWord(Align(instrTable[i]));
-	map->Put(wInstr,Store::IntToWord(i));
+	map->Put(wInstr, Store::IntToWord(i));
       }
       threadedTable = map->ToWord();
       RootSet::Add(threadedTable); // it should survive GC
     }
     IntMap *map = IntMap::FromWordDirect(threadedTable);
     word wInstr = Store::UnmanagedPointerToWord(Align(instr));
-    if(map->IsMember(wInstr))
-      return Store::DirectWordToInt(map->Get(wInstr));
-    else
-      return reinterpret_cast<u_int>(instr); // unkown
+    return static_cast<ByteCodeInstr::instr>(Store::DirectWordToInt(map->Get(wInstr)));
   }
 #endif // THREADED
 
+  static const char *LookupName(ByteCodeInstr::instr ins);
+  static u_int NumInstrs(Chunk *code);
   static void Disassemble(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv, u_int nRegisters); 
   static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv);
 };

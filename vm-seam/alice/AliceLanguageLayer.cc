@@ -30,6 +30,7 @@
 #include "alice/ByteCodeJitter.hh"
 #include "alice/ByteCodeSpecializer.hh"
 #include "alice/HotSpotConcreteCode.hh"
+#include "alice/AliceProfiler.hh"
 #if DEBUGGER
 #include "alice/DebugEnvironment.hh"
 #include "alice/AliceDebuggerEvent.hh"
@@ -188,4 +189,7 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
 }
 
 void AliceLanguageLayer::Destroy() {
+#if PROFILE
+  AliceProfiler::DumpInfo();
+#endif
 }

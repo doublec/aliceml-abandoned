@@ -16,6 +16,7 @@
 
 #include <stack>
 #include "alice/AbstractCode.hh"
+#include <stdlib.h>
 
 
 static const char *opcodeNames[AbstractCode::nInstrs] = {
@@ -34,6 +35,49 @@ const char *AbstractCode::GetOpcodeName(instr opcode) {
 
 const char *AbstractCode::GetOpcodeName(TagVal *pc) {
   return GetOpcodeName(AbstractCode::GetInstr(pc));
+}
+
+
+TagVal *AbstractCode::SkipDebugInstrs(TagVal *instr) {
+  AbstractCode::instr op = GetInstr(instr);
+  switch(op){
+    case Coord:
+    case Entry:
+    case Exit: {
+      word cont = instr->Sel(GetContinuationPos(op));
+      return SkipDebugInstrs(TagVal::FromWordDirect(cont));
+    }
+    default: {
+      return instr;
+    }
+  }
+}
+
+
+u_int AbstractCode::GetCloseReturnLength(TagVal *abstractCode) {
+  
+  TagVal *ins = TagVal::FromWordDirect(abstractCode->Sel(5));
+  ins = SkipDebugInstrs(ins);
+  
+  if (GetInstr(ins) == Close) {
+    word id = ins->Sel(0);
+    TagVal *tpl = TagVal::FromWordDirect(ins->Sel(2));
+    
+    ins = TagVal::FromWordDirect(ins->Sel(3));
+    ins = SkipDebugInstrs(ins);
+    
+    if (GetInstr(ins) == Return) {
+      Vector *idRefs = Vector::FromWordDirect(ins->Sel(0));
+      if (idRefs->GetLength() == 1) {
+	TagVal *idRef = TagVal::FromWordDirect(idRefs->Sub(0));
+	if ((GetIdRef(idRef) == Local || GetIdRef(idRef) == LastUseLocal) && idRef->Sel(0) == id) {
+	  return 1 + GetCloseReturnLength(tpl);
+	}
+      }
+    }
+  }
+  
+  return 0;
 }
 
 

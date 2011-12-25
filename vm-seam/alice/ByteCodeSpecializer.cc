@@ -31,18 +31,6 @@ void ByteCodeSpecializer::Init() {
 }
 
 
-bool ByteCodeSpecializer::CanBeSpecialized(ByteConcreteCode *bcc) {
-  TagVal *abstractCode = bcc->GetAbstractCode();
-  Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
-  for (u_int i=subst->GetLength(); i--; ) {
-    if (subst->Sub(i) == Store::IntToWord(Types::NONE)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
 bool ByteCodeSpecializer::Specialize(Closure *c) {
   ByteConcreteCode *bcc = ByteConcreteCode::FromWordDirect(c->GetConcreteCode());
   TagVal *abstractCode = bcc->GetAbstractCode();
@@ -91,7 +79,7 @@ bool ByteCodeSpecializer::RecordCall(Closure* c) {
   if (cc != INVALID_POINTER && cc->GetInterpreter() == ByteCodeInterpreter::self) {
     ByteConcreteCode *bcc = reinterpret_cast<ByteConcreteCode*>(cc);
     
-    if (CanBeSpecialized(bcc)) {
+    if (AbstractCode::GetNonSubstClosureSize(bcc->GetAbstractCode()) > 0) {
       Map *sc = Map::FromWordDirect(closures);
       word cWord = c->ToWord();
       u_int newN = Store::WordToInt(sc->CondGet(cWord, Store::IntToWord(0))) + 1;

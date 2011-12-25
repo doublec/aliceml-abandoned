@@ -15,22 +15,29 @@
 #endif
 
 #include <cstdio>
+#include <ostream>
+#include <string>
+#include <iomanip>
 #include "alice/ByteCode.hh"
+
+
 using namespace ByteCodeInstr;
+
 
 #ifdef THREADED
 void **ByteCode::instrTable = NULL;
 word ByteCode::threadedTable = INVALID_POINTER;
-#endif // THREADED
+#endif
 
 
 namespace {
   
   class ByteCodeDisassembler {
   private:
-    std::FILE *file;
+    std::ostream &out;
     Chunk *code;
     ProgramCounter curPC;
+    u_int printedInstrs;
     
     
     ProgramCounter GetStartPC() {
@@ -57,12 +64,12 @@ namespace {
     
     
     void PrintRegister(u_int r) {
-      std::fprintf(file, " R%"U_INTF, r);
+      out << " R" << r;
     }
    
    
     void PrintImmediate(u_int i) {
-      std::fprintf(file, " I%"U_INTF, i);
+      out << " I" << i;
     }
    
    
@@ -70,17 +77,17 @@ namespace {
       if (len == 0) { // list length is dynamic
         GET_1I(GetCodeBuffer(), curPC, n);
 	len = n;
-        std::fprintf(file, " %"U_INTF"#[", len);
+        out << " " << len << "#[";
       }
       else {
-        std::fprintf(file, " [");
+        out << " [";
       }
       return len;
     }
     
     
     void PrintListEnd(){ 
-      std::fprintf(file, "]");
+      out << "]";
     }
    
    
@@ -88,10 +95,10 @@ namespace {
       len = PrintListStart(len);
       for (u_int i=0; i<len; i++) {
         if (i > 0) {
-          std::fprintf(file, " ");
+          out << " ";
         }
         GET_1R(GetCodeBuffer(), curPC, r);
-        std::fprintf(file, "R%"U_INTF, r);
+        out << "R" << r;
       }
       PrintListEnd();
     }
@@ -101,12 +108,18 @@ namespace {
       len = PrintListStart(len);
       for (u_int i=0; i<len; i++) {
 	if (i > 0) {
-	  std::fprintf(file, " ");
+	  out << " ";
 	}
 	GET_1I(GetCodeBuffer(), curPC, im);
-	std::fprintf(file, "I%"U_INTF, im);
+	out << "I" << im;
       }
       PrintListEnd();
+    }
+
+
+    void PrintAddr(u_int addr) {
+      out << "0x" << std::hex << std::setfill('0') << std::setw(4)
+        << addr << std::dec;
     }
 
     
@@ -115,10 +128,10 @@ namespace {
       ProgramCounter fromPC = curPC;
       for (u_int i=0; i<len; i++) {
 	if (i > 0) {
-	  std::fprintf(file, " ");
+	  out << " ";
 	}
         GET_1I(GetCodeBuffer(), curPC, offset);
-        std::fprintf(file, "0x%04x", static_cast<int>(((fromPC - GetStartPC()) + offset) * sizeof(word)));
+	PrintAddr(static_cast<int>(((fromPC - GetStartPC()) + offset) * sizeof(word)));
       }
       PrintListEnd();
     }
@@ -296,7 +309,8 @@ namespace {
 	}
 	case ARGS_JUMP: {
 	  GET_1I(GetCodeBuffer(), curPC, offset);
-	  std::fprintf(file, " 0x%04x", static_cast<int>(((curPC - GetStartPC()) + offset) * sizeof(word)));
+          out << " ";
+	  PrintAddr(static_cast<int>(((curPC - GetStartPC()) + offset) * sizeof(word)));
 	  break;
 	}
 	default: {
@@ -308,16 +322,18 @@ namespace {
 
   public:
     
-    ByteCodeDisassembler(std::FILE *f, Chunk *code)
-      : file(f), code(code), curPC(GetStartPC()) {}
+    ByteCodeDisassembler(std::ostream &f, Chunk *code) : out(f), code(code), printedInstrs(0) {
+      curPC = GetStartPC();
+    }
     
     
-    ByteCodeDisassembler(std::FILE *f, Chunk *code, ProgramCounter curPC)
-      : file(f), code(code), curPC(curPC) {}
+    ByteCodeDisassembler(std::ostream &f, Chunk *code, ProgramCounter curPC)
+      : out(f), code(code), curPC(curPC), printedInstrs(0) {}
     
     
     void PrintInstr() {
-      std::fprintf(file, "0x%04x: ", static_cast<int>((curPC - GetStartPC()) * sizeof(word)));
+      PrintAddr(static_cast<int>((curPC - GetStartPC()) * sizeof(word)));
+      out << ": ";
       u_int instr;
       GET_INSTR(GetCodeBuffer(), curPC, instr);
 
@@ -328,16 +344,17 @@ namespace {
       switch(instr) {
 #define INSTR(name, args)			\
 	case ByteCodeInstr::name: {		\
-          std::fprintf(file, #name);		\
+          out << #name;				\
           PrintArgs(args);			\
-          std::fprintf(file, "\n");		\
+          out << "\n";				\
           break;				\
         }
- #include "alice/ByteCodeInstrs.hh"
+#include "alice/ByteCodeInstrs.hh"
         default: {
 	  Assert(false);
 	}
       }
+      printedInstrs++;
     }
     
     
@@ -352,20 +369,51 @@ namespace {
       return curPC;
     }
 
+
+    u_int PrintedInstrs() {
+      return printedInstrs;
+    }
+
   };
 
 }
 
 
+const char *ByteCode::LookupName(ByteCodeInstr::instr ins) {
+  switch(ins) {
+#undef INSTR
+#define INSTR(name, args)			\
+    case ByteCodeInstr::name:			\
+      return #name;
+#include "alice/ByteCodeInstrs.hh"
+    default: {
+      Assert(false);
+    }
+  }
+}
+
+
+u_int ByteCode::NumInstrs(Chunk *code) {
+  std::stringstream ss;
+  ByteCodeDisassembler bd(ss, code);
+  bd.PrintAllInstrs();
+  return bd.PrintedInstrs();
+}
+
+
 ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv) {
-  ByteCodeDisassembler bd(f, code, pc);
+  std::stringstream ss;
+  ByteCodeDisassembler bd(ss, code, pc);
   bd.PrintInstr();
+  std::fprintf(f, "%s", ss.str().c_str());
   return bd.GetCurPC();
 }
 
 
 void ByteCode::Disassemble(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv, u_int nRegisters) {
-  fprintf(f, "(* registers: %"U_INTF", code size: %"U_INTF" bytes *)\n", nRegisters, code->GetSize());
-  ByteCodeDisassembler bd(f, code);
+  std::stringstream ss;
+  ss << "(* registers: " << nRegisters << ", code size: " << code->GetSize() << " bytes *)\n";
+  ByteCodeDisassembler bd(ss, code);
   bd.PrintAllInstrs();
+  std::fprintf(f, "%s", ss.str().c_str());
 }
