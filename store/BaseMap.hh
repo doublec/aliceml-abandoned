@@ -13,6 +13,7 @@
 #define __STORE__BASE_MAP_HH__
 
 #include "store/Store.hh"
+#include "store/MapNode.hh"
 
 typedef void (*item_apply)(word key, word item);
 typedef word (*item_map)(word key, word item);
@@ -86,8 +87,27 @@ public:
    * In-place partial map: if func returns INVALID_POINTER then the key is removed.
    */
   SeamMemberDll void PartialMap(item_map func);
+  
+  /**
+   * Type-safe fold (iteration) over elements of the map.
+   */
+  template <typename A>
+  A Fold(A (*func)(word key, word item, A accum), A accum){
+    Block *table = GetTable();
+    for (u_int i=table->GetSize(); i--; ) {
+      
+      word nodes = table->GetArg(i);
+      while (nodes != Store::IntToWord(0)) {
+	MapNode *node = MapNode::FromWordDirect(nodes);
+	accum = func(node->GetKey(), node->GetValue(), accum);
+	nodes = node->GetNext();
+      }
+    }
+    return accum;
+  }
 
   static SeamMemberDll BaseMap<T> *New(BlockLabel l, u_int size);
 };
 
 #endif
+
