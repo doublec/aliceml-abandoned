@@ -202,13 +202,13 @@ static void PrintInfo(word /*key*/, word value) {
 }
 
 void Profiler::DumpInfo() {
-  const char *apf = getenv("ALICE_PROFILE_LOG");
-  if (apf != NULL) {
+  const char *spf = getenv("SEAM_PROFILE_LOG");
+  if (spf != NULL) {
     
     const char* file =
-      *apf == '\0' ? "alice_profile_log.csv" : apf;
+      *spf == '\0' ? "seam_profile_log.csv" : spf;
     if ((logFile = std::fopen(file, "w")) == NULL) {
-      Error("Profiler:DumpInfo: unable to open log file");
+      Error("Profiler::DumpInfo: unable to open log file");
     }
     
     double endTime = SampleTime();
