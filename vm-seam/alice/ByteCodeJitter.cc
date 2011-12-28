@@ -2847,7 +2847,7 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 			    sourceLocations.Export(),
 			    closeConcreteCodes);
 
-#ifdef PROFILE
+#if PROFILE
   AliceProfiler::ByteCodeCompiled(reinterpret_cast<ByteConcreteCode*>(hsc));
 #endif
 
