@@ -303,6 +303,31 @@ namespace {
 	  PrintArgs(ARGS_DYNR);
 	  break;
 	}
+	case ARGS_PRIMFUN: {
+	  GET_2I(GetCodeBuffer(), curPC, interpreterAddr, cFunctionAddr);
+	  out << " " << reinterpret_cast<Interpreter*>(interpreterAddr)->Identify();
+	  break;
+	}
+	case ARGS_PRIMFUN_1R: {
+	  PrintArgs(ARGS_PRIMFUN);
+	  PrintArgs(ARGS_1R);
+	  break;
+	}
+	case ARGS_PRIMFUN_2R: {
+	  PrintArgs(ARGS_PRIMFUN);
+	  PrintArgs(ARGS_2R);
+	  break;
+	}
+	case ARGS_PRIMFUN_3R: {
+	  PrintArgs(ARGS_PRIMFUN);
+	  PrintArgs(ARGS_3R);
+	  break;
+	}
+	case ARGS_PRIMFUN_DYNR: {
+	  PrintArgs(ARGS_PRIMFUN);
+	  PrintArgs(ARGS_DYNR);
+	  break;
+	}
 	case ARGS_DYNI: {
 	  PrintImmediateList();
 	  break;

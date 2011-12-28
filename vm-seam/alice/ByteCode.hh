@@ -60,6 +60,11 @@ namespace ByteCodeInstr {
     ARGS_2I_2R,
     ARGS_2I_3R,
     ARGS_2I_DYNR,
+    ARGS_PRIMFUN,
+    ARGS_PRIMFUN_1R,
+    ARGS_PRIMFUN_2R,
+    ARGS_PRIMFUN_3R,
+    ARGS_PRIMFUN_DYNR,
     ARGS_DYNI,
     ARGS_JUMP,
   };
