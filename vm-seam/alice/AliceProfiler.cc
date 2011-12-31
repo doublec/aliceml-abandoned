@@ -4,6 +4,9 @@
 #endif
 
 #if PROFILE
+#include <fstream>
+#include <iostream>
+#include <limits>
 #include "alice/AbstractCode.hh"
 #include "alice/AliceProfiler.hh"
 #include "alice/ByteConcreteCode.hh"
@@ -12,14 +15,20 @@
 
 namespace {
 
-  class UIntStat {
+  template<typename A>
+  class Stat {
   private:
-    u_int samples, min, max, total;
+    u_int samples;
+    A min, max, total;
   public:
     
-    UIntStat() : samples(0), min(0xffffffff), max(0), total(0) {}
+    Stat() :
+      samples(0),
+      min(std::numeric_limits<A>::max()),
+      max(std::numeric_limits<A>::min()),
+      total(0) {}
     
-    void Sample(u_int x) {
+    void Sample(A x) {
       if (x < min) {
 	min = x;
       }
@@ -30,22 +39,27 @@ namespace {
       total += x;
     }
     
-    void Dump(FILE *file, const char* name) {
+    void Dump(std::ostream& out, const char* name) {
       // statistic, samples, total, min, max, mean
-      std::fprintf(file, "%s, %"U_INTF", %"U_INTF", %"U_INTF", %"U_INTF", %.2f\n",
-        name, samples, total, min, max, static_cast<float>(total) / static_cast<float>(samples));
+      out << name << ", "
+          << samples << ", "
+          << total << ", "
+	  << min << ", "
+	  << max << ", "
+	  << (static_cast<float>(total) / static_cast<float>(samples)) << "\n";
     }
   };
 
   u_int executedInstrCounts[ByteCodeInstr::NUMBER_OF_INSTRS];
-  UIntStat numRegs, numInstrs, numBytes, immediateSize,
+  Stat<u_int> numRegs, numInstrs, numBytes, immediateSize,
     sourceLocsSize, numInlineAppVars, nonSubstClosureSize,
     closeReturnLength;
+  Stat<double> compilationMilliseconds;
 
 }
 
 
-void AliceProfiler::ByteCodeCompiled(ByteConcreteCode *bcc) {
+void AliceProfiler::ByteCodeCompiled(ByteConcreteCode *bcc, double elapsedMicroseconds) {
   TagVal *abstractCode = bcc->GetAbstractCode();
   
   numRegs.Sample(bcc->GetNLocals());
@@ -56,6 +70,7 @@ void AliceProfiler::ByteCodeCompiled(ByteConcreteCode *bcc) {
   sourceLocsSize.Sample(ByteCodeSourceLocations::Size(bcc->GetSourceLocations()));
   numInlineAppVars.Sample(bcc->GetInlineInfo()->NumInlinedAppVars());
   closeReturnLength.Sample(AbstractCode::GetCloseReturnLength(abstractCode));
+  compilationMilliseconds.Sample(elapsedMicroseconds / 1000.0);
 }
 
 
@@ -71,31 +86,30 @@ void AliceProfiler::DumpInfo() {
     const char* file =
       *apf == '\0' ? "alice_profile_log.csv" : apf;
     
-    FILE *logFile;
-    if ((logFile = std::fopen(file, "w")) == NULL) {
+    std::ofstream out(file, std::ios::out);
+    if (!out.is_open()) {
       Error("AliceProfiler::DumpInfo: unable to open log file");
     }
     
-    std::fprintf(logFile, "instruction name, execution count\n");
+    out << "instruction name, execution count\n";
     u_int total = 0;
     for (u_int i=0; i<ByteCodeInstr::NUMBER_OF_INSTRS; i++) {
       total += executedInstrCounts[i];
-      std::fprintf(logFile, "%s, %"U_INTF"\n",
-        ByteCode::LookupName(static_cast<ByteCodeInstr::instr>(i)), executedInstrCounts[i]);
+      out << ByteCode::LookupName(static_cast<ByteCodeInstr::instr>(i)) << ", "
+          << executedInstrCounts[i] << "\n";
     }
-    std::fprintf(logFile, "total, %"U_INTF"\n\n", total);
+    out << "total, " << total << "\n\n";
     
-    std::fprintf(logFile, "per-bytecode statistic, samples, total, min, max, mean\n");
-    numRegs.Dump(logFile, "registers required");
-    numBytes.Dump(logFile, "bytecode size (bytes)");
-    numInstrs.Dump(logFile, "bytecode size (instrs)");
-    nonSubstClosureSize.Dump(logFile, "non-subst closure size (values)");
-    immediateSize.Dump(logFile, "immediate size (values)");
-    sourceLocsSize.Dump(logFile, "source locations size (nodes)");
-    numInlineAppVars.Dump(logFile, "inlined app vars (recursive)");
-    closeReturnLength.Dump(logFile, "close-return length");
-    
-    std::fclose(logFile);
+    out << "per-bytecode statistic, samples, total, min, max, mean\n";
+    compilationMilliseconds.Dump(out, "compilation time (milliseconds)");
+    numRegs.Dump(out, "registers required");
+    numBytes.Dump(out, "bytecode size (bytes)");
+    numInstrs.Dump(out, "bytecode size (instrs)");
+    nonSubstClosureSize.Dump(out, "non-subst closure size (values)");
+    immediateSize.Dump(out, "immediate size (values)");
+    sourceLocsSize.Dump(out, "source locations size (nodes)");
+    numInlineAppVars.Dump(out, "inlined app vars (recursive)");
+    closeReturnLength.Dump(out, "close-return length");
   }
 }
 

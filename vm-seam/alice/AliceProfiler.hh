@@ -19,7 +19,7 @@ class AliceProfiler {
 public:
   
   // called after each bytecode compilation
-  static void ByteCodeCompiled(ByteConcreteCode *bcc);
+  static void ByteCodeCompiled(ByteConcreteCode *bcc, double elapsedMicroseconds);
   
   // called for each bytecode instruction executed
   static void ByteCodeExecuted(ByteCodeInstr::instr ins);

@@ -17,7 +17,6 @@
 #include <vector>
 #include <set>
 #include <algorithm>
-#include <sys/time.h>
 
 #include "alice/PrimitiveTable.hh"
 #include "alice/ByteCodeJitter.hh"
@@ -2720,13 +2719,16 @@ u_int invocations = 0;
 // Function of function_coord * value option vector * string vector *
 //             idDef args * outArity option * instr * liveness
 void ByteCodeJitter::Compile(HotSpotCode *hsc) {
-//    timeval startTime;
-//    gettimeofday(&startTime,0);
+#if PROFILE
+  double startMs = Time::GetElapsedMicroseconds();
+#endif
+  
   BCJIT_DEBUG("start compilation (%"U_INTF" times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
   Transform *transform =
     static_cast<Transform *>(hsc->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+  
 #ifdef DEBUG_DISASSEMBLE 
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   std::fprintf(stderr, "\n%"U_INTF". compile function %s (%p) at %s:%"S_INTF".%"S_INTF" nArgs=%"S_INTF"\n",
@@ -2758,9 +2760,6 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   constPropInfo = ByteCodeConstProp::Analyse(abstractCode, currentConcreteCode, inlineInfo);
 #endif
 #endif
-
-//    timeval startTime;
-//    gettimeofday(&startTime,0);
 
   // perform register allocation
 #ifdef DO_INLINING
@@ -2848,20 +2847,11 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 			    closeConcreteCodes);
 
 #if PROFILE
-  AliceProfiler::ByteCodeCompiled(reinterpret_cast<ByteConcreteCode*>(hsc));
+  double elapsedMs = Time::GetElapsedMicroseconds() - startMs;
+  AliceProfiler::ByteCodeCompiled(reinterpret_cast<ByteConcreteCode*>(hsc), elapsedMs);
 #endif
 
-//   static u_int sumNRegisters = 0;
-//   sumNRegisters += nRegisters;
-//   fprintf(stderr,"nLocals %d, nRegisters %d, sumNRegisters %d\n",
-// 	  currentNLocals,nRegisters,sumNRegisters);
-
-//   static u_int codeSize = 0;
-//   codeSize += code->GetSize();
-//   fprintf(stderr,"codeSize %d\n",codeSize);
 #ifdef DEBUG_DISASSEMBLE
-
-//   if(invocations>100) {
   fprintf(stderr,"-----------------\ncompiled code:\n");
 #ifdef THREADED
   ByteCode::Disassemble(stderr,(u_int *)code->GetBase(),code,
@@ -2872,11 +2862,4 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 #endif
   fprintf(stderr,"-------------\n");
 #endif
-//   }
-//   static double totalTime = 0;
-//   timeval stopTime;
-//   gettimeofday(&stopTime,0);
-//   totalTime += 0.000001 * ((double) (stopTime.tv_usec - startTime.tv_usec))
-//     + ((double) (stopTime.tv_sec - startTime.tv_sec));
-//   fprintf(stderr,"compile time %f seconds\n",totalTime);
 }
