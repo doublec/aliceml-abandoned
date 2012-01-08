@@ -19,6 +19,7 @@
 #include <string>
 #include <iomanip>
 #include "alice/ByteCode.hh"
+#include "alice/AbstractCodeInterpreter.hh"
 
 
 using namespace ByteCodeInstr;
@@ -36,6 +37,7 @@ namespace {
   private:
     std::ostream &out;
     Chunk *code;
+    Tuple *immediateEnv;
     ProgramCounter curPC;
     u_int printedInstrs;
     
@@ -328,6 +330,35 @@ namespace {
 	  PrintArgs(ARGS_DYNR);
 	  break;
 	}
+	case ARGS_ALICEFUN: {
+	  GET_1I(codeBuffer, curPC, closureAddr);
+	  Closure *c = Closure::FromWordDirect(immediateEnv->Sel(closureAddr));
+	  TagVal *abstractCode = AbstractCodeInterpreter::ConcreteToAbstractCode(c->GetConcreteCode());
+	  String *name = AbstractCodeInterpreter::MakeProfileName(abstractCode);
+	  PrintImmediate(closureAddr);
+	  out << "[" << name << "]";
+	  break;
+	}
+	case ARGS_ALICEFUN_1R: {
+	  PrintArgs(ARGS_ALICEFUN);
+	  PrintArgs(ARGS_1R);
+	  break;
+	}
+	case ARGS_ALICEFUN_2R: {
+	  PrintArgs(ARGS_ALICEFUN);
+	  PrintArgs(ARGS_2R);
+	  break;
+	}
+	case ARGS_ALICEFUN_3R: {
+	  PrintArgs(ARGS_ALICEFUN);
+	  PrintArgs(ARGS_3R);
+	  break;
+	}
+	case ARGS_ALICEFUN_DYNR: {
+	  PrintArgs(ARGS_ALICEFUN);
+	  PrintArgs(ARGS_DYNR);
+	  break;
+	}
 	case ARGS_DYNI: {
 	  PrintImmediateList();
 	  break;
@@ -347,13 +378,14 @@ namespace {
 
   public:
     
-    ByteCodeDisassembler(std::ostream &f, Chunk *code) : out(f), code(code), printedInstrs(0) {
+    ByteCodeDisassembler(std::ostream &f, Chunk *code, Tuple *immediateEnv)
+        : out(f), code(code), immediateEnv(immediateEnv), printedInstrs(0) {
       curPC = GetStartPC();
     }
     
     
-    ByteCodeDisassembler(std::ostream &f, Chunk *code, ProgramCounter curPC)
-      : out(f), code(code), curPC(curPC), printedInstrs(0) {}
+    ByteCodeDisassembler(std::ostream &f, Chunk *code, Tuple *immediateEnv, ProgramCounter curPC)
+      : out(f), code(code), immediateEnv(immediateEnv), curPC(curPC), printedInstrs(0) {}
     
     
     void PrintInstr() {
@@ -418,9 +450,9 @@ const char *ByteCode::LookupName(ByteCodeInstr::instr ins) {
 }
 
 
-u_int ByteCode::NumInstrs(Chunk *code) {
+u_int ByteCode::NumInstrs(Chunk *code, Tuple *imEnv) {
   std::stringstream ss;
-  ByteCodeDisassembler bd(ss, code);
+  ByteCodeDisassembler bd(ss, code, imEnv);
   bd.PrintAllInstrs();
   return bd.PrintedInstrs();
 }
@@ -428,7 +460,7 @@ u_int ByteCode::NumInstrs(Chunk *code) {
 
 ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv) {
   std::stringstream ss;
-  ByteCodeDisassembler bd(ss, code, pc);
+  ByteCodeDisassembler bd(ss, code, imEnv, pc);
   bd.PrintInstr();
   std::fprintf(f, "%s", ss.str().c_str());
   return bd.GetCurPC();
@@ -438,7 +470,7 @@ ProgramCounter ByteCode::DisassembleOne(std::FILE *f, ProgramCounter pc, Chunk *
 void ByteCode::Disassemble(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv, u_int nRegisters) {
   std::stringstream ss;
   ss << "(* registers: " << nRegisters << ", code size: " << code->GetSize() << " bytes *)\n";
-  ByteCodeDisassembler bd(ss, code);
+  ByteCodeDisassembler bd(ss, code, imEnv);
   bd.PrintAllInstrs();
   std::fprintf(f, "%s", ss.str().c_str());
 }

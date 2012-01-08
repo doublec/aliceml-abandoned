@@ -65,6 +65,11 @@ namespace ByteCodeInstr {
     ARGS_PRIMFUN_2R,
     ARGS_PRIMFUN_3R,
     ARGS_PRIMFUN_DYNR,
+    ARGS_ALICEFUN,
+    ARGS_ALICEFUN_1R,
+    ARGS_ALICEFUN_2R,
+    ARGS_ALICEFUN_3R,
+    ARGS_ALICEFUN_DYNR,
     ARGS_DYNI,
     ARGS_JUMP,
   };
@@ -122,7 +127,7 @@ public:
 #endif // THREADED
 
   static const char *LookupName(ByteCodeInstr::instr ins);
-  static u_int NumInstrs(Chunk *code);
+  static u_int NumInstrs(Chunk *code, Tuple *imEnv);
   static void Disassemble(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv, u_int nRegisters); 
   static ProgramCounter DisassembleOne(std::FILE *f, ProgramCounter pc, Chunk *code, Tuple *imEnv);
 };
