@@ -454,8 +454,36 @@ public:
     ReplaceArgUnchecked(BASE_SIZE + index, value);
   }
   
+  void InitRange(u_int startIndex, Vector *src) {
+    for(u_int i=0; i<src->GetLength(); i++) {
+      Init(startIndex + i, src->Sub(i));
+    }
+  }
+  
   word Sub(u_int index) {
     return GetArg(BASE_SIZE + index);
+  }
+  
+  Vector *Flatten() {
+    u_int flatSize = 0;
+    for (u_int i=0; i<GetLength(); i++) {
+      flatSize += Vector::FromWord(Sub(i))->GetLength();
+    }
+    Vector *flat = Vector::New(flatSize);
+    for (u_int i=0, j=0; i<GetLength(); i++) {
+      Vector *items = Vector::FromWord(Sub(i));
+      flat->InitRange(j, items);
+      j += items->GetLength();
+    }
+    return flat;
+  }
+  
+  Vector *Clone(){
+    Vector *clone = Vector::New(GetLength());
+    for (u_int i=0; i<GetLength(); i++) {
+      clone->Init(i, Sub(i));
+    }
+    return clone;
   }
 };
 
