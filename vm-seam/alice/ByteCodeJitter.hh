@@ -302,7 +302,8 @@ private:
     @param dst Destination register where the initialized tuple is stored.
     @param idRefs Actual values of the tuple components.
   */
-  void NewTup(u_int dst, Vector *idRefs);
+  void NewTupInto(u_int dst, Vector *idRefs);
+  u_int NewTup(Vector *idRefs, bool useReusableScratch = false);
 
   //! Little helper to compile tagged value selection
   /*!
@@ -314,6 +315,7 @@ private:
    */
   void LoadTagVal(u_int testVal, Vector *idDefs, bool isBig);
   void LoadTuple(u_int src, Vector *idDefs);
+  void LoadTupleIntoScratch(u_int src, u_int *dsts, u_int size);
 
   //! Determine if the specified test instr's target branch is known statically.
   TagVal *StaticTestBranch(TagVal *pc, word idRef, bool isBigTag = false);
@@ -365,12 +367,15 @@ private:
 
   void CompileCCC(Vector *rets, s_int outArity);
   void CompileInstr(TagVal *pc);
+  void CompileApplyImmediateUnchecked(Closure *closure, u_int *argRegs, u_int nActualArgs, bool isTailcall);
+  void CompileApplyImmediate(Closure *closure, u_int *argRegs, u_int nRegs, bool isTailcall);
+  void CompileApplyImmediate(Closure *closure, Vector *idRefs, bool isTailcall);
   void CompileApplyPrimitive(Closure *closure, Vector *args, bool isTailcall);
   void CompileSelfCall(TagVal *instr, bool isTailcall);
  
  // inlining
   void CompileInlineCCC(Vector *formalArgs, Vector *args, bool isReturn);
-  TagVal *CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, Vector *args, TagVal *idDefsInstrOpt);
+  TagVal *CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, TagVal *idDefsInstrOpt);
 
 public:
   //! constructor

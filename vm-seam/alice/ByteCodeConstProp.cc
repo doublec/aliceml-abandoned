@@ -221,11 +221,14 @@ namespace {
 	}
 	case AbstractCode::Global: {
 	  u_int index = Store::DirectWordToInt(idRef->Sel(0));
-	  TagVal *valOpt = TagVal::FromWord(subst->Sub(index));
-	  if(valOpt != INVALID_POINTER) {
-	    return Const::FromImmediate(valOpt->Sel(0));
-	  }
-	  else {
+	  TagVal *substIdRef = TagVal::FromWordDirect(subst->Sub(index));
+	  
+	  switch(AbstractCode::GetIdRef(substIdRef)) {
+	  case AbstractCode::Immediate:
+	    return Const::FromImmediate(substIdRef->Sel(0));
+	  case AbstractCode::Local:
+	    return constants[IdToId(substIdRef->Sel(0))];
+	  default:
 	    return Const::Unknown();
 	  }
 	}
@@ -472,17 +475,12 @@ namespace {
 	      word wConcreteCode = AbstractCodeInterpreter::GetCloseConcreteCode(parentCC, instr);
 	      TagVal *abstractCode = AbstractCodeInterpreter::ConcreteToAbstractCode(wConcreteCode);
 	      Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
-	      u_int closureSize = 0;
-	      for (u_int i=0; i<subst->GetLength(); i++) {
-		if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
-		  closureSize++;
-		}
-	      }
+	      u_int closureSize = AbstractCode::GetNumberOfGlobals(subst);
 	      
 	      Closure *cls = Closure::New(wConcreteCode, closureSize);
 	      for (u_int i=0, j=0; i<idRefs->GetLength(); i++) {
-		TagVal *valOpt = TagVal::FromWord(subst->Sub(i));
-		if (valOpt == INVALID_POINTER) {
+		TagVal *idRef = TagVal::FromWordDirect(subst->Sub(i));
+		if (AbstractCode::GetIdRef(idRef) == AbstractCode::Global) {
 		  cls->Init(j++, IdRefToImmediate(idRefs->Sub(i)));
 		}
 	      }
@@ -546,9 +544,16 @@ namespace {
 	    break;
 	  }
 	  case AbstractCode::AppVar: {
+	    
+	    // some AppVars are omitted
+	    word wOmittedCont = inlineInfo->GetOmittedAppVars()->CondGet(instr->ToWord());
+	    if (wOmittedCont != INVALID_POINTER) {
+	      stack.PushInstr(wOmittedCont);
+	    }
+	    
+	    // some AppVars are inlined
 	    word wAppVarInfo = inlineInfo->GetInlineMap()->CondGet(instr->ToWord());
 	    if (wAppVarInfo != INVALID_POINTER) {
-	      // function is being inlined
 	      
 	      AppVarInfo *avi = AppVarInfo::FromWordDirect(wAppVarInfo);
 	      TagVal *abstractCode = avi->GetAbstractCode();
@@ -567,9 +572,7 @@ namespace {
 	      stack.PushInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
 	      u_int offset = avi->GetLocalOffset();
 	      
-	      Vector *argsIdRefs = Vector::FromWordDirect(instr->Sel(1));
-	      Vector *argsIdDefs = ShiftIdDefs(Vector::FromWordDirect(abstractCode->Sel(3)), offset);
-	      InlineCCC(argsIdRefs, argsIdDefs);
+	      InlineCCC(avi->GetArgs(), ShiftIdDefs(Vector::FromWordDirect(abstractCode->Sel(3)), offset));
 	      localOffset += offset;
 	      subst = avi->GetSubst();
 	      inlineDepth++;
@@ -588,8 +591,8 @@ namespace {
 		inlineReturnIdDefs = ShiftIdDefs(inlineReturnIdDefs, -offset);
 	      }
 	    }
+	    // some AppVars are not omitted or inlined (but might be uncurried)
 	    else {
-	      // function is not being inlined
 	      TagVal *contOpt = TagVal::FromWord(instr->Sel(3));
 	      if(contOpt != INVALID_POINTER) {
 		Tuple *cont = Tuple::FromWordDirect(contOpt->Sel(0));

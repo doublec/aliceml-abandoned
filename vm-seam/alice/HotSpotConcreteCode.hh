@@ -37,9 +37,10 @@
 // abstract states of hot spot code
 //
 
+
 class AliceDll HotSpotCode : protected ConcreteCode {
 protected:
-  enum { TRANSFORM, INLINE_INFO, CODE, COUNTER, SIZE };
+  enum { TRANSFORM, INLINE_INFO, UNCURRY_INFO, CODE, COUNTER, SIZE };
   
 public:
   using ConcreteCode::ToWord;
@@ -53,18 +54,36 @@ public:
     return TagVal::FromWordDirect(GetAbstractRepresentation()->GetArgument());
   }
   
-  u_int GetCounter() { return Store::DirectWordToInt(Get(COUNTER)); }
-  word GetCode() { return Get(CODE); }
-  TagVal *GetInlineInfoOpt() { return TagVal::FromWord(Get(INLINE_INFO));}
 
-  void DecCounter() {
-    u_int counter = GetCounter();
-    Replace(COUNTER, Store::IntToWord(--counter));
+  UncurryInfo *GetUncurryInfo() {
+    word wUI = Get(UNCURRY_INFO);
+    return wUI == Store::IntToWord(0)
+      ? INVALID_POINTER
+      : UncurryInfo::FromWordDirect(wUI);
   }
-  void SetCode(word code) { Replace(CODE, code); }  
+  
+  u_int GetCounter() {
+    return Store::DirectWordToInt(Get(COUNTER));
+  }
+  
+  void DecCounter() {
+    Replace(COUNTER, Store::IntToWord(GetCounter() - 1));
+  }
+  
+  word GetCode() {
+    return Get(CODE);
+  }
+
+  void SetCode(word code) {
+    Replace(CODE, code);
+  }
+  
+  TagVal *GetInlineInfoOpt() {
+    return TagVal::FromWord(Get(INLINE_INFO));
+  }
+
   void SetInlineInfo(InlineInfo *info) {
-    TagVal *some = TagVal::New(Types::SOME, 1);
-    some->Init(0, info->ToWord());
+    TagVal *some = TagVal::New1(Types::SOME, info->ToWord());
     Replace(INLINE_INFO, some->ToWord());
   }
 };
@@ -100,6 +119,8 @@ public:
     concreteCode->Init(CODE, construct(abstractCode));
     concreteCode->Init(COUNTER, Store::IntToWord(counter));
     concreteCode->Init(INLINE_INFO, Store::IntToWord(Types::NONE));
+    UncurryInfo *ui = AbstractCode::GetUncurryInfo(abstractCode);
+    concreteCode->Init(UNCURRY_INFO, ui == INVALID_POINTER ? Store::IntToWord(0) : ui->ToWord());
     // set all other arguments to 0
     word zero = Store::IntToWord(0);
     for(u_int i=SIZE; i<size; i++)

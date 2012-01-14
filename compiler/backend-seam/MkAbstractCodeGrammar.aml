@@ -91,12 +91,10 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | LastUseLocal of id
 	  | Global of int
 	and template =
-	    Template of function_coord * int * 
-                        annotation *
+	    Template of function_coord * int * annotation *
 			idDef vector * outArity option * instr * liveness
 	and abstractCode =
-	    Function of function_coord * value option vector *
-			annotation *
+	    Function of function_coord * idRef vector * annotation *
 			idDef vector * outArity option * instr * liveness
 	and entry_point =
 	    ConEntry of Type.t * idRef * idRef vector

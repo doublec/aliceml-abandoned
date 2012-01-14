@@ -48,17 +48,16 @@ static word GetIdRef(word idRef, AbstractCodeFrame *frame, Closure *globalEnv) {
     Vector *subst = Vector::FromWordDirect(aac->Sel(1));
     s_int i = Store::WordToInt(tagVal->Sel(0));
     
-    TagVal *substVal = TagVal::FromWord(subst->Sub(i));
-    if (substVal != INVALID_POINTER) {
-      return substVal->Sel(0);
+    TagVal *substIdRef = TagVal::FromWordDirect(subst->Sub(i));
+    switch (AbstractCode::GetIdRef(substIdRef)) {
+    case AbstractCode::Immediate:
+      return substIdRef->Sel(0);
+    case AbstractCode::Local:
+    case AbstractCode::LastUseLocal:
+      return frame->GetLocal(substIdRef->Sel(0));
+    case AbstractCode::Global:
+      return globalEnv->Sub(Store::DirectWordToInt(substIdRef->Sel(0)));
     }
-    
-    for (s_int j=i-1; j>=0; j--) {
-      if (TagVal::FromWord(subst->Sub(j)) != INVALID_POINTER) {
-	i--;
-      }
-    }
-    return globalEnv->Sub(i);
   }
   default:
     Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
@@ -111,16 +110,16 @@ word AbstractCodeInterpreter::GetCloseConcreteCode(word parentConcreteCode, TagV
   
     // Inherit substitution
     Vector *subst = Vector::New(nGlobals);
-    for (u_int i = nGlobals; i--; ) {
+    for (u_int i=0, j=0; i<nGlobals; i++) {
       TagVal *idRef = TagVal::FromWord(idRefs->Sub(i));
       if (AbstractCode::GetIdRef(idRef) == AbstractCode::Global) {
-	TagVal *s = TagVal::FromWord(parentSubst->Sub(Store::DirectWordToInt(idRef->Sel(0))));
-	if (s != INVALID_POINTER) {
+	TagVal *s = TagVal::FromWordDirect(parentSubst->Sub(Store::DirectWordToInt(idRef->Sel(0))));
+	if (AbstractCode::GetIdRef(s) == AbstractCode::Immediate) {
 	  subst->Init(i, s->ToWord());
 	  continue;
 	}
       }
-      subst->Init(i, Store::IntToWord(Types::NONE));
+      subst->Init(i, TagVal::New1(AbstractCode::Global, Store::IntToWord(j++))->ToWord());
     }
     
     TagVal *template_ = TagVal::FromWordDirect(closeInstr->Sel(2));
@@ -649,12 +648,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	word wConcreteCode = GetCloseConcreteCode(globalEnv->GetConcreteCode(), pc);
 	TagVal *abstractCode = ConcreteToAbstractCode(wConcreteCode);
 	Vector *subst = Vector::FromWord(abstractCode->Sel(1));
-	u_int closureSize = 0;
-	for (u_int i=0; i<nGlobals; i++){
-	  if(TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
-	    closureSize++;
-	  }
-	}
+	u_int closureSize = AbstractCode::GetNumberOfGlobals(subst);
 	
 #if DEBUGGER
 	Closure *closure;
@@ -673,7 +667,8 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 #endif
 	for (u_int i=0, j=0; i<nGlobals; i++) {
 	  word val = GetIdRefKill(idRefs->Sub(i), frame, pc, globalEnv);
-	  if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
+	  TagVal *substIdRef = TagVal::FromWordDirect(subst->Sub(i));
+	  if (AbstractCode::GetIdRef(substIdRef) == AbstractCode::Global) {
 	    closure->Init(j++, val);
 	  }
 	}
@@ -697,9 +692,8 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Vector *subst = Vector::New(nGlobals);
 	for (u_int i = nGlobals; i--; ) {
 	  word value = GetIdRefKill(idRefs->Sub(i), frame, pc, globalEnv);
-	  TagVal *some = TagVal::New(Types::SOME, 1);
-	  some->Init(0, value);
-	  subst->Init(i, some->ToWord());
+	  TagVal *substIdRef = TagVal::New1(AbstractCode::Immediate, value);
+	  subst->Init(i, substIdRef->ToWord());
 	}
 	abstractCode->Init(1, subst->ToWord());
 	abstractCode->Init(2, template_->Sel(2));
@@ -1233,19 +1227,35 @@ String *AbstractCodeInterpreter::MakeProfileName(TagVal *abstractCode) {
   s_int column = Store::DirectWordToInt(funCoord->Sel(3));
   
   Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
-  u_int nSubst = 0;
-  for (u_int i = subst->GetLength(); i--; ) {
-    if (TagVal::FromWord(subst->Sub(i)) != INVALID_POINTER) {
-      nSubst++;
+  u_int nGlobals = subst->GetLength();
+  u_int nImmediate = 0, nClosure = 0, nLocal= 0;
+  for (u_int i = nGlobals; i--; ) {
+    TagVal *idRef = TagVal::FromWordDirect(subst->Sub(i));
+    switch(AbstractCode::GetIdRef(idRef)) {
+    case AbstractCode::Immediate:    nImmediate++; break;
+    case AbstractCode::Global:       nClosure++;   break;
+    case AbstractCode::Local:
+    case AbstractCode::LastUseLocal: nLocal++;     break;
     }
   }
   
   std::stringstream ss;
   if (name->GetSize() > 0) {
-    ss << name << " at ";
+    ss << name << " - ";
   }
-  ss << file << ", line " << line << ", column " << column <<
-    " (" << subst->GetLength() << " globals, " << nSubst << " specialised)";
+  ss << file << ":" << line << "." << column << " - " << nGlobals << " globals";
+  if (nGlobals) {
+    ss << " (";
+    if (nImmediate) {
+      ss << nImmediate << " immediate" << (nImmediate == nGlobals ? ")" : ", ");
+    }
+    if (nClosure) {
+      ss << nClosure << " closure" << (nImmediate+nClosure == nGlobals ? ")" : ", ");
+    }
+    if (nLocal) {
+      ss << nLocal << " local)";
+    }
+  }
   return String::New(ss.str());
 }
 

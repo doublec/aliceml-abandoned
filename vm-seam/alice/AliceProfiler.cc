@@ -52,10 +52,21 @@ namespace {
 
   u_int executedInstrCounts[ByteCodeInstr::NUMBER_OF_INSTRS];
   Stat<u_int> numRegs, numInstrs, numBytes, immediateSize,
-    sourceLocsSize, numInlineAppVars, nonSubstClosureSize,
-    closeReturnLength;
+    sourceLocsSize, numInlineAppVars, closeReturnLength;
   Stat<double> compilationMilliseconds;
 
+}
+
+
+static u_int GetCloseReturnLength(TagVal *abstractCode) {
+  u_int n = 0;
+  UncurryInfo *ui;
+  while((ui = AbstractCode::GetUncurryInfo(abstractCode)) != INVALID_POINTER) {
+    abstractCode = AbstractCodeInterpreter::ConcreteToAbstractCode(
+      ui->GetConcreteCode()->ToWord());
+    n++;
+  }
+  return n;
 }
 
 
@@ -64,12 +75,11 @@ void AliceProfiler::ByteCodeCompiled(ByteConcreteCode *bcc, double elapsedMicros
   
   numRegs.Sample(bcc->GetNLocals());
   numBytes.Sample(bcc->GetByteCode()->GetSize());
-  numInstrs.Sample(ByteCode::NumInstrs(bcc->GetByteCode()));
+  numInstrs.Sample(ByteCode::NumInstrs(bcc->GetByteCode(), bcc->GetImmediateArgs()));
   immediateSize.Sample(reinterpret_cast<Block*>(bcc->GetImmediateArgs())->GetSize());
-  nonSubstClosureSize.Sample(AbstractCode::GetNonSubstClosureSize(abstractCode));
   sourceLocsSize.Sample(ByteCodeSourceLocations::Size(bcc->GetSourceLocations()));
   numInlineAppVars.Sample(bcc->GetInlineInfo()->NumInlinedAppVars());
-  closeReturnLength.Sample(AbstractCode::GetCloseReturnLength(abstractCode));
+  closeReturnLength.Sample(GetCloseReturnLength(abstractCode));
   compilationMilliseconds.Sample(elapsedMicroseconds / 1000.0);
 }
 
@@ -105,7 +115,6 @@ void AliceProfiler::DumpInfo() {
     numRegs.Dump(out, "registers required");
     numBytes.Dump(out, "bytecode size (bytes)");
     numInstrs.Dump(out, "bytecode size (instrs)");
-    nonSubstClosureSize.Dump(out, "non-subst closure size (values)");
     immediateSize.Dump(out, "immediate size (values)");
     sourceLocsSize.Dump(out, "source locations size (nodes)");
     numInlineAppVars.Dump(out, "inlined app vars (recursive)");

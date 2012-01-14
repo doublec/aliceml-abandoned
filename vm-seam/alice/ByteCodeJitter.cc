@@ -46,50 +46,6 @@
 
 using namespace ByteCodeInstr;
 
-//
-// some helper functions
-//
-
-
-static void Jitter_PrintLiveness(Vector *liveness) {
-  u_int size = liveness->GetLength();
-  fprintf(stderr, "size = %"U_INTF"\n", size/2);
-  for(u_int i=0; i<size; i+=2) {
-    u_int index = i/2;
-    u_int start = Store::DirectWordToInt(liveness->Sub(i));
-    u_int end   = Store::DirectWordToInt(liveness->Sub(i+1));
-    fprintf(stderr, "%"U_INTF" : [%"U_INTF" .. %"U_INTF"]\n", index, start, end);
-  }
-}
-
-
-static Vector *ShiftIdDefs(Vector *srcs, s_int offset) {
-  u_int size = srcs->GetLength();
-  Vector *dsts = Vector::New(size);
-  for(u_int i = size; i--; ) {
-    TagVal *argOpt = TagVal::FromWord(srcs->Sub(i));
-    if(argOpt != INVALID_POINTER) {
-      u_int id = Store::DirectWordToInt(argOpt->Sel(0)) + offset;
-      TagVal *newOpt = TagVal::New(Types::SOME,1);
-      newOpt->Init(0,Store::IntToWord(id));
-      dsts->Init(i,newOpt->ToWord());
-    } else {
-      dsts->Init(i,srcs->Sub(i));
-    }
-  }
-  return dsts;
-}
-
-
-static bool AllIdDefsWildcards(Vector *idDefs) {
-  for (u_int i=idDefs->GetLength(); i--; ) {
-    if (TagVal::FromWord(idDefs->Sub(i)) != INVALID_POINTER) {
-      return false;
-    }
-  }
-  return true;
-}
-
 
 word ByteCodeJitter::ExtractImmediate(word idRef) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
@@ -165,10 +121,13 @@ namespace {
 	if (id >= aliases->GetLength() || aliases->Sub(id) == Store::IntToWord(id)) {
 	  u_int start = Store::DirectWordToInt(liveness->Sub(i));
 	  u_int end   = Store::DirectWordToInt(liveness->Sub(i+1));
-	  Event startEvent = { start, START_LIFE, id };
-	  Event endEvent   = { end,   END_LIFE, id };
-	  events.push_back(startEvent);
-	  events.push_back(endEvent);
+	  // if start > end then id is considered never alive
+	  if (start <= end) {
+	    Event startEvent = { start, START_LIFE, id };
+	    Event endEvent   = { end,   END_LIFE, id };
+	    events.push_back(startEvent);
+	    events.push_back(endEvent);
+	  }
 	}
       }
       std::sort(events.begin(), events.end(), CmpEvents);
@@ -199,16 +158,17 @@ namespace {
       }
       Assert(used.empty());
       
+      *nLocals = freed.size();
+      
       // populate alias mappings
       if (aliases != INVALID_POINTER) {
 	// loop direction is important!
 	for (u_int id=0; id<aliases->GetLength(); id++) {
 	  u_int src = Store::DirectWordToInt(aliases->Sub(id));
+	  Assert(src < liveness->GetLength()/2);
 	  mapping[id] = mapping[src];
 	}
       }
-      
-      *nLocals = freed.size();
     }
   };
 #endif // DO_REG_ALLOC
@@ -479,9 +439,7 @@ u_int ByteCodeJitter::InlineUnaryPrimitiveCCC(Vector *idRefs) {
     return LoadIdRefKill(idRefs->Sub(0));
   }
   else {
-    u_int src = GetNewScratch();
-    NewTup(src, idRefs);
-    return src;
+    return NewTup(idRefs);
   }
 }
 
@@ -849,7 +807,8 @@ TagVal *ByteCodeJitter::InstrPutRef(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
-void ByteCodeJitter::NewTup(u_int dst, Vector *idRefs) {
+
+void ByteCodeJitter::NewTupInto(u_int dst, Vector *idRefs) {
   u_int size = idRefs->GetLength();
   switch(size) {
     case 0: {
@@ -881,11 +840,19 @@ void ByteCodeJitter::NewTup(u_int dst, Vector *idRefs) {
   }
 }
 
+
+u_int ByteCodeJitter::NewTup(Vector *idRefs, bool useReusableScratch) {
+  u_int dst = GetNewScratch(useReusableScratch);
+  NewTupInto(dst, idRefs);
+  return dst;  
+}
+
+
 // PutTup of id * idRef vector * instr
 TagVal *ByteCodeJitter::InstrPutTup(TagVal *pc) {
   u_int dst = IdToReg(pc->Sel(0));
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
-  NewTup(dst, idRefs);
+  NewTupInto(dst, idRefs);
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
@@ -944,17 +911,13 @@ TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
   word wConcreteCode = AbstractCodeInterpreter::GetCloseConcreteCode(parentCC, pc);
   TagVal *abstractCode = AbstractCodeInterpreter::ConcreteToAbstractCode(wConcreteCode);
   Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
-  u_int closureSize = 0;
-  for (u_int i=nGlobals; i--; ) {
-    if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
-      closureSize++;
-    }
-  }
+  u_int closureSize = AbstractCode::GetNumberOfGlobals(subst);
   
   u_int ccAddr = imEnv.Register(wConcreteCode);
   SET_INSTR_1R2I(PC, mk_closure, dst, ccAddr, closureSize);
   for (u_int i=0, j=0; i<nGlobals; i++) {
-    if (TagVal::FromWord(subst->Sub(i)) == INVALID_POINTER) {
+    TagVal *substIdRef = TagVal::FromWord(subst->Sub(i));
+    if (AbstractCode::GetIdRef(substIdRef) == AbstractCode::Global) {
       u_int reg = LoadIdRefKill(globalRefs->Sub(i), true);
       SET_INSTR_2R1I(PC, init_closure, dst, reg, j);
       j++;
@@ -980,7 +943,7 @@ TagVal *ByteCodeJitter::InstrSpecialize(TagVal *pc) {
   SET_INSTR_1R1I(PC, new_vec, S0, nGlobals);
   for(u_int i=nGlobals; i--; ) {
     u_int src = LoadIdRefKill(globalRefs->Sub(i), true);
-    SET_INSTR_1R1I(PC, new_tagval_init1, S1, Types::SOME);
+    SET_INSTR_1R1I(PC, new_tagval_init1, S1, AbstractCode::Immediate);
     SET_1R(PC, src);
     SET_INSTR_2R1I(PC, init_vec, S0, S1, i);
   }
@@ -1063,8 +1026,7 @@ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure,
 	  break;
 	default: // nArgs > 1 --> construct tuple
 	  {
-	    dst = GetNewScratch();
-	    NewTup(dst,args);
+	    dst = NewTup(args);
 	  }
 	}
 	argRegs[0] = dst;
@@ -1074,11 +1036,7 @@ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure,
       {
 	if(nArgs == 1) { // deconstruct tuple
 	  u_int tup = LoadIdRefKill(args->Sub(0));
-	  for(u_int i=inArity; i--; ) {
-	    u_int dst = GetNewScratch();
-	    SET_INSTR_2R1I(PC,select_tup,dst,tup,i);
-	    argRegs[i] = dst;
-	  }
+	  LoadTupleIntoScratch(tup, argRegs, inArity);
 	} else {
 	  Assert(nArgs == inArity);
 	  for(u_int i = nArgs; i--; )
@@ -1094,9 +1052,7 @@ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure,
     // we cannot hardwire the CCC into the code. Therefore, we have to use a 
     // normal immediate call instead of a primitive call, and pack all 
     // arguments into one tuple.
-    u_int S = GetNewScratch();
-    NewTup(S, args);
-    argRegs[0] = S;
+    argRegs[0] = NewTup(args);
     nActualArgs = 1;
     // use closure instead of interpreter address
     interpreterAddr = imEnv.Register(closure->ToWord());
@@ -1199,9 +1155,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   // load arguments into registers
     
   if(overflow) { // construct tuple
-    u_int S = GetNewScratch();
-    NewTup(S, args);
-    argRegs[0] = S;
+    argRegs[0] = NewTup(args);
   } else {
     for(u_int i = nArgs; i--; )
       argRegs[i] = LoadIdRefKill(args->Sub(i));
@@ -1227,32 +1181,156 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   }
 }
 
+
+void ByteCodeJitter::CompileApplyImmediateUnchecked(Closure *closure, u_int *argRegs, u_int nActualArgs, bool isTailcall) {
+  Interpreter *interpreter =
+    ConcreteCode::FromWord(closure->GetConcreteCode())->GetInterpreter();
+ 
+  ByteCodeInstr::instr callInstr;
+  if (interpreter == ByteCodeInterpreter::self) {
+    CHOOSE_CALL_INSTR(callInstr, bci);
+  } 
+  else if (interpreter == HotSpotInterpreter::self) {
+    CHOOSE_CALL_INSTR(callInstr, rewrite);
+  }
+  else {
+    CHOOSE_CALL_INSTR(callInstr, immediate);
+  }
+  
+  u_int closureAddr = imEnv.Register(closure->ToWord());
+  if(nActualArgs < 4) {
+    SET_INSTR_1I(PC, callInstr, closureAddr);
+  }
+  else {
+    SET_INSTR_2I(PC, callInstr, closureAddr, nActualArgs);
+  }
+  for(u_int i = nActualArgs; i--; ) {
+    SET_1R(PC, argRegs[i]);
+  }
+}
+
+
+void ByteCodeJitter::CompileApplyImmediate(Closure *closure, u_int *regs, u_int nRegs, bool isTailcall) {
+  
+  bool overflow = nRegs > Scheduler::maxArgs;
+  u_int nActualArgs = overflow ? 1 : nRegs;
+  u_int argRegs[nActualArgs];
+  
+  // load arguments into registers
+  if(overflow) { // construct tuple
+    argRegs[0] = GetNewScratch();
+    SET_INSTR_1R1I(PC, new_tup, argRegs[0], nRegs);
+    for(u_int i=nRegs; i--; ) {
+      SET_INSTR_2R1I(PC, init_tup, argRegs[0], regs[i], i);
+    }
+    regs = argRegs;
+  }
+  
+  CompileApplyImmediateUnchecked(closure, regs, nActualArgs, isTailcall);
+}
+
+
+void ByteCodeJitter::CompileApplyImmediate(Closure *closure, Vector *idRefs, bool isTailcall) {
+  
+  u_int nArgs = idRefs->GetLength();
+  bool overflow = nArgs > Scheduler::maxArgs;
+  u_int nActualArgs = overflow ? 1 : nArgs;
+  u_int argRegs[nActualArgs];
+  
+  // load arguments into registers
+  if(overflow) { // construct tuple
+    argRegs[0] = NewTup(idRefs);
+  }
+  else {
+    for(u_int i = nArgs; i--; ) {
+      argRegs[i] = LoadIdRefKill(idRefs->Sub(i));
+    }
+  }
+  
+  CompileApplyImmediateUnchecked(closure, argRegs, nActualArgs, isTailcall);
+}
+
+
 // AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
 TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
+  word wInstr = pc->ToWord();
   Vector *args = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs = args->GetLength();
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
   s_int outArity = INVALID_INT;
+  word wClosure = ExtractImmediate(pc->Sel(0));
 
 #ifdef DO_INLINING
-  // check if the call can be inlined
-  Map *inlineMap = inlineInfo->GetInlineMap();
-  if(inlineMap->IsMember(pc->ToWord())) {
-    AppVarInfo *avi = AppVarInfo::FromWordDirect(inlineMap->Get(pc->ToWord()));
-    TagVal *continuation = CompileInlineFunction(pc, avi, args, idDefsInstrOpt);
+  bool isTailcall = (idDefsInstrOpt == INVALID_POINTER
+    && !(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER));
+  
+  // some appvars are omitted due to the uncurry optimization
+  word wOmittedCont = inlineInfo->GetOmittedAppVars()->CondGet(wInstr);
+  if (wOmittedCont != INVALID_POINTER) {
+    return TagVal::FromWordDirect(wOmittedCont);
+  }
+  
+  // some other appvars are inlined
+  word wAVII = inlineInfo->GetInlineMap()->CondGet(wInstr);
+  if(wAVII != INVALID_POINTER) {
+    AppVarInfo *avi = AppVarInfo::FromWordDirect(wAVII);
+    TagVal *continuation = CompileInlineFunction(pc, avi, idDefsInstrOpt);
     if (idDefsInstrOpt == INVALID_POINTER && currentFormalArgs != INVALID_POINTER) {
       patchTable->Add(PC);
       SET_INSTR_1I(PC, jump, 0);
     }
     return continuation;
   }
-  bool isTailcall = (idDefsInstrOpt == INVALID_POINTER
-    && !(inlineDepth > 0 && currentFormalArgs != INVALID_POINTER));
+  
+  {
+    // some other appvars are treated specially to due the uncurry optimization
+    word wUAVI = inlineInfo->GetUncurriedAppVars()->CondGet(wInstr);
+    if (wUAVI != INVALID_POINTER) {
+      UncurriedAppVarInfo *uavi = UncurriedAppVarInfo::FromWordDirect(wUAVI);
+      
+      // use a different set of arguments
+      u_int newNArgs = uavi->GetInArity();
+      u_int argRegs[newNArgs];
+      
+      Vector *argsIdRefs = uavi->GetArgIdRefs();
+      Vector *argsCCCSizes = uavi->GetArgCCCSizes();
+      for (u_int i=0, j=0; i<argsIdRefs->GetLength(); i++) {
+	
+	Vector *idRefs = Vector::FromWordDirect(argsIdRefs->Sub(i));
+	u_int actualSize = idRefs->GetLength();
+	u_int expSize = Store::DirectWordToInt(argsCCCSizes->Sub(i));
+	
+	if (expSize == actualSize) {
+	  for (u_int k=0; k<actualSize; k++) {
+	    argRegs[j] = LoadIdRefKill(idRefs->Sub(k));
+	    j++;
+	  }
+	}
+	else if (expSize == 0) {
+	  Assert(actualSize == 1);
+	  u_int reg = LoadIdRefKill(idRefs->Sub(0));
+	  SET_INSTR_1R(PC, await, reg);
+	}
+	else if(expSize == 1) {
+	  argRegs[j++] = NewTup(idRefs);
+	}
+	else {
+	  Assert(expSize > 1 && actualSize == 1);
+	  u_int tup = LoadIdRefKill(idRefs->Sub(0));
+	  LoadTupleIntoScratch(tup, argRegs + j, expSize);
+	  j += expSize;
+	}
+      }
+      
+      CompileApplyImmediate(uavi->GetClosure(), argRegs, newNArgs, isTailcall);
+      outArity = uavi->GetOutArity();
+      goto compile_continuation;
+    }
+  }
 #else
   bool isTailcall = (idDefsInstrOpt == INVALID_POINTER);
 #endif
   
-  word wClosure = ExtractImmediate(pc->Sel(0));
   if (wClosure != INVALID_POINTER) {
     BCJIT_DEBUG("AppVar: entered immediate\n");
     Closure *closure = Closure::FromWord(wClosure);
@@ -1274,10 +1352,11 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
 	Interpreter *interpreter = concreteCode->GetInterpreter();
 	outArity = interpreter->GetOutArity(concreteCode);
 	void *cFunction = reinterpret_cast<void*>(interpreter->GetCFunction());
+	
 	// check if this is a primitive
 	if(cFunction != NULL) {
 	  
-	  // try to inline some other common primitives
+	  // try to inline some common primitives
 	  if (InlinePrimitive(cFunction, args, idDefsInstrOpt)) {
 	    if (idDefsInstrOpt == INVALID_POINTER) {
 	      return INVALID_POINTER;
@@ -1287,8 +1366,7 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
 	    }
 	  }
 	  
-	  // else: couldn't inline primitve; try somthing else
-	  // we directly call the primitive function
+	  // directly call the primitive function
 	  CompileApplyPrimitive(closure, args, isTailcall);
 #ifdef DO_INLINING
 	  if(idDefsInstrOpt == INVALID_POINTER
@@ -1308,56 +1386,10 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
 	    CompileCCC(rets, outArity); 
 	    return TagVal::FromWordDirect(idDefsInstr->Sel(1));
 	  }
-	} else {
-	  // ok, it wasn't a primitive
-	  // but we are sure that is an immediate calls
-	  // so we can use specialized call instructions
-
-	  bool overflow = nArgs > Scheduler::maxArgs;
-	  u_int nActualArgs = overflow ? 1 : nArgs;
-	  u_int argRegs[nActualArgs];
-	  
-	  // load arguments into registers
-	  
-	  if(overflow) { // construct tuple
-	    u_int S = GetNewScratch();
-	    NewTup(S, args);
-	    argRegs[0] = S;
-	  } else {
-	    for(u_int i = nArgs; i--; )
-	      argRegs[i] = LoadIdRefKill(args->Sub(i));
-	  }
-
-	  // generate call instruction
-	  ByteCodeInstr::instr callInstr;	    
-	  if (interpreter == ByteCodeInterpreter::self) {
-	    // byte code call	    	      
-	    CHOOSE_CALL_INSTR(callInstr,bci);
-	  } 
-	  else if (interpreter == HotSpotInterpreter::self) {
-	    // immediate call that might change into a byte code call
-	    CHOOSE_CALL_INSTR(callInstr,rewrite);
-	  } else {
-	    // none byte code call that is immediate
-	    CHOOSE_CALL_INSTR(callInstr,immediate);
-	  }
-	  // ATTENTION: It is essential to transform the dereferenced closure
-	  // back to word. The idea is that the jitter dereferences once and
-	  // interpreter can thus access the closure argument with
-	  // Closure::FromWordDirect
-	  u_int closureAddr = imEnv.Register(closure->ToWord());	      
-	  if(nActualArgs < 4) {
-	    SET_INSTR_1I(PC,callInstr,closureAddr);
-	  } else {
-	    SET_INSTR_2I(PC,callInstr,closureAddr,nActualArgs);
-	  }
-	  for(u_int i = nActualArgs; i--; ) {
-	    u_int r = argRegs[i];
-	    SET_1R(PC,r);
-	  }
-
-	  goto compile_continuation;
 	}
+	
+	CompileApplyImmediate(closure, args, isTailcall);
+	goto compile_continuation;
       }
     }
   }
@@ -1371,9 +1403,7 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
     // load arguments into registers
     
     if(overflow) { // construct tuple
-      u_int S = GetNewScratch();
-      NewTup(S, args);
-      argRegs[0] = S;
+      argRegs[0] = NewTup(args);
     } else {
       for(u_int i = nArgs; i--; )
 	argRegs[i] = LoadIdRefKill(args->Sub(i));
@@ -1406,12 +1436,12 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
     return INVALID_POINTER;
   }
 #endif
-  if(isTailcall) 
+  if(isTailcall)
     return INVALID_POINTER;
   // non-tailcall
   Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
   Vector *rets = Vector::FromWordDirect(idDefsInstr->Sel(0));
-  CompileCCC(rets,outArity); 
+  CompileCCC(rets,outArity);
 
   return TagVal::FromWordDirect(idDefsInstr->Sel(1)); // compile continuation
 }
@@ -1657,7 +1687,7 @@ void ByteCodeJitter::LoadTuple(u_int src, Vector *idDefs) {
 
   // special case: either unit is being requested, or nothing is actually
   // selected from the tuple; either way it just needs to be requested
-  if (AllIdDefsWildcards(idDefs)) {
+  if (AbstractCode::AllIdDefsWildcards(idDefs)) {
     SET_INSTR_1R(PC, await, src);
     return;
   }
@@ -1741,6 +1771,33 @@ void ByteCodeJitter::LoadTuple(u_int src, Vector *idDefs) {
   }
 }
 
+
+void ByteCodeJitter::LoadTupleIntoScratch(u_int src, u_int *dsts, u_int size) {
+  
+  for (u_int i=0; i<size; i++) {
+    dsts[i] = GetNewScratch();
+  }
+  
+  // try and use specialized instructions to select from src
+  
+  u_int index = size - 1;
+  while (index > 2) {
+    SET_INSTR_2R1I(PC, select_tup, dsts[index], src, index);
+    index--;
+  }
+  
+  if (index == 2) {
+    SET_INSTR_4R(PC, get_tup3, dsts[0], dsts[1], dsts[2], src);
+  }
+  else if (index == 1) {
+    SET_INSTR_3R(PC, get_tup2, dsts[0], dsts[1], src);
+  }
+  else {
+    SET_INSTR_2R(PC, select_tup0, dsts[0], src);
+  }
+}
+
+  
 void ByteCodeJitter::LoadTagVal(u_int testVal, Vector *idDefs, bool isBig) {
   u_int idDefsLength = idDefs->GetLength();
   switch(idDefsLength) {
@@ -1816,7 +1873,7 @@ TagVal *ByteCodeJitter::StaticTestBranch(TagVal *pc, word idRef, bool isBigTag) 
     Tuple *info = Tuple::FromWordDirect(wInfo);
     // compile binding
     Vector *idDefs = Vector::FromWordDirect(info->Sel(0));
-    if (!AllIdDefsWildcards(idDefs)) { // TODO: might still need to await testVal...
+    if (!AbstractCode::AllIdDefsWildcards(idDefs)) { // TODO: might still need to await testVal...
       u_int testVal = LoadIdRefKill(idRef);
       LoadTagVal(testVal, idDefs, isBigTag);
     }
@@ -2136,9 +2193,7 @@ TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
   // load arguments into registers
     
   if(overflow) { // construct tuple
-    u_int S = GetNewScratch();
-    NewTup(S, returnIdRefs);
-    argRegs[0] = S;
+    argRegs[0] = NewTup(returnIdRefs);
   } else {
     // check for specialized return instruction
     if(returnIdRefs->GetLength() == 1) {
@@ -2546,7 +2601,7 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 	  switch(nArgs) {
 	  case 2:
 	  case 3:
-	    NewTup(dst, args); // special instr for pairs and triples
+	    NewTupInto(dst, args); // special instr for pairs and triples
 	    break;
 	  default:
 	    {
@@ -2565,7 +2620,7 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 		}
 	      }
 	      u_int tupReg = conflict ? GetNewScratch() : dst;
-	      NewTup(tupReg, args);
+	      NewTupInto(tupReg, args);
 	      if(conflict) {
 		SET_INSTR_2R(PC,load_reg,dst,tupReg);
 	      }
@@ -2589,18 +2644,18 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
 	    src = S;
 	  }
 	  SET_INSTR_2R1I(PC,select_tup,dst,src,i);
-	}	  
+	}
       }
     }
   }
 }
 
-// Function of function_coord * value option vector * string vector *
-//             idDef args * outArity option * instr * liveness
-TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, Vector *args, TagVal *idDefsInstrOpt) {
+
+TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, TagVal *idDefsInstrOpt) {
   INSERT_DEBUG_MSG("inline entry")
   
   TagVal *abstractCode = avi->GetAbstractCode();
+  Vector *args = avi->GetArgs();
   u_int offset = avi->GetLocalOffset();
   sourceLocations.BeginInlineFunction(abstractCode);
   
@@ -2630,13 +2685,13 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, V
   PatchTable *oldPatchTable = patchTable;
   patchTable = new PatchTable();
 
-  currentFormalInArgs = ShiftIdDefs(currentFormalInArgs,-offset);
+  currentFormalInArgs = AbstractCode::ShiftIdDefs(currentFormalInArgs, -offset);
 
   TagVal *continuation;
   if(idDefsInstrOpt != INVALID_POINTER) {
     Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
     currentFormalArgs = 
-      ShiftIdDefs(Vector::FromWordDirect(idDefsInstr->Sel(0)),-offset);
+      AbstractCode::ShiftIdDefs(Vector::FromWordDirect(idDefsInstr->Sel(0)), -offset);
     continuation = TagVal::FromWordDirect(idDefsInstr->Sel(1));
   } else if (inlineDepth == 1) {
     // if the first caller is a tailcall, than introduce a return instruction
@@ -2646,22 +2701,22 @@ TagVal *ByteCodeJitter::CompileInlineFunction(TagVal *appVar, AppVarInfo *avi, V
   } else {
     continuation = INVALID_POINTER;
     if(currentFormalArgs != INVALID_POINTER)
-      currentFormalArgs = ShiftIdDefs(currentFormalArgs,-offset);
+      currentFormalArgs = AbstractCode::ShiftIdDefs(currentFormalArgs, -offset);
   }
 
   // compile in ccc
   Vector *formalArgs = Vector::FromWordDirect(abstractCode->Sel(3));
   BCJIT_DEBUG("compile in CCC\n");
   // shift formal args -> look for better solution
-  Vector *formalArgsShifted = ShiftIdDefs(formalArgs,offset);
+  Vector *formalArgsShifted = AbstractCode::ShiftIdDefs(formalArgs, offset);
 
   TagVal *root = TagVal::FromWordDirect(abstractCode->Sel(5));
   TagVal *newRoot =
-    PeepHoleOptimizer::optimizeInlineInCCC(formalArgsShifted,args,root);
+    PeepHoleOptimizer::optimizeInlineInCCC(formalArgsShifted, args, root);
   if(newRoot != INVALID_POINTER)
     root = newRoot;
   else
-    CompileInlineCCC(formalArgsShifted,args);  
+    CompileInlineCCC(formalArgsShifted, args);  
 
   // save jitter state
   Vector *oldGlobalSubst = globalSubst;
@@ -2722,13 +2777,11 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
 #if PROFILE
   double startMs = Time::GetElapsedMicroseconds();
 #endif
-  
   BCJIT_DEBUG("start compilation (%"U_INTF" times) ", invocations);
   BCJIT_DEBUG("and compile the following abstract code:\n");
   Transform *transform =
     static_cast<Transform *>(hsc->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  
 #ifdef DEBUG_DISASSEMBLE 
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   std::fprintf(stderr, "\n%"U_INTF". compile function %s (%p) at %s:%"S_INTF".%"S_INTF" nArgs=%"S_INTF"\n",
@@ -2796,22 +2849,8 @@ void ByteCodeJitter::Compile(HotSpotCode *hsc) {
   sharedTable = IntMap::New(256);
 #endif
  
-  // prepare substituation
-  Vector *substInfo = Vector::FromWordDirect(abstractCode->Sel(1));
-  u_int nSubst      = substInfo->GetLength();
-  globalSubst       = Vector::New(nSubst);
-  for (u_int i=0, j=0; i<nSubst; i++) {
-    TagVal *valueOpt = TagVal::FromWord(substInfo->Sub(i));
-    TagVal *subst;
-    if (valueOpt != INVALID_POINTER) {
-      subst = TagVal::New1(AbstractCode::Immediate, valueOpt->Sel(0));
-    }
-    else {
-      subst = TagVal::New1(AbstractCode::Global, Store::IntToWord(j++));
-    }
-    globalSubst->Init(i, subst->ToWord());
-  }
-
+  globalSubst = Vector::FromWordDirect(abstractCode->Sel(1));
+  
   // prepare ByteCode WriteBuffer
   WriteBuffer::Init(); 
   PC = 0;

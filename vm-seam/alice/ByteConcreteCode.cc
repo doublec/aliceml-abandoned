@@ -17,6 +17,7 @@
 #include "alice/ByteConcreteCode.hh"
 #include "alice/ByteCode.hh"
 #include "alice/ByteCodeJitter.hh"
+#include "alice/ByteCodeSourceLocations.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/HotSpotConcreteCode.hh"
@@ -32,6 +33,7 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 						word immediateEnv,
 						word nbLocals,
 						word inlineInfo,
+						word uncurryInfo,
 						word sourceLocations) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(ByteCodeInterpreter::self, SIZE);
@@ -49,6 +51,7 @@ ByteConcreteCode *ByteConcreteCode::NewInternal(TagVal *abstractCode,
 		   ? Store::IntToWord(-1) : outArityOpt->Sel(0));
   concreteCode->Init(OUT_ARITY_POS, outArity);
   concreteCode->Init(INLINE_INFO_POS, inlineInfo);
+  concreteCode->Init(UNCURRY_INFO_POS, uncurryInfo);
   concreteCode->Init(SOURCE_LOCATIONS_POS, sourceLocations);
   concreteCode->Init(CLOSE_CONCRETE_CODES_POS, Map::New(8)->ToWord());
 
@@ -105,6 +108,9 @@ void ByteConcreteCode::Disassemble(std::FILE *file) {
 #ifdef THREADED
   ByteCode::Disassemble(file, reinterpret_cast<u_int *>(code->GetBase()), code, imEnv, GetNLocals());
 #else
-  ByteCode::Disassemble(file,0,code,imEnv, GetNLocals());
+  ByteCode::Disassemble(file, 0, code, imEnv, GetNLocals());
 #endif
+  std::stringstream ss;
+  ByteCodeSourceLocations::Print(abstractCode->Sel(0), GetSourceLocations(), ss);
+  std::fprintf(file, "\n%s", ss.str().c_str());
 }

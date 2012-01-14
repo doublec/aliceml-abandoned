@@ -553,7 +553,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputOption outputArity (context, outArityOpt);
  	     outputVector outputIdDef (context, args);
 	     outputAnnotation(context, localNamesTypOpt);
- 	     outputVector (outputOption outputValue) (context, globals);
+ 	     outputVector outputIdRef (context, globals);
  	     outputFunctionCoord (context, namedCoord);
  	     outputBlock (context, Label.function, 7))
   

@@ -41,18 +41,18 @@ bool ByteCodeSpecializer::Specialize(Closure *c) {
   }
   
   Vector *oldSubst = Vector::FromWordDirect(abstractCode->Sel(1));
-  Vector *subst = Vector::New(oldSubst->GetLength());
+  Vector *newSubst = Vector::New(oldSubst->GetLength());
   for (u_int i=0, j=0; i<oldSubst->GetLength(); i++) {
-    TagVal *valOpt = TagVal::FromWord(oldSubst->Sub(i));
-    if (valOpt == INVALID_POINTER) {
-      valOpt = TagVal::New1(Types::SOME, c->Sub(j++));
+    TagVal *idRef = TagVal::FromWordDirect(oldSubst->Sub(i));
+    if (AbstractCode::GetIdRef(idRef) == AbstractCode::Global) {
+      idRef = TagVal::New1(AbstractCode::Immediate, c->Sub(j++));
     }
-    subst->Init(i, valOpt->ToWord());
+    newSubst->Init(i, idRef->ToWord());
   }
 
   TagVal *newAbstractCode = TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
   newAbstractCode->Init(0, abstractCode->Sel(0));
-  newAbstractCode->Init(1, subst->ToWord());
+  newAbstractCode->Init(1, newSubst->ToWord());
   newAbstractCode->Init(2, abstractCode->Sel(2));
   newAbstractCode->Init(3, abstractCode->Sel(3));
   newAbstractCode->Init(4, abstractCode->Sel(4));
@@ -78,8 +78,9 @@ bool ByteCodeSpecializer::RecordCall(Closure* c) {
   
   if (cc != INVALID_POINTER && cc->GetInterpreter() == ByteCodeInterpreter::self) {
     ByteConcreteCode *bcc = reinterpret_cast<ByteConcreteCode*>(cc);
+    Vector *subst = Vector::FromWordDirect(bcc->GetAbstractCode()->Sel(1));
     
-    if (AbstractCode::GetNonSubstClosureSize(bcc->GetAbstractCode()) > 0) {
+    if (AbstractCode::GetNumberOfGlobals(subst) > 0) {
       Map *sc = Map::FromWordDirect(closures);
       word cWord = c->ToWord();
       u_int newN = Store::WordToInt(sc->CondGet(cWord, Store::IntToWord(0))) + 1;

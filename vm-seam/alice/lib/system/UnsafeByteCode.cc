@@ -793,7 +793,7 @@ namespace {
 
     // fake inline info, prevent assembled function from beeing inlined
     InlineInfo *inlineInfo = 
-      InlineInfo::New(Map::New(0), liveness, Vector::New(0), 100000);
+      InlineInfo::New(Map::New(0), Map::New(0), Map::New(0), liveness, Vector::New(0), 100000);
 
     ByteConcreteCode *bcc = 
       ByteConcreteCode::NewInternal(abstractCode,
@@ -801,6 +801,7 @@ namespace {
 				    imEnv->ToWord(),
 				    nbLocals,
 				    inlineInfo->ToWord(),
+				    Store::IntToWord(0),
 				    ByteCodeSourceLocations::Empty());
     return bcc->ToWord();
   }

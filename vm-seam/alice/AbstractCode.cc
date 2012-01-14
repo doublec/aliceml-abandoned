@@ -16,7 +16,17 @@
 
 #include <stack>
 #include "alice/AbstractCode.hh"
+#include "alice/AliceLanguageLayer.hh"
 #include <stdlib.h>
+#include <map>
+
+
+UncurryInfo* UncurryInfo::New(TagVal* abstractCode, u_int childArgsOffset) {
+  Tuple *t = Tuple::New(SIZE);
+  t->Init(CONCRETE_CODE_POS, AliceLanguageLayer::concreteCodeConstructor(abstractCode));
+  t->Init(CHILD_ARGS_OFFSET_POS, Store::IntToWord(childArgsOffset));
+  return reinterpret_cast<UncurryInfo*>(t);
+}
 
 
 static const char *opcodeNames[AbstractCode::nInstrs] = {
@@ -54,30 +64,117 @@ TagVal *AbstractCode::SkipDebugInstrs(TagVal *instr) {
 }
 
 
-u_int AbstractCode::GetCloseReturnLength(TagVal *abstractCode) {
+UncurryInfo *AbstractCode::MakeUncurryInfo(TagVal *clsTpl, Vector *clsIdRefs, Vector *parentIdDefs, Vector *parentSubst) {
   
-  TagVal *ins = TagVal::FromWordDirect(abstractCode->Sel(5));
-  ins = SkipDebugInstrs(ins);
+  u_int oldLocals = GetNumberOfLocals(clsTpl);
+  std::map<u_int, u_int> parentToNewIds; // maps a id from a parent idDef to an id on a the combined function
+  Vector *childIdDefs = Vector::FromWordDirect(clsTpl->Sel(3));
+  Vector *newIdDefs = Vector::New(parentIdDefs->GetLength() + childIdDefs->GetLength());
+  // the parents idDefs are placed before the childs
+  for (u_int i=0; i<parentIdDefs->GetLength(); i++) {
+    TagVal *idDef = TagVal::FromWord(parentIdDefs->Sub(i));
+    if (idDef == INVALID_POINTER) {
+      newIdDefs->Init(i, Store::IntToWord(Wildcard));
+    }
+    else {
+      u_int parentId = Store::DirectWordToInt(idDef->Sel(0));
+      u_int childId = oldLocals + parentToNewIds.size();
+      parentToNewIds[parentId] = childId;
+      newIdDefs->Init(i, TagVal::New1(IdDef, Store::IntToWord(childId))->ToWord());
+    }
+  }
+  newIdDefs->InitRange(parentIdDefs->GetLength(), childIdDefs);
+  u_int newLocals = oldLocals + parentToNewIds.size();
   
-  if (GetInstr(ins) == Close) {
-    word id = ins->Sel(0);
-    TagVal *tpl = TagVal::FromWordDirect(ins->Sel(2));
+  TagVal *newAnnot = TagVal::New1(Simple, Store::IntToWord(newLocals));
+  
+  Vector *oldLiveness = Vector::FromWordDirect(clsTpl->Sel(6));
+  Vector *newLiveness = Vector::New(newLocals * 2);
+  newLiveness->InitRange(0, oldLiveness);
+  u_int maxPP = GetMaxProgramPoint(clsTpl);
+  for(u_int i=oldLocals; i<newLocals; i++) {
+    newLiveness->Init(i*2,   Store::IntToWord(0));
+    newLiveness->Init(i*2+1, Store::IntToWord(maxPP));
+  }
+  
+  // the new code must work with the same closure as the parent code
+  Vector *newSubst = Vector::New(clsIdRefs->GetLength());
+  for(u_int i=0; i<newSubst->GetLength(); i++) {
+    TagVal *idRef = TagVal::FromWordDirect(clsIdRefs->Sub(i));
+    word res;
+    switch(GetInstr(idRef)) {
+      case Immediate: {
+	res = idRef->ToWord();
+	break;
+      }
+      case Global: {
+	u_int clsIndex = Store::DirectWordToInt(idRef->Sel(0));
+	TagVal *substIdRef = TagVal::FromWordDirect(parentSubst->Sub(clsIndex));
+	switch(GetIdRef(substIdRef)){
+	  case Immediate:
+	  case Global: {
+	    res = substIdRef->ToWord();
+	    break;
+	  }
+	  case Local:
+	  case LastUseLocal: {
+            u_int parentId = Store::DirectWordToInt(substIdRef->Sel(0));
+            Assert(parentToNewIds.count(parentId) == 1);
+	    u_int newId = parentToNewIds[parentId];
+	    res = TagVal::New1(Local, Store::IntToWord(newId))->ToWord();
+	    break;
+	  }
+	}
+	break;
+      }
+      case Local:
+      case LastUseLocal: {
+	u_int parentId = Store::DirectWordToInt(idRef->Sel(0));
+	Assert(parentToNewIds.count(parentId) == 1);
+	u_int newId = parentToNewIds[parentId];
+	res = TagVal::New1(Local, Store::IntToWord(newId))->ToWord();
+	break;
+      }
+    }
+    newSubst->Init(i, res);
+  }
+  
+  TagVal *abstractCode = TagVal::New(Function, functionWidth);
+  abstractCode->Init(0, clsTpl->Sel(0));
+  abstractCode->Init(1, newSubst->ToWord());
+  abstractCode->Init(2, newAnnot->ToWord());
+  abstractCode->Init(3, newIdDefs->ToWord());
+  abstractCode->Init(4, clsTpl->Sel(4));
+  abstractCode->Init(5, clsTpl->Sel(5));
+  abstractCode->Init(6, newLiveness->ToWord());
+  
+  return UncurryInfo::New(abstractCode, parentIdDefs->GetLength());
+}
+
+
+UncurryInfo *AbstractCode::GetUncurryInfo(TagVal *abstractCode) {
+  Vector *subst = Vector::FromWordDirect(abstractCode->Sel(1));
+  Vector *idDefs = Vector::FromWordDirect(abstractCode->Sel(3));
+  TagVal *fst = SkipDebugInstrs(TagVal::FromWordDirect(abstractCode->Sel(5)));
+  
+  if (GetInstr(fst) == Close) {
+    word clsId = fst->Sel(0);
+    Vector *clsIdRefs = Vector::FromWordDirect(fst->Sel(1));
+    TagVal *clsTpl = TagVal::FromWordDirect(fst->Sel(2));
+    TagVal *snd = SkipDebugInstrs(TagVal::FromWordDirect(fst->Sel(3)));
     
-    ins = TagVal::FromWordDirect(ins->Sel(3));
-    ins = SkipDebugInstrs(ins);
-    
-    if (GetInstr(ins) == Return) {
-      Vector *idRefs = Vector::FromWordDirect(ins->Sel(0));
-      if (idRefs->GetLength() == 1) {
-	TagVal *idRef = TagVal::FromWordDirect(idRefs->Sub(0));
-	if ((GetIdRef(idRef) == Local || GetIdRef(idRef) == LastUseLocal) && idRef->Sel(0) == id) {
-	  return 1 + GetCloseReturnLength(tpl);
+    if (GetInstr(snd) == Return) {
+      Vector *retIdRefs = Vector::FromWordDirect(snd->Sel(0));
+      if (retIdRefs->GetLength() == 1){
+	TagVal *idRef = TagVal::FromWordDirect(retIdRefs->Sub(0));
+	if ((GetIdRef(idRef) == Local || GetIdRef(idRef) == LastUseLocal) && idRef->Sel(0) == clsId) {
+	  return MakeUncurryInfo(clsTpl, clsIdRefs, idDefs, subst);
 	}
       }
     }
   }
   
-  return 0;
+  return INVALID_POINTER;
 }
 
 
@@ -173,6 +270,7 @@ s_int AbstractCode::GetNumProgramPoints(instr instr) {
       Assert(false);
   }
 }
+
 
 IntMap *AbstractCode::SharedInArity(TagVal *abstractCode) {
   
@@ -313,6 +411,186 @@ IntMap *AbstractCode::SharedInArity(TagVal *abstractCode) {
   }
   
   return sharedInArity;
+}
+
+
+u_int AbstractCode::GetMaxProgramPoint(TagVal *abstractCode) {
+  
+  // maps shared stamp => program point, for all Shared nodes yet encountered
+  IntMap *stamps = IntMap::New(32);
+  std::stack<word> toVisit;
+  u_int programPoint = 0;
+  
+  toVisit.push(abstractCode->Sel(5));
+  while (!toVisit.empty()) {
+    TagVal *instr = TagVal::FromWordDirect(toVisit.top());
+    toVisit.pop();
+    AbstractCode::instr instrOp = GetInstr(instr);
+    switch(instrOp) {
+      case Coord:
+      case Entry:
+      case Exit:
+      case EndTry:
+      case EndHandle:
+      case Kill:
+      case PutVar:
+      case PutNew:
+      case PutTag:
+      case PutCon:
+      case PutRef:
+      case PutTup:
+      case PutPolyRec:
+      case PutVec:
+      case Close:
+      case Specialize:
+      case GetRef:
+      case GetTup:
+      case Sel:
+      case LazyPolySel: {
+	programPoint += GetNumProgramPoints(instrOp);
+	toVisit.push(instr->Sel(GetContinuationPos(instrOp)));
+	break;
+      }
+      case AppPrim: {
+	TagVal *idDefInstrOpt = TagVal::FromWord(instr->Sel(2));
+	if(idDefInstrOpt == INVALID_POINTER) {
+	  programPoint++;
+	} else {
+	  Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
+	  programPoint += 2;
+	  toVisit.push(idDefInstr->Sel(1));
+	}
+	break;
+      }
+      case AppVar: {
+	TagVal *idDefsInstrOpt = TagVal::FromWord(instr->Sel(3));
+	if(idDefsInstrOpt == INVALID_POINTER) {
+	  programPoint++;
+	} else {
+	  Tuple *idDefsInstr = 
+	    Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+	  programPoint += 2;
+	  toVisit.push(idDefsInstr->Sel(1));
+	}
+	break;
+      }
+      case Raise:
+      case Reraise:
+      case Return: {
+	programPoint++;
+	break;
+      }
+      case Try: {
+	toVisit.push(instr->Sel(0));
+	programPoint++;
+	toVisit.push(instr->Sel(3));
+	break;
+      }
+      case CompactIntTest: {
+	programPoint++;
+	Vector *tests = Vector::FromWordDirect(instr->Sel(2)); 
+	u_int nTests = tests->GetLength();
+	for(u_int i=0; i<nTests; i++)
+	  toVisit.push(tests->Sub(i));
+	toVisit.push(instr->Sel(3));
+	break;
+      }
+      case IntTest:
+      case RealTest:
+      case StringTest: {
+	programPoint++;
+	Vector *tests = Vector::FromWordDirect(instr->Sel(1)); 
+	u_int nTests = tests->GetLength();
+	for(u_int i=0; i<nTests; i++) {
+	  Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+	  toVisit.push(pair->Sel(1));
+	}
+	toVisit.push(instr->Sel(2));
+	break;
+      }
+      case TagTest: {
+	programPoint++;
+	Vector *tests0 = Vector::FromWordDirect(instr->Sel(2));
+	u_int nTests0 = tests0->GetLength(); 
+	for(u_int i=0; i<nTests0; i++) {
+	  Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));
+	  toVisit.push(pair->Sel(1));
+	}	  
+	Vector *testsN = Vector::FromWordDirect(instr->Sel(3));
+	u_int nTestsN = testsN->GetLength(); 
+	for(u_int i=0; i<nTestsN; i++) {
+	  Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
+	  programPoint++;
+	  toVisit.push(triple->Sel(2));
+	}
+	toVisit.push(instr->Sel(4));
+	break;
+      }
+      case CompactTagTest: {
+	programPoint++;
+	Vector *tests = Vector::FromWordDirect(instr->Sel(2));
+	u_int nTests = tests->GetLength(); 
+	for(u_int i = 0; i<nTests; i++) {
+	  Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+	  TagVal *idDefsOpt = TagVal::FromWord(pair->Sel(0));
+	  if(idDefsOpt != INVALID_POINTER) {
+	    programPoint++;
+	  }
+	  toVisit.push(pair->Sel(1));
+	}
+	TagVal *elseInstrOpt = TagVal::FromWord(instr->Sel(3));
+	if(elseInstrOpt != INVALID_POINTER)
+	  toVisit.push(elseInstrOpt->Sel(0));
+	break;
+      }
+      case ConTest: {
+	programPoint++;
+	Vector *tests0 = Vector::FromWordDirect(instr->Sel(1));
+	u_int nTests0 = tests0->GetLength(); 
+	Vector *testsN = Vector::FromWordDirect(instr->Sel(2));
+	u_int nTestsN = testsN->GetLength(); 
+	for(u_int i=0; i<nTests0; i++) {
+	  Tuple *pair = Tuple::FromWordDirect(tests0->Sub(i));
+	  toVisit.push(pair->Sel(1));
+	}	  
+	for(u_int i=0; i<nTestsN; i++) {
+	  Tuple *triple = Tuple::FromWordDirect(testsN->Sub(i));
+	  programPoint++;
+	  toVisit.push(triple->Sel(2));
+	}
+	toVisit.push(instr->Sel(3));
+	break;
+      }
+      case VecTest: {
+	programPoint++;	  
+	Vector *tests = Vector::FromWordDirect(instr->Sel(1));
+	u_int nTests = tests->GetLength(); 
+	for(u_int i=0; i<nTests; i++) {
+	  Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
+	  Vector *idDefs = Vector::FromWordDirect(pair->Sel(0));
+	  if(idDefs->GetLength() > 0) {
+	    programPoint++;
+	  }
+	  toVisit.push(pair->Sel(1));
+	}
+	toVisit.push(instr->Sel(2));
+	break;
+      }
+      case Shared: {
+	word stamp = instr->Sel(0);
+	if(!stamps->IsMember(stamp)) {
+	  stamps->Put(stamp, Store::IntToWord(programPoint));
+	  toVisit.push(instr->Sel(1));
+	}
+	break;
+      }
+      default: {
+        Assert(false);
+      }
+    }
+  }
+  
+  return programPoint;
 }
   
 
