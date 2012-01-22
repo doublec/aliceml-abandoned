@@ -24,8 +24,10 @@ import structure FlatGrammar          from "FlatGrammar"
 import structure IntermediateAux      from "IntermediateAux"
 import signature SIMPLIFY_MATCH       from "SIMPLIFY_MATCH-sig"
 
+
 structure SimplifyMatch :> SIMPLIFY_MATCH =
     struct
+
 	structure I = IntermediateGrammar
 	structure O = FlatGrammar
 
@@ -179,6 +181,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun testMapIntersect (testMap1, testMap2) =
 	    PosMap.intersectWith testSetIntersect (testMap1, testMap2)
+
+	fun testMapIntersectAll []        = PosMap.empty
+	  | testMapIntersectAll (tm::tms) = List.foldl testMapIntersect tm tms
 
 	val entailed = testMapMember
 	fun disentailed (pos, test, testMap) =
@@ -537,13 +542,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 					     defaultTree))
 	  | propagateFails (Leaf (_, _), _, _) = ()
 	  | propagateFails ((Fail | Default | Unreachable _), _, _) =
-	    raise Crash.Crash "SimplifyMatch.propagateElses"
+	    raise Crash.Crash "SimplifyMatch.propagateFails"
 
 	(* Optimization of the Test Graph *)
 
 	(* In a first step (`Raw' annotations), compute for each node n
-	 * the list of all nodes that reach n through a `then' edge, and
-	 * the list of all the nodes that reach n through a `false' edge.
+	 * the list of all nodes that reach n directly through a `then'
+	 * edge, and the list of all the nodes that reach n directly
+	 * through an `else' edge.
 	 *
 	 * In a second step (`Cooked' annotations), compute for each edge
 	 * (i.e., reference to a graph) the maps (pos -> test) of tests that
@@ -584,13 +590,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun getSets (Node (pos, test, thenGraphRef, elseGraphRef,
 			       status as ref (Raw (thenPreds, elsePreds)))) =
 		let
-		    val thenTrueIn = intersect (#thenTrue, thenPreds)
-		    val thenFalseIn = intersect (#thenFalse, thenPreds)
-		    val elseTrueIn = intersect (#elseTrue, elsePreds)
-		    val elseFalseIn = intersect (#elseFalse, elsePreds)
-		    val elseTrue = testMapIntersect (thenTrueIn, elseTrueIn)
+		    val elseTrue = intersect (#thenTrue, thenPreds, #elseTrue, elsePreds)
 		    val thenTrue = testMapInsert (elseTrue, pos, test)
-		    val thenFalse = testMapIntersect (thenFalseIn, elseFalseIn)
+		    val thenFalse = intersect (#thenFalse, thenPreds, #elseFalse, elsePreds)
 		    val elseFalse = testMapInsert (thenFalse, pos, test)
 		    val sets = {thenTrue = thenTrue, thenFalse = thenFalse,
 				elseTrue = elseTrue, elseFalse = elseFalse}
@@ -610,12 +612,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | getSets (Node (_, _, _, _, ref (Cooked sets))) = SOME sets
 	      | getSets (Leaf (_, _)) = NONE
 	      | getSets _ = raise Crash.Crash "SimplifyMatch.getSets"
-	    and intersect (sel, graph::graphs) =
-		List.foldr (fn (graph, testMap) =>
-			    testMapIntersect (sel (valOf (getSets graph)),
-					      testMap))
-		(sel (valOf (getSets graph))) graphs
-	      | intersect (_, nil) = PosMap.empty
+
+	    and intersect (thenSel, thenPreds, elseSel, elsePreds) =
+		let
+		    val thenTestMaps = map (thenSel o valOf o getSets) thenPreds
+		    val elseTestMaps = map (elseSel o valOf o getSets) elsePreds
+		in
+		    testMapIntersectAll (thenTestMaps @ elseTestMaps)
+		end
 	in
 	    fun optimizeGraph graph =
 		(computeRaw (graph, NONE, NONE); getSets graph; graph)
@@ -843,6 +847,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 						\because e.g.\n    " ^
 						sample (nil, trueMap, falseMap)
 						^ "\nis not covered")
+
 			    val _ = propagateFails (graph, defaultGraph,
 						    defaultGraph)
 			    val graph' = optimizeGraph graph
