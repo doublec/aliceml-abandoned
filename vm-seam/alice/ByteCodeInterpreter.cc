@@ -697,20 +697,24 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 #define PRELUDE_RETURN3() PRELUDE_RETURN0()
 #define PRELUDE_RETURN()  GET_1I(codeBuffer,PC,nArgs)
 
+#define POSTLUDE_RETURN {				\
+      Scheduler::PopFrame(frame->GetSize());		\
+      StackFrame *newFrame = Scheduler::GetFrame();	\
+      /* dynamic test */ 				\
+      if(newFrame->GetWorker() == this) {		\
+	frame = reinterpret_cast<ByteCodeFrame*>(newFrame);	\
+	concreteCode = frame->GetConcreteCode();	\
+	LOADSTATE(PC, CP, IP);				\
+	DISPATCH(PC);					\
+      }							\
+      /* preempt check only in call instructions */	\
+      return Worker::CONTINUE; 				\
+    }
+
 #define SEAM_RETURN(NOA) {				\
 	PRELUDE_RETURN##NOA();				\
         SET_ARGS##NOA();				\
-	Scheduler::PopFrame(frame->GetSize());		\
-	StackFrame *newFrame = Scheduler::GetFrame();	\
-        /* dynamic test */ 				\
-	if(newFrame->GetWorker() == this) {		\
-	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);	\
-	  concreteCode = frame->GetConcreteCode();	\
-	  LOADSTATE(PC, CP, IP);			\
-	  DISPATCH(PC);					\
-	}						\
-	/* preempt check only in call instructions */	\
-        return Worker::CONTINUE; 			\
+        POSTLUDE_RETURN;				\
       }
 
     Case(seam_return)  SEAM_RETURN();
@@ -719,24 +723,20 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
     Case(seam_return2) SEAM_RETURN(2);
     Case(seam_return3) SEAM_RETURN(3);
 
-    // special case
     Case(seam_return_zero)
       {
 	Scheduler::SetNArgs(1);
 	Scheduler::SetCurrentArg(0, Store::IntToWord(0));
-	Scheduler::PopFrame(frame->GetSize());
-	StackFrame *newFrame = Scheduler::GetFrame();
-	/* dynamic test */
-	if(newFrame->GetWorker() == this) {
-	  frame = reinterpret_cast<ByteCodeFrame*>(newFrame);
-	  concreteCode = frame->GetConcreteCode();
-	  LOADSTATE(PC, CP, IP);
-	  DISPATCH(PC);
-	}
-	/* preemption check only in call instructions */
-	return Worker::CONTINUE; // pass control to scheduler
+	POSTLUDE_RETURN;
       }
-       
+
+    Case(seam_return_int)
+      {
+	GET_1I(codeBuffer, PC, val);
+	Scheduler::SetNArgs(1);
+	Scheduler::SetCurrentArg(0, Store::IntToWord(static_cast<s_int>(val)));
+	POSTLUDE_RETURN;
+      }
 
       /**************************************
        * closure building and initialization 
@@ -749,7 +749,7 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	SETREG(reg, closure->ToWord());
       }
       DISPATCH(PC);
-
+    
     Case(init_closure) // r0, r1, index
       {
 	GET_2R1I(codeBuffer,PC,r0,r1,index);
@@ -757,6 +757,22 @@ Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
 	closure->Init(index,GETREG(r1));
       }
       DISPATCH(PC);
+
+#define MK_CLOSURE_INIT(size) {						\
+	GET_1R1I(codeBuffer, PC, dst, codeAddr);			\
+	Closure *closure = Closure::New(IP->Sel(codeAddr), size);	\
+	for (u_int i=size; i--; ) {					\
+	  GET_1R(codeBuffer, PC, r);					\
+	  closure->Init(i, GETREG(r));					\
+	}								\
+	SETREG(dst, closure->ToWord());					\
+      }									\
+      DISPATCH(PC);
+
+    Case(mk_closure_init1) MK_CLOSURE_INIT(1);
+    Case(mk_closure_init2) MK_CLOSURE_INIT(2);
+    Case(mk_closure_init3) MK_CLOSURE_INIT(3);
+    Case(mk_closure_init4) MK_CLOSURE_INIT(4);
 
     Case(spec_closure) // r0, r1, template
       {

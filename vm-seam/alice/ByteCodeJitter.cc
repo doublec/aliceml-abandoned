@@ -790,11 +790,7 @@ TagVal *ByteCodeJitter::InstrPutTag(TagVal *pc) {
     default: SET_INSTR_1R2I(PC,new_tagval_init,dst,tag,nargs);    
     }
   }
-  // set arguments
-  for(u_int i = nargs; i--; ) {
-    u_int reg = regs[i];
-    SET_1R(PC,reg);
-  }
+  SET_NR_REV(PC, regs, nargs);
   
   return cont;
 }
@@ -914,16 +910,36 @@ TagVal *ByteCodeJitter::InstrClose(TagVal *pc) {
   u_int closureSize = AbstractCode::GetNumberOfGlobals(subst);
   
   u_int ccAddr = imEnv.Register(wConcreteCode);
-  SET_INSTR_1R2I(PC, mk_closure, dst, ccAddr, closureSize);
-  for (u_int i=0, j=0; i<nGlobals; i++) {
-    TagVal *substIdRef = TagVal::FromWord(subst->Sub(i));
-    if (AbstractCode::GetIdRef(substIdRef) == AbstractCode::Global) {
-      u_int reg = LoadIdRefKill(globalRefs->Sub(i), true);
-      SET_INSTR_2R1I(PC, init_closure, dst, reg, j);
-      j++;
+  if (closureSize >= 1 && closureSize <= 4) {
+    u_int args[closureSize];
+    
+    for (u_int i=0, j=0; i<nGlobals; i++) {
+      TagVal *substIdRef = TagVal::FromWord(subst->Sub(i));
+      if (AbstractCode::GetIdRef(substIdRef) == AbstractCode::Global) {
+	args[j++] = LoadIdRefKill(globalRefs->Sub(i));
+      }
+    }
+    
+    ByteCodeInstr::instr specials[] = {
+      mk_closure_init1,
+      mk_closure_init2,
+      mk_closure_init3,
+      mk_closure_init4
+    };
+    SET_INSTR_1R1I(PC, specials[closureSize-1], dst, ccAddr);
+    SET_NR_REV(PC, args, closureSize);
+  }
+  else {
+    SET_INSTR_1R2I(PC, mk_closure, dst, ccAddr, closureSize);
+    for (u_int i=0, j=0; i<nGlobals; i++) {
+      TagVal *substIdRef = TagVal::FromWord(subst->Sub(i));
+      if (AbstractCode::GetIdRef(substIdRef) == AbstractCode::Global) {
+	u_int reg = LoadIdRefKill(globalRefs->Sub(i), true);
+	SET_INSTR_2R1I(PC, init_closure, dst, reg, j);
+	j++;
+      }
     }
   }
-
   return cont;
 }
 
@@ -1064,10 +1080,7 @@ void ByteCodeJitter::CompileApplyPrimitive(Closure *closure,
   } else {
     SET_INSTR_3I(PC, callInstr, interpreterAddr, cFunctionAddr, nActualArgs);
   }
-  for(u_int i = nActualArgs; i--; ) {
-    u_int r = argRegs[i];
-    SET_1R(PC,r);
-  }
+  SET_NR_REV(PC, argRegs, nActualArgs);
 }
 
 
@@ -1175,10 +1188,7 @@ void ByteCodeJitter::CompileSelfCall(TagVal *instr, bool isTailcall) {
   } else {
     SET_INSTR_1I(PC,callInstr,nActualArgs);
   }
-  for(u_int i = nActualArgs; i--; ) {
-    u_int r = argRegs[i];
-    SET_1R(PC,r);
-  }
+  SET_NR_REV(PC, argRegs, nActualArgs);
 }
 
 
@@ -1204,9 +1214,7 @@ void ByteCodeJitter::CompileApplyImmediateUnchecked(Closure *closure, u_int *arg
   else {
     SET_INSTR_2I(PC, callInstr, closureAddr, nActualArgs);
   }
-  for(u_int i = nActualArgs; i--; ) {
-    SET_1R(PC, argRegs[i]);
-  }
+  SET_NR_REV(PC, argRegs, nActualArgs);
 }
 
 
@@ -1418,10 +1426,7 @@ TagVal *ByteCodeJitter::InstrAppVar(TagVal *pc) {
     } else {
       SET_INSTR_1R1I(PC,callInstr,closure,nActualArgs);
     }
-    for(u_int i = nActualArgs; i--; ) {
-      u_int r = argRegs[i];
-      SET_1R(PC,r);
-    }
+    SET_NR_REV(PC, argRegs, nActualArgs);
   } 
 
  compile_continuation: // nice hack ;-)
@@ -2198,9 +2203,14 @@ TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
     // check for specialized return instruction
     if(returnIdRefs->GetLength() == 1) {
       word val = ExtractImmediate(returnIdRefs->Sub(0));
-      if (PointerOp::IsInt(val) && Store::DirectWordToInt(val) == 0) {
-	SET_INSTR(PC, seam_return_zero);
-	return INVALID_POINTER;
+      if(PointerOp::IsInt(val)) {
+	if (val == Store::IntToWord(0)) {
+	  SET_INSTR(PC, seam_return_zero);
+	}
+	else {
+	  SET_INSTR_1I(PC, seam_return_int, Store::DirectWordToInt(val));
+	}
+        return INVALID_POINTER;
       }
     }
     // load arguments into registers
@@ -2222,10 +2232,7 @@ TagVal *ByteCodeJitter::InstrReturn(TagVal *pc) {
   } else {
     SET_INSTR_1I(PC,instr,nActualArgs);
   }
-  for(u_int i = nActualArgs; i--; ) {
-    u_int r = argRegs[i];
-    SET_1R(PC,r);
-  }
+  SET_NR_REV(PC, argRegs, nActualArgs);
 
   return INVALID_POINTER;
 }

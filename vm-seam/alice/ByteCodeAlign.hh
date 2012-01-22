@@ -155,7 +155,11 @@ class ByteCode; // forward declaration
 
 // set instructions + arguments
 #define SET_1I(index,i) ENCODE_1I(index,i)
-#define SET_1R(index,r) SET_1I(index,r)  
+#define SET_1R(index,r) SET_1I(index,r)
+#define SET_NR_REV(index, regs, n)		\
+  for (u_int i=n; i--; ) {			\
+    SET_1R(index, regs[i]);			\
+  }
 
 #define SET_INSTR(index,instr) ENCODE_INSTR(index,instr)	
 							
