@@ -233,8 +233,12 @@ private:
 
   word ExtractImmediate(word idRef);
 
-  TagVal *LookupSubst(u_int index) {
-    return TagVal::FromWordDirect(globalSubst->Sub(index));
+  TagVal *LookupSubst(TagVal *idRef) {
+    if (AbstractCode::GetIdRef(idRef) == AbstractCode::Global) {
+      u_int i = Store::DirectWordToInt(idRef->Sel(0));
+      return TagVal::FromWordDirect(globalSubst->Sub(i));
+    }
+    return idRef;
   }
 
   void LoadImmediateInto(u_int dst, word val);

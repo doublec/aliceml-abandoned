@@ -48,10 +48,7 @@ using namespace ByteCodeInstr;
 
 
 word ByteCodeJitter::ExtractImmediate(word idRef) {
-  TagVal *tagVal = TagVal::FromWordDirect(idRef);
-
-  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
-    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+  TagVal *tagVal = LookupSubst(TagVal::FromWordDirect(idRef));
 
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
@@ -255,11 +252,8 @@ void ByteCodeJitter::LoadImmediateInto(u_int dst, word val) {
 }
 
 void ByteCodeJitter::LoadIdRefInto(u_int dst, word idRef) {
-  TagVal *tagVal = TagVal::FromWordDirect(idRef);
-
-  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
-    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
-
+  TagVal *tagVal = LookupSubst(TagVal::FromWordDirect(idRef));
+  
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::LastUseLocal:
   case AbstractCode::Local:
@@ -287,10 +281,7 @@ void ByteCodeJitter::LoadIdRefInto(u_int dst, word idRef) {
 }
 
 u_int ByteCodeJitter::LoadIdRefKill(word idRef, bool useReusableScratch) {
-  TagVal *tagVal = TagVal::FromWordDirect(idRef);
-    
-  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
-    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+  TagVal *tagVal = LookupSubst(TagVal::FromWordDirect(idRef));
 
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::LastUseLocal: // TODO: include liveness table
@@ -821,18 +812,32 @@ void ByteCodeJitter::NewTupInto(u_int dst, Vector *idRefs) {
       u_int r0 = LoadIdRefKill(idRefs->Sub(0));
       u_int r1 = LoadIdRefKill(idRefs->Sub(1));
       u_int r2 = LoadIdRefKill(idRefs->Sub(2));
-      SET_INSTR_4R(PC,new_triple, dst, r0, r1, r2);
+      SET_INSTR_4R(PC, new_triple, dst, r0, r1, r2);
       break;
     }
     // also for 1-element Tuples! (e.g. for 1-element records)
     default: {
-     SET_INSTR_1R1I(PC, new_tup, dst, size);
-     for(u_int i=size; i--; ) {
-       u_int src = LoadIdRefKill(idRefs->Sub(i), true);
-       Assert(src != dst);
-       SET_INSTR_2R1I(PC, init_tup, dst, src, i);
-     }
-   }
+      // special case when dst conflicts with one of the idRefs
+      u_int useDst = dst;
+      for (u_int i=size; i--; ) {
+        TagVal *idRef = LookupSubst(TagVal::FromWord(idRefs->Sub(i)));
+        if(AbstractCode::GetIdRef(idRef) == AbstractCode::Local
+        || AbstractCode::GetIdRef(idRef) == AbstractCode::LastUseLocal) {
+          if (IdToReg(idRef->Sel(0)) == dst) {
+            useDst = GetNewScratch();
+            break;
+          }
+        }
+      }
+      SET_INSTR_1R1I(PC, new_tup, useDst, size);
+      for (u_int i=size; i--; ) {
+        u_int src = LoadIdRefKill(idRefs->Sub(i), true);
+        SET_INSTR_2R1I(PC, init_tup, useDst, src, i);
+      }
+      if (useDst != dst) {
+        SET_INSTR_2R(PC, load_reg, dst, useDst);
+      }
+    }
   }
 }
 
@@ -2588,55 +2593,13 @@ void ByteCodeJitter::CompileInlineCCC(Vector *formalArgs,
       SET_INSTR_1R(PC,await,reg);
     }
     break;
-  case 1:
-    switch(nArgs) {
-    case 0:
-      {
-	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
-	if(argOpt != INVALID_POINTER) {
-	  u_int dst = IdToReg(argOpt->Sel(0));	
-	  SET_INSTR_1R(PC,load_zero,dst); // load unit
-	}
-      }
-      break;
-    default:
-      {
-	Assert(nArgs > 1); // construct tuple into formal arg 0
-	TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
-	if(argOpt != INVALID_POINTER) {
-	  u_int dst = IdToReg(argOpt->Sel(0));
-	  switch(nArgs) {
-	  case 2:
-	  case 3:
-	    NewTupInto(dst, args); // special instr for pairs and triples
-	    break;
-	  default:
-	    {
-	      // analyse for conflicts
-	      u_int conflict = false;
-	      for(u_int i=nArgs; i--; ) {
-		TagVal *tagVal = TagVal::FromWordDirect(args->Sub(i));
-		u_int idRefTag = AbstractCode::GetIdRef(tagVal);
-		if(idRefTag == AbstractCode::Local ||
-		   idRefTag == AbstractCode::LastUseLocal) {
-		  u_int src = IdToReg(tagVal->Sel(0));
-		  if(src == dst) {
-		    conflict = true;
-		    break;
-		  }
-		}
-	      }
-	      u_int tupReg = conflict ? GetNewScratch() : dst;
-	      NewTupInto(tupReg, args);
-	      if(conflict) {
-		SET_INSTR_2R(PC,load_reg,dst,tupReg);
-	      }
-	    }
-	  }
-	}
-      }
+  case 1: {
+    TagVal *argOpt = TagVal::FromWord(formalArgs->Sub(0));
+    if(argOpt != INVALID_POINTER) {
+      NewTupInto(IdToReg(argOpt->Sel(0)), args);
     }
     break;
+  }
   default:
     BCJIT_DEBUG("inlined ccc nArgs %d, nFormals %d\n",nArgs,nFormalArgs);
     if(nArgs == 1) { // deconstruct tuple into formal args
