@@ -5,7 +5,6 @@
 
 
 import structure Type                  from "../../lib/rtt/Type"
-import structure IntMap                from "../infrastructure/IntMap"
 import structure StampMap              from "../common/StampMap"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
 import signature MINIMIZE              from "MINIMIZE-sig"
@@ -124,15 +123,13 @@ struct
         in
            case instr
 
-                (* there is no point having two Coords in a row *)
-             of Coord (_, next as Coord _)
-                => keep next
-
-                (* there is no point having a coord identical to a previous coord *)
-              | Coord (coord, instr)
+                (* remove adjacent coords, or coords that are equal to prevCoord *)
+             of Coord (coord, instr)
                 => if SOME coord = prevCoord
                    then keep instr
-                   else Coord (coord, new (coord, instr))
+                   else (case new (coord, instr)
+                           of ins as Coord _ => ins
+                            | ins            => Coord (coord, ins))
 
               | Entry (coord', ep, instr)
                 => Entry (coord', renameEntryPoint ep, new (coord', instr))
