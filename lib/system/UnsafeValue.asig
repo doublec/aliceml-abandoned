@@ -52,6 +52,9 @@ signature UNSAFE_VALUE_COMPONENT =
 		val taggedTuple: 'lab vector * int *
 				 'value vector -> 'sum_value
 
+		val conVal: 'con * ('lab * 'value) vector -> 'con_value
+		val conValTuple: 'con * 'value vector -> 'con_value
+
 		val prodPoly: ('lab * 'value) vector -> 'prod_value
 
 		val closure: 'code * 'value vector -> 'closure_value

@@ -328,6 +328,34 @@ DEFINE3(UnsafeValue_taggedTuple) {
   }
 } END
 
+DEFINE2(UnsafeValue_conVal) {
+  Block *tag = Store::WordToBlock(x0);
+  if (tag == INVALID_POINTER) {
+    REQUEST(x0);
+  }
+  DECLARE_VECTOR(labelValueVec, x1);
+  u_int length = labelValueVec->GetLength();
+  
+  if (length == 0) {
+    RETURN(x0);
+  }
+  RETURN_TAGGED(ConVal);
+} END
+
+DEFINE2(UnsafeValue_conValTuple) {
+  Block *tag = Store::WordToBlock(x0);
+  if (tag == INVALID_POINTER) {
+    REQUEST(x0);
+  }
+  DECLARE_VECTOR(values, x1);
+  u_int length = values->GetLength();
+  
+  if (length == 0) {
+    RETURN(x0);
+  }
+  RETURN_TAGGED_TUPLE(ConVal);
+} END
+
 DEFINE2(UnsafeValue_closure) {
   DECLARE_TAGVAL(abstractCode, x0);
   DECLARE_VECTOR(vector, x1);
@@ -388,7 +416,7 @@ DEFINE1(UnsafeValue_outArity) {
 
 AliceDll word UnsafeValue() {
   RequestInterpreter::Init();
-  Record *record = Record::New(24);
+  Record *record = Record::New(26);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
@@ -427,6 +455,10 @@ AliceDll word UnsafeValue() {
 		 UnsafeValue_tagged, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "taggedTuple",
 		 UnsafeValue_taggedTuple, 3);
+  INIT_STRUCTURE(record, "UnsafeValue", "conVal",
+		 UnsafeValue_conVal, 2);
+  INIT_STRUCTURE(record, "UnsafeValue", "conValTuple",
+		 UnsafeValue_conValTuple, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "closure",
 		 UnsafeValue_closure, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "prim",

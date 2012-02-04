@@ -67,6 +67,8 @@ structure UnsafeValue :
 		    (Label.t * Reflect.value) vector -> Reflect.value
 	val taggedTuple: Label.t vector * int *
 			 Reflect.value vector -> Reflect.value
+	val conVal: Reflect.value * (Label.t * Reflect.value) vector -> Reflect.value
+	val conValTuple: Reflect.value * Reflect.value vector -> Reflect.value
 	val inArity: Reflect.value -> int
 	val outArity : Reflect.value -> int
     end = UnsafeValue
@@ -636,6 +638,9 @@ functor MkValuePropagationPhase(val isCross: bool
 		SOME (rvalues, eager) => SOME (Vector.fromList rvalues, eager)
 	      | NONE => NONE
 
+	fun idRefToRValue (idRef, env) =
+	    valueToRValue (#1 (lookupEnv (env, idRef)))
+
 	fun labelIdRefVecToRValues (labelIdRefVec, env) =
 	    case Vector.foldr
 		     (fn (_, NONE) => NONE
@@ -677,6 +682,23 @@ functor MkValuePropagationPhase(val isCross: bool
 			SOME (UnsafeValue.tagged (labels, n, labelRValueVec),
 			      eager)
 		  | NONE => NONE
+
+	fun conValToRValue (idRef, args, env) =
+	    if isCross then NONE else
+	    let
+		val idRef = idRefToRValue (idRef, env)
+		val args  = argsToRValue (args, env)
+	    in
+		case (idRef, args)
+		  of (SOME (rv, true), SOME (OneArg rv', eager)) =>
+		      SOME (UnsafeValue.conValTuple (rv, #[rv']), eager)
+		   | (SOME (rv, true), SOME (TupArgs rv', eager)) =>
+		      SOME (UnsafeValue.conValTuple (rv, rv'), eager)
+		   | (SOME (rv, true), SOME (ProdArgs labelRValueVec, eager)) =>
+		      SOME (UnsafeValue.conVal (rv, labelRValueVec), eager)
+		   | _ =>
+		      NONE
+	    end
 
 	fun tupleToRValue (idRefs, env) =
 	    if isCross then NONE
@@ -1717,8 +1739,16 @@ functor MkValuePropagationPhase(val isCross: bool
 			(nil, TagExp (info, labels, n, args))
 	    end
 	  | vpExp (ConExp (info, idRef, args), env, _, _, _) =
-(*--** construct statically if possible *)
-	    (nil, ConExp (info, deref (idRef, env), derefArgs (args, env)))
+	    let
+		val idRef = deref (idRef, env)
+		val args  = derefArgs (args, env)
+	    in
+		case conValToRValue (idRef, args, env)
+		  of SOME (rvalue, eager) =>
+		     (nil, VarExp (info, Value (rvalue, eager)))
+		   | NONE =>
+			 (nil, ConExp (info, idRef, args))
+	    end
 	  | vpExp (RefExp (info, idRef), env, _, _, _) =
 	    (nil, RefExp (info, deref (idRef, env)))
 	  | vpExp (TupExp (info, idRefs), env, _, _, _) =
