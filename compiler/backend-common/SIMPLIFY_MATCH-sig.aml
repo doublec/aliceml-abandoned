@@ -51,9 +51,8 @@ signature SIMPLIFY_MATCH =
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
-	  | Leaf of O.body * O.body option ref
+	  | Leaf of O.body * O.body option ref * bool
 	  | Fail
-	  | Default
 	  | Unreachable of testGraph
 	and nodeStatus =
 	    Initial

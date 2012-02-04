@@ -982,18 +982,19 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | translateGraph (Node (_, _, _, _, ref (Translated stms)),
 			    mapping, _) =
 	    (stms, mapping)
-	  | translateGraph (Leaf (stms, stmsOptRef as ref NONE), mapping, _) =
+	  | translateGraph (Leaf (stms, stmsOptRef as ref NONE, default), mapping, _) =
 	    let
 		val stms' = share stms
 	    in
 		stmsOptRef := SOME stms'; (stms', mapping)
 	    end
-	  | translateGraph (Leaf (_, ref (SOME stms)), mapping, _) =
+	  | translateGraph (Leaf (_, ref (SOME stms), default), mapping, _) =
 	    (stms, mapping)
 	  | translateGraph (Unreachable graph, mapping, region) =
 	    translateGraph (graph, mapping, region)
 	  | translateGraph (_, _, _) =
 	    raise Crash.Crash "MkFlatteningPhase.translateGraph"
+
 	and translateNode (pos, RefTest stamp, thenGraph, _, mapping, region) =
 	    let
 		val (idDef, mapping') =
@@ -1112,6 +1113,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		([O.TestStm (region, idRef, tests, elseBody)], mapping''')
 	    end
+
 	and translateArgs (O.OneArg _, pos, mapping) =
 	    let
 		val (idDef, mapping') = adjoin (pos, mapping)
@@ -1132,6 +1134,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(O.ProdArgs labelIdDefVec, mapping')
 	    end
+
 	and translateTupArgs (n, pos, mapping) =
 	    let
 		val (idDefs, mapping) =
@@ -1140,6 +1143,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(Vector.fromList idDefs, mapping)
 	    end
+
 	and translateTupArgs' (i, n, pos, mapping) =
 	    let
 		val (idDefs, mapping) =
@@ -1150,6 +1154,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(idDef::idDefs, mapping)
 	    end
+
 	and translateProdArgs (labels, pos, mapping) =
 	    let
 		val (labelIdDefList, mapping) =
@@ -1164,6 +1169,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(Vector.fromList labelIdDefList, mapping)
 	    end
+
 	and stepPoint (info as {region, ...}, entryPoint, exp, exitPoint,
 		       f, cont) =
 	    if !Switches.CodeGen.debugMode andalso region <> Source.nowhere

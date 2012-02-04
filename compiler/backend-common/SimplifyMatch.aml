@@ -362,9 +362,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
-	  | Leaf of O.body * O.body option ref
+	  | Leaf of O.body * O.body option ref * bool
 	  | Fail
-	  | Default
 	  | Unreachable of testGraph
 	and nodeStatus =
 	    Initial
@@ -452,11 +451,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		     testMapToString elseFalse ^ "]\n"
 	       | _ => "") ^
 	    graphToString (elseGraph, level + 1)
-	  | graphToString (Leaf (body, _), level) =
-	    indent level ^ "leaf " ^
+	  | graphToString (Leaf (body, _, default), level) =
+	    indent level ^ (if default then "default " else "leaf ") ^
 	    (Source.regionToString (O.infoStm (List.hd body))) ^ "\n"
 	  | graphToString (Fail, level) = indent level ^ "fail\n"
-	  | graphToString (Default, level) = indent level ^ "default\n"
 	  | graphToString (Unreachable graph, level) =
 	    indent level ^ "unreachable\n" ^
 	    graphToString (graph, level + 1)
@@ -529,19 +527,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Elimination of Backtracking, Producing a Test Graph *)
 
-	fun propagateFails (Node (_, _, thenTreeRef, elseTreeRef, _),
-			    contTree, defaultTree) =
+	fun propagateFails (Node (_, _, thenTreeRef, elseTreeRef, _), contTree) =
 	    (case !elseTreeRef of
 		 Fail => elseTreeRef := contTree
-	       | Default => elseTreeRef := defaultTree
-	       | elseTree => propagateFails (elseTree, contTree, defaultTree);
+	       | elseTree => propagateFails (elseTree, contTree);
 	     case !thenTreeRef of
 		 Fail => thenTreeRef := contTree
-	       | Default => thenTreeRef := defaultTree
-	       | thenTree => propagateFails (thenTree, !elseTreeRef,
-					     defaultTree))
-	  | propagateFails (Leaf (_, _), _, _) = ()
-	  | propagateFails ((Fail | Default | Unreachable _), _, _) =
+	       | thenTree => propagateFails (thenTree, !elseTreeRef))
+	  | propagateFails (Leaf _, _) = ()
+	  | propagateFails ((Fail | Unreachable _), _) =
 	    raise Crash.Crash "SimplifyMatch.propagateFails"
 
 	(* Optimization of the Test Graph *)
@@ -610,7 +604,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    SOME sets
 		end
 	      | getSets (Node (_, _, _, _, ref (Cooked sets))) = SOME sets
-	      | getSets (Leaf (_, _)) = NONE
+	      | getSets (Leaf _) = NONE
 	      | getSets _ = raise Crash.Crash "SimplifyMatch.getSets"
 
 	    and intersect (thenSel, thenPreds, elseSel, elsePreds) =
@@ -622,7 +616,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	in
 	    fun optimizeGraph graph =
-		(computeRaw (graph, NONE, NONE); getSets graph; graph)
+		ignore(computeRaw (graph, NONE, NONE); getSets graph)
 	end
 
 	(* Check for exhaustiveness *)
@@ -795,12 +789,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			(check (trueMap, falseMap', conts, elseGraph);
 			 check (trueMap', falseMap, nil, thenGraph))
 	    end
-	  | check (trueMap, falseMap, conts, Leaf (_, _)) = ()
+	  | check (trueMap, falseMap, conts, Leaf (_, _, false)) = ()
+	  | check (trueMap, falseMap, conts, Leaf (_, _, true)) =
+		raise NonExhaustive (trueMap, falseMap)
 	  | check (trueMap, falseMap, nil, Fail) = ()	(* pruned *)
 	  | check (trueMap, falseMap, graph::conts, Fail) =
 		check (trueMap, falseMap, conts, graph)
-	  | check (trueMap, falseMap, conts, Default) =
-		raise NonExhaustive (trueMap, falseMap)
 	  | check (trueMap, falseMap, conts, Unreachable _) =
 		raise Crash.Crash "SimplifyMatch.checkExhaustiveness"
 
@@ -814,6 +808,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun buildGraph (region, matches, defaultBody, check) =
 	    let
+		val defaultGraph = Leaf (defaultBody, ref NONE, true)
 		val (graph, consequents) =
 		    Vector.foldr (fn ((region, pat, thenBody),
 				      (elseTree, consequents)) =>
@@ -822,16 +817,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				      val (testSeq, _) =
 					  makeTestSeq (pat', nil, nil, nil)
 				      val r = ref NONE
-				      val leaf = Leaf (thenBody, r)
+				      val leaf = Leaf (thenBody, r, false)
 				  in
 				      (mergeIntoTree (List.rev testSeq,
 						      leaf, elseTree),
 				       (region, r)::consequents)
-				  end) (Default, nil) matches
-		val defaultGraph = Leaf (defaultBody, ref NONE)
+				  end) (defaultGraph, nil) matches
 	    in
 		case graph of
-		    Default =>
+		    Leaf (_, _, true) =>
 			(Error.warn' (true, region, "match is void");
 			 (defaultGraph, consequents))
 		  | _ =>
@@ -847,12 +841,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 						\because e.g.\n    " ^
 						sample (nil, trueMap, falseMap)
 						^ "\nis not covered")
-
-			    val _ = propagateFails (graph, defaultGraph,
-						    defaultGraph)
-			    val graph' = optimizeGraph graph
+			    val _ = propagateFails (graph, defaultGraph)
+			    val _ = optimizeGraph graph
 			in
-			    (graph', consequents)
+			    (graph, consequents)
 			end
 	    end
 
