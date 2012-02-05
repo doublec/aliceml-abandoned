@@ -51,8 +51,8 @@ namespace {
   };
 
   u_int executedInstrCounts[ByteCodeInstr::NUMBER_OF_INSTRS];
-  Stat<u_int> numRegs, numInstrs, numBytes, immediateSize,
-    sourceLocsSize, numInlineAppVars, closeReturnLength;
+  Stat<u_int> numRegs, numInstrs, numBytes, immediateSize, sourceLocsSize,
+    closureSize, numInlineAppVars, closeReturnLength;
   Stat<double> compilationMilliseconds;
 
 }
@@ -78,6 +78,7 @@ void AliceProfiler::ByteCodeCompiled(ByteConcreteCode *bcc, double elapsedMicros
   numInstrs.Sample(ByteCode::NumInstrs(bcc->GetByteCode(), bcc->GetImmediateArgs()));
   immediateSize.Sample(reinterpret_cast<Block*>(bcc->GetImmediateArgs())->GetSize());
   sourceLocsSize.Sample(ByteCodeSourceLocations::Size(bcc->GetSourceLocations()));
+  closureSize.Sample(AbstractCode::GetClosureSize(abstractCode));
   numInlineAppVars.Sample(bcc->GetInlineInfo()->NumInlinedAppVars());
   closeReturnLength.Sample(GetCloseReturnLength(abstractCode));
   compilationMilliseconds.Sample(elapsedMicroseconds / 1000.0);
@@ -117,6 +118,7 @@ void AliceProfiler::DumpInfo() {
     numInstrs.Dump(out, "bytecode size (instrs)");
     immediateSize.Dump(out, "immediate size (values)");
     sourceLocsSize.Dump(out, "source locations size (nodes)");
+    closureSize.Dump(out, "required closure size");
     numInlineAppVars.Dump(out, "inlined app vars (recursive)");
     closeReturnLength.Dump(out, "close-return length");
   }

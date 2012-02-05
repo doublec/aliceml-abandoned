@@ -154,6 +154,10 @@ public:
     }
   }
   
+  static u_int GetClosureSize(TagVal *abstractCode) {
+    return GetNumberOfGlobals(Vector::FromWordDirect(abstractCode->Sel(1)));
+  }
+  
   static u_int GetNumberOfGlobals(Vector *idRefs) {
     u_int n = 0;
     for (u_int i=0; i<idRefs->GetLength(); i++){
