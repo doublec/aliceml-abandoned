@@ -78,6 +78,9 @@ namespace {
     }
   };
 
+  /**
+   * A set of file-descriptors that are awaiting (read/write/connect)abilty
+   */
   class Set: private Queue {
   private:
     static const u_int initialQueueSize = 8; //--** to be checked
@@ -88,13 +91,23 @@ namespace {
     static Set *New() {
       return static_cast<Set *>(Queue::New(initialQueueSize));
     }
+    
     static Set *FromWordDirect(word w) {
       return static_cast<Set *>(Queue::FromWordDirect(w));
     }
 
-    void Add(Entry *entry) {
+    Future *Add(int fd) {
+      for (u_int i=0; i<GetNumberOfElements(); i++) {
+        Entry *entry = Entry::FromWordDirect(GetNthElement(i));
+        if (entry->GetFD() == fd) {
+          return entry->GetFuture();
+        }
+      }
+      Entry *entry = Entry::New(fd, Future::New());
       Enqueue(entry->ToWord());
+      return entry->GetFuture();
     }
+    
     void Remove(int fd) {
       u_int n = GetNumberOfElements();
       for (u_int i = 0; i < n; i++) {
@@ -108,6 +121,7 @@ namespace {
         }
       }
     }
+    
     void EnterIntoFDSet(fd_set *fdSet, int *maxFD) {
       for (u_int i = GetNumberOfElements(); i--; ) {
         int fd = Entry::FromWordDirect(GetNthElement(i))->GetFD();
@@ -115,6 +129,7 @@ namespace {
         FD_SET(fd, fdSet);
       }
     }
+    
     void Schedule(fd_set *fdSet) {
       u_int n = GetNumberOfElements();
       for (u_int i = 0; i < n; i++) {
@@ -305,10 +320,7 @@ Future *IOHandler::WaitReadable(int fd) {
       goto retry;
     Error("IOHandler::WaitReadable");
   } else if (ret == 0) {
-    Future *future = Future::New();
-    Entry *entry = Entry::New(fd, future);
-    Set::FromWordDirect(Readable)->Add(entry);
-    return future;
+    return Set::FromWordDirect(Readable)->Add(fd);
   } else {
     return INVALID_POINTER;
   }
@@ -345,19 +357,14 @@ Future *IOHandler::WaitWritable(int fd) {
       goto retry;
     Error("IOHandler::WaitWritable");
   } else if (ret == 0) {
-    Future *future = Future::New();
-    Entry *entry = Entry::New(fd, future);
-    Set::FromWordDirect(Writable)->Add(entry);
-    return future;
+    return Set::FromWordDirect(Writable)->Add(fd);
   } else {
     return INVALID_POINTER;
   }
 }
 
 Future *IOHandler::WaitConnected(int fd) {
-  Entry *entry = Entry::New(fd, Future::New());
-  Set::FromWordDirect(Connected)->Add(entry);
-  return entry->GetFuture();
+  return Set::FromWordDirect(Connected)->Add(fd);
 }
 
 void IOHandler::Close(int fd) {
