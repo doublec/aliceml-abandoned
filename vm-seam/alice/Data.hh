@@ -544,9 +544,16 @@ public:
     Assert(length >= 0 && length <= maxLen);
     return static_cast<Word8Vector *>(String::New(length));
   }
+  
+  static Word8Vector *New(const char *data, u_int length) {
+    Assert(length >= 0 && length <= maxLen);
+    return static_cast<Word8Vector *>(String::New(data, length));
+  }
+  
   static Word8Vector *FromWord(word x) {
     return static_cast<Word8Vector *>(String::FromWord(x));
   }
+  
   static Word8Vector *FromWordDirect(word x) {
     return static_cast<Word8Vector *>(String::FromWordDirect(x));
   }
@@ -554,21 +561,25 @@ public:
   u_int GetLength() {
     return GetSize();
   }
+  
   void Init(u_int index, word value) {
     Assert(index < GetSize());
     s_int i = Store::WordToInt(value);
     Assert(i >= -128 && i <= 127);
     GetValue()[index] = static_cast<u_char>(i);
   }
+  
   void InitChunk(u_int index, u_int size, const u_char *chunk) {
     Assert(index + size <= GetSize());
     u_char *base = GetValue();
     memcpy(base + index, chunk, size);
   }
+  
   void LateInit(u_int index, word value) {
     // This is only meant to be called by Vector.tabulate
     Init(index, value);
   }
+  
   word Sub(u_int index) {
     return Store::IntToWord(static_cast<signed char>(GetValue()[index]));
   }
