@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 set -e
 
@@ -53,7 +53,7 @@ if [ "x${AUTOMAKE}" != "x" ]; then
 		rm -f aclocal.m4 configure
 		find . -name Makefile.in | xargs rm -f
 		echo "### - reconfiguring the source" >&2
-		libtoolize --automake && aclocal && automake && autoconf &&
+		libtoolize --automake && aclocal && automake --add-missing && autoconf &&
 		./configure --prefix="${prefix}" &&
 		echo "### - building and installing" >&2
 		make all install
