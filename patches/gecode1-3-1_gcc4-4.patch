@@ -1,6 +1,8 @@
---- gecode/int/count.hh	2006-11-01 14:03:27.000000000 +0000
-+++ gecode/int/count.hh.new	2010-11-20 11:19:06.823329578 +0000
-@@ -240,7 +240,7 @@
+diff --git a/gecode/int/count.hh b/gecode/int/count.hh
+index c509654..a812855 100644
+--- a/gecode/int/count.hh
++++ b/gecode/int/count.hh
+@@ -240,7 +240,7 @@ namespace Gecode { namespace Int { namespace Count {
      /// Number of views which are equal and have been eliminated
      int   c;
      /// Constructor for cloning \a p
@@ -9,7 +11,7 @@
      /// Constructor for creation
      BaseView(Space* home, ViewArray<VX>& x, VY y, VZ z, int c);
    public:
-@@ -280,12 +280,12 @@
+@@ -280,12 +280,12 @@ namespace Gecode { namespace Int { namespace Count {
      using BaseView<VX,VY,VZ,shr>::atmost;
  
      /// Constructor for cloning \a p
@@ -24,7 +26,7 @@
      /// Perform propagation
      virtual ExecStatus propagate(Space* home);
      /// Post propagator for \f$\#\{i\in\{0,\ldots,|x|-1\}\;|\;x_i=y\}=z+c\f$
-@@ -313,12 +313,12 @@
+@@ -313,12 +313,12 @@ namespace Gecode { namespace Int { namespace Count {
      using BaseView<VX,VY,VZ,shr>::atmost;
  
      /// Constructor for cloning \a p
@@ -39,7 +41,7 @@
      /// Perform propagation
      virtual ExecStatus propagate(Space* home);
      /// Post propagator for \f$\#\{i\in\{0,\ldots,|x|-1\}\;|\;x_i=y\}\neq z+c\f$
-@@ -346,12 +346,12 @@
+@@ -346,12 +346,12 @@ namespace Gecode { namespace Int { namespace Count {
      using BaseView<VX,VY,VZ,shr>::atmost;
  
      /// Constructor for cloning \a p
@@ -54,7 +56,7 @@
      /// Perform propagation
      virtual ExecStatus propagate(Space* home);
      /// Post propagator for \f$\#\{i\in\{0,\ldots,|x|-1\}\;|\;x_i=y\}\leq z+c\f$
-@@ -379,7 +379,7 @@
+@@ -379,7 +379,7 @@ namespace Gecode { namespace Int { namespace Count {
      using BaseView<VX,VY,VZ,shr>::atmost;
  
      /// Constructor for cloning \a p
@@ -63,3 +65,60 @@
    public:
      /// Constructor for creation
      GqView(Space* home, ViewArray<VX>& x, VY y, VZ z, int c);
+diff --git a/gecode/int/count/view.icc b/gecode/int/count/view.icc
+index 0c1108f..e2d5d43 100755
+--- a/gecode/int/count/view.icc
++++ b/gecode/int/count/view.icc
+@@ -124,7 +124,7 @@ namespace Gecode { namespace Int { namespace Count {
+ 			     ViewArray<VX>& x, VY y, VZ z, int c) {
+     if (z.assigned())
+       return EqInt<VX,VY>::post(home,x,y,z.val()+c);
+-    if (sharing(x,y,z))
++    if (EqView::sharing(x,y,z))
+       (void) new (home) EqView<VX,VY,VZ,true>(home,x,y,z,c);
+     else
+       (void) new (home) EqView<VX,VY,VZ,false>(home,x,y,z,c);
+@@ -236,7 +236,7 @@ namespace Gecode { namespace Int { namespace Count {
+ 			     VY y, VZ z, int c) {
+     if (z.assigned())
+       return LqInt<VX,VY>::post(home,x,y,z.val()+c);
+-    if (sharing(x,y,z))
++    if (LqView::sharing(x,y,z))
+       (void) new (home) LqView<VX,VY,VZ,true>(home,x,y,z,c);
+     else
+       (void) new (home) LqView<VX,VY,VZ,false>(home,x,y,z,c);
+@@ -289,7 +289,7 @@ namespace Gecode { namespace Int { namespace Count {
+ 			     ViewArray<VX>& x, VY y, VZ z, int c) {
+     if (z.assigned())
+       return GqInt<VX,VY>::post(home,x,y,z.val()+c);
+-    if (sharing(x,y,z))
++    if (GqView::sharing(x,y,z))
+       (void) new (home) GqView<VX,VY,VZ,true>(home,x,y,z,c);
+     else
+       (void) new (home) GqView<VX,VY,VZ,false>(home,x,y,z,c);
+diff --git a/gecode/int/linear/dom.icc b/gecode/int/linear/dom.icc
+index 72a0e69..83e10a6 100755
+--- a/gecode/int/linear/dom.icc
++++ b/gecode/int/linear/dom.icc
+@@ -407,7 +407,7 @@ namespace Gecode { namespace Int { namespace Linear {
+       ExecStatus es = prop_bnd<Val,View,View>(this,home,x,y,c);
+       if ((es == ES_SUBSUMED) || (es == ES_FAILED))
+ 	return es;
+-      return ES_FIX_PARTIAL(View::pme(ME_INT_DOM));
++      return this->ES_FIX_PARTIAL(View::pme(ME_INT_DOM));
+     }
+ 
+     // Value of equation for partial assignment
+diff --git a/gecode/int/var/imp-hdr.icc b/gecode/int/var/imp-hdr.icc
+index 6ae1266..d52bf71 100644
+--- a/gecode/int/var/imp-hdr.icc
++++ b/gecode/int/var/imp-hdr.icc
+@@ -1,7 +1,7 @@
+ /*
+  *  CAUTION:
+  *    This file has been automatically generated.
+- *    Do not edit, edit the file "../trunk/gecode/int/var-imp.vis" instead.
++ *    Do not edit, edit the file "gecode/int/var-imp.vis" instead.
+  *
+  *  This file contains generated code fragments which are 
+  *  copyrighted as follows:

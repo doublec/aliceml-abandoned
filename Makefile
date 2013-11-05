@@ -147,7 +147,7 @@ setup:
 	mkdir -p $(PWD)/seam/build
 	(cd $(PWD)/seam && hg clone $(HGROOT)seam sources)
 	mkdir -p $(PWD)/gecode/build
-	(cd $(PWD)/gecode && wget $(GECODE_URL) -O - | tar xz && mv $(GECODE_ARCHIVE_NAME) sources && cd sources && patch -p0 < $(PWD)/make/patches/gecode1-3-1_gcc4-4.patch)
+	(cd $(PWD)/gecode && wget $(GECODE_URL) -O - | tar xz && mv $(GECODE_ARCHIVE_NAME) sources && cd sources && patch -p1 < $(PWD)/make/patches/gecode1-3-1_gcc4-4.patch)
 	mkdir -p $(PWD)/alice/build
 	(cd $(PWD)/alice && hg clone $(HGROOT)alice sources)
 	@echo Setup complete.
