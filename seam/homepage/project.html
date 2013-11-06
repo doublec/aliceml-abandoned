@@ -1,0 +1,48 @@
+<?php
+  include("/services/ps/httpd/html/pslab.php");
+
+  function alice_project_header($title) {
+    global $baseurl;
+    $baseurl = "";
+    pslab_bibheader($title);
+    $baseurl = "/seam";
+?>
+
+    <P class=margin>
+      <?php pslab_uni(); ?>
+      <?php pslab_menu(); ?>
+      <BR><BR>
+      <A href="http://www.coli.uni-sb.de/sfb378/"
+	><IMG src="/images/sfb378.gif" border=0 vspace=8></A>
+    </P>
+<?php
+  }
+
+  $suburls =
+    array(array("text" => "Home",
+		"url"  => "index.html"),
+	  array("text" => "People",
+		"url"  => "people.html"),
+	  array("text" => "Papers",
+		"url"  => "papers.html"),
+	  array("text" => "",
+		"url"  => ""),
+	  array("text" => "Manual",
+		"url"  => "manual/"),
+	  array("text" => "Download",
+		"url"  => "download.html"),
+	  array("text" => "Contact",
+		"url"  => "people.html"));
+
+ function pslab_header1($title) {
+   echo "<H1>$title</H1>\n";
+ }
+
+ function pslab_header2($title) {
+   echo "<H2>$title</H2>\n";
+ }
+
+ function pslab_header3($title) {
+   echo "<H3>$title</H3>\n";
+ }
+?>

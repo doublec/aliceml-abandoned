@@ -1,0 +1,22 @@
+Package: seam
+Version: 1.3
+Revision: 1
+Source: http://www.ps.uni-sb.de/alice/download/sources/%n-%v.tar.gz
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+HomePage: http://www.ps.uni-sb.de/alice
+License: BSD
+Description: The Simple Extensible Abstract Machine
+Source-MD5: INSERTMD5HERE
+ConfigureParams: --disable-lightning
+CompileScript: <<
+make -f Makefile.cvs autotools LIBTOOLIZE=glibtoolize
+./configure %c
+sed -i -e '/whole_archive_flag_spec=\"*\"/d' libtool
+make
+<<
+Depends: seam-shlibs (= %v-%r)
+BuildDependsOnly: True
+SplitOff: <<
+  Package: seam-shlibs
+  Files: lib/libseam*.dylib
+<<

@@ -1,0 +1,534 @@
+<?php
+  include("../project.html");
+
+  alice_project_header("The Abstract Store");
+?>
+<P>
+The store manages the allocation of nodes and
+their efficient layout in memory.</P>
+<PRE>
+class SeamDll Store : public StatusWord {
+public:
+  static void InitStore(u_int mem_max[STORE_GENERATION_NUM],
+			u_int mem_free, u_int mem_tolerance);
+  static void CloseStore();
+
+  static void DoGC(word &root);
+  static void DoGCWithoutFinalize(word &root);
+  static void DoFinalize();
+  static void SetGCParams(u_int mem_free, u_int mem_tolerance);
+  static u_int NeedGC();
+
+  static BlockLabel MakeLabel(u_int l);
+  static Block *AllocBlock(BlockLabel l, u_int s, u_int gen = 0);
+  static Chunk *AllocChunk(u_int s, u_int gen = 0);
+  static Transient *AllocTransient(BlockLabel l);
+  static DynamicBlock *AllocDynamicBlock(u_int size, u_int scan, u_int g = 0);
+  static word IntToWord(s_int v);
+  static word UnmanagedPointerToWord(void *v);
+
+  static Block *WordToBlock(word v);
+  static Chunk *WordToChunk(word v);
+  static Transient *WordToTransient(word v);
+  static s_int WordToInt(word v);
+  static void *WordToUnmanagedPointer(word x);
+
+  static s_int DirectWordToInt(word x);
+  static Block *DirectWordToBlock(word x);
+  static Transient *DirectWordToTransient(word v);
+  static Chunk *DirectWordToChunk(word x);
+  static void *DirectWordToUnmanagedPointer(word x);
+};
+</PRE>
+<HR>
+<CENTER>The Store Interface</CENTER>
+
+<?php pslab_header2("Initilization") ?>
+
+<DL>
+  <DT><TT>InitStore(mem_max[STORE_GENERATION_NUM], mem_free, mem_tolerance)</TT>
+  </DT>
+  <DD>
+   <P>The static constructor function. It is given the initial memory limits
+      in bytes for each generation in <TT>mem_max</TT> together with garbage
+      colletion threshold parameter <TT>mem_free</TT>,
+      denoting the amount of free memory required in the oldest generation
+      after a major collection within the tolerance <TT>mem_tolerance</TT>
+      given in percent.
+   </P>
+  </DD>
+  <DT><TT>CloseStore()</TT>
+  </DT>
+  <DD>
+    <P>The static destructor.</P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Garbage Collection"); ?>
+
+<DL>
+  <DT><TT>DoGC(root)</TT>
+  </DT>
+  <DD>
+    <P>Triggers a garbage collection with respect to root set <TT>root</TT>.
+       According to the currents thresholds, the store automatically decides
+       whether a minor collection or a major collection will be performed.
+    </P>
+    <P>The collection also involves object finalization.
+    </P>
+  </DD>
+  <DT><TT>DoGCWithoutFinalize(root)</TT>
+  </DT>
+  <DD>
+    <P>Behaves like <TT>DoGC</TT> except for exclusion of the finalization phase.
+    </P>
+  </DD>
+  <DT><TT>DoFinalize()</TT>
+  </DT>
+  <DD>
+    <P>Triggers the finalization phase. This function must
+       be invoked after a successful call to <TT>DoGCWithoutFinalize</TT> and
+       prior to any new invocation of <TT>DoGCWithoutFinalize</TT>.
+    </P>
+    <P>It is good policy not to mix the <TT>DoGC</TT> and
+       <TT>DoGCWithoutFinalize/DoFinalize</TT> approach.
+       However, it is always safe to call <TT>DoGC</TT>.
+    </P>
+  </DD>
+  <DT><TT>SetGCParams(mem_free, mem_tolerance)</TT>
+  </DT>
+  <DD>
+    <P>Adjust the oldest generation garbage collection
+       thresholds to <TT>mem_free</TT> and <TT>mem_tolerance</TT>.
+    </P>
+  </DD>
+  <DT><TT>NeedGC()</TT>
+  </DT>
+  <DD>
+    <P>Queries the store's internal garbage collection flag. The function
+       returns zero in case no garbage collection is needed and a non zero value
+       otherwise.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Allocation"); ?>
+
+<DL>
+  <DT><TT>MakeLabel(l)</TT>
+  </DT>
+  <DD><P>Converts the integer value <TT>l</TT> into a corresponding block label.
+         This is a convenience function providing runtime assertions in debug
+         mode.
+      </P>
+  </DD>
+  <DT><TT>AllocBlock(l,s,gen)</TT>
+  </DT>
+  <DD>
+    <P>Allocates a managed block with minimal size <TT>s</TT>
+       and label <TT>l</TT>. As an optional argument,
+       a generation <TT>gen</TT> other than the default youngest
+       can be requested.
+    </P>
+    <P>Note that block sizes are only guaranted to be at least of the size
+       requested. The effective size might be larger than the one requested.
+    </P>
+  </DD>
+  <DT><TT>AllocChunk(s,gen)</TT>
+  </DT>
+  <DD>
+    <P>Allocates a byte chunk with minimal size <TT>s</TT>
+       As an optional argument, a generation <TT>gen</TT> other than
+       the default youngest can be requested.
+    </P>
+  </DD>
+  <DT><TT>AllocTransient(l)</TT>
+  </DT>
+  <DD>
+    <P>Allocates a transient with label <TT>l</TT>.
+    </P>
+  </DD>
+  <DT><TT>AllocDynamicBlock(size, scan, g)</TT>
+  </DT>
+  <DD>
+    <P>Allocates dynamic block with minimal size <TT>size</TT> and active size
+       <TT>scan</TT>, with <TT>0 <= scan <= size</TT>. As
+       an optional argument, a generation <TT>gen</TT> other than the
+       default youngest can be requested.
+    </P>
+    <P>This datatype is intended to allow the efficient modelling of resizable
+       datastructures by separating the allocated size denoted by <TT>size</TT>
+       from the actively used size denoted by <TT>scan</TT>. That is, the
+       garbage collector will only consider the active size. The active
+       size can be freely changed within the limits of the allocated size.
+       Note that this requires re-initalization of the freshly used fields
+       as their content might have become garbage already.
+    </P>
+    <P> The SEAM runtime stacks are modelled using dynamic blocks.
+    </P>
+  </DD>
+  <DT><TT>IntToWord(i)</TT>
+  </DT>
+  <DD>
+    <P>This function converts an integer value denoted by <TT>i</TT> into
+       a store word.
+    </P>
+  </DD>
+  <DT><TT>UnmanagedPointerToWord(v)</TT>
+  </DT>
+  <DD>
+    <P>This function converts an unmanaged pointer value denoted by
+       <TT>v</TT> into a store word.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Runtime Type Conversion"); ?>
+
+<P>
+  The store supports the notion of <EM>transients</EM>. A transient is
+  a placeholder for a not-yet known value. Once the value becomes known,
+  the transient becomes transparent in the store graph.
+  The transient-aware interface also provides for type testing of store nodes
+   by returning an invalid value each time a conversion fails.
+</P>
+<DL>
+  <DT><TT>WordToBlock(v)</TT>
+  </DT>
+  <DD>
+    <P>Tries to convert the word denoted by <TT>v</TT> into a managed block
+       pointer. In case of failure, <TT>INVALID_POINTER</TT> is returned.
+    </P>
+  </DD>
+  <DT><TT>WordToChunk(v)</TT>
+  </DT>
+  <DD>
+    <P>Tries to convert the word denoted by <TT>v</TT> into a byte chunk
+       pointer. In case of failure, <TT>INVALID_POINTER</TT> is returned.
+    </P>
+  </DD>
+  <DT><TT>WordToTransient(v)</TT>
+  </DT>
+  <DD>
+    <P>Tries to convert the word denoted by <TT>v</TT> into a transient
+       pointer. In case of failure, <TT>INVALID_POINTER</TT> is returned.
+    </P>
+  </DD>
+  <DT><TT>WordToInt(v)</TT>
+  </DT>
+  <DD>
+    <P>Tries to convert the word denoted by <TT>v</TT> into a integer value.
+       In case of failure, <TT>INVALID_INT</TT> is returned.
+    </P>
+  </DD>
+  <DT><TT>WordToUnmanagedPointer(v)</TT>
+  </DT>
+  <DD>
+    <P>Converts the word denoted by <TT>v</TT> into a unmanaged pointer.
+       This function always succeeds. Therefore, only use once you've ruled
+       out all other alternatives by successive testing.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header2("Static Type Conversion"); ?>
+
+<P>
+  The store also provides a second interface that is intended to express
+  static knowledge. It is neither transient aware nor does it allow
+  for type testing.
+</P>
+<DL>
+  <DT><TT>DirectWordToBlock(v)</TT>
+  </DT>
+  <DD>
+    <P>Converts the word denoted by <TT>v</TT> into a managed block
+       pointer. The function always succeeds.
+    </P>
+  </DD>
+  <DT><TT>DirectWordToChunk(v)</TT>
+  </DT>
+  <DD>
+    <P>Converts the word denoted by <TT>v</TT> into a byte chunk
+       pointer. The function always succeeds.
+    </P>
+  </DD>
+  <DT><TT>DirectWordToTransient(v)</TT>
+  </DT>
+  <DD>
+    <P>Converts the word denoted by <TT>v</TT> into a transient
+       pointer. The function always succeeds.
+    </P>
+  </DD>
+  <DT><TT>DirectWordToInt(v)</TT>
+  </DT>
+  <DD>
+    <P>Convertss the word denoted by <TT>v</TT> into a integer value.
+       The function always succeeds.
+    </P>
+  </DD>
+  <DT><TT>DirectWordToUnmanagedPointer(v)</TT>
+  </DT>
+  <DD>
+    <P>Converts the word denoted by <TT>v</TT> into a unmanaged pointer.
+       The function always succeeds.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header1("Basic Store Nodes"); ?>
+
+<PRE>
+class Block {
+public:
+  word *GetBase();
+  BlockLabel GetLabel();
+  u_int GetSize();
+  word GetArg(u_int f);
+  void InitArg(u_int f, s_int v);
+  void InitArg(u_int f, word v);
+  void ReplaceArg(u_int f, s_int v);
+  void ReplaceArg(u_int f, word v);
+  word ToWord();
+};
+
+class Transient : private Block {
+public:
+  using Block::GetLabel;
+
+  void InitArg(s_int v);
+  void InitArg(word v);
+  void ReplaceArg(s_int v);
+  void ReplaceArg(word v);
+  void Become(BlockLabel l, s_int w);
+  void Become(BlockLabel l, word w);
+  word ToWord();
+};
+
+class Chunk : private Block {
+public:
+  using Block::GetLabel;
+  using Block::ToWord;
+
+  char *GetBase();
+  u_int GetSize();
+  u_int Hash();
+  static Chunk *FromWord(word x);
+  static Chunk *FromWordDirect(word x);
+};
+
+class DynamicBlock : private Block {
+public:
+  using Block::GetBase;
+  using Block::GetLabel;
+  using Block::ToWord;
+  u_int GetSize();
+  u_int GetActiveSize();
+  void SetActiveSize(u_int size);
+  word GetArg(u_int f);
+  void InitArg(u_int f, s_int v);
+  void InitArg(u_int f, word v);
+  void ReplaceArg(u_int f, s_int v);
+  void ReplaceArg(u_int f, word v);
+  static DynamicBlock *FromWord(word x);
+  static DynamicBlock *FromWordDirect(word x);
+};
+</PRE>
+<HR><CENTER>Basic Store Nodes</CENTER>
+
+<P>
+  All store nodes share a similar interface as explained below.
+<DL>
+  <DT><TT>GetBase()</TT>
+  </DT>
+  <DD><P>Returns the base address of the field array. In case of a chunk,
+         the byte array base is returned.</P>
+  </DD>
+  <DT><TT>GetLabel()</TT>
+  </DT>
+  <DD><P>Returns the label of the node.</P>
+  </DD>
+  <DT><TT>GetSize()</TT>
+  </DT>
+  <DD><P>Returns the number of externally available node fields.
+         In case of a chunk, the size of the chunk in bytes is returned.
+      </P>
+  </DD>
+  <DT><TT>GetArg(f)</TT>
+  </DT>
+  <DD><P>Returns the value of the <TT>f</TT>-th data field. Valid indices
+      are between zero and <TT>GetSize()</TT> - 1. In case of dynamic blocks,
+      indices are limited to <TT>GetActiveSize()</TT> - 1.
+     </P>
+  </DD>
+  <DT><TT>InitArg(f,v)</TT>
+  </DT>
+  <DD><P>Initializes the <TT>f</TT>-th data field of the
+         node with value <TT>v</TT>. See <TT>GetArg</TT> for index limits.
+         The integer variant is present for optimization reasons.
+      </P>
+  </DD>
+  <DT><TT>ReplaceArg(f, v)</TT>
+  </DT>
+  <DD><P>Overwrites the <TT>f</TT>-th data field of the
+         node with value <TT>v</TT>. See <TT>GetArg</TT> for index limits.
+         The integer variant is present for optimization reasons.
+      </P>
+  </DD>
+  <DT><TT>ToWord()</TT>
+  </DT>
+  <DD><P>Converts the respective pointer value to a store word, that is, into
+      the tagged representation.</P>
+  </DD>
+  <DT><TT>FromWord(x)<BR>
+          FromWordDirect(x)</TT>
+  </DT>
+  <DD><P>Converts the tagged value denoted by <TT>x</TT>
+         to the respective pointer value. In case of <TT>FromWord</TT>,
+         <TT>INVALID_POINTER</TT> signals failure.
+      </P>
+  </DD>
+</DL>
+<P>
+  Apart from the generic interface, some node types provide special
+  functionality.
+</P>
+<DL>
+  <DT><TT>Transient::Become(l, w)</TT>
+  </DT>
+  <DD>
+    <P>Mutates a non-transparent transient.
+      <UL>
+        <LI><TT>REF_LABEL</TT> makes the transient transparent, that is,
+            replaces it by value <TT>w</TT>. The garbage collector eventually
+            eliminates reference chains.
+        <LI><TT>CANCELLED_LABEL</TT> fails the transient with value <TT>w</TT>,
+	    which must be a tuple of some value and a backtrace.
+        <LI><TT>HOLE_LABEL</TT> denotes a hole. A hole is a placeholder for
+            a unknown value that cannot be synchronized on. That is, an exception
+            will be raised in case a hole is encountered in a value-strict
+            position.
+         <LI><TT>FUTURE_LABEL</TT> denotes a future. A future is a placeholder
+            for a unknown value that provides for automatic synchronization.
+            That is, the thread will be blocked until the future is bound.
+         <LI><TT>BYNEED_LABEL</TT> denotes a byneed future. A byneed future
+            delays an encapsulated computation until its value is needed.
+      </UL>
+    </P>
+  </DD>
+  <DT><TT>Chunk::Hash()</TT>
+  </DT>
+  <DD><P>Returns a hash value computed from the contents of the byte array.</P>
+  </DD>
+  <DT><TT>DynamicBlock::GetActiveSize()<BR>
+          DynamicBlock::SetActiveSize(size)</TT>
+  </DT>
+  <DD><P>Returns and sets the active size of the dynamic block, respectively.
+         Note that new sizes must be less than <TT>GetSize()</TT>.
+  </DD>
+</DL>
+
+<?php pslab_header1("Store Maps"); ?>
+
+<P>
+  The store provides four basic map types.
+</P>
+<UL>
+  <LI>Integer maps (<TT>IntMap</TT>) map integer keys to arbitrary store values.
+  <LI>Chunk maps (<TT>ChunkMap</TT>) map chunk keys to arbitrary store values.
+  <LI>Generic maps (<TT>Map</TT>) map arbitrary non-transient store values
+      to arbitrary store values, with key equality based on token equality.
+  <LI>Weak maps (<TT>WeakMap</TT>) map integer keys to arbitrary store values.
+      Entries are finalized once the dictionary is the only live
+      store object referring to it.
+</UL>
+<PRE>
+typedef void (*item_apply)(word key, word item);
+
+class Finaliziation {
+public:
+  virtual void Finalize(word value) = 0;
+};
+
+template &lt;typename T&gt;
+class BaseMap : public Block {
+public:
+  void Put(word key, word value);
+  void Remove(word key);
+
+  bool IsMember(word key);
+  word Get(word key);
+  word CondGet(word key, word alternative); 
+
+  u_int GetSize();
+  void Clear();
+  bool IsEmpty();
+  void Apply(item_apply func);
+
+  static BaseMap&lt;T&gt; *New(u_int size, Finaliziation *object = NULL);
+  static BaseMap&lt;T&gt; *FromWord(word x);
+  static BaseMap&lt;T&gt; *FromWordDirect(word x);
+};
+</PRE>
+<HR>
+<CENTER>Idealized Store Map Interface</CENTER>
+
+<DL>
+  <DT><TT>Put(key, value)</TT>
+  </DT>
+  <DD><P>Stores value <TT>key</TT> under key <TT>key</TT>. Overwrites an
+      existing value.</P>
+  </DD>
+  <DT><TT>Remove(key)</TT>
+  </DT>
+  <DD><P>Removed the entry <TT>key</TT> from the map if it exists. Otherwise,
+      nothing happens.</P>
+  </DD>
+  <DT><TT>IsMember(key)</TT>
+  </DT>
+  <DD><P>Returns a boolean value indicating whether a value has been stored
+      under that <TT>key</TT>.</P>
+  </DD>
+  <DT><TT>Get(key)</TT>
+  </DT>
+  <DD><P>Returns the value stored under that <TT>key</TT>. Only valid if
+      <TT>IsMember(key) == true</TT>.</P>
+  </DD>
+  <DT><TT>CondGet(key, alternative)</TT>
+  </DT>
+  <DD><P>Returns the value stored under that <TT>key</TT> if it exists,
+      <TT>alternative</TT> otherwise.</P>
+  </DD>
+  <DT><TT>GetSize()</TT>
+  </DT>
+  <DD><P>Returns the number of elements stored in the map.</P>.
+  </DD>
+  <DT><TT>Clear()</TT>
+  </DT>
+  <DD><P>Empties the map.</P>
+  </DD>
+  <DT><TT>IsEmpty()</TT>
+  </DT>
+  <DD><P>Equals <TT>GetSize() == 0</TT>.</P>
+  </DD>
+  <DT><TT>Apply(func)</TT>
+  </DT>
+  <DD><P>Applies the function denoted by <TT>func</TT> to every key/value pair
+      stored in the map.</P>
+  </DD>
+  <DT><TT>New(size)<BR>
+          New(size, finalizer)</TT>
+  </DT>
+  <DD><P>Creates a new map of size <TT>size</TT>. In case of a weak map,
+         the corresponding finalization object is also passed.</P>
+  </DD>
+  <DT><TT>FromWord(x)<BR>
+          FromWordDirect(x)</TT>
+  </DT>
+  <DD><P>Converts the tagged value denoted by <TT>x</TT> into the respective
+      pointer value. In case of <TT>FromWord</TT>,
+      <TT>INVALID_POINTER</TT> signals failure.</P>
+  </DD>
+</DL>
+
+<?php pslab_footer("Webmaster"); ?>

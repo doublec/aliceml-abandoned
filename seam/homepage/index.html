@@ -1,0 +1,65 @@
+<?php
+  include("project.html");
+
+  alice_project_header("SEAM");
+?>
+
+<!--
+<H1><A href="download.html#packages"><I><B>
+    <FONT color="#ff8800">SEAM 0.0 has been released!</FONT></B></I></A></H1>
+-->
+
+<H2>Overview</H2>
+
+  <P>
+    SEAM (Simple Extensible Abstract Machine) is a
+    virtual machine architecture and library. SEAM is designed to be
+    language- and platform-independent, to be simple
+    and based on few principled services.
+  </P>
+  <UL>
+  <LI><EM>Uniform data representation and memory management.</EM>
+      All datastructures used to represent computations, including code and
+      threads, reside in an <EM>abstract store</EM>, which represents
+      an abstract graph of data nodes.
+      Language specific datastructures are modelled on top of the
+      language-independent store structures. The store manages the allocation
+      of nodes and their efficient layout in memory.
+  <LI><EM>Platform-independent external representation.</EM>
+      Store values are converted to a portable representation during
+      export (<EM>pickling</EM>), and converted back during
+      import (<EM>unpickling</EM>). A language-independent
+      <EM>transfer language</EM> is defined
+      to describe values independent from platform.
+      Unpickling operates with respect to runtime-pluggable
+      language-dependent transformation. For example, language specific code
+      can be instantiated either to byte code or to native code.
+  <LI><EM>Abstract execution model.</EM>
+      Computations are defined by a generic <EM>evaluator interface</EM>.
+      SEAM supports arbitrarily many codes and
+      evaluators to be used at the  same time and interact freely. In particular,
+      common virtual machine services like foreign
+      function interfaces are easily expressible.
+  </UL>
+  <P>SEAM is used successfully to implement the new virtual machine underlying
+     the <A href="http://www.ps.uni-sb.de/alice/">Alice Programming System</A>.
+  </P>
+
+<H2>News</H2>
+
+  <UL>
+    <LI> 2004/10/04: preliminary "SEAM" home page online
+    <LI> 2002/03/20: first version of "SEAM" VM is working
+  </UL>
+
+<H2>Funding</H2>
+
+  <P>
+    The SEAM Project is partially funded by the DFG (<A
+    href="http://www.coli.uni-sb.de/sfb378/">SFB
+    378</A>, Project <A
+    href="http://www.coli.uni-sb.de/sfb378/2002-2004/projects.phtml?action=2&w=16">MI
+    6 - NEP</A>).
+  </P>
+
+<?php pslab_footer("Webmaster"); ?>

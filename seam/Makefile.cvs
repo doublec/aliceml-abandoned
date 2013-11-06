@@ -1,0 +1,35 @@
+# -*- makefile -*-
+
+# This Makefile creates files that are necessary for building SEAM,
+# but should better not be put under CVS control.  It should be
+# executed each time this directory is released to the public, so that
+# users of SEAM do not need to generate all these files by hand.
+#
+# The autotools target creates the autotools build architecture:
+# automake, autoconf, and libtool.  It also creates a directory named
+# lightning, and a Makefile.am in it.  This directory is assumed to be
+# present by the autotools architecture; it is required even if GNU
+# lightning is not actually used for the build.
+#
+# The lightning target populates the lightning directory with the
+# actual files required if SEAM should be built with support for GNU
+# lightning.
+
+LIBTOOLIZE=libtoolize
+
+all: lightning autotools
+
+autotools:
+	if ! test -d lightning; then mkdir lightning; fi
+	cp -p Makefile.lightning.am lightning/Makefile.am
+	$(LIBTOOLIZE) --copy --force --automake --ltdl
+	aclocal -I .
+	autoconf
+	automake --add-missing
+	cd libltdl; aclocal; autoconf; automake --add-missing
+
+lightning:
+	rm -rf lightning
+	lightningize --copy --force --automake
+
+.PHONY: all autotools lightning

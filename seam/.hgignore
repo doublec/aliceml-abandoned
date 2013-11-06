@@ -1,0 +1,17 @@
+glob:INSTALL
+glob:Makefile.in
+glob:aclocal.m4
+glob:autom4te.cache/*
+glob:config.guess
+glob:config.sub
+glob:configure
+glob:depcomp
+glob:install-sh
+glob:libltdl/*
+glob:lightning/Makefile.am
+glob:ltmain.sh
+glob:missing
+glob:.kdev_include_paths
+syntax: glob
+lightning/*
+sh.exe.stackdump

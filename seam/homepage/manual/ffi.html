@@ -1,0 +1,437 @@
+<?php
+  include("../project.html");
+
+  alice_project_header("Interfacing to C and C++");
+?>
+<P>
+  SEAM provides a simple yet powerful interface to dynamically
+  link native C and C++ code to SEAM.
+  It provides for access and conversion from most SEAM values to C
+  data structures and vice versa and supports mechanisms to handle
+  suspension for C(++) functions.
+</P>
+<P>
+  The usage of the C and C++ interface is first explained using an
+  example followed by a reference part that describes the interface in detail.
+</P>
+
+<?php pslab_header2("A small Example"); ?>
+
+<P>Suppose we want to add a native module <TT>System</TT> providing the
+   <TT>getEnv</TT> function to our system.
+   In order to illustrate the foreign function interface, we will stepwise
+   examine the sample module implementation.
+<CENTER>
+<PRE>
+#include "SEAM.hh"                                              //  1
+                                                                //  2
+DEFINE1(System_getenv) {                                        //  3
+  DECLARE_STRING(string, x0);                                   //  4
+  char *envValue = getenv(string->ExportC());                   //  5
+  if (envValue == NULL)                                         //  6
+    RAISE(String::New("Not defined in environment")->ToWord()); //  7
+  RETURN(String::New(envValue)->ToWord());                      //  8
+} END                                                           //  9
+                                                                // 10
+word Interface() {                                              // 11
+  Tuple *interface = Tuple::New(1);                             // 12
+  u_int inArity = 1;                                            // 13
+  u_int outArity = 1;                                           // 14
+  Transform *abstract = INVALID_POINTER;                        // 15
+  word getenvFunc = Primitive::Makefunction("System_getEnv",    // 16
+		                            System_getEnv,      // 17
+                                            inArity,            // 18
+                                            outArity,           // 19
+                                            transform);         // 20
+  Closure *getenvClosure = Closure::New(getenvFunc, 0);         // 21
+  interface->Init(0, getenvClosure->ToWord());                  // 22
+  return interface->ToWord();                                   // 23
+}                                                               // 24
+</PRE></CENTER>
+<HR>
+<CENTER>A sample <TT>System</TT> module</CENTER>
+<P>
+  To implement the native module <TT>System</TT>,
+  we need the following three steps:
+</P>
+<OL>
+  <LI>Write the C code of the module.
+  <LI>Compile and create a DLL from it.
+  <LI>Link the module to SEAM.
+</OL>
+<?php pslab_header3("The C part"); ?>
+<P>
+Getting started with writing native modules for SEAM is simple: Just
+include <TT>SEAM.hh</TT> which contains everthing needed (line 1).
+Thereafter, use <TT>DEFINEn</TT>/<TT>END</TT> pairs to define module functions
+(lines 1 and 9), with <TT>n</TT> denoting the number of arguments.
+Use pre-defined <TT>DECLARE_</TT> macros to convert the arguments from the
+tagged representation into the untagged representation as shown in line 4.
+Use <TT>RAISE(value)</TT> to abnormally terminate execution with an exception
+or <TT>RETURN(value)</TT> to terminate normally returning value <TT>value</TT>.
+</P>
+<P>Finally every native module needs a export section. This is implemented
+by the interface function (lines 12-24). SEAM does not make any assumption
+how the export section of a native module has to look like, except that you
+have to use <TT>Primitive::MakeFunction</TT> to convert the module functions
+into a store representation.
+</P>
+
+<?php pslab_header3("Creating a DLL"); ?>
+
+<P>Assuming the above shown code resides in <TT>Alice.cc</TT> and seam
+is properly installed, that is <TT>seamtool</TT> in the path, we execute
+<PRE>
+seamtool compile -c System.cc -o System.o
+seamtool link -o System.dll System.o
+</PRE>
+<P>to create the native dll. Note that seamtool passes every option given to
+the underlying C/C++ compiler.
+<TT>seamtool</TT> itself only takes care of adding the
+appropriate include and library pathes for the <TT>g++</TT> compiler,
+which is currently the only compiler supported.
+</P>
+<P>Under windows, however, you can link to ms compiled binaries provided
+that you use the <TT>-ms-bitfields</TT> option. On windows, the compiler
+defaults to <TT>g++ -mno-cygwin</TT>.
+</P>
+
+<?php pslab_header3("Linking the Module"); ?>
+<P>
+  SEAM does not enforce any structure on how the export section of a
+  module has to look like. Consequently, there is no such
+  thing like a native module manager.
+  Instead a platform-independent <TT>DllLoader</TT> is provided,
+  allowing for linking of native dlls and accessing
+  fields from their export area.
+</P>
+<PRE>
+...
+const char *moduleName = "System.dll";
+DllLoader::libhandle handle = DllLoader::OpenLibrary(moduleName);
+if (handle == NULL) { ... error handling ...}
+
+String *interfaceName = String::New("Interface");
+word (*MkInterface)() = (word (*)()) DllLoader::GetSymbol(handle, interfaceName);
+if (MkInterface == NULL) {
+  DllLoader::CloseLibrary(handle);
+  ... error handling ...
+}
+
+word interfaceValue = MkInterface();
+word getenvClosure = Tuple::FromWordDirect(interfaceValue)->Sel(0);
+...
+</PRE>
+<HR>
+<CENTER>Sample linking code for module <TT>System</TT></CENTER>
+<P>
+  The code above illustrates how you would link the sample module and access
+  the getenv closure. This closure could now simply be invoked via
+  <TT>Scheduler::PushCall</TT>.
+</P>
+<?php pslab_header2("Specification of the C Interface"); ?>
+
+<?php pslab_header3("Declaration"); ?>
+
+<DL>
+  <DT>
+    <TT>DEFINEn(name) {</TT><BR>
+    <TT>... code of the function ...</TT><BR>
+    <TT>} END</TT> 
+  </DT>
+  <DD>
+    <P>
+      Every native function is declared as shown above, with
+      <TT>n</TT> denoting the number of arguments and <TT>name</TT>
+      the name of the function.
+      Note that using more than five arguemts requires the definition of your
+      own <TT>DEFINEn</TT> macros.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header3("Accessing arguments"); ?>
+
+<P>
+  The number of arguments that can be passed to a C function directly,
+  that is without constructing a container, is limited by the size of the
+  argument register bank whose size is implementation dependent. For example,
+  the current implementation provides 16 argument registers.
+</P>
+<P>
+  The arguments are of type <TT>word</TT> and referred
+  to by <TT>x<SUB>0</SUB></TT>, ..., <TT>x<SUB>n-1</SUB></TT>,
+  given <TT>n</TT> the number of arguments.
+</P>
+<P>
+  A general note: The pre-defined argument declarations
+  are transient-aware in that they will request the transient
+  in order to access the value. In case you want to access
+  the values directly, that is transient unaware,
+  you can use the provided <TT>FromWordDirect</TT> method of each SEAM datatype.
+</P>
+<DL>
+  <DT><TT>DECLARE_INT(i, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes an integer, whose
+       value is bound to <TT>i</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_UNMANAGED_POINTER(pointer, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes an unmanaged pointer,
+       whose value is bound to <TT>pointer</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_BLOCK(block, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a block, whose
+       value is bound to <TT>block</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_CLOSURE(closure, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a closure, whose
+       value is bound to <TT>closure</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_TUPLE(tuple, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a tuple, whose
+       value is bound to <TT>tuple</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_STRING(string, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a string, whose
+       value is bound to <TT>string</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_FLOAT(float, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a
+       single precision floating point value,
+       whose value is bound to <TT>float</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_DOUBLE(double, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a
+       double precision floating point value,
+       whose value is bound to <TT>double</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_UNIQUE_STRING(uniqueString, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a unique string,
+       whose value is bound to <TT>uniqueString</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_INT_MAP(intMap, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a integer map, whose
+       value is bound to <TT>intMap</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_CHUNK_MAP(chunkMap, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a chunk map, whose
+       value is bound to <TT>chunkMap</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_IODESC(ioDesc, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes an I/O Descriptor, whose
+       value is bound to <TT>ioDesc</TT>.
+    </P>
+  </DD>
+  <DT><TT>DECLARE_BLOCKTPYE(type, pointer, var)</TT></DT>
+  <DD>
+    <P>Declares that the variable <TT>var</TT> denotes a
+       managed pointer of type <TT>type</TT>, whose value is bound to
+       <TT>pointer</TT>.
+    </P>
+    <P>
+       This macro is used to declare new managed types. For example
+       <TT>DECLARE_CLOSURE(closure, var)</TT> equals
+       <TT>DECLARE_BLOCKTPYE(Closure, closure, var)</TT>.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header3("Returning arguments"); ?>
+
+<P>
+  SEAM supports more than one return argument. The number of return arguments is
+  limited only by the size of the argument register bank whose size is
+  implementation dependent. However, using more than 3 return values requires
+  the definition of your own <TT>RETURNn</TT> macros.
+</P>
+<DL>
+  <DT><TT>RETURN(value)</TT>
+  </DT>
+  <DD>
+    <P>Returns from the C function with return value <TT>value</TT>.
+    </P>
+  </DD>
+  <DT><TT>RETURN1(value)</TT>
+  </DT>
+  <DD>
+    <P>Returns from the C function with return value <TT>value</TT>.
+    <TT>RETURN</TT> is a convenience macro for <TT>RETURN1</TT>.
+    </P>
+  </DD>
+  <DT><TT>RETURN2(value1,value2)</TT>
+  </DT>
+  <DD>
+    <P>Returns from the C function with return values
+       <TT>value1</TT> and <TT>value2</TT>.
+    </P>
+  </DD>
+  <DT><TT>RETURN3(value1,value2,value3)</TT>
+  </DT>
+  <DD>
+    <P>Returns from the C function with return values
+       <TT>value1</TT>, <TT>value2</TT> and <TT>value3</TT>.
+    </P>
+  </DD>
+  <DT><TT>RETURN_INT(i)</TT>
+  </DT>
+  <DD>
+    <P>Returns from the C function with the integer i.
+       This is a convenience maco corresponding to
+       <TT>RETURN(Store::IntToWord(i))</TT>.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_header3("Interrupting computations"); ?>
+
+<P>
+  SEAM supports the computation of a native function body
+  to be interrupted in different ways.
+  However, blocking system calls made
+  in a native function body will block the entire machine.
+  Note that the entire function body will be executed anew once
+  the previously interrupted computation proceeds again.
+</P>
+<DL>
+  <DT><TT>PREEMPT0</TT>
+  </DT>
+  <DD>
+    <P>Yields the preemption of the computation. Note that all arguments
+       will be lost upon re-entrance of the computation.
+    </P>
+  </DD>
+  <DT><TT>SUSPEND</TT>
+  </DT>
+  <DD>
+     <P>Suspends the computation until it will be explicitly
+        resumed by another thread. The arguments are preserved.
+     </P>
+  </DD>
+  <DT><TT>REQUEST(value)</TT>
+  </DT>
+  <DD>
+     <P>The transient denoted by <TT>value</TT> will be requested.
+        The arguments are preserved.
+     </P>
+  </DD>
+  <DT><TT>RAISE(value)</TT>
+  </DT>
+  <DD>
+     <P>The execution of the C function terminates by rasing an exception
+        denoted by value <TT>value</TT>.
+     <P>
+  </DD>
+  <DT><TT>EXIT(i)</TT>
+  </DT>
+  <DD>
+     <P>Terminates the current SEAM process with return code <TT>i</TT>.
+     </P>
+  </DD>
+</DL>
+
+<?php pslab_header3("Creating native function values"); ?>
+
+<P>
+   Before a native function can be executed,
+   it must be made available as a proper SEAM value.
+   This is achieved by the function <TT>Primitive::MakeFunction</TT>.
+</P>
+
+<DL>
+  <DT>
+<PRE>
+Primitive::MakeFunction(const char *name,
+                        Interpreter::function function,
+                        u_int inArity,
+                        u_int outArity,
+                        Transform *abstract)</PRE>
+  </DT>
+  <DD>
+    <UL>
+      <LI><TT>name</TT> denotes the symbolic name of the native functions.
+      <LI><TT>function</TT> denotes the native function created by any
+      <TT>DEFINEn</TT> declarations.
+      <LI><TT>inArity</TT> denotes the number of input arguments.
+      <LI><TT>outArity</TT> denotes the number of return arguments.
+      <LI><TT>transform</TT> specifies how this function can be transformed
+          to an external represenation. This value defaults
+          to <TT>INVALID_POINTER</TT> denoting that there is no external
+          represenation.
+    </UL>
+  </DD>
+</DL>
+
+<?php pslab_header3("Linking Support"); ?>
+
+<PRE>
+class DllLoader {
+public:
+  typedef ... libhandle;
+
+  static libhandle OpenLibrary(String *filename);
+  static void CloseLibrary(libhandle handle);
+  static void *GetSymbol(libhandle libraryHandle, String *symbolName);
+  static String *GetLastError();
+};
+</PRE>
+<HR>
+<CENTER>The <TT>DllLoader</TT> interface</CENTER>
+
+<P>SEAM does not specify the format of the export section of native modules.
+   Instead any client can decide to build their own linker using the provided
+   <TT>DllLoader</TT> abstraction shown above.
+</P>
+<DL>
+  <DT><TT>OpenLibrary(filename)</TT>
+  </DT>
+  <DD>
+    <P>Tries to open a dynmamic link library denoted by <TT>filename</TT> and
+       returns a non NULL handle in case of success. Otherwise
+       <TT>GetLastError</TT> can be used to obtain the error message.
+    </P>
+  </DD>
+  <DT><TT>CloseLibrary(handle)</TT>
+  </DT>
+  <DD>
+     <P>Unlinks the library denoted by <TT>handle</TT>.
+     </P>
+  </DD>
+  <DT><TT>GetSymbol(handle, name)</TT>
+  </DT>
+  <DD>
+    <P>Tries to extract the value named <TT>name</TT> from the export section
+       of the library denoted by <TT>handle</TT>.
+    </P>
+  </DD>
+  <DT><TT>GetLastError()</TT>
+  </DT>
+  <DD>
+    <P>Returns the last error as a SEAM string.
+    </P>
+  </DD>
+</DL>
+
+<?php pslab_footer("Webmaster"); ?>

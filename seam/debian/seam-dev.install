@@ -1,0 +1,6 @@
+usr/bin/seamtool
+usr/include
+usr/lib/*.a
+usr/lib/*.la
+usr/lib/*.so
+usr/share/aclocal

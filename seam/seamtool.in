@@ -1,0 +1,135 @@
+#!/bin/sh
+# 
+# Authors:
+#   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+#   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+# 
+# Copyright:
+#   Leif Kornstaedt, 2003
+#   Marco Kuhlmann, 2003
+# 
+# Last Change:
+#   $Date$
+#   $Revision$
+# 
+
+set -e
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+includedir=@includedir@
+pkgincludedir=@includedir@/@PACKAGE@
+libdir=@libdir@
+
+usage () {
+    echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
+    echo "Compilation utility for SEAM                               " >&2
+    echo "                                                           " >&2
+    echo "Generic options:                                           " >&2
+    echo "  -h, --help       display this message and exit           " >&2
+    echo "  -v, --verbose    enable verbose shell tracing            " >&2
+    echo "  -V, --version    show version information and exit       " >&2
+    echo "                                                           " >&2
+    echo "MODE must be one of the following:                         " >&2
+    echo "  compile          compile a C++ source file               " >&2
+    echo "  compilec         compile a C source file                 " >&2
+    echo "  link             create a library or an executable       " >&2
+    echo "  config           output installation paths for SEAM      " >&2
+    echo "                                                           " >&2
+    echo "MODE-ARGs vary depending on the MODE.                      " >&2
+}
+
+config_usage () {
+    echo "Usage: $0 config [CONFIG-ARG]                              " >&2
+    echo "Output installation paths for SEAM                         " >&2
+    echo "                                                           " >&2
+    echo "Depending on CONFIG-ARG, emit the directory prefix for     " >&2
+    echo "  prefix           architecture-independent files          " >&2
+    echo "  exec_prefix      architecture-dependent files            " >&2
+    echo "  includedir       C header files                          " >&2
+    echo "  pkgincludedir    SEAM-specific C header files            " >&2
+    echo "  libdir           object code libraries                   " >&2
+    echo "  seamlibdir       SEAM extension modules                  " >&2
+}
+
+version () {
+    echo "$0 (SEAM compilation utility) @PACKAGE_VERSION@" >&2
+    echo "                                                           " >&2
+    echo "Copyright (C) 2003  Programming Systems Lab                " >&2
+    echo "See the source for copying conditions.                     " >&2
+}
+
+cmd () {
+    if [ $verbose -ne 0 ]; then echo "$@"; fi
+    "$@" || exit $?
+}
+
+if [ $# -lt 1 ]; then
+    usage
+    exit 2
+fi
+
+verbose=0
+
+case "$1" in
+    -h|--help)
+	usage
+	exit 0
+	;;
+    -V|--version)
+	version
+	exit 0
+	;;
+    -v|--verbose)
+	verbose=1
+	shift
+	;;
+esac
+
+mode=$1
+shift
+
+case "$mode" in
+    makedepend)
+	cmd @SEAMTOOL_MAKEDEPEND_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_MAKEDEPEND_CMD_POSTAMBLE@
+	;;
+    compile)
+	cmd @SEAMTOOL_COMPILE_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_COMPILE_CMD_POSTAMBLE@
+	;;
+    compilec)
+	cmd @SEAMTOOL_COMPILE_C_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_COMPILE_C_CMD_POSTAMBLE@
+	;;
+    link)
+        cmd @SEAMTOOL_LINK_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_LINK_CMD_POSTAMBLE@
+	;;
+    config)
+	case "$1" in
+	    --help)
+		config_usage
+		exit 0
+		;;
+            prefix|exec_prefix|includedir|pkgincludedir|libdir)
+		eval tmp="\$$1" && echo "$tmp"
+                ;;
+	    seamlibdir)
+		echo '${libdir}/seam'
+		;;
+	    *)
+		echo "$0: unknown config option '$1'." >&2
+		echo "Try '$0 config --help' for more information." >&2
+		exit 2
+		;;
+	esac
+	;;
+    *)
+	echo "$0: unknown mode '$mode'" >&2
+	echo "Try '$0 --help' for more information." >&2
+	exit 2
+	;;
+esac
+
+exit 0
