@@ -1,0 +1,11 @@
+#!/bin/sh
+
+SML_NJ=$(which sml 2>/dev/null)
+
+if [ $SML_NJ ]; then
+SMLNJ_HOME=$(dirname $(dirname "$SML_NJ"))
+CM_PATH=$(cygpath -m $SMLNJ_HOME/lib);
+SMLNJ_BIN=$(cygpath -m $SMLNJ_HOME/bin)
+exec "$SMLNJ_HOME/bin/.run/run.x86-win32.exe" @SMLload="$SMLNJ_BIN/.heap/ml-lex.x86-win32" "$@"
+else exec ml-lex "$@"
+fi

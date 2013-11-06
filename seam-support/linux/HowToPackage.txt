@@ -1,0 +1,53 @@
+How to build Alice packages for different Linux distros
+=======================================================
+
+The first step is to do a complete bootstrap somewhere, using the
+usual toplevel Makefile. Then do a
+make dist-seam
+which will create all needed Alice packages in a subdirectory
+"packages". Move all files to seam-support/linux
+Go to the seam-build directory and
+make dist
+Move the resulting seam-%version.tar.gz to seam-support/linux
+Go to the gecode-build directory and
+make dist
+Move the resulting gecode-%version.tar.gz to seam-support/linux
+
+Please note that some of the following steps may require root privileges.
+
+RPM
+===
+make -f Makefile.rpm gecode-%version.tar.gz
+rpm -Uvh gecode-*.rpm
+make -f Makefile.rpm seam-%version.tar.gz
+rpm -Uvh seam-*.rpm
+make -f Makefile.rpm alice-%version.tar.gz
+rpm -Uvh alice-*.rpm
+make -f Makefile.rpm alice-gtk-%version.tar.gz
+rpm -Uvh alice-gtk*.rpm
+make -f Makefile.rpm alice-gecode-%version.tar.gz
+rpm -Uvh alice-gecode*.rpm
+make -f Makefile.rpm alice-runtime-%version.tar.gz
+rpm -Uvh alice-runtime*.rpm
+
+
+Debian
+======
+make -f Makefile.debian gecode-%version.tar.gz
+dpkg -i gecode-*.deb
+make -f Makefile.debian seam-%version.tar.gz
+dpkg -i seam-*.deb
+make -f Makefile.debian alice-%version.tar.gz
+dpkg -i alice-*.deb
+make -f Makefile.debian alice-gtk-%version.tar.gz
+dpkg -i alice-gtk*.deb
+make -f Makefile.debian alice-gecode-%version.tar.gz
+dpkg -i alice-gecode*.deb
+make -f Makefile.debian alice-runtime-%version.tar.gz
+dpkg -i alice-runtime*.deb
+
+Fink (Mac OS)
+=============
+
+make -f Makefile.fink
+should build and install all the packages.

@@ -1,0 +1,221 @@
+diff -rNu automake1.7-1.7.6.orig/automake.in automake1.7-1.7.6/automake.in
+--- automake1.7-1.7.6.orig/automake.in	2003-07-10 22:51:00.000000000 +0200
++++ automake1.7-1.7.6/automake.in	2003-07-28 11:40:30.000000000 +0200
+@@ -1671,6 +1671,7 @@
+     &handle_gettext;
+     &handle_libraries;
+     &handle_ltlibraries;
++    &handle_seamlibraries;
+     &handle_programs;
+     &handle_scripts;
+ 
+@@ -3572,6 +3573,81 @@
+     }
+ }
+ 
++
++# handle_seamlibraries ()
++# -------------------
++# Handle seam libraries.
++sub handle_seamlibraries
++{
++  my @liblist = &am_install_var ('seamlibs', 'SEAMLIBRARIES',
++				 'seamlib', 'noinst', 'check');
++  return if ! @liblist;
++
++  my @prefix = am_primary_prefixes ('SEAMLIBRARIES', 0, 'seamlib',
++				    'noinst', 'check');
++
++  require_variables_for_macro ($prefix[0] . '_SEAMLIBRARIES',
++			       'SEAM library used', 'SEAMTOOL')
++    if (@prefix);
++
++  foreach my $onelib (@liblist)
++    {
++      my $seen_libobjs = 0;
++      # Check that the library fits the standard naming convention.
++      if (basename ($onelib) !~ /.*\.dll/)
++	{
++	  # FIXME should put line number here.  That means mapping
++	  # from library name back to variable name.
++	  err_am "`$onelib' is not a standard seam library name";
++	}
++
++      my $obj = &get_object_extension ($onelib);
++
++      # Canonicalize names and check for misspellings.
++      my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
++					    '_OBJECTS', '_DEPENDENCIES');
++
++      if (variable_defined ($xlib . '_LIBADD'))
++	{
++	  if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
++	    {
++	      $seen_libobjs = 1;
++	    }
++	}
++      else
++	{
++	  # Generate support for conditional object inclusion in
++	  # libraries.
++	  &define_variable ($xlib . "_LIBADD", '');
++	}
++
++      reject_var ($xlib . '_LDADD',
++		  "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
++
++      # Make sure we at look at this.
++      &examine_variable ($xlib . '_DEPENDENCIES');
++
++      &handle_source_transform ($xlib, $onelib, $obj);
++
++      # If the resulting library lies into a subdirectory,
++      # make sure this directory will exist.
++      my $dirstamp = require_build_directory_maybe ($onelib);
++
++      $output_rules .= &file_contents ('seamlibrary',
++				       ('LIBRARY'  => $onelib,
++					'XLIBRARY' => $xlib,
++					'DIRSTAMP' => $dirstamp));
++
++      if ($seen_libobjs)
++	{
++	  if (variable_defined ($xlib . '_LIBADD'))
++	    {
++	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
++	    }
++	}
++    }
++}
++
+ # See if any _SOURCES variable were misspelled.
+ sub check_typos ()
+ {
+diff -rNu automake1.7-1.7.6.orig/ChangeLog automake1.7-1.7.6/ChangeLog
+--- automake1.7-1.7.6.orig/ChangeLog	2003-07-10 22:52:33.000000000 +0200
++++ automake1.7-1.7.6/ChangeLog	2003-07-28 11:52:58.000000000 +0200
+@@ -1,3 +1,8 @@
++2003-07-28  Marco Kuhlmann  <kuhlmann@ps.uni-sb.de>
++
++	* lib/am/seamlibrary.am, lib/am/seamlibs.am, automake.in
++	(handle_seamlibraries): Added support for SEAM language layers.
++
+ 2003-07-10  Alexandre Duret-Lutz  <adl@gnu.org>
+ 
+ 	* configure.in, NEWS: Bump version to 1.7.6.
+diff -rNu automake1.7-1.7.6.orig/lib/am/Makefile.am automake1.7-1.7.6/lib/am/Makefile.am
+--- automake1.7-1.7.6.orig/lib/am/Makefile.am	2003-06-04 21:23:26.000000000 +0200
++++ automake1.7-1.7.6/lib/am/Makefile.am	2003-07-28 11:52:14.000000000 +0200
+@@ -26,5 +26,5 @@
+ footer.am header-vars.am header.am install.am java.am lang-compile.am \
+ lex.am library.am libs.am libtool.am lisp.am ltlib.am ltlibrary.am \
+ mans-vars.am mans.am multilib.am program.am progs.am python.am \
+-remake-hdr.am scripts.am subdirs.am tags.am texi-vers.am texibuild.am \
+-texinfos.am yacc.am
++remake-hdr.am scripts.am seamlibrary.am seamlibs.am subdirs.am tags.am \
++texi-vers.am texibuild.am texinfos.am yacc.am
+diff -rNu automake1.7-1.7.6.orig/lib/am/seamlibrary.am automake1.7-1.7.6/lib/am/seamlibrary.am
+--- automake1.7-1.7.6.orig/lib/am/seamlibrary.am	1970-01-01 01:00:00.000000000 +0100
++++ automake1.7-1.7.6/lib/am/seamlibrary.am	2003-07-28 11:36:01.000000000 +0200
+@@ -0,0 +1,29 @@
++##
++## Author:
++##   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
++##
++## Copyright:
++##   Marco Kuhlmann, 2003
++##
++## Last Change:
++##   $Id$
++##
++
++## This file contains templates for build rules for the
++## SEAMLIBRARIES primary.  It is used to assemble the final
++## Makefile, with the following substitutions made by automake:
++##
++## %LIBRARY%
++##   is the filename of the SEAM library to build (eg, foo.dll).
++##
++## %XLIBRARY%
++##   is the name of the canonical automake variable name matching
++##   %LIBRARY% (eg, foo_dll).
++##
++## %DIRSTAMP%
++##   is used to make sure that the directory containing %LIBRARY%
++##   is present before %LIBRARY% itself is being built.
++
++%LIBRARY%: $(%XLIBRARY%_OBJECTS) $(%XLIBRARY%_DEPENDENCIES) %DIRSTAMP%
++	-rm -f %LIBRARY%
++	$(SEAMTOOL) link -o %LIBRARY% $(%XLIBRARY%_OBJECTS) $(%XLIBRARY%_LIBADD) $(LIBS) $(LDFLAGS)
+diff -rNu automake1.7-1.7.6.orig/lib/am/seamlibs.am automake1.7-1.7.6/lib/am/seamlibs.am
+--- automake1.7-1.7.6.orig/lib/am/seamlibs.am	1970-01-01 01:00:00.000000000 +0100
++++ automake1.7-1.7.6/lib/am/seamlibs.am	2003-07-28 11:35:52.000000000 +0200
+@@ -0,0 +1,68 @@
++##
++## Author:
++##   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
++##
++## Copyright:
++##   Marco Kuhlmann, 2003
++##
++## Last Change:
++##   $Id$
++##
++
++## This file contains templates for install, uninstall and clean
++## rules for the SEAMLIBRARIES primary.  It is used to assemble
++## the final Makefile, with the following substitutions made by
++## automake:
++##
++## %DIR%
++##   will be replaced by [FOO]seamlib, where FOO contains all
++##   special installation schemes, like `noinst' and `checked',
++##   if these were given.
++##
++## %NDIR%
++##   will be replaced by seamlib (%NDIR% is %DIR% with special
++##   installation schemes omitted).
++##
++## Fragments prefixed with ?FOO? will only be executed if FOO is
++## true when this file is read by automake.  (Correspondingly,
++## fragments prefixed with ?!FOO? will only be executed if FOO is
++## false.)
++
++if %?FIRST%
++SEAMTOOL = seamtool
++endif %?FIRST%
++
++if %?INSTALL%
++am__installdirs += $(DESTDIR)$(%NDIR%dir)
++?BASE?%DIR%SEAMLIBRARIES_INSTALL = $(INSTALL)
++?!BASE?%DIR%SEAMLIBRARIES_INSTALL = $(install_sh_PROGRAM)
++?EXEC?.PHONY install-exec-am: install-%DIR%SEAMLIBRARIES
++?!EXEC?.PHONY install-data-am: install-%DIR%SEAMLIBRARIES
++install-%DIR%SEAMLIBRARIES: $(%DIR%_SEAMLIBRARIES)
++	@$(NORMAL_INSTALL)
++	$(mkinstalldirs) $(DESTDIR)$(%NDIR%dir)
++	@list='$(%DIR%_SEAMLIBRARIES)'; for p in $$list; do \
++	  if test -f $$p; then \
++?BASE?	    f="`echo $$p | sed -e 's|^.*/||'`"; \
++?!BASE?	    f="$$p"; \
++	    echo " $(%DIR%SEAMLIBRARIES_INSTALL) $$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
++	    $(%DIR%SEAMLIBRARIES_INSTALL) $$p $(DESTDIR)$(%NDIR%dir)/$$f; \
++	  else :; fi; \
++	done
++	@$(POST_INSTALL)
++endif %?INSTALL%
++
++if %?INSTALL%
++.PHONY uninstall-am: uninstall-%DIR%SEAMLIBRARIES
++uninstall-%DIR%SEAMLIBRARIES:
++	@$(NORMAL_UNINSTALL)
++	@list='$(%DIR%_SEAMLIBRARIES)'; for p in $$list; do \
++?BASE?	  p="`echo $$p | sed -e 's|^.*/||'`"; \
++	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$p"; \
++	  rm -f $(DESTDIR)$(%NDIR%dir)/$$p; \
++	done
++endif %?INSTALL%
++
++.PHONY clean-am: clean-%DIR%SEAMLIBRARIES
++clean-%DIR%SEAMLIBRARIES:
++	-test -z "$(%DIR%_SEAMLIBRARIES)" || rm -f $(%DIR%_SEAMLIBRARIES)

@@ -1,0 +1,18 @@
+Automake for Seam
+=================
+
+This is a patched version of automake 1.7.6 that eases the development
+of SEAM language layers.
+
+This is achieved by supporting one new primary: SEAMLIBRARIES
+
+It can be used for example in the following way:
+
+seamlib_SEAMLIBRARIES = foo.dll
+foo_dll_SOURCES = foo.cc
+
+This Makefile.am is enough to build a library foo.dll from the
+corresponding source file and install it in the preferred seamlib
+path. For this to work, the configure.ac of your project should
+contain a test for seamtool (as is provided by the seam.m4 file in the
+main SEAM distribution).

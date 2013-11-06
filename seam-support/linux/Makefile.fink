@@ -1,0 +1,42 @@
+URL = http://www.ps.uni-sb.de/alice/download/sources
+
+REVISION = 1
+PACKAGES = seam-1.3 alice-1.3 \
+	alice-gecode-1.3 alice-gtk-1.3 \
+	alice-sqlite-1.3 alice-xml-1.3 \
+	alice-regex-1.3 alice-runtime-1.3
+
+GECODEVERSION = 1.3.1
+
+all: $(PACKAGES:%=%.tar.gz)
+
+$(PACKAGES:%=%.tar.gz): %:
+	curl $(URL)/$@ -o $@
+	md5sum $@ | cut -f 1 -d ' ' > $@.md5
+	tar -f $@ -z -x '*/debian/*.info' -O > $(@:%.tar.gz=%)-$(REVISION).info
+	sed -i -e "s/INSERTMD5HERE/`cat $@.md5`/" \
+	  $(@:%.tar.gz=%)-$(REVISION).info
+	sudo cp $(@:%.tar.gz=%)-$(REVISION).info \
+	  /sw/fink/dists/local/main/finkinfo/
+	sudo cp $@ /sw/src/
+	sudo rm -rf /sw/src/$(@:%.tar.gz=%)-$(REVISION)
+	fink validate $(@:%.tar.gz=%)-$(REVISION).info
+	fink build $(@:%.tar.gz=%)-$(REVISION)
+	fink install $(@:%.tar.gz=%)-$(REVISION)
+
+gecode:
+	curl http://www.gecode.org/download/gecode-$(GECODEVERSION).tar.gz -o \
+	  gecode-$(GECODEVERSION).tar.gz
+	md5sum gecode-$(GECODEVERSION).tar.gz | cut -f 1 -d ' ' > gecode.md5
+	cp gecode.info gecode-$(GECODEVERSION).info
+	sed -i -e "s/INSERTMD5HERE/`cat $@.md5`/" \
+	  gecode-$(GECODEVERSION).info
+	sed -i -e "s/VERSION/$(GECODEVERSION)/" \
+	  gecode-$(GECODEVERSION).info
+	sudo cp gecode-$(GECODEVERSION).info \
+	  /sw/fink/dists/local/main/finkinfo/
+	sudo cp gecode-1.3.1.tar.gz /sw/src/
+	sudo rm -rf /sw/src/gecode-1.3.1
+	fink validate gecode-$(GECODEVERSION).info
+	fink build gecode
+	fink install gecode

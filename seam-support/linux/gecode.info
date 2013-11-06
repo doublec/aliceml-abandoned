@@ -1,0 +1,9 @@
+Package: gecode
+Version: VERSION
+Revision: 1
+Source: http://www.gecode.org/download/%n-%v.tar.gz
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+HomePage: http://www.gecode.org
+License: BSD
+Description: The Gecode Constraint Library
+Source-MD5: INSERTMD5HERE

@@ -1,0 +1,33 @@
+#!/bin/sh
+
+PACKAGES=/home/pslab/Projects/Mozart/Packages
+export windlldir=$PACKAGES/dlls
+
+export PATH=/usr/bin:/usr/local/bin:/c/WINDOWS/system32:/c/WINDOWS:/c/WINDOWS/System32/Wbem:/home/pslab/bin:/c/Programme/Emacs/bin
+
+export CC=gcc
+export CXX=g++
+export OZTOOL_CC='gcc -mno-cygwin'
+export OZTOOL_CXX='g++ -mno-cygwin'
+export OZTOOL_LD='g++ -mno-cygwin'
+
+
+unset OZHOME OZPATH OZEMULATOR
+# --enable-warnings disabled due to inlining problems in libfd stuff
+# --enable-opt=o for optimisations; =d for debug emulator
+#  --enable-contrib-gtk \
+#  --with-gtk-canvas-dir=/home/pslab/Projects/WinGTK-1.3/build \
+#  --disable-contrib-os \
+
+/home/pslab/Projects/Mozart/Sources/configure \
+  --prefix=/home/pslab/Projects/Mozart/Install \
+  --enable-errors \
+  --enable-opt=o \
+  --with-inc-dir=$PACKAGES/include \
+  --with-lib-dir=$PACKAGES/lib \
+  --with-tclinclude=$PACKAGES/include \
+  --with-tkinclude=$PACKAGES/include \
+  --with-tcl=$PACKAGES \
+  --with-tk=$PACKAGES \
+  --disable-contrib-compat \
+  --disable-index

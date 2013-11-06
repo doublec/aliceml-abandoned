@@ -1,0 +1,18 @@
+URL = http://www.ps.uni-sb.de/alice/download/sources
+
+REVISION = 1
+PACKAGES = seam-1.4 alice-1.4 \
+	alice-gecode-1.4 alice-gtk-1.4 \
+	alice-xml-1.4 alice-sqlite-1.4 alice-regex-1.4 \
+	alice-runtime-1.4
+
+all: $(PACKAGES:%=%.tar.gz)
+
+$(PACKAGES:%=%.tar.gz): %:
+	curl $(URL)/$@ -o $@
+	tar -f $@ -z -x -O '*/debian/*.spec' > $(@:%.tar.gz=%)-$(REVISION).spec
+	./build-rpm $@ $(@:%.tar.gz=%)-$(REVISION).spec
+	rpm -Uvh --force $(@:%.tar.gz=%)-$(REVISION).*[l6h].rpm
+
+complete:
+	./build-rpm $(PACKAGES:%=%.tar.gz) alice-complete.spec

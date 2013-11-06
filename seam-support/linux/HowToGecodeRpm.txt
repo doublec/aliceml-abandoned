@@ -1,0 +1,18 @@
+To build a rpm package for the alice-gecode binding 1.3, you need a rpm
+package for gecode 1.1.0.
+
+Download the gecode sources 1.1.0 from http://www.gecode.org
+
+To build the package, just invoke
+
+./build-rpm gecode-1.1.0.tar.gz gecode.spec
+
+Install the resulting rpm package with
+
+rpm -Uhv gecode-1.1.0-1.i386.rpm
+
+Now, you can start the packaging process for Alice and the dependencies to
+gecode are automatically configured by rpm.
+
+Note: This process should also work for newer Gecode release. You only have to 
+adjust the "Version" field in gecode.spec accordingly.
