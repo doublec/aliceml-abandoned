@@ -547,6 +547,6 @@ selectgui:
 test:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	ALICE_HOME=$(PREFIX)/share/alice && \
-	cd $(PWD)/alice/sources/test/suite && \
+	cd $(PWD)/alice/test/suite && \
 	./run.sh
 
